@@ -481,9 +481,12 @@ pub(crate) fn crit_bleeds(c: &Char) -> Vec<(u32, u32, u32, u32, CritBleedOf)> {
         .collect()
 }
 
-/// The character's stats: gear's, and the talents' on top.
+/// The character's stats: gear's and the Well Fed buff's, and the talents' on top.
 pub(crate) fn stats(c: &Char) -> CharacterStats {
     let mut s = crate::equipment::stats(c);
+    if let Some(fed) = crate::cooking::fed(c) {
+        s.add_stats(fed.stats);
+    }
     s.crit_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::MeleeCritPct { .. })));
     s.crit_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::ModCritChance { .. })));
     s.crit_damage_pct = sum(c, |e| matches!(e, TalentEffect::ModCritDamage { .. }));

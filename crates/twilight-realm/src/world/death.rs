@@ -80,6 +80,8 @@ impl InWorld {
         // debuff comes back after release.
         self.auras_die_with(self.guid, events);
         self.marked_shown = false;
+        // ...but for a legendary meal's Well Fed buff.
+        self.well_fed_dies(c, events);
         // Notoriety falls to nothing, so the Heat aura is rightly gone with the rest.
         c.notoriety = 0.0;
         self.heat_shown = 0;

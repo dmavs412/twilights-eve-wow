@@ -128,7 +128,7 @@ impl InWorld {
             return;
         }
         if fear.walk.is_none() {
-            let speed = self.player_speeds().run * self.skills.speed_mul(self.guid);
+            let speed = self.player_speeds().run * self.player_speed_mul();
             let (lo, hi) = RUN_SECS;
             let secs = rng.frand(lo, hi).min(fear.left);
             let away = (c.position[1] - fear.from[1]).atan2(c.position[0] - fear.from[0]);

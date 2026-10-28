@@ -1320,6 +1320,37 @@ fn a_lost_fish_still_costs_the_lure_a_point() {
     assert_eq!(table["fishing_lure"]["durability"].as_integer(), Some(4));
 }
 
+/// A test meal whose Well Fed buff spares the lure at every bite.
+const LURE_MEAL: &str = r#"
+item = [{ entry = 969801, name = "Angler's Test Supper", use_spell = 25695 }]
+
+[[recipe]]
+key = "test_lure_supper"
+kind = "legend"
+meal = 969801
+ingredients = [960401, 960401, 960401, 960401, 960401]
+double = { stat = "stamina", stat_value = 0, ooc = "lure", ooc_value = 100 }
+"#;
+
+#[test]
+fn a_lure_wear_buff_of_a_hundred_percent_keeps_the_lure_whole_at_a_bite() {
+    let _ = Realm::new().with_cooking(LURE_MEAL);
+    let mut a = with_gear(
+        Side::East,
+        &format!(
+            "{}\n[fishing_pole]\nslot = 0\nentry = {FISHING_POLE}\ncount = 1\n\
+             \n[well_fed]\nmeal = 969801\nleft_secs = 600.0\n",
+            lure_table(SHINY_BAUBLE, 5)
+        ),
+        &[],
+    );
+    a.hook();
+    a.let_it_go();
+    let blob = a.realm.export_character(a.guid).unwrap();
+    let table: toml::Table = blob.parse().unwrap();
+    assert_eq!(table["fishing_lure"]["durability"].as_integer(), Some(5));
+}
+
 #[test]
 fn a_lure_is_never_repaired_or_charged_for() {
     use twilight_realm::rules::durability::repair_cost;

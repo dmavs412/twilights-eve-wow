@@ -371,9 +371,17 @@ fn biters(
         .collect()
 }
 
-/// A pool fish's weight in the bite roll at game minute `minute`, with `bait` on the cast.
-fn roll_weight(f: &PoolFish, minute: u32, bait: Option<u32>) -> f32 {
-    fish::fish(f.item).map_or(f.weight, |d| d.roll_weight(f.weight, minute, bait))
+/// A pool fish's weight in the bite roll at game minute `minute`, with `bait` on the cast, and
+/// an uncommon or rare fish's raised by a Well Fed `rarity_pct`.
+fn roll_weight(f: &PoolFish, minute: u32, bait: Option<u32>, rarity_pct: u32) -> f32 {
+    fish::fish(f.item).map_or(f.weight, |d| {
+        let weight = d.roll_weight(f.weight, minute, bait);
+        if matches!(d.rarity, fish::Rarity::Uncommon | fish::Rarity::Rare) {
+            weight * (1.0 + rarity_pct as f32 / 100.0)
+        } else {
+            weight
+        }
+    })
 }
 
 /// One of `rows` by `weight`.
@@ -572,7 +580,7 @@ impl InWorld {
             Stage::Choosing { left, .. } => {
                 *left -= dt;
                 if *left <= 0.0 {
-                    self.fishing_choice(true, c, events);
+                    self.fishing_choice(true, c, rng, events);
                 }
             }
             Stage::Reeling(bite) => {
@@ -592,6 +600,7 @@ impl InWorld {
         &mut self,
         reel: bool,
         c: &mut Char,
+        rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) -> bool {
         let Some(f) = self.fishing.as_mut() else {
@@ -609,7 +618,7 @@ impl InWorld {
         if reel {
             bite.left = fish::bar().timeout_secs + RESULT_SLACK_SECS;
             f.stage = Stage::Reeling(bite);
-            wear_lure(c, events);
+            wear_lure(c, rng, events);
             return true;
         }
         if let Some(bait) = boost.bait {
@@ -768,11 +777,12 @@ impl InWorld {
                 && l.criteria_hold(water, boost.bait, minute)
                 && rng.frand(0.0, 100.0) < l.chance
         });
+        let rarity_pct = crate::cooking::fed(c).map_or(0, |f| f.rarity_pct);
         let rolled = match legend {
             Some(l) => Some((l.item, l.level, l.style, l.difficulty, true)),
             None => pick(
                 &biters(pool, effective, kind, water, boost.bait, boost.lure, minute),
-                |f| roll_weight(f, minute, boost.bait),
+                |f| roll_weight(f, minute, boost.bait, rarity_pct),
                 rng,
             )
             .and_then(|f| {
@@ -858,7 +868,7 @@ impl InWorld {
             return;
         }
         f.stage = Stage::Reeling(bite);
-        wear_lure(c, events);
+        wear_lure(c, rng, events);
     }
 
     /// `FishingResult` with a bar open: a win the realm believes lands the fish, and the chest
@@ -951,10 +961,14 @@ impl InWorld {
     }
 }
 
-/// The Lure slot's lure loses a point at a bite. At zero it breaks: the first piece of its entry
-/// in the Satchel takes its place, or the slot empties and waits for one (`lure_waiting`). The
-/// Journal follows either way.
-fn wear_lure(c: &mut Char, events: &mut Vec<SessionEvent>) {
+/// The Lure slot's lure loses a point at a bite, unless a Well Fed lure wear percent spares it.
+/// At zero it breaks: the first piece of its entry in the Satchel takes its place, or the slot
+/// empties and waits for one (`lure_waiting`). The Journal follows either way.
+fn wear_lure(c: &mut Char, rng: &mut Rng, events: &mut Vec<SessionEvent>) {
+    let spared = crate::cooking::fed(c).map_or(0, |f| f.lure_wear_pct);
+    if c.fishing_lure.is_none() || (spared > 0 && rng.frand(0.0, 100.0) < spared as f32) {
+        return;
+    }
     let Some(lure) = &mut c.fishing_lure else {
         return;
     };
@@ -1141,7 +1155,7 @@ impl crate::Realm {
         let Some(c) = self.characters.get_mut(w.guid) else {
             return;
         };
-        let changed = w.fishing_choice(reel, c, &mut self.events);
+        let changed = w.fishing_choice(reel, c, &mut self.rng, &mut self.events);
         let guid = w.guid;
         self.remove_spent_bobbers();
         if changed {

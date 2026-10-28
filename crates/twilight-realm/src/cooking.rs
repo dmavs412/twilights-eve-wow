@@ -86,7 +86,7 @@ pub(crate) struct Double {
 }
 
 /// A legendary meal's own effect, or one of a plant meal's specials: a key and its numbers.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
 pub(crate) struct Unique {
     pub(crate) key: String,
     #[serde(flatten)]
@@ -463,6 +463,86 @@ pub(crate) fn category_of(item: u32) -> Option<&'static str> {
     file().category.get(&item.to_string()).map(String::as_str)
 }
 
+/// What eating a meal gives while Well Fed: the effects its recipe names, summed.
+#[derive(Clone, Default, Debug, PartialEq)]
+pub(crate) struct Buff {
+    /// `[str, agi, sta, int, spi]`.
+    pub(crate) stats: [u32; 5],
+    pub(crate) xp_pct: u32,
+    /// Out of combat only, as `speed_pct`.
+    pub(crate) regen_pct: u32,
+    pub(crate) speed_pct: u32,
+    /// More pulls at each Herb Patch.
+    pub(crate) pulls: u32,
+    /// Uncommon and rare roll weights, at a fishing pool and a Herb Patch.
+    pub(crate) rarity_pct: u32,
+    /// The share of bites that cost the lure nothing.
+    pub(crate) lure_wear_pct: u32,
+    /// A legendary or plant meal's: it lasts `legendary_minutes` and survives death.
+    pub(crate) legendary: bool,
+    /// A legendary meal's unique effect and a plant meal's specials, which #493 reads.
+    pub(crate) specials: Vec<&'static Special>,
+}
+
+impl Buff {
+    /// Adds effect `key`'s `value`; a key no field names adds nothing.
+    fn add(&mut self, key: &str, value: u32) {
+        let field = match key {
+            "strength" => &mut self.stats[0],
+            "agility" => &mut self.stats[1],
+            "stamina" => &mut self.stats[2],
+            "intellect" => &mut self.stats[3],
+            "spirit" => &mut self.stats[4],
+            "xp" => &mut self.xp_pct,
+            "regen" => &mut self.regen_pct,
+            "speed" => &mut self.speed_pct,
+            "pull" => &mut self.pulls,
+            "rarity" => &mut self.rarity_pct,
+            "lure" => &mut self.lure_wear_pct,
+            _ => return,
+        };
+        *field += value;
+    }
+}
+
+/// The Well Fed buff meal item `meal` gives, from its recipe or as Hearty Mush; `None` for an
+/// item that is no meal.
+pub(crate) fn buff_of(meal: u32) -> Option<Buff> {
+    let mut b = Buff::default();
+    if meal == mush().meal {
+        b.regen_pct = mush().regen;
+        return Some(b);
+    }
+    let r = recipe_of_meal(meal)?;
+    match r.kind {
+        Kind::Tier | Kind::Dish => {
+            let key = r.effect.as_deref()?;
+            let tier = usize::from(r.tier?);
+            b.add(key, effect(key)?.values.get(tier).copied()?);
+        }
+        Kind::Legend => {
+            if let Some(d) = &r.double {
+                b.add(&d.stat, d.stat_value);
+                b.add(&d.ooc, d.ooc_value);
+            }
+            b.specials.extend(&r.unique);
+        }
+        Kind::Plant => {
+            if let Some(s) = &r.stat {
+                b.add(&s.stat, s.value);
+            }
+            b.specials.extend(&r.specials);
+        }
+    }
+    b.legendary = matches!(r.kind, Kind::Legend | Kind::Plant);
+    Some(b)
+}
+
+/// The Well Fed buff `c` is under.
+pub(crate) fn fed(c: &crate::characters::Char) -> Option<Buff> {
+    c.well_fed.and_then(|w| buff_of(w.meal))
+}
+
 /// How many of `list`'s items a best ordering lines up with `recipe`'s ingredients: the size of
 /// the two multisets' overlap.
 fn overlap(recipe: &Recipe, list: &[u32]) -> usize {
@@ -527,6 +607,19 @@ mod tests {
         assert_eq!(cut_of(960401).map(|c| c.bait), Some(960502));
         assert_eq!(category_of(961026), Some("egg"));
         assert_eq!(orders().first_order.item, 960401);
+    }
+
+    #[test]
+    fn a_double_legend_gives_both_effects_and_hearty_mush_its_regen() {
+        let bass = buff_of(962201).unwrap();
+        assert_eq!(bass.stats, [0, 0, 6, 0, 0]);
+        assert_eq!(bass.regen_pct, 300);
+        assert!(bass.legendary);
+        let mush = buff_of(962400).unwrap();
+        assert_eq!(mush.regen_pct, 100);
+        assert!(!mush.legendary);
+        assert_eq!(buff_of(962003).map(|b| b.stats), Some([0, 0, 12, 0, 0]));
+        assert_eq!(buff_of(960401), None, "a fish is no meal");
     }
 
     #[test]

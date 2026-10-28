@@ -65,6 +65,10 @@ pub(crate) struct Perks {
     pub(crate) wildluck: bool,
     pub(crate) nightowl: bool,
     pub(crate) thornwise: bool,
+    /// A Well Fed buff's extra pulls.
+    pub(crate) pulls: u32,
+    /// A Well Fed buff's percent on the uncommon and rare plants' weights.
+    pub(crate) rarity_pct: u32,
 }
 
 impl Perks {
@@ -81,6 +85,7 @@ impl Perks {
             wildluck: has("wildluck"),
             nightowl: has("nightowl"),
             thornwise: has("thornwise"),
+            ..Perks::default()
         }
     }
 }
@@ -177,6 +182,9 @@ pub(crate) fn roll(
                 Rarity::Rare => tuning.rare_boost,
                 _ => 0.0,
             };
+            if matches!(p.rarity, Rarity::Uncommon | Rarity::Rare) {
+                weight *= 1.0 + perks.rarity_pct as f32 / 100.0;
+            }
             (p, weight * (1.0 + boost * level.saturating_sub(1) as f32))
         })
         .filter(|(_, w)| *w > 0.0)
@@ -265,6 +273,7 @@ pub(crate) fn roll(
     if perks.thornwise {
         pulls = pulls.saturating_sub(1);
     }
+    pulls += perks.pulls;
     let mut grid = Grid::of(tuning.size as usize, cells, pulls);
     grid.thorns = thorns as u32;
     if perks.gloves {
@@ -606,6 +615,18 @@ mod tests {
         assert_eq!(pulls(NOON, perks(true, false)), t.pulls - 1);
         assert_eq!(pulls(5 * 60, perks(true, false)), t.pulls - 1);
         assert_eq!(pulls(NOON, perks(false, true)), t.pulls - 1);
+    }
+
+    #[test]
+    fn a_well_fed_pull_bonus_adds_its_pulls() {
+        let t = herbs::grid();
+        let pool = herbs::plants_in("elwynn");
+        let fed = Perks {
+            pulls: 1,
+            ..Perks::default()
+        };
+        let g = roll(&mut Rng::new(1), &pool, 30, NOON, t, t.thorns, fed);
+        assert_eq!(g.pulls_left, t.pulls + 1);
     }
 
     #[test]

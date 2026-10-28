@@ -1339,6 +1339,12 @@ impl Skills {
 
     /// What `unit`'s run speed is multiplied by: its strongest snare only, and every sprint.
     pub(super) fn speed_mul(&self, unit: u64) -> f32 {
+        self.speed_mul_at_least(unit, 1.0)
+    }
+
+    /// [`Self::speed_mul`] with the sprints' part at least `floor`: a Well Fed speed, which
+    /// takes the larger of itself and the sprints rather than adding to them.
+    pub(super) fn speed_mul_at_least(&self, unit: u64, floor: f32) -> f32 {
         let snare = self
             .auras
             .iter()
@@ -1353,7 +1359,7 @@ impl Skills {
             AuraKind::RunSpeed { pct } => Some(1.0 + pct as f32 / 100.0),
             _ => None,
         });
-        (1.0 - snare.min(100) as f32 / 100.0) * sprint
+        (1.0 - snare.min(100) as f32 / 100.0) * sprint.max(floor)
     }
 
     /// The extra critical strike chance, in percent, the player's buffs give `skill`.
@@ -5528,7 +5534,11 @@ impl InWorld {
     }
 
     pub(super) fn update_speed(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
-        let mul = self.skills.speed_mul(unit);
+        let mul = if unit == self.guid {
+            self.player_speed_mul()
+        } else {
+            self.skills.speed_mul(unit)
+        };
         if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == unit) {
             mob.speed_mul = felt_speed_mul(mul, !mob.remote && mob.template.raises_boss_bar());
         }

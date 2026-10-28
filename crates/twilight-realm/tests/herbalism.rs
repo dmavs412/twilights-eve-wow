@@ -293,6 +293,26 @@ fn the_herbalist_fields_survive_a_save_round_trip() {
     let _ = &mut p;
 }
 
+#[test]
+fn a_well_fed_buff_survives_a_save_round_trip_and_shows_at_login() {
+    let p = party(&[true]);
+    let guid = p.guids[0];
+    let blob = p.realm.export_character(guid).unwrap()
+        + "\n[well_fed]\nmeal = 962001\nleft_secs = 600.0\n";
+    let mut realm = Realm::with_seed(9).with_herbs(TEST_HERBS);
+    realm.import_character(&blob).unwrap();
+    let again = realm.export_character(guid).unwrap();
+    assert!(
+        again.contains("[well_fed]\nmeal = 962001\nleft_secs = 600.0"),
+        "{again}"
+    );
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    let events = drain(&mut realm);
+    let me = gear_common::descriptor(&events, guid);
+    assert_eq!(me.unit_aura_ids().nth(30), Some(19705), "the Well Fed aura");
+}
+
 const PRAIRIE_WOLF: u32 = 2958;
 const DANDELION: u32 = 961_001;
 

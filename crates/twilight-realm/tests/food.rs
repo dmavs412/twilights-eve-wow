@@ -221,6 +221,159 @@ fn a_warrior_can_drink_but_has_no_mana_to_restore() {
     assert_eq!(s.me().unit_power_type(), 1, "still rage");
 }
 
+const HUNTERS_FISH_STEW: u32 = 962001; // +2 Stamina, 30 min
+const DARKSHIRE_GULPER_POT: u32 = 962003; // +12 Stamina
+const LIONS_PRIDE_CHOWDER: u32 = 962025; // regen +100%
+const BROTHER_BASS_SUPPER: u32 = 962201; // legendary: +6 Stamina, regen +300%
+const HEARTY_MUSH: u32 = 962400;
+const WELL_FED: u32 = 19705;
+const FED_SLOT: usize = 30;
+
+/// The health `sta` Stamina gives: the first 20 points 1 each, the rest 10.
+fn stamina_health(sta: u32) -> u32 {
+    sta.min(20) + sta.saturating_sub(20) * 10
+}
+
+/// A warrior of `level` carrying `meals`, two of each, from backpack slot 23 on.
+fn diner(level: u8, meals: &[u32]) -> Script {
+    let carried: Vec<_> = meals
+        .iter()
+        .enumerate()
+        .map(|(i, &m)| (PACK_1 + i as u8, m, 2))
+        .collect();
+    let (realm, me, events) = warrior_with(level, 0, &carried);
+    Script { realm, me, events }
+}
+
+impl Script {
+    fn eat_at(&mut self, slot: u8) -> Vec<SessionEvent> {
+        self.send(RealmCommand::UseItem { bag: 255, slot })
+    }
+
+    fn fed_aura(&self) -> u32 {
+        self.me().unit_aura_ids().nth(FED_SLOT).unwrap_or(0)
+    }
+
+    /// Lets the nearest mob beat the warrior to death.
+    fn die(&mut self) {
+        let mob = the_mob(&self.events);
+        stand_by(&mut self.realm, &mob);
+        self.send(RealmCommand::AttackSwing { guid: mob.guid });
+        self.send(RealmCommand::AttackStop);
+        for _ in 0..12_000 {
+            self.run(0.1);
+            if self.me().unit_health() == Some(0) {
+                return;
+            }
+        }
+        panic!("the warrior outlived twenty minutes of beating");
+    }
+}
+
+#[test]
+fn a_meal_raises_its_stat_and_shows_well_fed_and_another_replaces_it() {
+    let mut s = diner(10, &[HUNTERS_FISH_STEW, LIONS_PRIDE_CHOWDER]);
+    let sta = s.me().unit_stat(2).unwrap();
+    let max = s.me().unit_max_health().unwrap();
+    let eaten = s.eat_at(PACK_1);
+    assert!(
+        format!("{eaten:?}").contains("You eat Hunter's Fish Stew."),
+        "{eaten:?}"
+    );
+    assert_eq!(s.me().unit_stat(2), Some(sta + 2));
+    assert_eq!(
+        s.me().unit_max_health(),
+        Some(max + stamina_health(sta + 2) - stamina_health(sta))
+    );
+    assert_eq!(s.fed_aura(), WELL_FED);
+
+    let replaced = s.eat_at(PACK_1 + 1);
+    assert!(
+        format!("{replaced:?}")
+            .contains("You eat Lion's Pride Chowder. It replaces Hunter's Fish Stew."),
+        "{replaced:?}"
+    );
+    assert_eq!(s.me().unit_stat(2), Some(sta), "the Stamina falls back");
+    assert_eq!(s.me().unit_max_health(), Some(max));
+    assert_eq!(s.fed_aura(), WELL_FED);
+}
+
+#[test]
+fn a_tier_three_stamina_meal_gives_twelve() {
+    let mut s = diner(10, &[DARKSHIRE_GULPER_POT]);
+    let sta = s.me().unit_stat(2).unwrap();
+    s.eat_at(PACK_1);
+    assert_eq!(s.me().unit_stat(2), Some(sta + 12));
+}
+
+#[test]
+fn a_meal_in_combat_is_refused_and_stays() {
+    let mut s = diner(10, &[HUNTERS_FISH_STEW]);
+    let mob = the_mob(&s.events);
+    stand_by(&mut s.realm, &mob);
+    s.send(RealmCommand::AttackSwing { guid: mob.guid });
+    s.run(0.1);
+    let events = s.eat_at(PACK_1);
+    assert!(
+        events.iter().any(|e| matches!(
+            e,
+            SessionEvent::CastResult {
+                success: false,
+                reason: Some(0),
+                ..
+            }
+        )),
+        "SPELL_FAILED_AFFECTING_COMBAT: {events:?}"
+    );
+    let guid = s.me().player_pack_slot(0).unwrap();
+    assert_eq!(descriptor(&s.events, guid).item_stack_count(), Some(2));
+    assert_eq!(s.fed_aura(), 0);
+}
+
+#[test]
+fn a_well_fed_buff_wears_off_after_thirty_minutes() {
+    let mut s = diner(10, &[HUNTERS_FISH_STEW]);
+    let sta = s.me().unit_stat(2).unwrap();
+    s.eat_at(PACK_1);
+    for _ in 0..(29 * 60) {
+        s.realm.tick(1.0, &FlatGround);
+        drain(&mut s.realm);
+    }
+    s.run(0.1);
+    assert_eq!(s.fed_aura(), WELL_FED, "still on at 29 minutes");
+    let mut all = Vec::new();
+    for _ in 0..61 {
+        s.realm.tick(1.0, &FlatGround);
+        all.extend(drain(&mut s.realm));
+    }
+    s.events.extend(all.clone());
+    assert!(
+        format!("{all:?}").contains("Hunter's Fish Stew wears off."),
+        "the system line"
+    );
+    assert_eq!(s.fed_aura(), 0);
+    assert_eq!(s.me().unit_stat(2), Some(sta));
+}
+
+#[test]
+fn hearty_mush_ends_on_death() {
+    let mut s = diner(1, &[HEARTY_MUSH]);
+    s.eat_at(PACK_1);
+    assert_eq!(s.fed_aura(), WELL_FED);
+    s.die();
+    assert!(format!("{:?}", s.events).contains("Hearty Mush ends."));
+    assert_eq!(s.fed_aura(), 0);
+}
+
+#[test]
+fn a_legendary_meal_survives_death() {
+    let mut s = diner(1, &[BROTHER_BASS_SUPPER]);
+    s.eat_at(PACK_1);
+    s.die();
+    assert!(format!("{:?}", s.events).contains("Brother Bass Supper survives your death."));
+    assert_eq!(s.fed_aura(), WELL_FED);
+}
+
 #[test]
 fn the_tooltip_names_the_food_spell_and_the_bar_counts_the_stack() {
     let mut s = Script::new();

@@ -7,14 +7,18 @@
 use benilla_protocol::SessionEvent;
 
 use super::InWorld;
-use crate::characters::Char;
+use crate::characters::{Char, WellFed};
 use crate::clock;
+use crate::cooking;
 use crate::equipment;
 use crate::fields::*;
 use crate::items;
 
 /// The buff slot the meal's aura shows in: the last one, clear of the skills' auras.
 const AURA_SLOT: u16 = 31;
+/// The buff slot the Well Fed aura shows in, beside the meal's: the two share their flags and
+/// levels words, so both are always written together.
+const FED_SLOT: u16 = 30;
 pub(super) const UNIT_FIELD_AURA: u16 = 47;
 pub(super) const UNIT_FIELD_AURAFLAGS: u16 = 95;
 pub(super) const UNIT_FIELD_AURALEVELS: u16 = 101;
@@ -30,6 +34,8 @@ const AFFECTING_COMBAT: u8 = 0x00;
 
 /// A meal in progress.
 pub(super) struct Meal {
+    /// The item's spell, whose aura shows while sitting.
+    spell: u32,
     /// Health restored over the whole meal, and so far.
     total: u32,
     restored: u32,
@@ -160,33 +166,177 @@ impl InWorld {
             ammo_display_id: None,
             item_caster: Some(item_guid),
         });
-        let duration = clock::secs(t.duration_ms);
-        let mut pairs = vec![
-            (UNIT_FIELD_AURA + AURA_SLOT, t.use_spell),
-            (
-                UNIT_FIELD_AURAFLAGS + AURA_SLOT / 8,
-                AURA_FLAGS << (4 * (AURA_SLOT % 8)),
-            ),
-            (
-                UNIT_FIELD_AURALEVELS + AURA_SLOT / 4,
-                u32::from(c.level) << (8 * (AURA_SLOT % 4)),
-            ),
-        ];
+        self.meal = Some(Meal {
+            spell: t.use_spell,
+            total: t.restores_health,
+            restored: 0,
+            duration: clock::secs(t.duration_ms),
+            elapsed: 0.0,
+            tick: 0.0,
+            at: c.position,
+        });
+        let mut pairs = self.food_aura_pairs();
         pairs.push((UNIT_FIELD_BYTES_1, UNIT_STAND_STATE_SIT));
         events.push(values(self.guid, &pairs));
         events.push(SessionEvent::AuraDuration {
             slot: AURA_SLOT as u8,
             remaining_ms: t.duration_ms,
         });
-        self.meal = Some(Meal {
-            total: t.restores_health,
-            restored: 0,
-            duration,
-            elapsed: 0.0,
-            tick: 0.0,
-            at: c.position,
-        });
         true
+    }
+
+    /// `CMSG_USE_ITEM` on a meal (ADR 0025): one is eaten, and its Well Fed buff replaces the one
+    /// on. Refused in combat, as food is; nothing when dead. Whether one was used up.
+    pub(crate) fn eat_meal(
+        &mut self,
+        slot: crate::inventory::Pos,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        if self.dead() {
+            return false;
+        }
+        let Some((entry, buff)) = c
+            .inventory
+            .get(slot)
+            .and_then(|i| Some((i.entry, cooking::buff_of(i.entry)?)))
+        else {
+            return false;
+        };
+        let eat = cooking::eat();
+        if self.player.in_combat {
+            events.push(SessionEvent::CastResult {
+                spell_id: eat.use_spell,
+                success: false,
+                reason: Some(AFFECTING_COMBAT),
+                arg: None,
+            });
+            return false;
+        }
+        let Some(item_guid) = use_up_one(slot, c, events) else {
+            return false;
+        };
+        events.push(SessionEvent::CastResult {
+            spell_id: eat.use_spell,
+            success: true,
+            reason: None,
+            arg: None,
+        });
+        events.push(SessionEvent::SpellGo {
+            caster: self.guid,
+            spell_id: eat.use_spell,
+            cast_flags: 0,
+            hits: vec![self.guid],
+            misses: Vec::new(),
+            target: Some(self.guid),
+            go_target: None,
+            dest: None,
+            ammo_display_id: None,
+            item_caster: Some(item_guid),
+        });
+        let mut line = format!("You eat {}.", item_name(entry));
+        if let Some(was) = c.well_fed {
+            line.push_str(&format!(" It replaces {}.", item_name(was.meal)));
+        }
+        events.push(crate::quests::system_line(line));
+        let minutes = if buff.legendary {
+            eat.legendary_minutes
+        } else {
+            eat.minutes
+        };
+        c.well_fed = Some(WellFed {
+            meal: entry,
+            left_secs: (minutes * 60) as f32,
+        });
+        self.well_fed_changed(c, events);
+        true
+    }
+
+    /// The Well Fed buff runs down by `dt`; at nothing it wears off.
+    pub(super) fn well_fed_tick(&mut self, dt: f32, c: &mut Char, events: &mut Vec<SessionEvent>) {
+        let Some(fed) = &mut c.well_fed else {
+            return;
+        };
+        fed.left_secs -= dt;
+        if fed.left_secs <= 0.0 {
+            self.end_well_fed(c, "wears off", events);
+        }
+    }
+
+    /// The character died: a legendary meal's buff survives it, any other ends.
+    pub(super) fn well_fed_dies(&mut self, c: &mut Char, events: &mut Vec<SessionEvent>) {
+        let Some(fed) = c.well_fed else {
+            return;
+        };
+        if self.fed.as_ref().is_some_and(|f| f.legendary) {
+            let line = format!("{} survives your death.", item_name(fed.meal));
+            events.push(crate::quests::system_line(line));
+        } else {
+            self.end_well_fed(c, "ends", events);
+        }
+    }
+
+    /// The Well Fed buff ends, with "<meal> `how`." in the chat.
+    fn end_well_fed(&mut self, c: &mut Char, how: &str, events: &mut Vec<SessionEvent>) {
+        let Some(fed) = c.well_fed.take() else {
+            return;
+        };
+        let line = format!("{} {how}.", item_name(fed.meal));
+        events.push(crate::quests::system_line(line));
+        self.well_fed_changed(c, events);
+    }
+
+    /// `c.well_fed` changed: the stats, the speed and the aura follow it.
+    fn well_fed_changed(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+        let speed_was = self.fed_speed_mul();
+        self.fed = cooking::fed(c);
+        self.refresh_gear(c, events);
+        if self.fed_speed_mul() != speed_was {
+            self.update_speed(self.guid, events);
+        }
+        self.show_food_auras(c, events);
+    }
+
+    /// At login under a Well Fed buff: its aura, and its speed. The stats already carry it.
+    pub(super) fn show_well_fed(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+        if self.fed.is_none() {
+            return;
+        }
+        if self.fed_speed_mul() != 1.0 {
+            self.update_speed(self.guid, events);
+        }
+        self.show_food_auras(c, events);
+    }
+
+    /// The meal's and the Well Fed slots' fields, and the Well Fed timer while it lasts.
+    fn show_food_auras(&self, c: &Char, events: &mut Vec<SessionEvent>) {
+        events.push(values(self.guid, &self.food_aura_pairs()));
+        if let Some(fed) = c.well_fed.filter(|_| self.fed.is_some()) {
+            events.push(SessionEvent::AuraDuration {
+                slot: FED_SLOT as u8,
+                remaining_ms: clock::ms(fed.left_secs),
+            });
+        }
+    }
+
+    /// The `UNIT_FIELD_AURA*` fields of the meal's slot and the Well Fed slot, as both stand.
+    fn food_aura_pairs(&self) -> Vec<(u16, u32)> {
+        let meal = self.meal.as_ref().map_or(0, |m| m.spell);
+        let fed = self.fed.as_ref().map_or(0, |_| cooking::eat().buff_spell);
+        let level = u32::from(self.player.stats.level);
+        let (mut flags, mut levels) = (0, 0);
+        for (slot, spell) in [(AURA_SLOT, meal), (FED_SLOT, fed)] {
+            if spell != 0 {
+                flags |= AURA_FLAGS << (4 * (slot % 8));
+                levels |= level << (8 * (slot % 4));
+            }
+        }
+        vec![
+            (UNIT_FIELD_AURA + AURA_SLOT, meal),
+            (UNIT_FIELD_AURA + FED_SLOT, fed),
+            (UNIT_FIELD_AURAFLAGS + AURA_SLOT / 8, flags),
+            (UNIT_FIELD_AURALEVELS + AURA_SLOT / 4, levels),
+        ]
     }
 
     /// The meal goes on by `dt`: each regeneration tick restores its share, and the end the rest.
@@ -223,16 +373,15 @@ impl InWorld {
         if self.meal.take().is_none() {
             return;
         }
-        events.push(values(
-            self.guid,
-            &[
-                (UNIT_FIELD_AURA + AURA_SLOT, 0),
-                (UNIT_FIELD_AURAFLAGS + AURA_SLOT / 8, 0),
-                (UNIT_FIELD_AURALEVELS + AURA_SLOT / 4, 0),
-                (UNIT_FIELD_BYTES_1, 0),
-            ],
-        ));
+        let mut pairs = self.food_aura_pairs();
+        pairs.push((UNIT_FIELD_BYTES_1, 0));
+        events.push(values(self.guid, &pairs));
     }
+}
+
+/// Item `entry`'s name, "" for none.
+fn item_name(entry: u32) -> String {
+    items::template(entry).map_or_else(String::new, |t| t.name.clone())
 }
 
 /// Takes one of the stack in `slot` out of the bags, telling the client: the item's guid.

@@ -119,6 +119,8 @@ pub(crate) struct Char {
     pub(crate) herb_picks: Vec<(u32, u32)>,
     /// Whether Find Herbs is on.
     pub(crate) herb_tracking: bool,
+    /// The meal they last ate, while its Well Fed buff lasts (ADR 0025).
+    pub(crate) well_fed: Option<WellFed>,
     /// Whether they have seen the Forager's Grid guided tour.
     pub(crate) herb_tour_seen: bool,
     /// The perk keys they hold, one per slot filled.
@@ -140,6 +142,13 @@ pub(crate) struct Char {
     pub(crate) dish_log: Vec<DishLog>,
     /// The kitchen lessons: cook, recipe, eat, order, reveal, discover.
     pub(crate) cook_lessons: [bool; 6],
+}
+
+/// A Well Fed buff: the meal item eaten, and the seconds left. It keeps its time over a logout.
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct WellFed {
+    pub(crate) meal: u32,
+    pub(crate) left_secs: f32,
 }
 
 /// A known recipe's line in the Dish Journal: how often it was cooked, and when and where first
@@ -261,6 +270,7 @@ impl Characters {
             herbalist_xp: 0,
             herb_picks: Vec::new(),
             herb_tracking: false,
+            well_fed: None,
             herb_tour_seen: false,
             herb_perks: Vec::new(),
             herb_tool: None,

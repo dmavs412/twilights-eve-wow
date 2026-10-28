@@ -21,7 +21,8 @@ impl InWorld {
         let mut healed = false;
         while p.regen >= regen::TICK_SECS {
             p.regen -= regen::TICK_SECS;
-            let pct = crate::talents::health_regen_pct(c);
+            let fed = crate::cooking::fed(c).map_or(0, |f| f.regen_pct);
+            let pct = crate::talents::health_regen_pct(c) + fed;
             p.health = (p.health + regen::tick_heal(p.stats.base[4], pct)).min(max);
             healed = true;
         }

@@ -376,6 +376,9 @@ pub(crate) struct InWorld {
     victor_flag: Option<[f32; 2]>,
     /// Seconds until a refused step onto a Closed Zone is told again.
     closed_hush: f32,
+    /// The Well Fed buff the character is under, as `Char::well_fed` names it: what the speed
+    /// and the mana regeneration read, which have no `Char` to hand.
+    fed: Option<crate::cooking::Buff>,
 }
 
 impl InWorld {
@@ -421,7 +424,7 @@ impl InWorld {
         events.push(cast::action_buttons(c));
         // The proficiencies and the carried items' objects, ahead of the player that names them.
         equipment::login(c, events);
-        let w = Self {
+        let mut w = Self {
             guid: c.guid,
             since_save: 0.0,
             map: c.map,
@@ -512,8 +515,10 @@ impl InWorld {
             marked_applied: c.marked.is_some(),
             victor_flag: None,
             closed_hush: 0.0,
+            fed: crate::cooking::fed(c),
         };
         events.push(w.player_create(c));
+        w.show_well_fed(c, events);
         w
     }
 
@@ -830,6 +835,7 @@ impl InWorld {
         }
         self.update_combat(dt, events);
         self.eat(dt, c, events);
+        self.well_fed_tick(dt, c, events);
         self.regenerate(dt, c, events);
         self.boss_fight_tick(events);
         self.map_marks_tick(c, events);
@@ -1652,16 +1658,15 @@ impl InWorld {
     }
 
     /// What an award of `base` XP pays `c`: times the Tier XP Rate, then the Heat Level's
-    /// multiplier, then the dev multiplier; nothing at the Tier Cap.
+    /// multiplier, then a Well Fed XP bonus, then the dev multiplier; nothing at the Tier Cap.
     fn scaled_xp(&self, c: &Char, base: u32) -> u32 {
         if at_tier_cap(c) {
             0
         } else {
             let heat = crate::rules::notoriety::heat_level(c.notoriety);
-            self.dev.xp(crate::rules::notoriety::with_heat(
-                at_tier_rate(c, base),
-                heat,
-            ))
+            let xp = crate::rules::notoriety::with_heat(at_tier_rate(c, base), heat);
+            let fed = crate::cooking::fed(c).map_or(0, |f| f.xp_pct);
+            self.dev.xp(xp * (100 + fed) / 100)
         }
     }
 
@@ -1737,7 +1742,8 @@ impl InWorld {
             m.state == State::Engaged && m.target == self.guid && !self.skills.incapacitated(m.guid)
         });
         let in_combat = p.alive() && (attacking || attacked || self.skills.holds_combat());
-        if in_combat != p.in_combat {
+        let flipped = in_combat != p.in_combat;
+        if flipped {
             p.in_combat = in_combat;
             events.push(values(
                 self.guid,
@@ -1747,9 +1753,34 @@ impl InWorld {
                 )],
             ));
         }
-        if p.power.regenerate(dt, in_combat, p.stats.mana_regen) {
+        // A Well Fed regeneration counts out of combat only.
+        let fed_pct = match &self.fed {
+            Some(f) if !in_combat => f.regen_pct,
+            _ => 0,
+        };
+        let mana_regen = p.stats.mana_regen * (1.0 + f64::from(fed_pct) / 100.0);
+        if p.power.regenerate(dt, in_combat, mana_regen) {
             events.push(values(self.guid, &[p.power.field()]));
         }
+        // ...as does its speed.
+        if flipped && self.fed.as_ref().is_some_and(|f| f.speed_pct > 0) {
+            self.update_speed(self.guid, events);
+        }
+    }
+
+    /// The Well Fed run speed multiplier: out of combat, its speed; else 1.
+    pub(super) fn fed_speed_mul(&self) -> f32 {
+        match &self.fed {
+            Some(f) if !self.player.in_combat => 1.0 + f.speed_pct as f32 / 100.0,
+            _ => 1.0,
+        }
+    }
+
+    /// What the player's run speed is multiplied by: the auras', with a Well Fed speed in
+    /// place of a smaller sprint.
+    pub(super) fn player_speed_mul(&self) -> f32 {
+        self.skills
+            .speed_mul_at_least(self.guid, self.fed_speed_mul())
     }
 }
 

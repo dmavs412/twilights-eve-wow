@@ -732,6 +732,14 @@ impl Realm {
         self
     }
 
+    /// This realm with the `[[recipe]]` and `item` rows in `toml` (the shape of
+    /// `content/cooking.toml`) added alongside the shipped ones, for the rest of the process: a
+    /// test seam, so a script can eat a meal no shipped recipe cooks.
+    pub fn with_cooking(self, toml: &str) -> Self {
+        cooking::add(toml);
+        self
+    }
+
     /// The guids of the Rumour givers standing in the world.
     pub fn rumour_givers(&self) -> Vec<u64> {
         self.rumours.givers()
@@ -1587,7 +1595,17 @@ impl Realm {
                                 self.save(guid);
                             }
                         } else if !quests::use_starter(c, slot, &mut self.events) {
-                            match w.eat_or_drink(slot, c, self.wall, &mut self.events) {
+                            // A meal gives its Well Fed buff.
+                            let meal = c
+                                .inventory
+                                .get(slot)
+                                .is_some_and(|i| cooking::buff_of(i.entry).is_some());
+                            let eaten = if meal {
+                                Some(w.eat_meal(slot, c, &mut self.events))
+                            } else {
+                                w.eat_or_drink(slot, c, self.wall, &mut self.events)
+                            };
+                            match eaten {
                                 Some(true) => {
                                     let guid = w.guid;
                                     self.save(guid);

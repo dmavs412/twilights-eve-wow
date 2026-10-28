@@ -240,6 +240,9 @@ struct Save {
     /// save has not chosen.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     calling_chosen: bool,
+    /// The Well Fed buff left (ADR 0025, within version 5): a table, so after the plain keys.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    well_fed: Option<crate::characters::WellFed>,
     /// The Fishing Journal's Pole and Lure slots (#371), added within version 4: a save without
     /// them has both empty. Each is an item at slot 0.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -481,6 +484,7 @@ pub(crate) fn export(c: &Char) -> String {
         herbalist_xp: c.herbalist_xp,
         herb_picks: c.herb_picks.clone(),
         herb_tracking: c.herb_tracking,
+        well_fed: c.well_fed,
         herb_tour_seen: c.herb_tour_seen,
         herb_perks: c.herb_perks.clone(),
         herb_tool: c.herb_tool,
@@ -595,6 +599,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         herbalist_xp: s.herbalist_xp,
         herb_picks: s.herb_picks,
         herb_tracking: s.herb_tracking,
+        well_fed: s.well_fed,
         herb_tour_seen: s.herb_tour_seen,
         herb_perks: s.herb_perks,
         herb_tool: s.herb_tool,

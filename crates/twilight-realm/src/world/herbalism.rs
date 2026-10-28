@@ -392,6 +392,7 @@ impl crate::Realm {
         };
         let tuning = herbs::grid();
         let minute = game_clock::minute_of_day(self.wall);
+        let fed = crate::cooking::fed(c);
         let grid = forage::roll(
             &mut self.rng,
             &herbs::plants_in(&z.key),
@@ -399,7 +400,11 @@ impl crate::Realm {
             minute,
             tuning,
             z.thorns.unwrap_or(tuning.thorns),
-            forage::Perks::of(&c.herb_perks),
+            forage::Perks {
+                pulls: fed.as_ref().map_or(0, |f| f.pulls),
+                rarity_pct: fed.as_ref().map_or(0, |f| f.rarity_pct),
+                ..forage::Perks::of(&c.herb_perks)
+            },
         );
         let mut open = Open {
             patch,

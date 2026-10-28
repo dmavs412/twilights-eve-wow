@@ -157,6 +157,25 @@ impl CharacterStats {
         }
     }
 
+    /// Adds `stats` (`[str, agi, sta, int, spi]`) as worn gear does: to the stats and their green
+    /// part, with what each feeds, Intellect's mana and Spirit's mana regeneration included.
+    pub fn add_stats(&mut self, stats: [u32; 5]) {
+        let [.., int_was, spi_was] = self.base;
+        for (i, delta) in stats.into_iter().enumerate() {
+            if delta > 0 {
+                self.raise_stat(i, delta);
+                self.bonus[i] += delta;
+            }
+        }
+        let [.., int, spi] = self.base;
+        if self.max_mana > 0 {
+            self.max_mana = self.max_mana + power::max_mana(self.class, self.level, int)
+                - power::max_mana(self.class, self.level, int_was);
+        }
+        self.mana_regen +=
+            power::mana_per_tick(self.class, spi) - power::mana_per_tick(self.class, spi_was);
+    }
+
     /// Keeps `health_pct` percent of the base health and `mana_pct` percent of the base mana,
     /// rounded down: a Calling's multipliers on its stat profile. Stamina's and intellect's parts
     /// stay whole; 100 changes nothing.
