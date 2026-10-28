@@ -377,6 +377,11 @@ pub(crate) fn plants_in(zone_key: &str) -> Vec<&'static Plant> {
         .collect()
 }
 
+/// The shipped `[[plant]]` rows, without any a test added: what a content check reads.
+pub(crate) fn shipped_plants() -> &'static [Plant] {
+    &file().plant
+}
+
 /// The tool whose item is `item`.
 pub(crate) fn tool(item: u32) -> Option<&'static Tool> {
     file()

@@ -277,6 +277,22 @@ fn herbalism() -> &'static HashMap<u32, Template> {
     })
 }
 
+/// Whether `entry` is an item row of `content/fish.toml` or `content/herbs.toml`: something
+/// fished or gathered, which a recipe may take.
+pub(crate) fn gathered(entry: u32) -> bool {
+    fishing().contains_key(&entry) || herbalism().contains_key(&entry)
+}
+
+/// Cooking's meals and cut baits (`content/cooking.toml`), by entry.
+fn cooking() -> &'static HashMap<u32, Template> {
+    static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
+    ITEMS.get_or_init(|| {
+        let table: Table = toml::from_str(include_str!("../content/cooking.toml"))
+            .expect("content/cooking.toml parses");
+        table.item.into_iter().map(|t| (t.entry, t)).collect()
+    })
+}
+
 /// The items the realm hands out itself (`content/given_items.toml`), by entry.
 fn given() -> &'static HashMap<u32, Template> {
     static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
@@ -312,6 +328,8 @@ pub(crate) fn template(entry: u32) -> Option<&'static Template> {
         .or_else(|| goods().get(&entry))
         .or_else(|| fishing().get(&entry))
         .or_else(|| herbalism().get(&entry))
+        .or_else(|| cooking().get(&entry))
+        .or_else(|| crate::cooking::added_item(entry))
         .or_else(|| crate::quests::item_template(entry))
         .or_else(|| gear().get(&entry))
 }

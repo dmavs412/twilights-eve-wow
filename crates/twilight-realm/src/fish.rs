@@ -748,6 +748,16 @@ pub(crate) fn fish_items() -> impl Iterator<Item = u32> {
         .map(|f| f.item)
 }
 
+/// The shipped `[[fish]]` rows, without any a test added: what a content check reads.
+pub(crate) fn shipped_fish() -> &'static [Fish] {
+    &file().fish
+}
+
+/// The shipped `[[legend]]` rows, without any a test added.
+pub(crate) fn shipped_legends() -> &'static [Legend] {
+    &file().legend
+}
+
 /// The pool a Fishing Water fishes: its `pool`, else the pool of its area's zone, else of its
 /// `zone`.
 fn water_pool(w: &Water) -> Option<&'static Pool> {
@@ -937,14 +947,36 @@ mod tests {
         assert_eq!(snapper.roll_weight(37.85, 7 * 60, None), 37.85 * 2.0);
         assert_eq!(snapper.roll_weight(37.85, 12 * 60, worms), 37.85 * 2.0);
         assert_eq!(snapper.roll_weight(37.85, 12 * 60, None), 37.85);
+
+        // A cut bait is a bigger fish's favourite (#490): the Shiner's is Smallfish Chunks, no
+        // longer the Shiny Minnow.
+        let shiner = fish(960403).unwrap();
+        let factor = bar().favourite_bait_factor;
+        assert_eq!(
+            shiner.roll_weight(10.0, 22 * 60, Some(960501)),
+            10.0 * factor
+        );
+        assert_eq!(shiner.roll_weight(10.0, 22 * 60, Some(960102)), 10.0);
+    }
+
+    #[test]
+    fn brother_bass_bites_only_on_cut_perch() {
+        let bass = legend(960002).unwrap();
+        let river = Some("northshire_river");
+        assert!(bass.criteria_hold(river, Some(960502), 12 * 60));
+        assert!(!bass.criteria_hold(river, None, 12 * 60));
+        assert!(!bass.criteria_hold(river, Some(960102), 12 * 60));
+        assert!(!bass.criteria_hold(None, Some(960502), 12 * 60));
     }
 
     #[test]
     fn corpse_grub_puts_the_night_peak_and_condition_at_any_hour() {
         let catfish = fish(6308).unwrap();
         let grub = Some(960106);
-        assert_eq!(catfish.roll_weight(10.0, 12 * 60, grub), 10.0 * 4.0);
+        assert_eq!(catfish.roll_weight(10.0, 12 * 60, grub), 10.0 * 2.0);
         assert_eq!(catfish.roll_weight(10.0, 12 * 60, Some(960105)), 10.0);
+        // Snapper Belly is its favourite; by night the peak doubles it again.
+        assert_eq!(catfish.roll_weight(10.0, 23 * 60, Some(960504)), 10.0 * 4.0);
         assert!(block_holds(Block::Night, 12 * 60, grub));
         assert!(!block_holds(Block::Dusk, 12 * 60, grub));
         assert!(!block_holds(Block::Night, 12 * 60, None));

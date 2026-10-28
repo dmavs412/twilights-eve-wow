@@ -8,11 +8,11 @@ holds what the Build lane's tickets read:
   rule: `resolve`, `distance` and `cook` for cooking, `mealInfo` for strengths, `rollOrders`,
   `orderAccepts` and `deliver` for orders, `lessons` for the checklist. Its items use short ids
   (`gperch`); `cooking.toml` uses the realm's entries.
-- `cooking.toml`, generated from the prototype and the realm's item entries: the eat spells, the
-  11 effects and their placeholder strengths, the two kitchens, herb categories, the 93 recipes,
-  Hearty Mush, the 22 cut baits, the order tunables and the 116 item rows (94 meals, 22 cut
-  baits). Its header names every field. The content ticket moves it to
-  `crates/twilight-realm/content/cooking.toml`.
+- `cooking.toml` now lives at `crates/twilight-realm/content/cooking.toml` (#490). It was generated
+  from the prototype and the realm's item entries: the eat spells, the 11 effects and their
+  placeholder strengths, the two kitchens, herb categories, the 93 recipes, Hearty Mush, the 22 cut
+  baits, the order tunables and the 116 item rows (94 meals, 22 cut baits). Its header names every
+  field.
 
 Item entries: meals 962001 to 962044 (tier recipes), 962101 to 962130 (fish dishes), 962201 to
 962216 (legendary meals), 962301 to 962303 (plant meals) and 962400 (Hearty Mush); cut baits

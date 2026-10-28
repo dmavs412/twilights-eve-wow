@@ -260,7 +260,7 @@ difficulty = 35
 rarity = "common"
 kinds = ["river", "lake"]
 peak = "night"
-favourite_bait = 960106
+favourite_bait = 960504 # Snapper Belly
 
 [[fish]]
 item = 6303 # Raw Slitherskin Mackerel
@@ -269,7 +269,7 @@ difficulty = 30
 rarity = "uncommon"
 kinds = ["coast"]
 peak = "dawn"
-favourite_bait = 960102
+favourite_bait = 960505 # Herring Chunks
 
 [[fish]]
 item = 6361 # Raw Rainbow Fin Albacore
@@ -278,7 +278,7 @@ difficulty = 45
 rarity = "uncommon"
 kinds = ["coast"]
 peak = "day"
-favourite_bait = 960102
+favourite_bait = 960507 # Whisker Bait
 
 [[fish]]
 item = 6358 # Oily Blackmouth
@@ -287,7 +287,7 @@ difficulty = 40
 rarity = "uncommon"
 kinds = ["coast", "river"]
 peak = "dusk"
-favourite_bait = 960104
+favourite_bait = 960508 # Cut Lake Perch
 
 [[fish]]
 item = 8365 # Raw Mithril Head Trout
@@ -296,7 +296,7 @@ difficulty = 40
 rarity = "uncommon"
 kinds = ["river"]
 peak = "day"
-favourite_bait = 960102
+favourite_bait = 960518 # Sunfish Chunks
 
 [[fish]]
 item = 960401 # Goldshire Perch
@@ -323,7 +323,7 @@ difficulty = 30
 rarity = "uncommon"
 kinds = ["lake"]
 peak = "day"
-favourite_bait = 960102
+favourite_bait = 960501 # Smallfish Chunks
 
 [[fish]]
 item = 960404 # Stonefield Carp
@@ -333,6 +333,7 @@ rarity = "uncommon"
 kinds = ["lake", "pond"]
 peak = "dusk"
 bait = 960101
+favourite_bait = 960503 # Trout Strips
 
 [[fish]]
 item = 960405 # Duskfin
@@ -341,6 +342,7 @@ difficulty = 50
 rarity = "rare"
 kinds = ["lake", "river"]
 block = "dusk"
+favourite_bait = 960506 # Eel Slices
 
 [[fish]]
 item = 960406 # Crystal Lake Glimmerfish
@@ -349,7 +351,7 @@ difficulty = 55
 rarity = "rare"
 kinds = ["lake"]
 peak = "night"
-favourite_bait = 960102
+favourite_bait = 960512 # Shiner Flash
 water = "crystal_lake"
 
 [[fish]]
@@ -368,7 +370,7 @@ difficulty = 25
 rarity = "common"
 kinds = ["river"]
 peak = "night"
-favourite_bait = 960104
+favourite_bait = 960502 # Cut Perch
 
 [[fish]]
 item = 960409 # Gilded Koi
@@ -378,6 +380,7 @@ rarity = "rare"
 kinds = ["river"]
 peak = "day"
 lure = 6532
+favourite_bait = 960509 # Bluegill Strips
 
 [[fish]]
 item = 960410 # Dockside Gulper
@@ -387,6 +390,7 @@ rarity = "rare"
 kinds = ["coast"]
 block = "night"
 bait = 960104
+favourite_bait = 960510 # Bleak Fry
 
 [[fish]]
 item = 960411 # Everstill Perch
@@ -395,7 +399,7 @@ difficulty = 25
 rarity = "common"
 kinds = ["lake"]
 peak = "dawn"
-favourite_bait = 960101
+favourite_bait = 960514 # Mackerel Strips
 
 [[fish]]
 item = 960412 # Redridge Bluegill
@@ -404,7 +408,7 @@ difficulty = 28
 rarity = "common"
 kinds = ["river", "lake"]
 peak = "day"
-favourite_bait = 960101
+favourite_bait = 960515 # Albacore Belly
 
 [[fish]]
 item = 960413 # Millrace Trout
@@ -414,6 +418,7 @@ rarity = "uncommon"
 kinds = ["river"]
 peak = "dawn"
 water = "althers_mill"
+favourite_bait = 960513 # Carp Dough
 
 [[fish]]
 item = 960414 # Lakeshire Sunfish
@@ -422,7 +427,7 @@ difficulty = 40
 rarity = "uncommon"
 kinds = ["lake"]
 peak = "day"
-favourite_bait = 960102
+favourite_bait = 960516 # Blackmouth Oil Bait
 
 [[fish]]
 item = 960415 # Ironjaw Pike
@@ -431,7 +436,7 @@ difficulty = 45
 rarity = "uncommon"
 kinds = ["lake", "river"]
 peak = "dusk"
-favourite_bait = 960105
+favourite_bait = 960511 # Chub Chunks
 
 [[fish]]
 item = 960416 # Emberscale Darter
@@ -439,7 +444,7 @@ style = "dart"
 difficulty = 60
 rarity = "rare"
 kinds = ["river"]
-favourite_bait = 960105
+favourite_bait = 960517 # Millrace Strips
 block = "dawn"
 
 [[fish]]
@@ -448,7 +453,7 @@ style = "sinker"
 difficulty = 65
 rarity = "rare"
 kinds = ["lake"]
-favourite_bait = 960102
+favourite_bait = 960519 # Pike Fillet Bait
 water = "lake_everstill"
 block = "day"
 
@@ -494,7 +499,7 @@ style = "floater"
 difficulty = 65
 rarity = "rare"
 kinds = ["river", "pond"]
-favourite_bait = 960106
+favourite_bait = 960520 # Mithril Scale Bait
 block = "night"
 
 [[fish]]
@@ -505,6 +510,7 @@ rarity = "rare"
 kinds = ["pond"]
 water = "twilight_grove"
 block = "dawn"
+favourite_bait = 960521 # Loach Bits
 
 [[pool]]
 key = "elwynn"
@@ -604,6 +610,7 @@ level = 20
 style = "smooth"
 difficulty = 80
 chance = 1
+bait = 960512 # Shiner Flash
 
 [[legend]]
 item = 960002
@@ -614,6 +621,7 @@ style = "floater"
 difficulty = 75
 chance = 5
 water = "northshire_river"
+bait = 960502 # Cut Perch
 
 [[legend]]
 item = 960003
@@ -624,6 +632,7 @@ style = "dart"
 difficulty = 85
 chance = 5
 block = "night"
+bait = 960501 # Smallfish Chunks
 
 [[legend]]
 item = 960004
@@ -633,7 +642,7 @@ level = 13
 style = "dart"
 difficulty = 85
 chance = 5
-bait = 960103 # Gnoll Ear
+bait = 960504 # Snapper Belly
 
 [[legend]]
 item = 960005
@@ -643,6 +652,7 @@ level = 22
 style = "mixed"
 difficulty = 85
 chance = 1
+bait = 960514 # Mackerel Strips
 
 [[legend]]
 item = 960006
@@ -653,6 +663,7 @@ style = "smooth"
 difficulty = 80
 chance = 5
 water = "cathedral_canal"
+bait = 960505 # Herring Chunks
 
 [[legend]]
 item = 960007
@@ -663,6 +674,7 @@ style = "dart"
 difficulty = 85
 chance = 5
 block = "dawn"
+bait = 960506 # Eel Slices
 
 [[legend]]
 item = 960008
@@ -672,7 +684,7 @@ level = 17
 style = "sinker"
 difficulty = 90
 chance = 5
-bait = 960104 # Prison Gruel
+bait = 960513 # Carp Dough
 
 [[legend]]
 item = 960009
@@ -682,6 +694,7 @@ level = 21
 style = "dart"
 difficulty = 90
 chance = 1
+bait = 960515 # Albacore Belly
 
 [[legend]]
 item = 960010
@@ -692,6 +705,7 @@ style = "sinker"
 difficulty = 85
 chance = 5
 water = "althers_mill"
+bait = 960507 # Whisker Bait
 
 [[legend]]
 item = 960011
@@ -703,6 +717,7 @@ difficulty = 95
 chance = 5
 water = "lake_everstill"
 block = "night"
+bait = 960508 # Cut Lake Perch
 
 [[legend]]
 item = 960012
@@ -712,7 +727,7 @@ level = 19
 style = "dart"
 difficulty = 90
 chance = 5
-bait = 960105 # Worg Haunch
+bait = 960509 # Bluegill Strips
 
 [[legend]]
 item = 960013
@@ -722,6 +737,7 @@ level = 22
 style = "smooth"
 difficulty = 90
 chance = 1
+bait = 960510 # Bleak Fry
 
 [[legend]]
 item = 960014
@@ -733,6 +749,7 @@ difficulty = 90
 chance = 5
 water = "twilight_grove"
 block = "dusk"
+bait = 960511 # Chub Chunks
 
 [[legend]]
 item = 960015
@@ -742,7 +759,7 @@ level = 25
 style = "mixed"
 difficulty = 92
 chance = 5
-bait = 960106 # Corpse Grub
+bait = 960521 # Loach Bits
 
 [[legend]]
 item = 960016
@@ -754,6 +771,7 @@ difficulty = 95
 chance = 5
 water = "darkened_bank"
 block = "night"
+bait = 960522 # Grayling Slices
 
 [[water]]
 key = "northshire_river"
@@ -854,3 +872,69 @@ ignored_by = ["common"]
 [[bait]]
 item = 960106 # Corpse Grub
 always_block = "night"
+
+[[bait]]
+item = 960501 # Smallfish Chunks
+
+[[bait]]
+item = 960502 # Cut Perch
+
+[[bait]]
+item = 960503 # Trout Strips
+
+[[bait]]
+item = 960504 # Snapper Belly
+
+[[bait]]
+item = 960505 # Herring Chunks
+
+[[bait]]
+item = 960506 # Eel Slices
+
+[[bait]]
+item = 960507 # Whisker Bait
+
+[[bait]]
+item = 960508 # Cut Lake Perch
+
+[[bait]]
+item = 960509 # Bluegill Strips
+
+[[bait]]
+item = 960510 # Bleak Fry
+
+[[bait]]
+item = 960511 # Chub Chunks
+
+[[bait]]
+item = 960512 # Shiner Flash
+
+[[bait]]
+item = 960513 # Carp Dough
+
+[[bait]]
+item = 960514 # Mackerel Strips
+
+[[bait]]
+item = 960515 # Albacore Belly
+
+[[bait]]
+item = 960516 # Blackmouth Oil Bait
+
+[[bait]]
+item = 960517 # Millrace Strips
+
+[[bait]]
+item = 960518 # Sunfish Chunks
+
+[[bait]]
+item = 960519 # Pike Fillet Bait
+
+[[bait]]
+item = 960520 # Mithril Scale Bait
+
+[[bait]]
+item = 960521 # Loach Bits
+
+[[bait]]
+item = 960522 # Grayling Slices

@@ -49,6 +49,7 @@ pub mod chat;
 mod clock;
 mod combat;
 mod content;
+mod cooking;
 mod creature_spells;
 mod currency_vendor;
 mod dev;
