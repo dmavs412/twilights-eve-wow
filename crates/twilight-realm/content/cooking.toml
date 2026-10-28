@@ -1134,7 +1134,8 @@ count = 3
 [orders]
 # The fish order: a named fish this often, else "N fish of any kind".
 named_fish_chance = 0.6
-named_fish_qty = [3, 6]            # a rare fish asks for 1 or 2
+named_fish_qty = [3, 6]
+rare_fish_qty = [1, 2]             # a rare fish asks for fewer
 named_fish_copper = [20, 8]        # qty x (base + per_level x fish level) x (1 + rarity value)
 any_fish_qty = [6, 10]
 any_fish_copper = 30               # per fish
@@ -1148,4 +1149,4 @@ herb_copper = [15, 3]              # qty x (base + per_level x character level)
 # One order in three also pays a bonus: a recipe Rumour or one rare ingredient, half and half.
 bonus_chance = 0.3333
 # A character's first Goldshire fish order.
-first_order = { item = 960401, qty = 3, copper = 84 }
+first_order = { kitchen = "goldshire", item = 960401, qty = 3, copper = 84 }

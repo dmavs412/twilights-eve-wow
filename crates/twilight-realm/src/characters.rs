@@ -142,6 +142,54 @@ pub(crate) struct Char {
     pub(crate) dish_log: Vec<DishLog>,
     /// The kitchen lessons: cook, recipe, eat, order, reveal, discover.
     pub(crate) cook_lessons: [bool; 6],
+    /// Each kitchen's orders, as last rolled.
+    pub(crate) kitchen_orders: Vec<KitchenOrders>,
+    /// Whether the Goldshire kitchen has posted their first fish order.
+    pub(crate) first_order_given: bool,
+}
+
+/// A kitchen's orders for one character: the dawn-based game day they were rolled on.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct KitchenOrders {
+    pub(crate) kitchen: String,
+    pub(crate) day: u32,
+    pub(crate) orders: Vec<Order>,
+}
+
+/// One kitchen order.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct Order {
+    /// 0 fish, 1 meal, 2 herb.
+    pub(crate) kind: u8,
+    pub(crate) label: String,
+    pub(crate) want: Want,
+    pub(crate) qty: u32,
+    pub(crate) copper: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) bonus: Option<Bonus>,
+    pub(crate) done: bool,
+}
+
+/// What an order takes.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) enum Want {
+    Item(u32),
+    AnyFish,
+    /// Meals whose recipe holds an ingredient of `category`, of band `min_band` or higher.
+    MealWith {
+        category: String,
+        min_band: u8,
+    },
+    /// Cooking herbs of a category.
+    HerbOf(String),
+}
+
+/// What an order pays beside its copper.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) enum Bonus {
+    /// Teaches a random unknown tier recipe.
+    Rumour,
+    Item(u32),
 }
 
 /// A Well Fed buff: the meal item eaten, and the seconds left. It keeps its time over a logout.
@@ -281,6 +329,8 @@ impl Characters {
             cook_visited: Vec::new(),
             dish_log: Vec::new(),
             cook_lessons: [false; 6],
+            kitchen_orders: Vec::new(),
+            first_order_given: false,
         });
         CHAR_CREATE_SUCCESS
     }

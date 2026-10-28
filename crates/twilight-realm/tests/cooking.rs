@@ -3,7 +3,7 @@
 
 mod common;
 
-use benilla_protocol::{KitchenRecipe, SessionEvent, START_ELWYNN};
+use benilla_protocol::{KitchenOrderRow, KitchenRecipe, SessionEvent, START_ELWYNN};
 use common::*;
 use twilight_realm::{KitchenAction, KitchenMode, Realm, RealmCommand};
 
@@ -66,6 +66,11 @@ fn placed(blob: &str, at: [f32; 3]) -> String {
 
 /// A character standing beside Tomas, holding [`PANTRY`] in the Satchel.
 fn at_tomas() -> (Realm, u64) {
+    at_tomas_with("")
+}
+
+/// [`at_tomas`], with `extra` appended to the save.
+fn at_tomas_with(extra: &str) -> (Realm, u64) {
     let (guid, blob) = new_save();
     let [x, y, _] = hub_home(hub_guid(TOMAS));
     let mut blob = placed(&blob, [x + 1.5, y, 0.0]);
@@ -74,6 +79,7 @@ fn at_tomas() -> (Realm, u64) {
             "\n[[satchel]]\nentry = {entry}\ncount = {count}\n"
         ));
     }
+    blob.push_str(extra);
     let mut realm = Realm::with_seed(7);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -339,6 +345,233 @@ fn the_cooking_fields_survive_a_save_round_trip() {
     assert!(again.contains("recipe = \"regen_1\""), "{again}");
     assert!(again.contains("cooked = 1"), "{again}");
     assert!(again.contains("Lion's Pride kitchen"), "{again}");
+}
+
+/// Game day 20000 at 08:00, then the next day at 05:00 (before dawn) and at 06:30, as the wall
+/// clock in milliseconds: a game day is 86400 game seconds, 12 to a real second.
+const MORNING_MS: u64 = (20_000 * 86_400 + 8 * 3_600) * 1_000 / 12;
+const BEFORE_DAWN_MS: u64 = (20_001 * 86_400 + 5 * 3_600) * 1_000 / 12;
+const AFTER_DAWN_MS: u64 = (20_001 * 86_400 + 6 * 3_600 + 1_800) * 1_000 / 12;
+
+const CUT_PERCH: u32 = 960_502;
+
+/// The last `Kitchen`'s orders in `events`.
+fn orders(events: &[SessionEvent]) -> Vec<KitchenOrderRow> {
+    events
+        .iter()
+        .rev()
+        .find_map(|e| match e {
+            SessionEvent::Kitchen { orders, .. } => Some(orders.clone()),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("a Kitchen in {events:?}"))
+}
+
+/// The chat lines in `events`.
+fn lines(events: &[SessionEvent]) -> Vec<String> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::Chat(m) => Some(m.text.clone()),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The saved character's copper.
+fn money(realm: &Realm, guid: u64) -> i64 {
+    let table: toml::Table = realm.export_character(guid).unwrap().parse().unwrap();
+    table.get("money").and_then(|m| m.as_integer()).unwrap_or(0)
+}
+
+/// The saved character's `key`.
+fn saved(realm: &Realm, guid: u64, key: &str) -> Option<toml::Value> {
+    let table: toml::Table = realm.export_character(guid).unwrap().parse().unwrap();
+    table.get(key).cloned()
+}
+
+#[test]
+fn the_first_goldshire_order_is_three_perch_for_84_copper() {
+    let (mut realm, guid) = at_tomas();
+    realm.set_wall_clock(MORNING_MS);
+    let rows = orders(&open(&mut realm));
+    let fish = &rows[0];
+    assert_eq!(
+        (fish.kind, fish.label.as_str(), fish.qty, fish.copper),
+        (0, "3 Goldshire Perch", 3, 84)
+    );
+    assert_eq!(fish.have, 3);
+    assert!(fish.can_deliver && !fish.done);
+
+    let before = money(&realm, guid);
+    let events = act(&mut realm, KitchenAction::Deliver(0));
+    assert!(
+        lines(&events).iter().any(|l| l == "Just what I needed."),
+        "{events:?}"
+    );
+    let fish = &orders(&events)[0];
+    assert!(fish.done && !fish.can_deliver);
+    assert_eq!(money(&realm, guid), before + 84);
+    assert_eq!(held(&realm, guid, GOLDSHIRE_PERCH).0, 3);
+    let lessons = events
+        .iter()
+        .rev()
+        .find_map(|e| match e {
+            SessionEvent::Kitchen { lessons, .. } => Some(*lessons),
+            _ => None,
+        })
+        .unwrap();
+    assert!(lessons[3], "the order lesson");
+
+    // A done order is closed.
+    let again = act(&mut realm, KitchenAction::Deliver(0));
+    assert!(lines(&again).iter().any(|l| l == "That order is closed."));
+}
+
+#[test]
+fn three_orders_a_kitchen_keep_until_dawn_and_then_roll_anew() {
+    let (mut realm, guid) = at_tomas();
+    realm.set_wall_clock(MORNING_MS);
+    let first = orders(&open(&mut realm));
+    assert_eq!(
+        first.iter().map(|o| o.kind).collect::<Vec<_>>(),
+        [0, 1, 2],
+        "{first:?}"
+    );
+    let meal = &first[1].label;
+    assert!(
+        meal.contains("dishes with ") && meal.ends_with(" in them"),
+        "{meal}"
+    );
+    assert!(first[2].label.contains(" raw "), "{}", first[2].label);
+
+    // The same game day keeps them, before dawn the next calendar day too.
+    assert_eq!(orders(&open(&mut realm)), first);
+    realm.set_wall_clock(BEFORE_DAWN_MS);
+    assert_eq!(orders(&open(&mut realm)), first);
+    assert_eq!(saved(&realm, guid, "first_order_given"), Some(true.into()));
+
+    // Past 06:00 they roll anew, and the first Perch order does not come back.
+    realm.set_wall_clock(AFTER_DAWN_MS);
+    let next = orders(&open(&mut realm));
+    assert_eq!(next.len(), 3);
+    assert_ne!(next[0].label, "3 Goldshire Perch", "{next:?}");
+    let days = saved(&realm, guid, "kitchen_orders").unwrap();
+    assert_eq!(
+        days.as_array().unwrap()[0]["day"].as_integer(),
+        Some(20_001)
+    );
+}
+
+/// The Goldshire orders of day 20000: the first Perch order and two meal orders.
+const MEAL_ORDERS: &str = r#"
+[[kitchen_orders]]
+kitchen = "goldshire"
+day = 20000
+
+[[kitchen_orders.orders]]
+kind = 0
+label = "3 Goldshire Perch"
+want = { Item = 960401 }
+qty = 3
+copper = 84
+done = false
+
+[[kitchen_orders.orders]]
+kind = 1
+label = "1 dishes with a fish in them"
+want = { MealWith = { category = "fish", min_band = 1 } }
+qty = 1
+copper = 110
+done = false
+
+[[kitchen_orders.orders]]
+kind = 1
+label = "1 band 10 or higher dishes with a fish in them"
+want = { MealWith = { category = "fish", min_band = 10 } }
+qty = 1
+copper = 220
+bonus = "Rumour"
+done = false
+"#;
+
+#[test]
+fn a_meal_order_takes_a_tier_meal_of_its_band() {
+    let (mut realm, guid) = at_tomas_with(MEAL_ORDERS);
+    realm.set_wall_clock(MORNING_MS);
+    open(&mut realm);
+    let events = cook(&mut realm, KitchenMode::Experiment, "", &FIRST_POT);
+    assert_eq!(cooked(&events).0, CHOWDER);
+    let rows = orders(&events);
+    assert!(rows[1].can_deliver, "a band 1 tier meal holds a fish");
+    assert!(!rows[2].can_deliver, "band 10 or higher");
+    assert_eq!(rows[2].bonus, "a recipe Rumour");
+
+    let refused = act(&mut realm, KitchenAction::Deliver(2));
+    assert!(lines(&refused)
+        .iter()
+        .any(|l| l == "You need 1 band 10 or higher dishes with a fish in them."));
+    assert_eq!(held(&realm, guid, CHOWDER), (0, 1));
+
+    let events = act(&mut realm, KitchenAction::Deliver(1));
+    assert!(orders(&events)[1].done);
+    assert_eq!(held(&realm, guid, CHOWDER), (0, 0));
+}
+
+#[test]
+fn cutting_a_goldshire_perch_gives_three_cut_perch_in_the_satchel() {
+    let (mut realm, guid) = at_tomas();
+    let events = open(&mut realm);
+    let cuttable = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::Kitchen { cuttable, .. } => Some(cuttable.clone()),
+            _ => None,
+        })
+        .unwrap();
+    assert!(
+        cuttable.contains(&(GOLDSHIRE_PERCH, 6, CUT_PERCH)),
+        "{cuttable:?}"
+    );
+
+    let events = act(&mut realm, KitchenAction::Cut(GOLDSHIRE_PERCH));
+    assert!(
+        lines(&events)
+            .iter()
+            .any(|l| l == "You cut Goldshire Perch into 3 Cut Perch."),
+        "{events:?}"
+    );
+    assert_eq!(held(&realm, guid, GOLDSHIRE_PERCH).0, 5);
+    assert_eq!(
+        held(&realm, guid, CUT_PERCH),
+        (3, 0),
+        "in the Fishing Satchel"
+    );
+
+    // A herb does not cut.
+    let refused = act(&mut realm, KitchenAction::Cut(DANDELION));
+    assert!(lines(&refused).iter().any(|l| l == "You can't cut that."));
+}
+
+#[test]
+fn the_orders_survive_a_save_round_trip() {
+    let (mut realm, guid) = at_tomas();
+    realm.set_wall_clock(MORNING_MS);
+    open(&mut realm);
+    act(&mut realm, KitchenAction::Deliver(0));
+    let blob = realm.export_character(guid).unwrap();
+    let mut back = Realm::with_seed(9);
+    back.import_character(&blob).unwrap();
+    for key in ["kitchen_orders", "first_order_given"] {
+        let value = saved(&realm, guid, key);
+        assert!(value.is_some(), "{key} in {blob}");
+        assert_eq!(saved(&back, guid, key), value, "{key}");
+    }
+    let days = saved(&back, guid, "kitchen_orders").unwrap();
+    assert_eq!(
+        days.as_array().unwrap()[0]["orders"][0]["done"].as_bool(),
+        Some(true)
+    );
 }
 
 #[test]

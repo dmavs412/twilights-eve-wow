@@ -232,6 +232,11 @@ struct Save {
     cook_lessons: [bool; 6],
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     dish_log: Vec<crate::characters::DishLog>,
+    /// Kitchen orders (#494, within version 5): a save without them has been posted no order.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    first_order_given: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    kitchen_orders: Vec<crate::characters::KitchenOrders>,
     /// The entry the empty Lure slot waits to refill with (version 5). A plain key, so before the
     /// gear tables.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -495,6 +500,8 @@ pub(crate) fn export(c: &Char) -> String {
         cook_visited: c.cook_visited.clone(),
         cook_lessons: c.cook_lessons,
         dish_log: c.dish_log.clone(),
+        first_order_given: c.first_order_given,
+        kitchen_orders: c.kitchen_orders.clone(),
         lure_waiting: c.lure_waiting,
         calling_chosen: c.calling_chosen,
         fishing_pole: saved_gear(&c.fishing_pole),
@@ -610,6 +617,8 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         cook_visited: s.cook_visited,
         dish_log: s.dish_log,
         cook_lessons: s.cook_lessons,
+        kitchen_orders: s.kitchen_orders,
+        first_order_given: s.first_order_given,
         fishing_pole: None,
         fishing_lure: None,
         lure_waiting: s.lure_waiting,

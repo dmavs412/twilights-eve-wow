@@ -223,6 +223,25 @@ pub struct KitchenIngredient {
     pub untried: bool,
 }
 
+/// Twilight's Eve, not 1.12: one of a kitchen's orders today (ADR 0025).
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct KitchenOrderRow {
+    /// "3 Goldshire Perch", "2 dishes with a mushroom in them", "4 raw spices".
+    pub label: String,
+    /// 0 fish, 1 meal, 2 herb.
+    pub kind: u8,
+    pub copper: u32,
+    pub qty: u32,
+    /// How many the player holds that it takes, at most `qty`.
+    pub have: u32,
+    pub done: bool,
+    pub can_deliver: bool,
+    /// "a recipe Rumour", "1 Black Truffle", or "" for none.
+    pub bonus: String,
+    /// The bonus is a rare item.
+    pub bonus_rare: bool,
+}
+
 /// Which Satchel item: its entry, and a piece's durability (`None` for a counted row).
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SatchelPick {
@@ -497,6 +516,10 @@ pub enum SessionEvent {
         /// Sorted by rarity, then level.
         pantry: Vec<KitchenIngredient>,
         lessons: [bool; 6],
+        /// Today's three orders: fish, meal, herb.
+        orders: Vec<KitchenOrderRow>,
+        /// `(fish, held, bait)`: each fish held that cuts into a bait.
+        cuttable: Vec<(u32, u32, u32)>,
     },
     /// Twilight's Eve, not 1.12: what a filled pot would cook. `meal` is 0 for a trial, which
     /// cooks whatever it matches. Never wire-decoded.

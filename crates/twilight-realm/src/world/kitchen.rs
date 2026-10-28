@@ -2,16 +2,20 @@
 //! kitchen, which sends the recipe book and the pantry, predicts a pot and cooks it into a meal or
 //! Hearty Mush. The first cook at a kitchen teaches its starters; an exact match teaches the
 //! recipe it cooks; an item cooked with for the first time shows in every recipe that uses it.
+//! Each kitchen posts three orders a character a game day, and cuts fish into bait (#494).
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
-use benilla_protocol::messages::GossipOption;
-use benilla_protocol::{KitchenIngredient, KitchenRecipe, SessionEvent};
+use benilla_protocol::messages::{self as m, ChatMessage, GossipOption};
+use benilla_protocol::{KitchenIngredient, KitchenOrderRow, KitchenRecipe, SessionEvent};
 
-use crate::characters::{Char, DishLog};
+use crate::characters::{Bonus, Char, DishLog, KitchenOrders, Order, Want};
 use crate::cooking::{self, Family, Kind, Recipe};
 use crate::equipment;
+use crate::fields::values;
 use crate::hub::{self, Npc};
+use crate::quests::system_line;
+use crate::rng::Rng;
 use crate::rules::game_clock;
 use crate::{KitchenAction, KitchenMode};
 
@@ -22,6 +26,7 @@ const ICON_CHAT: u8 = 0;
 /// `cook_lessons`' places, as the prototype's `S.lessons`.
 const LESSON_COOK: usize = 0;
 const LESSON_RECIPE: usize = 1;
+const LESSON_ORDER: usize = 3;
 const LESSON_REVEAL: usize = 4;
 const LESSON_DISCOVER: usize = 5;
 
@@ -67,9 +72,11 @@ impl crate::Realm {
         let Some(guid) = self.world.as_ref().map(|w| w.guid) else {
             return;
         };
-        let Some(c) = self.characters.get(guid) else {
+        let wall = self.wall;
+        let Some(c) = self.characters.get_mut(guid) else {
             return;
         };
+        let rolled = post_orders(c, kitchen, wall, &mut self.rng);
         self.events.push(SessionEvent::GossipComplete);
         self.events.push(kitchen_event(c, npc.guid(), kitchen));
         self.kitchens.0.insert(
@@ -79,6 +86,9 @@ impl crate::Realm {
                 kitchen: &kitchen.key,
             },
         );
+        if rolled {
+            self.save(guid);
+        }
     }
 
     /// An action at the open kitchen; nothing without one.
@@ -123,6 +133,26 @@ impl crate::Realm {
                     why: Vec::new(),
                 }),
             },
+            KitchenAction::Deliver(index) => {
+                let delivered = deliver(
+                    c,
+                    npc,
+                    kitchen,
+                    usize::from(index),
+                    &mut self.rng,
+                    &mut self.events,
+                );
+                if delivered {
+                    self.events.push(kitchen_event(c, npc, kitchen));
+                    self.save(guid);
+                }
+            }
+            KitchenAction::Cut(fish) => {
+                if cut(c, fish, &mut self.events) {
+                    self.events.push(kitchen_event(c, npc, kitchen));
+                    self.save(guid);
+                }
+            }
         }
     }
 
@@ -313,8 +343,8 @@ fn category(item: u32) -> Option<String> {
     }
 }
 
-/// Every ingredient `c` holds in the bags or Satchel, by rarity, then level, then entry.
-fn pantry(c: &Char) -> Vec<KitchenIngredient> {
+/// Every item `c` holds at least one of in the bags or Satchel, ascending.
+fn held_items(c: &Char) -> Vec<u32> {
     let mut entries: Vec<u32> = c
         .inventory
         .iter()
@@ -324,22 +354,25 @@ fn pantry(c: &Char) -> Vec<KitchenIngredient> {
         .collect();
     entries.sort_unstable();
     entries.dedup();
-    let mut rows: Vec<(u8, KitchenIngredient)> = entries
+    entries.retain(|&item| c.inventory.count(item) > 0);
+    entries
+}
+
+/// Every ingredient `c` holds in the bags or Satchel, by rarity, then level, then entry.
+fn pantry(c: &Char) -> Vec<KitchenIngredient> {
+    let mut rows: Vec<(u8, KitchenIngredient)> = held_items(c)
         .into_iter()
         .filter_map(|item| {
             let category = category(item)?;
-            let count = c.inventory.count(item);
-            (count > 0).then(|| {
-                let rarity = crate::items::template(item).map_or(0, |t| t.quality);
-                let row = KitchenIngredient {
-                    item,
-                    count,
-                    level: cooking::ingredient_level(item),
-                    category,
-                    untried: !c.cook_tried.contains(&item),
-                };
-                (rarity, row)
-            })
+            let rarity = crate::items::template(item).map_or(0, |t| t.quality);
+            let row = KitchenIngredient {
+                item,
+                count: c.inventory.count(item),
+                level: cooking::ingredient_level(item),
+                category,
+                untried: !c.cook_tried.contains(&item),
+            };
+            Some((rarity, row))
         })
         .collect();
     rows.sort_by_key(|(rarity, r)| (*rarity, r.level, r.item));
@@ -353,18 +386,27 @@ fn kitchen_event(c: &Char, npc: u64, kitchen: &cooking::Kitchen) -> SessionEvent
     let others = all
         .iter()
         .filter(|r| r.kind != Kind::Tier && knows(c, &r.key));
-    let cook = hub::npcs()
-        .iter()
-        .find(|n| n.entry == kitchen.cook)
-        .map_or_else(String::new, |n| n.name.clone());
+    let held = held_items(c);
     SessionEvent::Kitchen {
         npc,
         name: kitchen.name.clone(),
-        cook,
+        cook: cook_name(kitchen),
         book: tier.chain(others).map(|r| page(c, r)).collect(),
         pantry: pantry(c),
         lessons: c.cook_lessons,
+        orders: order_rows(c, kitchen, &held),
+        cuttable: held
+            .iter()
+            .filter_map(|&f| cooking::cut_of(f).map(|cut| (f, c.inventory.count(f), cut.bait)))
+            .collect(),
     }
+}
+
+fn cook_name(kitchen: &cooking::Kitchen) -> String {
+    hub::npcs()
+        .iter()
+        .find(|n| n.entry == kitchen.cook)
+        .map_or_else(String::new, |n| n.name.clone())
 }
 
 /// Whether every slot is an ingredient `c` holds enough of.
@@ -572,4 +614,390 @@ fn cook(
         revealed,
         line: lines.join(" "),
     })
+}
+
+/// An order's kind.
+const ORDER_FISH: u8 = 0;
+const ORDER_MEAL: u8 = 1;
+const ORDER_HERB: u8 = 2;
+
+/// The game hour the kitchens post new orders at.
+const DAWN_HOUR: f64 = 6.0;
+
+/// The dawn-based game day at the wall clock `wall`: it turns at [`DAWN_HOUR`].
+fn order_day(wall: f64) -> u32 {
+    game_clock::day_serial(wall - DAWN_HOUR * 3600.0 / game_clock::SPEED)
+}
+
+/// Rolls `kitchen`'s orders for `c` when they were not rolled on today's order day; true when
+/// it rolled.
+fn post_orders(c: &mut Char, kitchen: &cooking::Kitchen, wall: f64, rng: &mut Rng) -> bool {
+    let day = order_day(wall);
+    if c.kitchen_orders
+        .iter()
+        .any(|k| k.kitchen == kitchen.key && k.day == day)
+    {
+        return false;
+    }
+    let orders = roll_orders(c, kitchen, rng);
+    c.kitchen_orders.retain(|k| k.kitchen != kitchen.key);
+    c.kitchen_orders.push(KitchenOrders {
+        kitchen: kitchen.key.clone(),
+        day,
+        orders,
+    });
+    true
+}
+
+/// A fish's or herb's rarity as a number: common 0, uncommon 1, rare 2, legendary 3.
+fn rarity_value(item: u32) -> u32 {
+    if let Some(f) = crate::fish::fish(item) {
+        return f.rarity as u32;
+    }
+    crate::herbs::zones()
+        .into_iter()
+        .flat_map(|z| crate::herbs::plants_in(&z.key))
+        .chain(crate::herbs::plants_in(crate::herbs::ANY))
+        .find(|p| p.item == item)
+        .map_or(0, |p| p.rarity as u32)
+}
+
+const RARE: u32 = 2;
+
+/// "a mushroom", "an allium", "greens": the prototype's article rule.
+fn with_article(category: &str) -> String {
+    if category == "greens" {
+        category.to_owned()
+    } else if category.starts_with(['a', 'e', 'i', 'o', 'u']) {
+        format!("an {category}")
+    } else {
+        format!("a {category}")
+    }
+}
+
+/// "mushrooms", "greens", "fruit": the prototype's `CAT[..].many`.
+fn plural(category: &str) -> String {
+    match category {
+        "greens" | "fruit" | "fish" => category.to_owned(),
+        _ => format!("{category}s"),
+    }
+}
+
+fn pick<T: Copy>(list: &[T], rng: &mut Rng) -> Option<T> {
+    (!list.is_empty()).then(|| list[rng.below(list.len() as u32) as usize])
+}
+
+/// The prototype's `rollOrders` for one kitchen: a fish, a meal and a herb order, each with a
+/// chance of a bonus. The first Goldshire roll posts the first fish order and sets
+/// `first_order_given`.
+pub(crate) fn roll_orders(c: &mut Char, kitchen: &cooking::Kitchen, rng: &mut Rng) -> Vec<Order> {
+    let t = cooking::orders();
+    let level = c.level;
+    let fish: Vec<u32> = crate::fish::fish_items()
+        .filter(|&f| crate::fish::legend(f).is_none() && cooking::ingredient_level(f) <= level)
+        .collect();
+    let herbs: Vec<(u32, &str)> = cooking::cooking_herbs()
+        .filter(|&(h, _)| cooking::ingredient_level(h) <= level)
+        .collect();
+    let order = |kind: u8, label: String, want: Want, qty: u32, copper: u32| Order {
+        kind,
+        label,
+        want,
+        qty,
+        copper,
+        bonus: None,
+        done: false,
+    };
+    let mut list = Vec::new();
+
+    let first = &t.first_order;
+    let named = pick(&fish, rng).filter(|_| rng.frand(0.0, 1.0) < t.named_fish_chance);
+    list.push(if !c.first_order_given && kitchen.key == first.kitchen {
+        c.first_order_given = true;
+        order(
+            ORDER_FISH,
+            format!("{} {}", first.qty, meal_name(first.item)),
+            Want::Item(first.item),
+            first.qty,
+            first.copper,
+        )
+    } else if let Some(f) = named {
+        let rarity = rarity_value(f);
+        let [lo, hi] = if rarity == RARE {
+            t.rare_fish_qty
+        } else {
+            t.named_fish_qty
+        };
+        let qty = rng.urand(lo, hi);
+        let [base, per_level] = t.named_fish_copper;
+        let fish_level = u32::from(cooking::ingredient_level(f));
+        order(
+            ORDER_FISH,
+            format!("{qty} {}", meal_name(f)),
+            Want::Item(f),
+            qty,
+            qty * (base + per_level * fish_level) * (1 + rarity),
+        )
+    } else {
+        let qty = rng.urand(t.any_fish_qty[0], t.any_fish_qty[1]);
+        order(
+            ORDER_FISH,
+            format!("{qty} fish of any kind"),
+            Want::AnyFish,
+            qty,
+            qty * t.any_fish_copper,
+        )
+    });
+
+    // The meal: a herb category from the recipes they know, else the kitchen's starters.
+    let keys: Vec<&String> = if c.cook_known.is_empty() {
+        kitchen.starters.iter().collect()
+    } else {
+        c.cook_known.iter().collect()
+    };
+    let categories: BTreeSet<&str> = keys
+        .into_iter()
+        .filter_map(|k| cooking::recipe(k))
+        .filter(|r| matches!(r.kind, Kind::Tier | Kind::Dish))
+        .flat_map(|r| {
+            r.ingredients
+                .iter()
+                .filter_map(|&i| cooking::category_of(i))
+        })
+        .filter(|cat| herbs.iter().any(|(_, h)| h == cat))
+        .collect();
+    let categories: Vec<&str> = categories.into_iter().collect();
+    let category = pick(&categories, rng).unwrap_or("fish");
+    let bands = cooking::tiers().bands;
+    let high = level >= bands[1] && rng.below(2) == 0;
+    let qty = rng.urand(t.meal_qty[0], t.meal_qty[1]);
+    let [base, per_level] = t.meal_copper;
+    let band_text = if high {
+        format!("band {} or higher ", bands[1])
+    } else {
+        String::new()
+    };
+    list.push(order(
+        ORDER_MEAL,
+        format!(
+            "{qty} {band_text}dishes with {} in them",
+            with_article(category)
+        ),
+        Want::MealWith {
+            category: category.to_owned(),
+            min_band: if high { bands[1] } else { bands[0] },
+        },
+        qty,
+        qty * (base + per_level * u32::from(level)) * (1 + u32::from(high)),
+    ));
+
+    // The herb: a category of a cooking herb they can reach.
+    let herb_categories: BTreeSet<&str> = herbs.iter().map(|&(_, cat)| cat).collect();
+    let herb_categories: Vec<&str> = herb_categories.into_iter().collect();
+    if let Some(category) = pick(&herb_categories, rng) {
+        let qty = rng.urand(t.herb_qty[0], t.herb_qty[1]);
+        let [base, per_level] = t.herb_copper;
+        list.push(order(
+            ORDER_HERB,
+            format!("{qty} raw {}", plural(category)),
+            Want::HerbOf(category.to_owned()),
+            qty,
+            qty * (base + per_level * u32::from(level)),
+        ));
+    }
+
+    let rares: Vec<u32> = herbs
+        .iter()
+        .map(|&(h, _)| h)
+        .chain(fish.iter().copied())
+        .filter(|&i| rarity_value(i) == RARE)
+        .collect();
+    for o in &mut list {
+        if rng.frand(0.0, 1.0) < t.bonus_chance {
+            o.bonus = Some(match pick(&rares, rng).filter(|_| rng.below(2) == 0) {
+                Some(item) => Bonus::Item(item),
+                None => Bonus::Rumour,
+            });
+        }
+    }
+    list
+}
+
+/// Whether an order wanting `want` takes `item`. A meal counts when its tier recipe or dish holds
+/// an ingredient of the category and its tier is at least `min_band`'s.
+fn accepts(want: &Want, item: u32) -> bool {
+    match want {
+        Want::Item(wanted) => item == *wanted,
+        Want::AnyFish => crate::fish::fish(item).is_some() && crate::fish::legend(item).is_none(),
+        Want::HerbOf(cat) => cooking::category_of(item) == Some(cat.as_str()),
+        Want::MealWith {
+            category: cat,
+            min_band,
+        } => cooking::recipe_of_meal(item).is_some_and(|r| {
+            matches!(r.kind, Kind::Tier | Kind::Dish)
+                && r.tier
+                    .is_some_and(|t| t >= cooking::tiers().band_of(*min_band))
+                && r.ingredients
+                    .iter()
+                    .any(|&i| category(i).as_deref() == Some(cat.as_str()))
+        }),
+    }
+}
+
+/// The prototype's `valueOf`: a delivery takes the lowest first. A meal is its tier plus one; a
+/// fish or herb its rarity times 100 plus its level.
+fn value(item: u32) -> u32 {
+    match cooking::recipe_of_meal(item) {
+        Some(r) => r.tier.map_or(5, |t| u32::from(t) + 1),
+        None => rarity_value(item) * 100 + u32::from(cooking::ingredient_level(item)),
+    }
+}
+
+/// `kitchen`'s orders for `c` as the window shows them, `held` being [`held_items`].
+fn order_rows(c: &Char, kitchen: &cooking::Kitchen, held: &[u32]) -> Vec<KitchenOrderRow> {
+    let Some(k) = c.kitchen_orders.iter().find(|k| k.kitchen == kitchen.key) else {
+        return Vec::new();
+    };
+    k.orders
+        .iter()
+        .map(|o| {
+            let have: u32 = held
+                .iter()
+                .filter(|&&i| accepts(&o.want, i))
+                .map(|&i| c.inventory.count(i))
+                .sum();
+            KitchenOrderRow {
+                label: o.label.clone(),
+                kind: o.kind,
+                copper: o.copper,
+                qty: o.qty,
+                have: have.min(o.qty),
+                done: o.done,
+                can_deliver: !o.done && have >= o.qty,
+                bonus: match o.bonus {
+                    Some(Bonus::Rumour) => "a recipe Rumour".to_owned(),
+                    Some(Bonus::Item(item)) => format!("1 {}", meal_name(item)),
+                    None => String::new(),
+                },
+                bonus_rare: matches!(o.bonus, Some(Bonus::Item(_))),
+            }
+        })
+        .collect()
+}
+
+/// The cook of `kitchen`, whose guid is `npc`, says `text`.
+fn cook_says(npc: u64, kitchen: &cooking::Kitchen, text: &str) -> SessionEvent {
+    SessionEvent::Chat(ChatMessage {
+        chat_type: m::CHAT_MSG_MONSTER_SAY,
+        language: 0,
+        sender_guid: npc,
+        target_guid: 0,
+        sender_name: Some(cook_name(kitchen)),
+        channel: None,
+        text: text.to_owned(),
+        chat_tag: 0,
+    })
+}
+
+/// A Rumour: teaches a random tier recipe `c` does not know.
+fn rumour(c: &mut Char, rng: &mut Rng, events: &mut Vec<SessionEvent>) {
+    let pool: Vec<&Recipe> = cooking::recipes()
+        .into_iter()
+        .filter(|r| r.kind == Kind::Tier && !knows(c, &r.key))
+        .collect();
+    let Some(r) = pick(&pool, rng) else {
+        events.push(system_line(
+            "You already know every recipe a Rumour can teach.".to_owned(),
+        ));
+        return;
+    };
+    learn(c, &r.key);
+    events.push(system_line(format!(
+        "The bonus Rumour teaches you: {}.",
+        meal_name(r.meal)
+    )));
+}
+
+/// The prototype's `deliver`: fills `kitchen`'s order `index` from what `c` holds, the cheapest
+/// first, pays it and its bonus; false, with a line, when it is closed or `c` holds too few.
+fn deliver(
+    c: &mut Char,
+    npc: u64,
+    kitchen: &cooking::Kitchen,
+    index: usize,
+    rng: &mut Rng,
+    events: &mut Vec<SessionEvent>,
+) -> bool {
+    let Some(order) = c
+        .kitchen_orders
+        .iter()
+        .find(|k| k.kitchen == kitchen.key)
+        .and_then(|k| k.orders.get(index))
+        .filter(|o| !o.done)
+        .cloned()
+    else {
+        events.push(system_line("That order is closed.".to_owned()));
+        return false;
+    };
+    let mut items: Vec<u32> = held_items(c)
+        .into_iter()
+        .filter(|&i| accepts(&order.want, i))
+        .collect();
+    items.sort_by_key(|&i| (value(i), i));
+    let have: u32 = items.iter().map(|&i| c.inventory.count(i)).sum();
+    if have < order.qty {
+        events.push(system_line(format!("You need {}.", order.label)));
+        return false;
+    }
+    let mut left = order.qty;
+    for item in items {
+        let n = left.min(c.inventory.count(item));
+        equipment::take(c, item, n, events);
+        left -= n;
+        if left == 0 {
+            break;
+        }
+    }
+    if let Some(o) = c
+        .kitchen_orders
+        .iter_mut()
+        .find(|k| k.kitchen == kitchen.key)
+        .and_then(|k| k.orders.get_mut(index))
+    {
+        o.done = true;
+    }
+    c.inventory.money += order.copper;
+    events.push(values(c.guid, &[equipment::money_pair(&c.inventory)]));
+    events.push(cook_says(npc, kitchen, "Just what I needed."));
+    match order.bonus {
+        Some(Bonus::Item(item)) => match equipment::receive(c, item, 1, events) {
+            Ok(_) => events.push(system_line(format!("Bonus: 1 {}.", meal_name(item)))),
+            Err(reason) => events.push(equipment::inventory_failure(reason, 0)),
+        },
+        Some(Bonus::Rumour) => rumour(c, rng, events),
+        None => {}
+    }
+    c.cook_lessons[LESSON_ORDER] = true;
+    true
+}
+
+/// The prototype's `cutBait`: one `fish` becomes its `[[cut]]` bait, which `receive` sends to the
+/// Fishing Satchel; false, with a line, when it does not cut or `c` holds none.
+fn cut(c: &mut Char, fish: u32, events: &mut Vec<SessionEvent>) -> bool {
+    let Some(cut) = cooking::cut_of(fish).filter(|_| c.inventory.count(fish) > 0) else {
+        events.push(system_line("You can't cut that.".to_owned()));
+        return false;
+    };
+    if let Err(reason) = equipment::receive(c, cut.bait, cut.count, events) {
+        events.push(equipment::inventory_failure(reason, 0));
+        return false;
+    }
+    equipment::take(c, fish, 1, events);
+    events.push(system_line(format!(
+        "You cut {} into {} {}.",
+        meal_name(fish),
+        cut.count,
+        meal_name(cut.bait)
+    )));
+    true
 }

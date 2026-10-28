@@ -198,6 +198,10 @@ pub enum KitchenAction {
         recipe: String,
         slots: Vec<u32>,
     },
+    /// Fills today's order at this index.
+    Deliver(u8),
+    /// Cuts one of this fish into its bait.
+    Cut(u32),
     Close,
 }
 

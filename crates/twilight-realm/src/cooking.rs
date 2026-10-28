@@ -145,9 +145,11 @@ pub(crate) struct Cut {
     pub(crate) count: u32,
 }
 
-/// A character's first Goldshire fish order.
+/// A character's first fish order, at one kitchen.
 #[derive(Deserialize)]
 pub(crate) struct FirstOrder {
+    /// The `[[kitchen]]` key that posts it.
+    pub(crate) kitchen: String,
     pub(crate) item: u32,
     pub(crate) qty: u32,
     pub(crate) copper: u32,
@@ -158,6 +160,8 @@ pub(crate) struct FirstOrder {
 pub(crate) struct Orders {
     pub(crate) named_fish_chance: f32,
     pub(crate) named_fish_qty: [u32; 2],
+    /// A rare named fish's, in place of `named_fish_qty`.
+    pub(crate) rare_fish_qty: [u32; 2],
     /// `[base, per_level]`.
     pub(crate) named_fish_copper: [u32; 2],
     pub(crate) any_fish_qty: [u32; 2],
@@ -468,6 +472,14 @@ pub(crate) fn orders() -> &'static Orders {
 /// A cooking herb's category (`[category]`).
 pub(crate) fn category_of(item: u32) -> Option<&'static str> {
     file().category.get(&item.to_string()).map(String::as_str)
+}
+
+/// Every cooking herb (`[category]`) and its category.
+pub(crate) fn cooking_herbs() -> impl Iterator<Item = (u32, &'static str)> {
+    file()
+        .category
+        .iter()
+        .filter_map(|(k, v)| Some((k.parse().ok()?, v.as_str())))
 }
 
 /// What eating a meal gives while Well Fed: the effects its recipe names, summed.
