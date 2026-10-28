@@ -63,9 +63,8 @@ A Herb Patch uses a stock 1.12 bush model, so it needs no art.
 
 ## Cooking and alchemy (spec #447)
 
-One icon per product type (ADR 0025): the five Strength Steps of a potion share its icon, and
-the bands and qualities of a meal recipe share the recipe's icon. The tickets write the exact
-list from the recipe rows; these are the spec's counts.
+Alchemy keeps one icon per product type (ADR 0025): the five Strength Steps of a potion share
+its icon. Cooking has one item row per recipe, so every recipe has its own icon.
 
 ### Alchemy item icons, painted
 
@@ -90,8 +89,8 @@ Toxic green, Volatile orange.
 
 Davis painted 72 cooking icons: 22 cut baits and 50 meals. They are 128 x 128 PNGs in
 `data/twilights-eve/art/`, waiting for the cooking item rows. The 50 meals are the 30 named fish
-dishes, the 16 legendary meals, the 3 legendary plant meals and Hearty Mush. No category recipe
-has an icon yet.
+dishes, the 16 legendary meals, the 3 legendary plant meals and Hearty Mush. The 44 grid
+recipes have placeholders (below).
 
 **Cut baits**, `cut_<fish>.png`, one per common and uncommon fish: `brilliant_smallfish`,
 `bristle_whisker_catfish`, `canal_eel`, `darkshire_bleak`, `everstill_perch`, `goldshire_perch`,
@@ -121,49 +120,77 @@ order, and each skin matches its fish.
 | `meal_the_twilight_koi.png` | a purple fish on a crescent-moon stand |
 | `meal_worgfang_pike.png` | a fanged pike in a fang-trimmed bowl |
 
-**Unassigned meals**, `meal_01.png` to `meal_35.png`: the 30 named fish dishes and five legends
-(Bell-Toll Bream, Everstill Leviathan, Old Goldfin, Sorrowgill, Stockade Sucker). The cooking
-tickets pick each one's dish and rename the file.
+**The 35 paintings that arrived unnamed**, matched to the dish each shows on 2026-10-27 and renamed
+to `meal_<fish>.png` (the fish dish of that fish, or the legend's meal). A match Davis disagrees
+with is a rename of two files.
 
-| File | Painting |
+| File | Was | Fish dish or legend | Painting |
+|---|---|---|---|
+| `meal_canal_eel.png` | `meal_01` | Canal Eel | three fish on a skewer |
+| `meal_goldshire_perch.png` | `meal_02` | Goldshire Perch | a fish on a plate with lemons |
+| `meal_oily_blackmouth.png` | `meal_03` | Oily Blackmouth | four fish hung to dry |
+| `meal_bell_toll_bream.png` | `meal_04` | Bell-Toll Bream | a fish in a silver bowl set with a blue gem (a legend?) |
+| `meal_gilded_koi.png` | `meal_05` | Gilded Koi | fish rolls on a gold plate |
+| `meal_dockside_gulper.png` | `meal_06` | Dockside Gulper | a pot with a fish head and fin |
+| `meal_longjaw_mud_snapper.png` | `meal_07` | Longjaw Mud Snapper | a pot of fish and vegetable stew |
+| `meal_stockade_sucker.png` | `meal_08` | Stockade Sucker | a fish stuffed through its mouth with potatoes |
+| `meal_bristle_whisker_catfish.png` | `meal_09` | Bristle Whisker Catfish | an orange fish in a skillet of green sauce |
+| `meal_ghostscale_carp.png` | `meal_10` | Ghostscale Carp | a fish under herb sprigs |
+| `meal_rainbow_fin_albacore.png` | `meal_11` | Rainbow Fin Albacore | a grilled fish steak |
+| `meal_millrace_trout.png` | `meal_12` | Millrace Trout | a roast fish with lemon and potatoes |
+| `meal_emberscale_darter.png` | `meal_13` | Emberscale Darter | a blackened fillet on a board |
+| `meal_mirror_lake_shiner.png` | `meal_14` | Mirror Lake Shiner | a pie with a fish head through the crust |
+| `meal_darkshire_bleak.png` | `meal_15` | Darkshire Bleak | a soup with a whole small fish |
+| `meal_stonefield_carp.png` | `meal_16` | Stonefield Carp | fish balls in a bowl |
+| `meal_brilliant_smallfish.png` | `meal_17` | Brilliant Smallfish | fried small fish in a paper cone (Brilliant Smallfish?) |
+| `meal_duskfin.png` | `meal_18` | Duskfin | purple and pink fish cubes with a violet garnish |
+| `meal_redridge_bluegill.png` | `meal_19` | Redridge Bluegill | a red fish stew |
+| `meal_sorrowgill.png` | `meal_20` | Sorrowgill | a soup in a knot-patterned bowl (a legend?) |
+| `meal_everstill_perch.png` | `meal_21` | Everstill Perch | an orange fish on leaves |
+| `meal_dreaming_glassfin.png` | `meal_22` | Dreaming Glassfin | translucent raw slices (Dreaming Glassfin?) |
+| `meal_mithril_head_trout.png` | `meal_23` | Mithril Head Trout | a grilled fillet on a plate |
+| `meal_old_goldfin.png` | `meal_24` | Old Goldfin | a golden fish with lemon (Old Goldfin?) |
+| `meal_ravenwood_chub.png` | `meal_25` | Ravenwood Chub | a fish with bread in a basket |
+| `meal_everstill_whitefish.png` | `meal_26` | Everstill Whitefish | a paper parcel tied with string |
+| `meal_ironjaw_pike.png` | `meal_27` | Ironjaw Pike | a pike head on a grill |
+| `meal_slitherskin_mackerel.png` | `meal_28` | Slitherskin Mackerel | a soup with striped blue skin pieces (Slitherskin Mackerel?) |
+| `meal_hushed_bank_grayling.png` | `meal_29` | Hushed Bank Grayling | a fillet on a big leaf |
+| `meal_lakeshire_sunfish.png` | `meal_30` | Lakeshire Sunfish | a fish steak with lemon |
+| `meal_gravemoss_loach.png` | `meal_31` | Gravemoss Loach | leaf-wrapped rice rolls |
+| `meal_everstill_leviathan.png` | `meal_32` | Everstill Leviathan | a salt-crusted fish on paper |
+| `meal_harbour_herring.png` | `meal_33` | Harbour Herring | pickled fish in a jar (Harbour Herring?) |
+| `meal_northshire_brook_trout.png` | `meal_34` | Northshire Brook Trout | a pale fish soup with cabbage |
+| `meal_crystal_lake_glimmerfish.png` | `meal_35` | Crystal Lake Glimmerfish | a braided pasty |
+
+### Cooking grid recipe icons, placeholder
+
+The 44 grid recipes (11 effects, four band tiers each, spec #447) wear placeholders painted on
+2026-10-27: a bowl on the effect's colour, a border in the tier's quality colour (white, green,
+blue, purple) and one to four pips for band 1, 10, 20 or 30. 128 x 128 PNGs in
+`data/twilights-eve/art/`, named `meal_<recipe>.png`, band 1 first in each row. Paint over them
+under the same names.
+
+| Effect | Files |
 |---|---|
-| `meal_01` | three fish on a skewer |
-| `meal_02` | a fish on a plate with lemons |
-| `meal_03` | four fish hung to dry |
-| `meal_04` | a fish in a silver bowl set with a blue gem (a legend?) |
-| `meal_05` | fish rolls on a gold plate |
-| `meal_06` | a pot with a fish head and fin |
-| `meal_07` | a pot of fish and vegetable stew |
-| `meal_08` | a fish stuffed through its mouth with potatoes |
-| `meal_09` | an orange fish in a skillet of green sauce |
-| `meal_10` | a fish under herb sprigs |
-| `meal_11` | a grilled fish steak |
-| `meal_12` | a roast fish with lemon and potatoes |
-| `meal_13` | a blackened fillet on a board |
-| `meal_14` | a pie with a fish head through the crust |
-| `meal_15` | a soup with a whole small fish |
-| `meal_16` | fish balls in a bowl |
-| `meal_17` | fried small fish in a paper cone (Brilliant Smallfish?) |
-| `meal_18` | purple and pink fish cubes with a violet garnish |
-| `meal_19` | a red fish stew |
-| `meal_20` | a soup in a knot-patterned bowl (a legend?) |
-| `meal_21` | an orange fish on leaves |
-| `meal_22` | translucent raw slices (Dreaming Glassfin?) |
-| `meal_23` | a grilled fillet on a plate |
-| `meal_24` | a golden fish with lemon (Old Goldfin?) |
-| `meal_25` | a fish with bread in a basket |
-| `meal_26` | a paper parcel tied with string |
-| `meal_27` | a pike head on a grill |
-| `meal_28` | a soup with striped blue skin pieces (Slitherskin Mackerel?) |
-| `meal_29` | a fillet on a big leaf |
-| `meal_30` | a fish steak with lemon |
-| `meal_31` | leaf-wrapped rice rolls |
-| `meal_32` | a salt-crusted fish on paper |
-| `meal_33` | pickled fish in a jar (Harbour Herring?) |
-| `meal_34` | a pale fish soup with cabbage |
-| `meal_35` | a braided pasty |
+| stamina | `meal_hunters_fish_stew`, `meal_woodsmans_hotpot`, `meal_darkshire_gulper_pot`, `meal_ghostlight_stew` |
+| strength | `meal_spiced_fish_skewer`, `meal_brawlers_skewer`, `meal_ironjaw_kebab`, `meal_ember_truffle_kebab` |
+| agility | `meal_brookside_fry`, `meal_millrace_fry`, `meal_emberscale_fry`, `meal_truffled_grayling` |
+| intellect | `meal_abbey_mushroom_pie`, `meal_scholars_supper`, `meal_koi_and_ghostcap_pie`, `meal_dreaming_truffle_pie` |
+| spirit | `meal_monks_honey_broth`, `meal_vigil_broth`, `meal_mithril_honey_broth`, `meal_twilight_rite` |
+| xp | `meal_hearthside_fish_cakes`, `meal_travellers_supper`, `meal_lakeshire_fish_cakes`, `meal_whitefish_truffle_cakes` |
+| regen | `meal_lions_pride_chowder`, `meal_lakeshore_chowder`, `meal_hushed_bank_chowder`, `meal_gravemoss_chowder` |
+| speed | `meal_trail_fish_wrap`, `meal_ravenwood_wrap`, `meal_millrace_wrap`, `meal_runners_glassfin_wrap` |
+| pull | `meal_foragers_stew`, `meal_redridge_foragers_pot`, `meal_gravemoss_foragers_pot`, `meal_truffle_hunters_pot` |
+| rarity | `meal_anglers_soup`, `meal_ironjaw_anglers_soup`, `meal_lakeshire_anglers_soup`, `meal_hushed_bank_anglers_soup` |
+| lure | `meal_smoked_fish_jerky`, `meal_blackmouth_jerky`, `meal_ironjaw_jerky`, `meal_gravemoss_jerky` |
+
+### Cooking Journal bookmark, placeholder
+
+`crates/benilla-app/assets/ui/journal/prof_cooking.tga`, 128 x 128 RGBA TGA: the Journal's
+Cooking bookmark, beside `prof_fishing` and `prof_herbalism`. The placeholder is a bowl on brown.
 
 ### Crafting window
 
-The kitchen and alchemy table window (ADR 0025): a frame, a recipe list row, an ingredient slot
-and a commit button. The tickets name the files.
+The Kitchen window reuses the Journal's frame art (`journal\window_bg`, `slot`, `title_plaque`,
+`bottom_tab`, `divider`), so it needs no file of its own yet. The alchemy table's window is
+still to be specified.
