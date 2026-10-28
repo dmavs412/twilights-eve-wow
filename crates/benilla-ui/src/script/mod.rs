@@ -41,6 +41,7 @@ mod chat_window;
 mod clip;
 mod colorselect;
 mod container;
+mod cooking;
 mod craft;
 mod cursor;
 mod death;
@@ -178,6 +179,10 @@ pub use chat_window::{message_group_index, ChatWindowLook, MESSAGE_GROUPS};
 pub use container::{
     BagAutoStore, ContainerMove, ContainerSlot, ContainerState, EnchantView, PendingWrap,
     PetitionSlotView, RandomPropertyView, UiCursorMode,
+};
+pub use cooking::{
+    KitchenCall, KitchenCookedView, KitchenIngredientView, KitchenMode, KitchenOrderView,
+    KitchenPredictionView, KitchenRecipeView, KitchenView,
 };
 pub use craft::{CraftReagent, CraftRecipe, CraftState, CraftTooltip};
 pub use cursor::money::coin_icon;

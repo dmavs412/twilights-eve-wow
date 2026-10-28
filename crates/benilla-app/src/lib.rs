@@ -66,6 +66,7 @@ mod herb_patch;
 #[cfg(feature = "dev")]
 mod hover_log;
 mod items;
+mod kitchen;
 mod loading_screen;
 mod local_state;
 mod login;

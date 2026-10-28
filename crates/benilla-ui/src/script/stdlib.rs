@@ -97,6 +97,7 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
     super::clock::install(lua)?;
     super::fishing::install(lua)?;
     super::herbalism::install(lua)?;
+    super::cooking::install(lua)?;
     super::calling_choice::install(lua)?;
     super::zone_text::install(lua)?;
     lua.load(WOW_STDLIB)

@@ -285,6 +285,8 @@ fn pump(
         Option<ResMut<crate::calling_choice::CallingChoiceInbox>>,
         Option<ResMut<crate::herb_patch::HerbInbox>>,
         Option<ResMut<crate::herb_patch::HerbOutbox>>,
+        Option<ResMut<crate::kitchen::KitchenInbox>>,
+        Option<ResMut<crate::kitchen::KitchenOutbox>>,
     ),
 ) {
     let LocalRealm {
@@ -333,6 +335,12 @@ fn pump(
     }
     // The Forager's Grid's clicks (spec #435).
     if let Some(outbox) = reel.4.as_deref_mut() {
+        for command in outbox.0.drain(..) {
+            backing.handle(command);
+        }
+    }
+    // The Kitchen window's choices (ADR 0025).
+    if let Some(outbox) = reel.6.as_deref_mut() {
         for command in outbox.0.drain(..) {
             backing.handle(command);
         }
@@ -406,6 +414,20 @@ fn pump(
             }
             continue;
         }
+        // The open kitchen, its prediction, a cooked pot and its close go to the Kitchen window
+        // (ADR 0025).
+        if matches!(
+            event,
+            SessionEvent::Kitchen { .. }
+                | SessionEvent::KitchenPrediction { .. }
+                | SessionEvent::KitchenCooked { .. }
+                | SessionEvent::KitchenClosed
+        ) {
+            if let Some(inbox) = reel.5.as_deref_mut() {
+                inbox.0.push(event);
+            }
+            continue;
+        }
         // Fishing's bite, end and Angler Level go to the Reeling Bar (ADR 0018).
         if matches!(
             event,
@@ -431,6 +453,9 @@ fn pump(
                 inbox.0.push(SessionEvent::LoggedOut);
             }
             if let Some(inbox) = reel.3.as_deref_mut() {
+                inbox.0.push(SessionEvent::LoggedOut);
+            }
+            if let Some(inbox) = reel.5.as_deref_mut() {
                 inbox.0.push(SessionEvent::LoggedOut);
             }
         }

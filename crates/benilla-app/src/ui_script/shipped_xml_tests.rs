@@ -1958,6 +1958,9 @@ fn the_layer_does_not_grow() {
         "FishingJournal.xml",
         // The Forager's Grid window (spec #435): the realm's open grid, its clicks and its close.
         "HerbPatch.xml",
+        // The Kitchen window (spec #447): the realm's book, pantry, prediction and orders, and
+        // the player's choices.
+        "Kitchen.xml",
         // The Calling Choice popup (spec #414): the realm's Tier 1 options and the pick.
         "CallingChoice.xml",
     ];
