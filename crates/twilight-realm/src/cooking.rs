@@ -231,7 +231,16 @@ fn check(file: &File) {
                     "dish {} needs an effect, a tier and a [[fish]] teacher",
                     r.key
                 );
-                let band = file.tier.band_of(ingredient_level(teacher.unwrap()));
+                // The shipped pools only: a test's pool may list the fish at another level.
+                let fish = teacher.unwrap();
+                let level = crate::fish::shipped_pools()
+                    .iter()
+                    .flat_map(|p| &p.fish)
+                    .filter(|f| f.item == fish)
+                    .map(|f| f.level)
+                    .min()
+                    .unwrap_or(1) as u8;
+                let band = file.tier.band_of(level);
                 assert!(
                     r.tier == Some(band),
                     "dish {}'s tier is not {band}, the band of its fish's level",

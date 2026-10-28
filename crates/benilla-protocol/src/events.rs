@@ -190,6 +190,39 @@ pub struct HerbKnown {
     pub rows: Vec<u8>,
 }
 
+/// Twilight's Eve, not 1.12: one page of a kitchen's recipe book (ADR 0025), as far as the player
+/// knows it.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct KitchenRecipe {
+    pub key: String,
+    /// 0 tier, 1 dish, 2 legend, 3 plant.
+    pub kind: u8,
+    /// "+Stamina", "More XP", "Extra herb pulls", "+Agility and move speed", ...
+    pub effect: String,
+    /// "Combat Well Fed", "Legendary double meal", ...
+    pub family: String,
+    /// 1, 10, 20 or 30; 0 for a legend or plant meal.
+    pub band: u8,
+    pub known: bool,
+    /// The meal's name and item; "" and 0 while unknown.
+    pub name: String,
+    pub meal: u32,
+    /// The ingredient items; an unrevealed slot of an unknown recipe is 0.
+    pub slots: Vec<u32>,
+}
+
+/// Twilight's Eve, not 1.12: one ingredient the player holds, for a kitchen's pantry.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct KitchenIngredient {
+    pub item: u32,
+    pub count: u32,
+    pub level: u8,
+    /// A cooking herb's category, or "fish", "legend" or "plant".
+    pub category: String,
+    /// Never cooked with: cooking it reveals where it goes.
+    pub untried: bool,
+}
+
 /// Which Satchel item: its entry, and a piece's durability (`None` for a counted row).
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SatchelPick {
@@ -452,6 +485,40 @@ pub enum SessionEvent {
     /// Twilight's Eve, not 1.12: the Forager's Grid closed. `reason`: 0 out of pulls, 1 every tile
     /// pulled, 2 the player left, 3 damage, 4 walked away. Never wire-decoded.
     HerbGridClosed { patch: u64, reason: u8 },
+    /// Twilight's Eve, not 1.12: the open kitchen (ADR 0025), sent when a cook opens it and after
+    /// every cook. `lessons` are cook, recipe, eat, order, reveal, discover. Never wire-decoded.
+    Kitchen {
+        npc: u64,
+        /// The kitchen's name and its cook's.
+        name: String,
+        cook: String,
+        /// The tier recipes in `cooking.toml` order, then the known dishes, legends and plants.
+        book: Vec<KitchenRecipe>,
+        /// Sorted by rarity, then level.
+        pantry: Vec<KitchenIngredient>,
+        lessons: [bool; 6],
+    },
+    /// Twilight's Eve, not 1.12: what a filled pot would cook. `meal` is 0 for a trial, which
+    /// cooks whatever it matches. Never wire-decoded.
+    KitchenPrediction {
+        ready: bool,
+        meal: u32,
+        note: String,
+        why: Vec<String>,
+    },
+    /// Twilight's Eve, not 1.12: a pot was cooked into `meal`, Hearty Mush when `mush`; `close`
+    /// when one item kept it from a recipe. `revealed` is (item, unknown recipes it appears in);
+    /// `line` is the cook's words. Never wire-decoded.
+    KitchenCooked {
+        meal: u32,
+        mush: bool,
+        close: bool,
+        learned: Vec<String>,
+        revealed: Vec<(u32, u32)>,
+        line: String,
+    },
+    /// Twilight's Eve, not 1.12: the kitchen closed. Never wire-decoded.
+    KitchenClosed,
     /// `SMSG_CHAR_CREATE`/`_DELETE`'s raw `WorldResult`; on success a fresh roster comes first.
     CharActionResult { action: CharAction, code: u8 },
     /// We are in the world; the IO thread emits this before any object update.

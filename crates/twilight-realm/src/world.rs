@@ -46,6 +46,8 @@ pub(crate) use phase::{DoorClick, LockedClick};
 mod sleep;
 pub(crate) use fishing::{angler_options, find_hint, hint_options, is_hint_option};
 pub(crate) use herbalism::{herbalist_options, HerbPatches};
+pub(crate) mod kitchen;
+pub(crate) use kitchen::{kitchen_options, Kitchens};
 pub(crate) use phase::creatures;
 mod procs;
 mod regen;

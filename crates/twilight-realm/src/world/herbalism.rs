@@ -893,7 +893,11 @@ fn collect(
                 (base as f32 * h.colour_factor(level.saturating_sub(plant_level))).round() as u32;
             match c.herb_picks.iter_mut().find(|(i, _)| *i == item) {
                 Some(pick) => pick.1 += 1,
-                None => c.herb_picks.push((item, 1)),
+                None => {
+                    c.herb_picks.push((item, 1));
+                    // The first pick of a legendary plant teaches its meal (ADR 0025).
+                    super::kitchen::learn_first(c, item, "pick", events);
+                }
             }
             let item_name = crate::items::template(item).map_or("a plant", |t| t.name.as_str());
             let title = if let Some([lo, hi]) = money {

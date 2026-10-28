@@ -11,8 +11,9 @@ pub mod world;
 pub use auth::AuthReject;
 pub use events::{
     decode, CallingOption, CharAction, EntityKind, FishPage, HerbBasketRow, HerbKnown, HerbLog,
-    HerbTile, LoginRefusal, LoginStage, MapIcon, MapMark, MarkedQuest, MoveSpeeds, Poll,
-    SatchelPick, SatchelRow, SessionEnd, SessionEvent, SessionEventKind,
+    HerbTile, KitchenIngredient, KitchenRecipe, LoginRefusal, LoginStage, MapIcon, MapMark,
+    MarkedQuest, MoveSpeeds, Poll, SatchelPick, SatchelRow, SessionEnd, SessionEvent,
+    SessionEventKind,
 };
 pub use messages::field;
 pub use messages::{

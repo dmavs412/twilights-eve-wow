@@ -922,7 +922,12 @@ impl InWorld {
                 gain_angler_xp(c, fish::angler().legend_bonus_xp);
             }
             events.push(angler(c));
+            let first = !c.fish_log.iter().any(|l| l.item == item);
             record_catch(c, item, 1 + bite.extra_fish, perfect, bite.place);
+            // The first catch of a fish or a legend teaches its dish (ADR 0025).
+            if first {
+                super::kitchen::learn_first(c, item, "catch", events);
+            }
             // Every catch in the pool rolls its Legend Rumours.
             let mut hinted = false;
             for (legend, note) in rumours::legend_catch_hits(c, &bite.pool.key, rng) {

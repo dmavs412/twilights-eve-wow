@@ -220,6 +220,18 @@ struct Save {
     herb_consumable: Option<u32>,
     #[serde(default, skip_serializing_if = "is_zero")]
     perk_resets: u32,
+    /// Cooking (ADR 0025), all added within version 5: a save without them knows no recipe and
+    /// has cooked nothing.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    cook_known: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    cook_tried: Vec<u32>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    cook_visited: Vec<String>,
+    #[serde(default)]
+    cook_lessons: [bool; 6],
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    dish_log: Vec<crate::characters::DishLog>,
     /// The entry the empty Lure slot waits to refill with (version 5). A plain key, so before the
     /// gear tables.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -474,6 +486,11 @@ pub(crate) fn export(c: &Char) -> String {
         herb_tool: c.herb_tool,
         herb_consumable: c.herb_consumable,
         perk_resets: c.perk_resets,
+        cook_known: c.cook_known.clone(),
+        cook_tried: c.cook_tried.clone(),
+        cook_visited: c.cook_visited.clone(),
+        cook_lessons: c.cook_lessons,
+        dish_log: c.dish_log.clone(),
         lure_waiting: c.lure_waiting,
         calling_chosen: c.calling_chosen,
         fishing_pole: saved_gear(&c.fishing_pole),
@@ -583,6 +600,11 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         herb_tool: s.herb_tool,
         herb_consumable: s.herb_consumable,
         perk_resets: s.perk_resets,
+        cook_known: s.cook_known,
+        cook_tried: s.cook_tried,
+        cook_visited: s.cook_visited,
+        dish_log: s.dish_log,
+        cook_lessons: s.cook_lessons,
         fishing_pole: None,
         fishing_lure: None,
         lure_waiting: s.lure_waiting,

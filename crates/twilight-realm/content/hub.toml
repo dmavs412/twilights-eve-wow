@@ -1673,13 +1673,14 @@ subname = "Cook"
 level = 10
 display_id = 1293
 faction_template = 35
-role = "ambient"
+role = "cook"
 npc_flags = 0x1
 map = 0
 position = [-9466.99, -4.534, 57.033]
 orientation = 1.6406
 text_id = 64158
-greeting = "Thirty mouths on the floor and two pots. When this kitchen cooks for travellers again you'll smell it from the road. Until then, Toddrick's your man."
+cook = true
+greeting = "Two pots and thirty mouths. Use the kitchen whenever you like, $C; I'll show you my recipes the first time you cook."
 
 # the house east of town, ground floor
 [[npc]]
@@ -1792,6 +1793,25 @@ text_id = 64141
 teaches_herbalism = true
 stock = [961201, 961203, 961205]
 greeting = "The brothers keep the Abbey's herb beds, $C, and the beds keep us in tea and salve. I can teach you to gather what grows wild around here, and sell you a few things for the work."
+
+# ── Brother Hollis, the Abbey's cook (#491) ──────────────────────────────────────────────────────
+# By the Abbey's east door, beside Brother Ansel's herb beds. His gossip opens the Abbey kitchen.
+[[npc]]
+guid = 9300064
+entry = 190074
+name = "Brother Hollis"
+subname = "Cook"
+level = 10
+display_id = 3277
+faction_template = 35
+role = "cook"
+npc_flags = 0x1
+map = 0
+position = [-8880.0, -200.0, 80.32]
+orientation = 3.14
+text_id = 64162
+cook = true
+greeting = "The brothers eat what the river and the beds give us, $C. Cook with me any time; I'll teach you the Abbey's dishes on your first go."
 
 # ── Hedda Thornwick, the Goldshire herbalist (#441) ──────────────────────────────────────────────
 # Gives the Shears quest, sells every herbalist's good and forgets a Herbalist's perks for money.

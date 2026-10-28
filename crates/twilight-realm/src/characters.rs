@@ -130,6 +130,25 @@ pub(crate) struct Char {
     pub(crate) herb_consumable: Option<u32>,
     /// How many times they have reset their perks.
     pub(crate) perk_resets: u32,
+    /// Cooking (ADR 0025): the recipe keys they know, in the order learned.
+    pub(crate) cook_known: Vec<String>,
+    /// The items they have cooked with at least once, ascending.
+    pub(crate) cook_tried: Vec<u32>,
+    /// The kitchen keys they have cooked at.
+    pub(crate) cook_visited: Vec<String>,
+    /// One row per known recipe.
+    pub(crate) dish_log: Vec<DishLog>,
+    /// The kitchen lessons: cook, recipe, eat, order, reveal, discover.
+    pub(crate) cook_lessons: [bool; 6],
+}
+
+/// A known recipe's line in the Dish Journal: how often it was cooked, and when and where first
+/// ("Day 2, 08:00, Lion's Pride kitchen"; "" before the first cook).
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct DishLog {
+    pub(crate) recipe: String,
+    pub(crate) cooked: u32,
+    pub(crate) first: String,
 }
 
 /// What being **Marked** holds (#179): the logged-in time left, and the hunter that won, as
@@ -247,6 +266,11 @@ impl Characters {
             herb_tool: None,
             herb_consumable: None,
             perk_resets: 0,
+            cook_known: Vec::new(),
+            cook_tried: Vec::new(),
+            cook_visited: Vec::new(),
+            dish_log: Vec::new(),
+            cook_lessons: [false; 6],
         });
         CHAR_CREATE_SUCCESS
     }

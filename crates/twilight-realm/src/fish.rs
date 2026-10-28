@@ -753,6 +753,11 @@ pub(crate) fn shipped_fish() -> &'static [Fish] {
     &file().fish
 }
 
+/// The shipped `[[pool]]` rows, without any a test added.
+pub(crate) fn shipped_pools() -> &'static [Pool] {
+    &file().pool
+}
+
 /// The shipped `[[legend]]` rows, without any a test added.
 pub(crate) fn shipped_legends() -> &'static [Legend] {
     &file().legend

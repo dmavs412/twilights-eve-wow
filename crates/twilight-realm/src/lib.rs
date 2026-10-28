@@ -175,6 +175,32 @@ pub enum HerbAction {
     TourSeen,
 }
 
+/// How a kitchen pot is filled (ADR 0025): from a known recipe, guessing an unknown recipe's
+/// hidden slots, or anything at all.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum KitchenMode {
+    Recipe,
+    Discover,
+    Experiment,
+}
+
+/// What the player does at an open kitchen. `slots` are item entries, 0 for an empty slot.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
+pub enum KitchenAction {
+    /// What the pot would cook, answered with `KitchenPrediction`.
+    Predict {
+        mode: KitchenMode,
+        recipe: String,
+        slots: Vec<u32>,
+    },
+    Cook {
+        mode: KitchenMode,
+        recipe: String,
+        slots: Vec<u32>,
+    },
+    Close,
+}
+
 /// Everything a client can ask of the realm. The glue maps the client's own commands onto these
 /// and drops the rest.
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -220,6 +246,8 @@ pub enum RealmCommand {
     },
     /// An action on the open Forager's Grid (spec #435).
     Herb(HerbAction),
+    /// An action at the open kitchen (ADR 0025).
+    Kitchen(KitchenAction),
     /// Click off one of the player's own buffs.
     CancelAura {
         spell_id: u32,
@@ -631,6 +659,8 @@ pub struct Realm {
     objects: objects::Objects,
     /// Each character's Herb Patches (#438): not saved.
     herb_patches: world::HerbPatches,
+    /// Each character's open kitchen: not saved.
+    kitchens: world::Kitchens,
     /// The Rumours under way: not saved.
     rumours: rumours::Rumours,
 }
@@ -1524,6 +1554,7 @@ impl Realm {
             } => self.fishing_result(won, perfect, treasure, secs),
             RealmCommand::FishingChoice { reel } => self.fishing_choice(reel),
             RealmCommand::Herb(action) => self.herb_action(action),
+            RealmCommand::Kitchen(action) => self.kitchen_action(action),
             RealmCommand::ChooseCalling { quest } => {
                 self.change_satchel(|c, events| calling_choice::choose(c, quest, events))
             }
@@ -2042,6 +2073,7 @@ impl Realm {
         let ticked = w.tick(dt, self.wall, host, c, &mut self.rng, &mut self.events);
         self.tick_fishing(dt, host);
         self.tick_herbs(host);
+        self.check_open_kitchen();
         let Some(w) = &mut self.world else {
             return;
         };
@@ -2416,6 +2448,7 @@ impl Realm {
             return;
         };
         self.forget_herb_patches(w.guid);
+        self.kitchens.close(w.guid);
         // Leaving dead is a release: the save puts the character where it comes back.
         if let Some(c) = self.characters.get_mut(w.guid) {
             w.release(c, &mut Vec::new());
