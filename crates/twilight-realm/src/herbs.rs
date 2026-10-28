@@ -429,6 +429,21 @@ mod tests {
     }
 
     #[test]
+    fn every_plant_goes_to_the_herbalism_satchel() {
+        for z in zones() {
+            for p in plants_in(&z.key) {
+                assert_eq!(
+                    crate::items::template(p.item).and_then(|t| t.journal),
+                    Some(crate::items::Profession::Herbalism),
+                    "plant item {} in zone {}",
+                    p.item,
+                    z.key
+                );
+            }
+        }
+    }
+
+    #[test]
     fn the_colour_bands_fall_to_grey() {
         let h = herbalist();
         assert_eq!(h.colour_factor(2), 1.0);
