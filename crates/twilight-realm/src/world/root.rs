@@ -18,8 +18,8 @@ pub(super) struct Root {
 }
 
 impl InWorld {
-    /// The player can't move for `duration_ms`; a root already holding is lengthened, never
-    /// shortened.
+    /// The player can't move for `duration_ms`, less under a Well Fed `cc_half`; a root already
+    /// holding is lengthened, never shortened.
     pub(super) fn start_root(
         &mut self,
         spell_id: u32,
@@ -29,6 +29,7 @@ impl InWorld {
         if !self.player.alive() {
             return;
         }
+        let duration_ms = self.fed_cc_ms(duration_ms, false);
         let secs = clock::secs(duration_ms);
         self.show_root(spell_id, duration_ms, events);
         if let Some(root) = &mut self.root {

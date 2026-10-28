@@ -1352,6 +1352,18 @@ fn a_lure_wear_buff_of_a_hundred_percent_keeps_the_lure_whole_at_a_bite() {
 }
 
 #[test]
+fn old_goldfins_meal_turns_every_common_bite_into_an_uncommon_of_the_pool() {
+    // The Commons Pond: a common smallfish and an uncommon Mirror Lake Shiner, both of which bite
+    // without the meal (`worg_haunch_drops_common_fish_from_the_roll`).
+    let fed = format!(
+        "\n[fishing_pole]\nslot = 0\nentry = {FISHING_POLE}\ncount = 1\n\
+         \n[well_fed]\nmeal = 962204\nleft_secs = 3600.0\n"
+    );
+    let mut a = with_gear(Side::SouthWest, &fed, &[]);
+    assert_eq!(bitten(&mut a, 15), [960403].into());
+}
+
+#[test]
 fn a_lure_is_never_repaired_or_charged_for() {
     use twilight_realm::rules::durability::repair_cost;
     assert_eq!(repair_cost(SHINY_BAUBLE, 12), 0);

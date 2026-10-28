@@ -286,10 +286,12 @@ impl InWorld {
         self.well_fed_changed(c, events);
     }
 
-    /// `c.well_fed` changed: the stats, the speed and the aura follow it.
-    fn well_fed_changed(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+    /// `c.well_fed` changed: the stats, the speed and the aura follow it, and a damage stack
+    /// built under the old one falls away.
+    pub(super) fn well_fed_changed(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
         let speed_was = self.fed_speed_mul();
         self.fed = cooking::fed(c);
+        self.damage_stack = 0;
         self.refresh_gear(c, events);
         if self.fed_speed_mul() != speed_was {
             self.update_speed(self.guid, events);

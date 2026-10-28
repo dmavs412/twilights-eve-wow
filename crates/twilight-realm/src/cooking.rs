@@ -95,6 +95,13 @@ pub(crate) struct Unique {
 
 pub(crate) type Special = Unique;
 
+impl Unique {
+    /// Its number `name`; 0 for one the row does not give.
+    pub(crate) fn param(&self, name: &str) -> u32 {
+        self.params.get(name).copied().unwrap_or(0)
+    }
+}
+
 /// A plant meal's stat.
 #[derive(Deserialize, Debug)]
 pub(crate) struct PlantStat {
@@ -502,6 +509,11 @@ impl Buff {
             _ => return,
         };
         *field += value;
+    }
+
+    /// Its special `key`, if it has one.
+    pub(crate) fn special(&self, key: &str) -> Option<&'static Special> {
+        self.specials.iter().copied().find(|s| s.key == key)
     }
 }
 

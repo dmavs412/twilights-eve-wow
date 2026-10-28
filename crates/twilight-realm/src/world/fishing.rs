@@ -384,6 +384,30 @@ fn roll_weight(f: &PoolFish, minute: u32, bait: Option<u32>, rarity_pct: u32) ->
     })
 }
 
+/// A Well Fed `rarity_up`: a common `picked` becomes a random uncommon of `rows`, an uncommon a
+/// random rare, when `rows` has one.
+fn rarity_up(
+    rows: &[&'static PoolFish],
+    picked: &'static PoolFish,
+    rng: &mut Rng,
+) -> &'static PoolFish {
+    let next = match fish::fish(picked.item).map(|d| d.rarity) {
+        Some(fish::Rarity::Common) => fish::Rarity::Uncommon,
+        Some(fish::Rarity::Uncommon) => fish::Rarity::Rare,
+        _ => return picked,
+    };
+    let up: Vec<&'static PoolFish> = rows
+        .iter()
+        .copied()
+        .filter(|f| fish::fish(f.item).is_some_and(|d| d.rarity == next))
+        .collect();
+    if up.is_empty() {
+        picked
+    } else {
+        up[rng.below(up.len() as u32) as usize]
+    }
+}
+
 /// One of `rows` by `weight`.
 fn pick<'a, T>(rows: &'a [T], weight: impl Fn(&T) -> f32, rng: &mut Rng) -> Option<&'a T> {
     let total: f32 = rows.iter().map(&weight).sum();
@@ -777,18 +801,24 @@ impl InWorld {
                 && l.criteria_hold(water, boost.bait, minute)
                 && rng.frand(0.0, 100.0) < l.chance
         });
-        let rarity_pct = crate::cooking::fed(c).map_or(0, |f| f.rarity_pct);
+        let fed = crate::cooking::fed(c);
+        let rarity_pct = fed.as_ref().map_or(0, |f| f.rarity_pct);
+        let rarer = fed.is_some_and(|f| f.special("rarity_up").is_some());
         let rolled = match legend {
             Some(l) => Some((l.item, l.level, l.style, l.difficulty, true)),
-            None => pick(
-                &biters(pool, effective, kind, water, boost.bait, boost.lure, minute),
-                |f| roll_weight(f, minute, boost.bait, rarity_pct),
-                rng,
-            )
-            .and_then(|f| {
-                let def = fish::fish(f.item)?;
-                Some((f.item, f.level, def.style, def.difficulty, false))
-            }),
+            None => {
+                let rows = biters(pool, effective, kind, water, boost.bait, boost.lure, minute);
+                pick(
+                    &rows,
+                    |f| roll_weight(f, minute, boost.bait, rarity_pct),
+                    rng,
+                )
+                .map(|&f| if rarer { rarity_up(&rows, f, rng) } else { f })
+                .and_then(|f| {
+                    let def = fish::fish(f.item)?;
+                    Some((f.item, f.level, def.style, def.difficulty, false))
+                })
+            }
         };
         let (Some((item, level, style, base, legendary)), Some(f)) =
             (rolled, self.fishing.as_mut())

@@ -99,6 +99,7 @@ impl InWorld {
                     school: patch.school,
                     through_cover: true,
                     root_ms: 0,
+                    level: None,
                 });
                 patch.next += patch.tick_secs;
             }

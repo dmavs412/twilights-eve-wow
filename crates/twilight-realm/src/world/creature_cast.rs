@@ -173,6 +173,7 @@ impl InWorld {
                     school: spell.school,
                     through_cover: false,
                     root_ms: 0,
+                    level: Some(mob.level()),
                 });
             } else if let CreatureEffect::Nova { damage, radius } = spell.effect {
                 self.gazes.push(Gaze {
@@ -184,6 +185,7 @@ impl InWorld {
                     school: spell.school,
                     through_cover: true,
                     root_ms: 0,
+                    level: Some(mob.level()),
                 });
             } else if let CreatureEffect::Root {
                 radius,
@@ -199,6 +201,7 @@ impl InWorld {
                     school: spell.school,
                     through_cover: true,
                     root_ms: duration_ms,
+                    level: Some(mob.level()),
                 });
             } else if let CreatureEffect::GroundPatch {
                 radius,

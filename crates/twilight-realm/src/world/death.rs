@@ -58,6 +58,10 @@ impl InWorld {
     /// The player was killed: the fight ends and the toll is taken, once
     /// (`Player::DurabilityLossAll`, `SMSG_DURABILITY_DAMAGE_DEATH`; the money is the spec's).
     pub(super) fn die(&mut self, c: &mut Char, events: &mut Vec<SessionEvent>) {
+        // A Well Fed `revive` cancels it, once.
+        if self.fed_revive(c, events) {
+            return;
+        }
         let p = &mut self.player;
         p.dead = true;
         // Death empties a rage bar; mana and energy keep what they held.

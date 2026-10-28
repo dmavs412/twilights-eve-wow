@@ -12,6 +12,7 @@ impl InWorld {
     /// Regeneration goes on by `dt`. A fight, or a full bar, restarts the tick.
     pub(super) fn regenerate(&mut self, dt: f32, c: &Char, events: &mut Vec<SessionEvent>) {
         let max = cast::buffed(&self.player.stats, &self.skills).max_health;
+        let fed = self.fed_regen_pct();
         let p = &mut self.player;
         if !p.alive() || p.in_combat || p.health >= max {
             p.regen = 0.0;
@@ -21,7 +22,6 @@ impl InWorld {
         let mut healed = false;
         while p.regen >= regen::TICK_SECS {
             p.regen -= regen::TICK_SECS;
-            let fed = crate::cooking::fed(c).map_or(0, |f| f.regen_pct);
             let pct = crate::talents::health_regen_pct(c) + fed;
             p.health = (p.health + regen::tick_heal(p.stats.base[4], pct)).min(max);
             healed = true;

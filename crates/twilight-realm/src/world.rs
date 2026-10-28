@@ -52,6 +52,7 @@ pub(crate) use phase::creatures;
 mod procs;
 mod regen;
 mod rest;
+mod specials;
 
 pub(crate) use dungeon::come_out;
 
@@ -164,6 +165,9 @@ pub(crate) struct Gaze {
     pub(crate) through_cover: bool,
     /// Not damage but a root of this many milliseconds; 0 for damage.
     pub(crate) root_ms: u32,
+    /// The caster's level, which a shard's player does not hold the caster to read; `None` for
+    /// a ground patch.
+    pub(crate) level: Option<u8>,
 }
 
 /// A GameObject the Phase sees appear or go: a creature spell's ground patch.
@@ -379,6 +383,13 @@ pub(crate) struct InWorld {
     /// The Well Fed buff the character is under, as `Char::well_fed` names it: what the speed
     /// and the mana regeneration read, which have no `Char` to hand.
     fed: Option<crate::cooking::Buff>,
+    /// A Well Fed `damage_stack`'s percent, built by this fight's landed hits.
+    damage_stack: u32,
+    /// A Well Fed `melee_reflect`'s returns owed: `(mob, damage)`, paid once the mobs have
+    /// ticked.
+    reflected: Vec<(u64, u32)>,
+    /// Whether the game clock was in the night block at this tick.
+    night: bool,
 }
 
 impl InWorld {
@@ -516,6 +527,9 @@ impl InWorld {
             victor_flag: None,
             closed_hush: 0.0,
             fed: crate::cooking::fed(c),
+            damage_stack: 0,
+            reflected: Vec::new(),
+            night: false,
         };
         events.push(w.player_create(c));
         w.show_well_fed(c, events);
@@ -725,6 +739,7 @@ impl InWorld {
     ) -> Ticked {
         let mut ticked = Ticked::default();
         self.closed_hush = (self.closed_hush - dt).max(0.0);
+        self.night = crate::fish::Block::Night.holds(game_clock::minute_of_day(wall));
         if self.transfer {
             return ticked;
         }
@@ -807,6 +822,7 @@ impl InWorld {
                 self.mob_tick(i, dt, host, c, rng, events, &mut ticked);
             }
         }
+        self.pay_reflected(c, rng, events, &mut ticked);
         self.skills_tick(dt, wall, c, rng, events, &mut ticked);
         self.movement_tick(dt, c, rng, events, &mut ticked);
         self.fear_tick(dt, host, c, rng, events);
@@ -852,9 +868,11 @@ impl InWorld {
     }
 
     /// How close the player may come before an idle `mob` notices them: a stealthed player is
-    /// noticed only inside the short stealth range.
+    /// noticed only inside the short stealth range, and a Well Fed `night_aggro_half` shrinks it
+    /// at night.
     fn notice_radius(&self, mob: &Mob, player_level: u8) -> f32 {
-        let r = aggro::radius(mob.template.detection_range, player_level, mob.level());
+        let r = aggro::radius(mob.template.detection_range, player_level, mob.level())
+            * self.night_notice_mul();
         if self.skills.stealthed() {
             r.min(aggro::stealth_radius(player_level, mob.level()))
         } else {
@@ -1112,6 +1130,7 @@ impl InWorld {
         {
             self.white_swing(i, from_front, false, false, c, rng, events, ticked);
         }
+        self.fed_swing_landed(i, from_front, may_swing_again, c, rng, events, ticked);
     }
 
     /// A mob's tick: chase, swing, or walk home.
@@ -1383,7 +1402,7 @@ impl InWorld {
                 hit_info: 0,
             },
         ));
-        self.player_takes(gaze.caster, gaze.damage, gaze.school, events);
+        self.player_takes_at(gaze.caster, gaze.level, gaze.damage, gaze.school, events);
     }
 
     /// The player loses `damage` to a creature's blow or spell: rage from it, and a timed cast
@@ -1395,11 +1414,26 @@ impl InWorld {
         school: crate::rules::school::School,
         events: &mut Vec<SessionEvent>,
     ) {
+        self.player_takes_at(from, None, damage, school, events);
+    }
+
+    /// [`Self::player_takes`] from an attacker of `level`, when the attacker is not one of this
+    /// world's mobs to read it from.
+    fn player_takes_at(
+        &mut self,
+        from: u64,
+        level: Option<u8>,
+        damage: u32,
+        school: crate::rules::school::School,
+        events: &mut Vec<SessionEvent>,
+    ) {
         if damage > 0 {
             self.last_hit_by = Some(from);
         }
         self.skills.break_stealth(events);
+        let damage = self.fed_damage_taken(from, level, damage, school);
         let damage = self.skills.absorb(damage, school, events);
+        self.fed_reflect(from, damage, school);
         self.hurt |= damage > 0;
         let p = &mut self.player;
         p.health = p.health.saturating_sub(damage);
@@ -1535,6 +1569,7 @@ impl InWorld {
             };
             self.take_credit(credit, c, rng, events, ticked);
         }
+        self.fed_kill_heal(events);
         self.proc(
             crate::rules::procs::Happened {
                 was_ms: 0,
@@ -1753,11 +1788,13 @@ impl InWorld {
                 )],
             ));
         }
+        // A fight's damage stack falls away when it ends.
+        if flipped && !in_combat {
+            self.damage_stack = 0;
+        }
         // A Well Fed regeneration counts out of combat only.
-        let fed_pct = match &self.fed {
-            Some(f) if !in_combat => f.regen_pct,
-            _ => 0,
-        };
+        let fed_pct = if in_combat { 0 } else { self.fed_regen_pct() };
+        let p = &mut self.player;
         let mana_regen = p.stats.mana_regen * (1.0 + f64::from(fed_pct) / 100.0);
         if p.power.regenerate(dt, in_combat, mana_regen) {
             events.push(values(self.guid, &[p.power.field()]));

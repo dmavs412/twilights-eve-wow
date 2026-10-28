@@ -4544,7 +4544,8 @@ impl InWorld {
         damage
     }
 
-    /// The player's melee blow landed on `target`: the procs on a melee hit.
+    /// The player's melee blow landed on `target`: the procs on a melee hit, and a Well Fed
+    /// damage stack grows.
     pub(super) fn melee_hit(
         &mut self,
         target: u64,
@@ -4553,6 +4554,7 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
+        self.fed_stack_hit();
         self.proc(
             crate::rules::procs::Happened {
                 was_ms: 0,
@@ -4571,10 +4573,10 @@ impl InWorld {
     }
 
     /// `damage` the player deals, raised by their talents for the weapon in hand and by their
-    /// buffs.
+    /// buffs, then by a Well Fed damage stack.
     pub(super) fn dealt(&self, c: &Char, damage: u32) -> u32 {
         let pct = crate::talents::weapon_damage_pct(c) + self.skills.damage_pct();
-        damage * (100 + pct) / 100
+        damage * (100 + pct) / 100 * (100 + self.damage_stack) / 100
     }
 
     /// A melee blow of the player's landed `damage` on `from`: under Sweeping Strikes, the
@@ -4880,7 +4882,7 @@ impl InWorld {
     }
 
     /// `target` loses `damage`; at 0 it dies at the player's hand.
-    fn hurt(
+    pub(super) fn hurt(
         &mut self,
         target: u64,
         damage: u32,
@@ -5566,6 +5568,7 @@ impl InWorld {
         // A heal lands on its caster in `mob_cast`, which holds the mob.
         use crate::creature_spells::CreatureEffect;
         if let CreatureEffect::Fear { duration_ms } = spell.effect {
+            let duration_ms = self.fed_cc_ms(duration_ms, true);
             let aura = Aura {
                 unit: self.guid,
                 spell_id: spell.spell_id,
