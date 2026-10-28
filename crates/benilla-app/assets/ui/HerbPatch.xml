@@ -65,6 +65,18 @@
         BENILLA_HERB_XP_COLOUR = { 0.541, 0.361, 1.000 }
         BENILLA_HERB_AXIS_COLOUR = { 0.788, 0.690, 0.541 }
         BENILLA_HERB_SIGHT_PICKS = 3
+        BENILLA_HERB_TOUR_GOLD = { 1.000, 0.820, 0.000 }
+        BENILLA_HERB_TOUR_PAD = 4
+        BENILLA_HERB_TOUR_GAP = 12
+        BENILLA_HERB_TOUR_WIDTH = 260
+        BENILLA_HERB_TOUR_HEIGHT = 124
+        -- Each Tool skill in a sentence, %s its cost in pulls. The realm sends no tuning, so the
+        -- line length and the snip bonus are written in here.
+        BENILLA_HERB_TOUR_SKILLS = {
+            Sweep = "Sweep pulls a line of 3 tiles for %s",
+            Probe = "Probe marks the 3×3 around a tile for %s",
+            Snip = "Snip pulls one tile carefully for %s: a thorn costs nothing extra and a plant yields 1 more",
+        }
 
         BenillaHerbState = { mode = nil, across = true, sight = {}, log = {}, missing = false, start = 0, clock = 0 }
 
@@ -103,28 +115,29 @@
             return n .. " " .. word .. "s"
         end
 
-        -- Four 1 px lines along the frame's edges, `out` units outside them.
-        function BenillaHerb_Lines(frame, out, r, g, b, a)
+        -- Four lines `w` units thick (1 when nil) along the frame's edges, `out` units outside them.
+        function BenillaHerb_Lines(frame, out, r, g, b, a, w)
+            w = w or 1
             local top = frame:CreateTexture(nil, "BORDER")
             top:SetTexture(r, g, b, a)
             top:SetPoint("TOPLEFT", frame, "TOPLEFT", -out, out)
             top:SetPoint("TOPRIGHT", frame, "TOPRIGHT", out, out)
-            top:SetHeight(1)
+            top:SetHeight(w)
             local bottom = frame:CreateTexture(nil, "BORDER")
             bottom:SetTexture(r, g, b, a)
             bottom:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", -out, -out)
             bottom:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", out, -out)
-            bottom:SetHeight(1)
+            bottom:SetHeight(w)
             local left = frame:CreateTexture(nil, "BORDER")
             left:SetTexture(r, g, b, a)
             left:SetPoint("TOPLEFT", frame, "TOPLEFT", -out, out)
             left:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", -out, -out)
-            left:SetWidth(1)
+            left:SetWidth(w)
             local right = frame:CreateTexture(nil, "BORDER")
             right:SetTexture(r, g, b, a)
             right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", out, out)
             right:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", out, -out)
-            right:SetWidth(1)
+            right:SetWidth(w)
         end
 
         -- The panel recipe: a brown gradient, a gold line on each edge and a black line outside it.
@@ -288,6 +301,16 @@
                 entry:Hide()
             end
             BenillaHerbXPBar:SetStatusBarColor(BENILLA_HERB_XP_COLOUR[1], BENILLA_HERB_XP_COLOUR[2], BENILLA_HERB_XP_COLOUR[3])
+
+            -- The tour's callout, and its two outline rings: a 2 px gold line inside a soft glow.
+            BenillaHerb_Panel(BenillaHerbTourCallout)
+            local gold = BENILLA_HERB_TOUR_GOLD
+            for n = 1, 2 do
+                local ring = CreateFrame("Frame", "BenillaHerbTourRing" .. n, BenillaHerbTour)
+                BenillaHerb_Lines(ring, 8, gold[1], gold[2], gold[3], 0.25, 6)
+                BenillaHerb_Lines(ring, 2, gold[1], gold[2], gold[3], 1, 2)
+                ring:Hide()
+            end
             BenillaHerbState.chips = {}
             BenillaHerbState.known = {}
         end
@@ -452,6 +475,7 @@
                 table.insert(shown, BenillaHerb_PoolChip(BenillaHerbState.chips, "BenillaHerbChip", n, text))
             end
             local consumableName = BenillaHerb_ItemInfo(consumable)
+            BenillaHerbState.itemChip = nil
             if consumableName then
                 local state = "used"
                 if armed then
@@ -460,8 +484,9 @@
                     state = "ready"
                 end
                 n = n + 1
-                table.insert(shown, BenillaHerb_PoolChip(BenillaHerbState.chips, "BenillaHerbChip", n,
-                    "Item |cffffffff" .. consumableName .. "|r · " .. state))
+                BenillaHerbState.itemChip = BenillaHerb_PoolChip(BenillaHerbState.chips, "BenillaHerbChip", n,
+                    "Item |cffffffff" .. consumableName .. "|r · " .. state)
+                table.insert(shown, BenillaHerbState.itemChip)
             end
             for k = 1, GetNumHerbNotes() do
                 n = n + 1
@@ -675,6 +700,9 @@
 
         function BenillaHerb_OnUpdate()
             if not GetHerbGrid() then
+                if BenillaHerbState.tour then
+                    BenillaHerbTour_End(false)
+                end
                 -- An ended patch keeps its window, and its end card, until Close.
                 if BenillaHerbPatch:IsVisible() and not BenillaHerbState.over then
                     BenillaHerbPatch:Hide()
@@ -703,7 +731,9 @@
                 return
             end
             -- A new patch: the window was closed, or still shows the end card of the last one.
-            if not BenillaHerbPatch:IsVisible() or (BenillaHerbState.over and not over) then
+            local fresh = not BenillaHerbPatch:IsVisible() or (BenillaHerbState.over and not over)
+            if fresh then
+                BenillaHerbTour_End(false)
                 BenillaHerbState.mode = nil
                 BenillaHerbState.sight = {}
                 BenillaHerbState.log = {}
@@ -722,9 +752,16 @@
                 end
             end
             BenillaHerb_Paint()
+            local _, _, _, _, _, tourSeen = GetHerbalistInfo()
+            if fresh and not tourSeen then
+                BenillaHerbTour_Start()
+            elseif BenillaHerbState.tour then
+                BenillaHerbTour_Show()
+            end
         end
 
         function BenillaHerb_Closed(reason)
+            BenillaHerbTour_End(false)
             BenillaHerbState.mode = nil
             BenillaHerbState.sight = {}
             -- The patch ran out of pulls or tiles: its end card already says so.
@@ -740,6 +777,7 @@
         end
 
         function BenillaHerbClose_OnClick()
+            BenillaHerbTour_End(false)
             BenillaHerbState.over = nil
             BenillaHerbPatch:Hide()
         end
@@ -842,6 +880,213 @@
                 BenillaHerbState.sight = {}
             end
             BenillaHerb_Paint()
+        end
+
+        -- The consumable's description, the quoted gold line of its item tooltip; nil without one.
+        function BenillaHerbTour_Effect(item)
+            if not item or item == 0 then
+                return nil
+            end
+            local tip = BenillaHerbTourScan or CreateFrame("GameTooltip", "BenillaHerbTourScan", UIParent)
+            tip:SetOwner(BenillaHerbPatch, "ANCHOR_NONE")
+            tip:SetHyperlink("item:" .. item .. ":0:0:0")
+            local effect
+            for n = 1, tip:NumLines() do
+                local line = getglobal("BenillaHerbTourScanTextLeft" .. n)
+                local _, _, inner = string.find(line and line:GetText() or "", '^"(.*)"$')
+                if inner and not effect then
+                    effect = inner
+                end
+            end
+            tip:Hide()
+            return effect
+        end
+
+        -- The guided tour's steps in order: the groups of regions each outlines (one ring a group)
+        -- and its text. A step whose regions are all hidden is skipped.
+        BENILLA_HERB_TOUR = {
+            {
+                regions = function()
+                    local list = { BenillaHerbPullsLabel, BenillaHerbPulls }
+                    local n = 1
+                    while getglobal("BenillaHerbPip" .. n) do
+                        table.insert(list, getglobal("BenillaHerbPip" .. n))
+                        n = n + 1
+                    end
+                    return { list }
+                end,
+                text = "Each pull spends one. The patch ends when they run out.",
+            },
+            {
+                regions = function() return { { BenillaHerbBed } } end,
+                text = "Click a bush to pull it. A plant goes to your Satchel, a weed gives nothing, and a thorn costs an extra pull.",
+            },
+            {
+                regions = function() return { { BenillaHerbLegendSample1, BenillaHerbLegendText1 } } end,
+                text = "A pulled tile's number counts the plants still hidden in the 8 tiles around it. Hover it to see which.",
+            },
+            {
+                regions = function() return { BenillaHerbState.known } end,
+                text = "Pick a plant 5 times and the Journal says if it grows here. 10 names its row, and 25 makes its bush glow.",
+            },
+            {
+                regions = function() return { { BenillaHerbSkill } } end,
+                text = function()
+                    local _, _, _, _, cost = GetHerbGrid()
+                    local skill = BENILLA_HERB_TOUR_SKILLS[BenillaHerbState.skill or ""] or (BenillaHerbState.skill or "") .. " costs %s"
+                    return "Your Tool's skill: " .. string.format(skill, BenillaHerb_Plural(cost or 0, "pull")) .. "."
+                end,
+            },
+            {
+                regions = function() return { { BenillaHerbState.itemChip } } end,
+                text = function()
+                    local _, _, _, _, _, consumable = GetHerbGrid()
+                    local effect = BenillaHerbTour_Effect(consumable) or BenillaHerb_ItemInfo(consumable) or ""
+                    return "Your consumable for this patch: " .. string.gsub(effect, "%.$", "") .. "."
+                end,
+            },
+            {
+                regions = function()
+                    local basket = { BenillaHerbBasketTitle, BenillaHerbBasketEmpty }
+                    for n = 1, BENILLA_HERB_BASKET_ROWS do
+                        table.insert(basket, getglobal("BenillaHerbBasket" .. n))
+                    end
+                    return { basket, { BenillaHerbLogPanel } }
+                end,
+                text = "What this patch has given you, pull by pull.",
+            },
+            {
+                regions = function() return { { BenillaHerbLeave } } end,
+                text = "Leave, walk away or take damage and the patch is finished.",
+            },
+        }
+
+        -- Step `n`'s groups with their hidden regions taken out, and empty groups dropped.
+        function BenillaHerbTour_Groups(n)
+            local groups = {}
+            for _, list in ipairs(BENILLA_HERB_TOUR[n].regions()) do
+                local shown = {}
+                for _, region in ipairs(list) do
+                    if region:IsVisible() then
+                        table.insert(shown, region)
+                    end
+                end
+                if table.getn(shown) > 0 then
+                    table.insert(groups, shown)
+                end
+            end
+            return groups
+        end
+
+        -- The screen rect around a group: left, right, top, bottom.
+        function BenillaHerbTour_Rect(group)
+            local l, r, t, b
+            for _, region in ipairs(group) do
+                local rl, rr, rt, rb = region:GetLeft(), region:GetRight(), region:GetTop(), region:GetBottom()
+                if rl and rr and rt and rb then
+                    l = l and math.min(l, rl) or rl
+                    r = r and math.max(r, rr) or rr
+                    t = t and math.max(t, rt) or rt
+                    b = b and math.min(b, rb) or rb
+                end
+            end
+            return l, r, t, b
+        end
+
+        -- The callout sits right of the region when the main column has room, else below it, else
+        -- above it; with no region it is centred.
+        function BenillaHerbTour_Place(l, r, t, b)
+            local w, h, gap = BENILLA_HERB_TOUR_WIDTH, BENILLA_HERB_TOUR_HEIGHT, BENILLA_HERB_TOUR_GAP
+            local pl, pr = BenillaHerbPatch:GetLeft(), BenillaHerbPatch:GetRight()
+            local pt, pb = BenillaHerbPatch:GetTop(), BenillaHerbPatch:GetBottom()
+            local x, y
+            if not l then
+                x, y = (pl + pr - w) / 2, (pt + pb + h) / 2
+            elseif r + gap + w <= pr then
+                x, y = r + gap, math.max(math.min(t, pt), pb + h)
+            else
+                x, y = math.max(pl, math.min(l, pr - w)), b - gap
+                if y - h < pb then
+                    y = t + gap + h
+                end
+            end
+            BenillaHerbTourCallout:ClearAllPoints()
+            BenillaHerbTourCallout:SetPoint("TOPLEFT", BenillaHerbPatch, "TOPLEFT", x - pl, y - pt)
+        end
+
+        -- Draw the current step: its rings, its callout, its text and "N / M".
+        function BenillaHerbTour_Show()
+            local tour = BenillaHerbState.tour
+            local n = tour.steps[tour.at]
+            -- A frame's GetLeft settles the layout, so the regions below read fresh rects.
+            local pl, pt = BenillaHerbPatch:GetLeft(), BenillaHerbPatch:GetTop()
+            local l, r, t, b
+            for k = 1, 2 do
+                getglobal("BenillaHerbTourRing" .. k):Hide()
+            end
+            for k, group in ipairs(n and BenillaHerbTour_Groups(n) or {}) do
+                local gl, gr, gt, gb = BenillaHerbTour_Rect(group)
+                local ring = getglobal("BenillaHerbTourRing" .. k)
+                if gl and ring then
+                    local pad = BENILLA_HERB_TOUR_PAD
+                    ring:ClearAllPoints()
+                    ring:SetPoint("TOPLEFT", BenillaHerbPatch, "TOPLEFT", gl - pl - pad, gt - pt + pad)
+                    ring:SetWidth(gr - gl + 2 * pad)
+                    ring:SetHeight(gt - gb + 2 * pad)
+                    ring:Show()
+                    if k == 1 then
+                        l, r, t, b = gl, gr, gt, gb
+                    end
+                end
+            end
+            local text = n and BENILLA_HERB_TOUR[n].text or ""
+            if type(text) == "function" then
+                text = text()
+            end
+            local total = table.getn(tour.steps)
+            BenillaHerbTourText:SetText(text)
+            BenillaHerbTourCount:SetText(tour.at .. " / " .. total)
+            BenillaHerbTourNext:SetText(tour.at >= total and "Done" or "Next")
+            BenillaHerbTour_Place(l, r, t, b)
+            BenillaHerbTour:Show()
+        end
+
+        -- Start the tour at step 1, over an open grid.
+        function BenillaHerbTour_Start()
+            if not GetHerbGrid() or not BenillaHerbPatch:IsVisible() then
+                return
+            end
+            local steps = {}
+            for n = 1, table.getn(BENILLA_HERB_TOUR) do
+                if table.getn(BenillaHerbTour_Groups(n)) > 0 then
+                    table.insert(steps, n)
+                end
+            end
+            BenillaHerbState.tour = { steps = steps, at = 1 }
+            BenillaHerbTour_Show()
+        end
+
+        -- End the tour; `seen` (Done or Skip) tells the realm, once.
+        function BenillaHerbTour_End(seen)
+            local tour = BenillaHerbState.tour
+            BenillaHerbState.tour = nil
+            BenillaHerbTour:Hide()
+            if seen and tour then
+                HerbTourSeen()
+            end
+        end
+
+        function BenillaHerbTourNext_OnClick()
+            local tour = BenillaHerbState.tour
+            if not tour then
+                return
+            end
+            if tour.at >= table.getn(tour.steps) then
+                BenillaHerbTour_End(true)
+                return
+            end
+            tour.at = tour.at + 1
+            BenillaHerbTour_Show()
         end
     ]]></Script>
 
@@ -996,6 +1241,48 @@
                         </FontString>
                     </Layer>
                 </Layers>
+            </Frame>
+            <Button name="BenillaHerbTourHelp" inherits="UIPanelButtonTemplate" text="?">
+                <Size><AbsDimension x="24" y="24"/></Size>
+                <Anchors><Anchor point="LEFT" relativeTo="BenillaHerbTitle" relativePoint="RIGHT"><Offset><AbsDimension x="8" y="0"/></Offset></Anchor></Anchors>
+                <Scripts><OnClick>BenillaHerbTour_Start()</OnClick></Scripts>
+            </Button>
+            <!-- The guided tour: covers the window and the pull log and takes the mouse, so only
+                 its callout's buttons answer while it shows. -->
+            <Frame name="BenillaHerbTour" frameStrata="DIALOG" enableMouse="true" hidden="true">
+                <Anchors>
+                    <Anchor point="TOPLEFT"/>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="BenillaHerbLogPanel"/>
+                </Anchors>
+                <Frames>
+                    <Frame name="BenillaHerbTourCallout">
+                        <Size><AbsDimension x="260" y="124"/></Size>
+                        <Anchors><Anchor point="TOPLEFT"/></Anchors>
+                        <Layers>
+                            <Layer level="ARTWORK">
+                                <FontString name="BenillaHerbTourText" inherits="GameFontHighlight" justifyH="LEFT" justifyV="TOP">
+                                    <Size><AbsDimension x="236" y="72"/></Size>
+                                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-12"/></Offset></Anchor></Anchors>
+                                </FontString>
+                                <FontString name="BenillaHerbTourCount" inherits="GameFontNormalSmall" justifyH="LEFT">
+                                    <Anchors><Anchor point="BOTTOMLEFT"><Offset><AbsDimension x="12" y="16"/></Offset></Anchor></Anchors>
+                                </FontString>
+                            </Layer>
+                        </Layers>
+                        <Frames>
+                            <Button name="BenillaHerbTourNext" inherits="UIPanelButtonTemplate" text="Next">
+                                <Size><AbsDimension x="70" y="22"/></Size>
+                                <Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-12" y="10"/></Offset></Anchor></Anchors>
+                                <Scripts><OnClick>BenillaHerbTourNext_OnClick()</OnClick></Scripts>
+                            </Button>
+                            <Button name="BenillaHerbTourSkip" inherits="UIPanelButtonTemplate" text="Skip">
+                                <Size><AbsDimension x="70" y="22"/></Size>
+                                <Anchors><Anchor point="RIGHT" relativeTo="BenillaHerbTourNext" relativePoint="LEFT"><Offset><AbsDimension x="-6" y="0"/></Offset></Anchor></Anchors>
+                                <Scripts><OnClick>BenillaHerbTour_End(true)</OnClick></Scripts>
+                            </Button>
+                        </Frames>
+                    </Frame>
+                </Frames>
             </Frame>
         </Frames>
         <Scripts>

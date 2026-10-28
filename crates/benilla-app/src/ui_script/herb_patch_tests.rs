@@ -4,18 +4,29 @@
 
 use benilla_ui::script::{
     HerbBasketView, HerbCall, HerbGridView, HerbKnownView, HerbLogView, HerbTileView,
-    ItemTemplateView, ScriptValue, UiScript,
+    HerbalistView, ItemTemplateView, ScriptValue, UiScript,
 };
 
 use super::test_ui::load_ui as load_xml;
 
 const ART: &str = "Interface\\Benilla\\herbalism\\";
 
+/// The window for a character who has seen the guided tour, so it stays out of the way.
 fn window() -> UiScript {
+    toured(true)
+}
+
+/// The window for a character whose `tourSeen` is `seen`.
+fn toured(seen: bool) -> UiScript {
     let mut s = UiScript::new().unwrap();
     s.set_screen_size(1024.0, 768.0);
     load_xml(&s, "HerbPatch.xml");
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+    s.set_herbalist(HerbalistView {
+        knows: true,
+        tour_seen: seen,
+        ..Default::default()
+    });
     s
 }
 
@@ -452,4 +463,191 @@ fn closing_hides_the_window_and_pushing_none_does_too() {
     s.tick(0.0);
     s.resolve();
     assert!(!shown(&s, "BenillaHerbPatch"));
+}
+
+/// A real left click at the frame's centre, through the hit test.
+fn mouse_click(s: &mut UiScript, frame: &str) {
+    s.resolve();
+    let (x, y) = s
+        .eval::<(f64, f64)>(&format!("return {frame}:GetCenter()"))
+        .unwrap();
+    s.mouse_move(x as f32, y as f32);
+    s.mouse_button(x as f32, y as f32, "LeftButton", true);
+    s.mouse_button(x as f32, y as f32, "LeftButton", false);
+}
+
+fn press(s: &UiScript, button: &str) {
+    s.run(&format!("this = {button} {button}:Click()")).unwrap();
+}
+
+/// The tour's step numbers, space separated.
+fn tour_steps(s: &UiScript) -> String {
+    s.eval::<String>(
+        "return BenillaHerbState.tour and table.concat(BenillaHerbState.tour.steps, ' ') or ''",
+    )
+    .unwrap()
+}
+
+#[test]
+fn a_first_grid_starts_the_tour_at_step_one() {
+    let mut s = toured(false);
+    push(&mut s, mixed());
+    assert!(shown(&s, "BenillaHerbTour"));
+    assert!(shown(&s, "BenillaHerbTourRing1"));
+    assert_eq!(
+        text(&s, "BenillaHerbTourText"),
+        "Each pull spends one. The patch ends when they run out."
+    );
+    // No Tool and no consumable: the skill and Item steps drop out.
+    assert_eq!(tour_steps(&s), "1 2 3 4 7 8");
+    assert_eq!(text(&s, "BenillaHerbTourCount"), "1 / 6");
+    assert_eq!(text(&s, "BenillaHerbTourNext"), "Next");
+}
+
+#[test]
+fn the_tour_skips_the_steps_whose_regions_are_hidden() {
+    let mut s = toured(false);
+    named(&mut s, 961101, "Herbalist's Sickle");
+    push(
+        &mut s,
+        grid(|g| {
+            g.tool = 961101;
+            g.skill_cost = 2;
+        }),
+    );
+    assert_eq!(tour_steps(&s), "1 2 3 5 7 8");
+    for _ in 0..3 {
+        press(&s, "BenillaHerbTourNext");
+    }
+    assert_eq!(text(&s, "BenillaHerbTourCount"), "4 / 6");
+    assert_eq!(
+        text(&s, "BenillaHerbTourText"),
+        "Your Tool's skill: Sweep pulls a line of 3 tiles for 2 pulls."
+    );
+    press(&s, "BenillaHerbTourNext");
+    assert!(
+        shown(&s, "BenillaHerbTourRing2"),
+        "the Basket and the pull log"
+    );
+    press(&s, "BenillaHerbTourNext");
+    assert_eq!(text(&s, "BenillaHerbTourCount"), "6 / 6");
+    assert_eq!(text(&s, "BenillaHerbTourNext"), "Done");
+    assert!(!shown(&s, "BenillaHerbTourRing2"));
+    press(&s, "BenillaHerbTourNext");
+    assert!(!shown(&s, "BenillaHerbTour"));
+    assert_eq!(s.take_herb_calls(), vec![HerbCall::TourSeen]);
+}
+
+#[test]
+fn the_item_step_reads_the_consumables_description() {
+    let mut s = toured(false);
+    s.set_item_template(
+        961202,
+        ItemTemplateView {
+            name: "Elixir of Herb Sight".into(),
+            description: "Shows what three hidden tiles hold.".into(),
+            ..Default::default()
+        },
+    );
+    push(
+        &mut s,
+        grid(|g| {
+            g.consumable = 961202;
+            g.consumable_ready = true;
+        }),
+    );
+    assert_eq!(tour_steps(&s), "1 2 3 6 7 8");
+    for _ in 0..3 {
+        press(&s, "BenillaHerbTourNext");
+    }
+    assert_eq!(
+        text(&s, "BenillaHerbTourText"),
+        "Your consumable for this patch: Shows what three hidden tiles hold."
+    );
+}
+
+#[test]
+fn every_callout_sits_inside_the_window_and_off_its_outline() {
+    let mut s = toured(false);
+    named(&mut s, 961101, "Herbalist's Sickle");
+    named(&mut s, 961202, "Elixir of Herb Sight");
+    named(&mut s, 2447, "Peacebloom");
+    push(
+        &mut s,
+        grid(|g| {
+            g.tool = 961101;
+            g.skill_cost = 2;
+            g.consumable = 961202;
+            g.consumable_ready = true;
+            g.known = mixed().known;
+        }),
+    );
+    assert_eq!(tour_steps(&s), "1 2 3 4 5 6 7 8");
+    for step in 1..=8 {
+        s.resolve();
+        let fits = s
+            .eval::<String>(
+                "local c, p, r = BenillaHerbTourCallout, BenillaHerbPatch, BenillaHerbTourRing1 \
+                 local inside = c:GetLeft() >= p:GetLeft() and c:GetRight() <= p:GetRight() \
+                     and c:GetTop() <= p:GetTop() and c:GetBottom() >= p:GetBottom() \
+                 local apart = c:GetLeft() >= r:GetRight() or c:GetRight() <= r:GetLeft() \
+                     or c:GetBottom() >= r:GetTop() or c:GetTop() <= r:GetBottom() \
+                 return (inside and 'in' or 'out') .. ' ' .. (apart and 'apart' or 'over')",
+            )
+            .unwrap();
+        assert_eq!(fits, "in apart", "step {step}");
+        press(&s, "BenillaHerbTourNext");
+    }
+    assert!(!shown(&s, "BenillaHerbTour"));
+}
+
+#[test]
+fn skip_hides_the_tour_and_queues_one_tour_seen() {
+    let mut s = toured(false);
+    push(&mut s, mixed());
+    press(&s, "BenillaHerbTourSkip");
+    press(&s, "BenillaHerbTourSkip");
+    assert!(!shown(&s, "BenillaHerbTour"));
+    assert_eq!(s.take_herb_calls(), vec![HerbCall::TourSeen]);
+}
+
+#[test]
+fn a_seen_tour_waits_for_the_help_button() {
+    let mut s = toured(true);
+    push(&mut s, mixed());
+    assert!(!shown(&s, "BenillaHerbTour"));
+    assert_eq!(text(&s, "BenillaHerbTourHelp"), "?");
+    mouse_click(&mut s, "BenillaHerbTourHelp");
+    assert!(shown(&s, "BenillaHerbTour"));
+    assert_eq!(text(&s, "BenillaHerbTourCount"), "1 / 6");
+    // A replay tells the realm too.
+    press(&s, "BenillaHerbTourSkip");
+    assert_eq!(s.take_herb_calls(), vec![HerbCall::TourSeen]);
+}
+
+#[test]
+fn the_tour_blocks_clicks_on_the_grid() {
+    let mut s = toured(false);
+    push(&mut s, mixed());
+    mouse_click(&mut s, "BenillaHerbTile4");
+    mouse_click(&mut s, "BenillaHerbLeave");
+    assert!(s.take_herb_calls().is_empty());
+    mouse_click(&mut s, "BenillaHerbTourSkip");
+    assert_eq!(s.take_herb_calls(), vec![HerbCall::TourSeen]);
+    mouse_click(&mut s, "BenillaHerbTile4");
+    assert_eq!(s.take_herb_calls(), vec![HerbCall::Pull(3)]);
+}
+
+#[test]
+fn the_grid_closing_ends_the_tour_unseen() {
+    let mut s = toured(false);
+    push(&mut s, mixed());
+    s.fire_event("HERB_GRID_CLOSED", vec![ScriptValue::Int(3)]);
+    s.set_herb_grid(None);
+    s.resolve();
+    assert!(!shown(&s, "BenillaHerbTour"));
+    assert!(s.take_herb_calls().is_empty());
+    // The realm still says unseen, so the next patch tours again.
+    push(&mut s, mixed());
+    assert!(shown(&s, "BenillaHerbTour"));
 }
