@@ -17,7 +17,7 @@ python tools/twilights-eve/extract_spells.py search "Heroic Strike" --family 4 -
 python tools/twilights-eve/extract_spells.py talents --class 1
 python tools/twilights-eve/extract_spells.py spell 78 12294
 python tools/twilights-eve/extract_spells.py selftest
-python tools/twilights-eve/simulate_fights.py --calling vanguard --mobs ... --stats ...
+python3.15 tools/twilights-eve/balance/run.py --scenario all --levels 1-30 --fights 300 --out report.md
 ```
 
 ## The client enforces some things before it sends a cast
@@ -272,7 +272,12 @@ shows the Battle Stance icon the way real servers do. That is optional.
 
 ## Balance simulation
 
-`tools/twilights-eve/simulate_fights.py` is a stdlib Monte Carlo. It pits a human Warrior
+The balance model is `tools/twilights-eve/balance/run.py` (#484): every Basic Warrior level and
+every Tier 1 Calling at levels 10 to 30, against the creatures `mobs.rs` makes, judged by the
+rules in `docs/balance/rules.md`. The rest of this section is the history of the
+`simulate_fights.py` it replaced.
+
+`simulate_fights.py` was a stdlib Monte Carlo. It pitted a human Warrior
 (naked base stats + Tier Bonus + an assumed weapon and armour) against a same-level
 `creature_classlevelstats` warrior-class mob. It uses `vanilla-combat-rules.md` (hit table,
 armour, rage, two-roll yellow attacks) and the formulas in `callings.json`. Its inputs are
