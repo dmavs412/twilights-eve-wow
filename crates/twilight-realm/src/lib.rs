@@ -1627,6 +1627,9 @@ impl Realm {
                 }
             }
             RealmCommand::CancelAura { spell_id } => {
+                if spell_id == herbs::spell().find {
+                    self.cancel_herb_tracking();
+                }
                 if let Some(w) = &mut self.world {
                     w.cancel_aura(spell_id, &mut self.events);
                 }

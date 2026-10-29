@@ -260,6 +260,40 @@ fn find_herbs_toggles_tracking() {
     assert_eq!(tracking(&p.seen(0)[before..]), [(PATCH_ENTRY, false)]);
 }
 
+/// The Find Herbs aura is what lights the minimap's tracking icon (#476).
+#[test]
+fn find_herbs_shows_its_aura_while_tracking_and_clicking_it_off_stops_tracking() {
+    let mut p = party(&[true]);
+    let guid = p.guids[0];
+    let shown = |p: &Party| {
+        let mut view = common::fight::View::default();
+        view.see(p.seen(0));
+        view.aura(guid, FIND_HERBS).is_some()
+    };
+    p.run(0.2);
+    assert!(!shown(&p), "no aura while tracking is off");
+    let cast = RealmCommand::CastSpell {
+        spell_id: FIND_HERBS,
+        target: None,
+    };
+    p.cmd(0, cast.clone());
+    p.run(0.2);
+    assert!(shown(&p), "the cast puts the aura up");
+    let before = p.seen(0).len();
+    p.cmd(
+        0,
+        RealmCommand::CancelAura {
+            spell_id: FIND_HERBS,
+        },
+    );
+    p.run(0.2);
+    assert!(!shown(&p), "clicked off");
+    assert_eq!(tracking(&p.seen(0)[before..]), [(PATCH_ENTRY, false)]);
+    p.cmd(0, cast);
+    p.run(0.2);
+    assert!(shown(&p), "a second cast puts it back");
+}
+
 #[test]
 fn the_herbalist_fields_survive_a_save_round_trip() {
     let mut p = party(&[true]);

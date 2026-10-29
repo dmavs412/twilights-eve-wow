@@ -205,6 +205,23 @@ struct Patches {
 #[derive(Default)]
 pub(crate) struct HerbPatches(HashMap<u64, Patches>);
 
+impl super::InWorld {
+    /// The Find Herbs aura brought in line with the character's tracking, so the minimap's
+    /// tracking icon shows it: up while tracking is on and the player lives, down otherwise.
+    pub(super) fn show_herb_tracking(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+        let show = c.herb_tracking && self.player.alive();
+        if show == self.herb_tracking_shown {
+            return;
+        }
+        if show {
+            self.show_marker(herbs::spell().find, true, 1, events);
+        } else {
+            self.hide_marker(herbs::spell().find, events);
+        }
+        self.herb_tracking_shown = show;
+    }
+}
+
 impl crate::Realm {
     /// A line of a herbalist's menu: the goods open the merchant window; the lesson teaches
     /// Herbalism; the reset forgets the perks for money. Each closes the menu.
@@ -281,6 +298,18 @@ impl crate::Realm {
         self.events.push(tracking(c));
         self.save(guid);
         true
+    }
+
+    /// The player clicked the Find Herbs aura off: tracking goes off with it.
+    pub(crate) fn cancel_herb_tracking(&mut self) {
+        let on = self
+            .world
+            .as_ref()
+            .and_then(|w| self.characters.get(w.guid))
+            .is_some_and(|c| c.herb_tracking);
+        if on {
+            self.find_herbs();
+        }
     }
 
     /// Fills the served character's patches on their first tick knowing Herbalism, then spawns

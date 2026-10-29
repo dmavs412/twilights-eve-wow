@@ -374,6 +374,8 @@ pub(crate) struct InWorld {
     last_hit_by: Option<u64>,
     /// Whether the Marked debuff is up.
     marked_shown: bool,
+    /// Whether the Find Herbs aura is up.
+    herb_tracking_shown: bool,
     /// Whether the stats carry the Marked penalty.
     marked_applied: bool,
     /// Where the Marked victor's map flag was last put.
@@ -524,6 +526,7 @@ impl InWorld {
             hunters_sent: 0,
             last_hit_by: None,
             marked_shown: false,
+            herb_tracking_shown: false,
             marked_applied: c.marked.is_some(),
             victor_flag: None,
             closed_hush: 0.0,
@@ -779,6 +782,7 @@ impl InWorld {
         }
         self.rest(dt, c, events);
         self.notoriety_tick(dt, host, c, rng, events);
+        self.show_herb_tracking(c, events);
         self.hide_tick(dt, c);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;

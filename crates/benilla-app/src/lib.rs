@@ -264,6 +264,10 @@ fn launch(build: BuildId, extend: Option<Extension<'_>>) -> AppExit {
     // The browser entry installs console_error_panic_hook; filesystem reports are native.
     crash::install(build);
 
+    // `Interface\Benilla\` art reads from the shipped UI before any system loads a texture: the
+    // minimap's Herb Patch leaf loads before the UI script starts, and a miss stays cached.
+    benilla_assets::set_layer_images(ui_script::layer_image);
+
     let mut app = App::new();
     // The panel footer and the build banner read the stamp back.
     app.insert_resource(build);
