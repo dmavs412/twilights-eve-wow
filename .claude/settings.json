@@ -19,8 +19,7 @@
       "Bash(git push:*)", "Bash(git reset --hard:*)", "Bash(git rebase:*)", "Bash(git worktree add:*)",
       "Bash(git worktree remove:*)", "Bash(rm -rf:*)", "Bash(rm -r:*)",
       "Bash(gh pr merge:*)", "Bash(gh pr create:*)", "Bash(gh issue delete:*)"
-    ],
-    "deny": ["Bash(python3)", "Bash(python3 *)", "Bash(python)", "Bash(python *)"]
+    ]
   },
   "hooks": {
     "PreToolUse": [

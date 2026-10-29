@@ -188,7 +188,7 @@ foreach ($t in $queue) {
     $prompt = "Unattended run, nobody is at the keyboard. Read $rules first and follow it. " +
               "Then implement GitHub issue #$n ($title) on $Repo."
     if ($AllowAgents) {
-        $prompt += " Tonight the Agent tool is allowed: CLAUDE.md's line that subagents are denied does not apply. " +
+        $prompt += " Tonight the Agent tool is allowed. " +
                    "Use subagents for reading, searching and independent sub-tasks; only the main session runs cargo " +
                    "and commits, so two sessions never edit the same file."
     }
