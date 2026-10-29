@@ -5,12 +5,14 @@ and a respec bought from a trainer. 346 talent rows in the master CSV served sev
 client drew them in the stock talent frame from `Talent.dbc`, and the realm read them through
 `crates/twilight-realm/src/talents.rs`. Davis found the tree slow to read and the points a chore,
 and no pick changed how a cast played. This ADR replaces the whole thing. Grilled 2026-10-28, spec
-#498. Prototype: `docs/specs/talents/skill-variants-prototype.html`.
+#498. Prototype: `docs/specs/talents/skill-variants-prototype.html`. Amended 2026-10-29 (see the
+last section): rows open at fixed Row Levels shared by a Tier, and the Tier 1 Callings get six.
 
 ## Decision
 
-- **A Calling has Talent Rows, each a row of three.** A row opens at a level (`row_level` in the
-  sheet). The player sets one of its three choices. An empty row can be set anywhere, at no cost.
+- **A Calling has Talent Rows, each a row of three.** A row opens at one of its Tier's Row Levels,
+  the way Mists of Pandaria's talent tiers open at fixed levels: 2, 4, 6 and 8 at Tier 0, and 4, 8,
+  12, 16, 20 and 24 at Tier 1. The player sets one of its three choices. An empty row can be set anywhere, at no cost.
   A set row changes only while an innkeeper is within service range, at no cost, reached by the
   innkeeper's gossip line "I want to rethink my talents". A set row never clears back to empty: a
   choice is a strict upgrade, so there is nothing to go back to. Advancement clears every row, as
@@ -40,17 +42,35 @@ and no pick changed how a cast played. This ADR replaces the whole thing. Grille
   and `talent_wipes` and gains `rows`, the set choice per row key.
 - **The talent effect machinery stays for Talent rows.** `talents.rs`'s queries (`on_hit`, `procs`,
   `stats`, `spell_mods` and the rest) read the set Talent choices at rank one instead of learned
-  ranks. No shipped Calling has a Talent row yet; Basic Warrior ships four Skill Choice rows.
+  ranks. Basic Warrior ships four Skill Choice rows; Acolyte's sixth row is the first Talent row.
 
 ## Consequences
 
-- A Tier 1 Calling plays with empty rows, so its plain skills, until its own follow-up ticket set
-  writes its choices. Each Calling's rows are one ticket set, grilled from this ADR, not a new one.
-- Row levels are per Calling. A row opens no earlier than its skill's `learn_level` and no later
-  than the Tier Cap; the build enforces both.
+- Row Levels are per Tier, written on each calling row as `row_levels` (`2|4|6|8`, or
+  `4|8|12|16|20|24`). The build refuses a Calling whose rows do not fill that list exactly, one row
+  a level, and two Callings of one Tier with different lists. A row still opens no earlier than
+  its skill's `learn_level`.
+- Every Tier 1 Calling has six rows, one per skill it learns at level 1. The Kick (level 10) and
+  the utility (level 20) never get a row. Ranger has seven such skills, so one shot has none
+  (Auto Shot never has one); Acolyte has five, so its sixth row is a Talent row. Their first
+  choices are placeholders written by the Build lane; each Calling's rows get a grill of their
+  own later.
+- A Calling whose calling row has no `row_levels` has no rows: Zealot (Tier 2) for now. Tier 2
+  and Tier 3 Row Levels are set when those Tiers are built.
 - The 25 realm test files that learned talents to test a skill lose that step or go, and the
   tests of the tree itself go. The Skill Choice tests take their place.
 - Balance work on a skill now covers four spells: the plain one and its three choices. The balance
   rules in `docs/balance/rules.md` read a choice as the skill with that strength added.
 - `docs/specs/talents/README.md` holds the layout, the row vocabulary and Basic Warrior's twelve
   choices, with the prototype as the reference for the rules.
+
+## Amended 2026-10-29
+
+Davis asked for every Calling's old talents to go and for milestone choices in the Mists of
+Pandaria style: four for Basic Warrior, six for each Tier 1 Calling. Only the row levels changed.
+The first version let each skill pick its own `row_level`, and left the Tier 1 Callings with empty
+rows until a grill each. Now a Tier shares one list of Row Levels, and the Tier 1 Callings get
+placeholder rows at once. Row content, the innkeeper rule, the panel and Advancement are as above.
+The talent trees go for every Calling, Zealot's TOML tree included. The balance model reads every
+open row set to its most damaging choice, and nothing makes up the old trees' passive power,
+since only Vanguard's talents ever worked in play (#187).

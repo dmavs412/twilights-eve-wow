@@ -161,7 +161,7 @@ How much more XP a character earns from everything, set by their Tier: ×1 at Ti
 _Avoid_: XP bonus, rested XP (WoW's own, which is separate)
 
 **Talent Row**:
-A row of three choices on the Talents panel, one row per skill of the Calling that has one, and later rows of passives or actives tied to no skill. A row opens at its level; the player sets one of its three. An empty row is set anywhere; a set row changes only at an innkeeper, free either way, and never clears. Advancement empties every row. Every skill of the current Calling is available from its learn level without a row. ADR 0028.
+A row of three choices on the Talents panel, opening at one of its Tier's Row Levels: a skill's row, or a row of passives or actives tied to no skill. The player sets one of its three. An empty row is set anywhere; a set row changes only at an innkeeper, free either way, and never clears. Advancement empties every row. Every skill of the current Calling is available from its learn level without a row. ADR 0028.
 _Avoid_: talent tree, talent point, tab, tier (of a tree), respec
 
 **Skill Choice**:
@@ -169,8 +169,12 @@ One of the three choices in a skill's Talent Row: the skill with one strength ad
 _Avoid_: variant, card, glyph, rank
 
 **Talent**:
-One of the three choices in a Talent Row that belongs to no skill: a passive (one-rank effects) or an active (a skill of its own), learned while set. In the sheet, a `talent` row with `row_key`. No Calling ships one yet.
+One of the three choices in a Talent Row that belongs to no skill: a passive (one-rank effects) or an active (a skill of its own), learned while set. In the sheet, a `talent` row with `row_key`.
 _Avoid_: perk, trait
+
+**Row Levels**:
+The levels at which a Tier's Talent Rows open, one row each, shared by every Calling of the Tier, as Mists of Pandaria's talent tiers open at fixed levels: 2, 4, 6, 8 at Tier 0 and 4, 8, 12, 16, 20, 24 at Tier 1. Tier 2 and 3 have none yet. The `row_levels` cell of a calling row. ADR 0028.
+_Avoid_: milestone, talent tier
 
 **Creature Spell**:
 A spell a creature casts in a fight, such as Geomancer Vurx's Corruption. Creature Spells are written by hand in the realm's `creature_spells.toml`, not in the master CSV, and a creature lists the ones it knows. The client only shows them: the cast bar, the icon and the debuff come from a stock spell's row.

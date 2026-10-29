@@ -14,11 +14,13 @@ nothing reads it.
   skill, with its own spell id, name, icon and description. While set it replaces the plain skill
   in the spell book and on the bar. In the sheet, a `talent` row with `variant_of`.
 - **Talent.** One of the three choices of a Talent row: a passive (one-rank effects) or an active
-  (its own skill). In the sheet, a `talent` row with `row_key`. No shipped Calling has one yet.
+  (its own skill). In the sheet, a `talent` row with `row_key`. Acolyte's sixth row is the first.
 
 ## Rules
 
-1. A row is locked below its `row_level`, open at and above it.
+1. A row is locked below its `row_level`, open at and above it. Row levels are the Tier's Row
+   Levels (amended 2026-10-29): 2, 4, 6, 8 at Tier 0; 4, 8, 12, 16, 20, 24 at Tier 1; none yet at
+   Tier 2 and 3. A Calling has exactly one row at each of its Tier's Row Levels.
 2. An open, empty row can be set anywhere, free.
 3. A set row changes only while an innkeeper is within service range, free. The innkeeper's gossip
    line "I want to rethink my talents" opens the panel with every open row live. The realm checks
@@ -31,8 +33,13 @@ nothing reads it.
 
 ## The sheet
 
-Three columns join the master CSV: `variant_of`, `row_key`, `row_level`.
+Four columns join the master CSV: `variant_of`, `row_key`, `row_level` (#499) and `row_levels`
+(amended 2026-10-29).
 
+- A calling row sets `row_levels`, its Tier's Row Levels joined by `|`: `2|4|6|8` for Basic
+  Warrior, `4|8|12|16|20|24` for each Tier 1 Calling. Blank means the Calling has no rows. The build
+  refuses a Calling whose rows' levels are not exactly that list (a missing level, a level twice,
+  a level not in it), and two calling rows of one `tier` with different lists.
 - A skill row sets `row_level` when it has a Skill Choice row. Blank means no row. The build refuses
   a `row_level` below the skill's `learn_level` or above the Calling's `tier_cap`, and a Skill
   Choice whose skill has no `row_level`.
@@ -69,6 +76,7 @@ click.
   innkeeper: any open row can be changed."
 - Hovering a cell shows the choice's spell tooltip (name, description) from its Spell.dbc row.
 - Ten rows fit; past that the strips scroll.
+- A Calling with no rows (Zealot) shows "No talents yet." where the strips would be.
 
 ## Basic Warrior's rows
 
@@ -93,7 +101,28 @@ in `master.csv`. Every choice's numbers are the prototype's; Davis's first play 
 Readings taken in the grill: Blindside's crit is the caster's next hit on any target within 10 s
 (the prototype says "on it"); a Searing Blast burn tick still ends a Gouge, as the prototype shows.
 
+## Tier 1 rows (amended 2026-10-29)
+
+Six rows per Tier 1 Calling, at 4, 8, 12, 16, 20 and 24, one per skill the Calling learns at level
+1. The Kick and the utility get none.
+
+| Calling | Skills with a row | Note |
+|---|---|---|
+| Vanguard | Righteous Smash, Bulwark Charge, Consecration, Shield of the Penitent, Zealous Cleave, Seal of Iron | |
+| Cutthroat | Sinister Strike, Eviscerate, Rupture, Garrote, Evasion, Stealth | |
+| Initiate | Ley-Spark, Searing Ember, Biting Cold, Catalyst, Blink, Ley Ward | |
+| Ranger | six of Snapshot, Puncturing Shaft, Barbed Arrow, Vault, Rapid Fire, Field Dressing, Explosive Shot | the Build lane picks the one left out; Auto Shot never has a row |
+| Acolyte | Creeping Blight, Blood Lance, Dark Mending, Miasma, Siphon Life, and one Talent row | the Talent row's three are passives or actives |
+
+Which skill opens at which level, and the 18 choices, are placeholders the Build lane writes, one
+ticket per Calling. Each choice may start from an old tree talent that touched the skill
+(Iron Juggernaut, Executioner's Toll, Bloodletting, Explosive Payload), keeping its name, or be a
+fresh design. Each is a strict upgrade, as above. A choice may need a new generic mechanic; the
+ticket adds it with its tests. Each Calling's rows get their own grill later, and Davis's play
+notes tune them. The Build lane fills in a table per Calling below, in the form of Basic
+Warrior's.
+
 ## Tickets
 
 In order, each blocked by the one before: data and build (#499), realm (#500), client panel
-(#501), tree purge and docs (#502). Tier 1 Callings' rows are later ticket sets, one per Calling.
+(#501), tree purge and docs (#502), then Row Levels and the Tier 1 Callings' rows (listed on #498).

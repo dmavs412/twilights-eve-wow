@@ -10,9 +10,9 @@ the model's readings, not play; play notes override them.
 - Levels 1 to 9 are Tier 0: the Basic Warrior in its starting outfit and the best white (Common)
   rows it can wear at its level. No talents (there are none).
 - Levels 10 to 30 are the five Tier 1 Callings: Cutthroat, Ranger, Initiate, Vanguard, Acolyte.
-  Each fights in its damage build with every Talent Point the level gives (`points_at` in
-  `crates/twilight-realm/src/rules/talents.rs`: level - 1). #187 says talents do nothing in play
-  for four of the five; the model assumes that bug gets fixed.
+  Each fights with every Talent Row its level has opened set to the choice that adds the most
+  damage (ADR 0028, amended 2026-10-29). Rows open by the real level, not the Power Level. The old trees and their points are gone; nothing makes
+  up their passive power.
 - "Greens" means the best Uncommon row the Calling can wear in every slot at its level, from
   `data/twilights-eve/gear.csv`. "Blues" means the best Rare row where one exists at that level,
   else the green.
