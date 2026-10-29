@@ -110,7 +110,7 @@ Six rows per Tier 1 Calling, at 4, 8, 12, 16, 20 and 24, one per skill the Calli
 |---|---|---|
 | Vanguard | Righteous Smash, Shield of the Penitent, Zealous Cleave, Bulwark Charge, Seal of Iron, and one Talent row | Consecration is Bulwark Charge's patch, not a button, so it has no row (grill 2026-10-29) |
 | Cutthroat | Sinister Strike, Evasion, Eviscerate, Rupture, Garrote, and one Talent row | Stealth gives its row to the blood droplets, which have no button (grill 2026-10-29) |
-| Initiate | Ley-Spark, Searing Ember, Biting Cold, Catalyst, Blink, Ley Ward | |
+| Initiate | Ley-Spark, Ley Ward, Searing Ember, Biting Cold, Catalyst, and one Talent row | Blink gives its row to passives, two of which upgrade Blink (grill 2026-10-29) |
 | Ranger | six of Snapshot, Puncturing Shaft, Barbed Arrow, Vault, Rapid Fire, Field Dressing, Explosive Shot | the Build lane picks the one left out; Auto Shot never has a row |
 | Acolyte | Creeping Blight, Blood Lance, Dark Mending, Miasma, Siphon Life, and one Talent row | the Talent row's three are passives or actives |
 
@@ -204,6 +204,59 @@ Davis chose the rows, their order and the 18 choices. The readings below are min
   from Stealth it still opens with a critical strike.
 - Kidney Shot's and Choking Garrote's stuns take diminishing returns as Bull Rush's do.
 - Phantom Guile's combo point goes on the Cutthroat's current target, as the old talent's did.
+
+## Initiate's rows
+
+Grilled with Davis 2026-10-29 (#506). Rows open at Ley-Spark 4, Ley Ward 8, Searing Ember 12,
+Biting Cold 16, the Talent row 20 and Catalyst 24. Ley Ward comes early because Initiate dies more
+than any other Tier 1 Calling in the balance sims. Catalyst, the payoff, closes the rows. Blink has
+no row. Its place went to a Talent row of passives (row key `passives`), and two of the three
+upgrade Blink. The numbers are the grill's; Davis's first play note tunes them.
+
+| Row | Choice | Changes | Icon |
+|---|---|---|---|
+| Ley-Spark | Ley-Line Tap | 50% chance to refund its mana; at full mana, a shield of twice the cost for 10 s instead | `Spell_Shadow_ManaBurn` |
+| Ley-Spark | Arcane Substrate | each cast cuts the next Biting Cold's cast by 0.5 s and lengthens the next Searing Ember's burn by 5 s | `Spell_Fire_MeteorStorm` |
+| Ley-Spark | Warding Spark | a critical hit wards the Initiate for 50% of its damage for 8 s | `Spell_Nature_AstralRecalGroup` |
+| Ley Ward | Siphoning Ward | half of the damage the ward absorbs comes back as mana | `Spell_Nature_Purge` |
+| Ley Ward | Frost Ward | an enemy whose damage the ward absorbs is slowed 50% for 4 s | `Spell_Frost_FrostWard` |
+| Ley Ward | Volatile Ward | when the ward breaks, it bursts for the amount it absorbed as Arcane to enemies within 8 yd | `Spell_Nature_WispSplode` |
+| Searing Ember | Thermal Feedback | each burn tick has a 10% chance to make the next Biting Cold instant and free | `Spell_Fire_Flare` |
+| Searing Ember | Smoldering Ember | a burning enemy deals 15% less damage to the Initiate | `Spell_Fire_Incinerate` |
+| Searing Ember | Kindling Ember | each burn tick returns 3% of max mana | `Spell_Fire_MasterOfElements` |
+| Biting Cold | Combustion Engine | 45% more damage to a target the Initiate's Searing Ember burns | `Spell_Fire_FlameShock` |
+| Biting Cold | Splintering Cold | the slow also lands on every enemy within 8 yd of the target | `Spell_Frost_IceShard` |
+| Biting Cold | Frostbite | roots a target that is already slowed for 2 s | `Spell_Frost_FrostArmor` |
+| Talent row | Shattered Blink | Blink leaves a ring of frost where the Initiate stood that roots enemies within 8 yd for 4 s | `Spell_Frost_FreezingBreath` |
+| Talent row | Arcane Momentum | after a Blink, Ley-Spark deals 45% more damage for 5 s | `Spell_Shadow_Teleport` |
+| Talent row | Catalytic Resonance | each Catalyst that consumes an Ember or a Cold gives 10% more spell damage for 8 s | `Spell_Nature_Lightning` |
+| Catalyst | Thermal Shock | the shatter deals 30% more and the Ember refund gives 30% more mana | `Spell_Frost_FrostShock` |
+| Catalyst | Deep Freeze | consuming a Biting Cold also stuns the target 3 s | `Spell_Frost_Glacier` |
+| Catalyst | Catalytic Chain | each Ember or Cold it consumes is copied onto another enemy within 10 yd | `Spell_Fire_Fire` |
+
+Davis chose the rows, their order, the 18 choices, Thermal Feedback's 10% (the old talent had 20%),
+Kindling Ember's 3% and Frostbite's condition. The readings below are mine, and Davis accepted
+them.
+
+- Old talents keep their name and their full-rank numbers. Four old icons clashed and were
+  swapped: Thermal Feedback's was Searing Ember's, Catalytic Resonance's was Catalyst's (it takes
+  its own buff's), Combustion Engine's was Backdraft's, and Thermal Shock's was Fire Blast's.
+- Davis skipped Overcharged Spark and Wildfire, the plain damage choices offered for Ley-Spark and
+  Searing Ember, as he twice did for Cutthroat. He also skipped Greater Ley Ward, the one plain
+  number offered for Ley Ward. The Ley-Spark and Searing Ember rows add damage only through mana
+  and tempo, so the balance model (`docs/balance/rules.md`) sets each to whichever choice its sim
+  finds most damaging.
+- Arcane Substrate gives both buffs on each cast. Each goes with its own skill's next cast.
+- Frostbite's "already slowed" means any snare on the target before the cast lands, the test the
+  old Frigid Conservation used. Biting Cold's own slow in the same cast does not count.
+- Kindling Ember's 3% is per tick, whatever the stacks.
+- Smoldering Ember's 15% cut is to the Initiate's damage taken from that enemy only.
+- Volatile Ward bursts only when it breaks; a ward that times out does nothing.
+- A new Warding Spark ward replaces the old one only when it is larger.
+- Frost Ward's slow is its own aura, so Catalyst does not shatter it, but it counts as a slow for
+  Frostbite.
+- Splintering Cold's slow is Biting Cold's own aura, so Catalyst shatters it on any of those
+  enemies.
 
 ## Tickets
 
