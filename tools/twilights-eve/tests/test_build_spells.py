@@ -557,6 +557,33 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
         self.assert_fails([CALLING, ground, {**patch, "visual": "none"}],
                           "the ground patch is drawn from holy_patch's visual, which is none")
 
+    def test_a_ground_effect_names_its_caster_aura_by_id(self):
+        ground = {**STRIKE, "effect1_kind": "ground_effect",
+                  "effect1_params": "radius_yd=8;tick_ms=1000;duration_ms=8000;amount.base=4;amount.per_level=0;"
+                                    "caster_aura=ward", "visual": "133"}
+        ward ={**AURA, "key": "ward", "spell_id": "1000455", "modelled": "yes",
+                "effect1_kind": "mod_damage_taken_pct", "effect1_params": "pct=-10"}
+        done, data = self.run_build([CALLING, ground, ward])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        params = data[0]["skills"][0]["effects"][0]["params"]
+        self.assertEqual(params["caster_aura_spell_id"], 1000455)
+        self.assertNotIn("caster_aura", params)
+        self.assert_fails([CALLING, ground], "caster_aura 'ward' is not an aura row of this Calling")
+
+    def test_mod_damage_taken_pct_takes_a_negative_pct_and_no_school(self):
+        ward = {**AURA, "key": "ward", "modelled": "yes", "effect1_kind": "mod_damage_taken_pct",
+                "effect1_params": "pct=-10"}
+        done, data = self.run_build([CALLING, ward])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["auras"][0]["effects"][0]["params"], {"pct": -10})
+        done, _ = self.run_build([CALLING, {**ward, "effect1_params": "pct=15;school=physical"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        for bad in ("pct=0", "pct=-101", "pct=1.5", ""):
+            self.assert_fails([CALLING, {**ward, "effect1_params": bad}],
+                              "mod_damage_taken_pct needs a whole pct from -100 up, not 0")
+        self.assert_fails([CALLING, {**ward, "effect1_params": "pct=-10;school=wind"}],
+                          "mod_damage_taken_pct school is 'wind'")
+
     def test_a_ground_cast_sends_its_radius_index_on_its_first_effect(self):
         ground = {**STRIKE, "target": "dest", "realm_radius_yd": "8", "client_radius_index": "14",
                   "effect1_kind": "school_damage", "effect1_params": "amount.base=5;amount.per_level=0"}

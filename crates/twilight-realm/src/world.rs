@@ -1452,6 +1452,9 @@ impl InWorld {
         }
         self.skills.break_stealth(events);
         let damage = self.fed_damage_taken(from, level, damage, school);
+        // The player's own damage-taken auras: less inside their Consecration.
+        let damage =
+            crate::mobs::changed_by(damage, self.skills.damage_taken_pct(self.guid, school));
         let damage = self.skills.absorb(damage, school, events);
         self.fed_reflect(from, damage, school);
         self.hurt |= damage > 0;

@@ -30,7 +30,7 @@ use crate::rules::seals;
 use crate::rules::skills::{self as formulas, ability_table};
 use crate::rules::stats::{CharacterStats, OFF_HAND_DAMAGE_PCT};
 use crate::rules::talents::{crit_damage, deep_wound_tick, heal_tick, scaled, scaled_share};
-use crate::space::distance;
+use crate::space::{distance, flat_distance};
 
 /// `UNIT_FIELD_BYTES_1`: stand state, loyalty, shapeshift form, visibility flags.
 const UNIT_FIELD_BYTES_1: u16 = 138;
@@ -313,6 +313,10 @@ struct Ground {
     left: f32,
     period: f32,
     next_tick: f32,
+    /// The aura row the caster wears while they stand inside (Consecrated Ground), and whether
+    /// they stood inside at the last look.
+    caster_aura: Option<&'static callings::AuraDef>,
+    caster_inside: bool,
 }
 
 impl Aura {
@@ -533,10 +537,11 @@ enum AuraKind {
         pct: u32,
         bits: &'static [u8],
     },
-    /// The unit takes `pct` percent more `school` damage from others than the aura's caster.
+    /// The unit takes `pct` percent more `school` damage from others than the aura's caster, less
+    /// when `pct` is negative; `None` is every school.
     DamageTaken {
-        pct: u32,
-        school: School,
+        pct: i32,
+        school: Option<School>,
     },
     /// The unit's chance to hit is `pct` points higher (lower when negative).
     HitChance {
@@ -719,6 +724,11 @@ impl AuraKind {
                 | AuraKind::Stealth { .. }
                 | AuraKind::Stacks { .. }
                 | AuraKind::Marker { helpful: true, .. }
+                // Less damage taken (Consecrated Ground) is a buff; more is a debuff.
+                | AuraKind::DamageTaken {
+                    pct: i32::MIN..=-1,
+                    ..
+                }
         )
     }
 
@@ -1272,6 +1282,19 @@ impl Skills {
             .filter(|a| a.unit == unit)
             .map(|a| match a.kind {
                 AuraKind::HealingTaken { pct } => pct,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// The percent more `school` damage `unit` takes from its own auras, negative for less
+    /// (Consecrated Ground).
+    pub(super) fn damage_taken_pct(&self, unit: u64, school: School) -> i32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == unit)
+            .map(|a| match a.kind {
+                AuraKind::DamageTaken { pct, school: of } if of.is_none_or(|s| s == school) => pct,
                 _ => 0,
             })
             .sum()
@@ -4031,6 +4054,7 @@ impl InWorld {
                 school,
                 amount,
                 ground_spell_id,
+                caster_aura_spell_id,
             } => {
                 // Where the cast ended: after a Charge, the caster stands at its destination.
                 let more = crate::talents::ground_amount_pct(c, &skill.key);
@@ -4046,14 +4070,24 @@ impl InWorld {
                     left: clock::secs(duration_ms + longer),
                     period: clock::secs(tick_ms),
                     next_tick: clock::secs(tick_ms),
+                    caster_aura: caster_aura_spell_id.and_then(|id| {
+                        callings::of(c.calling)
+                            .auras
+                            .iter()
+                            .find(|a| a.spell_id == id)
+                    }),
+                    caster_inside: false,
                 };
-                for old in self
+                let old: Vec<Ground> = self
                     .skills
                     .grounds
                     .iter()
                     .filter(|g| g.caster == ground.caster)
-                {
-                    events.push(SessionEvent::ObjectDestroyed(old.object));
+                    .copied()
+                    .collect();
+                for gone in &old {
+                    self.ward_off(gone, events);
+                    events.push(SessionEvent::ObjectDestroyed(gone.object));
                 }
                 self.skills.grounds.retain(|g| g.caster != ground.caster);
                 events.push(patch_create(
@@ -4064,6 +4098,7 @@ impl InWorld {
                     ground.radius_yd,
                 ));
                 self.skills.grounds.push(ground);
+                self.ground_ward(c, events);
             }
             // Takes the stacks once for every target: `cast` does it after the loop.
             Effect::ConsumeAuraStacks { .. } => {}
@@ -5513,6 +5548,7 @@ impl InWorld {
         ticked: &mut Ticked,
     ) {
         let mut due = Vec::new();
+        let mut ended = Vec::new();
         for g in &mut self.skills.grounds {
             g.left -= dt;
             g.next_tick -= dt;
@@ -5522,9 +5558,14 @@ impl InWorld {
             }
             if g.left <= CLOCK_EPSILON {
                 events.push(SessionEvent::ObjectDestroyed(g.object));
+                ended.push(*g);
             }
         }
         self.skills.grounds.retain(|g| g.left > CLOCK_EPSILON);
+        for g in &ended {
+            self.ward_off(g, events);
+        }
+        self.ground_ward(c, events);
         for g in due {
             let inside: Vec<u64> = self
                 .mobs
@@ -5538,6 +5579,39 @@ impl InWorld {
                 self.bonus_hit(g.spell_id, guid, g.damage, g.school, c, rng, events, ticked);
             }
         }
+    }
+
+    /// The caster's aura from their own patches (Consecrated Ground): on while they stand alive
+    /// inside, by flat distance to the centre, and off as they step out. One that ran out while
+    /// the patch still holds them (a patch Hallowed Ground made longer) goes back on.
+    fn ground_ward(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+        let me = self.guid;
+        let alive = self.player.alive();
+        let mut grounds = std::mem::take(&mut self.skills.grounds);
+        for g in grounds.iter_mut().filter(|g| g.caster == me) {
+            let Some(def) = g.caster_aura else {
+                continue;
+            };
+            let inside = alive && flat_distance(g.centre, c.position) <= g.radius_yd;
+            if inside && !self.skills.on(me, def.spell_id) {
+                self.put_aura(def, me, c.power_level(), events);
+            } else if !inside {
+                self.ward_off(g, events);
+            }
+            g.caster_inside = inside;
+        }
+        self.skills.grounds = grounds;
+    }
+
+    /// The caster's aura from patch `g` comes off them, if they stood inside it.
+    fn ward_off(&mut self, g: &Ground, events: &mut Vec<SessionEvent>) {
+        let Some(def) = g.caster_aura.filter(|_| g.caster_inside) else {
+            return;
+        };
+        let gone = self
+            .skills
+            .remove_where(|a| a.unit == g.caster && a.spell_id == def.spell_id, events);
+        self.faded(&gone, events);
     }
 
     /// What an aura's going undoes.

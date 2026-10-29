@@ -819,7 +819,7 @@
     "dmg_class": 2,
     "school": 0,
     "prevention_type": 2,
-    "description": "Charge an enemy, generating 15 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. Usable in combat.",
+    "description": "Charge an enemy, generating 15 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
     "stances": [
      "Battle Stance"
     ],
@@ -12286,6 +12286,28 @@
     "name": "Vengeful Conviction",
     "aura_description": "Your next Righteous Smash grants 2 stacks of Conviction.",
     "visual": 2816
+   }
+  },
+  {
+   "spell_id": 1000455,
+   "calling": "vanguard",
+   "key": "aura_consecration_ward",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_InnerFire",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Consecrated Ground",
+    "aura_description": "Damage taken reduced by 10%."
    }
   },
   {

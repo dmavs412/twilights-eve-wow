@@ -1263,7 +1263,7 @@ pub(crate) struct Stance {
 }
 
 /// `damage` changed by `pct` percent, never below 0.
-fn changed_by(damage: u32, pct: i32) -> u32 {
+pub(crate) fn changed_by(damage: u32, pct: i32) -> u32 {
     (i64::from(damage) * i64::from(100 + pct) / 100).max(0) as u32
 }
 

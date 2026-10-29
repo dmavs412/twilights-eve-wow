@@ -330,11 +330,13 @@ pub enum AuraEffect {
         family_bits: Vec<u8>,
     },
     /// The unit takes `pct` percent more `school` damage from others than the aura's caster
-    /// (Festering Wounds). No other player deals damage yet, so it changes nothing today.
+    /// (Festering Wounds), or less when `pct` is negative (Consecrated Ground). No `school` is
+    /// every school. On a mob it changes nothing yet, as no other player deals damage; on the
+    /// player it changes every blow they take.
     ModDamageTakenPct {
-        pct: u32,
+        pct: i32,
         #[serde(default)]
-        school: School,
+        school: Option<School>,
     },
     /// The player's next cast of one of the skills changes: see [`NextCast`].
     NextCast(NextCast),
@@ -1776,6 +1778,11 @@ pub enum Effect {
         /// logs carry this id. `None` names the skill that cast it.
         #[serde(default)]
         ground_spell_id: Option<u32>,
+        /// The aura row the caster wears while they stand in their own patch
+        /// (`caster_aura=key`, Consecrated Ground): on as they step in, off as they step out, the
+        /// patch ends or a new one replaces it. No one else inside gets it.
+        #[serde(default)]
+        caster_aura_spell_id: Option<u32>,
     },
 }
 

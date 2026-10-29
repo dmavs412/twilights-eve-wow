@@ -2001,12 +2001,13 @@
         "base": 4,
         "per_level": 0.6
        },
+       "caster_aura_spell_id": 1000455,
        "ground_spell_id": 1000397
       },
       "realm_only": false
      }
     ],
-    "description": "Charge an enemy, generating 15 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. Usable in combat."
+    "description": "Charge an enemy, generating 15 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. You take 10% less damage while you stand in it. Usable in combat."
    },
    {
     "key": "consecration",
@@ -5017,6 +5018,35 @@
      }
     ],
     "description": "Your next Righteous Smash grants 2 stacks of Conviction."
+   },
+   {
+    "key": "aura_consecration_ward",
+    "name": "Consecrated Ground",
+    "spell_id": 1000455,
+    "status": "wip",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_taken_pct",
+      "params": {
+       "pct": -10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Damage taken reduced by 10%."
    }
   ],
   "rows": [],

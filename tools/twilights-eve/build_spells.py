@@ -930,6 +930,13 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
         pct = params.get("pct")
         if isinstance(pct, bool) or not isinstance(pct, int) or pct <= 0:
             raise BuildError(f"{where}: {kind} needs a positive whole pct, has {pct!r}")
+    if kind == "mod_damage_taken_pct":
+        # A negative pct lowers the damage (Consecrated Ground); no school is every school.
+        pct = params.get("pct")
+        if isinstance(pct, bool) or not isinstance(pct, int) or pct < -100 or pct == 0:
+            raise BuildError(f"{where}: mod_damage_taken_pct needs a whole pct from -100 up, not 0, has {pct!r}")
+        if params.get("school", "physical") not in SCHOOLS:
+            raise BuildError(f"{where}: mod_damage_taken_pct school is {params['school']!r}, want one of {', '.join(SCHOOLS)}")
     if kind == "taunt":
         duration = params.get("duration_ms")
         if isinstance(duration, bool) or not isinstance(duration, int) or duration <= 0:
@@ -1441,6 +1448,8 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
                 raise BuildError(f"{here}: grow_aura aura {parsed['aura']!r} has no periodic_damage effect to grow")
         if kind == "pickup" and parsed.get("grants") not in auras:
             raise BuildError(f"{here}: grants {parsed.get('grants')!r} is not an aura row of this Calling")
+        if kind == "ground_effect" and "caster_aura" in parsed and parsed["caster_aura"] not in auras:
+            raise BuildError(f"{here}: caster_aura {parsed['caster_aura']!r} is not an aura row of this Calling")
         if kind == "ground_area":
             for side in ("enemy_aura", "ally_aura"):
                 if side in parsed and parsed[side] not in auras:
@@ -1531,9 +1540,14 @@ def resolve_reset_cooldowns(calling: dict) -> None:
 def resolve_ground_spell(calling: dict) -> None:
     """A `ground_effect`'s `ground_spell=key` becomes that skill's spell id: the patch's
     DynamicObject and its tick logs name it. The client draws the object from its own row, so the
-    skill must be client visible."""
+    skill must be client visible. Its `caster_aura=key` becomes that aura row's spell id, the aura
+    the caster wears while standing in the patch."""
+    spell_ids = {a["key"]: a.get("spell_id") for a in calling["auras"]}
     for skill in calling["skills"]:
         for effect in skill["effects"]:
+            if effect["kind"] == "ground_effect" and "caster_aura" in effect["params"]:
+                # `build_row` has checked the key names an aura row of the Calling.
+                effect["params"]["caster_aura_spell_id"] = spell_ids[effect["params"].pop("caster_aura")]
             key = effect["params"].pop("ground_spell", None) if effect["kind"] == "ground_effect" else None
             if key is None:
                 continue
