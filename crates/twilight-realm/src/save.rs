@@ -13,8 +13,9 @@ use crate::inventory::{bag_size, is_journal, Inventory, Item, Pos, Satchel};
 /// a save from any other version is refused. From version 3 the spell ids are the sheet's own,
 /// from version 4 the talent ids too (ADR 0011): an older save's action bar and talents name
 /// stock ids, remapped on load through [`OLD_IDS`]. Version 5 adds the Satchel (ADR 0023): an
-/// older save's bag Journal Items move into it on load, once.
-pub const SAVE_VERSION: u32 = 5;
+/// older save's bag Journal Items move into it on load, once. Version 6 swaps the talent tree for
+/// Talent Rows (ADR 0028): an older save's talents are ignored and every row loads empty.
+pub const SAVE_VERSION: u32 = 6;
 
 /// The oldest save version the realm still reads. Version 2's quests are Hunting Quests, done once
 /// per character; version 1's are read the same way.
@@ -22,9 +23,6 @@ const OLDEST_VERSION: u32 = 1;
 
 /// The last version whose spell ids were stock 1.12.1 ones.
 const LAST_STOCK_SPELLS_VERSION: u32 = 2;
-/// The last version whose talent ids were stock `Talent.dbc` ones.
-const LAST_STOCK_TALENTS_VERSION: u32 = 3;
-
 /// The one-time tables of stock spell and talent ids to the sheet's own, `{spells, talents}`,
 /// written by `tools/twilights-eve/migrate_from_scratch.py` (#204) and `migrate_talent_ids.py`
 /// (#205).
@@ -55,16 +53,6 @@ fn remap_action_bar(bar: Vec<(u8, u32)>) -> Vec<(u8, u32)> {
             let new = table.get(&(packed & 0x00FF_FFFF))?;
             Some((slot, ACTION_SPELL << 24 | new))
         })
-        .collect()
-}
-
-/// A stock-id save's talents with each `Talent.dbc` id remapped; a talent the table lacks is
-/// dropped, and its points come back, since points are counted from the level.
-fn remap_talents(talents: Vec<(u32, u8)>) -> Vec<(u32, u8)> {
-    let table = old_ids("talents");
-    talents
-        .into_iter()
-        .filter_map(|(id, rank)| Some((*table.get(&id)?, rank)))
         .collect()
 }
 
@@ -121,12 +109,10 @@ struct Save {
     /// Copper. Added within version 1: a save without it has none.
     #[serde(default)]
     money: u32,
-    /// `[talent id, rank]` per learned talent. Added within version 1: a save without them has none.
+    /// `[row key, spell id]` per set Talent Row. Added in version 6: an older save has none, and
+    /// its `talents` and `talent_wipes` are not read.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    talents: Vec<(u32, u8)>,
-    /// Respecs bought, which price the next. Added within version 1.
-    #[serde(default)]
-    talent_wipes: u32,
+    rows: Vec<(String, u32)>,
     /// The ammo's entry, 0 for none (#157). Added within version 2: a save without it has none.
     #[serde(default, skip_serializing_if = "is_zero")]
     ammo: u32,
@@ -456,8 +442,7 @@ pub(crate) fn export(c: &Char) -> String {
         orientation: c.orientation,
         action_bar: c.action_bar.clone(),
         money: c.inventory.money,
-        talents: c.talents.clone(),
-        talent_wipes: c.talent_wipes,
+        rows: c.rows.clone(),
         ammo: c.inventory.ammo,
         item_ready_at: c
             .item_cooldowns
@@ -543,12 +528,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         } else {
             s.action_bar
         },
-        talents: if header.version <= LAST_STOCK_TALENTS_VERSION {
-            remap_talents(s.talents)
-        } else {
-            s.talents
-        },
-        talent_wipes: s.talent_wipes,
+        rows: s.rows,
         inventory: {
             let mut inventory = load_inventory(s.money, s.ammo, &s.items)?;
             load_satchel(&mut inventory, &s.satchel)?;

@@ -1,8 +1,7 @@
-//! Seal of Iron, a buff whose procs fire on the player's landed melee hits, and Wrathful Iron, a
-//! talent proc that fires only while that buff is up. The engine half is played through the
-//! realm's seam on a test Calling (`Realm::with_callings`) whose rows carry the same generic
-//! effects as the Vanguard's, with a free strike to count hits by; the content half reads the
-//! Vanguard's rows.
+//! Seal of Iron, a buff whose procs fire on the player's landed melee hits. The engine half is
+//! played through the realm's seam on a test Calling (`Realm::with_callings`) whose rows carry the
+//! same generic effects as the Vanguard's, with a free strike to count hits by; the content half
+//! reads the Vanguard's rows for the seal and for Wrathful Iron, a talent proc that needs the seal.
 
 mod common;
 
@@ -20,9 +19,6 @@ const STRIKE: u32 = 1752;
 const SEAL: u32 = 20165;
 /// The armour buff one of the seal's procs puts up lasts 10 s.
 const ARMOR_MS: u32 = 10_000;
-/// The test talent, Wrathful Iron's shape at 50%, and its one rank's spell.
-const WRATHFUL: u32 = 99005;
-const WRATHFUL_SPELL: u32 = 99051;
 /// Landed hits to count over.
 const HITS: usize = 100;
 
@@ -71,40 +67,19 @@ key = "test_seal_armor"
 spell_id = 10291
 duration_ms = 10000
 effects = [{ kind = "armor_items_pct", pct = 20 }]
-
-[[calling.talent_tab]]
-id = 9991
-name = "Test"
-background = "WarriorArms"
-
-[[calling.talent_tab.talent]]
-key = "wrathful"
-talent_id = 99005
-tier = 1
-column = 1
-rank_spells = [99051]
-spell_name = "Test Wrathful"
-effects = [{ kind = "proc", on = "melee_hit", while_aura = "test_seal_of_iron", chance = 50, per_rank = [0], weapon_pct = 25, school = "holy" }]
 "#;
 
-/// A level 20 human of the test Calling, with `talents` learned, by the scorpid camp south of the
-/// Crossroads: the camp's mobs and the view.
-fn at_the_camp(talents: &[(u32, u8)]) -> (Realm, u64, Vec<Mob>, View) {
+/// A level 20 human of the test Calling by the scorpid camp south of the Crossroads: the camp's
+/// mobs and the view.
+fn at_the_camp() -> (Realm, u64, Vec<Mob>, View) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Iron", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
-    let mut blob = maker
+    let blob = maker
         .export_character(guid)
         .unwrap()
         .replace("level = 1\n", &format!("level = {LEVEL}\n"))
         .replace("calling = \"basic_warrior\"", "calling = \"test_seal\"");
-    if !talents.is_empty() {
-        let rows: Vec<String> = talents.iter().map(|(t, r)| format!("[{t}, {r}]")).collect();
-        blob = blob.replace(
-            "money = 0\n",
-            &format!("money = 0\ntalents = [{}]\n", rows.join(", ")),
-        );
-    }
     let mut realm = Realm::with_seed(SEED).with_callings(TEST_CALLINGS);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -202,18 +177,6 @@ fn armor_buffs(events: &[SessionEvent]) -> usize {
         .count()
 }
 
-fn sears(events: &[SessionEvent], me: u64) -> Vec<u32> {
-    events
-        .iter()
-        .filter_map(|e| match e {
-            SessionEvent::SpellDamageLog(l) if l.attacker == me && l.spell_id == WRATHFUL_SPELL => {
-                Some(l.damage)
-            }
-            _ => None,
-        })
-        .collect()
-}
-
 fn seal_up(realm: &mut Realm, view: &mut View) {
     realm.handle(cast(SEAL, None));
     assert_eq!(refusal(&view.drain(realm), SEAL), None, "the seal");
@@ -221,7 +184,7 @@ fn seal_up(realm: &mut Realm, view: &mut View) {
 
 #[test]
 fn seal_of_iron_heals_and_hardens_at_about_ten_percent_a_hit_each() {
-    let (mut realm, me, camp, mut view) = at_the_camp(&[]);
+    let (mut realm, me, camp, mut view) = at_the_camp();
     seal_up(&mut realm, &mut view);
     let seen = strike_camp(&mut realm, &mut view, me, &camp);
     // 10% each over 100 hits: 10 expected, wide bounds for one seed.
@@ -233,24 +196,10 @@ fn seal_of_iron_heals_and_hardens_at_about_ten_percent_a_hit_each() {
 
 #[test]
 fn without_the_seal_there_are_no_procs() {
-    let (mut realm, me, camp, mut view) = at_the_camp(&[(WRATHFUL, 1)]);
+    let (mut realm, me, camp, mut view) = at_the_camp();
     let seen = strike_camp(&mut realm, &mut view, me, &camp);
     assert_eq!(heals(&seen), 0);
     assert_eq!(armor_buffs(&seen), 0);
-    assert!(sears(&seen, me).is_empty(), "Wrathful Iron needs the seal");
-}
-
-#[test]
-fn wrathful_iron_sears_only_while_the_seal_is_up() {
-    let (mut realm, me, camp, mut view) = at_the_camp(&[(WRATHFUL, 1)]);
-    seal_up(&mut realm, &mut view);
-    let seen = strike_camp(&mut realm, &mut view, me, &camp);
-    let burns = sears(&seen, me);
-    // 50% over 100 hits.
-    assert!((30..=70).contains(&burns.len()), "{} sears", burns.len());
-    assert!(burns.iter().all(|&d| d > 0), "{burns:?}");
-    // Holy: every sear is the same 25% of the average swing.
-    assert!(burns.iter().all(|&d| d == burns[0]), "{burns:?}");
 }
 
 #[test]
@@ -305,7 +254,7 @@ fn the_vanguards_rows_carry_the_seal_and_wrathful_iron() {
 /// The seal's two procs are one buff on the bar, not two.
 #[test]
 fn the_seal_is_one_buff() {
-    let (mut realm, me, _camp, mut view) = at_the_camp(&[]);
+    let (mut realm, me, _camp, mut view) = at_the_camp();
     seal_up(&mut realm, &mut view);
     view.run(&mut realm, 0.5);
     let slots = view

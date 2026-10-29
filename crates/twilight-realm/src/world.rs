@@ -4,6 +4,7 @@
 mod advance;
 mod call_for_help;
 mod cast;
+pub(crate) use cast::action_buttons;
 pub(crate) mod closed;
 mod creature_cast;
 mod hearth;
@@ -428,6 +429,7 @@ impl InWorld {
             timescale: game_clock::TIMESCALE,
         });
         events.push(cast::spell_book(c, wall));
+        events.push(crate::talents::rows_event(c, false));
         events.push(fishing::angler(c));
         events.push(herbalism::herbalist(c));
         events.push(herbalism::tracking(c));
@@ -1034,6 +1036,10 @@ impl InWorld {
         // The armour the player's debuffs took off it (Sundered).
         let mut stats = stats;
         stats.armor_pen += self.skills.armor_loss(target);
+        // A buff for any skill's next hit (Blindside's edge) counts for the main hand's swing.
+        if !off_hand {
+            stats.crit_pct += f64::from(self.skills.white_crit_pct());
+        }
         let mut swing = combat::player_swing(&stats, &self.mobs[i], from_front, opener, rng);
         swing.off_hand = off_hand;
         swing.damage = self.dealt(c, swing.damage);
@@ -1043,6 +1049,15 @@ impl InWorld {
             self.faded(&counted, events);
         }
         events.push(SessionEvent::AttackerState(swing.report(self.guid, target)));
+        if !off_hand
+            && !matches!(
+                swing.outcome,
+                Outcome::Miss | Outcome::Dodge | Outcome::Parry
+            )
+        {
+            let gone = self.skills.spend_charges(None, events);
+            self.faded(&gone, events);
+        }
         if swing.outcome == Outcome::Dodge {
             self.skills
                 .dodged_by(target, crate::callings::opens_on_dodge(c.calling), events);
@@ -1742,6 +1757,10 @@ impl InWorld {
                     });
                 }
             }
+            // A Talent Row this level opens.
+            if crate::talents::rows(c).iter().any(|r| r.level == c.level) {
+                events.push(crate::talents::rows_event(c, false));
+            }
             match xp::xp_to_next(c.level) {
                 // The Tier Cap: what is left over is not banked.
                 Some(_) if at_tier_cap(c) => {
@@ -1760,7 +1779,6 @@ impl InWorld {
         let mut pairs = vec![(PLAYER_XP, c.xp)];
         if leveled {
             pairs.push((PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)));
-            pairs.push(crate::talents::points_pair(c));
             pairs.push((UNIT_FIELD_HEALTH, self.player.health));
             pairs.extend(sheet_pairs(
                 c,
@@ -2132,7 +2150,6 @@ fn player_fields(c: &Char, stats: &CharacterStats, power: &Power) -> ObjectField
     pairs.extend(crate::rest::pairs(c));
     pairs.extend(sheet_pairs(c, stats));
     pairs.push(cast::stance(c));
-    pairs.push(crate::talents::points_pair(c));
     pairs.extend(crate::equipment::inventory_pairs(c));
     pairs.extend(crate::quests::log_pairs(c));
     pairs.extend(crate::areas::explored_pairs());

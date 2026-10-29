@@ -149,48 +149,22 @@ pub fn spells(calling: &str, keys: &[&str]) -> Vec<u32> {
     keys.iter().map(|key| spell(calling, key)).collect()
 }
 
-/// The spell id of rank `rank` (from 1) of `calling`'s talent `key` on the sheet.
-pub fn talent_spell(calling: &str, key: &str, rank: usize) -> u32 {
-    let talent = sheet_calling(calling)["talent_tabs"]
+/// The spell id of the choice `key` of `calling`'s Talent Row for `skill` (a Skill Choice row's
+/// skill key, or a Talent row's key) on the sheet.
+pub fn choice(calling: &str, skill: &str, key: &str) -> u32 {
+    let row = sheet_calling(calling)["rows"]
         .as_array()
         .unwrap()
         .iter()
-        .flat_map(|tab| tab["talents"].as_array().unwrap())
-        .find(|t| t["key"] == key)
-        .unwrap_or_else(|| panic!("{calling}/{key} is not a talent of the sheet"));
-    id_of(
-        &talent["ranks"][rank - 1],
-        &format!("{calling}/{key} rank {rank}"),
-    )
-}
-
-/// The talent id of `calling`'s talent `key` on the sheet (ADR 0011: the sheet's own, 1,000,000
-/// up), as `CMSG_LEARN_TALENT` and the save name it.
-pub fn talent(calling: &str, key: &str) -> u32 {
-    let talent = sheet_calling(calling)["talent_tabs"]
+        .find(|r| r["key"] == skill)
+        .unwrap_or_else(|| panic!("{calling}/{skill} is not a row of the sheet"));
+    let choice = row["choices"]
         .as_array()
         .unwrap()
         .iter()
-        .flat_map(|tab| tab["talents"].as_array().unwrap())
-        .find(|t| t["key"] == key)
-        .unwrap_or_else(|| panic!("{calling}/{key} is not a talent of the sheet"));
-    talent["ranks"][0]["talent_id"]
-        .as_u64()
-        .unwrap_or_else(|| panic!("{calling}/{key} has no talent id")) as u32
-}
-
-/// Every rank's spell id of `calling`'s talent `key`, rank 1 first.
-pub fn talent_spells(calling: &str, key: &str) -> Vec<u32> {
-    let talent = sheet_calling(calling)["talent_tabs"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .flat_map(|tab| tab["talents"].as_array().unwrap())
-        .find(|t| t["key"] == key)
-        .unwrap_or_else(|| panic!("{calling}/{key} is not a talent of the sheet"));
-    (1..=talent["ranks"].as_array().unwrap().len())
-        .map(|rank| talent_spell(calling, key, rank))
-        .collect()
+        .find(|c| c["key"] == key)
+        .unwrap_or_else(|| panic!("{calling}/{skill}/{key} is not a choice of the sheet"));
+    id_of(choice, &format!("{calling}/{skill}/{key}"))
 }
 
 /// Flat ground at `z = 0` with nothing in the way, and no area anywhere: nothing to discover.

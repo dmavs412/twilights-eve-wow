@@ -1,7 +1,6 @@
-//! Timed casts and next-cast buffs: a skill with a cast bar goes off when the bar fills; Arcane
-//! Substrate's riders shorten the next Biting Cold or lengthen the next Ember's burn, and using
-//! one takes both; Ley-Line Attunement's third charge makes the next Biting Cold free. Played
-//! through the realm's seam with a test Mage Calling whose skills hit for 1.
+//! Timed casts: a skill with a cast bar goes off when the bar fills, and a step interrupts it.
+//! Played through the realm's seam with a test Mage Calling whose skill hits for 1. The shipped
+//! Arcane Substrate and Ley-Line Attunement auras load as next-cast buffs.
 
 mod common;
 
@@ -25,17 +24,6 @@ shapeshift_form = 0
 armour = ["cloth"]
 
 [[calling.skill]]
-key = "ley_spark"
-spell_id = 2912
-power_cost = 0
-cooldown_ms = 0
-gcd_ms = 0
-target = "enemy"
-range_yd = [0.0, 30.0]
-meta = { cast_time_ms = 1500 }
-effects = [{ kind = "school_damage", school = "arcane", amount = { base = 1.0 } }]
-
-[[calling.skill]]
 key = "biting_cold"
 spell_id = 116
 power_cost = 20
@@ -45,99 +33,20 @@ target = "enemy"
 range_yd = [0.0, 30.0]
 meta = { cast_time_ms = 2500 }
 effects = [{ kind = "school_damage", school = "frost", amount = { base = 1.0 } }]
-
-[[calling.skill]]
-key = "searing_ember"
-spell_id = 133
-power_cost = 0
-cooldown_ms = 0
-gcd_ms = 0
-target = "enemy"
-range_yd = [0.0, 30.0]
-effects = [{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 12000, tick = { base = 1.0 } }]
-
-[[calling.aura]]
-key = "substrate_cold"
-spell_id = 12536
-duration_ms = 15000
-charges = 1
-row = { exclusive_group = "substrate" }
-effects = [{ kind = "next_cast", skill = "biting_cold", cast_time_ms = -500, family_bits = [5] }]
-
-[[calling.aura]]
-key = "substrate_ember"
-spell_id = 11129
-duration_ms = 15000
-charges = 1
-row = { exclusive_group = "substrate" }
-effects = [{ kind = "next_cast", skill = "searing_ember", duration_ms = 5000, family_bits = [0] }]
-
-[[calling.aura]]
-key = "attunement"
-spell_id = 18462
-duration_ms = 30000
-row = { max_stacks = 3, stack_rule = "stack" }
-effects = [{ kind = "at_max_stacks", becomes = "attuned" }]
-
-[[calling.aura]]
-key = "attuned"
-spell_id = 18463
-duration_ms = 30000
-charges = 1
-effects = [{ kind = "next_cast", skill = ["biting_cold", "catalyst"], cost_pct = -100 }]
-
-[[calling.talent_tab]]
-id = 906
-name = "Test"
-background = "MageArcane"
-
-[[calling.talent_tab.talent]]
-key = "arcane_substrate"
-talent_id = 30
-tier = 1
-column = 1
-rank_spells = [11103, 12357, 12358, 12359, 12360]
-spell_name = "Arcane Substrate"
-effects = [{ kind = "proc", on = "cast", skill = "ley_spark", per_rank = [0, 0, 0, 0, 0], auras = [["substrate_cold", "substrate_ember"], ["substrate_cold", "substrate_ember"], ["substrate_cold", "substrate_ember"], ["substrate_cold", "substrate_ember"], ["substrate_cold", "substrate_ember"]] }]
-
-[[calling.talent_tab.talent]]
-key = "ley_line_attunement"
-talent_id = 1142
-tier = 1
-column = 2
-rank_spells = [18464, 18465, 18466]
-spell_name = "Ley-Line Attunement"
-effects = [{ kind = "proc", on = "cast", skill = "ley_spark", per_rank = [0, 0, 0], auras = [["attunement"], ["attunement"], ["attunement"]] }]
 "#;
 
-const LEY_SPARK: u32 = 2912;
 const BITING_COLD: u32 = 116;
-const SEARING_EMBER: u32 = 133;
-const SUBSTRATE_COLD: u32 = 12536;
-const SUBSTRATE_EMBER: u32 = 11129;
-const ATTUNED: u32 = 18463;
 
-const ARCANE_SUBSTRATE: u32 = 30;
-const LEY_LINE_ATTUNEMENT: u32 = 1142;
-
-/// A level 10 test Mage with `talents`, 20 yd from a camp mob: the realm, their guid, the mob
-/// and the view.
-fn world(talents: &[(u32, u8)]) -> (Realm, u64, Mob, View) {
+/// A level 10 test Mage 20 yd from a camp mob: the realm, their guid, the mob and the view.
+fn world() -> (Realm, u64, Mob, View) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Weaver", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
-    let mut blob = maker
+    let blob = maker
         .export_character(guid)
         .unwrap()
         .replace("level = 1\n", "level = 10\n")
         .replace("calling = \"basic_warrior\"", "calling = \"test_mage\"");
-    if !talents.is_empty() {
-        let rows: Vec<String> = talents.iter().map(|(t, r)| format!("[{t}, {r}]")).collect();
-        blob = blob.replace(
-            "money = 0\n",
-            &format!("money = 0\ntalents = [{}]\n", rows.join(", ")),
-        );
-    }
     let mut realm = Realm::with_seed(5).with_callings(TEST_CALLINGS);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -196,17 +105,9 @@ fn landed(events: &[SessionEvent], spell_id: u32) -> bool {
         .any(|e| matches!(e, SessionEvent::SpellDamageLog(l) if l.spell_id == spell_id))
 }
 
-/// Casts Ley-Spark at `mob` and waits for it to land.
-fn ley_spark(realm: &mut Realm, view: &mut View, mob: &Mob) -> Vec<SessionEvent> {
-    assert_eq!(start(realm, view, LEY_SPARK, mob), 1500);
-    let events = view.run(realm, 1.6);
-    assert!(landed(&events, LEY_SPARK), "Ley-Spark lands");
-    events
-}
-
 #[test]
 fn a_cast_bar_goes_off_when_it_fills_and_moving_interrupts_it() {
-    let (mut realm, me, mob, mut view) = world(&[]);
+    let (mut realm, me, mob, mut view) = world();
     assert_eq!(start(&mut realm, &mut view, BITING_COLD, &mob), 2500);
     assert!(!landed(&view.run(&mut realm, 2.4), BITING_COLD), "not yet");
     assert!(landed(&view.run(&mut realm, 0.2), BITING_COLD), "it lands");
@@ -218,99 +119,6 @@ fn a_cast_bar_goes_off_when_it_fills_and_moving_interrupts_it() {
     let after = view.run(&mut realm, 2.0);
     assert!(!landed(&after, BITING_COLD), "interrupted by the step");
     assert_eq!(view.fields(me).unit_power(MANA), mana, "nothing paid");
-}
-
-#[test]
-fn arcane_substrate_shortens_the_next_biting_cold_and_takes_the_ember_rider_with_it() {
-    let (mut realm, me, mob, mut view) = world(&[(ARCANE_SUBSTRATE, 5)]);
-    let sparked = ley_spark(&mut realm, &mut view, &mob);
-    assert!(view.aura(me, SUBSTRATE_COLD).is_some() && view.aura(me, SUBSTRATE_EMBER).is_some());
-    // The client's cast bar is told too.
-    assert!(sparked.iter().any(|e| matches!(
-        e,
-        SessionEvent::SpellModifier {
-            flat: true,
-            mask_bit: 5,
-            op: 10,
-            value: -500
-        }
-    )));
-    assert_eq!(start(&mut realm, &mut view, BITING_COLD, &mob), 2000);
-    assert!(!landed(&view.run(&mut realm, 1.9), BITING_COLD));
-    let done = view.run(&mut realm, 0.2);
-    assert!(landed(&done, BITING_COLD), "lands after 2.0 s");
-    assert!(
-        view.aura(me, SUBSTRATE_COLD).is_none(),
-        "the Cold rider is used"
-    );
-    assert!(
-        view.aura(me, SUBSTRATE_EMBER).is_none(),
-        "the Ember rider goes with it"
-    );
-    assert!(done.iter().any(|e| matches!(
-        e,
-        SessionEvent::SpellModifier {
-            flat: true,
-            mask_bit: 5,
-            op: 10,
-            value: 0
-        }
-    )));
-    assert_eq!(
-        start(&mut realm, &mut view, BITING_COLD, &mob),
-        2500,
-        "back to 2.5 s"
-    );
-}
-
-#[test]
-fn arcane_substrate_makes_the_next_embers_burn_last_17_seconds() {
-    let (mut realm, me, mob, mut view) = world(&[(ARCANE_SUBSTRATE, 5)]);
-    ley_spark(&mut realm, &mut view, &mob);
-    realm.handle(cast(SEARING_EMBER, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(&mut realm), SEARING_EMBER), None);
-    assert!(
-        view.aura(me, SUBSTRATE_COLD).is_none(),
-        "the Cold rider goes with it"
-    );
-    view.run(&mut realm, 16.5);
-    assert!(
-        view.aura(mob.guid, SEARING_EMBER).is_some(),
-        "still burning at 16.5 s"
-    );
-    view.run(&mut realm, 1.0);
-    assert!(
-        view.aura(mob.guid, SEARING_EMBER).is_none(),
-        "out by 17.5 s"
-    );
-}
-
-#[test]
-fn three_ley_sparks_with_attunement_make_the_next_biting_cold_free() {
-    let (mut realm, me, mob, mut view) = world(&[(LEY_LINE_ATTUNEMENT, 1)]);
-    for _ in 0..2 {
-        ley_spark(&mut realm, &mut view, &mob);
-    }
-    assert!(
-        view.aura(me, ATTUNED).is_none(),
-        "two charges are not enough"
-    );
-    ley_spark(&mut realm, &mut view, &mob);
-    assert!(view.aura(me, ATTUNED).is_some(), "the third makes it ready");
-
-    let mana = view.fields(me).unit_power(MANA).unwrap();
-    start(&mut realm, &mut view, BITING_COLD, &mob);
-    assert!(landed(&view.run(&mut realm, 2.6), BITING_COLD));
-    assert_eq!(view.fields(me).unit_power(MANA).unwrap(), mana, "free");
-    assert!(view.aura(me, ATTUNED).is_none(), "used up");
-
-    start(&mut realm, &mut view, BITING_COLD, &mob);
-    assert!(landed(&view.run(&mut realm, 2.6), BITING_COLD));
-    assert_eq!(
-        view.fields(me).unit_power(MANA).unwrap(),
-        mana - 20,
-        "the next one costs again"
-    );
 }
 
 #[test]

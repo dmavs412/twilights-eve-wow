@@ -19,8 +19,6 @@ const LEVEL: u8 = 20;
 const TAG: u32 = 1752;
 const BURST: u32 = 2098;
 const CONVICTION: u32 = 78;
-/// The test talent, Zealous Restoration's shape: the burst heals for 10/20/30% of its damage.
-const RESTORATION: u32 = 99001;
 
 const TEST_CALLINGS: &str = r#"
 [[calling]]
@@ -52,29 +50,15 @@ gcd_ms = 0
 target = "enemy"
 range_yd = [0.0, 5.0]
 effects = [{ kind = "consume_aura_stacks", aura_spell_id = 78, per_stack = { base = 5.0, per_level = 1.0 }, school = "holy" }]
-
-[[calling.talent_tab]]
-id = 9990
-name = "Test"
-background = "WarriorArms"
-
-[[calling.talent_tab.talent]]
-key = "restoration"
-talent_id = 99001
-tier = 1
-column = 1
-rank_spells = [99011, 99012, 99013]
-spell_name = "Test Restoration"
-effects = [{ kind = "consume_heal_pct", skill = "burst", per_rank = [10, 20, 30] }]
 "#;
 
-/// A level 20 human of the test Calling, with `talents` learned, beside the scorpid camp south of
-/// the Crossroads: the camp's mobs and the view. Stands two yards from the first mob.
-fn at_the_camp(talents: &[(u32, u8)]) -> (Realm, u64, Vec<Mob>, View) {
+/// A level 20 human of the test Calling beside the scorpid camp south of the Crossroads: the
+/// camp's mobs and the view. Stands two yards from the first mob.
+fn at_the_camp() -> (Realm, u64, Vec<Mob>, View) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Varian", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
-    let mut blob = maker
+    let blob = maker
         .export_character(guid)
         .unwrap()
         .replace("level = 1\n", &format!("level = {LEVEL}\n"))
@@ -82,13 +66,6 @@ fn at_the_camp(talents: &[(u32, u8)]) -> (Realm, u64, Vec<Mob>, View) {
             "calling = \"basic_warrior\"",
             "calling = \"test_conviction\"",
         );
-    if !talents.is_empty() {
-        let rows: Vec<String> = talents.iter().map(|(t, r)| format!("[{t}, {r}]")).collect();
-        blob = blob.replace(
-            "money = 0\n",
-            &format!("money = 0\ntalents = [{}]\n", rows.join(", ")),
-        );
-    }
     let mut realm = Realm::with_seed(SEED).with_callings(TEST_CALLINGS);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -148,7 +125,7 @@ fn stacks(view: &View, me: u64) -> u8 {
 
 #[test]
 fn three_hits_leave_three_stacks() {
-    let (mut realm, me, camp, mut view) = at_the_camp(&[]);
+    let (mut realm, me, camp, mut view) = at_the_camp();
     for want in 1..=3 {
         cast_at(&mut realm, &mut view, TAG, &camp[0]);
         assert_eq!(stacks(&view, me), want);
@@ -157,7 +134,7 @@ fn three_hits_leave_three_stacks() {
 
 #[test]
 fn six_hits_leave_five_the_most() {
-    let (mut realm, me, camp, mut view) = at_the_camp(&[]);
+    let (mut realm, me, camp, mut view) = at_the_camp();
     for _ in 0..6 {
         cast_at(&mut realm, &mut view, TAG, &camp[0]);
     }
@@ -166,7 +143,7 @@ fn six_hits_leave_five_the_most() {
 
 #[test]
 fn the_stacks_fade_together_after_the_last_hit() {
-    let (mut realm, me, camp, mut view) = at_the_camp(&[]);
+    let (mut realm, me, camp, mut view) = at_the_camp();
     cast_at(&mut realm, &mut view, TAG, &camp[0]);
     view.run(&mut realm, 10.0);
     cast_at(&mut realm, &mut view, TAG, &camp[0]);
@@ -179,7 +156,7 @@ fn the_stacks_fade_together_after_the_last_hit() {
 
 #[test]
 fn zealous_cleave_takes_every_stack_for_holy_damage_a_stack() {
-    let (mut realm, me, camp, mut view) = at_the_camp(&[]);
+    let (mut realm, me, camp, mut view) = at_the_camp();
     for _ in 0..6 {
         cast_at(&mut realm, &mut view, TAG, &camp[0]);
     }
@@ -192,7 +169,7 @@ fn zealous_cleave_takes_every_stack_for_holy_damage_a_stack() {
 
 #[test]
 fn with_no_stacks_there_is_no_bonus_and_the_cast_still_goes_off() {
-    let (mut realm, _, camp, mut view) = at_the_camp(&[]);
+    let (mut realm, _, camp, mut view) = at_the_camp();
     let events = cast_at(&mut realm, &mut view, BURST, &camp[0]);
     assert!(damage_of(&events, BURST).is_empty());
     assert!(events.iter().any(|e| matches!(
@@ -223,23 +200,8 @@ fn worn_down(realm: &mut Realm, me: u64, camp: &[Mob], view: &mut View, missing:
 }
 
 #[test]
-fn zealous_restoration_heals_a_share_of_the_bonus_damage() {
-    for (rank, pct) in [(1u8, 10u32), (3, 30)] {
-        let (mut realm, me, camp, mut view) = at_the_camp(&[(RESTORATION, rank)]);
-        let health = worn_down(&mut realm, me, &camp, &mut view, 60);
-        for _ in 0..5 {
-            cast_at(&mut realm, &mut view, TAG, &camp[0]);
-        }
-        let events = cast_at(&mut realm, &mut view, BURST, &camp[0]);
-        let bonus: u32 = damage_of(&events, BURST).iter().sum();
-        assert_eq!(bonus, 5 * (5 + u32::from(LEVEL)));
-        assert_eq!(view.health(me), health + bonus * pct / 100, "rank {rank}");
-    }
-}
-
-#[test]
 fn without_the_talent_the_cleave_heals_nothing() {
-    let (mut realm, me, camp, mut view) = at_the_camp(&[]);
+    let (mut realm, me, camp, mut view) = at_the_camp();
     let health = worn_down(&mut realm, me, &camp, &mut view, 20);
     for _ in 0..5 {
         cast_at(&mut realm, &mut view, TAG, &camp[0]);

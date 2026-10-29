@@ -1,5 +1,5 @@
 //! **Advancement** (`GLOSSARY.md`), in the world: the character becomes level 1 of the Calling it
-//! advanced into. Its skills, talents and Talent Points are replaced by the new Calling's, and
+//! advanced into. Its skills are replaced by the new Calling's and its Talent Rows are cleared, and
 //! that Calling's Tier Bonus lifts its base stats, and its proficiency is sent again. Gear, bags,
 //! gold and every quest, done or under way, stay.
 
@@ -16,13 +16,17 @@ use crate::rules::xp;
 impl InWorld {
     /// `c` advances into `to`, and the client is told everything that changed.
     pub(crate) fn advance(&mut self, c: &mut Char, to: Calling, events: &mut Vec<SessionEvent>) {
-        // The old tree first, while it is still current: its rank spells and spell mods go.
-        crate::talents::wipe(c, events);
-        for s in &callings::of(c.calling).skills {
-            events.push(SessionEvent::SpellRemoved {
-                spell_id: s.spell_id,
-            });
+        // The old Calling's spells first, while it is still current: its skills and set choices.
+        let old: Vec<u32> = callings::of(c.calling)
+            .skills
+            .iter()
+            .map(|s| s.spell_id)
+            .chain(crate::talents::known_spells(c))
+            .collect();
+        for spell_id in old {
+            events.push(SessionEvent::SpellRemoved { spell_id });
         }
+        c.rows.clear();
         c.calling = to;
         events.push(SessionEvent::Callings {
             by_guid: vec![(c.guid, callings::of(to).key.clone())],
@@ -30,8 +34,6 @@ impl InWorld {
         c.level = 1;
         c.xp = 0;
         c.notoriety = crate::rules::notoriety::advanced(c.notoriety);
-        // The respec's price starts over with the new tree.
-        c.talent_wipes = 0;
         c.action_bar = None;
         for s in callings::of(c.calling)
             .skills
@@ -43,6 +45,7 @@ impl InWorld {
             });
         }
         events.extend(crate::talents::spell_mods(c));
+        events.push(crate::talents::rows_event(c, false));
         // The new Calling's armour, for the client's equip checks and tooltips.
         crate::equipment::proficiency(c, events);
         events.push(cast::action_buttons(c));
@@ -58,7 +61,6 @@ impl InWorld {
         let mut pairs = vec![
             (PLAYER_XP, c.xp),
             (PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)),
-            crate::talents::points_pair(c),
             (UNIT_FIELD_HEALTH, p.health),
             p.power.field(),
             (

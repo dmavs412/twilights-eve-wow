@@ -17,9 +17,11 @@ const THE_CROSSROADS: u32 = 380;
 // The menu's lines, by the index `CMSG_GOSSIP_SELECT_OPTION` echoes.
 const OPTION_BIND: u32 = 0;
 const OPTION_BROWSE: u32 = 1;
-/// `GOSSIP_ICON_INTERACT_2`, the binder's, and `GOSSIP_ICON_VENDOR`.
+const OPTION_RETHINK: u32 = 2;
+/// `GOSSIP_ICON_INTERACT_2`, the binder's, `GOSSIP_ICON_VENDOR` and `GOSSIP_ICON_CHAT`.
 const ICON_BINDER: u8 = 5;
 const ICON_VENDOR: u8 = 1;
+const ICON_CHAT: u8 = 0;
 
 /// Where the Hearthstone takes a character, and the `AreaTable` id that names it.
 #[derive(Debug, Clone, Copy)]
@@ -77,6 +79,12 @@ pub(crate) fn options() -> Vec<GossipOption> {
             coded: false,
             message: "Let me browse your goods.".into(),
         },
+        GossipOption {
+            index: OPTION_RETHINK,
+            icon: ICON_CHAT,
+            coded: false,
+            message: "I want to rethink my talents.".into(),
+        },
     ]
 }
 
@@ -87,9 +95,10 @@ fn innkeeper(guid: u64) -> Option<&'static Npc> {
 
 impl crate::Realm {
     /// A line of the innkeeper's menu: the bind line asks the stock confirm; the browse line
-    /// opens his merchant window. Both close the menu.
+    /// opens his merchant window; the rethink line opens the Talents panel with every open row
+    /// live. All close the menu.
     pub(crate) fn inn_select(&mut self, npc: &Npc, option: u32) {
-        if !self.near(npc) || !matches!(option, OPTION_BIND | OPTION_BROWSE) {
+        if !self.near(npc) || !matches!(option, OPTION_BIND | OPTION_BROWSE | OPTION_RETHINK) {
             return;
         }
         self.events.push(SessionEvent::GossipComplete);
@@ -105,7 +114,18 @@ impl crate::Realm {
         else {
             return;
         };
+        if option == OPTION_RETHINK {
+            self.events.push(crate::talents::rows_event(c, true));
+            return;
+        }
         crate::vendor::list(npc.guid(), c, &mut self.events);
+    }
+
+    /// Whether an innkeeper stands within service range of the character in the world.
+    pub(crate) fn at_innkeeper(&self) -> bool {
+        hub::npcs()
+            .iter()
+            .any(|n| n.is_innkeeper() && n.area.is_some() && self.near(n))
     }
 
     /// `CMSG_BINDER_ACTIVATE`: binds the character where they stand, at an innkeeper within

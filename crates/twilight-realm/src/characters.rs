@@ -58,10 +58,8 @@ pub(crate) struct Char {
     /// The action bar as the player arranged it, `(slot, kind << 24 | action)`; `None` until
     /// they first change it, which shows the Calling's default bar.
     pub(crate) action_bar: Option<Vec<(u8, u32)>>,
-    /// Learned talents of the current Calling's tree, `(talent id, rank)`.
-    pub(crate) talents: Vec<(u32, u8)>,
-    /// Respecs bought so far, which set the next one's price.
-    pub(crate) talent_wipes: u32,
+    /// The current Calling's set Talent Rows, `(row key, the set choice's spell id)`.
+    pub(crate) rows: Vec<(String, u32)>,
     /// Gear, bags and money.
     pub(crate) inventory: Inventory,
     /// The items cooling down after use, `(entry, the wall-clock second it is ready at)`: time
@@ -288,8 +286,7 @@ impl Characters {
             position: [x, y, z],
             orientation: facing,
             action_bar: None,
-            talents: Vec::new(),
-            talent_wipes: 0,
+            rows: Vec::new(),
             inventory: content::starting_inventory(Calling::BASIC_WARRIOR),
             item_cooldowns: Vec::new(),
             quests: QuestLog::default(),

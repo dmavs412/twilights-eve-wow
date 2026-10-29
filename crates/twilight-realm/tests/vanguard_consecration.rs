@@ -2,8 +2,7 @@
 //! eight, each enemy inside the patch takes Holy damage. Played through the realm's seam by a
 //! level 4 Vanguard charging the first mob of the scorpid camp south of the Crossroads, from
 //! the west. The charge ends two yards short of it; the camp's next mob stands ten yards from
-//! that spot and, being out of social range of the first, is never pulled. Hallowed Ground
-//! lengthens the patch and strengthens its ticks.
+//! that spot and, being out of social range of the first, is never pulled.
 
 mod common;
 
@@ -14,10 +13,9 @@ use twilight_realm::callings;
 use twilight_realm::{Realm, RealmCommand};
 
 const SEED: u64 = 0x5EED_0103;
-/// Level 4 has the three Talent Points Hallowed Ground's ranks cost.
 const LEVEL: u8 = 4;
-/// Seconds to watch: the patch's eight and Hallowed Ground's six more, with a second to spare.
-const WATCH_SECS: f32 = 15.0;
+/// Seconds to watch: the patch's eight, with two to spare.
+const WATCH_SECS: f32 = 10.0;
 
 fn vanguard() -> &'static callings::CallingDef {
     callings::calling("vanguard").expect("the Vanguard is a shipped Calling")
@@ -66,39 +64,21 @@ fn destroyed(events: &[SessionEvent], guid: u64) -> bool {
         .any(|e| matches!(e, SessionEvent::ObjectDestroyed(g) if *g == guid))
 }
 
-/// Hallowed Ground's talent id.
-fn hallowed_ground() -> u32 {
-    vanguard()
-        .talent_tabs
-        .iter()
-        .flat_map(|t| &t.talents)
-        .find(|t| t.key == "hallowed_ground")
-        .expect("the Vanguard has Hallowed Ground")
-        .talent_id
-}
-
 /// The level 8 or 9 mob at the edge of the camp south of the Crossroads, sturdy enough to outlast
-/// fourteen ticks (`content/barrens.toml`, 9000034).
+/// the patch (`content/barrens.toml`, 9000034).
 const STURDY: [f32; 3] = [-452.0, -3014.0, 0.0];
 
-/// A level 4 Vanguard with `talents` learned, 25 yd west of the mob at `spot` and facing it: that
-/// mob, the charge's target, and the one ten yards from where the charge ends, if any.
-fn scene(talents: &[(u32, u8)], spot: [f32; 3]) -> (Realm, View, u64, Mob, Option<Mob>) {
+/// A level 4 Vanguard 25 yd west of the mob at `spot` and facing it: that mob, the charge's
+/// target, and the one ten yards from where the charge ends, if any.
+fn scene(spot: [f32; 3]) -> (Realm, View, u64, Mob, Option<Mob>) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Varian", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let me = roster(&mut maker)[0].guid;
-    let mut blob = maker
+    let blob = maker
         .export_character(me)
         .unwrap()
         .replace("level = 1\n", &format!("level = {LEVEL}\n"))
         .replace("calling = \"basic_warrior\"", "calling = \"vanguard\"");
-    if !talents.is_empty() {
-        let rows: Vec<String> = talents.iter().map(|(t, r)| format!("[{t}, {r}]")).collect();
-        blob = blob.replace(
-            "money = 0\n",
-            &format!("money = 0\ntalents = [{}]\n", rows.join(", ")),
-        );
-    }
     let mut realm = Realm::with_seed(SEED);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid: me });
@@ -141,8 +121,8 @@ struct Ticks {
 }
 
 /// Charges at the mob at `spot`, then watches the patch run out.
-fn charge(talents: &[(u32, u8)], spot: [f32; 3]) -> Ticks {
-    let (mut realm, mut view, _, near, far) = scene(talents, spot);
+fn charge(spot: [f32; 3]) -> Ticks {
+    let (mut realm, mut view, _, near, far) = scene(spot);
     let id = charge_id();
     realm.handle(cast(id, Some(near.guid)));
     let mut events = view.drain(&mut realm);
@@ -175,14 +155,14 @@ fn charge(talents: &[(u32, u8)], spot: [f32; 3]) -> Ticks {
 
 #[test]
 fn an_enemy_at_the_destination_takes_eight_ticks_of_holy_damage() {
-    let ticks = charge(&[], CAMP);
+    let ticks = charge(CAMP);
     assert_eq!(ticks.near.len(), 8, "{:?}", ticks.near);
     assert!(ticks.near.iter().all(|d| *d > 0 && *d == ticks.near[0]));
 }
 
 #[test]
 fn an_enemy_ten_yards_away_takes_none() {
-    let ticks = charge(&[], CAMP);
+    let ticks = charge(CAMP);
     assert_eq!(
         ticks.far,
         Some(Vec::new()),
@@ -191,47 +171,24 @@ fn an_enemy_ten_yards_away_takes_none() {
 }
 
 /// The patch is a DynamicObject named Consecration, 8 yd wide where the charge ended, two yards
-/// short of the mob; it is destroyed as the patch ends, Hallowed Ground's seconds included.
+/// short of the mob; it is destroyed as the patch ends, eight seconds on.
 #[test]
 fn the_patch_is_a_consecration_object_at_the_destination_until_it_ends() {
-    for (talents, secs) in [(vec![], 8.0), (vec![(hallowed_ground(), 3)], 14.0)] {
-        let (mut realm, mut view, _, near, _) = scene(&talents, STURDY);
-        realm.handle(cast(charge_id(), Some(near.guid)));
-        let events = view.drain(&mut realm);
-        realm.handle(RealmCommand::AttackStop);
-        let objects = patch_objects(&events);
-        let [(guid, spell_id, centre, radius)] = objects[..] else {
-            panic!("one object for the patch, has {objects:?}");
-        };
-        assert_eq!(spell_id, consecration_id());
-        assert_eq!(radius, 8.0);
-        assert!(
-            (flat(centre, near.position) - 2.0).abs() < 0.5,
-            "{centre:?} is where the charge ended, beside {:?}",
-            near.position
-        );
-        assert!(
-            !destroyed(&view.run(&mut realm, secs - 0.5), guid),
-            "still up"
-        );
-        assert!(
-            destroyed(&view.run(&mut realm, 1.0), guid),
-            "gone at {secs} s"
-        );
-    }
-}
-
-#[test]
-fn hallowed_ground_three_of_three_makes_it_fourteen_ticks_each_forty_five_percent_bigger() {
-    let plain = charge(&[], STURDY);
-    let blessed = charge(&[(hallowed_ground(), 3)], STURDY);
-    assert_eq!(blessed.near.len(), 14, "{:?}", blessed.near);
-    let want = (plain.near[0] as f32 * 1.45).round() as i64;
-    for d in &blessed.near {
-        assert!(
-            (i64::from(*d) - want).abs() <= 1,
-            "{d} is not 45% over {}",
-            plain.near[0]
-        );
-    }
+    let (mut realm, mut view, _, near, _) = scene(STURDY);
+    realm.handle(cast(charge_id(), Some(near.guid)));
+    let events = view.drain(&mut realm);
+    realm.handle(RealmCommand::AttackStop);
+    let objects = patch_objects(&events);
+    let [(guid, spell_id, centre, radius)] = objects[..] else {
+        panic!("one object for the patch, has {objects:?}");
+    };
+    assert_eq!(spell_id, consecration_id());
+    assert_eq!(radius, 8.0);
+    assert!(
+        (flat(centre, near.position) - 2.0).abs() < 0.5,
+        "{centre:?} is where the charge ended, beside {:?}",
+        near.position
+    );
+    assert!(!destroyed(&view.run(&mut realm, 7.5), guid), "still up");
+    assert!(destroyed(&view.run(&mut realm, 1.0), guid), "gone at 8 s");
 }

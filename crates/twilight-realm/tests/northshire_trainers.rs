@@ -1,6 +1,6 @@
 //! Northshire's five Calling trainers (#215): Hub NPCs with `map = 0`. A character on the
 //! Eastern Kingdoms sees and reaches them and not the Crossroads trainers; a Kalimdor character
-//! the reverse. Sergeant Hale sells the respec.
+//! the reverse. None of them sells a respec.
 
 mod common;
 mod gear_common;
@@ -10,7 +10,6 @@ use benilla_protocol::{EntityKind, SessionEvent, START_ELWYNN};
 use common::*;
 use quest_common::{accept, completed, hand_in, on_offer};
 
-const HALE: u32 = 190050;
 const NORTHSHIRE_TRAINERS: [u32; 5] = [190050, 190051, 190052, 190053, 190054];
 const CROSSROADS_TRAINERS: [u32; 5] = [5810, 190030, 190031, 190032, 190033];
 
@@ -28,22 +27,16 @@ fn create_at(realm: &mut Realm, name: &str, start: u8) -> u64 {
         .guid
 }
 
-/// A character on the Eastern Kingdoms (`START_ELWYNN`) or on Kalimdor (`0`), in the world.
-fn enter(start: u8, talents: bool) -> (Realm, u64, Vec<SessionEvent>) {
+/// A character on the Eastern Kingdoms (`START_ELWYNN`) or on Kalimdor (`0`), in the world, at
+/// level 10 (the Tier Cap) when `at_cap`.
+fn enter(start: u8, at_cap: bool) -> (Realm, u64, Vec<SessionEvent>) {
     let mut realm = realm();
     let me = create_at(&mut realm, "Pilgrim", start);
-    if talents {
+    if at_cap {
         let blob = realm
             .export_character(me)
             .unwrap()
-            .replace("level = 1\n", "level = 10\n")
-            .replace(
-                "xp = 0\n",
-                &format!(
-                    "xp = 0\ntalents = [[{}, 3]]\n",
-                    talent("basic_warrior", "field_medic")
-                ),
-            );
+            .replace("level = 1\n", "level = 10\n");
         let mut loaded = Realm::new();
         loaded.import_character(&blob).unwrap();
         realm = loaded;
@@ -124,26 +117,6 @@ fn a_kalimdor_character_sees_and_reaches_the_crossroads_trainers_and_not_northsh
     }
 }
 
-#[test]
-fn hales_unlearn_line_opens_the_talent_wipe_confirm() {
-    let (mut realm, _, _) = enter(START_ELWYNN, true);
-    walk_to(&mut realm, HALE);
-    let lines = menu(&mut realm, HALE).expect("Hale's menu");
-    assert_eq!(lines, ["I wish to unlearn my talents."]);
-    realm.handle(RealmCommand::GossipSelectOption {
-        guid: hub_guid(HALE),
-        option: 0,
-    });
-    let events = drain(&mut realm);
-    assert!(
-        events.iter().any(|e| matches!(
-            e,
-            SessionEvent::TalentWipeConfirm { trainer, .. } if *trainer == hub_guid(HALE)
-        )),
-        "{events:?}"
-    );
-}
-
 /// Each trainer, their quest (#216) and the Calling it makes.
 const TIER_1_QUESTS: [(u32, u32, &str); 5] = [
     (190050, 64009, "vanguard"),
@@ -188,9 +161,9 @@ fn the_hubs_advancement_quest_still_works_for_a_kalimdor_character() {
 }
 
 #[test]
-fn the_other_northshire_trainers_sell_no_respec() {
+fn no_northshire_trainer_sells_a_respec() {
     let (mut realm, _, _) = enter(START_ELWYNN, true);
-    for entry in &NORTHSHIRE_TRAINERS[1..] {
+    for entry in &NORTHSHIRE_TRAINERS {
         walk_to(&mut realm, *entry);
         // Brother Corwin (190054) also hints at a Legendary Fish from Angler 1 (#331).
         let lines = menu(&mut realm, *entry).map(|l| {

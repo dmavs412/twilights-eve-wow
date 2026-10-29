@@ -65,6 +65,9 @@ pub struct CallingDef {
     pub blurb: String,
     #[serde(rename = "skill")]
     pub skills: Vec<Skill>,
+    /// The Talent Rows, in level order (ADR 0028); the sheet's alone, none for a TOML Calling.
+    #[serde(skip)]
+    pub rows: Vec<TalentRow>,
     /// The Talent Tree: its tabs, as the stock talent frame shows them.
     #[serde(default, rename = "talent_tab")]
     pub talent_tabs: Vec<TalentTab>,
@@ -628,6 +631,60 @@ impl TierBonus {
     }
 }
 
+/// One Talent Row (ADR 0028): three choices, opened at `level`, one of them set at a time.
+#[derive(Debug)]
+pub struct TalentRow {
+    pub key: String,
+    pub level: u8,
+    pub kind: RowKind,
+    /// A Skill Choice row's skill key; `None` for a Talent row.
+    pub skill: Option<String>,
+    pub choices: Vec<RowChoice>,
+}
+
+/// What a Talent Row's choices are.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RowKind {
+    /// Three variants of one skill, each replacing it while set.
+    SkillChoice,
+    /// Three passives or actives of their own.
+    Talent,
+}
+
+/// One choice of a Talent Row.
+#[derive(Debug)]
+pub enum RowChoice {
+    Skill(Skill),
+    /// A one-rank talent: its effects, or its skill when it is an active one.
+    Talent(TalentDef),
+}
+
+impl RowChoice {
+    /// The spell setting it teaches.
+    pub fn spell_id(&self) -> u32 {
+        match self {
+            RowChoice::Skill(s) => s.spell_id,
+            RowChoice::Talent(t) => t.rank_spells[0],
+        }
+    }
+
+    /// Its name, as the sheet has it.
+    pub fn name(&self) -> &str {
+        match self {
+            RowChoice::Skill(s) => &s.name,
+            RowChoice::Talent(t) => &t.name,
+        }
+    }
+
+    /// The skill it casts: a Skill Choice, or an active Talent's.
+    pub fn skill(&self) -> Option<&Skill> {
+        match self {
+            RowChoice::Skill(s) => Some(s),
+            RowChoice::Talent(t) => t.skill.as_ref(),
+        }
+    }
+}
+
 /// One page of a Talent Tree.
 #[derive(Debug, Deserialize)]
 pub struct TalentTab {
@@ -644,6 +701,9 @@ pub struct TalentTab {
 #[derive(Debug, Deserialize)]
 pub struct TalentDef {
     pub key: String,
+    /// The sheet's name; empty for a TOML talent.
+    #[serde(default)]
+    pub name: String,
     /// The `Talent.dbc` id the client's `CMSG_LEARN_TALENT` carries.
     pub talent_id: u32,
     /// 1-based; tier `n` needs `5 × (n − 1)` points spent in the tab.
@@ -1228,6 +1288,9 @@ pub fn spell_mod_op(name: &str) -> Option<u8> {
 #[derive(Debug, Deserialize)]
 pub struct Skill {
     pub key: String,
+    /// The sheet's name; empty for a TOML skill.
+    #[serde(default)]
+    pub name: String,
     pub spell_id: u32,
     /// The level the Calling learns it at; 1 from the start.
     #[serde(default = "one_u8")]
@@ -1281,6 +1344,9 @@ pub struct Skill {
     /// Gates, cost kind, cast shape and spellmods from the master CSV. Loaded, not enforced yet.
     #[serde(default)]
     pub meta: SpellMeta,
+    /// A Skill Choice's skill key (`variant_of`), which it answers to as well as its own.
+    #[serde(default)]
+    pub replaces: Option<String>,
 }
 
 /// The `SpellFamilyFlags` bits the client gives borrowed spells: no Warrior spell uses a bit
@@ -1362,6 +1428,19 @@ pub enum Effect {
         /// This much of the target's armour is skipped for this strike (Puncturing Shaft).
         #[serde(default)]
         armor_ignore: Option<Linear>,
+        /// That percent more on a target wearing a stun or incapacitate at the hit.
+        #[serde(default)]
+        controlled_pct: u32,
+        /// The nearest other enemy in melee reach in front of the caster takes that percent of
+        /// the hit (Cleave).
+        #[serde(default)]
+        cleave_pct: u32,
+        /// `below_bonus_pct` more on a target under `below_health_pct` of its health before the
+        /// hit (Finisher).
+        #[serde(default)]
+        below_health_pct: u32,
+        #[serde(default)]
+        below_bonus_pct: u32,
     },
     /// Flat damage of a school. Physical goes against armour, and through the melee table when
     /// `melee_hit_table`; any other school ignores armour, rolls only the level-based miss, and
@@ -1379,6 +1458,9 @@ pub enum Effect {
         /// blow rolls (after the cast's own cost). A caster on another bar gets none.
         #[serde(default)]
         crit_pct_at_full_mana: Option<f32>,
+        /// That percent more on a target wearing a stun or incapacitate at the hit (Backdraft).
+        #[serde(default)]
+        controlled_pct: u32,
     },
     /// A bleed on the target under the skill's own spell id: `tick` every `tick_ms`.
     PeriodicDamage {
@@ -1747,6 +1829,11 @@ impl Effect {
 }
 
 impl Skill {
+    /// Whether it answers to `key`: its own, or the skill it is a Skill Choice of.
+    pub fn is(&self, key: &str) -> bool {
+        self.key == key || self.replaces.as_deref() == Some(key)
+    }
+
     /// A shot: it needs a bow, gun, crossbow or thrown weapon in the ranged slot
     /// (`requires_weapon=any_ranged`), and ammo for one that shoots it.
     pub fn wants_ranged(&self) -> bool {
@@ -1933,13 +2020,13 @@ pub(crate) fn default_bar(calling: Calling) -> Vec<(u8, u32)> {
         .collect()
 }
 
-/// Every skill of a Calling: its own, then its active talents'.
+/// Every skill of a Calling: its own, then its rows' Skill Choices and active Talents'.
 fn every_skill(c: &'static CallingDef) -> impl Iterator<Item = &'static Skill> {
     c.skills.iter().chain(
-        c.talent_tabs
+        c.rows
             .iter()
-            .flat_map(|tab| &tab.talents)
-            .filter_map(|t| t.skill.as_ref()),
+            .flat_map(|row| &row.choices)
+            .filter_map(RowChoice::skill),
     )
 }
 
@@ -1967,13 +2054,15 @@ pub fn borrowed_skills() -> impl Iterator<Item = &'static Skill> {
         .filter(move |s| seen.insert(s.spell_id))
 }
 
-/// Every WIP talent's rank spells, of every Calling: the spells the client names
+/// Every WIP Talent choice's spell, of every Calling's rows: the spells the client names
 /// "<Name> (WIP)" (ADR 0003).
 pub fn wip_rank_spell_ids() -> impl Iterator<Item = u32> {
     all()
         .into_iter()
-        .flat_map(|c| &c.talent_tabs)
-        .flat_map(|tab| &tab.talents)
-        .filter(|t| t.is_wip())
-        .flat_map(|t| t.rank_spells.iter().copied())
+        .flat_map(|c| &c.rows)
+        .flat_map(|row| &row.choices)
+        .filter_map(|choice| match choice {
+            RowChoice::Talent(t) if t.is_wip() => Some(t.rank_spells[0]),
+            _ => None,
+        })
 }

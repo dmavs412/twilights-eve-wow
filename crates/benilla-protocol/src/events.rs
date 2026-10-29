@@ -228,6 +228,27 @@ pub struct KitchenIngredient {
     pub untried: bool,
 }
 
+/// Twilight's Eve, not 1.12: one Talent Row as the Talents panel shows it (ADR 0028).
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct TalentRowView {
+    pub key: String,
+    pub level: u8,
+    /// The character's level has reached `level`.
+    pub open: bool,
+    /// A Skill Choice row's plain skill's name; "" for a Talent row.
+    pub skill: String,
+    /// The set choice's spell id; 0 when empty.
+    pub set: u32,
+    pub choices: Vec<TalentChoiceView>,
+}
+
+/// Twilight's Eve, not 1.12: one choice of a Talent Row.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct TalentChoiceView {
+    pub spell_id: u32,
+    pub name: String,
+}
+
 /// Twilight's Eve, not 1.12: one of a kitchen's orders today (ADR 0025).
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct KitchenOrderRow {
@@ -533,6 +554,14 @@ pub enum SessionEvent {
     /// Twilight's Eve, not 1.12: the Forager's Grid closed. `reason`: 0 out of pulls, 1 every tile
     /// pulled, 2 the player left, 3 damage, 4 walked away. Never wire-decoded.
     HerbGridClosed { patch: u64, reason: u8 },
+    /// Twilight's Eve, not 1.12: the current Calling's Talent Rows (ADR 0028), sent at login, on a
+    /// level that opens a row, after every set and after Advancement. `at_innkeeper`: a set row
+    /// may change. Never wire-decoded.
+    TalentRows {
+        calling: String,
+        at_innkeeper: bool,
+        rows: Vec<TalentRowView>,
+    },
     /// Twilight's Eve, not 1.12: the open kitchen (ADR 0025), sent when a cook opens it and after
     /// every cook. `lessons` are cook, recipe, eat, order, reveal, discover. Never wire-decoded.
     Kitchen {

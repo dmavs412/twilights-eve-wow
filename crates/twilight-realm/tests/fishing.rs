@@ -1933,8 +1933,8 @@ fn waiting_of(events: &[SessionEvent]) -> Option<Option<u32>> {
 fn waiting_for(entry: u32) -> impl FnOnce(String) -> String {
     move |b| {
         b.replacen(
-            "version = 5\n",
-            &format!("version = 5\nlure_waiting = {entry}\n"),
+            "version = 6\n",
+            &format!("version = 6\nlure_waiting = {entry}\n"),
             1,
         )
     }
@@ -2156,14 +2156,14 @@ fn the_tenth_catch_completes_a_collect_quest_through_the_satchel() {
 }
 
 #[test]
-fn a_version_4_save_moves_its_bag_journal_items_and_a_version_5_save_keeps_them() {
+fn a_version_4_save_moves_its_bag_journal_items_and_a_newer_save_keeps_them() {
     let items = [
         (PACK_1, SMALLFISH, 4),
         (PACK_2, SHINY_BAUBLE, 1),
         (25, WORN_SHORTSWORD, 1),
     ];
     let old = |b: String| {
-        b.replace("version = 5", "version = 4").replace(
+        b.replace("version = 6", "version = 4").replace(
             &format!("entry = {SHINY_BAUBLE}\ncount = 1\n"),
             &format!("entry = {SHINY_BAUBLE}\ncount = 1\ndurability = 14\n"),
         )
@@ -2180,7 +2180,7 @@ fn a_version_4_save_moves_its_bag_journal_items_and_a_version_5_save_keeps_them(
         )),
         "{blob}"
     );
-    assert!(blob.contains("version = 5"));
+    assert!(blob.contains("version = 6"));
     assert_eq!(blob.matches("[[items]]").count(), 1, "{blob}");
 
     let (b, _) = holding(Side::East, &[], &items, |b| b);

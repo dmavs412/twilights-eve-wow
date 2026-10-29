@@ -11,8 +11,9 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 
 use crate::callings::{
-    self, Armour, AuraDef, AuraEffect, AuraRow, CallingDef, ClientSpellMod, Effect, Prereq, Skill,
-    SpellMeta, StatProfile, TalentDef, TalentEffect, TalentTab, Target, TierBonus, WeaponKind,
+    self, Armour, AuraDef, AuraEffect, AuraRow, CallingDef, ClientSpellMod, Effect, Prereq,
+    RowChoice, RowKind, Skill, SpellMeta, StatProfile, TalentDef, TalentEffect, TalentRow,
+    TalentTab, Target, TierBonus, WeaponKind,
 };
 use crate::rules::power::PowerKind;
 
@@ -52,7 +53,19 @@ struct GenCalling {
     #[serde(default)]
     talent_tabs: Vec<GenTab>,
     #[serde(default)]
+    rows: Vec<GenRow>,
+    #[serde(default)]
     auras: Vec<GenAura>,
+}
+
+/// A Talent Row: a Skill Choice's choices are built rows of a full skill, a Talent's are one rank.
+#[derive(Deserialize)]
+struct GenRow {
+    key: String,
+    level: u8,
+    kind: String,
+    skill: Option<String>,
+    choices: Vec<Value>,
 }
 
 #[derive(Deserialize)]
@@ -83,6 +96,8 @@ struct GenEffect {
 #[derive(Deserialize)]
 struct GenSkill {
     key: String,
+    #[serde(default)]
+    name: String,
     spell_id: u32,
     #[serde(default)]
     learn_level: u8,
@@ -112,6 +127,9 @@ struct GenSkill {
     spellbook: Option<bool>,
     #[serde(default)]
     effects: Vec<GenEffect>,
+    /// A Skill Choice's skill key.
+    #[serde(default)]
+    variant_of: Option<String>,
     #[serde(flatten)]
     meta: SpellMeta,
 }
@@ -146,7 +164,11 @@ struct GenTalent {
 struct GenRank {
     #[serde(default)]
     key: String,
+    #[serde(default)]
+    name: String,
     spell_id: u32,
+    /// None on a Talent row's choice.
+    #[serde(default)]
     talent_id: u32,
     #[serde(default)]
     effects: Vec<GenEffect>,
@@ -229,6 +251,7 @@ fn calling(g: GenCalling) -> CallingDef {
             .filter_map(|s| skill(s, &g.auras))
             .collect(),
         talent_tabs: tabs.into_iter().map(|t| tab(&g.key, t, &g.auras)).collect(),
+        rows: g.rows.iter().map(|r| row(&g.key, r, &g.auras)).collect(),
         auras: g.auras.iter().filter_map(aura).collect(),
         key: g.key.clone(),
     }
@@ -269,6 +292,14 @@ fn aura(g: &GenAura) -> Option<AuraDef> {
 /// itself (`per_combo`) win. An aura that is missing or unmodelled makes it `None`.
 fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
     let mut object = e.params.clone();
+    // A skill's proc on its own cast that applies a buff grants the caster that buff (Blindside).
+    if e.kind == "proc" && object.get("on").and_then(Value::as_str) == Some("cast") {
+        let key = object.get("apply_aura")?.as_str()?;
+        let aura = auras.iter().find(|a| a.modelled && a.key == key)?;
+        return Some(Effect::GrantAura {
+            aura_spell_id: aura.spell_id,
+        });
+    }
     // An effect that works on stacks of an aura (`aura=key`) reads the aura row's spell id,
     // duration and stack columns.
     if let Some(key) = object.remove("aura") {
@@ -333,6 +364,7 @@ fn skill(g: &GenSkill, auras: &[GenAura]) -> Option<Skill> {
     let effects = effects.filter(|e| !e.is_empty())?;
     Some(Skill {
         key: g.key.clone(),
+        name: g.name.clone(),
         spell_id: g.spell_id,
         learn_level: g.learn_level.max(1),
         power_cost: g.realm_cost,
@@ -354,7 +386,56 @@ fn skill(g: &GenSkill, auras: &[GenAura]) -> Option<Skill> {
         borrowed: None,
         effects,
         meta: g.meta.clone(),
+        replaces: g.variant_of.clone(),
     })
+}
+
+/// A Talent Row, its choices built; a choice the realm cannot model yet is left out.
+fn row(calling: &str, g: &GenRow, auras: &[GenAura]) -> TalentRow {
+    let unreadable = |e: serde_json::Error| -> ! {
+        panic!(
+            "server_spells.json {calling}/{}: a row choice reads: {e}",
+            g.key
+        )
+    };
+    let kind = match g.kind.as_str() {
+        "skill_choice" => RowKind::SkillChoice,
+        "talent" => RowKind::Talent,
+        other => panic!(
+            "server_spells.json {calling}/{}: no row kind {other}",
+            g.key
+        ),
+    };
+    let choices = g
+        .choices
+        .iter()
+        .filter_map(|v| match kind {
+            RowKind::SkillChoice => {
+                let s: GenSkill =
+                    serde_json::from_value(v.clone()).unwrap_or_else(|e| unreadable(e));
+                skill(&s, auras).map(RowChoice::Skill)
+            }
+            RowKind::Talent => {
+                let rank: GenRank =
+                    serde_json::from_value(v.clone()).unwrap_or_else(|e| unreadable(e));
+                let t = GenTalent {
+                    key: rank.key.clone(),
+                    seat: Seat { row: 1, column: 1 },
+                    exceptional: rank.target.is_some(),
+                    prereq: None,
+                    ranks: vec![rank],
+                };
+                talent(&t, auras).map(|t| RowChoice::Talent(TalentDef { talent_id: 0, ..t }))
+            }
+        })
+        .collect();
+    TalentRow {
+        key: g.key.clone(),
+        level: g.level,
+        kind,
+        skill: g.skill.clone(),
+        choices,
+    }
 }
 
 fn tab(calling: &str, g: &GenTab, auras: &[GenAura]) -> TalentTab {
@@ -383,6 +464,7 @@ fn talent(g: &GenTalent, auras: &[GenAura]) -> Option<TalentDef> {
         ([rank], Some(target)) => skill(
             &GenSkill {
                 key: rank.key.clone(),
+                name: rank.name.clone(),
                 spell_id: rank.spell_id,
                 learn_level: 0,
                 realm_cost: rank.realm_cost,
@@ -398,6 +480,7 @@ fn talent(g: &GenTalent, auras: &[GenAura]) -> Option<TalentDef> {
                 client_visible: None,
                 spellbook: None,
                 effects: rank.effects.clone(),
+                variant_of: None,
                 meta: rank.meta.clone(),
             },
             auras,
@@ -406,6 +489,7 @@ fn talent(g: &GenTalent, auras: &[GenAura]) -> Option<TalentDef> {
     };
     Some(TalentDef {
         key: g.key.clone(),
+        name: first.name.clone(),
         talent_id: first.talent_id,
         tier: g.seat.row,
         column: g.seat.column,

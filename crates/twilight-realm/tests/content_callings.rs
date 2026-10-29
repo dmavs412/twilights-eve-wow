@@ -478,49 +478,12 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
     }
 }
 
-/// The client names these " (WIP)": the rank spells of every talent with no effect and no skill,
-/// Anger Management's and Flurry's (in every tree that has them), the Zealot's unmodelled
-/// Paladin talents' and the Vanguard's unmodelled talents'.
+/// The client names these " (WIP)": the spell of every Talent row choice with no effect and no
+/// skill. No Calling has a Talent row yet, so the old tree's talents are no longer among them.
 #[test]
-fn the_wip_rank_spells_are_the_talents_with_no_effect() {
-    let mut ids: Vec<u32> = callings::wip_rank_spell_ids().collect();
-    ids.sort_unstable();
-    ids.dedup();
-    let mut want: Vec<u32> = [
-        // The Zealot's Paladin talents.
-        ("zealot", "anger_management"),
-        ("zealot", "flurry"),
-        ("zealot", "improved_judgement"),
-        ("zealot", "vindication"),
-        ("zealot", "eye_for_an_eye"),
-        ("zealot", "pursuit_of_justice"),
-        ("zealot", "improved_hammer_of_justice"),
-        ("zealot", "vengeance"),
-        ("zealot", "holy_power"),
-        ("zealot", "divine_strength"),
-        ("zealot", "precision"),
-        ("zealot", "redoubt"),
-        ("zealot", "reckoning"),
-        // Vanguard's Bastion: nothing (every talent is modelled now).
-        // Vanguard's Righteous: nothing (every talent is modelled now).
-        // Cutthroat's Skirmisher: nothing (Lethality, Flurry of Blades, Reflexive Strike, Dual
-        // Wield Specialization, Phantom Guile and Relentless Strikes are modelled now).
-        // Cutthroat's Tracker: nothing (Scent of Blood, Bloodletting, Predator's Step, Serrated
-        // Strikes, Ruthlessness and Executioner's Toll are modelled now).
-        // Initiate's Weaver and Channeler: nothing (every talent is modelled now).
-        // Ranger's Swiftbow: Parting Gift (a trap left behind by Vault; every other talent is
-        // modelled now).
-        ("ranger", "parting_gift"),
-        // Ranger's Arbalest: nothing (every talent is modelled now).
-        // Acolyte's Rot-Weaver: nothing (every talent is modelled now).
-        // Acolyte's Hemomancer: Blood Ties (the client cannot target an ally with Drain Life).
-        ("acolyte", "blood_ties"),
-    ]
-    .into_iter()
-    .flat_map(|(calling, key)| common::talent_spells(calling, key))
-    .collect();
-    want.sort_unstable();
-    assert_eq!(ids, want);
+fn the_wip_rank_spells_are_the_talent_row_choices_with_no_effect() {
+    let ids: Vec<u32> = callings::wip_rank_spell_ids().collect();
+    assert_eq!(ids, Vec::<u32>::new());
 }
 
 #[test]

@@ -1502,8 +1502,21 @@
       },
       "weapon_hand": "main",
       "max_targets": 1,
-      "modelled": false,
-      "effects": [],
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 20,
+          "per_level": 2.5
+         },
+         "controlled_pct": 100,
+         "school": "fire"
+        },
+        "realm_only": false
+       }
+      ],
       "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked. Double damage to a stunned or incapacitated target.",
       "variant_of": "fire_blast"
      }
@@ -1584,8 +1597,34 @@
       },
       "weapon_hand": "main",
       "max_targets": 1,
-      "modelled": false,
-      "effects": [],
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 10,
+          "per_level": 1.5
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "incapacitate",
+        "params": {
+         "apply_aura": "blindside_incapacitate"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "proc",
+        "params": {
+         "on": "cast",
+         "apply_aura": "blindside_edge"
+        },
+        "realm_only": false
+       }
+      ],
       "description": "Strikes the enemy for a little Physical damage and incapacitates it for 6 sec. Any later damage ends it. Your next hit is a critical strike.",
       "variant_of": "gouge"
      },
@@ -1669,8 +1708,24 @@
       },
       "weapon_hand": "main",
       "max_targets": 1,
-      "modelled": false,
-      "effects": [],
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "on_next_swing": true,
+         "bonus": {
+          "base": 9.5,
+          "per_level": 1.4,
+          "per_ap": 0
+         },
+         "threat_bonus": 20,
+         "cleave_pct": 50
+        },
+        "realm_only": false
+       }
+      ],
       "description": "A strong attack that increases melee damage by $s1 and causes a high amount of threat. A second enemy in reach takes half the hit.",
       "variant_of": "heroic_strike"
      },
@@ -1700,8 +1755,25 @@
       },
       "weapon_hand": "main",
       "max_targets": 1,
-      "modelled": false,
-      "effects": [],
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "on_next_swing": true,
+         "bonus": {
+          "base": 9.5,
+          "per_level": 1.4,
+          "per_ap": 0
+         },
+         "threat_bonus": 20,
+         "below_health_pct": 30,
+         "below_bonus_pct": 50
+        },
+        "realm_only": false
+       }
+      ],
       "description": "A strong attack that increases melee damage by $s1 and causes a high amount of threat. Deals 50% more to an enemy below 30% health.",
       "variant_of": "heroic_strike"
      },

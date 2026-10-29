@@ -54,9 +54,6 @@ pub(crate) struct Npc {
     /// A vendor's list, in the merchant window's order.
     #[serde(default)]
     pub(crate) stock: Vec<u32>,
-    /// The trainer who sells the talent respec (`crate::trainer`).
-    #[serde(default)]
-    respec: bool,
     /// The Blood Coin vendor: it sells its stock for Blood Coin (`crate::currency_vendor`).
     #[serde(default)]
     pub(crate) blood_coin: bool,
@@ -154,16 +151,6 @@ impl Npc {
     /// Whether it gives quests (`UNIT_NPC_FLAG_QUESTGIVER`).
     pub(crate) fn gives_quests(&self) -> bool {
         self.npc_flags & 0x2 != 0
-    }
-
-    /// Whether it trains (`UNIT_NPC_FLAG_TRAINER`): one of the four Tier 1 trainers.
-    pub(crate) fn trains(&self) -> bool {
-        self.npc_flags & 0x10 != 0
-    }
-
-    /// Whether it sells the talent respec: Uzzek, the Vanguard Trainer, alone.
-    pub(crate) fn sells_respec(&self) -> bool {
-        self.trains() && self.respec
     }
 
     /// Whether it binds the Hearthstone (`UNIT_NPC_FLAG_INNKEEPER`).

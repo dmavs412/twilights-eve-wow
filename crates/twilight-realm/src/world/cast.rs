@@ -1182,7 +1182,7 @@ impl Skills {
     }
 
     /// The percent the player's buffs raise `skill`'s amounts by.
-    pub(super) fn skill_amount_pct(&self, skill: &str) -> u32 {
+    pub(super) fn skill_amount_pct(&self, skill: &Skill) -> u32 {
         self.auras
             .iter()
             .filter(|a| a.unit == self.me)
@@ -1192,7 +1192,7 @@ impl Skills {
                     pct,
                     stacks,
                     ..
-                } if s == skill => pct * stacks,
+                } if skill.is(s) => pct * stacks,
                 _ => 0,
             })
             .sum()
@@ -1362,13 +1362,23 @@ impl Skills {
         (1.0 - snare.min(100) as f32 / 100.0) * sprint.max(floor)
     }
 
-    /// The extra critical strike chance, in percent, the player's buffs give `skill`.
-    pub(super) fn skill_crit_pct(&self, skill: &str) -> u32 {
+    /// The extra critical strike chance, in percent, the player's buffs give `skill`: theirs for
+    /// it, and those for `any` skill (Blindside's edge).
+    pub(super) fn skill_crit_pct(&self, skill: &Skill) -> u32 {
+        self.crit_pct_for(|s| s == "any" || skill.is(s))
+    }
+
+    /// The extra critical strike chance a white swing gets: the buffs' for `any` skill.
+    pub(super) fn white_crit_pct(&self) -> u32 {
+        self.crit_pct_for(|s| s == "any")
+    }
+
+    fn crit_pct_for(&self, wanted: impl Fn(&str) -> bool) -> u32 {
         self.auras
             .iter()
             .filter(|a| a.unit == self.me)
             .map(|a| match a.kind {
-                AuraKind::SkillCrit { skill: s, pct } if s == skill => pct,
+                AuraKind::SkillCrit { skill: s, pct } if wanted(s) => pct,
                 _ => 0,
             })
             .sum()
@@ -1382,24 +1392,24 @@ impl Skills {
     }
 
     /// The power the player's buffs take off `skill`'s cost.
-    pub(super) fn cost_less(&self, skill: &str) -> u32 {
+    pub(super) fn cost_less(&self, skill: &Skill) -> u32 {
         self.auras
             .iter()
             .filter(|a| a.unit == self.me)
             .map(|a| match a.kind {
-                AuraKind::SkillCost { skill: s, amount } if s == skill => amount,
+                AuraKind::SkillCost { skill: s, amount } if skill.is(s) => amount,
                 _ => 0,
             })
             .sum()
     }
 
     /// The most stacks the player's buffs make `skill` add, 0 for none.
-    fn skill_stacks(&self, skill: &str) -> u32 {
+    fn skill_stacks(&self, skill: &Skill) -> u32 {
         self.auras
             .iter()
             .filter(|a| a.unit == self.me)
             .map(|a| match a.kind {
-                AuraKind::SkillStacks { skill: s, stacks } if s == skill => stacks,
+                AuraKind::SkillStacks { skill: s, stacks } if skill.is(s) => stacks,
                 _ => 0,
             })
             .max()
@@ -1423,17 +1433,25 @@ impl Skills {
             .collect()
     }
 
-    /// `skill` landed: each of the player's buffs for it with charges loses one, and a spent one
-    /// goes.
-    fn spend_charges(&mut self, skill: &str, events: &mut Vec<SessionEvent>) -> Vec<Aura> {
+    /// `skill` landed (`None`: a white swing): each of the player's buffs for it, or for `any`
+    /// skill, with charges loses one, and a spent one goes. A white swing spends only a buff for
+    /// `any` skill, and a skill never spends a buff of its own spell, which its cast just granted.
+    pub(super) fn spend_charges(
+        &mut self,
+        skill: Option<&Skill>,
+        events: &mut Vec<SessionEvent>,
+    ) -> Vec<Aura> {
         for a in &mut self.auras {
-            let for_skill = matches!(
-                a.kind,
+            let for_skill = match a.kind {
                 AuraKind::SkillCrit { skill: s, .. }
                 | AuraKind::SkillAmount { skill: s, .. }
                 | AuraKind::SkillCost { skill: s, .. }
-                | AuraKind::SkillStacks { skill: s, .. } if s == skill
-            );
+                | AuraKind::SkillStacks { skill: s, .. } => match skill {
+                    Some(k) => k.is(s) || (s == "any" && a.spell_id != k.spell_id),
+                    None => s == "any",
+                },
+                _ => false,
+            };
             if a.unit == self.me && a.charges > 0 && for_skill {
                 a.charges -= 1;
                 if a.charges == 0 {
@@ -1747,7 +1765,8 @@ impl Skills {
     }
 }
 
-/// `SMSG_INITIAL_SPELLS`: the current Calling's skills and learned talents' rank spells, and the
+/// `SMSG_INITIAL_SPELLS`: the current Calling's skills, a set Skill Choice in its skill's place,
+/// and the set choices' spells, and the
 /// item cooldowns still running at the wall clock's `wall` (the skills' own start afresh each
 /// session).
 pub(super) fn spell_book(c: &Char, wall: f64) -> SessionEvent {
@@ -1756,6 +1775,7 @@ pub(super) fn spell_book(c: &Char, wall: f64) -> SessionEvent {
             .skills
             .iter()
             .filter(|s| u32::from(s.learn_level) <= u32::from(c.level))
+            .filter(|s| !crate::talents::replaced(c).any(|k| k == s.key))
             .map(|s| s.spell_id)
             .chain(crate::talents::known_spells(c))
             .chain(c.knows_fishing.then_some(crate::fish::spell().id))
@@ -1779,7 +1799,7 @@ pub(super) fn spell_book(c: &Char, wall: f64) -> SessionEvent {
 }
 
 /// `SMSG_ACTION_BUTTONS`: the bar as the player left it, or the Calling's default.
-pub(super) fn action_buttons(c: &Char) -> SessionEvent {
+pub(crate) fn action_buttons(c: &Char) -> SessionEvent {
     let bar = c
         .action_bar
         .clone()
@@ -2636,6 +2656,10 @@ impl InWorld {
                         on_next_swing: false,
                         unavoidable: false,
                         per_combo: None,
+                        controlled_pct: 0,
+                        cleave_pct: 0,
+                        below_health_pct: 0,
+                        below_bonus_pct: 0,
                         weapon_pct,
                         school: School::Physical,
                         crit_if_target_in: None,
@@ -2705,7 +2729,7 @@ impl InWorld {
             self.gain_rage(skill.spell_id, extra, events);
         }
         if any_landed {
-            let gone = self.skills.spend_charges(&skill.key, events);
+            let gone = self.skills.spend_charges(Some(skill), events);
             self.faded(&gone, events);
         }
         if self.skills.cast_dealt > 0 {
@@ -3111,7 +3135,7 @@ impl InWorld {
             _ => skill.power_cost,
         };
         let cost = crate::talents::power_cost_from(c, skill, base)
-            .saturating_sub(self.skills.cost_less(&skill.key));
+            .saturating_sub(self.skills.cost_less(skill));
         (cost as i32 * (100 + self.skills.next_cost_pct(&skill.key)) / 100) as u32
     }
 
@@ -3420,7 +3444,7 @@ impl InWorld {
                 < crit
                     + mana_crit
                     + (crate::talents::skill_crit_pct(c, &skill.key)
-                        + self.skills.skill_crit_pct(&skill.key))
+                        + self.skills.skill_crit_pct(skill))
                         * 100 =>
             {
                 Landed::Crit
@@ -3448,8 +3472,7 @@ impl InWorld {
         let ap = stats.attack_power;
         // Talents that raise the skill's amounts (Improved Rend, Improved Battle Shout), and the
         // player's buffs for it (Arcane Momentum).
-        let pct =
-            crate::talents::amount_pct(c, &skill.key) + self.skills.skill_amount_pct(&skill.key);
+        let pct = crate::talents::amount_pct(c, &skill.key) + self.skills.skill_amount_pct(skill);
         let sized = |l: formulas::Linear| scaled(l.at(level, ap), pct);
         // A hit's and a tick's own talents, some only against a target wearing the caster's aura
         // (Combustion Engine, Volatile Embers).
@@ -3462,7 +3485,7 @@ impl InWorld {
         };
         let part_pct = |part| {
             crate::talents::amount_pct_on(c, &skill.key, part, wears)
-                + self.skills.skill_amount_pct(&skill.key)
+                + self.skills.skill_amount_pct(skill)
         };
         let (hit_pct, tick_pct) = (
             part_pct(crate::callings::AppliesTo::Hit),
@@ -3523,8 +3546,14 @@ impl InWorld {
                 weapon_pct,
                 school,
                 armor_ignore,
+                controlled_pct,
+                cleave_pct,
+                below_health_pct,
+                below_bonus_pct,
                 ..
             } => {
+                let cond =
+                    self.condition_pct(target, controlled_pct, below_health_pct, below_bonus_pct);
                 let roll = weapon_roll(&stats, weapon, rng) * weapon_pct as f32 / 100.0;
                 let shield =
                     stats.block_value * crate::talents::block_value_pct(c, &skill.key) / 100;
@@ -3535,7 +3564,7 @@ impl InWorld {
                     crate::talents::amount_pct_near(c, &skill.key, d)
                 });
                 let raw = roll + (bonus.at(level, ap) + per_combo(more) + shield) as f32;
-                let raw = raw * (100 + pct + near) as f32 / 100.0;
+                let raw = raw * (100 + pct + near + cond) as f32 / 100.0;
                 let ignore = armor_ignore.map_or(0, |l| l.at(level, ap))
                     + crate::talents::skill_armor_ignore(c, &skill.key);
                 let dealt = self.strike_through(
@@ -3554,16 +3583,31 @@ impl InWorld {
                 if dealt > 0 && weapon != Weapon::Ranged {
                     self.melee_hit(target, c, rng, events, ticked);
                 }
+                if dealt > 0 && cleave_pct > 0 {
+                    let share = dealt * cleave_pct / 100;
+                    self.cleave(
+                        target,
+                        share,
+                        school,
+                        skill.spell_id,
+                        c,
+                        rng,
+                        events,
+                        ticked,
+                    );
+                }
             }
             Effect::SchoolDamage {
                 school,
                 amount,
                 per_combo: more,
+                controlled_pct,
                 ..
             } => {
                 let raw = scaled(amount.at(level, ap), hit_pct)
                     + per_combo(more)
                     + if school.is_magic() { direct_bonus } else { 0 };
+                let raw = scaled(raw, self.condition_pct(target, controlled_pct, 0, 0));
                 self.skills.cast_dealt += self.strike(
                     skill.spell_id,
                     target,
@@ -3953,7 +3997,7 @@ impl InWorld {
                 events.push(values(self.guid, &sheet));
             }
             Effect::AddAuraStacks { .. } => {
-                let more = self.skills.skill_stacks(&skill.key);
+                let more = self.skills.skill_stacks(skill);
                 self.add_aura_stacks(effect, more, level, events)
             }
             Effect::GrowAura {
@@ -3964,7 +4008,19 @@ impl InWorld {
             }
             Effect::GrantAura { aura_spell_id } => {
                 let auras = &callings::of(c.calling).auras;
-                if let Some(def) = auras.iter().find(|a| a.spell_id == aura_spell_id) {
+                // Not the skill's own crowd control, which may share the spell (Blindside).
+                let control = |a: &callings::AuraDef| {
+                    a.effects.iter().any(|e| {
+                        matches!(
+                            e,
+                            callings::AuraEffect::Incapacitate | callings::AuraEffect::Root
+                        )
+                    })
+                };
+                if let Some(def) = auras
+                    .iter()
+                    .find(|a| a.spell_id == aura_spell_id && !control(a))
+                {
                     self.grant_aura(def, level, 0, events);
                 }
             }
@@ -4230,7 +4286,7 @@ impl InWorld {
                     // Convergence's buff).
                     let chance = (stats.crit_pct * 100.0) as u32
                         + (crate::talents::skill_crit_pct(c, &skill.key)
-                            + self.skills.skill_crit_pct(&skill.key))
+                            + self.skills.skill_crit_pct(skill))
                             * 100;
                     let how = if rng.below(ROLL) < chance {
                         Landed::Crit
@@ -4891,24 +4947,27 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
+        self.hurt_school(target, damage, School::Physical, c, rng, events, ticked);
+    }
+
+    /// [`Self::hurt`] in `school`.
+    #[allow(clippy::too_many_arguments)]
+    fn hurt_school(
+        &mut self,
+        target: u64,
+        damage: u32,
+        school: School,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
         let Some(i) = self.mobs.iter().position(|m| m.guid == target && m.alive()) else {
             return;
         };
         let mob = &mut self.mobs[i];
-        let damage = self.skills.absorb_on(
-            mob.guid,
-            damage,
-            crate::rules::school::School::Physical,
-            events,
-        );
-        super::wound(
-            mob,
-            damage,
-            self.guid,
-            crate::rules::school::School::Physical,
-            &mut self.harms,
-            events,
-        );
+        let damage = self.skills.absorb_on(mob.guid, damage, school, events);
+        super::wound(mob, damage, self.guid, school, &mut self.harms, events);
         if mob.state == State::Idle {
             super::engage(mob, self.guid, events);
         }
@@ -4917,6 +4976,62 @@ impl InWorld {
         } else {
             self.woken_by_damage(target, events);
         }
+    }
+
+    /// The percent more a strike deals `target`: `controlled_pct` when it wears a stun or an
+    /// incapacitate, and `below_bonus_pct` when its health is under `below_health_pct`.
+    fn condition_pct(
+        &self,
+        target: u64,
+        controlled_pct: u32,
+        below_health_pct: u32,
+        below_bonus_pct: u32,
+    ) -> u32 {
+        let controlled = if controlled_pct > 0 && self.skills.stunned(target) {
+            controlled_pct
+        } else {
+            0
+        };
+        let low = self
+            .mobs
+            .iter()
+            .find(|m| m.guid == target)
+            .filter(|m| m.health * 100 < m.stats.max_health * below_health_pct)
+            .map_or(0, |_| below_bonus_pct);
+        controlled + low
+    }
+
+    /// The nearest other living enemy in melee reach in front of the caster takes `damage` of
+    /// `school` from `spell_id`, with no threat bonus (Cleave).
+    #[allow(clippy::too_many_arguments)]
+    fn cleave(
+        &mut self,
+        target: u64,
+        damage: u32,
+        school: School,
+        spell_id: u32,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let Some(other) = self
+            .mobs
+            .iter()
+            .filter(|m| m.guid != target && m.alive())
+            .filter(|m| distance(m.position, c.position) <= super::melee_reach())
+            .filter(|m| in_front(c.orientation, c.position, m.position))
+            .min_by(|a, b| {
+                distance(a.position, c.position).total_cmp(&distance(b.position, c.position))
+            })
+            .map(|m| m.guid)
+        else {
+            return;
+        };
+        events.push(SessionEvent::SpellDamageLog(damage_log(
+            self.guid, other, spell_id, damage, school, false,
+        )));
+        self.hurt_school(other, damage, school, c, rng, events, ticked);
     }
 
     /// The queued on-next-swing strike replaces this white swing at `target`, when its rage is
@@ -4943,11 +5058,22 @@ impl InWorld {
         let Some(i) = self.mobs.iter().position(|m| m.guid == target && m.alive()) else {
             return false;
         };
-        let bonus = skill.effects.iter().find_map(|e| match e {
-            Effect::WeaponStrike { bonus, .. } => Some(*bonus),
+        let strike = skill.effects.iter().find_map(|e| match *e {
+            Effect::WeaponStrike {
+                bonus,
+                cleave_pct,
+                controlled_pct,
+                below_health_pct,
+                below_bonus_pct,
+                ..
+            } => Some((
+                bonus,
+                cleave_pct,
+                self.condition_pct(target, controlled_pct, below_health_pct, below_bonus_pct),
+            )),
             _ => None,
         });
-        let Some(bonus) = bonus else {
+        let Some((bonus, cleave_pct, more)) = strike else {
             return false;
         };
         self.pay(skill, true, c, events);
@@ -4962,7 +5088,7 @@ impl InWorld {
         stats.min_damage += extra;
         stats.max_damage += extra;
         // The player's buffs for the skill (Cutthroat's Momentum) add crit chance.
-        stats.crit_pct += f64::from(self.skills.skill_crit_pct(&skill.key));
+        stats.crit_pct += f64::from(self.skills.skill_crit_pct(skill));
         // Cleave's other targets: the nearest living mobs beside the first, each on its own roll.
         let at = self.mobs[i].position;
         let mut beside: Vec<usize> = (0..self.mobs.len())
@@ -5029,11 +5155,11 @@ impl InWorld {
         }
         if missed_by(swings[0].1.outcome).is_none() {
             // A buff that raises the stacks is spent by this same hit.
-            let more = self.skills.skill_stacks(&skill.key);
+            let more = self.skills.skill_stacks(skill);
             for effect in &skill.effects {
                 self.add_aura_stacks(effect, more, c.power_level(), events);
             }
-            let gone = self.skills.spend_charges(&skill.key, events);
+            let gone = self.skills.spend_charges(Some(skill), events);
             self.faded(&gone, events);
         }
         let impale =
@@ -5045,6 +5171,9 @@ impl InWorld {
             }
             if swing.outcome == Outcome::Crit {
                 swing.damage = crit_damage(swing.would_be, impale);
+            }
+            if guid == target {
+                swing.damage = scaled(swing.damage, more);
             }
             swing.damage = self.dealt(c, swing.damage);
             events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
@@ -5064,6 +5193,19 @@ impl InWorld {
             }
             if guid == target {
                 self.sweep(guid, swing.damage, c, rng, events, ticked);
+                if swing.damage > 0 && cleave_pct > 0 {
+                    let share = swing.damage * cleave_pct / 100;
+                    self.cleave(
+                        guid,
+                        share,
+                        School::Physical,
+                        spell_id,
+                        c,
+                        rng,
+                        events,
+                        ticked,
+                    );
+                }
             }
             if swing.damage > 0 {
                 self.melee_hit(guid, c, rng, events, ticked);

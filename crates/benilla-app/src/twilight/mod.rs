@@ -645,17 +645,13 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             slot,
             count,
         }),
-        ClientCommand::LearnTalent { talent_id, rank } => {
-            Some(RealmCommand::LearnTalent { talent_id, rank })
-        }
+        ClientCommand::LearnTalent { .. } => None,
         ClientCommand::GossipHello { guid } => Some(RealmCommand::GossipHello { guid }),
         ClientCommand::GossipSelectOption { guid, option } => {
             Some(RealmCommand::GossipSelectOption { guid, option })
         }
         ClientCommand::NpcTextQuery { text_id, .. } => Some(RealmCommand::NpcTextQuery { text_id }),
-        ClientCommand::TalentWipeConfirm { trainer } => {
-            Some(RealmCommand::TalentWipeConfirm { trainer })
-        }
+        ClientCommand::TalentWipeConfirm { .. } => None,
         ClientCommand::BinderActivate { binder } => Some(RealmCommand::BinderActivate { binder }),
         ClientCommand::ListInventory { guid } => Some(RealmCommand::ListInventory { guid }),
         ClientCommand::BuyItem {

@@ -1,7 +1,6 @@
 //! Catalyst consumes the Initiate's auras on a target: a Cold shatters for a multiple of Biting
-//! Cold's hit, an Ember refunds mana. Thermal Shock raises both, Catalytic Chain spreads the
-//! consumed aura to a second mob, and Catalytic Resonance raises spell damage after a consume.
-//! Played through the realm's seam with a test Mage Calling whose numbers are easy to read.
+//! Cold's hit, an Ember refunds mana, and with nothing to consume it does nothing. Played through
+//! the realm's seam with a test Mage Calling whose numbers are easy to read.
 
 mod common;
 
@@ -15,8 +14,7 @@ use twilight_realm::{Realm, RealmCommand};
 const MANA: u8 = 0;
 
 /// `cold` a hit of 1 with a snare, `ember` a burn, `catalyst` the consume (a shatter of 200% of a
-/// 20 hit, a 20% refund), `drain` spends 10 mana, `bolt` an arcane hit of 50. Thermal Shock,
-/// Catalytic Chain and Catalytic Resonance (10% at every rank) on the talent tab.
+/// 20 hit, a 20% refund) and `drain` spends 10 mana.
 const TEST_CALLINGS: &str = r#"
 [[calling]]
 key = "test_mage"
@@ -72,84 +70,24 @@ cooldown_ms = 0
 gcd_ms = 0
 target = "self"
 effects = []
-
-[[calling.skill]]
-key = "bolt"
-spell_id = 2136
-power_cost = 0
-cooldown_ms = 0
-gcd_ms = 0
-target = "enemy"
-range_yd = [0.0, 30.0]
-effects = [{ kind = "school_damage", school = "arcane", amount = { base = 50.0 } }]
-
-[[calling.aura]]
-key = "resonance"
-spell_id = 12042
-duration_ms = 8000
-effects = [{ kind = "mod_spell_damage_pct", pct = 10 }]
-
-[[calling.talent_tab]]
-id = 906
-name = "Test"
-background = "MageArcane"
-
-[[calling.talent_tab.talent]]
-key = "thermal_shock"
-talent_id = 27
-tier = 1
-column = 1
-rank_spells = [11078, 11080, 12342]
-spell_name = "Thermal Shock"
-effects = [{ kind = "consume_amount_pct", skill = "catalyst", per_rank = [10, 20, 30] }]
-
-[[calling.talent_tab.talent]]
-key = "catalytic_chain"
-talent_id = 23
-tier = 1
-column = 2
-rank_spells = [11083, 12351]
-spell_name = "Catalytic Chain"
-effects = [{ kind = "proc", on = "consume", skill = "catalyst", spread = 10.0, chances = [50, 100], per_rank = [0, 0] }]
-
-[[calling.talent_tab.talent]]
-key = "catalytic_resonance"
-talent_id = 80
-tier = 1
-column = 3
-rank_spells = [11237, 12463, 12464, 16769, 16770]
-spell_name = "Catalytic Resonance"
-effects = [{ kind = "proc", on = "consume", skill = "catalyst", per_rank = [0, 0, 0, 0, 0], auras = [["resonance"], ["resonance"], ["resonance"], ["resonance"], ["resonance"]] }]
 "#;
 
 const COLD: u32 = 116;
 const EMBER: u32 = 133;
 const CATALYST: u32 = 8921;
 const DRAIN: u32 = 2912;
-const BOLT: u32 = 2136;
 
-const THERMAL_SHOCK: u32 = 27;
-const CATALYTIC_CHAIN: u32 = 23;
-const CATALYTIC_RESONANCE: u32 = 80;
-
-/// A level 10 test Mage with `talents` at the scorpid camp, at `seed`: the realm, their guid,
-/// the camp's mobs and the view.
-fn world(seed: u64, talents: &[(u32, u8)]) -> (Realm, u64, Vec<Mob>, View) {
+/// A level 10 test Mage at the scorpid camp, at `seed`: the realm, their guid, the camp's mobs
+/// and the view.
+fn world(seed: u64) -> (Realm, u64, Vec<Mob>, View) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Weaver", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
-    let mut blob = maker
+    let blob = maker
         .export_character(guid)
         .unwrap()
         .replace("level = 1\n", "level = 10\n")
         .replace("calling = \"basic_warrior\"", "calling = \"test_mage\"");
-    if !talents.is_empty() {
-        let rows: Vec<String> = talents.iter().map(|(t, r)| format!("[{t}, {r}]")).collect();
-        blob = blob.replace(
-            "money = 0\n",
-            &format!("money = 0\ntalents = [{}]\n", rows.join(", ")),
-        );
-    }
     let mut realm = Realm::with_seed(seed).with_callings(TEST_CALLINGS);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -208,10 +146,10 @@ fn refund(events: &[SessionEvent], spell_id: u32) -> Option<u32> {
     })
 }
 
-/// Catalyst on a Cold, then on an Ember (mana spent first so the refund shows), with
-/// `talents`: the shatter's damage and the refund, as a share of max mana in percent.
-fn consume_both(talents: &[(u32, u8)]) -> (u32, f32) {
-    let (mut realm, me, mobs, mut view) = world(7, talents);
+/// Catalyst on a Cold, then on an Ember (mana spent first so the refund shows): the shatter's
+/// damage and the refund, as a share of max mana in percent.
+fn consume_both() -> (u32, f32) {
+    let (mut realm, me, mobs, mut view) = world(7);
     let mob = &mobs[0];
     stand_at(&mut realm, mob, 20.0);
     go(&mut realm, &mut view, COLD, Some(mob.guid));
@@ -235,21 +173,14 @@ fn consume_both(talents: &[(u32, u8)]) -> (u32, f32) {
 
 #[test]
 fn catalyst_shatters_a_cold_for_twice_its_hit_and_refunds_a_fifth_of_mana_for_an_ember() {
-    let (shatter, refund) = consume_both(&[]);
+    let (shatter, refund) = consume_both();
     assert_eq!(shatter, 40, "200% of a 20 hit");
     assert!((refund - 20.0).abs() < 0.5, "{refund}% of max mana");
 }
 
 #[test]
-fn thermal_shock_makes_the_consume_260_percent_and_26_percent() {
-    let (shatter, refund) = consume_both(&[(THERMAL_SHOCK, 3)]);
-    assert_eq!(shatter, 52, "260% of a 20 hit");
-    assert!((refund - 26.0).abs() < 0.5, "{refund}% of max mana");
-}
-
-#[test]
 fn catalyst_with_nothing_to_consume_does_nothing() {
-    let (mut realm, me, mobs, mut view) = world(8, &[]);
+    let (mut realm, me, mobs, mut view) = world(8);
     let mob = &mobs[0];
     stand_at(&mut realm, mob, 20.0);
     for _ in 0..5 {
@@ -260,64 +191,6 @@ fn catalyst_with_nothing_to_consume_does_nothing() {
     assert_eq!(damage(&events, CATALYST, mob.guid), None);
     assert_eq!(refund(&events, CATALYST), None);
     assert_eq!(view.fields(me).unit_power(MANA), mana);
-}
-
-#[test]
-fn catalytic_chain_spreads_the_consumed_aura_to_a_second_mob() {
-    let (mut realm, _, mut mobs, mut view) = world(9, &[(CATALYTIC_CHAIN, 2)]);
-    // Two mobs pulled onto the caster stand side by side.
-    stand_at(&mut realm, &mobs[0], 20.0);
-    mobs.truncate(2);
-    for m in &mobs {
-        go(&mut realm, &mut view, COLD, Some(m.guid));
-    }
-    for e in view.run(&mut realm, 8.0) {
-        if let SessionEvent::MonsterMove { guid, path, .. } = e {
-            if let (Some(m), Some(end)) = (mobs.iter_mut().find(|m| m.guid == guid), path.last()) {
-                m.position = *end;
-            }
-        }
-    }
-    let (mob, other) = (&mobs[0], &mobs[1]);
-    assert!(
-        flat(mob.position, other.position) <= 10.0,
-        "pulled together"
-    );
-    go(&mut realm, &mut view, EMBER, Some(mob.guid));
-    go(&mut realm, &mut view, CATALYST, Some(mob.guid));
-    assert!(
-        view.aura(mob.guid, EMBER).is_none(),
-        "consumed on the target"
-    );
-    let copy = view
-        .aura(other.guid, EMBER)
-        .expect("a copy on the second mob");
-    assert_eq!(copy.stacks, 1);
-}
-
-#[test]
-fn catalytic_resonance_raises_the_next_spell_by_ten_percent() {
-    let bolt = |talents: &[(u32, u8)]| {
-        let (mut realm, _, mobs, mut view) = world(10, talents);
-        let mob = &mobs[0];
-        stand_at(&mut realm, mob, 20.0);
-        go(&mut realm, &mut view, EMBER, Some(mob.guid));
-        go(&mut realm, &mut view, CATALYST, Some(mob.guid));
-        // Several bolts, for one that does not crit.
-        (0..10)
-            .find_map(|_| {
-                let events = go(&mut realm, &mut view, BOLT, Some(mob.guid));
-                events.iter().find_map(|e| match e {
-                    SessionEvent::SpellDamageLog(l) if l.spell_id == BOLT && l.hit_info == 0 => {
-                        Some(l.damage)
-                    }
-                    _ => None,
-                })
-            })
-            .expect("a bolt that does not crit")
-    };
-    assert_eq!(bolt(&[]), 50);
-    assert_eq!(bolt(&[(CATALYTIC_RESONANCE, 5)]), 55);
 }
 
 #[test]

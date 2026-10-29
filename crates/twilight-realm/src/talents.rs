@@ -1,111 +1,89 @@
-//! A character's talents: the points they have to spend, learning a talent of the current
-//! Calling's tree, the respec, and what the learned talents add to a fight. The tree is data
-//! ([`crate::callings::TalentTab`]); nothing here names a talent.
+//! A character's Talent Rows (ADR 0028): which choice each row of the current Calling has set,
+//! setting one, and what the set choices add to a fight. The rows are data
+//! ([`crate::callings::TalentRow`]); nothing here names a talent or a skill.
 //!
-//! The client reads a talent's rank as the highest rank spell it knows (vmangos
-//! `Player::LearnTalent` teaches the new rank's spell), so a learned talent's rank spells ride the
-//! spellbook, a learn sends `SMSG_LEARNED_SPELL`, and a respec one `SMSG_REMOVED_SPELL` a rank.
+//! A set Skill Choice replaces its skill in the spell book and on the bar; a set Talent adds its
+//! effects, or its skill when it is an active one. Every choice is one rank.
 
-use benilla_protocol::SessionEvent;
+use benilla_protocol::{SessionEvent, TalentChoiceView, TalentRowView};
 
 use crate::callings::{
-    self, CritBleedOf, Skill, Stat, TalentDef, TalentEffect, TalentTab, Wielded,
+    self, CritBleedOf, RowChoice, RowKind, Skill, Stat, TalentDef, TalentEffect, TalentRow, Wielded,
 };
 use crate::characters::Char;
-use crate::fields::values;
 use crate::rules::power::PowerKind;
 use crate::rules::stats::CharacterStats;
-use crate::rules::talents::{points_at, respec_cost};
 
-/// `PLAYER_CHARACTER_POINTS1`: the unspent Talent Points.
-const PLAYER_CHARACTER_POINTS1: u16 = 1102;
-
-/// Points needed in a tab per tier above the first (`Talent.dbc` tiers, vmangos).
-const POINTS_PER_TIER: u32 = 5;
-
-/// The current Calling's tree.
-fn tree(c: &Char) -> &'static [TalentTab] {
-    &callings::of(c.calling).talent_tabs
+/// The current Calling's rows, in level order.
+pub(crate) fn rows(c: &Char) -> &'static [TalentRow] {
+    &callings::of(c.calling).rows
 }
 
-/// A talent of the current tree, and its tab.
-fn find(c: &Char, talent_id: u32) -> Option<(&'static TalentTab, &'static TalentDef)> {
-    tree(c).iter().find_map(|tab| {
-        tab.talents
-            .iter()
-            .find(|t| t.talent_id == talent_id)
-            .map(|t| (tab, t))
+/// The choice `c` has set on `row`, if any.
+pub(crate) fn chosen(c: &Char, row: &TalentRow) -> Option<&'static RowChoice> {
+    let &(_, spell_id) = c.rows.iter().find(|(key, _)| *key == row.key)?;
+    rows(c)
+        .iter()
+        .find(|r| r.key == row.key)?
+        .choices
+        .iter()
+        .find(|choice| choice.spell_id() == spell_id)
+}
+
+/// Every set choice of `c`'s rows.
+fn set_choices(c: &Char) -> impl Iterator<Item = &'static RowChoice> + '_ {
+    rows(c).iter().filter_map(|row| chosen(c, row))
+}
+
+/// The set Talents' definitions.
+fn set_talents(c: &Char) -> impl Iterator<Item = &'static TalentDef> + '_ {
+    set_choices(c).filter_map(|choice| match choice {
+        RowChoice::Talent(t) => Some(t),
+        RowChoice::Skill(_) => None,
     })
 }
 
-/// The rank `c` has in `talent_id`, 0 for none.
-fn rank(c: &Char, talent_id: u32) -> u8 {
-    c.talents
-        .iter()
-        .find(|(id, _)| *id == talent_id)
-        .map_or(0, |(_, r)| *r)
-}
-
-/// The points spent, in all or in one tab.
-fn spent(c: &Char, tab: Option<&TalentTab>) -> u32 {
-    c.talents
-        .iter()
-        .filter(|(id, _)| tab.is_none_or(|tab| tab.talents.iter().any(|t| t.talent_id == *id)))
-        .map(|(_, r)| u32::from(*r))
-        .sum()
-}
-
-/// The Talent Points `c` has left to spend.
-pub(crate) fn free_points(c: &Char) -> u32 {
-    points_at(c.level).saturating_sub(spent(c, None))
-}
-
-/// The points field, as the player's create and every change carry it.
-pub(crate) fn points_pair(c: &Char) -> (u16, u32) {
-    (PLAYER_CHARACTER_POINTS1, free_points(c))
-}
-
-/// Drops from a loaded save what the tree no longer has: a talent it lost, ranks past a talent's
-/// last, and the talents bought last when they cost more points than the level gives.
+/// Drops from a loaded save a row the Calling lacks, a spell that is not one of that row's
+/// choices, and a row the level has not opened.
 pub(crate) fn keep_valid(c: &mut Char) {
-    let mut kept: Vec<(u32, u8)> = Vec::new();
-    for &(id, r) in &c.talents {
-        let Some((_, t)) = find(c, id) else {
-            continue;
-        };
-        let r = r.min(t.rank_spells.len() as u8);
-        if r > 0 && !kept.iter().any(|(k, _)| *k == id) {
-            kept.push((id, r));
-        }
-    }
-    let mut points = points_at(c.level);
-    kept.retain(|(_, r)| {
-        let fits = u32::from(*r) <= points;
-        if fits {
-            points -= u32::from(*r);
-        }
-        fits
+    let level = c.level;
+    let own = rows(c);
+    c.rows.retain(|(key, spell_id)| {
+        own.iter().any(|row| {
+            row.key == *key
+                && level >= row.level
+                && row.choices.iter().any(|ch| ch.spell_id() == *spell_id)
+        })
     });
-    c.talents = kept;
 }
 
-/// Every learned rank's spell, for the spellbook at login.
+/// Every set choice's spell, for the spell book.
 pub(crate) fn known_spells(c: &Char) -> impl Iterator<Item = u32> + '_ {
-    c.talents.iter().flat_map(|&(id, r)| {
-        find(c, id)
-            .map(|(_, t)| &t.rank_spells[..usize::from(r).min(t.rank_spells.len())])
-            .unwrap_or(&[])
-            .iter()
-            .copied()
+    set_choices(c).map(RowChoice::spell_id)
+}
+
+/// The skill keys a set Skill Choice has taken out of the spell book.
+pub(crate) fn replaced(c: &Char) -> impl Iterator<Item = &'static str> + '_ {
+    set_choices(c).filter_map(|choice| match choice {
+        RowChoice::Skill(s) => s.replaces.as_deref(),
+        RowChoice::Talent(_) => None,
     })
 }
 
-/// Every learned talent's effects, each with the index of the rank learned.
+/// Whether the skill `key` of `c`'s Calling answers to `wanted`: the same key, or a Skill Choice
+/// of the skill `wanted`.
+fn answers(c: &Char, key: &str, wanted: &str) -> bool {
+    key == wanted
+        || rows(c)
+            .iter()
+            .flat_map(|row| &row.choices)
+            .filter_map(RowChoice::skill)
+            .any(|s| s.key == key && s.is(wanted))
+}
+
+/// Every set Talent's effects, each with the index of its one rank.
 fn learned(c: &Char) -> impl Iterator<Item = (&'static TalentEffect, usize)> + '_ {
-    c.talents
-        .iter()
-        .filter_map(|&(id, r)| find(c, id).map(|(_, t)| (t, r)))
-        .flat_map(|(t, r)| t.effects.iter().map(move |e| (e, usize::from(r) - 1)))
+    set_talents(c).flat_map(|t| t.effects.iter().map(|e| (e, 0)))
 }
 
 /// The size of each learned talent's effects that `pick` takes, summed.
@@ -141,19 +119,148 @@ pub(crate) fn pickup_radius_yd(c: &Char) -> f32 {
         .sum()
 }
 
-/// A skill `c` can cast: one of the current Calling's that its level has reached, or a learned
-/// active talent's.
+/// A skill `c` can cast: one of the current Calling's that its level has reached and no set Skill
+/// Choice replaces, or a set choice's (a Skill Choice, or an active Talent's).
 pub(crate) fn skill(c: &Char, spell_id: u32) -> Option<&'static Skill> {
     let own = callings::of(c.calling)
         .skills
         .iter()
-        .filter(|s| u32::from(s.learn_level) <= u32::from(c.level));
-    let talents = tree(c)
+        .filter(|s| u32::from(s.learn_level) <= u32::from(c.level))
+        .filter(|s| !replaced(c).any(|k| k == s.key));
+    let chosen = set_choices(c).filter_map(RowChoice::skill);
+    own.chain(chosen).find(|s| s.spell_id == spell_id)
+}
+
+/// Why a row could not be set.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Refusal {
+    NoSuchRow,
+    /// Below its level.
+    Locked,
+    NotAChoice,
+    /// Already set, and no innkeeper within service range.
+    NeedsInnkeeper,
+    /// That choice is the one set.
+    Same,
+}
+
+/// `SetTalentRow`: sets `row_key` to the choice `spell_id`. The old spell (the plain skill for an
+/// empty Skill Choice row, else the previous choice) leaves the spell book and the bar for the
+/// new one, and the rows are sent again.
+pub(crate) fn set(
+    c: &mut Char,
+    row_key: &str,
+    spell_id: u32,
+    at_innkeeper: bool,
+    events: &mut Vec<SessionEvent>,
+) -> Result<(), Refusal> {
+    let row = rows(c)
         .iter()
-        .flat_map(|tab| &tab.talents)
-        .filter(|t| rank(c, t.talent_id) > 0)
-        .filter_map(|t| t.skill.as_ref());
-    own.chain(talents).find(|s| s.spell_id == spell_id)
+        .find(|r| r.key == row_key)
+        .ok_or(Refusal::NoSuchRow)?;
+    if c.level < row.level {
+        return Err(Refusal::Locked);
+    }
+    if !row.choices.iter().any(|ch| ch.spell_id() == spell_id) {
+        return Err(Refusal::NotAChoice);
+    }
+    let old = chosen(c, row);
+    if old.is_some_and(|o| o.spell_id() == spell_id) {
+        return Err(Refusal::Same);
+    }
+    if old.is_some() && !at_innkeeper {
+        return Err(Refusal::NeedsInnkeeper);
+    }
+    let old_spell = match (old, row.kind) {
+        (Some(o), _) => Some(o.spell_id()),
+        (None, RowKind::SkillChoice) => callings::of(c.calling)
+            .skills
+            .iter()
+            .find(|s| row.skill.as_deref() == Some(s.key.as_str()))
+            .map(|s| s.spell_id),
+        (None, RowKind::Talent) => None,
+    };
+    c.rows.retain(|(key, _)| key != row_key);
+    c.rows.push((row_key.to_owned(), spell_id));
+    if let Some(old_spell) = old_spell {
+        events.push(SessionEvent::SpellRemoved {
+            spell_id: old_spell,
+        });
+        let bar = c
+            .action_bar
+            .get_or_insert_with(|| callings::default_bar(c.calling));
+        for (_, packed) in bar.iter_mut() {
+            // Kind 0, a spell, in the top byte.
+            if *packed == old_spell {
+                *packed = spell_id;
+            }
+        }
+    }
+    events.push(SessionEvent::SpellLearned { spell_id });
+    events.push(crate::world::action_buttons(c));
+    if row.kind == RowKind::Talent {
+        events.extend(spell_mods(c));
+    }
+    events.push(rows_event(c, at_innkeeper));
+    Ok(())
+}
+
+impl crate::Realm {
+    /// The Calling of the character in the world; `None` at character select.
+    pub fn current_calling(&self) -> Option<&'static callings::CallingDef> {
+        let w = self.world.as_ref()?;
+        self.characters.get(w.guid).map(|c| callings::of(c.calling))
+    }
+
+    /// `SetTalentRow` from the character in the world: a refusal answers nothing; a set redoes the
+    /// sheet and saves.
+    pub(crate) fn set_talent_row(&mut self, row: &str, spell_id: u32) {
+        let at_innkeeper = self.at_innkeeper();
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
+        if set(c, row, spell_id, at_innkeeper, &mut self.events).is_ok() {
+            w.refresh_gear(c, &mut self.events);
+            let guid = w.guid;
+            self.save(guid);
+        }
+    }
+}
+
+/// The Talent Rows event: every row of the current Calling, open or not, and its set choice.
+pub(crate) fn rows_event(c: &Char, at_innkeeper: bool) -> SessionEvent {
+    let def = callings::of(c.calling);
+    SessionEvent::TalentRows {
+        calling: def.name.clone(),
+        at_innkeeper,
+        rows: def
+            .rows
+            .iter()
+            .map(|row| TalentRowView {
+                key: row.key.clone(),
+                level: row.level,
+                open: c.level >= row.level,
+                skill: def
+                    .skills
+                    .iter()
+                    .find(|s| row.skill.as_deref() == Some(s.key.as_str()))
+                    .map(|s| s.name.clone())
+                    .unwrap_or_default(),
+                set: chosen(c, row).map_or(0, RowChoice::spell_id),
+                choices: row
+                    .choices
+                    .iter()
+                    .map(|ch| TalentChoiceView {
+                        spell_id: ch.spell_id(),
+                        name: ch.name().to_owned(),
+                    })
+                    .collect(),
+            })
+            .collect(),
+    }
 }
 
 /// Whether `c` wields `weapon` in the main hand.
@@ -190,7 +297,8 @@ pub(crate) fn weapon_damage_pct(c: &Char) -> u32 {
 pub(crate) fn skill_crit_damage_pct(c: &Char, skill: Option<&str>, builder: bool) -> u32 {
     sum(c, |e| {
         matches!(e, TalentEffect::SkillCritDamagePct { builders, skill: s, .. }
-            if (builder || !builders) && s.as_deref().is_none_or(|s| Some(s) == skill))
+            if (builder || !builders)
+                && s.as_deref().is_none_or(|s| skill.is_some_and(|k| answers(c, k, s))))
     })
 }
 
@@ -213,7 +321,7 @@ pub(crate) fn damage_pct_vs(
 pub(crate) fn skill_armor_ignore(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::SkillArmorIgnore { skill: s, .. } if s == skill),
+        |e| matches!(e, TalentEffect::SkillArmorIgnore { skill: s, .. } if answers(c, skill, s)),
     )
 }
 
@@ -221,7 +329,7 @@ pub(crate) fn skill_armor_ignore(c: &Char, skill: &str) -> u32 {
 pub(crate) fn no_min_range(c: &Char, skill: &str, ranged: bool) -> bool {
     sum(c, |e| {
         matches!(e, TalentEffect::NoMinRange { skill: s, .. }
-            if s == skill || (ranged && s == "ranged"))
+            if answers(c, skill, s) || (ranged && s == "ranged"))
     }) > 0
 }
 
@@ -230,7 +338,7 @@ pub(crate) fn no_min_range(c: &Char, skill: &str, ranged: bool) -> bool {
 pub(crate) fn amount_pct_near(c: &Char, skill: &str, distance: f32) -> u32 {
     sum(c, |e| {
         matches!(e, TalentEffect::SkillAmountPct { skill: s, max_distance_yd, .. }
-            if s == skill && *max_distance_yd > 0.0 && distance <= *max_distance_yd)
+            if answers(c, skill, s) && *max_distance_yd > 0.0 && distance <= *max_distance_yd)
     })
 }
 
@@ -239,7 +347,7 @@ pub(crate) fn amount_pct_near(c: &Char, skill: &str, distance: f32) -> u32 {
 pub(crate) fn extra_target_pct(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::SkillExtraTarget { skill: s, .. } if s == skill),
+        |e| matches!(e, TalentEffect::SkillExtraTarget { skill: s, .. } if answers(c, skill, s)),
     )
 }
 
@@ -248,7 +356,7 @@ pub(crate) fn extra_target_pct(c: &Char, skill: &str) -> u32 {
 pub(crate) fn bonus_combo_pct(c: &Char, skill: &str, bleeding: bool) -> u32 {
     sum(c, |e| {
         matches!(e, TalentEffect::SkillBonusCombo { skill: s, target_state, .. }
-            if s == skill && (bleeding || target_state.is_none()))
+            if answers(c, skill, s) && (bleeding || target_state.is_none()))
     })
 }
 
@@ -256,7 +364,7 @@ pub(crate) fn bonus_combo_pct(c: &Char, skill: &str, bleeding: bool) -> u32 {
 pub(crate) fn duration_ms(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::SkillDurationMs { skill: s, .. } if s == skill),
+        |e| matches!(e, TalentEffect::SkillDurationMs { skill: s, .. } if answers(c, skill, s)),
     )
 }
 
@@ -264,7 +372,7 @@ pub(crate) fn duration_ms(c: &Char, skill: &str) -> u32 {
 pub(crate) fn duration_pct(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::SkillDurationPct { skill: s, .. } if s == skill),
+        |e| matches!(e, TalentEffect::SkillDurationPct { skill: s, .. } if answers(c, skill, s)),
     )
 }
 
@@ -352,11 +460,11 @@ pub(crate) fn on_struck(c: &Char) -> OnStruck {
 pub(crate) fn power_cost_from(c: &Char, skill: &callings::Skill, base: u32) -> u32 {
     let less = sum(
         c,
-        |e| matches!(e, TalentEffect::SkillCost { skill: s, flat: true, .. } if *s == skill.key),
+        |e| matches!(e, TalentEffect::SkillCost { skill: s, flat: true, .. } if skill.is(s)),
     );
     let more = sum(
         c,
-        |e| matches!(e, TalentEffect::SkillCost { skill: s, flat: false, .. } if *s == skill.key),
+        |e| matches!(e, TalentEffect::SkillCost { skill: s, flat: false, .. } if skill.is(s)),
     );
     crate::rules::talents::scaled(base, more).saturating_sub(less)
 }
@@ -365,7 +473,7 @@ pub(crate) fn power_cost_from(c: &Char, skill: &callings::Skill, base: u32) -> u
 pub(crate) fn block_value_pct(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::SkillBlockValuePct { skill: s, .. } if s == skill),
+        |e| matches!(e, TalentEffect::SkillBlockValuePct { skill: s, .. } if answers(c, skill, s)),
     )
 }
 
@@ -378,7 +486,7 @@ pub(crate) fn amount_pct(c: &Char, skill: &str) -> u32 {
             requires_target_aura: None,
             max_distance_yd,
             ..
-        } if s == skill && *max_distance_yd == 0.0)
+        } if answers(c, skill, s) && *max_distance_yd == 0.0)
     })
 }
 
@@ -399,7 +507,7 @@ pub(crate) fn amount_pct_on(
             ..
         } => {
             *max_distance_yd == 0.0
-                && s == skill
+                && answers(c, skill, s)
                 && (*applies_to == callings::AppliesTo::Both || *applies_to == part)
                 && requires_target_aura.as_deref().is_none_or(&wears)
         }
@@ -411,7 +519,7 @@ pub(crate) fn amount_pct_on(
 pub(crate) fn extra_rage(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::SkillRage { skill: s, .. } if s == skill),
+        |e| matches!(e, TalentEffect::SkillRage { skill: s, .. } if answers(c, skill, s)),
     )
 }
 
@@ -419,7 +527,7 @@ pub(crate) fn extra_rage(c: &Char, skill: &str) -> u32 {
 pub(crate) fn skill_crit_pct(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::SkillCritPct { skill: s, .. } if s == skill),
+        |e| matches!(e, TalentEffect::SkillCritPct { skill: s, .. } if s == "any" || answers(c, skill, s)),
     )
 }
 
@@ -427,7 +535,7 @@ pub(crate) fn skill_crit_pct(c: &Char, skill: &str) -> u32 {
 pub(crate) fn consume_heal_pct(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::ConsumeHealPct { skill: s, .. } if s == skill),
+        |e| matches!(e, TalentEffect::ConsumeHealPct { skill: s, .. } if answers(c, skill, s)),
     )
 }
 
@@ -435,7 +543,7 @@ pub(crate) fn consume_heal_pct(c: &Char, skill: &str) -> u32 {
 pub(crate) fn consume_amount_pct(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::ConsumeAmountPct { skill: s, .. } if s == skill),
+        |e| matches!(e, TalentEffect::ConsumeAmountPct { skill: s, .. } if answers(c, skill, s)),
     )
 }
 
@@ -443,7 +551,7 @@ pub(crate) fn consume_amount_pct(c: &Char, skill: &str) -> u32 {
 pub(crate) fn ground_amount_pct(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::GroundAmountPct { skill: s, .. } if s == skill),
+        |e| matches!(e, TalentEffect::GroundAmountPct { skill: s, .. } if answers(c, skill, s)),
     )
 }
 
@@ -451,32 +559,22 @@ pub(crate) fn ground_amount_pct(c: &Char, skill: &str) -> u32 {
 pub(crate) fn ground_duration_ms(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::GroundDurationMs { skill: s, .. } if s == skill),
+        |e| matches!(e, TalentEffect::GroundDurationMs { skill: s, .. } if answers(c, skill, s)),
     )
 }
 
 /// The bleeds a melee crit leaves: `(aura spell, tick ms, duration ms, percent, what of)`.
 pub(crate) fn crit_bleeds(c: &Char) -> Vec<(u32, u32, u32, u32, CritBleedOf)> {
-    c.talents
-        .iter()
-        .filter_map(|&(id, r)| {
-            let (_, t) = find(c, id)?;
-            t.effects.iter().find_map(|e| match e {
-                TalentEffect::CritBleed {
-                    aura_spell_id,
-                    tick_ms,
-                    duration_ms,
-                    of,
-                    per_rank,
-                } => Some((
-                    *aura_spell_id,
-                    *tick_ms,
-                    *duration_ms,
-                    per_rank[usize::from(r) - 1],
-                    *of,
-                )),
-                _ => None,
-            })
+    learned(c)
+        .filter_map(|(e, r)| match e {
+            TalentEffect::CritBleed {
+                aura_spell_id,
+                tick_ms,
+                duration_ms,
+                of,
+                per_rank,
+            } => Some((*aura_spell_id, *tick_ms, *duration_ms, per_rank[r], *of)),
+            _ => None,
         })
         .collect()
 }
@@ -625,10 +723,8 @@ pub(crate) struct Proc {
 
 /// The procs of `c`'s talents that `happened` sets off.
 pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<Proc> {
-    c.talents
-        .iter()
-        .filter_map(|&(id, r)| find(c, id).map(|(_, t)| (t, usize::from(r) - 1)))
-        .flat_map(|(t, r)| t.effects.iter().map(move |e| (t, e, r)))
+    set_talents(c)
+        .flat_map(|t| t.effects.iter().map(move |e| (t, e, 0)))
         .filter_map(|(t, e, r)| match e {
             TalentEffect::Proc {
                 on,
@@ -772,109 +868,6 @@ pub(crate) fn health_regen_pct(c: &Char) -> u32 {
     })
 }
 
-/// Why a talent could not be learned.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Refusal {
-    /// Not in the current Calling's tree.
-    NotInTree,
-    /// Already at that rank or past its last.
-    Rank,
-    NoPoints,
-    /// Not enough points spent in the tab for its tier.
-    Tier,
-    /// Its prerequisite is not at the rank it needs.
-    Prereq,
-}
-
-/// `CMSG_LEARN_TALENT` for the 0-based `rank`: vmangos's `Player::LearnTalent` rules. Learns up to
-/// that rank, paying a point a rank, and answers the new spell and points.
-pub(crate) fn learn(
-    c: &mut Char,
-    talent_id: u32,
-    rank: u32,
-    events: &mut Vec<SessionEvent>,
-) -> Result<(), Refusal> {
-    let (tab, t) = find(c, talent_id).ok_or(Refusal::NotInTree)?;
-    let have = u32::from(self::rank(c, talent_id));
-    let want = rank + 1;
-    if want <= have || want as usize > t.rank_spells.len() {
-        return Err(Refusal::Rank);
-    }
-    if free_points(c) < want - have {
-        return Err(Refusal::NoPoints);
-    }
-    if spent(c, Some(tab)) < u32::from(t.tier - 1) * POINTS_PER_TIER {
-        return Err(Refusal::Tier);
-    }
-    if let Some(p) = &t.prereq {
-        let needed = tab
-            .talents
-            .iter()
-            .find(|o| o.key == p.key)
-            .map_or(0, |o| self::rank(c, o.talent_id));
-        if needed < p.rank {
-            return Err(Refusal::Prereq);
-        }
-    }
-    c.talents.retain(|(id, _)| *id != talent_id);
-    c.talents.push((talent_id, want as u8));
-    for &spell_id in &t.rank_spells[have as usize..want as usize] {
-        events.push(SessionEvent::SpellLearned { spell_id });
-    }
-    if !t.client_spellmods.is_empty() {
-        events.extend(spell_mods(c));
-    }
-    events.push(values(c.guid, &[points_pair(c)]));
-    Ok(())
-}
-
-impl crate::Realm {
-    /// The Calling of the character in the world, whose Talent Tree the client's talent frame
-    /// must show; `None` at character select.
-    pub fn current_calling(&self) -> Option<&'static callings::CallingDef> {
-        let w = self.world.as_ref()?;
-        self.characters.get(w.guid).map(|c| callings::of(c.calling))
-    }
-
-    /// `CMSG_LEARN_TALENT` from the character in the world: a refusal answers nothing, as
-    /// vmangos's does; a learn redoes the sheet and saves.
-    pub(crate) fn learn_talent(&mut self, talent_id: u32, rank: u32) {
-        let Some(w) = &mut self.world else {
-            return;
-        };
-        let Some(c) = self.characters.get_mut(w.guid) else {
-            return;
-        };
-        if learn(c, talent_id, rank, &mut self.events).is_ok() {
-            w.refresh_gear(c, &mut self.events);
-            let guid = w.guid;
-            self.save(guid);
-        }
-    }
-}
-
-/// Whether `c` has any talent to wipe.
-pub(crate) fn any(c: &Char) -> bool {
-    !c.talents.is_empty()
-}
-
-/// What `c`'s next respec costs, in copper.
-pub(crate) fn wipe_cost(c: &Char) -> u32 {
-    respec_cost(c.talent_wipes)
-}
-
-/// Unlearns every talent (vmangos `Player::ResetTalents`): each rank's spell goes, every point
-/// comes back, and the spell mods return to nothing. The price is the caller's.
-pub(crate) fn wipe(c: &mut Char, events: &mut Vec<SessionEvent>) {
-    let spells: Vec<u32> = known_spells(c).collect();
-    c.talents.clear();
-    for spell_id in spells {
-        events.push(SessionEvent::SpellRemoved { spell_id });
-    }
-    events.extend(spell_mods(c));
-    events.push(values(c.guid, &[points_pair(c)]));
-}
-
 /// The value `c`'s talents give one spell-mod cell; 0 when none touches it.
 pub(crate) fn spell_mod_value(c: &Char, flat: bool, bit: u8, op: u8) -> i32 {
     spell_mods(c)
@@ -891,20 +884,26 @@ pub(crate) fn spell_mod_value(c: &Char, flat: bool, bit: u8, op: u8) -> i32 {
         .unwrap_or(0)
 }
 
-/// Every spell-mod cell the current tree can touch, at its value for what `c` has learned: sent at
-/// login and whenever one moves, since each packet sets a cell outright.
+/// Every spell-mod cell the current rows' Talents can touch, at its value for what `c` has set:
+/// sent at login and whenever one moves, since each packet sets a cell outright.
 pub(crate) fn spell_mods(c: &Char) -> Vec<SessionEvent> {
     let mut cells: Vec<(bool, u8, u8, i32)> = Vec::new();
-    for t in tree(c).iter().flat_map(|tab| &tab.talents) {
-        let r = usize::from(self::rank(c, t.talent_id));
-        for m in &t.client_spellmods {
-            let value = if r == 0 { 0 } else { m.per_rank[r - 1] };
-            match cells
-                .iter_mut()
-                .find(|(f, b, o, _)| (*f, *b, *o) == (m.flat, m.family_bit, m.op))
-            {
-                Some(cell) => cell.3 += value,
-                None => cells.push((m.flat, m.family_bit, m.op, value)),
+    for row in rows(c) {
+        let set = chosen(c, row);
+        for choice in &row.choices {
+            let RowChoice::Talent(t) = choice else {
+                continue;
+            };
+            let on = set.is_some_and(|s| s.spell_id() == choice.spell_id());
+            for m in &t.client_spellmods {
+                let value = if on { m.per_rank[0] } else { 0 };
+                match cells
+                    .iter_mut()
+                    .find(|(f, b, o, _)| (*f, *b, *o) == (m.flat, m.family_bit, m.op))
+                {
+                    Some(cell) => cell.3 += value,
+                    None => cells.push((m.flat, m.family_bit, m.op, value)),
+                }
             }
         }
     }

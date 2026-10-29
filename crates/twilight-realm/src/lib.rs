@@ -355,11 +355,13 @@ pub enum RealmCommand {
         slot: u8,
         count: u8,
     },
-    /// Spend Talent Points on a talent of the current Calling's tree, up to the 0-based `rank`.
-    LearnTalent {
-        talent_id: u32,
-        rank: u32,
+    /// Set the Talent Row `row` to its choice `spell_id` (ADR 0028).
+    SetTalentRow {
+        row: String,
+        spell_id: u32,
     },
+    /// The Talents panel opened: answered with [`SessionEvent::TalentRows`].
+    OpenTalentRows,
     /// Talk to an NPC: its gossip menu.
     GossipHello {
         guid: u64,
@@ -376,10 +378,6 @@ pub enum RealmCommand {
     /// Accept the innkeeper's bind confirm: bind the Hearthstone where the player stands.
     BinderActivate {
         binder: u64,
-    },
-    /// Accept the respec the trainer priced: unlearn every talent for gold.
-    TalentWipeConfirm {
-        trainer: u64,
     },
     /// Open a vendor's merchant window, answered with [`SessionEvent::VendorInventory`].
     ListInventory {
@@ -1770,13 +1768,23 @@ impl Realm {
             RealmCommand::PageTextQuery { page_id } => {
                 self.events.extend(items::page_chain(page_id));
             }
-            RealmCommand::LearnTalent { talent_id, rank } => self.learn_talent(talent_id, rank),
+            RealmCommand::SetTalentRow { row, spell_id } => self.set_talent_row(&row, spell_id),
+            RealmCommand::OpenTalentRows => {
+                let at_innkeeper = self.at_innkeeper();
+                if let Some(c) = self
+                    .world
+                    .as_ref()
+                    .and_then(|w| self.characters.get(w.guid))
+                {
+                    self.events
+                        .push(crate::talents::rows_event(c, at_innkeeper));
+                }
+            }
             RealmCommand::GossipHello { guid } => self.gossip_hello(guid),
             RealmCommand::GossipSelectOption { guid, option } => self.gossip_select(guid, option),
             RealmCommand::NpcTextQuery { text_id } => {
                 self.events.extend(hub::greeting(text_id));
             }
-            RealmCommand::TalentWipeConfirm { trainer } => self.talent_wipe(trainer),
             RealmCommand::BinderActivate { binder } => self.binder_activate(binder),
             RealmCommand::QuestQuery { quest } => {
                 self.events.extend(quests::template_response(quest));

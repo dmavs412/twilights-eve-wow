@@ -1,5 +1,6 @@
 //! The Zealot's borrowed Paladin skills, through the realm's seam: Hammer of Justice's stun, the
-//! Seals (one at a time; Seal of Command's holy procs) and Judgement consuming the Seal.
+//! Seals (one at a time; Seal of Command's holy procs; Seal of the Crusader's haste and attack
+//! power) and Judgement consuming the Seal, for a holy hit or the Crusader's holy damage taken.
 
 mod common;
 
@@ -338,61 +339,6 @@ fn holy_damage_at_a_judged_target_rises_by_a_fifth() {
     );
 }
 
-/// Improved Seal of the Crusader 3/3: the Seal's attack power and the judgement's holy damage
-/// taken, each 15% more, and the client's tooltip cell for the attack power.
-#[test]
-fn improved_seal_of_the_crusader_raises_its_attack_power_and_judgement() {
-    let improved = |blob: String| {
-        blob.replace("level = 1\n", "level = 4\n").replace(
-            "xp = 0\n",
-            &format!(
-                "xp = 0\ntalents = [[{}, 3]]\n",
-                talent("zealot", "improved_seal_of_the_crusader")
-            ),
-        )
-    };
-    let (mut realm, me, _, mut view) = tanking_as(12, &improved);
-    realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
-    view.drain(&mut realm);
-    // A level 4 Zealot: 20 + 4·4 = 36, 15% more is 41.4.
-    assert_eq!(view.fields(me).unit_attack_power_mods(), (41, 0));
-
-    let (hit, ap) = judged_judgement_of_command(tanking_as(25, &improved));
-    let plain = (30.0 + 3.0 * 4.0 + 0.15 * ap).round();
-    assert_eq!(
-        hit,
-        (plain * 1.23).round() as u32,
-        "{plain} at {ap} attack power, 23% more"
-    );
-}
-
-#[test]
-fn improved_seal_of_the_crusader_tells_the_client_the_seals_attack_power_is_higher() {
-    let (_, _, _, entry) = zealot_at_as(SEED, &|blob: String| {
-        blob.replace("level = 1\n", "level = 4\n").replace(
-            "xp = 0\n",
-            &format!(
-                "xp = 0\ntalents = [[{}, 2]]\n",
-                talent("zealot", "improved_seal_of_the_crusader")
-            ),
-        )
-    });
-    let cell = entry
-        .iter()
-        .filter_map(|e| match *e {
-            // `SPELLMOD_EFFECT1`, a percent on Seal of the Crusader's family bit.
-            SessionEvent::SpellModifier {
-                flat: false,
-                mask_bit: 34,
-                op: 3,
-                value,
-            } => Some(value),
-            _ => None,
-        })
-        .next_back();
-    assert_eq!(cell, Some(10), "two ranks: 10%");
-}
-
 /// Seal of the Crusader judged on the tanked mob, kept up past its 10 s by one landed swing,
 /// and then Seal of Command judged on it: Judgement of Command's damage, and the attack power
 /// it was judged at.
@@ -452,12 +398,9 @@ fn judged_judgement_of_command(
 
 const SEED: u64 = 0x5EED_0023;
 
-/// A human Zealot from a level 1 save that `edit` changes, in the world at the Crossroads; the
-/// view and what entering the world sent.
-fn zealot_at_as(
-    seed: u64,
-    edit: &dyn Fn(String) -> String,
-) -> (Realm, u64, View, Vec<SessionEvent>) {
+/// A human Zealot from a level 1 save that `edit` changes, in the world at the Crossroads, and
+/// what the client has seen.
+fn zealot_at_as(seed: u64, edit: &dyn Fn(String) -> String) -> (Realm, u64, View) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Varian", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
@@ -471,10 +414,10 @@ fn zealot_at_as(
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);
     let mut view = View::default();
-    let entry = view.drain(&mut realm);
+    view.drain(&mut realm);
     // The world streams in over the first ticks.
     view.run(&mut realm, 1.0);
-    (realm, guid, view, entry)
+    (realm, guid, view)
 }
 
 /// A level 1 Zealot that pulled the camp south of the Crossroads without swinging back, and took
@@ -485,7 +428,7 @@ fn tanking(rage: u32) -> (Realm, u64, Mob, View) {
 
 /// [`tanking`], from a save that `edit` changes.
 fn tanking_as(rage: u32, edit: &dyn Fn(String) -> String) -> (Realm, u64, Mob, View) {
-    let (mut realm, me, mut view, _) = zealot_at_as(SEED, edit);
+    let (mut realm, me, mut view) = zealot_at_as(SEED, edit);
     // Out of reach of the four neutral scorpids, then each of them in turn.
     realm.handle(RealmCommand::Move {
         motion: Default::default(),

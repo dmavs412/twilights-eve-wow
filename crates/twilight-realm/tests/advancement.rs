@@ -174,9 +174,9 @@ static ZEALOT_SKILLS: std::sync::LazyLock<Vec<u32>> = std::sync::LazyLock::new(|
         &[&keys[..], &["mortal_strike", "charge"]].concat(),
     )
 });
-/// Three of Cruelty's Recruit ranks, Righteous Fury's now.
-static CRUELTY_RANKS: std::sync::LazyLock<Vec<u32>> =
-    std::sync::LazyLock::new(|| talent_spells("vanguard", "righteous_fury")[..3].to_vec());
+/// Bull Rush, a choice of the Basic Warrior's Charge row.
+static BULL_RUSH: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| choice("basic_warrior", "charge", "bull_rush"));
 
 /// The trainer's guid, from the entry burst.
 fn trainer(events: &[SessionEvent]) -> u64 {
@@ -295,17 +295,14 @@ fn take(realm: &mut Realm, npc: u64, quest: u32) -> Vec<SessionEvent> {
     events
 }
 
-/// A Basic Warrior at the cap with things to keep: 12345 copper, 7 Tokens, Cruelty 3/3, the worn
-/// sword, a Hearthstone and skins in the bags, and a quest under way.
+/// A Basic Warrior at the cap with things to keep: 12345 copper, 7 Tokens, Bull Rush on the Charge
+/// row, the worn sword, a Hearthstone and skins in the bags, and a quest under way.
 fn capped_warrior() -> (Realm, u64, Vec<SessionEvent>) {
     let items: &[Carried] = &[(15, 25, 1), (23, 6948, 1), (24, CROCOLISK_SKIN, 3)];
     let (guid, blob) = save_with_quests(10, items, 7, &[(THINNING_THE_HERDS, [1, 2, 0, 0])]);
     let blob = blob.replace("money = 0\n", "money = 12345\n").replace(
         "xp = 0\n",
-        &format!(
-            "xp = 0\ntalents = [[{}, 3]]\n",
-            talent("vanguard", "righteous_fury")
-        ),
+        &format!("xp = 0\nrows = [[\"charge\", {}]]\n", *BULL_RUSH),
     );
     let mut realm = Realm::with_seed(SEED);
     realm.import_character(&blob).unwrap();
@@ -431,16 +428,14 @@ fn advancement_makes_a_level_1_vanguard_with_the_new_skills_and_tree() {
     assert_eq!(now.player_talent_points(), Some(0), "no points at level 1");
     assert_eq!(now.unit_health(), now.unit_max_health(), "at full health");
 
-    // The kits swapped, and Cruelty's ranks gone with the old tree.
+    // The kits swapped, and Bull Rush gone with the old rows.
     let known = spellbook(&events);
     assert_eq!(
         known,
         TIER_1_SKILLS.iter().copied().collect(),
         "exactly the kit"
     );
-    for s in CRUELTY_RANKS.iter() {
-        assert!(!known.contains(s), "spell {s} forgotten");
-    }
+    assert!(!known.contains(&*BULL_RUSH), "Bull Rush forgotten");
     let tabs: Vec<&str> = realm
         .current_calling()
         .unwrap()
@@ -553,50 +548,6 @@ fn after_advancement_a_hunting_quest_done_at_tier_0_stays_done() {
 }
 
 #[test]
-fn a_talent_respec_leaves_the_quests_alone() {
-    let quests: &[Underway] = &[
-        (CROCOLISK_SKINS, [0; 4]),
-        (THINNING_THE_HERDS, [1, 2, 0, 0]),
-    ];
-    let (guid, blob) = save_with_quests(10, EIGHT_SKINS, 0, quests);
-    let blob = blob
-        .replace(
-            "money = 0
-",
-            "money = 12345
-",
-        )
-        .replace(
-            "xp = 0
-",
-            &format!(
-                "xp = 0\ntalents = [[{}, 3]]\n",
-                talent("basic_warrior", "field_medic")
-            ),
-        );
-    let (mut realm, me, mut events) = enter_saved(guid, &blob);
-    let zunjin = giver(&events, ZUNJIN);
-    events.extend(hand_in(&mut realm, zunjin, CROCOLISK_SKINS));
-    let log_before = quest_log(&events, me);
-    assert_eq!(log_before, [(1, THINNING_THE_HERDS, [1, 2, 0, 0], 0)]);
-
-    let uzzek = trainer(&events);
-    walk_up_to(&mut realm, uzzek);
-    realm.handle(RealmCommand::TalentWipeConfirm { trainer: uzzek });
-    events.extend(drain(&mut realm));
-    assert_eq!(
-        descriptor(&events, me).player_money(),
-        Some(12345 + 500 - 10000),
-        "the respec went through"
-    );
-    assert_eq!(quest_log(&events, me), log_before, "the quest under way");
-    assert!(
-        !on_offer(&mut realm, zunjin).contains(&CROCOLISK_SKINS),
-        "still done this Tier"
-    );
-}
-
-#[test]
 fn advancement_resends_proficiency_with_plate() {
     let (mut realm, me, mut events) = capped_warrior();
     let armour = |events: &[SessionEvent]| {
@@ -641,7 +592,7 @@ fn the_calling_survives_the_save() {
     let blob = realm.export_character(me).unwrap();
     assert!(blob.contains("calling = \"vanguard\"\n"), "{blob}");
     assert!(blob.contains("level = 1\n"), "{blob}");
-    assert!(!blob.contains("talents"), "no talents left: {blob}");
+    assert!(!blob.contains("\"charge\""), "no rows left: {blob}");
 
     let mut reloaded = Realm::with_seed(SEED);
     reloaded.import_character(&blob).unwrap();
@@ -661,17 +612,9 @@ fn the_calling_survives_the_save() {
 
 #[test]
 fn a_save_from_before_the_rename_loads_as_a_vanguard() {
-    // Tier 1 was saved as "warrior" before it was Vanguard; Cruelty's talent is Righteous Fury now.
+    // Tier 1 was saved as "warrior" before it was Vanguard.
     let (guid, blob) = save_with(12, 0, &[]);
-    let blob = blob
-        .replace("calling = \"basic_warrior\"", "calling = \"warrior\"")
-        .replace(
-            "money = 0\n",
-            &format!(
-                "money = 0\ntalents = [[{}, 3]]\n",
-                talent("vanguard", "righteous_fury")
-            ),
-        );
+    let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"warrior\"");
     let mut realm = Realm::with_seed(SEED);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -681,10 +624,6 @@ fn a_save_from_before_the_rename_loads_as_a_vanguard() {
     assert_eq!(realm.calling_name(guid), Some("Vanguard"));
     let known = spellbook(&events);
     assert!(TIER_1_SKILLS.iter().all(|s| known.contains(s)));
-    assert!(
-        CRUELTY_RANKS.iter().all(|s| known.contains(s)),
-        "the talent kept"
-    );
     assert_eq!(descriptor(&events, guid).unit_level(), Some(12));
     let saved = realm.export_character(guid).unwrap();
     assert!(saved.contains("calling = \"vanguard\"\n"), "{saved}");
@@ -770,18 +709,10 @@ fn uzzek_no_longer_offers_the_tier_2_quests() {
 
 // ── Zealot ──────────────────────────────────────────────────────────────────────────────────────
 
-/// A Vanguard at the cap in Jouster's Chestplate, with Cruelty 3/3.
+/// A Vanguard at the cap in Jouster's Chestplate.
 fn capped_vanguard() -> (Realm, u64, Vec<SessionEvent>) {
     let (guid, blob) = save_with_quests(30, &[(4, JOUSTERS_CHESTPLATE, 1)], 0, &[]);
-    let blob = at_wray(&blob)
-        .replace("calling = \"basic_warrior\"", "calling = \"vanguard\"")
-        .replace(
-            "xp = 0\n",
-            &format!(
-                "xp = 0\ntalents = [[{}, 3]]\n",
-                talent("vanguard", "righteous_fury")
-            ),
-        );
+    let blob = at_wray(&blob).replace("calling = \"basic_warrior\"", "calling = \"vanguard\"");
     let mut realm = Realm::with_seed(SEED);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -813,7 +744,7 @@ fn the_zealots_vow_makes_a_level_1_zealot_with_six_skills_in_the_same_plate() {
     assert_eq!(
         spellbook(&events),
         ZEALOT_SKILLS.iter().copied().collect(),
-        "exactly the six, Cruelty and the Vanguard kit forgotten"
+        "exactly the six, the Vanguard kit forgotten"
     );
     assert_eq!(now.player_inv_slot(4), chest, "the plate stays worn");
     assert_eq!(now.unit_shapeshift_form(), 17, "still in Battle Stance");
@@ -1153,11 +1084,11 @@ count = 200"
 }
 
 #[test]
-fn only_uzzek_sells_the_respec() {
+fn no_trainer_sells_a_respec() {
     let (mut realm, _, events) = questing(10, &[], 0, &[]);
-    assert_eq!(
-        gossip_menu(&mut realm, trainer(&events)).0,
-        ["I wish to unlearn my talents."]
+    assert!(
+        gossip_menu(&mut realm, trainer(&events)).0.is_empty(),
+        "Uzzek"
     );
     for (entry, _, title) in NEW_LINES {
         let npc = giver(&events, entry);

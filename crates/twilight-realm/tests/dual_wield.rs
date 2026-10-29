@@ -1,8 +1,7 @@
-//! A Cutthroat's off-hand auto-attack and Dual Wield Specialization: the off hand swings on its
-//! own timer at half damage, two worn weapons add 19% to every white swing's miss chance, and the
-//! talent raises the off hand's damage. Played through the realm's seam by a level 10 Cutthroat
-//! near the Crossroads, read off the `AttackerState` packets (`HITINFO_LEFTSWING` marks the off
-//! hand).
+//! A Cutthroat's off-hand auto-attack: the off hand swings on its own timer at half damage, and two
+//! worn weapons add 19% to every white swing's miss chance. Played through the realm's seam by a
+//! level 10 Cutthroat near the Crossroads, read off the `AttackerState` packets
+//! (`HITINFO_LEFTSWING` marks the off hand).
 
 mod common;
 mod gear_common;
@@ -19,10 +18,8 @@ const MAIN_HAND: u8 = 15;
 const OFF_HAND: u8 = 16;
 const BACKPACK: u8 = 255;
 const PACK_1: u8 = 23;
-/// `Talent.dbc` id of Dual Wield Specialization, 5 ranks.
-const DUAL_WIELD_SPECIALIZATION: u32 = 1705;
 
-/// A Rogue-Class Calling carrying the off-hand talent, which the shipped Cutthroat no longer has.
+/// A Rogue-Class Calling that wields a dagger in each hand.
 const TEST_CALLINGS: &str = r#"
 [[calling]]
 key = "test_rogue"
@@ -44,20 +41,6 @@ gcd_ms = 0
 target = "enemy"
 range_yd = [0.0, 5.0]
 effects = [{ kind = "add_combo_points", amount = 1 }]
-
-[[calling.talent_tab]]
-id = 906
-name = "Test"
-background = "RogueAssassination"
-
-[[calling.talent_tab.talent]]
-key = "dual_wield_specialization"
-talent_id = 1705
-tier = 1
-column = 1
-rank_spells = [1000211, 1000212, 1000213, 1000214, 1000215]
-spell_name = "Dual Wield Specialization"
-effects = [{ kind = "offhand_damage_pct", per_rank = [10, 20, 30, 40, 50] }]
 "#;
 /// 1H dagger, 6-12 every 1.5 s.
 const SMALL_HAND_BLADE: u32 = 816;
@@ -68,25 +51,20 @@ const HITINFO_AFFECTS_VICTIM: u32 = 0x2;
 const HITINFO_LEFTSWING: u32 = 0x4;
 const HITINFO_MISS: u32 = 0x10;
 
-/// A Cutthroat's save carrying `items`, with `talents` learned.
-fn cutthroat_save(items: &[Carried], talents: &[(u32, u8)]) -> (u64, String) {
-    let (guid, mut blob) = save_with(LEVEL, 0, items);
-    blob = blob.replace("calling = \"basic_warrior\"", "calling = \"test_rogue\"");
-    if !talents.is_empty() {
-        let rows: Vec<String> = talents.iter().map(|(t, r)| format!("[{t}, {r}]")).collect();
-        let line = format!("money = 0\ntalents = [{}]\n", rows.join(", "));
-        blob = blob.replace("money = 0\n", &line);
-    }
+/// A Cutthroat's save carrying `items`.
+fn cutthroat_save(items: &[Carried]) -> (u64, String) {
+    let (guid, blob) = save_with(LEVEL, 0, items);
+    let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"test_rogue\"");
     (guid, blob)
 }
 
 /// A Cutthroat with a dagger in each hand.
-fn two_daggers(talents: &[(u32, u8)]) -> (u64, String) {
+fn two_daggers() -> (u64, String) {
     let items = [
         (MAIN_HAND, SMALL_HAND_BLADE, 1),
         (OFF_HAND, SMALL_HAND_BLADE, 1),
     ];
-    cutthroat_save(&items, talents)
+    cutthroat_save(&items)
 }
 
 /// The save in a realm on `seed`, in the world, attacking a mob near it.
@@ -167,7 +145,7 @@ fn the_off_hand_swings_at_its_own_weapons_speed() {
         (MAIN_HAND, SMALL_HAND_BLADE, 1),
         (OFF_HAND, GIANT_TARANTULA_FANG, 1),
     ];
-    let (guid, blob) = cutthroat_save(&items, &[]);
+    let (guid, blob) = cutthroat_save(&items);
     let mut realm = enter(guid, &blob, 0x5EED_0108);
     let all = swings(&mut realm, guid, 6.0);
     assert_spaced(&times(&all, true), 1.4);
@@ -176,7 +154,7 @@ fn the_off_hand_swings_at_its_own_weapons_speed() {
 
 #[test]
 fn with_one_dagger_there_are_no_off_hand_swings() {
-    let (guid, blob) = cutthroat_save(&[(MAIN_HAND, SMALL_HAND_BLADE, 1)], &[]);
+    let (guid, blob) = cutthroat_save(&[(MAIN_HAND, SMALL_HAND_BLADE, 1)]);
     let mut realm = enter(guid, &blob, 0x5EED_0108);
     let all = swings(&mut realm, guid, 6.0);
     assert!(all.len() >= 3, "{} swings", all.len());
@@ -194,7 +172,7 @@ fn a_second_dagger_goes_in_the_off_hand_for_a_cutthroat_only() {
         slot: PACK_1,
     };
 
-    let (guid, blob) = cutthroat_save(&items, &[]);
+    let (guid, blob) = cutthroat_save(&items);
     let mut realm = enter(guid, &blob, 0x5EED_0108);
     realm.handle(equip.clone());
     let all = swings(&mut realm, guid, 4.0);
@@ -243,8 +221,8 @@ fn main_hand_misses(swings: &[AttackerState]) -> usize {
 
 #[test]
 fn two_weapons_add_to_the_miss_chance() {
-    let one = cutthroat_save(&[(MAIN_HAND, SMALL_HAND_BLADE, 1)], &[]);
-    let two = main_hand_misses(&opening_swings(&two_daggers(&[]), 300));
+    let one = cutthroat_save(&[(MAIN_HAND, SMALL_HAND_BLADE, 1)]);
+    let two = main_hand_misses(&opening_swings(&two_daggers(), 300));
     let single = main_hand_misses(&opening_swings(&one, 300));
     // 19 points more of 300 fights is about 57; the base chance is under 1%.
     assert!(two > single + 30, "two weapons {two}, one {single}");
@@ -252,19 +230,9 @@ fn two_weapons_add_to_the_miss_chance() {
 
 #[test]
 fn the_off_hand_deals_about_half_the_main_hands_damage() {
-    let swings = opening_swings(&two_daggers(&[]), 300);
+    let swings = opening_swings(&two_daggers(), 300);
     let main = mean_plain_hit(&swings, false);
     let off = mean_plain_hit(&swings, true);
     let ratio = off / main;
     assert!(ratio > 0.4 && ratio < 0.6, "off {off:.2}, main {main:.2}");
-}
-
-#[test]
-fn dual_wield_specialization_raises_the_off_hands_damage() {
-    let bare = opening_swings(&two_daggers(&[]), 300);
-    let talents = [(DUAL_WIELD_SPECIALIZATION, 5)];
-    let trained = opening_swings(&two_daggers(&talents), 300);
-    let ratio = mean_plain_hit(&trained, true) / mean_plain_hit(&bare, true);
-    // A Power Level body's attack power is a larger part of each hit, which the talent does not raise.
-    assert!(ratio > 1.4 && ratio < 1.7, "5/5 deals {ratio:.2}x of 0/5");
 }
