@@ -172,40 +172,41 @@ fn the_character_button_carries_the_player_portrait_through_the_reference_crop()
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 
-/// Under level 10 `UpdateTalentButton` hides the talent button and seats the quest log on its
-/// anchor (`MainMenuBarMicroButtons.lua:133`).
+/// Stock `UpdateTalentButton` hides the talent button under level 10 and seats the quest log on
+/// its anchor (`MainMenuBarMicroButtons.lua:133`). Twilight's Talents panel (ADR 0028) takes the
+/// gate off, so the button shows from level 1 with the row at its full width.
 #[test]
-fn the_talent_button_appears_at_level_ten_and_the_row_closes_up_below_it() {
+fn the_talent_button_shows_at_level_one() {
     let _data = benilla_formats::wow_data_or_skip!();
     let mut s = harness();
 
-    set_player_level(&mut s, 9);
+    set_player_level(&mut s, 1);
     s.resolve();
     assert!(
         !s.eval::<bool>("return TalentMicroButton:IsVisible()")
             .unwrap(),
-        "no talents before 10"
+        "the stock gate hides it"
     );
-    // The quest log takes the talent button's seat: slot 3, not 4.
-    assert_eq!(left_of(&s, "QuestLogMicroButton"), 552.0 + 26.0 * 2.0);
-    assert_eq!(
-        left_of(&s, "HelpMicroButton"),
-        552.0 + 26.0 * 6.0,
-        "the whole tail moves up one slot with it"
-    );
-
-    set_player_level(&mut s, 10);
+    assert!(s
+        .eval::<bool>(crate::ui_twilight::UNLOCK_TALENT_FRAME)
+        .unwrap());
     s.resolve();
     assert!(
         s.eval::<bool>("return TalentMicroButton:IsVisible()")
             .unwrap(),
-        "the button returns at 10"
+        "the button shows at 1"
     );
     assert_eq!(
         left_of(&s, "QuestLogMicroButton"),
         553.0 + 26.0 * 3.0,
-        "…and the tail goes back out, at the gate's own −2"
+        "…and the quest log sits after it, at the gate's own −2"
     );
+    // A level-up runs the gate again, and it stays open.
+    set_player_level(&mut s, 2);
+    s.resolve();
+    assert!(s
+        .eval::<bool>("return TalentMicroButton:IsVisible()")
+        .unwrap());
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 

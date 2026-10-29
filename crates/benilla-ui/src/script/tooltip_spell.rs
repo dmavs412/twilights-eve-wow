@@ -10,8 +10,8 @@
 //! unit selector asks for. A miss records the id; a `set_spell_by_id` miss also waits, and the
 //! app's answer re-renders that tooltip a frame after the hover. That frame is a known difference
 //! from the reference, which builds every spell tooltip at the call (`0x52e610`); a spell no
-//! pushed set names, such as an `enchant:` link's, always meets it. A talent or tracking miss shows
-//! its view on the next hover.
+//! pushed set names, such as an `enchant:` link's, always meets it. A tracking miss shows its view
+//! on the next hover.
 
 use mlua::{Lua, Table, Value};
 
@@ -128,8 +128,8 @@ impl super::UiScript {
 
     /// The spells whose player view a hover reads from the VM's own state rather than the
     /// player's book: the open quest's and each log entry's reward spell, the open craft's spell
-    /// subjects, the player's and every other unit's auras, and the tracking spell. The app pushes
-    /// their views ahead of a hover.
+    /// subjects, the player's and every other unit's auras, the tracking spell and every Talent
+    /// Row choice. The app pushes their views ahead of a hover.
     pub fn spell_tooltip_subjects(&self) -> Vec<u32> {
         let model = self.model_ref();
         let rewards = model
@@ -162,6 +162,7 @@ impl super::UiScript {
             .chain(craft)
             .chain(auras)
             .chain(tracking)
+            .chain(super::talent::tooltip_subjects(&model))
             .filter(|&id| id != 0)
             .collect()
     }
@@ -273,27 +274,6 @@ pub(super) fn spell_view_of(
     v
 }
 
-/// The talent lines [`render_spell`] interleaves (`TOOLTIP_TALENT_RANK 0x854a2c`,
-/// `TOOLTIP_TALENT_LEARN 0x8549f8`): the white "Rank r/m" after the name, the red requirements
-/// while locked, the next-rank block and the green learn hint.
-#[derive(Clone, Debug, Default)]
-pub(super) struct TalentLines {
-    /// `Talent.dbc` Flags bit 0: `SetTalent` hands an exceptional talent to the spell builder
-    /// `0x52e610` (`0x5352ab`) and any other to the talent builder `0x52b0a0`, which writes no
-    /// cost, range, cast, required-item, form, reagent or chance line.
-    pub exceptional: bool,
-    /// `TOOLTIP_TALENT_RANK` ("Rank %d/%d") filled from the player's strings; `None` when they
-    /// lack the key, and no rank row shows.
-    pub rank_line: Option<String>,
-    pub reqs: Vec<String>,
-    /// The next rank's spell id, 0 for none, asked from the store while `next_desc` is missing.
-    pub next_spell: u32,
-    pub next_desc: Option<String>,
-    pub learn: bool,
-}
-
-/// The talent learn hint's green, `0xff00ff00`.
-const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
 /// The unmet-requirement red, `0xffff2020` (`0xc0d390`, the item builder's red).
 const RED: [f32; 4] = [1.0, 32.0 / 255.0, 32.0 / 255.0, 1.0];
 
@@ -317,7 +297,6 @@ fn render_spell(
     v: &SpellTooltipView,
     opts: SpellRenderOpts,
     remaining: Option<String>,
-    talent: Option<&TalentLines>,
 ) -> mlua::Result<()> {
     let SpellRenderOpts {
         aura,
@@ -332,17 +311,7 @@ fn render_spell(
         v.rank.clone().filter(|_| show_rank).map(|t| (t, GRAY))
     };
     append_line(lua, this, (v.name.clone(), name_color), right, false)?;
-    let talent_builder = talent.is_some_and(|t| !t.exceptional);
-    // The talent head: the white rank line, then the red requirements while locked.
-    if let Some(t) = talent {
-        if let Some(rank) = &t.rank_line {
-            append_line(lua, this, (rank.clone(), WHITE), None, false)?;
-        }
-        for req in &t.reqs {
-            append_line(lua, this, (req.clone(), RED), None, true)?;
-        }
-    }
-    if !aura && !talent_builder {
+    if !aura {
         match (&v.cost, &v.range) {
             (Some(c), Some(r)) => append_line(
                 lua,
@@ -394,73 +363,11 @@ fn render_spell(
         let color = if aura { WHITE } else { GOLD };
         append_line(lua, this, (desc.clone(), color), None, true)?;
     }
-    // The talent tail: the white `TOOLTIP_TALENT_NEXT_RANK` header (`0x854a10`, pushed at
-    // `0x52b2cd`) over the next rank's gold description, then the green `TOOLTIP_TALENT_LEARN`
-    // hint (`0x52b362`). Both are the player's own strings; without them the line is skipped.
-    if let Some(t) = talent {
-        // The talent builder skips a rank with an empty description, header and all (`0x52b294`).
-        let next = t
-            .next_desc
-            .as_ref()
-            .filter(|n| !talent_builder || !n.is_empty());
-        if let Some(next) = next {
-            // The talent builder's gold `" "` spacer (`0x82ee00`, `0x52b2a8`) after a description.
-            if talent_builder && !desc.is_empty() {
-                append_line(lua, this, (" ".into(), GOLD), None, false)?;
-            }
-            if let Some(header) = crate::strings::global(lua, "TOOLTIP_TALENT_NEXT_RANK") {
-                append_line(lua, this, (header, WHITE), None, false)?;
-            }
-            append_line(lua, this, (next.clone(), GOLD), None, true)?;
-        }
-        if t.learn {
-            if let Some(hint) = crate::strings::global(lua, "TOOLTIP_TALENT_LEARN") {
-                append_line(lua, this, (hint, GREEN), None, false)?;
-            }
-        }
-    }
     // The time-remaining line (`SetPlayerBuff` only) is the title's gold `0xffffd200`, not the
     // description's white: a 1.12.1 screenshot reads (255, 210, 0) on it.
     if let Some(rem) = remaining {
         append_line(lua, this, (rem, GOLD), None, false)?;
     }
-    Ok(())
-}
-
-/// `GameTooltip:SetTalent`'s render: the talent's spell plus its talent lines; a missing next-rank
-/// view is asked for.
-pub(super) fn set_spell_with_talent(
-    lua: &Lua,
-    this: &Table,
-    spell_id: u32,
-    talent: TalentLines,
-) -> mlua::Result<()> {
-    let h = frame_handle_of(lua, this)?;
-    {
-        let mut model = lua.app_data_mut::<Model>().expect("model app_data");
-        clear_content(&mut model, h);
-    }
-    fire_cleared(lua, h);
-    if talent.next_desc.is_none() {
-        super::talent::ask_next_rank(lua, talent.next_spell);
-    }
-    match spell_view_of(lua, spell_id, false) {
-        Some(v) => render_spell(
-            lua,
-            this,
-            &v,
-            SpellRenderOpts::default(),
-            None,
-            Some(&talent),
-        )?,
-        None => {
-            // No view yet: the rank line alone until the next hover.
-            if let Some(rank) = &talent.rank_line {
-                append_line(lua, this, (rank.clone(), WHITE), None, false)?;
-            }
-        }
-    }
-    super::tooltip::show_or_hide_empty(lua, h);
     Ok(())
 }
 
@@ -512,7 +419,7 @@ fn fill_spell(
     remaining: Option<String>,
 ) -> mlua::Result<()> {
     match spell_view_of(lua, spell_id, opts.alt_caster) {
-        Some(v) => render_spell(lua, this, &v, opts, remaining, None)?,
+        Some(v) => render_spell(lua, this, &v, opts, remaining)?,
         None => {
             if let Some(name) = fallback_name.clone() {
                 append_line(lua, this, (name, WHITE), None, false)?;

@@ -111,6 +111,7 @@ mod sound;
 mod spell;
 /// The melee swing refusal's latch + 4 s repeat (`SMSG_ATTACKSWING_*`).
 mod swing_refusal;
+mod talent_rows;
 mod target;
 #[cfg(test)]
 pub(crate) mod test_support;
@@ -177,8 +178,6 @@ mod ui_spellbook;
 mod ui_stable;
 mod ui_summon;
 mod ui_tabard;
-mod ui_talent;
-mod ui_talent_wipe;
 mod ui_taxi;
 mod ui_text;
 mod ui_tooltip;

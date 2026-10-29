@@ -20,7 +20,6 @@ use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink, SelfGuid};
 
 mod goto;
 mod remote;
-mod talents;
 #[cfg(test)]
 pub(crate) mod vanilla_player;
 
@@ -131,7 +130,6 @@ impl Plugin for TwilightPlugin {
         .add_systems(
             Update,
             (
-                talents::follow_calling.after(pump),
                 track_self_calling.after(pump),
                 crate::ui_twilight::unlock_talent_frame,
             ),
@@ -287,6 +285,8 @@ fn pump(
         Option<ResMut<crate::herb_patch::HerbOutbox>>,
         Option<ResMut<crate::kitchen::KitchenInbox>>,
         Option<ResMut<crate::kitchen::KitchenOutbox>>,
+        Option<ResMut<crate::talent_rows::TalentRowsInbox>>,
+        Option<ResMut<crate::talent_rows::TalentRowsOutbox>>,
     ),
 ) {
     let LocalRealm {
@@ -341,6 +341,12 @@ fn pump(
     }
     // The Kitchen window's choices (ADR 0025).
     if let Some(outbox) = reel.6.as_deref_mut() {
+        for command in outbox.0.drain(..) {
+            backing.handle(command);
+        }
+    }
+    // The Talents panel's clicks and opens (ADR 0028).
+    if let Some(outbox) = reel.8.as_deref_mut() {
         for command in outbox.0.drain(..) {
             backing.handle(command);
         }
@@ -425,6 +431,13 @@ fn pump(
                 | SessionEvent::CookingJournal { .. }
         ) {
             if let Some(inbox) = reel.5.as_deref_mut() {
+                inbox.0.push(event);
+            }
+            continue;
+        }
+        // The Calling's Talent Rows go to the Talents panel (ADR 0028).
+        if matches!(event, SessionEvent::TalentRows { .. }) {
+            if let Some(inbox) = reel.7.as_deref_mut() {
                 inbox.0.push(event);
             }
             continue;
@@ -645,13 +658,11 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             slot,
             count,
         }),
-        ClientCommand::LearnTalent { .. } => None,
         ClientCommand::GossipHello { guid } => Some(RealmCommand::GossipHello { guid }),
         ClientCommand::GossipSelectOption { guid, option } => {
             Some(RealmCommand::GossipSelectOption { guid, option })
         }
         ClientCommand::NpcTextQuery { text_id, .. } => Some(RealmCommand::NpcTextQuery { text_id }),
-        ClientCommand::TalentWipeConfirm { .. } => None,
         ClientCommand::BinderActivate { binder } => Some(RealmCommand::BinderActivate { binder }),
         ClientCommand::ListInventory { guid } => Some(RealmCommand::ListInventory { guid }),
         ClientCommand::BuyItem {
@@ -828,15 +839,15 @@ impl Host for TerrainHost<'_, '_, '_, '_, '_> {
     }
 }
 
-/// The spell rewrites of ADR 0011, made once the client has loaded its spell data:
-/// - the compiled-in patch inserts every Calling spell as a row of its own;
-/// - then a WIP talent's rank spells read "<Name> (WIP)" in the talent frame and its tooltips.
+/// The spell rewrite of ADR 0011, made once the client has loaded its spell data: the compiled-in
+/// patch inserts every Calling spell as a row of its own.
 fn rewrite_spells(mut spells: ResMut<crate::ui_action::Spells>) {
-    let catalog = &mut spells.catalog;
-    if let Err(err) = catalog.apply_dbc_patch(benilla_formats::CLIENT_DBC_PATCH) {
+    if let Err(err) = spells
+        .catalog
+        .apply_dbc_patch(benilla_formats::CLIENT_DBC_PATCH)
+    {
         error!("client_dbc_patch.json does not parse: {err}");
     }
-    catalog.mark_wip(twilight_realm::callings::wip_rank_spell_ids());
 }
 
 /// Basic Warrior is the only Calling a character starts as, so create offers only Warrior.

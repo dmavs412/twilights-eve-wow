@@ -496,13 +496,12 @@ pub(crate) struct Model {
     /// through [`Self::unit_guids`].
     pub(crate) spell_targetable_units: HashSet<u64>,
 
-    pub(crate) talents: super::talent::TalentUiState,
-    /// `LearnTalent(tab, index)` calls queued.
-    pub(crate) talent_learns: Vec<(u32, u32)>,
-    /// `ConfirmTalentWipe()` calls, one `MSG_TALENT_WIPE_CONFIRM` each; the app holds the trainer.
-    pub(crate) talent_wipe_confirms: u32,
-    /// `CheckTalentMasterDist()`: the respec question is live and in range; false hides its dialog.
-    pub(crate) talent_master_pending: bool,
+    /// The current Calling's Talent Rows the `GetTalentRow*` getters read, pushed by the host.
+    pub(crate) talent_rows: super::TalentRowsView,
+    /// The Talents panel's calls since the host last drained them.
+    pub(crate) talent_rows_calls: Vec<super::TalentRowsCall>,
+    /// `UnitCharacterPoints("player")`: unspent talent points, free primary professions.
+    pub(crate) character_points: (u32, u32),
     // ── The dialog engine's verbs (`0x48dca0` is the first below) ──
     /// `ConfirmPetUnlearn()` calls; the app holds the trainer and the money gate.
     pub(crate) pet_unlearn_confirms: u32,
@@ -1263,10 +1262,9 @@ impl Model {
             casting: false,
             spell_targeting: false,
             spell_targetable_units: HashSet::new(),
-            talents: super::talent::TalentUiState::default(),
-            talent_learns: Vec::new(),
-            talent_wipe_confirms: 0,
-            talent_master_pending: false,
+            talent_rows: Default::default(),
+            talent_rows_calls: Vec::new(),
+            character_points: (0, 0),
             pet_unlearn_confirms: 0,
             pet_untrainer_pending: false,
             instance_boot_secs: 0,

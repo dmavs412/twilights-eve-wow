@@ -1165,7 +1165,6 @@ pub(super) fn dispatch(w: &mut WorldWriter, cmd: ClientCommand) -> Result<()> {
         ClientCommand::GmTicketSystemStatus => w.gm_ticket_system_status(),
         ClientCommand::BinderActivate { binder } => w.binder_activate(binder),
         ClientCommand::SummonResponse { summoner } => w.summon_response(summoner),
-        ClientCommand::TalentWipeConfirm { trainer } => w.talent_wipe_confirm(trainer),
         ClientCommand::ForceLogout => w.player_logout(),
         ClientCommand::AreaSpiritHealerQueue { healer } => w.area_spirit_healer_queue(healer),
         ClientCommand::BattlefieldPort { map_id, accept } => w.battlefield_port(map_id, accept),
@@ -1209,7 +1208,6 @@ pub(super) fn dispatch(w: &mut WorldWriter, cmd: ClientCommand) -> Result<()> {
         ClientCommand::UnstablePet { npc, pet_number } => w.unstable_pet(npc, pet_number),
         ClientCommand::StableSwapPet { npc, pet_number } => w.stable_swap_pet(npc, pet_number),
         ClientCommand::BuyStableSlot { npc } => w.buy_stable_slot(npc),
-        ClientCommand::LearnTalent { talent_id, rank } => w.learn_talent(talent_id, rank),
         ClientCommand::UnlearnSkill { skill_id } => w.unlearn_skill(skill_id),
         ClientCommand::SetFactionAtWar {
             rep_list_id,

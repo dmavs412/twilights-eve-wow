@@ -1251,6 +1251,37 @@ mod tests {
                  LoadOnDemand row.",
             ),
             (
+                "Blizzard_TalentUI.xml",
+                "GetTalentInfo",
+                "the stock talent tree's reader. The Talents panel (ADR 0028) replaced the stock \
+                 frame: `ToggleTalentFrame` opens `BenillaTalents` and never loads this addon, so \
+                 no click reaches it.",
+            ),
+            (
+                "Blizzard_TalentUI.xml",
+                "GetTalentPrereqs",
+                "the stock talent tree's prerequisite arrows. The Talents panel (ADR 0028) \
+                 replaced the stock frame, which nothing loads, so no click reaches it.",
+            ),
+            (
+                "Blizzard_TalentUI.xml",
+                "LearnTalent",
+                "the stock talent tree's learn click. The Talents panel (ADR 0028) replaced the \
+                 stock frame, which nothing loads, so no click reaches it.",
+            ),
+            (
+                "StaticPopup.xml",
+                "CheckTalentMasterDist",
+                "CONFIRM_TALENT_WIPE's range poll. Talent Rows (ADR 0028) have no trainer respec, \
+                 so nothing shows that dialog.",
+            ),
+            (
+                "StaticPopup.xml",
+                "ConfirmTalentWipe",
+                "CONFIRM_TALENT_WIPE's Accept. Talent Rows (ADR 0028) have no trainer respec, so \
+                 nothing shows that dialog.",
+            ),
+            (
                 "StaticPopup.xml",
                 "ReplaceTradeEnchant",
                 "a registered 1.12 binding (`0x48d330`) whose body is not yet known; it is built \
@@ -1869,6 +1900,12 @@ mod tests {
             (
                 "BILLING_NAG_DIALOG",
                 "UIParent.lua — the subscription-time nag; vmangos never sends it",
+            ),
+            (
+                "CONFIRM_TALENT_WIPE",
+                "UIParent.lua, the class trainer's respec question. Talent Rows (ADR 0028) \
+                 replaced the talent tree, and a set row changes free at an innkeeper, so no \
+                 client feed asks it and the Local Realm never sends `MSG_TALENT_WIPE_CONFIRM`",
             ),
             (
                 "IGR_BILLING_NAG_DIALOG",

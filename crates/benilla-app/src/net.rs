@@ -1155,11 +1155,6 @@ pub(crate) enum ClientCommand {
     SummonResponse {
         summoner: u64,
     },
-    /// `MSG_TALENT_WIPE_CONFIRM`, the `CONFIRM_TALENT_WIPE` Accept: the only packet in the flow
-    /// that resets. Declining sends nothing.
-    TalentWipeConfirm {
-        trainer: u64,
-    },
     // ── The dialog engine's verbs ──
     /// `ForceLogout()`: `CMSG_PLAYER_LOGOUT` (`0x4A`), only with a live world session.
     ForceLogout,
@@ -1292,12 +1287,6 @@ pub(crate) enum ClientCommand {
     /// `CMSG_BUY_STABLE_SLOT`; a refusal is `SMSG_STABLE_RESULT`'s `ERR_MONEY`.
     BuyStableSlot {
         npc: u64,
-    },
-    /// `CMSG_LEARN_TALENT`: a `Talent.dbc` row and the 0-based rank, which is the current rank
-    /// count. No reply beyond the learn and `PLAYER_CHARACTER_POINTS1`.
-    LearnTalent {
-        talent_id: u32,
-        rank: u32,
     },
     /// `CMSG_UNLEARN_SKILL`. No ack: the line leaves only by the `PLAYER_SKILL_INFO` update.
     UnlearnSkill {

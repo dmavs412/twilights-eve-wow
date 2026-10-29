@@ -26,6 +26,14 @@ const BEYOND_1_12: &[&str] = &[
     "GetCallingChoice",
     "GetCallingChoiceSkill",
     "ChooseCalling",
+    // Twilight's Eve: the Talents panel (ADR 0028) has no 1.12 verb; `Talents.xml` reads the
+    // Calling's Talent Rows from these, and `SetTalentRowChoice` and `OpenTalentRows` queue its
+    // clicks for the host.
+    "GetTalentRows",
+    "GetTalentRow",
+    "GetTalentChoice",
+    "SetTalentRowChoice",
+    "OpenTalentRows",
 ];
 
 /// `reference/1.12-globals.tsv`'s names.

@@ -1,298 +1,207 @@
-//! The talent bindings: the app pushes the class's pages and talents, resolved from `Talent.dbc`
-//! and `Spell.dbc` ([`UiScript::set_talents`]), and `LearnTalent(tab, index)` queues clicks for
-//! `CMSG_LEARN_TALENT`. Grid seats, ranks, prerequisites and availability are the app's.
+//! The Talents panel's state (ADR 0028, spec #498, `assets/ui/Talents.xml`): the current
+//! Calling's Talent Rows as the realm sent them. Lua reads `GetTalentRows()`, `GetTalentRow(i)`
+//! and `GetTalentChoice(i, j)`; the panel queues `SetTalentRowChoice(i, j)` and
+//! `OpenTalentRows()` for the host, which sends them to the realm. The host pushes the rows and
+//! fires `TALENT_ROWS_UPDATE`. The client decides nothing: the realm refuses a locked row or a
+//! set row away from an innkeeper.
 //!
-//! The tuples are what `Blizzard_TalentUI.lua` reads (`:154`, `:180`): `GetTalentTabInfo(i)` gives
-//! name, texture, pointsSpent, fileName; `GetTalentInfo(tab, i)` name, icon, tier, column, rank,
-//! maxRank, isExceptional, meetsPrereq. Tiers and columns are 1-based, as the stock frame indexes
-//! `TALENT_BRANCH_ARRAY[tier][column]`. The respec pair answers a class trainer's
-//! `CONFIRM_TALENT_WIPE` and reads no snapshot.
-//!
-//! `GameTooltip:SetTalent` (`0x535170`) builds an exceptional talent with the spell builder
-//! (`0x52e610`) and any other with the talent builder (`0x52b0a0`), which keeps the spell's name
-//! and description and drops the rest of its body. The talent lines are the talent builder's: the
-//! rank line (`TOOLTIP_TALENT_RANK`, `0x854a2c`), the red requirement lines after it, the "Next
-//! rank:" block (`TOOLTIP_TALENT_NEXT_RANK`, `0x854a10`, white, over the next rank's gold
-//! description) and "Click to learn" (`TOOLTIP_TALENT_LEARN`, `0x8549f8`) in green on a learnable
-//! rank. The spell builder writes the same lines around the full body (`0x52f735`); its next-rank
-//! pass, a second full body, never runs, as no 1.12 exceptional talent has a second rank.
+//! `GameTooltip:SetTalent(i, j)` keeps its 1.12 name and shows choice `j` of row `i` as its spell,
+//! through the spell builder the spell book's hover uses. Indices are 1-based in Lua.
 
 use mlua::{Lua, MultiValue, Table, Value};
 
-use super::tooltip_spell::{spell_view_of, TalentLines};
+use super::tooltip_spell::{set_spell_by_id, SpellRenderOpts};
 use super::Model;
 
-/// One talent page, a `TalentTab.dbc` row: `GetTalentTabInfo`'s source.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct TalentTabView {
+/// One choice of a row, as the realm's `TalentChoiceView`, with the icon the host resolved.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct TalentChoiceView {
+    pub spell_id: u32,
     pub name: String,
-    /// The `Interface\TalentFrame\<base>-` art base, the tuple's `fileName`.
-    pub background: String,
-    pub points_spent: u32,
+    /// The spell's icon from its own Spell.dbc row in the client's catalog; `None` without one.
+    pub icon: Option<String>,
 }
 
-/// One prerequisite edge, a `GetTalentPrereqs` triplet.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct TalentPrereqView {
-    pub tier: u32,
-    pub column: u32,
-    /// The prerequisite is learned to its required rank.
-    pub learnable: bool,
+/// One Talent Row, as the realm's `TalentRowView`.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct TalentRowView {
+    pub key: String,
+    pub level: u8,
+    /// The character's level has reached `level`.
+    pub open: bool,
+    /// A Skill Choice row's plain skill's name; "" for a Talent row.
+    pub skill: String,
+    /// The set choice's spell id; 0 when empty.
+    pub set: u32,
+    pub choices: Vec<TalentChoiceView>,
 }
 
-/// One talent button: `GetTalentInfo`'s source and the tooltip's context.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct TalentView {
-    pub name: String,
-    pub texture: Option<String>,
-    pub tier: u32,
-    pub column: u32,
-    /// Current rank, 0 when unlearned.
-    pub rank: u32,
-    pub max_rank: u32,
-    /// `Talent.dbc` flags bit 0 (`TalentRec+0x4c`), the tuple's `isExceptional`; the stock frame
-    /// ignores it.
-    pub exceptional: bool,
-    /// The required spell is known; prerequisite talents live in the triplets.
-    pub meets_prereq: bool,
-    pub prereqs: Vec<TalentPrereqView>,
-    /// The spell id of rank `max(1, rank)`, the tooltip's spell part.
-    pub display_spell: u32,
-    /// The next rank's spell id when `0 < rank < max_rank`, else 0.
-    pub next_spell: u32,
-    /// Red requirement lines (`TOOLTIP_TALENT_TIER_POINTS`, `TOOLTIP_TALENT_PREREQ`), shown while
-    /// the talent is locked.
-    pub req_lines: Vec<String>,
-    /// A higher rank is learnable now: the green `TOOLTIP_TALENT_LEARN` line and border.
-    pub learnable: bool,
+/// The current Calling's rows, as the realm's `TalentRows` event.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct TalentRowsView {
+    pub calling: String,
+    /// An innkeeper is within service range, so a set row may change.
+    pub at_innkeeper: bool,
+    pub rows: Vec<TalentRowView>,
 }
 
-/// The pushed snapshot: the player's own pages and unspent points.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct TalentUiState {
-    pub tabs: Vec<TalentTabView>,
-    /// `talents[t]` holds tab `t+1`'s talents, in the app's enumeration order.
-    pub talents: Vec<Vec<TalentView>>,
-    /// `UnitCharacterPoints("player")`: unspent talent points, free primary professions.
-    pub points: (u32, u32),
+/// One call the panel queued for the host.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TalentRowsCall {
+    /// Set the row keyed `row` to the choice `spell_id`.
+    Set { row: String, spell_id: u32 },
+    /// The panel asks for the rows; the realm answers with them.
+    Open,
 }
 
 impl super::UiScript {
-    /// Push the whole talent snapshot.
-    pub fn set_talents(&mut self, state: TalentUiState) {
-        self.model_mut().talents = state;
+    /// Push the rows `GetTalentRows()` and its siblings answer.
+    pub fn set_talent_rows(&mut self, view: TalentRowsView) {
+        self.model_mut().talent_rows = view;
     }
 
-    /// Drain the queued `LearnTalent(tab, index)` clicks, both 1-based.
-    pub fn take_talent_learns(&mut self) -> Vec<(u32, u32)> {
-        std::mem::take(&mut self.model_mut().talent_learns)
-    }
-
-    /// Drain the count of `ConfirmTalentWipe()` calls, each an outbound `MSG_TALENT_WIPE_CONFIRM`;
-    /// a count, since the app holds the trainer's guid.
-    pub fn take_talent_wipe_confirms(&mut self) -> u32 {
-        std::mem::take(&mut self.model_mut().talent_wipe_confirms)
-    }
-
-    /// Push whether a trainer's respec question is live and in range, which
-    /// `CheckTalentMasterDist()` answers; false for none pending or walked away.
-    pub fn set_talent_master_pending(&mut self, pending: bool) {
-        let mut model = self.model_mut();
-        if model.talent_master_pending != pending {
-            model.talent_master_pending = pending;
-        }
+    /// Drain the panel's calls since the last drain, oldest first.
+    pub fn take_talent_rows_calls(&mut self) -> Vec<TalentRowsCall> {
+        std::mem::take(&mut self.model_mut().talent_rows_calls)
     }
 }
 
-/// One talent by its 1-based (tab, index).
-fn talent_at(model: &Model, tab: usize, index: usize) -> Option<&TalentView> {
+/// The 0-based index for a 1-based Lua number.
+fn index(i: i64) -> Option<usize> {
+    usize::try_from(i.checked_sub(1)?).ok()
+}
+
+fn row_at(model: &Model, i: i64) -> Option<&TalentRowView> {
+    model.talent_rows.rows.get(index(i)?)
+}
+
+fn choice_at(model: &Model, i: i64, j: i64) -> Option<(&TalentRowView, &TalentChoiceView)> {
+    let row = row_at(model, i)?;
+    Some((row, row.choices.get(index(j)?)?))
+}
+
+fn text(lua: &Lua, s: &str) -> mlua::Result<Value> {
+    Ok(Value::String(lua.create_string(s)?))
+}
+
+fn queue(lua: &Lua, call: TalentRowsCall) {
+    lua.app_data_mut::<Model>()
+        .expect("model app_data")
+        .talent_rows_calls
+        .push(call);
+}
+
+/// The spells of every choice on the panel, whose tooltip views the host pushes ahead of a hover.
+pub(super) fn tooltip_subjects(model: &Model) -> impl Iterator<Item = u32> + '_ {
     model
-        .talents
-        .talents
-        .get(tab.checked_sub(1)?)
-        .and_then(|t| t.get(index.checked_sub(1)?))
+        .talent_rows
+        .rows
+        .iter()
+        .flat_map(|r| r.choices.iter().map(|c| c.spell_id))
+        .filter(|&id| id != 0)
 }
 
-/// Register the talent globals.
+/// Register the `GetTalentRow*` getters and the panel's calls.
 pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
     let g = lua.globals();
-
+    // GetTalentRows(): count, atInnkeeper, callingName.
     g.set(
-        "GetNumTalentTabs",
+        "GetTalentRows",
         lua.create_function(|lua, ()| {
             let model = lua.app_data_ref::<Model>().expect("model app_data");
-            Ok(model.talents.tabs.len() as i64)
-        })?,
-    )?;
-
-    // `texture` is nil: the stock frame never reads it. Out of range answers a single nil.
-    g.set(
-        "GetTalentTabInfo",
-        lua.create_function(|lua, i: usize| {
-            let model = lua.app_data_ref::<Model>().expect("model app_data");
-            let Some(tab) = i.checked_sub(1).and_then(|n| model.talents.tabs.get(n)) else {
-                return Ok(MultiValue::from_vec(vec![Value::Nil]));
-            };
+            let v = &model.talent_rows;
             Ok(MultiValue::from_vec(vec![
-                Value::String(lua.create_string(&tab.name)?),
-                Value::Nil,
-                Value::Integer(i64::from(tab.points_spent)),
-                Value::String(lua.create_string(&tab.background)?),
+                Value::Integer(v.rows.len() as i64),
+                Value::Boolean(v.at_innkeeper),
+                text(lua, &v.calling)?,
             ]))
         })?,
     )?;
-
+    // GetTalentRow(i): key, level, open, skillName, setSpell; nothing out of range.
     g.set(
-        "GetNumTalents",
-        lua.create_function(|lua, tab: usize| {
+        "GetTalentRow",
+        lua.create_function(|lua, i: i64| {
             let model = lua.app_data_ref::<Model>().expect("model app_data");
-            let n = tab
-                .checked_sub(1)
-                .and_then(|t| model.talents.talents.get(t))
-                .map_or(0, Vec::len);
-            Ok(n as i64)
+            let Some(r) = row_at(&model, i) else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![
+                text(lua, &r.key)?,
+                Value::Integer(i64::from(r.level)),
+                Value::Boolean(r.open),
+                text(lua, &r.skill)?,
+                Value::Integer(i64::from(r.set)),
+            ]))
         })?,
     )?;
-
+    // GetTalentChoice(i, j): spellId, name, icon; nothing out of range.
     g.set(
-        "GetTalentInfo",
-        lua.create_function(|lua, (tab, i): (usize, usize)| {
+        "GetTalentChoice",
+        lua.create_function(|lua, (i, j): (i64, i64)| {
             let model = lua.app_data_ref::<Model>().expect("model app_data");
-            let Some(t) = talent_at(&model, tab, i) else {
-                return Ok(MultiValue::from_vec(vec![Value::Nil]));
+            let Some((_, c)) = choice_at(&model, i, j) else {
+                return Ok(MultiValue::new());
             };
-            let texture = match &t.texture {
-                Some(tex) => Value::String(lua.create_string(tex)?),
+            let icon = match &c.icon {
+                Some(icon) => text(lua, icon)?,
                 None => Value::Nil,
             };
             Ok(MultiValue::from_vec(vec![
-                Value::String(lua.create_string(&t.name)?),
-                texture,
-                Value::Integer(i64::from(t.tier)),
-                Value::Integer(i64::from(t.column)),
-                Value::Integer(i64::from(t.rank)),
-                Value::Integer(i64::from(t.max_rank)),
-                Value::Integer(i64::from(t.exceptional)),
-                Value::Boolean(t.meets_prereq),
+                Value::Integer(i64::from(c.spell_id)),
+                text(lua, &c.name)?,
+                icon,
             ]))
         })?,
     )?;
-
-    // Flat (tier, column, isLearnable) triplets, as `Blizzard_TalentUI.lua:385` walks them.
+    // SetTalentRowChoice(i, j): queues choice j of row i for the realm; out of range does nothing.
     g.set(
-        "GetTalentPrereqs",
-        lua.create_function(|lua, (tab, i): (usize, usize)| {
-            let model = lua.app_data_ref::<Model>().expect("model app_data");
-            let mut out = Vec::new();
-            if let Some(t) = talent_at(&model, tab, i) {
-                for p in &t.prereqs {
-                    out.push(Value::Integer(i64::from(p.tier)));
-                    out.push(Value::Integer(i64::from(p.column)));
-                    out.push(Value::Boolean(p.learnable));
-                }
+        "SetTalentRowChoice",
+        lua.create_function(|lua, (i, j): (i64, i64)| {
+            let call = {
+                let model = lua.app_data_ref::<Model>().expect("model app_data");
+                choice_at(&model, i, j).map(|(r, c)| TalentRowsCall::Set {
+                    row: r.key.clone(),
+                    spell_id: c.spell_id,
+                })
+            };
+            if let Some(call) = call {
+                queue(lua, call);
             }
-            Ok(MultiValue::from_vec(out))
-        })?,
-    )?;
-
-    // The app gates the send on its own `learnable`; the server re-validates
-    // (vmangos `Player::LearnTalent`).
-    g.set(
-        "LearnTalent",
-        lua.create_function(|lua, (tab, i): (u32, u32)| {
-            let mut model = lua.app_data_mut::<Model>().expect("model app_data");
-            model.talent_learns.push((tab, i));
             Ok(())
         })?,
     )?;
-
-    // ConfirmTalentWipe(): the `CONFIRM_TALENT_WIPE` Accept, the one call that unlearns talents.
-    // No argument: the reference sends the trainer guid it latched (`0xc4d7a0`); the app holds it.
     g.set(
-        "ConfirmTalentWipe",
+        "OpenTalentRows",
         lua.create_function(|lua, ()| {
-            let mut model = lua.app_data_mut::<Model>().expect("model app_data");
-            model.talent_wipe_confirms += 1;
+            queue(lua, TalentRowsCall::Open);
             Ok(())
         })?,
     )?;
-
-    // CheckTalentMasterDist(): polled by that dialog's OnUpdate, false hides it. The reference
-    // re-runs its interact-range test on the latched trainer (`0x5df980`, `d² <= [0xc4c28c]`);
-    // no packet either way.
-    g.set(
-        "CheckTalentMasterDist",
-        lua.create_function(|lua, ()| {
-            let model = lua.app_data_ref::<Model>().expect("model app_data");
-            Ok(model.talent_master_pending)
-        })?,
-    )?;
-
-    // Every unit token answers the player's own pair: `PLAYER_CHARACTER_POINTS1/2` are private
-    // fields only we receive.
-    g.set(
-        "UnitCharacterPoints",
-        lua.create_function(|lua, _unit: String| {
-            let model = lua.app_data_ref::<Model>().expect("model app_data");
-            let (cp1, cp2) = model.talents.points;
-            Ok((i64::from(cp1), i64::from(cp2)))
-        })?,
-    )?;
-
     Ok(())
 }
 
-/// Register `GameTooltip:SetTalent(tab, index)` into the tooltip method table.
+/// Register `GameTooltip:SetTalent(i, j)`: choice `j` of row `i` as its spell, the choice's name
+/// standing in until the spell's view arrives.
 pub(super) fn install_tooltip_method(lua: &Lua, m: &Table) -> mlua::Result<()> {
     m.set(
         "SetTalent",
-        lua.create_function(|lua, (this, tab, i): (Table, usize, usize)| {
-            let (display, lines) = {
+        lua.create_function(|lua, (this, i, j): (Table, i64, i64)| {
+            let choice = {
                 let model = lua.app_data_ref::<Model>().expect("model app_data");
-                let Some(t) = talent_at(&model, tab, i) else {
-                    return Ok(());
-                };
-                // From the ask-once spell store; a miss shows on the next hover.
-                let next_desc = (t.next_spell != 0)
-                    .then(|| {
-                        model
-                            .spell_tooltips
-                            .get(&t.next_spell)
-                            .map(|v| v.description.clone())
-                    })
-                    .flatten();
-                // `TOOLTIP_TALENT_RANK`, "Rank %d/%d" (`0x854a2c`, pushed at `0x52b213`); an
-                // install without it shows no rank line.
-                let rank_line = crate::strings::global(lua, "TOOLTIP_TALENT_RANK").map(|tmpl| {
-                    crate::strings::fill(
-                        &tmpl,
-                        &[
-                            crate::strings::Arg::D(t.rank.into()),
-                            crate::strings::Arg::D(t.max_rank.into()),
-                        ],
-                    )
-                });
-                (
-                    t.display_spell,
-                    TalentLines {
-                        exceptional: t.exceptional,
-                        rank_line,
-                        reqs: t.req_lines.clone(),
-                        next_spell: t.next_spell,
-                        next_desc,
-                        learn: t.learnable,
-                    },
-                )
+                choice_at(&model, i, j).map(|(_, c)| (c.spell_id, c.name.clone()))
             };
-            super::tooltip_spell::set_spell_with_talent(lua, &this, display, lines)
+            let Some((spell_id, name)) = choice else {
+                return Ok(());
+            };
+            set_spell_by_id(
+                lua,
+                &this,
+                spell_id,
+                Some(name),
+                SpellRenderOpts::default(),
+                None,
+            )
         })?,
     )?;
     Ok(())
-}
-
-/// Ask the spell store for the next rank's description; a miss queues it as a primary view's does.
-pub(super) fn ask_next_rank(lua: &Lua, next_spell: u32) {
-    if next_spell != 0 {
-        let _ = spell_view_of(lua, next_spell, false); // a miss records the ask as a side effect
-    }
 }

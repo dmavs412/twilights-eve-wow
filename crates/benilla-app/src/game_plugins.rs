@@ -84,8 +84,6 @@ use crate::ui_spellbook::UiSpellbookPlugin;
 use crate::ui_stable::UiStablePlugin;
 use crate::ui_summon::UiSummonPlugin;
 use crate::ui_tabard::TabardUiPlugin;
-use crate::ui_talent::UiTalentPlugin;
-use crate::ui_talent_wipe::UiTalentWipePlugin;
 use crate::ui_taxi::UiTaxiPlugin;
 use crate::ui_text::UiTextPlugin;
 use crate::ui_tooltip::UiTooltipPlugin;
@@ -115,6 +113,7 @@ impl PluginGroup for GamePlugins {
             .add(FishingReelPlugin)
             .add(HerbPatchPlugin)
             .add(KitchenPlugin)
+            .add(crate::talent_rows::TalentRowsPlugin)
             .add(crate::calling_choice::CallingChoicePlugin)
             .add(QuestMarkersPlugin)
             .add(crate::pipe_warm::plugin)
@@ -211,9 +210,6 @@ impl PluginGroup for GamePlugins {
             .add(UiSpellbookPlugin)
             // After UiSpellbookPlugin: a macro's spell resolves against the book it pushes.
             .add(crate::ui_macro::UiMacroPlugin)
-            // After UiActionPlugin, whose `Spells` catalog it shares.
-            .add(UiTalentPlugin)
-            .add(UiTalentWipePlugin)
             // The form list by the reference's admission and order (`0x4b25b0`, `0x4b2bb0`); after
             // UiActionPlugin (`Spells`) and SpellPlugin (the cast tail).
             .add(UiShapeshiftPlugin)
@@ -1182,8 +1178,6 @@ pub(crate) mod schedule_tests {
          "the intents are Lua's; the event answers a Save intent"),
         ("ui_tabard.rs", "feed_tabard", Because::PlayerRoundTrip,
          "every latch follows a tabard-vendor click, and `reset_on_world_enter` zeroes the resource on entry"),
-        ("ui_talent_wipe.rs", "feed_talent_wipe", Because::PlayerRoundTrip,
-         "`MSG_TALENT_WIPE_CONFIRM` answers the trainer's gossip option"),
         ("ui_taxi/mod.rs", "feed_taxi", Because::PlayerRoundTrip,
          "both packets follow talking to a flight master"),
         ("ui_tradeskill.rs", "drain_trade_skill", Because::FilledByVm,

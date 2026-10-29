@@ -1,29 +1,13 @@
 //! Twilight's Eve's rewrites of the spell catalog, made when the client loads its spell data
 //! (ADR 0011). The compiled-in client patch inserts every Calling spell as a complete row of its
-//! own, under an id no stock spell uses. A talent the realm does not model yet reads
-//! "<Name> (WIP)".
+//! own, under an id no stock spell uses.
 
 use super::{
     EffectRow, SpellCatalog, SpellDisplay, ATTR_EX2_AUTO_REPEAT, ATTR_EX3_NORMAL_RANGED_ATTACK,
     ATTR_EX_CHANNELED, ATTR_NOT_IN_COMBAT, ATTR_ON_NEXT_SWING, ATTR_PASSIVE, ATTR_RANGED,
 };
 
-/// What a WIP talent's rank spells add to their names.
-const WIP_SUFFIX: &str = " (WIP)";
-
 impl SpellCatalog {
-    /// Appends [`WIP_SUFFIX`] to the name of every spell in `ids`, once; an id the catalog lacks
-    /// is skipped.
-    pub fn mark_wip(&mut self, ids: impl IntoIterator<Item = u32>) {
-        for id in ids {
-            if let Some(display) = self.spells.get_mut(&id) {
-                if !display.name.ends_with(WIP_SUFFIX) {
-                    display.name.push_str(WIP_SUFFIX);
-                }
-            }
-        }
-    }
-
     /// Applies the compiled-in client patch (`client_dbc_patch.json`, ADR 0011) to the rows it
     /// lists. An id from [`FROM_SCRATCH_MIN_ID`] up is inserted as a complete row: name, icon,
     /// look, cost, cooldowns, stances, family, school, cast shape, targets and every effect from
@@ -105,13 +89,9 @@ impl SpellCatalog {
                     *slot = index as u32;
                 }
             }
-            // The sheet's name replaces the borrowed one; a WIP mark made before stays on it.
+            // The sheet's name replaces the borrowed one.
             if let Some(name) = f["name"].as_str().filter(|n| !n.is_empty()) {
-                let wip = d.name.ends_with(WIP_SUFFIX);
                 d.name = name.to_owned();
-                if wip {
-                    d.name.push_str(WIP_SUFFIX);
-                }
             }
             if let Some(text) = f["description"].as_str().filter(|t| !t.is_empty()) {
                 d.description = Some(text.to_owned());
@@ -266,25 +246,6 @@ mod tests {
     use super::*;
     use crate::SpellDisplay;
 
-    #[test]
-    fn mark_wip_names_only_the_named_spells_once() {
-        let named = |name: &str| SpellDisplay {
-            name: name.into(),
-            rank: Some("Rank 1".into()),
-            ..SpellDisplay::default()
-        };
-        let mut catalog = SpellCatalog::from_displays(HashMap::from([
-            (12300, named("Iron Will")),
-            (12297, named("Anticipation")),
-        ]));
-        catalog.mark_wip([12300, 999]);
-        catalog.mark_wip([12300]);
-        let iron_will = catalog.get(12300).unwrap();
-        assert_eq!(iron_will.name, "Iron Will (WIP)");
-        assert_eq!(iron_will.rank.as_deref(), Some("Rank 1"));
-        assert_eq!(catalog.get(12297).unwrap().name, "Anticipation");
-    }
-
     fn patch_catalog() -> SpellCatalog {
         let stock = |name: &str| SpellDisplay {
             name: name.into(),
@@ -297,7 +258,7 @@ mod tests {
         SpellCatalog::from_displays(HashMap::from([
             (2136, stock("Fire Blast")),
             (78, stock("Heroic Strike")),
-            (12300, stock("Talent")),
+            (12300, stock("Iron Will")),
         ]))
     }
 
@@ -308,7 +269,7 @@ mod tests {
         {"spell_id": 78, "fields": {"cost": 15, "power_type": 1, "stances": ["Battle Stance", "Berserker Stance"],
          "description": ""}},
         {"spell_id": 999999, "fields": {"cost": 1}}
-    ], "talents": []}"#;
+    ]}"#;
 
     #[test]
     fn a_patched_row_costs_rage_and_reads_the_sheet() {
@@ -357,8 +318,8 @@ mod tests {
         assert_eq!((ground.implicit_target_a1, ground.targets), (16, 64));
         assert_eq!(ground.effect_implicit_target_b, [28; 3]);
         assert_ne!(ground.attributes & ATTR_NOT_IN_COMBAT, 0);
-        let talent = catalog.get(1_000_005).unwrap();
-        assert!(talent.passive && !talent.ranged_attack());
+        let passive = catalog.get(1_000_005).unwrap();
+        assert!(passive.passive && !passive.ranged_attack());
     }
 
     #[test]

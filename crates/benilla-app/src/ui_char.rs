@@ -80,6 +80,7 @@ impl Plugin for UiCharPlugin {
                     .in_set(UiFeed),
                 watch_skill_ups.in_set(UiFeed),
                 feed_skills.in_set(UiFeed),
+                feed_character_points.in_set(UiFeed),
                 drain_skill_abandons.after(UiInput),
             ),
         );
@@ -220,6 +221,48 @@ fn watch_skill_ups(
             *prev = Some((guid, cur));
         }
     }
+}
+
+/// `PLAYER_CHARACTER_POINTS1/2`, the pair `UnitCharacterPoints("player")` answers, and
+/// `CHARACTER_POINTS_CHANGED` with each one's delta as the reference's `SignalEvent2` sends them:
+/// `ChatFrame.lua:1326` tests `arg2 > 0` unguarded, so an argless fire raises. The free-professions
+/// line is not composed here: the stock `ChatFrame_OnEvent` arm (`ChatFrame.lua:1324-1334`) prints
+/// `LEVEL_UP_SKILL_POINTS` itself. A new VM gets the pair again with zero deltas.
+fn feed_character_points(
+    script: Option<NonSendMut<UiScript>>,
+    self_store: Query<&ObjectStore, With<SelfPlayer>>,
+    mut last: Local<crate::ui_script::VmMemo<Option<(u32, u32)>>>,
+) {
+    let Some(mut script) = script else {
+        return;
+    };
+    let last = last.get(&script);
+    let Ok(store) = self_store.single() else {
+        return;
+    };
+    let points = (
+        store.0.player_talent_points().unwrap_or(0),
+        store.0.player_free_professions().unwrap_or(0),
+    );
+    if *last == Some(points) {
+        return;
+    }
+    let (talent_delta, profession_delta) = match *last {
+        Some((old_talent, old_professions)) => (
+            i64::from(points.0) - i64::from(old_talent),
+            i64::from(points.1) - i64::from(old_professions),
+        ),
+        None => (0, 0),
+    };
+    *last = Some(points);
+    script.set_character_points(points);
+    script.fire_event(
+        "CHARACTER_POINTS_CHANGED",
+        vec![
+            ScriptValue::Int(talent_delta),
+            ScriptValue::Int(profession_delta),
+        ],
+    );
 }
 
 /// The skills-pane feed: every `PLAYER_SKILL_INFO` line the reference lists, as a flat

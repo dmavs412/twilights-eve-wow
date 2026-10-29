@@ -376,7 +376,6 @@ mod tests {
             ("MailOpen", "its window icon is art, not a unit bake"),
             // Reached from an open gossip menu, which stays open behind it and heads the chain;
             // unlike the registrar's, the server does not close it first.
-            ("TalentWipeState", "rides the still-open gossip session"),
             ("BinderState", "rides the still-open gossip session"),
             // The pet trainer's question, reached the same way.
             ("PetUnlearnState", "rides the still-open gossip session"),

@@ -517,12 +517,11 @@ impl PetInputs {
 pub(super) struct SpellTooltipSources<'w> {
     spells: Option<Res<'w, Spells>>,
     trainer_subjects: Option<Res<'w, TrainerTooltipSubjects>>,
-    talents: Option<Res<'w, crate::ui_talent::Talents>>,
 }
 
-/// Push a view for every spell the UI can hover (the book, the class's talent ranks, the open
-/// trainer's services, and what the VM holds: the pet's spells, the quest rewards, the craft's
-/// subjects, every unit's auras and the tracking spell) before it is hovered, as the reference
+/// Push a view for every spell the UI can hover (the book, the open trainer's services, and what
+/// the VM holds: the pet's spells, the quest rewards, the craft's subjects, every unit's auras,
+/// the tracking spell and the Talent Row choices) before it is hovered, as the reference
 /// reads them all locally; an ask for any other id too.
 pub(super) fn feed_spell_tooltips(
     script: Option<NonSendMut<UiScript>>,
@@ -549,7 +548,6 @@ pub(super) fn feed_spell_tooltips(
     let SpellTooltipSources {
         spells,
         trainer_subjects,
-        talents,
     } = spell_sources;
     let Some(mut script) = script else {
         return;
@@ -559,7 +557,8 @@ pub(super) fn feed_spell_tooltips(
         return;
     };
     let mut wanted: Vec<u32> = script.take_spell_tooltip_asks();
-    // What the VM holds for a hover: pet spells, quest rewards, craft subjects, auras, tracking.
+    // What the VM holds for a hover: quest rewards, craft subjects, auras, tracking, the Talent
+    // Row choices.
     wanted.extend(
         script
             .spell_tooltip_subjects()
@@ -600,22 +599,6 @@ pub(super) fn feed_spell_tooltips(
                 .copied()
                 .filter(|s| !memory.pet_pushed.contains_key(s)),
         );
-    }
-    // Every rank of the class's talents: a talent tooltip reads the current and the next rank.
-    if let (Some(talents), Ok(store)) = (talents.as_deref(), self_q.single()) {
-        let race = store.0.unit_race().unwrap_or(0);
-        // The Calling's tabs: its catalog's masks admit any class table (ADR 0011).
-        let class = crate::twilight::self_calling().map_or(0, |c| c.class);
-        for tab in talents.catalog.tabs_for_class(race, class) {
-            for t in talents.catalog.talents_in_tab(tab.id) {
-                wanted.extend(
-                    t.ranks
-                        .iter()
-                        .copied()
-                        .filter(|s| *s != 0 && !memory.pushed.contains_key(s)),
-                );
-            }
-        }
     }
     let home_area: Option<String> = home_bind
         .as_deref()

@@ -1,0 +1,333 @@
+<Ui>
+    <!--
+        The Talents panel (ADR 0028, spec #498), in the Mists of Pandaria layout: one strip per
+        Talent Row of the current Calling, top to bottom in the realm's order, each a level label
+        and three choices. It replaces the stock talent frame: `ToggleTalentFrame` (ui_twilight.rs)
+        calls BenillaTalents_Toggle, which asks the realm with OpenTalentRows() and opens on its
+        answer. The app pushes the realm's rows; the frame reads GetTalentRows(), GetTalentRow(i)
+        and GetTalentChoice(i, j), and a click sends SetTalentRowChoice(i, j). It decides nothing:
+        the realm refuses a locked row and a set row away from an innkeeper.
+        TALENT_ROWS_UPDATE repaints; the update that answers OpenTalentRows opens the window, and
+        so does one sent at an innkeeper, which is the innkeeper's "rethink" line.
+
+        A 384 x 512 frame at the stock TalentFrame's place (the left panel slot), the Journal's
+        frame art. Cell states: locked (row not open) is desaturated and grey and takes no click;
+        open and empty is normal, lights on hover and sets the row; set has a gold border and lit
+        text; open with another cell set is dimmed and takes no click, unless at an innkeeper,
+        when it is normal and changes the row.
+    -->
+    <Script><![CDATA[
+        BENILLA_TALENTS_ROW_HEIGHT = 48
+        BENILLA_TALENTS_CHOICES = 3
+        BENILLA_TALENTS_DIM = 0.45
+        BENILLA_TALENTS_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
+        BENILLA_TALENTS_GOLD = { 1.0, 0.82, 0.0 }
+        BENILLA_TALENTS_GREY = { 0.5, 0.5, 0.5 }
+        BENILLA_TALENTS_WHITE = { 1.0, 1.0, 1.0 }
+        BENILLA_TALENTS_FOOTER = "Set rows change at an innkeeper."
+        BENILLA_TALENTS_FOOTER_INN = "At the innkeeper: any open row can be changed."
+
+        -- rows: strips made so far; opening: OpenTalentRows() was sent and its answer opens.
+        BenillaTalentsState = { rows = 0, opening = false }
+
+        function BenillaTalents_OnLoad()
+            if UISpecialFrames then
+                tinsert(UISpecialFrames, "BenillaTalents")
+            end
+            BenillaTalentsScroll:EnableMouseWheel(true)
+        end
+
+        -- The micro button and the talent key: close, or ask the realm and open on its answer.
+        function BenillaTalents_Toggle()
+            if BenillaTalents:IsVisible() then
+                BenillaTalents:Hide()
+            else
+                BenillaTalentsState.opening = true
+                OpenTalentRows()
+            end
+        end
+
+        function BenillaTalents_Rows()
+            BenillaTalents_Update()
+            local _, atInnkeeper = GetTalentRows()
+            if BenillaTalentsState.opening or atInnkeeper then
+                BenillaTalentsState.opening = false
+                BenillaTalents:Show()
+            end
+        end
+
+        function BenillaTalents_Colour(region, c)
+            region:SetTextColor(c[1], c[2], c[3])
+        end
+
+        -- One choice: its icon and name, and its state from the row's.
+        function BenillaTalents_PaintCell(cell, i, j, open, set, atInnkeeper)
+            local spellId, name, icon = GetTalentChoice(i, j)
+            if not spellId then
+                cell.clickable = false
+                cell:Hide()
+                return
+            end
+            cell:Show()
+            cell.row = i
+            cell.choice = j
+            local frame = cell:GetName()
+            local texture = getglobal(frame .. "Icon")
+            local label = getglobal(frame .. "Name")
+            texture:SetTexture(icon or BENILLA_TALENTS_ICON)
+            label:SetText(name)
+            local state
+            if not open then
+                state = "locked"
+            elseif set ~= 0 and set == spellId then
+                state = "set"
+            elseif set == 0 or atInnkeeper then
+                state = "open"
+            else
+                state = "dim"
+            end
+            cell.clickable = state == "open"
+            texture:SetDesaturated(state == "locked")
+            if state == "locked" then
+                BenillaTalents_Colour(label, BENILLA_TALENTS_GREY)
+            elseif state == "set" then
+                BenillaTalents_Colour(label, BENILLA_TALENTS_WHITE)
+            else
+                BenillaTalents_Colour(label, BENILLA_TALENTS_GOLD)
+            end
+            if state == "dim" then
+                cell:SetAlpha(BENILLA_TALENTS_DIM)
+            else
+                cell:SetAlpha(1)
+            end
+            for _, side in ipairs({ "Top", "Bottom", "Left", "Right" }) do
+                local edge = getglobal(frame .. "Set" .. side)
+                if state == "set" then
+                    edge:Show()
+                else
+                    edge:Hide()
+                end
+            end
+            getglobal(frame .. "Hover"):Hide()
+        end
+
+        function BenillaTalents_Update()
+            local count, atInnkeeper, calling = GetTalentRows()
+            BenillaTalentsCalling:SetText(calling)
+            local child = BenillaTalentsScrollChild
+            for i = 1, count do
+                local strip = getglobal("BenillaTalentsRow" .. i)
+                if not strip then
+                    strip = CreateFrame("Frame", "BenillaTalentsRow" .. i, child, "BenillaTalentsRowTemplate")
+                    strip:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -(i - 1) * BENILLA_TALENTS_ROW_HEIGHT)
+                end
+                strip:Show()
+                local _, level, open, skill, set = GetTalentRow(i)
+                local name = strip:GetName()
+                local label = getglobal(name .. "Level")
+                label:SetText(tostring(level))
+                if open then
+                    BenillaTalents_Colour(label, BENILLA_TALENTS_GOLD)
+                else
+                    BenillaTalents_Colour(label, BENILLA_TALENTS_GREY)
+                end
+                getglobal(name .. "Skill"):SetText(skill)
+                for j = 1, BENILLA_TALENTS_CHOICES do
+                    BenillaTalents_PaintCell(getglobal(name .. "Cell" .. j), i, j, open, set, atInnkeeper)
+                end
+            end
+            for i = count + 1, BenillaTalentsState.rows do
+                getglobal("BenillaTalentsRow" .. i):Hide()
+            end
+            BenillaTalentsState.rows = math.max(count, BenillaTalentsState.rows)
+            child:SetHeight(math.max(count * BENILLA_TALENTS_ROW_HEIGHT, 1))
+            BenillaTalentsScroll:UpdateScrollChildRect()
+            if count == 0 then
+                BenillaTalentsEmpty:Show()
+                BenillaTalentsFooter:Hide()
+            else
+                BenillaTalentsEmpty:Hide()
+                BenillaTalentsFooter:Show()
+                if atInnkeeper then
+                    BenillaTalentsFooter:SetText(BENILLA_TALENTS_FOOTER_INN)
+                else
+                    BenillaTalentsFooter:SetText(BENILLA_TALENTS_FOOTER)
+                end
+            end
+        end
+
+        function BenillaTalentsCell_OnClick()
+            if this.clickable then
+                SetTalentRowChoice(this.row, this.choice)
+            end
+        end
+
+        function BenillaTalentsCell_OnEnter()
+            if this.clickable then
+                getglobal(this:GetName() .. "Hover"):Show()
+            end
+            if this.row and GameTooltip then
+                GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                GameTooltip:SetTalent(this.row, this.choice)
+                GameTooltip:Show()
+            end
+        end
+
+        function BenillaTalentsCell_OnLeave()
+            getglobal(this:GetName() .. "Hover"):Hide()
+            if GameTooltip then
+                GameTooltip:Hide()
+            end
+        end
+
+        function BenillaTalents_Wheel(scroll, delta)
+            local v = scroll:GetVerticalScroll() - delta * BENILLA_TALENTS_ROW_HEIGHT
+            local range = scroll:GetVerticalScrollRange()
+            if v > range then v = range end
+            if v < 0 then v = 0 end
+            scroll:SetVerticalScroll(v)
+        end
+    ]]></Script>
+
+    <!-- One choice: a 28 px icon and the name to its right; a gold border while set. -->
+    <Button name="BenillaTalentsCellTemplate" virtual="true">
+        <Size><AbsDimension x="104" y="40"/></Size>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentBg">
+                    <Anchors>
+                        <Anchor point="TOPLEFT"><Offset><AbsDimension x="1" y="-1"/></Offset></Anchor>
+                        <Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-1" y="1"/></Offset></Anchor>
+                    </Anchors>
+                    <Color r="0" g="0" b="0" a="0.35"/>
+                </Texture>
+            </Layer>
+            <Layer level="BORDER">
+                <Texture name="$parentHover" setAllPoints="true" hidden="true"><Color r="1" g="1" b="1" a="0.12"/></Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <Texture name="$parentIcon">
+                    <Size><AbsDimension x="28" y="28"/></Size>
+                    <Anchors><Anchor point="LEFT"><Offset><AbsDimension x="6" y="0"/></Offset></Anchor></Anchors>
+                </Texture>
+                <FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="LEFT">
+                    <Size><AbsDimension x="64" y="36"/></Size>
+                    <Anchors><Anchor point="LEFT"><Offset><AbsDimension x="38" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+            </Layer>
+            <Layer level="OVERLAY">
+                <Texture name="$parentSetTop" hidden="true">
+                    <Size><AbsDimension x="104" y="2"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"/></Anchors>
+                    <Color r="1" g="0.82" b="0" a="1"/>
+                </Texture>
+                <Texture name="$parentSetBottom" hidden="true">
+                    <Size><AbsDimension x="104" y="2"/></Size>
+                    <Anchors><Anchor point="BOTTOMLEFT"/></Anchors>
+                    <Color r="1" g="0.82" b="0" a="1"/>
+                </Texture>
+                <Texture name="$parentSetLeft" hidden="true">
+                    <Size><AbsDimension x="2" y="40"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"/></Anchors>
+                    <Color r="1" g="0.82" b="0" a="1"/>
+                </Texture>
+                <Texture name="$parentSetRight" hidden="true">
+                    <Size><AbsDimension x="2" y="40"/></Size>
+                    <Anchors><Anchor point="TOPRIGHT"/></Anchors>
+                    <Color r="1" g="0.82" b="0" a="1"/>
+                </Texture>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnClick>BenillaTalentsCell_OnClick()</OnClick>
+            <OnEnter>BenillaTalentsCell_OnEnter()</OnEnter>
+            <OnLeave>BenillaTalentsCell_OnLeave()</OnLeave>
+        </Scripts>
+    </Button>
+
+    <!-- One Talent Row: its level at the left, a Skill Choice row's skill above its three cells. -->
+    <Frame name="BenillaTalentsRowTemplate" virtual="true">
+        <Size><AbsDimension x="352" y="48"/></Size>
+        <Layers>
+            <Layer level="ARTWORK">
+                <FontString name="$parentLevel" inherits="GameFontNormal" justifyH="CENTER">
+                    <Size><AbsDimension x="40" y="40"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="0" y="-8"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentSkill" inherits="GameFontDisableSmall" justifyH="LEFT">
+                    <Size><AbsDimension x="308" y="9"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="44" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button name="$parentCell1" inherits="BenillaTalentsCellTemplate">
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="40" y="-8"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentCell2" inherits="BenillaTalentsCellTemplate">
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="144" y="-8"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentCell3" inherits="BenillaTalentsCellTemplate">
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="248" y="-8"/></Offset></Anchor></Anchors>
+            </Button>
+        </Frames>
+    </Frame>
+
+    <Frame name="BenillaTalents" parent="UIParent" toplevel="true" enableMouse="true" hidden="true">
+        <Size><AbsDimension x="384" y="512"/></Size>
+        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="0" y="-104"/></Offset></Anchor></Anchors>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <!-- Dark wood behind window_bg, whose border has see-through gaps between its rails. -->
+                <Texture name="$parentBacking"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="8" y="-8"/></Offset></Anchor><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-8" y="8"/></Offset></Anchor></Anchors><Color r="0.09" g="0.06" b="0.035" a="1"/></Texture>
+            </Layer>
+            <Layer level="BORDER">
+                <!-- window_bg in nine pieces, so the border keeps its painted width at any frame size. -->
+                <Texture name="$parentTopLeft" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="TOPLEFT"/></Anchors><TexCoords left="0.000000" right="0.156250" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentTopRight" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="TOPRIGHT"/></Anchors><TexCoords left="0.843750" right="1.000000" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentBottomLeft" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="BOTTOMLEFT"/></Anchors><TexCoords left="0.000000" right="0.156250" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentBottomRight" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="BOTTOMRIGHT"/></Anchors><TexCoords left="0.843750" right="1.000000" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentTop" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="50" y="0"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-50" y="-50"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentBottom" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="50" y="50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="-50" y="0"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentLeft" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="0" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="50" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.000000" right="0.156250" top="0.078125" bottom="0.921875"/></Texture>
+                <Texture name="$parentRight" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-50" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="0" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.843750" right="1.000000" top="0.078125" bottom="0.921875"/></Texture>
+                <Texture name="$parentMiddle" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="50" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="-50" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.078125" bottom="0.921875"/></Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <Texture name="$parentPlaque" file="Interface\Benilla\journal\title_plaque"><Size><AbsDimension x="240" y="42"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="2"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="$parentDivider" file="Interface\Benilla\journal\divider"><Size><AbsDimension x="316" y="12"/></Size><Anchors><Anchor point="BOTTOM"><Offset><AbsDimension x="0" y="34"/></Offset></Anchor></Anchors></Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <FontString name="BenillaTalentsTitle" inherits="GameFontNormalLarge" text="Talents"><Anchors><Anchor point="CENTER" relativeTo="$parentPlaque"><Offset><AbsDimension x="0" y="1"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaTalentsCalling" inherits="GameFontNormalSmall"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-42"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaTalentsEmpty" inherits="GameFontDisable" text="No talents yet." hidden="true"><Anchors><Anchor point="CENTER"><Offset><AbsDimension x="0" y="0"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaTalentsFooter" inherits="GameFontHighlightSmall"><Anchors><Anchor point="BOTTOM"><Offset><AbsDimension x="0" y="20"/></Offset></Anchor></Anchors></FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button name="BenillaTalentsClose"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-12" y="-12"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\close_normal"/><PushedTexture file="Interface\Benilla\journal\close_pushed"/><HighlightTexture file="Interface\Benilla\journal\close_hover" alphaMode="ADD"/><Scripts><OnClick>BenillaTalents:Hide()</OnClick></Scripts></Button>
+            <!-- The strips: ten rows' worth would not fit under the title, so they scroll. -->
+            <ScrollFrame name="BenillaTalentsScroll">
+                <Size><AbsDimension x="352" y="404"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="16" y="-60"/></Offset></Anchor></Anchors>
+                <ScrollChild>
+                    <Frame name="BenillaTalentsScrollChild">
+                        <Size><AbsDimension x="352" y="1"/></Size>
+                    </Frame>
+                </ScrollChild>
+                <Scripts><OnMouseWheel>BenillaTalents_Wheel(this, arg1)</OnMouseWheel></Scripts>
+            </ScrollFrame>
+        </Frames>
+        <Scripts>
+            <OnLoad>
+                BenillaTalents_OnLoad()
+                this:RegisterEvent("TALENT_ROWS_UPDATE")
+            </OnLoad>
+            <OnEvent>
+                if event == "TALENT_ROWS_UPDATE" then
+                    BenillaTalents_Rows()
+                end
+            </OnEvent>
+        </Scripts>
+    </Frame>
+</Ui>

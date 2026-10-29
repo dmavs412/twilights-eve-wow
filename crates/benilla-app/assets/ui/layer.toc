@@ -47,3 +47,5 @@ HerbPatch.xml
 Kitchen.xml
 # The Calling Choice popup (spec #414): the realm's Tier 1 options and the pick.
 CallingChoice.xml
+# The Talents panel (ADR 0028): the realm's Talent Rows and the player's picks, in place of the stock talent frame.
+Talents.xml

@@ -2386,10 +2386,7 @@ fn the_ding_block_is_printed_once() {
 fn the_free_professions_line_is_printed_once() {
     let _data = benilla_formats::wow_data_or_skip!();
     let mut s = chat_vm();
-    s.set_talents(benilla_ui::script::TalentUiState {
-        points: (0, 2),
-        ..Default::default()
-    });
+    s.set_character_points((0, 2));
     s.run(
         r#"
         SkillLines = {}
@@ -2402,7 +2399,7 @@ fn the_free_professions_line_is_printed_once() {
     )
     .unwrap();
     let before = lines_in_window(&s);
-    // `ui_talent`'s fire: arg1 = the talent delta, arg2 = the profession delta.
+    // `feed_character_points`'s fire: arg1 = the talent delta, arg2 = the profession delta.
     s.fire_event(
         "CHARACTER_POINTS_CHANGED",
         vec![

@@ -44,7 +44,6 @@ mod slider;
 mod statusbar;
 mod stdlib;
 mod structure_queries;
-mod talent;
 mod taxi;
 mod texcoord_font;
 mod tooltip;

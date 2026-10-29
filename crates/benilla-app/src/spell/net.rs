@@ -516,8 +516,8 @@ fn announce_learn(spell_id: u32, spells: Option<&Spells>, errors: &mut UiErrorKe
 }
 
 /// `SMSG_REMOVED_SPELL`: the spell leaves the book. A talent wipe arrives as these (vmangos
-/// `ResetTalents` calls `RemoveSpell` on every rank, each sending `SendSpellRemoved`), and
-/// [`crate::ui_talent`] derives rank from the book. The feeds diff `spells`, and
+/// `ResetTalents` calls `RemoveSpell` on every rank, each sending `SendSpellRemoved`), and so does
+/// a Talent Row's old choice (ADR 0028). The feeds diff `spells`, and
 /// [`crate::ui_action::LearnedAbilities`] re-derives from it (the reference's unlearn write site,
 /// `0x4b2c50`); a bar button naming the spell is left as is.
 ///

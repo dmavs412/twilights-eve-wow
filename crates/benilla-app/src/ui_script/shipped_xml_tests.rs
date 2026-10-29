@@ -1963,6 +1963,9 @@ fn the_layer_does_not_grow() {
         "Kitchen.xml",
         // The Calling Choice popup (spec #414): the realm's Tier 1 options and the pick.
         "CallingChoice.xml",
+        // The Talents panel (ADR 0028): the realm's Talent Rows and the player's picks, which
+        // replace the stock talent frame; no stock file has rows.
+        "Talents.xml",
     ];
     assert_eq!(
         super::addons::Addon::layer().toc.files,

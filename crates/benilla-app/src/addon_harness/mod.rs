@@ -1245,13 +1245,6 @@ fn seat_a_session(script: &mut UiScript) {
     // browse menu's order) is read at file scope, as by `Auctioneer`'s `AucCore.lua:105`.
     script.note_addon_info_reply(&[]);
     script.set_auction_item_classes(auction_item_classes());
-
-    // The talent tree (`Talent.dbc` x `TalentTab.dbc`), read by position at file scope
-    // (`KTM_Data.lua:376`). Zero ranks and the full pool, a fresh 60 (51 points, `level - 9`), so a
-    // rank is a number rather than nil.
-    if let Some(state) = talent_snapshot(script) {
-        script.set_talents(state);
-    }
 }
 
 /// The 1.12 auction browse tree, read once off the player's chain by the builder the live client
@@ -1275,47 +1268,6 @@ fn auction_item_classes() -> Vec<benilla_ui::script::AuctionCategory> {
         crate::ui_auction::categories(classes.as_ref(), subclasses.as_ref())
     })
     .clone()
-}
-
-/// The seated character's talent pages, built by the live client's `build_pages`. The DBCs are read
-/// once per process; the pages are built per VM, since the requirement lines come from that VM's
-/// `GlobalStrings.lua`. `None` with no install.
-fn talent_snapshot(script: &UiScript) -> Option<benilla_ui::script::TalentUiState> {
-    use std::sync::OnceLock;
-    #[allow(clippy::type_complexity)]
-    static DBCS: OnceLock<
-        Option<(
-            benilla_formats::TalentCatalog,
-            benilla_formats::SpellCatalog,
-        )>,
-    > = OnceLock::new();
-    let (talents, spells) = DBCS
-        .get_or_init(|| {
-            let data = benilla_formats::wow_data()?;
-            let mut chain = benilla_formats::open_chain(&data).ok()?;
-            let talents = benilla_formats::load_talent_catalog(&mut chain).ok()?;
-            let spells = benilla_formats::load_spell_catalog(&mut chain).ok()?;
-            Some((talents, spells))
-        })
-        .as_ref()?;
-    let get = |key: &str| {
-        script
-            .lua()
-            .globals()
-            .get::<String>(key)
-            .ok()
-            .filter(|t| !t.is_empty())
-    };
-    // Human (`ChrRaces.dbc` 1) warrior (`ChrClasses.dbc` 1), the character `seat_a_session` seats.
-    Some(crate::ui_talent::build_pages(
-        talents,
-        &BTreeSet::new(),
-        spells,
-        1,
-        1,
-        (51, 0),
-        &get,
-    ))
 }
 
 /// One seated equipment slot, at full durability.
@@ -3754,10 +3706,9 @@ mod dependency_tests {
         assert_eq!(script.widget_kind("NoSuchFrameAnywhere"), None);
     }
 
-    /// The seated session answers the login-scoped catalogues at file scope: `Auctioneer`
-    /// subscripts `classes[10]` (`AucCore.lua:106`) and `KLHThreatMeter` negates a talent rank
-    /// (`KTM_My.lua:721`). The contents come off the player's DBCs, so the reads are asserted, not
-    /// the data.
+    /// The seated session answers the login-scoped catalogue at file scope: `Auctioneer`
+    /// subscripts `classes[10]` (`AucCore.lua:106`). The contents come off the player's DBCs, so
+    /// the read is asserted, not the data.
     #[test]
     fn the_seated_session_answers_the_login_scoped_catalogues() {
         if benilla_formats::wow_data().is_none() {
@@ -3779,20 +3730,6 @@ mod dependency_tests {
                 .ok(),
             Some(10),
             "the browse tree is the reference's ten auctionable classes"
-        );
-        // KLHThreatMeter's line, reduced: a positional read and arithmetic on the rank.
-        assert_eq!(
-            script
-                .eval::<i64>("local _, _, _, _, rank = GetTalentInfo(3, 13) return -rank")
-                .ok(),
-            Some(0),
-            "a talent read by POSITION answers a number — nil is what the corpus was getting"
-        );
-        assert!(
-            script
-                .eval::<bool>("return GetNumTalentTabs() == 3 and GetNumTalents(1) > 0")
-                .unwrap_or(false),
-            "the seated warrior has his three pages"
         );
     }
 

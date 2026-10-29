@@ -5,16 +5,18 @@ use bevy::prelude::*;
 
 /// The stock UI keeps talents shut below level 10: `ToggleTalentFrame` returns early
 /// (`UIParent.lua:206`) and `UpdateTalentButton` hides the micro button
-/// (`MainMenuBarMicroButtons.lua:133`). A Talent Point comes at level 2 here, so both lose the
-/// gate; the rest of each is the stock body. Run once per VM, once FrameXML has defined them.
-const UNLOCK_TALENT_FRAME: &str = r#"
+/// (`MainMenuBarMicroButtons.lua:133`). Here the Talents panel (`Talents.xml`, ADR 0028) replaces
+/// the stock frame, and a Calling's first Talent Row opens at level 2. So `ToggleTalentFrame`
+/// toggles `BenillaTalents` and never loads `Blizzard_TalentUI`, and the micro button shows from
+/// level 1; the rest of `UpdateTalentButton` is the stock body. Run once per VM, once FrameXML has
+/// defined them.
+pub(crate) const UNLOCK_TALENT_FRAME: &str = r#"
 if type(ToggleTalentFrame) ~= "function" or type(UpdateTalentButton) ~= "function" then
     return false
 end
 function ToggleTalentFrame()
-    TalentFrame_LoadUI();
-    if ( TalentFrame_Toggle ) then
-        TalentFrame_Toggle();
+    if ( BenillaTalents_Toggle ) then
+        BenillaTalents_Toggle();
     end
 end
 function UpdateTalentButton()
@@ -25,7 +27,7 @@ UpdateTalentButton();
 return true
 "#;
 
-/// Opens the talent frame below level 10, in every UI VM.
+/// Puts the Talents panel behind the talent key and micro button, in every UI VM.
 pub(crate) fn unlock_talent_frame(
     script: Option<NonSendMut<benilla_ui::script::UiScript>>,
     mut memo: Local<crate::ui_script::VmMemo<bool>>,

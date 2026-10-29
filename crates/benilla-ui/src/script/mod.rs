@@ -266,7 +266,7 @@ pub use spellbook::{
 };
 pub use stable::{StableIntent, StablePetSlot, StableState, NUM_STABLE_SLOTS};
 pub use summon::SummonConfirmUiState;
-pub use talent::{TalentPrereqView, TalentTabView, TalentUiState, TalentView};
+pub use talent::{TalentChoiceView, TalentRowView, TalentRowsCall, TalentRowsView};
 pub use taxi::{TaxiNodeType, TaxiUiNode, TaxiUiState};
 pub use tooltip_spell::SpellTooltipView;
 pub use trade::{TradeSideState, TradeSlotItem, TradeState, TRADE_SLOTS};

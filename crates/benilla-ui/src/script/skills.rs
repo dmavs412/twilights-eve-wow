@@ -90,6 +90,12 @@ impl super::UiScript {
         model.skills = state;
     }
 
+    /// Push `PLAYER_CHARACTER_POINTS1/2`, the pair `UnitCharacterPoints("player")` answers: unspent
+    /// talent points and free primary professions.
+    pub fn set_character_points(&mut self, points: (u32, u32)) {
+        self.model_mut().character_points = points;
+    }
+
     /// Drain the skill ids `AbandonSkill` queued, one `CMSG_UNLEARN_SKILL` each; the removal comes
     /// back as a skill-field update.
     pub fn take_skill_abandons(&mut self) -> Vec<u32> {
@@ -265,6 +271,17 @@ fn displayed_ranks(e: &SkillEntry) -> (i64, i64) {
 /// Register the skills-pane globals.
 pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
     let g = lua.globals();
+
+    // Every unit token answers the player's own pair: `PLAYER_CHARACTER_POINTS1/2` are private
+    // fields only we receive. The skills pane and the chat frame's level-up line read the second.
+    g.set(
+        "UnitCharacterPoints",
+        lua.create_function(|lua, _unit: String| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let (cp1, cp2) = model.character_points;
+            Ok((i64::from(cp1), i64::from(cp2)))
+        })?,
+    )?;
 
     // GetNumSkillLines() → the visible row count (0 before any push).
     g.set(

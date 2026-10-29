@@ -870,7 +870,7 @@ mod binder_tests;
 mod summon_tests;
 
 #[cfg(test)]
-mod talent_wipe_tests;
+mod talent_rows_tests;
 
 #[cfg(test)]
 mod death_tests;
