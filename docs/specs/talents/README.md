@@ -112,7 +112,7 @@ Six rows per Tier 1 Calling, at 4, 8, 12, 16, 20 and 24, one per skill the Calli
 | Cutthroat | Sinister Strike, Evasion, Eviscerate, Rupture, Garrote, and one Talent row | Stealth gives its row to the blood droplets, which have no button (grill 2026-10-29) |
 | Initiate | Ley-Spark, Ley Ward, Searing Ember, Biting Cold, Catalyst, and one Talent row | Blink gives its row to passives, two of which upgrade Blink (grill 2026-10-29) |
 | Ranger | Snapshot, Vault, Barbed Arrow, Puncturing Shaft, Rapid Fire, and one Talent row | Explosive Shot has no button; its row went to a Talent row that holds Explosive Payload. Field Dressing has no row. Auto Shot never has one (grill 2026-10-29) |
-| Acolyte | Creeping Blight, Blood Lance, Dark Mending, Miasma, Siphon Life, and one Talent row | the Talent row's three are passives or actives |
+| Acolyte | Creeping Blight, Blood Lance, Dark Mending, Miasma, Siphon Life, and one Talent row | the Talent row holds Necrotic Detonation, an active, and two passives (grill 2026-10-29) |
 
 Which skill opens at which level, and the 18 choices, are placeholders the Build lane writes, one
 ticket per Calling. Each choice may start from an old tree talent that touched the skill
@@ -312,6 +312,74 @@ accepted them.
 - Killshot reads the target's health when the cast starts.
 - Rapid Assault loses its own 3 min button. It works only while Rapid Fire is up.
 - Every row has a choice that adds damage, so the balance model (`docs/balance/rules.md`) can set
+  every row to a damage choice.
+
+## Acolyte's rows
+
+Grilled with Davis 2026-10-29 (#508). Rows open at Creeping Blight 4, Blood Lance 8, the Talent row
+12, Siphon Life 16, Dark Mending 20 and Miasma 24. Davis put Creeping Blight, the Calling's core,
+first, and the Talent row in the middle, once Blight and Lance both have rows. Miasma's 15 s cooldown
+closes the rows. The Talent row (row key `talents`) holds Necrotic Detonation, an active, and two
+passives: Davis said on 2026-10-23 that Detonation stays a talent. Hush (the Kick) and Grasping
+Shadows (the utility) get no row. The numbers are the grill's; Davis's first play note tunes them.
+
+| Row | Choice | Changes | Icon |
+|---|---|---|---|
+| Creeping Blight | Epidemic | each tick has a 30% chance to copy Blight, with its stacks and time left, onto another enemy within 10 yd that does not wear it | `Spell_Shadow_Contagion` |
+| Creeping Blight | Virulence | each tick has a 2.5% chance per stack to make the next Blood Lance cast 0.5 s faster | `Spell_Shadow_Requiem` |
+| Creeping Blight | Withering Blight | the target deals 2% less damage per stack, up to 20% | `Spell_Shadow_CurseOfMannoroth` |
+| Blood Lance | Exsanguinate | 5% more damage per Creeping Blight stack on the target, up to 50% | `Spell_Shadow_BloodBoil` |
+| Blood Lance | Splintering Lance | enemies within 8 yd of the target take 30% of the hit, and each one wearing Blight gains a stack | `Spell_Shadow_CorpseExplode` |
+| Blood Lance | Sanguine Barrier | the ally who gets the HoT also gets a shield of 20% of the hit for 6 s | `Spell_Shadow_SacrificialShield` |
+| Talent row | Necrotic Detonation | active, 20 s cooldown: consumes the target's Creeping Blight for 12 + 1 per level a stack as Shadow, and heals allies within 10 yd for 150% of it | `Spell_Shadow_UnsummonBuilding` |
+| Talent row | Masochism | Blood Lance and Dark Mending give back 30% of the health they cost over 5 s | `Spell_Nature_MoonGlow` |
+| Talent row | Will to Survive | below 50% health, the Acolyte takes 30% more healing | `Spell_Holy_Renew` |
+| Siphon Life | Feeding Siphon | each tick has a 30% chance to add a stack to the target's Creeping Blight | `Spell_Shadow_LifeDrain` |
+| Siphon Life | Gorging Siphon | healing past max health becomes a shield, up to 20% of max health, for 10 s | `Spell_Shadow_VampiricAura` |
+| Siphon Life | Unbroken Siphon | can be channeled while moving | `Spell_Shadow_Haunting` |
+| Dark Mending | Coagulation | also leaves a shield on the ally of 30% of the heal that soaks Physical damage for 10 s | `Spell_Holy_Heal02` |
+| Dark Mending | Dark Surplus | healing past the ally's max health bursts as Shadow damage on enemies within 8 yd of the ally | `Spell_Shadow_AbominationExplosion` |
+| Dark Mending | Sanguine Flow | the next Blood Lance within 6 s is instant | `Spell_Shadow_DeathPact` |
+| Miasma | Noxious Vapors | enemies inside have 10% less chance to hit with melee and ranged attacks | `Spell_Shadow_PlagueCloud` |
+| Miasma | Breeding Ground | every 2 s, each enemy inside that wears the Acolyte's Creeping Blight gains a stack | `Spell_Shadow_CreepingPlague` |
+| Miasma | Shroud of Rot | the cloud sits on the Acolyte and moves with them | `Spell_Shadow_AuraOfDarkness` |
+
+Davis chose the rows, their order, the 18 choices, Feeding Siphon's 30% chance per tick, and Dark
+Mending's two new choices after he turned down the first four offered. The readings below are mine,
+and Davis accepted them.
+
+- Old talents keep their name and their full-rank numbers. Two old icons clashed and were swapped:
+  Epidemic's was Cutthroat's Evasion's, and Noxious Vapors' was Creeping Blight's. The swapped icon
+  also goes on the choice's aura. The new icons were unused in the sheet at a466eb1a.
+- Davis skipped every control choice offered (Crippling Blight, Clutching Siphon, Binding Mend), the
+  plain cast speed of Crimson Surge, Symbiotic Rot and Corpse Bloom for the Talent row, Echoing Mend,
+  and Morbid Fascination. For Dark Mending he turned down Transference, Rotting Renewal, Binding Mend
+  and then Borrowed Life.
+- Necrotic Detonation keeps its cells: 20 s cooldown, 12 + 1 per level a stack, the 150% heal to
+  allies within 10 yd.
+- Epidemic's copies roll too, so Blight can spread through a pack.
+- Virulence's buff holds one charge. A new proc refreshes it.
+- Withering Blight cuts the target's damage to everyone, not only to the Acolyte.
+- Exsanguinate counts the stacks before the Lance's own stack lands.
+- Splintering Lance has no cap on enemies. The splash does not feed the HoT or the shield.
+- Sanguine Barrier's shield is 20% of the damage the Lance dealt. It goes on the HoT's ally, and a new
+  one replaces the old. Today the realm shields only the caster, as every absorb does, so solo it is
+  the Acolyte.
+- Masochism counts Blood Lance and Dark Mending, the two health costs.
+- Will to Survive checks the Acolyte's health as each heal lands, from any source.
+- Feeding Siphon rolls only on a tick that hits, and adds only to the Acolyte's own Blight.
+- Gorging Siphon's shield grows with each tick's overhealing up to 20% of max health, and lasts 10 s
+  from its last growth.
+- Unbroken Siphon drops only the rule that a step ends the channel. Range and the target's death
+  still end it.
+- Coagulation's shield is 30% of the full heal, so it shields even an ally at full health.
+- Dark Surplus counts only overhealing.
+- Sanguine Flow holds one charge, and the Lance still costs health.
+- Noxious Vapors covers melee and ranged attacks, not spells.
+- Breeding Ground never refreshes Blight's timer, which nothing refreshes.
+- Shroud of Rot casts on the Acolyte with no ground target. A new Miasma replaces the old.
+- Every row has a choice that adds damage (Epidemic, Exsanguinate, Necrotic Detonation, Feeding
+  Siphon, Dark Surplus, Breeding Ground), so the balance model (`docs/balance/rules.md`) can set
   every row to a damage choice.
 
 ## Tickets
