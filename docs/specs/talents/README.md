@@ -109,7 +109,7 @@ Six rows per Tier 1 Calling, at 4, 8, 12, 16, 20 and 24, one per skill the Calli
 | Calling | Skills with a row | Note |
 |---|---|---|
 | Vanguard | Righteous Smash, Shield of the Penitent, Zealous Cleave, Bulwark Charge, Seal of Iron, and one Talent row | Consecration is Bulwark Charge's patch, not a button, so it has no row (grill 2026-10-29) |
-| Cutthroat | Sinister Strike, Eviscerate, Rupture, Garrote, Evasion, Stealth | |
+| Cutthroat | Sinister Strike, Evasion, Eviscerate, Rupture, Garrote, and one Talent row | Stealth gives its row to the blood droplets, which have no button (grill 2026-10-29) |
 | Initiate | Ley-Spark, Searing Ember, Biting Cold, Catalyst, Blink, Ley Ward | |
 | Ranger | six of Snapshot, Puncturing Shaft, Barbed Arrow, Vault, Rapid Fire, Field Dressing, Explosive Shot | the Build lane picks the one left out; Auto Shot never has a row |
 | Acolyte | Creeping Blight, Blood Lance, Dark Mending, Miasma, Siphon Life, and one Talent row | the Talent row's three are passives or actives |
@@ -161,6 +161,49 @@ Readings taken in the grill:
 - Avenging Light, Wrathful Iron and Seal of Fervor fire on every landed melee hit the realm's
   `melee_hit` sees: white swings, next-swing strikes and skill strikes, once per target a Cleave
   hits.
+
+## Cutthroat's rows
+
+Grilled with Davis 2026-10-29 (#505). Rows open at Sinister Strike 4, Evasion 8, Eviscerate 12,
+Rupture 16, the Talent row 20 and Garrote 24. Evasion comes early so a struggling Cutthroat gets a
+survival row soon. Stealth has no row. Its place went to a Talent row of blood droplet passives
+(row key `passives`). The numbers are the grill's; Davis's first play note tunes them.
+
+| Row | Choice | Changes | Icon |
+|---|---|---|---|
+| Sinister Strike | Serrated Strikes | awards 2 combo points instead of 1 against a bleeding target | `INV_Sword_17` |
+| Sinister Strike | Flurry of Blades | a second enemy in reach takes 50% of the strike | `Ability_Warrior_PunishingBlow` |
+| Sinister Strike | Practiced Strike | costs 25 Energy instead of 35 | `Ability_Warrior_DecisiveStrike` |
+| Evasion | Phantom Guile | each dodge while it is up gives 1 combo point and 10 Energy | `Spell_Shadow_Charm` |
+| Evasion | Elusiveness | cooldown 60 s instead of 120 | `Spell_Nature_Invisibilty` |
+| Evasion | Second Wind | also heals 30% of max health over its 15 s | `Spell_Nature_Rejuvenation` |
+| Eviscerate | Open Wounds | 50% more damage to a bleeding target | `Spell_Shadow_DeathScream` |
+| Eviscerate | Executioner's Toll | a killing blow that yields experience heals 20% of max health and gives 80 Energy | `Spell_Shadow_Fumble` |
+| Eviscerate | Kidney Shot | also stuns the target 1 s per combo point spent | `INV_Gauntlets_04` |
+| Rupture | Bloodletting | the bleed deals 50% more damage | `INV_Weapon_Crossbow_11` |
+| Rupture | Open Veins | every tick spills a blood droplet, instead of half of them | `Spell_Shadow_LifeDrain` |
+| Rupture | Sanguine Rupture | heals 80% of its damage instead of 40% | `Ability_Hunter_Pet_Bat` |
+| Talent row | Blood Frenzy | Bloodlust stacks to 10 instead of 5 | `Ability_Racial_BloodRage` |
+| Talent row | Thirst | each droplet picked up heals 10% of max health | `Spell_Shadow_LifeDrain02` |
+| Talent row | Blood Rush | each droplet picked up gives 10 Energy | `Spell_Shadow_ShadowWordDominate` |
+| Garrote | Brazen Garrote | needs no Stealth | `Spell_Shadow_Curse` |
+| Garrote | Choking Garrote | also stuns the target 3 s | `Ability_CheapShot` |
+| Garrote | Initiative | awards 3 combo points instead of 1 | `Spell_Shadow_Possession` |
+
+Davis chose the rows, their order and the 18 choices. The readings below are mine unless marked.
+
+- Stealth and Garrote are both pressed once per fight, at the opener. Stealth gave its row to the
+  droplets, as Consecration's row went to passives (Davis).
+- No choice in the Sinister Strike or Evasion row adds damage on one target by itself. Serrated
+  Strikes, Practiced Strike and Phantom Guile add it through more combo points or Energy, so the
+  balance model (`docs/balance/rules.md`) sets each of those rows to whichever choice its sim finds
+  most damaging. Flurry of Blades adds nothing on one target, as Sweeping Zeal.
+- A target is bleeding while it wears a Physical damage over time the Cutthroat put on it
+  (Rupture, Garrote). The old Serrated Strikes used the same test.
+- Brazen Garrote has no cooldown, as plain Garrote has none, and a recast refreshes the bleed. Cast
+  from Stealth it still opens with a critical strike.
+- Kidney Shot's and Choking Garrote's stuns take diminishing returns as Bull Rush's do.
+- Phantom Guile's combo point goes on the Cutthroat's current target, as the old talent's did.
 
 ## Tickets
 
