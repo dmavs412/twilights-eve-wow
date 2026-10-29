@@ -111,7 +111,7 @@ Six rows per Tier 1 Calling, at 4, 8, 12, 16, 20 and 24, one per skill the Calli
 | Vanguard | Righteous Smash, Shield of the Penitent, Zealous Cleave, Bulwark Charge, Seal of Iron, and one Talent row | Consecration is Bulwark Charge's patch, not a button, so it has no row (grill 2026-10-29) |
 | Cutthroat | Sinister Strike, Evasion, Eviscerate, Rupture, Garrote, and one Talent row | Stealth gives its row to the blood droplets, which have no button (grill 2026-10-29) |
 | Initiate | Ley-Spark, Ley Ward, Searing Ember, Biting Cold, Catalyst, and one Talent row | Blink gives its row to passives, two of which upgrade Blink (grill 2026-10-29) |
-| Ranger | six of Snapshot, Puncturing Shaft, Barbed Arrow, Vault, Rapid Fire, Field Dressing, Explosive Shot | the Build lane picks the one left out; Auto Shot never has a row |
+| Ranger | Snapshot, Vault, Barbed Arrow, Puncturing Shaft, Rapid Fire, and one Talent row | Explosive Shot has no button; its row went to a Talent row that holds Explosive Payload. Field Dressing has no row. Auto Shot never has one (grill 2026-10-29) |
 | Acolyte | Creeping Blight, Blood Lance, Dark Mending, Miasma, Siphon Life, and one Talent row | the Talent row's three are passives or actives |
 
 Which skill opens at which level, and the 18 choices, are placeholders the Build lane writes, one
@@ -257,6 +257,62 @@ them.
   Frostbite.
 - Splintering Cold's slow is Biting Cold's own aura, so Catalyst shatters it on any of those
   enemies.
+
+## Ranger's rows
+
+Grilled with Davis 2026-10-29 (#507). Rows open at the Talent row 4, Snapshot 8, Vault 12, Barbed
+Arrow 16, Puncturing Shaft 20 and Rapid Fire 24. Davis put the Talent row first. Snapshot is
+pressed most. Vault is the only survival row, so it opens next. Rapid Fire's 60 s cooldown closes
+the rows. Explosive Shot has no button, and only the old Explosive Payload talent fired it, so its
+row became a Talent row (row key `talents`) that holds Explosive Payload. Field Dressing has no
+row. The numbers are the grill's; Davis's first play note tunes them.
+
+| Row | Choice | Changes | Icon |
+|---|---|---|---|
+| Talent row | Explosive Payload | active, 15 s cooldown: the next Auto Shot becomes Explosive Shot, 150% weapon damage as Fire to the target and every enemy within 8 yd | `INV_Misc_Bomb_04` |
+| Talent row | Guerilla Tactics | each 2 s of moving without stopping gives a stack, up to 3; the next Snapshot deals 50% more per stack and spends them all | `Ability_Parry` |
+| Talent row | Point Blank | shots have no 8 yd minimum range; Puncturing Shaft deals 20% more to a target within 8 yd | `Ability_EyeOfTheOwl` |
+| Snapshot | Twin Arrows | 30% chance to fire a second, free Snapshot at the same target; the second never repeats | `Spell_Holy_PrayerOfHealing` |
+| Snapshot | Rhythmic Draw | each Snapshot cuts the next Puncturing Shaft's cast by 0.5 s, stacking | `Spell_Nature_StrangleVines` |
+| Snapshot | Adrenaline Rush | a critical hit takes 6 s off Vault's cooldown | `Ability_Hunter_SwiftStrike` |
+| Vault | Parting Gift | leaves a trap where the Ranger stood that roots the first enemy to step on it for 4 s | `Spell_Nature_TimeStop` |
+| Vault | Parting Shot | fires a free Snapshot at the Ranger's target on landing | `Ability_Hunter_CriticalShot` |
+| Vault | Unbound Leap | also sheds snares, and gives 40% run speed for 3 s | `Ability_Mount_WhiteTiger` |
+| Barbed Arrow | Jagged Barbs | each bleed tick has a 20% chance to sunder the target's armor by 250 for 10 s, stacking 3 times | `Ability_PierceDamage` |
+| Barbed Arrow | Pinning Barb | also roots the target for 2 s | `Ability_Rogue_Trip` |
+| Barbed Arrow | Bloodscent | each bleed tick returns 2% of base mana | `Spell_Frost_WizardMark` |
+| Puncturing Shaft | Piercing Force | a critical hit deals 250% instead of 200%, and the shot ignores 250 more armor | `Ability_SearingArrow` |
+| Puncturing Shaft | Staggering Shaft | also stuns the target for 2 s | `Ability_Hunter_AimedShot` |
+| Puncturing Shaft | Killshot | instant against a target below 30% health | `Ability_Hunter_SniperShot` |
+| Rapid Fire | Flurry | the next 2 Snapshots after it cost nothing and always crit | `Ability_Ensnare` |
+| Rapid Fire | Rapid Assault | while it is up, each Snapshot fires an extra free arrow for 50% weapon damage | `Ability_UpgradeMoonGlaive` |
+| Rapid Fire | Running Fire | while it is up, Auto Shot keeps firing while the Ranger moves | `Ability_Marksmanship` |
+
+Davis chose the rows, their order and the 18 choices. The readings below are mine, and Davis
+accepted them.
+
+- Old talents keep their name and their full-rank numbers. Parting Gift's 4 s is its two ranks of
+  2 s. Four old icons clashed with a plain skill and were swapped: Explosive Payload's was Silencing
+  Shot's, Adrenaline Rush's was Cutthroat's Kick, Jagged Barbs' was Barbed Arrow's and Rapid
+  Assault's was Auto Shot's. The swapped icon also goes on the choice's buff or debuff aura.
+- Davis skipped Steadfast Aim, the plain-numbers passive. He also skipped one new choice in every
+  Skill Choice row (Lingering Barbs, Rolling Recovery, Contagious Barbs, Restless Draw) and the old
+  Shrapnel Payload. He picks mechanics over numbers, as with the other Callings.
+- Explosive Payload keeps its 15 s cooldown. Explosive Shot stays hidden (`spellbook=no`), and
+  Explosive Payload is the only thing that fires it.
+- Point Blank keeps its client spell modifier for the minimum range (ADR 0010), so setting it sends
+  the modifier and changing it takes the modifier away.
+- Guerilla Tactics gives 50% per stack, so a Snapshot can deal up to 150% more.
+- Plain Vault already sheds stuns and roots. Unbound Leap adds snares to that list.
+- Parting Gift's trap arms at once and lasts 20 s. It is not Snare Trap's trap, and both can be
+  down at once.
+- Parting Shot's Snapshot is the Ranger's current Snapshot (a Snapshot Skill Choice when one is
+  set), and it counts as a Snapshot for Twin Arrows, Adrenaline Rush and Guerilla Tactics. With no
+  target in range or sight, it fires nothing.
+- Killshot reads the target's health when the cast starts.
+- Rapid Assault loses its own 3 min button. It works only while Rapid Fire is up.
+- Every row has a choice that adds damage, so the balance model (`docs/balance/rules.md`) can set
+  every row to a damage choice.
 
 ## Tickets
 
