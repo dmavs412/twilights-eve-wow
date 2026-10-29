@@ -108,7 +108,7 @@ Six rows per Tier 1 Calling, at 4, 8, 12, 16, 20 and 24, one per skill the Calli
 
 | Calling | Skills with a row | Note |
 |---|---|---|
-| Vanguard | Righteous Smash, Bulwark Charge, Consecration, Shield of the Penitent, Zealous Cleave, Seal of Iron | |
+| Vanguard | Righteous Smash, Shield of the Penitent, Zealous Cleave, Bulwark Charge, Seal of Iron, and one Talent row | Consecration is Bulwark Charge's patch, not a button, so it has no row (grill 2026-10-29) |
 | Cutthroat | Sinister Strike, Eviscerate, Rupture, Garrote, Evasion, Stealth | |
 | Initiate | Ley-Spark, Searing Ember, Biting Cold, Catalyst, Blink, Ley Ward | |
 | Ranger | six of Snapshot, Puncturing Shaft, Barbed Arrow, Vault, Rapid Fire, Field Dressing, Explosive Shot | the Build lane picks the one left out; Auto Shot never has a row |
@@ -121,6 +121,46 @@ fresh design. Each is a strict upgrade, as above. A choice may need a new generi
 ticket adds it with its tests. Each Calling's rows get their own grill later, and Davis's play
 notes tune them. The Build lane fills in a table per Calling below, in the form of Basic
 Warrior's.
+
+## Vanguard's rows
+
+Grilled with Davis 2026-10-29 (#504). Rows open at Righteous Smash 4, Shield of the Penitent 8,
+Zealous Cleave 12, Bulwark Charge 16, the Talent row 20 and Seal of Iron 24. Shield of the
+Penitent comes early so a tanking Vanguard gets a survival row soon. The Talent row's three are
+passives (row key `passives`). The numbers are the grill's; Davis's first play note tunes them.
+
+| Row | Choice | Changes | Icon |
+|---|---|---|---|
+| Righteous Smash | Iron Juggernaut | also deals Physical damage equal to 150% of the shield's Block Value | `Ability_Warrior_Sunder` |
+| Righteous Smash | Vengeful Conviction | each hit adds 2 Conviction instead of 1 | `Ability_Warrior_Revenge` |
+| Righteous Smash | Penitent's Smash | heals the Vanguard for 25% of the damage it deals | `Spell_Holy_SealOfSacrifice` |
+| Shield of the Penitent | Searing Penance | each block deals double Holy: 24 + 2.4/level | `Spell_Holy_SearingLight` |
+| Shield of the Penitent | Shield Specialization | each block while it is up gives 3 Rage | `INV_Shield_06` |
+| Shield of the Penitent | Steadfast Penitent | lasts 15 s instead of 10, as long as its cooldown | `Spell_Holy_SealOfProtection` |
+| Zealous Cleave | Sweeping Zeal | hits up to 5 enemies instead of 3 | `Ability_Warrior_Rampage` |
+| Zealous Cleave | Zealous Restoration | heals the Vanguard for 75% of the Conviction Holy damage it deals | `Spell_Holy_HolyBolt` |
+| Zealous Cleave | Tithe of Zeal | refunds 2 Rage per Conviction stack spent | `Spell_Holy_MindVision` |
+| Bulwark Charge | Hammer of the Vanguard | the charge ends in a Holy strike for 150% weapon damage + 10 + 1/level | `Ability_ThunderBolt` |
+| Bulwark Charge | Bulwark Slam | stuns the target 2 s on arrival | `Ability_Warrior_DefensiveStance` |
+| Bulwark Charge | Fervent Charge | generates 30 Rage instead of 15 | `Spell_Holy_SealOfFury` |
+| Talent row | Avenging Light | every landed melee hit, white swing or skill, also deals 25% of weapon damage as Holy | `Spell_Holy_SealOfRighteousness` |
+| Talent row | Bulwark of Faith | max health +25% | `Spell_Holy_Restoration` |
+| Talent row | Ceaseless Zeal | every block or parry gives 5 Rage and 1 Conviction | `Spell_Holy_SealOfBlood` |
+| Seal of Iron | Wrathful Iron | hits also have a 50% chance to sear for 50% of weapon damage as Holy | `Spell_Holy_SealOfWrath` |
+| Seal of Iron | Seal of Mending | both procs fire at 50% instead of 25% | `Spell_Holy_GreaterHeal` |
+| Seal of Iron | Seal of Fervor | hits also have a 25% chance to give 5 Rage | `Spell_Holy_SealOfValor` |
+
+Readings taken in the grill:
+
+- Consecration's row became the Talent row because the patch has no button to swap. Davis asked
+  for passives stronger than numbers on a patch.
+- The plain patch itself changes: a Vanguard standing in their own Consecration takes 10% less
+  damage (#509). That cut was first offered as a passive and Davis made it part of the patch.
+- On one target Sweeping Zeal adds nothing, so the balance model (`docs/balance/rules.md`) reads
+  the Cleave row as adding no damage when it fights a single enemy.
+- Avenging Light, Wrathful Iron and Seal of Fervor fire on every landed melee hit the realm's
+  `melee_hit` sees: white swings, next-swing strikes and skill strikes, once per target a Cleave
+  hits.
 
 ## Tickets
 
