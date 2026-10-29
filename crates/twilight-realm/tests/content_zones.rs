@@ -8,7 +8,7 @@ mod import_zone;
 #[test]
 fn each_zone_toml_is_the_import_of_its_dump() {
     for zone in import_zone::ZONES {
-        let want = import_zone::convert(zone, &import_zone::dump(zone), &[]);
+        let want = import_zone::convert(zone, &import_zone::dump(zone));
         let have = std::fs::read_to_string(import_zone::output_path(zone))
             .unwrap_or_default()
             .replace("\r\n", "\n");

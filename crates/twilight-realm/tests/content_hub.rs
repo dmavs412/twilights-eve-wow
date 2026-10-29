@@ -199,6 +199,14 @@ fn every_npcs_flags_fit_its_role() {
                     && gives
                     && !n.stock.is_empty()
             }
+            // The stock Herbalism Trainers: the lesson in their menu, and nothing else.
+            "herb_trainer" => {
+                n.npc_flags == GOSSIP
+                    && n.teaches_herbalism
+                    && talks
+                    && !gives
+                    && n.stock.is_empty()
+            }
             // Tomas and Brother Hollis: the kitchen in their menu (#491).
             "cook" => n.npc_flags == GOSSIP && n.cook && talks && !gives && n.stock.is_empty(),
             other => panic!("{}: no role {other:?}", n.name),
@@ -416,7 +424,8 @@ fn goldshire_townsfolk_speak_and_no_title_names_a_dead_trade() {
         ("talker", "Blacksmith")
     );
     for n in hub().iter().filter(|n| n.map == EASTERN_KINGDOMS) {
-        let trainer = n.subname.contains("Trainer") && n.role != "trainer";
+        let trainer =
+            n.subname.contains("Trainer") && !matches!(n.role.as_str(), "trainer" | "herb_trainer");
         let dead = ["Journeyman", "Merchant", "Physician"]
             .iter()
             .any(|t| n.subname.contains(t));
@@ -427,6 +436,22 @@ fn goldshire_townsfolk_speak_and_no_title_names_a_dead_trade() {
             n.name
         );
     }
+}
+
+/// Every stock Herbalism Trainer in the imported zones teaches Herbalism, as Brother Ansel does.
+#[test]
+fn every_herbalism_trainer_teaches_herbalism() {
+    let npcs = hub();
+    let trainers: Vec<&str> = npcs
+        .iter()
+        .filter(|n| n.subname == "Herbalism Trainer")
+        .inspect(|n| assert!(n.teaches_herbalism, "{} teaches nothing", n.name))
+        .map(|n| n.name.as_str())
+        .collect();
+    assert_eq!(
+        trainers,
+        ["Herbalist Pomeroy", "Shylamiir", "Tannysa", "Alma Jainrose"]
+    );
 }
 
 #[test]

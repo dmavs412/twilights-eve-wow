@@ -8,7 +8,6 @@
 # of its own.
 spawns = [
   [11, 1215, 26, 26, -9056.23, 152.629, 115.116, 3.1591, 3237, 0.0, 11],
-  [12, 1218, 10, 10, -9059.67, 148.566, 115.222, 1.6057, 3269, 0.0, 12],
   [30, 794, 1, 1, -9387.45, -117.388, 58.865, 2.618, 338, 0.0, 30],
   [113, 119, 10, 11, -9788.9, 646.32, 35.616, 0.3762, 381, 15.0, 113],
   [189, 119, 10, 11, -9848.83, 648.454, 39.75, 2.2844, 381, 15.0, 189],
@@ -3652,27 +3651,6 @@ level_min = 26
 level_max = 26
 health_multiplier = 1.05
 damage_multiplier = 0.9
-armor_multiplier = 1.0
-base_attack_time = 1500
-speed_walk = 1.0
-speed_run = 1.143
-detection_range = 18.0
-friendly = true
-
-[[template]]
-entry = 1218
-name = "Herbalist Pomeroy"
-subname = "Herbalism Trainer"
-creature_type = 7
-rank = 0
-display_id = 3269
-faction_template = 35
-hostile = false
-unit_class = "warrior"
-level_min = 10
-level_max = 10
-health_multiplier = 1.0
-damage_multiplier = 0.75
 armor_multiplier = 1.0
 base_attack_time = 1500
 speed_walk = 1.0

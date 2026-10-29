@@ -137,15 +137,19 @@ fn money_text(copper: u32) -> String {
     parts.join(" ")
 }
 
-/// A herbalist's gossip lines for `c`: the goods, the lesson while they do not know Herbalism
-/// (`teaches_herbalism`), and the perk reset once they hold a perk (`resets_perks`).
+/// A herbalist's gossip lines for `c`: the goods when it has any, the lesson while they do not
+/// know Herbalism (`teaches_herbalism`), and the perk reset once they hold a perk
+/// (`resets_perks`).
 pub(crate) fn herbalist_options(npc: &Npc, c: &Char) -> Vec<GossipOption> {
-    let mut options = vec![GossipOption {
-        index: OPTION_BROWSE,
-        icon: ICON_VENDOR,
-        coded: false,
-        message: "Let me browse your goods.".into(),
-    }];
+    let mut options = Vec::new();
+    if !npc.stock.is_empty() {
+        options.push(GossipOption {
+            index: OPTION_BROWSE,
+            icon: ICON_VENDOR,
+            coded: false,
+            message: "Let me browse your goods.".into(),
+        });
+    }
     if npc.teaches_herbalism && !c.knows_herbalism {
         options.push(GossipOption {
             index: OPTION_TEACH,

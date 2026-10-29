@@ -91,7 +91,6 @@ spawns = [
   [6261, 9982, 30, 30, -9249.09, -2152.7, 64.017, 3.1241, 9255, 0.0, 6261],
   [6262, 3087, 22, 22, -9204.3, -2065.44, 78.087, 3.111, 3379, 0.5, 6262],
   [6263, 3088, 25, 25, -9173.33, -2088.29, 89.033, 3.8048, 3380, 0.0, 6263],
-  [6264, 812, 20, 20, -9237.78, -2041.65, 78.168, 4.6489, 1745, 0.0, 6264],
   [6265, 3091, 26, 26, -9234.38, -2160.86, 71.212, 6.0899, 3376, 0.5, 6265],
   [6266, 791, 20, 20, -9260.25, -2195.37, 64.017, 3.4558, 3368, 0.0, 6266],
   [6267, 721, 1, 1, -9254.87, -3144.46, 107.969, 0.1587, 4626, 10.0, 6267],
@@ -2057,27 +2056,6 @@ level_min = 25
 level_max = 25
 health_multiplier = 1.02
 damage_multiplier = 0.9
-armor_multiplier = 1.0
-base_attack_time = 2000
-speed_walk = 1.0
-speed_run = 1.143
-detection_range = 18.0
-friendly = true
-
-[[template]]
-entry = 812
-name = "Alma Jainrose"
-subname = "Herbalism Trainer"
-creature_type = 7
-rank = 0
-display_id = 1745
-faction_template = 35
-hostile = false
-unit_class = "warrior"
-level_min = 20
-level_max = 20
-health_multiplier = 1.0
-damage_multiplier = 0.85
 armor_multiplier = 1.0
 base_attack_time = 2000
 speed_walk = 1.0

@@ -1833,3 +1833,75 @@ text_id = 64142
 resets_perks = true
 stock = [961201, 961202, 961203, 961204, 961205, 961206, 961207]
 greeting = "Elwynn's hedgerows are the best larder in the kingdom, $C, if you know where to look and when to cut. I sell what a herbalist needs, and for a price I can make you forget the habits you picked up."
+
+# ── The stock Herbalism Trainers ─────────────────────────────────────────────────────────────────
+# Moved from their spawns in content/elwynn.toml, stormwind.toml and redridge.toml to the same x
+# and y, under their real names, entries and displays. Each teaches Herbalism as Brother Ansel
+# does, and sells nothing. z is ground_check.py's.
+[[npc]]
+guid = 9300065
+entry = 1218
+name = "Herbalist Pomeroy"
+subname = "Herbalism Trainer"
+level = 10
+display_id = 3269
+faction_template = 35
+role = "herb_trainer"
+npc_flags = 0x1
+map = 0
+position = [-9059.67, 148.566, 115.222]
+orientation = 1.6057
+text_id = 64163
+teaches_herbalism = true
+greeting = "Peacebloom along the fences, Silverleaf under the oaks. I can teach you to tell them apart and cut them clean, $C."
+
+[[npc]]
+guid = 9300066
+entry = 5502
+name = "Shylamiir"
+subname = "Herbalism Trainer"
+level = 35
+display_id = 3296
+faction_template = 35
+role = "herb_trainer"
+npc_flags = 0x1
+map = 0
+position = [-8723.51, 1180.27, 98.426]
+orientation = 4.2586
+text_id = 64164
+teaches_herbalism = true
+greeting = "Every herb has a right way to be cut, $C, and most people learn the wrong one first. Let me teach you the right one."
+
+[[npc]]
+guid = 9300067
+entry = 5566
+name = "Tannysa"
+subname = "Herbalism Trainer"
+level = 35
+display_id = 3445
+faction_template = 35
+role = "herb_trainer"
+npc_flags = 0x1
+map = 0
+position = [-8969.99, 779.636, 95.974]
+orientation = 4.1015
+text_id = 64165
+teaches_herbalism = true
+greeting = "Even a city has its wild corners, $C. Learn what grows in them and you will never go without salve."
+
+[[npc]]
+guid = 9300068
+entry = 812
+name = "Alma Jainrose"
+subname = "Herbalism Trainer"
+level = 20
+display_id = 1745
+faction_template = 35
+role = "herb_trainer"
+npc_flags = 0x1
+map = 0
+position = [-9237.78, -2041.65, 78.168]
+orientation = 4.6489
+text_id = 64166
+teaches_herbalism = true
+greeting = "Briarthorn and Bruiseweed grow thick on these slopes, $C. I can teach you to gather them."

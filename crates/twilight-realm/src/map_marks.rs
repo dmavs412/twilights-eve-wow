@@ -161,6 +161,7 @@ fn service(role: &str) -> Option<(MapIcon, &'static str)> {
         "trainer" => (MapIcon::Trainer, "Trainer"),
         "angler" => (MapIcon::Trainer, "Angler"),
         "fisherman" => (MapIcon::Trainer, "Fisherman"),
+        "herb_trainer" => (MapIcon::Trainer, "Herbalism Trainer"),
         "goods" | "shop" => (MapIcon::Vendor, "Vendor"),
         "repairer" => (MapIcon::Vendor, "Repairs"),
         "blood_coin" => (MapIcon::Vendor, "Blood Coin Broker"),
