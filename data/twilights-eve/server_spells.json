@@ -1765,6 +1765,12 @@
   "name": "Basic Warrior",
   "tier": 0,
   "tier_cap": 10,
+  "row_levels": [
+   2,
+   4,
+   6,
+   8
+  ],
   "tier_bonus": {
    "strength": 0,
    "agility": 0,

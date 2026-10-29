@@ -695,7 +695,7 @@ def build_profiles(rows: list[dict]) -> dict[str, dict]:
 
 
 def build_calling(row: dict, where: str) -> dict:
-    """A calling row: the Calling's name, tier, Tier Cap, Tier Bonus and form."""
+    """A calling row: the Calling's name, tier, Tier Cap, Row Levels, Tier Bonus and form."""
     out: dict = {"name": row["name"]}
     # A row with no tier only names the Calling; the realm reads the Calling's rest elsewhere.
     if row["tier"] or row["tier_cap"]:
@@ -704,6 +704,16 @@ def build_calling(row: dict, where: str) -> dict:
                 raise BuildError(f"{where}: a calling row needs {column}")
         out["tier"] = whole(row["tier"], f"{where} tier")
         out["tier_cap"] = whole(row["tier_cap"], f"{where} tier_cap")
+    if row["row_levels"]:
+        if "tier_cap" not in out:
+            raise BuildError(f"{where}: row_levels needs tier and tier_cap")
+        levels = [whole(part, f"{where} row_levels") for part in row["row_levels"].split("|")]
+        if any(a >= b for a, b in zip(levels, levels[1:])):
+            raise BuildError(f"{where}: row_levels {levels} does not rise")
+        for level in levels:
+            if not 1 <= level <= out["tier_cap"]:
+                raise BuildError(f"{where}: row_levels {level} is outside 1 to tier_cap {out['tier_cap']}")
+        out["row_levels"] = levels
     if row["tier_bonus"]:
         bonus = parse_params(row["tier_bonus"], f"{where} tier_bonus")
         for stat, value in bonus.items():
@@ -1341,6 +1351,11 @@ def build_rows(calling: dict, skill_rows: list[tuple[int, dict]], choices: dict[
             raise BuildError(f"{where}: row_level {level} is outside 1 to {calling['key']}'s tier_cap {cap}")
         out.append((level, line, {"key": key, "level": level, "kind": "talent", "skill": None,
                                   "choices": [built for _, _, built, _ in mine]}))
+    # One row opens at each of the Tier's Row Levels, no more and no fewer.
+    opened = sorted(level for level, _, _ in out)
+    wanted = calling.get("row_levels", [])
+    if opened != wanted:
+        raise BuildError(f"{calling['key']}: rows open at {opened} and do not fill row_levels {wanted}")
     return [entry for _, _, entry in sorted(out, key=lambda e: (e[0], e[1]))]
 
 
@@ -1973,6 +1988,15 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
         resolve_amount_of(with_choices)
         resolve_ground_spell(with_choices)
         resolve_next_cast(calling, masks.get(calling["key"], {}))
+    # Every Calling of a Tier opens its rows at the same levels; a blank row_levels is not compared yet.
+    by_tier: dict[int, dict] = {}
+    for calling in callings.values():
+        if "row_levels" not in calling:
+            continue
+        first = by_tier.setdefault(calling["tier"], calling)
+        if first["row_levels"] != calling["row_levels"]:
+            raise BuildError(f"tier {calling['tier']}: {first['key']}'s row_levels {first['row_levels']} "
+                             f"differs from {calling['key']}'s {calling['row_levels']}")
 
     for (calling_key, key), ranks in talent_rows.items():
         calling = callings[calling_key]

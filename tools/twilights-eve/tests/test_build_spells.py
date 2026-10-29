@@ -1592,7 +1592,7 @@ class TalentRows(BuildSpells):
         a = choice("a", 1000501, client_cost="-", effect1_kind="school_damage",
                    effect1_params="amount.base=1;amount.per_level=0", effect4_kind="-")
         b = choice("b", 1000502, client_cost="20", realm_cost="20")
-        rows = [CALLING, {**STRIKE, "row_level": "3"}, a, b, choice("c", 1000503)]
+        rows = [{**CALLING, "row_levels": "3"}, {**STRIKE, "row_level": "3"}, a, b, choice("c", 1000503)]
         done, data = self.run_build(rows)
         self.assertEqual(done.returncode, 0, done.stderr)
         (row,) = data[0]["rows"]
@@ -1620,7 +1620,7 @@ class TalentRows(BuildSpells):
 
     def test_rows_sort_by_level_then_sheet_order(self):
         shout = {**STRIKE, "key": "shout", "spell_id": "1000079", "row_level": "2"}
-        rows = [CALLING, {**STRIKE, "row_level": "5"}, *self.three(), shout,
+        rows = [{**CALLING, "row_levels": "2|4|5"}, {**STRIKE, "row_level": "5"}, *self.three(), shout,
                 choice("d", 1000504, "shout"), choice("e", 1000505, "shout"), choice("f", 1000506, "shout"),
                 row_talent("x"), row_talent("y"), row_talent("z")]
         done, data = self.run_build(rows)
@@ -1686,6 +1686,41 @@ class TalentRows(BuildSpells):
         self.assert_fails([{**STRIKE, "effect1_params": params + ";below_health_pct=30"}],
                           "below_health_pct and below_bonus_pct go together")
 
+    def test_rows_with_a_blank_row_levels_fail(self):
+        self.assert_fails([CALLING, {**STRIKE, "row_level": "3"}, *self.three()], "do not fill row_levels")
+
+    def test_a_row_level_missing_from_the_rows_fails(self):
+        rows = [{**CALLING, "row_levels": "2|4"}, {**STRIKE, "row_level": "2"}, *self.three()]
+        self.assert_fails(rows, "vanguard: rows open at [2] and do not fill row_levels [2, 4]")
+
+    def test_two_rows_at_one_level_fail(self):
+        shout = {**STRIKE, "key": "shout", "spell_id": "1000079", "row_level": "3"}
+        rows = [{**CALLING, "row_levels": "3"}, {**STRIKE, "row_level": "3"}, *self.three(), shout,
+                choice("d", 1000504, "shout"), choice("e", 1000505, "shout"), choice("f", 1000506, "shout")]
+        self.assert_fails(rows, "vanguard: rows open at [3, 3] and do not fill row_levels [3]")
+
+    def test_row_levels_failures_name_the_row_and_the_cell(self):
+        self.assert_fails([{**CALLING, "row_levels": "2|x"}], "(vanguard/vanguard) row_levels")
+        self.assert_fails([{**CALLING, "row_levels": "4|2"}], "row_levels [4, 2] does not rise")
+        self.assert_fails([{**CALLING, "row_levels": "12"}], "row_levels 12 is outside 1 to tier_cap 10")
+        self.assert_fails([{**CALLING, "tier": "", "tier_cap": "", "row_levels": "2"}],
+                          "row_levels needs tier and tier_cap")
+
+    def other(self, levels: str) -> list[dict]:
+        """A second tier 0 Calling, `other`, whose calling row holds `levels`, with a Talent row at each."""
+        rows = [{**CALLING, "calling": "other", "key": "other", "name": "Other", "row_levels": levels}]
+        for n, level in enumerate(levels.split("|") if levels else []):
+            rows += [row_talent(f"o{n}{c}", f"other{n}", level, calling="other") for c in "xyz"]
+        return rows
+
+    def test_two_callings_of_a_tier_with_different_row_levels_fail(self):
+        rows = [{**CALLING, "row_levels": "2|4"}, row_talent("x", level="2"), row_talent("y", level="2"),
+                row_talent("z", level="2"), row_talent("u", "rage"), row_talent("v", "rage"), row_talent("w", "rage")]
+        self.assert_fails(rows + self.other("2|6"), "tier 0: vanguard's row_levels [2, 4] differs from other's [2, 6]")
+        done, data = self.run_build(rows + self.other(""))
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual({c["key"]: c.get("row_levels") for c in data}, {"vanguard": [2, 4], "other": None})
+
     def test_the_committed_basic_warrior_has_four_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
                   encoding="utf-8") as f:
@@ -1693,6 +1728,7 @@ class TalentRows(BuildSpells):
         self.assertEqual([(r["key"], r["level"]) for r in warrior["rows"]],
                          [("charge", 2), ("fire_blast", 4), ("gouge", 6), ("heroic_strike", 8)])
         self.assertTrue(all(len(r["choices"]) == 3 for r in warrior["rows"]))
+        self.assertEqual(warrior["row_levels"], [2, 4, 6, 8])
 
 
 class Vocabulary(unittest.TestCase):
