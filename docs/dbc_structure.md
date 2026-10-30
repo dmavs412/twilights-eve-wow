@@ -1,10 +1,9 @@
 # DBC structure: what the client reads, and where the realm takes over
 
-The 1.12.1 client reads its spell data from `Spell.dbc`, `Talent.dbc` and `TalentTab.dbc` in the
-game's MPQ patch chain. The client shows a spell and decides whether to send a cast from those
-rows alone. The Local Realm never reads them at runtime: it reads `server_spells.json`. The two
-meet only through `client_dbc_patch.json`, which the client applies to its rows in memory at load
-(ADR 0003). Keeping the two apart is what lets the realm become a server later without the client
+The 1.12.1 client reads its spell data from `Spell.dbc` in the game's MPQ patch chain. The client
+shows a spell and decides whether to send a cast from those rows alone. The Local Realm never
+reads them at runtime: it reads `server_spells.json`. The two meet only through
+`client_dbc_patch.json`, which the client applies to its rows in memory at load (ADR 0003). Keeping the two apart is what lets the realm become a server later without the client
 changing.
 
 ## Spell.dbc
@@ -35,28 +34,28 @@ die sides, base dice, dice per level, real points per level, base points, effect
 implicit target A (82) and B (85), radius, apply-aura name, amplitude, chain target, item type,
 misc value (106), trigger spell (109), points per combo point. Three slots is the whole row.
 
-**The three-effect limit.** A passive talent rank is a spell whose effects are `APPLY_AURA` with
-an aura name per slot, so a talent can carry at most three auras the client knows about. The
-client needs those only for what it shows or gates itself: a cost, a crit chance on the character
-sheet, a tooltip number. Everything a talent does beyond that is the realm's business and needs no
-slot at all. Hence the rule in `CLAUDE.md`: effects 1 to 3 may go to the patch, effects 4 and 5
-are realm-only components, and the `description` text carries them to the tooltip.
+**The three-effect limit.** A passive Talent is a spell whose effects are `APPLY_AURA` with an
+aura name per slot, so it can carry at most three auras the client knows about. The client needs
+those only for what it shows or gates itself: a cost, a crit chance on the character sheet, a
+tooltip number. Everything a Talent or a Skill Choice does beyond that is the realm's business and
+needs no slot at all. Hence the rule in `CLAUDE.md`: effects 1 to 3 may go to the patch, effects 4
+and 5 are realm-only components, and the `description` text carries them to the tooltip.
 
 **Borrowed spells.** A Calling that casts another class's spell (Zealot's Seals) gets that spell's
 row rewritten in memory: power type, cost, stances cleared, family name set to the character's
 class, family flags set to one bit no spell of that class uses. The CSV's `borrowed_*` columns
 and the `client_*` columns are the source; the spell id stays the real one.
 
-## Talent.dbc and TalentTab.dbc
+## Skill Choices and Talents
 
-`Talent.dbc`: id, tab id, row, column, the rank spells (five slots), prerequisite talents (three)
-with their ranks, flags, required spell. `TalentTab.dbc`: id, name, icon, race mask, class mask,
-order, background texture. The loader's columns are in `crates/benilla-formats/src/talents.rs`.
+A Skill Choice or a Talent (ADR 0028) is a plain spell row in `Spell.dbc`, patched like any
+skill. It has its own spell id, name, icon, description and effects, and the three-effect limit
+above holds for it too. A Skill Choice takes its skill's `SpellFamilyFlags` bit, so a spellmod
+aimed at the skill reaches the choice as well.
 
-A Calling's tree is real `Talent.dbc` rows re-seated on a grid of the Calling's own: the CSV's
-`talent_id` and `spell_id` per rank are the real records, and `tab`, `tab_row`, `tab_column` are
-the seat. The client's talent catalog is built from the patch file, so the stock talent frame
-shows the Calling's tabs. A row opens at five points per row above it, as in vanilla.
+The client patches neither `Talent.dbc` nor `TalentTab.dbc` and reads neither. The realm sends the
+Calling's rows in `TalentRows`, and the Talents panel (`assets/ui/Talents.xml`) draws them. It
+reads each choice's name, icon and description from the choice's own patched `Spell.dbc` row.
 
 ## What the client reads from the realm instead
 

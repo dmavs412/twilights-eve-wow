@@ -212,3 +212,10 @@ Cooking bookmark, beside `prof_fishing` and `prof_herbalism`. The placeholder is
 The Kitchen window reuses the Journal's frame art (`journal\window_bg`, `slot`, `title_plaque`,
 `bottom_tab`, `divider`), so it needs no file of its own yet. The alchemy table's window is
 still to be specified.
+
+## Talent Rows (spec #498)
+
+### Talents panel
+
+The Talents panel (`assets/ui/Talents.xml`) uses the Journal's frame art (`journal\window_bg`,
+`title_plaque`, `divider`, the close button), so it needs no file of its own yet.

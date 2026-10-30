@@ -60,7 +60,7 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
 
 ## Architecture rules
 
-- **Content is data.** Spell ids, talent trees, costs, formulas and ability effects live in
+- **Content is data.** Spell ids, Talent Rows, costs, formulas and ability effects live in
   `data/twilights-eve/master.csv` and flow through `tools/twilights-eve/build_spells.py` into
   `server_spells.json` for the realm and `client_dbc_patch.json` for the client. A spell id or a
   talent's numbers in a `.rs` file is a bug. `docs/spell_pipeline.md`. Read and edit sheet rows

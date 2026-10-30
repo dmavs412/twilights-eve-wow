@@ -3,13 +3,13 @@
 This guide is for an LLM that is asked to write a Python script appending one Calling (a class, such as Cutthroat) to
 `data/twilights-eve/master.csv`. Read all of it before writing code. The schema is spec #63; the build
 (`tools/twilights-eve/build_spells.py`) checks every rule below and rejects the sheet on the first error.
-The design inputs for each Tier 1 Calling (class, tabs, Tier Bonus, kit) are in `docs/agents/tier1-callings-sheet.md`.
+The design inputs for each Tier 1 Calling (class, Tier Bonus, kit) are in `docs/agents/tier1-callings-sheet.md`.
 
 ## What we want from you
 
-One Python script, plus a short summary. The script appends that Calling's rows: its `calling` row, its `talent_tab` rows,
-skills, auras, hidden helper abilities and every talent rank. The summary lists every guess you made and every effect
-the game cannot run yet.
+One Python script, plus a short summary. The script appends that Calling's rows: its `calling` row, skills, auras,
+hidden helper abilities, and the Skill Choices and Talents of its Talent Rows. The summary lists every guess you made
+and every effect the game cannot run yet.
 
 ## Rules for the script
 
@@ -30,11 +30,10 @@ the game cannot run yet.
 
 | kind | one per | purpose |
 |---|---|---|
-| `calling` | Calling | names the Calling. `calling` and `key` are both the Calling's key. |
-| `talent_tab` | tab | `key`, `name`, `tab_id`, `background`, `tab_order` |
+| `calling` | Calling | names the Calling. `calling` and `key` are both the Calling's key. It sets `row_levels`. |
 | `skill` | ability | something the player casts, or a hidden ability something else triggers |
 | `aura` | lasting effect | every buff, debuff, DoT, stun or form. Skills apply it by key. |
-| `talent` | talent **rank** | one row for each rank, 1 to `max_rank` |
+| `talent` | choice in a Talent Row | a Skill Choice (`variant_of`) or a Talent (`row_key`), always `rank=1`. See "Talent Rows" below. |
 
 Every row carries the following:
 - `calling`: the Calling's key.
@@ -57,12 +56,8 @@ Every row carries the following:
   hit, a bleed proc). They have `client_visible=no`, **no** `client_spell_id`, no `client_*` cells, and a
   `realm_spell_id` you pick: a whole number of at least 1,000,000, unique across the sheet. Before choosing, read the file to find
   the highest one already used.
-- **Talents:** `talent_id` is a real `Talent.dbc` id. Each rank's `client_spell_id` is that talent's real spell for
-  the rank. Use the closest real talent of the class.
-- **Tabs:** `tab_id` is a real `TalentTab.dbc` id and `background` its art name. Rogue's tabs are 182
-  `RogueAssassination`, 181 `RogueCombat` and 183 `RogueSubtlety`. A talent's `source_tab_id` is the real tab its
-  `talent_id` belongs to. Its `tab` is the **key** of one of this Calling's `talent_tab` rows (`skirmisher`, not
-  `Skirmisher`).
+- **Skill Choices and Talents** take their own `spell_id`, a whole number of at least 1,000,000, unique across the
+  sheet and never their skill's. Find the highest one already used, as for a hidden ability. They have no `talent_id`.
 
 ## modelled and status
 
@@ -74,10 +69,24 @@ Every row carries the following:
 
 ## Columns by group
 
-### Talent seat
-- `tab`, `tab_row` (1 up), `tab_column` (1 to 4), `max_rank` (1 to 5, the same on every rank row).
-- `prereq_key` and `prereq_rank`: another talent this one requires.
-- Every rank from 1 to `max_rank` must have a row. Ranks share the seat and differ in numbers and `description`.
+### Talent Rows
+The rules are ADR 0028 and `docs/specs/talents/README.md` ("The sheet"). A Talent Row is a row of three choices that
+opens at its `row_level`; the player sets one of the three.
+- The `calling` row sets `row_levels`, its Tier's Row Levels joined by `|`: `2|4|6|8` at Tier 0, `4|8|12|16|20|24` at
+  Tier 1. Blank means the Calling has no rows. The Calling needs exactly one row at each of those levels.
+- A Skill Choice row belongs to one skill. The skill row sets `row_level`, the level its row opens, no lower than its
+  `learn_level`. Each of its three choices is a strict upgrade of the skill. A choice is a `talent` row with
+  `variant_of=<skill key>`, `rank=1`, and its own `spell_id`, `name`, `icon`, `visual`, `status` and `description`.
+  Leave `row_level` empty on the choice.
+- A Skill Choice is an overlay on its skill row. A blank cell inherits the skill row's cell, and a cell of `-` blanks
+  the inherited one. A filled `effectN_kind` replaces slot N whole, kind and params, and `effectN_kind=-` drops the slot.
+  A `spellmodN_*` group follows the same rule. Fill only the cells that differ from the skill.
+- A Talent row belongs to no skill. Its three choices are `talent` rows with one shared `row_key=<key>`, one shared
+  `row_level`, `rank=1` and no `variant_of`. A passive one carries effects; an active one sets `target` or `cast_kind`.
+- Every row has exactly three choices. A `talent` row with neither `variant_of` nor `row_key` fails the build.
+- The old tree columns stay empty on every row: `talent_id`, `source_tab_id`, `tab`, `tab_row`, `tab_column`,
+  `prereq_key`, `prereq_rank`, `max_rank`, `tab_id`, `background`, `tab_order` and `exceptional`. The build refuses a
+  filled one.
 
 ### Client-facing cost and timing (`client_*`) and realm values (`realm_*`)
 - `client_cost`, `client_cooldown_ms`, `client_gcd_ms`, `client_cast_time_ms`, `client_range_min`, `client_range_max` and
@@ -190,11 +199,11 @@ The params the build checks:
   (default 1). A landed hit adds the stacks to the caster's aura on the target, up to its `max_stacks`, and leaves its timer. A target
   without the aura gets nothing.
 - **`consume_aura_stacks`:** `aura=` as above, a `per_stack.*` block and `school=`. The cast takes every stack and strikes each target it hit
-  for the block a stack. **`consume_heal_pct`** (a talent effect): `skill=` the consuming skill, `pct=` per rank of the bonus damage healed.
+  for the block a stack. **`consume_heal_pct`** (a talent effect): `skill=` the consuming skill, `pct=` the percent of the bonus damage healed.
 - **Finishers:** there is no finisher kind. A damage or duration effect with a `per_combo.*` block (`per_combo.base`,
   `per_combo.per_level`, `per_combo.per_ap`) is a finisher. It needs combo points and spends them all.
 - **`mod_stat`:** `stat=strength|agility|stamina|intellect|spirit` with `pct=` or `amount=`.
-- **`proc`:** `on=cast|kill|dodge|finisher`, optional `skill=` and `chance=` (per rank), then at
+- **`proc`:** `on=cast|kill|dodge|finisher`, optional `skill=` and `chance=`, then at
   least one of `apply_aura=key|key` or `heal_pct=` (not both), `energize=` (the character's own
   power) and `add_combo_points=` (on the mob being fought, or on the finisher's target; none with no
   target). A `finisher` proc fires after the finisher has spent its points. On `on=periodic_tick`,
@@ -226,9 +235,10 @@ kind=aura   calling=cutthroat class=4 key=rupture_bleed name=Rupture client_spel
 ## Checklist before you hand back
 
 - [ ] The script only appends, writes by header name, and refuses unknown columns and a second run.
-- [ ] There is one `calling` row and one `talent_tab` row per tab, and talents' `tab` names a tab key.
-- [ ] Every talent has every rank from 1 to `max_rank`, with the same seat on each rank.
-- [ ] Every `client_spell_id`, `talent_id` and `tab_id` is a real 1.12.1 id. Every guess is in `assumptions`.
+- [ ] There is one `calling` row, and its `row_levels` has one Talent Row at each level.
+- [ ] Every Talent Row has exactly three choices at `rank=1`, each a `talent` row with `variant_of` or `row_key`.
+      The tree columns are empty.
+- [ ] Every `client_spell_id` is a real 1.12.1 id. Every guess is in `assumptions`.
 - [ ] Hidden abilities have `client_visible=no`, a unique `realm_spell_id` of 1,000,000 or more, and no `client_*` cells.
 - [ ] Every lasting effect is an `aura` row applied by key.
 - [ ] `modelled=yes` only where every effect kind is in the vocabulary. Every row has `status=placeholder`.
