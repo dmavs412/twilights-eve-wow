@@ -1639,6 +1639,113 @@ class TalentRows(BuildSpells):
                 self.assert_fails(talent_row({**rush, "effect1_params": f"amount={bad}"}),
                                   "pickup_energize needs a whole amount of at least 1, has")
 
+    # Initiate's rows (#506): a modelled aura row of the Calling to name, and one effect each.
+    BUFF = {**AURA, "modelled": "yes"}
+    WARD = {**STRIKE, "target": "self", "effect1_kind": "absorb",
+            "effect1_params": "pct=10;pct_of=max_mana;duration_ms=20000"}
+    SNARE = {**STRIKE, "effect1_kind": "mod_run_speed", "effect1_params": "pct=-50;duration_ms=6000"}
+    CONSUME = {**STRIKE, "effect1_kind": "consume_aura", "effect1_params": "aura=buff;energize_pct_of_max=10"}
+
+    def built_params(self, before: list[dict], row: dict, extra: str) -> dict:
+        """The first effect's built params of `row` with `extra` added to them."""
+        done, data = self.run_build([*before, {**row, "effect1_params": f"{row['effect1_params']};{extra}"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return data[0]["skills"][0]["effects"][0]["params"]
+
+    def assert_each_fails(self, before: list[dict], row: dict, message: str, *extras: str) -> None:
+        """`row`'s first effect with each of `extras` added fails the build naming `message`."""
+        for extra in extras:
+            with self.subTest(extra=extra):
+                self.assert_fails([*before, {**row, "effect1_params": f"{row['effect1_params']};{extra}"}],
+                                  message)
+
+    def test_refund_cost_takes_a_chance_a_pct_and_an_optional_shield_at_a_full_bar(self):
+        row = {**STRIKE, "effect1_kind": "refund_cost", "effect1_params": "chance=50;pct=100"}
+        params = self.built_params([], row, "full_absorb_pct=200;absorb_duration_ms=10000")
+        self.assertEqual(params, {"chance": 50, "pct": 100, "full_absorb_pct": 200,
+                                  "absorb_duration_ms": 10000})
+        self.assert_each_fails([], {**row, "effect1_params": "pct=100"},
+                               "refund_cost needs a chance from 1 to 100, has", "chance=0", "chance=101")
+        self.assert_each_fails([], {**row, "effect1_params": "chance=50"},
+                               "refund_cost needs pct, a whole number of at least 1, has", "pct=0")
+        self.assert_each_fails([], row, "full_absorb_pct needs a whole number of at least 1, has",
+                               "full_absorb_pct=0;absorb_duration_ms=10000")
+        self.assert_each_fails([], row, "full_absorb_pct needs absorb_duration_ms", "full_absorb_pct=200")
+        self.assert_each_fails([], row, "absorb_duration_ms needs a whole number of at least 1, has",
+                               "full_absorb_pct=200;absorb_duration_ms=0")
+
+    def test_an_absorbs_if_crit_is_yes_or_no(self):
+        self.assertIs(self.built_params([], self.WARD, "if_crit=yes")["if_crit"], True)
+        self.assert_each_fails([], self.WARD, "absorb if_crit is yes or no, has", "if_crit=2")
+
+    def test_an_absorbs_energize_pct_and_burst_radius_yd_are_whole_numbers_of_at_least_1(self):
+        for param in ("energize_pct", "burst_radius_yd"):
+            with self.subTest(param=param):
+                self.assert_whole_param([], self.WARD, param)
+        # The burst is in the row's school; the shield's own `school` is what it soaks.
+        params = self.built_params([], {**self.WARD, "school": "arcane"}, "burst_radius_yd=8")
+        self.assertEqual((params["burst_school"], params.get("school")), ("arcane", None))
+
+    def test_an_absorbs_attacker_aura_names_an_aura_row_of_the_calling(self):
+        params = self.built_params([CALLING, self.BUFF], self.WARD, "attacker_aura=buff")
+        self.assertEqual(params["attacker_aura"], "buff")
+        self.assert_each_fails([CALLING, self.BUFF], self.WARD,
+                               "attacker_aura 'ghost' is not an aura row of this Calling", "attacker_aura=ghost")
+
+    def test_a_periodic_damages_tick_aura_and_its_chance_go_together(self):
+        before = [CALLING, self.BUFF]
+        params = self.built_params(before, self.BLEED, "tick_aura=buff;tick_aura_chance=10")
+        self.assertEqual((params["tick_aura"], params["tick_aura_chance"]), ("buff", 10))
+        self.assert_each_fails(before, self.BLEED, "tick_aura 'ghost' is not an aura row of this Calling",
+                               "tick_aura=ghost;tick_aura_chance=10")
+        self.assert_each_fails(before, self.BLEED, "tick_aura_chance needs a whole number from 1 to 100, has",
+                               "tick_aura=buff;tick_aura_chance=0", "tick_aura=buff;tick_aura_chance=101")
+        self.assert_each_fails(before, self.BLEED, "tick_aura and tick_aura_chance go together",
+                               "tick_aura=buff", "tick_aura_chance=10")
+
+    def test_a_periodic_damages_weaken_pct_runs_from_1_to_100(self):
+        self.assertEqual(self.built_params([], self.BLEED, "weaken_pct=15")["weaken_pct"], 15)
+        self.assert_each_fails([], self.BLEED, "weaken_pct needs a whole number from 1 to 100, has",
+                               "weaken_pct=0", "weaken_pct=101", "weaken_pct=1.5")
+
+    def test_a_periodic_damages_tick_energize_pct_of_max_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param([], self.BLEED, "tick_energize_pct_of_max")
+
+    def test_a_school_damages_vs_aura_and_its_pct_go_together(self):
+        before = [CALLING, self.BUFF]
+        params = self.built_params(before, self.HIT, "vs_aura=buff;vs_aura_pct=45")
+        self.assertEqual((params["vs_aura"], params["vs_aura_pct"]), ("buff", 45))
+        self.assert_each_fails(before, self.HIT, "vs_aura 'ghost' is not an aura row of this Calling",
+                               "vs_aura=ghost;vs_aura_pct=45")
+        self.assert_each_fails(before, self.HIT, "vs_aura_pct needs a whole number of at least 1, has",
+                               "vs_aura=buff;vs_aura_pct=0")
+        self.assert_each_fails(before, self.HIT, "vs_aura and vs_aura_pct go together",
+                               "vs_aura=buff", "vs_aura_pct=45")
+
+    def test_a_snares_radius_yd_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param([], self.SNARE, "radius_yd")
+
+    def test_root_takes_an_aura_spell_id_and_a_duration(self):
+        row = {**STRIKE, "effect1_kind": "root", "effect1_params": "aura_spell_id=12494"}
+        self.assertEqual(self.built_params([], row, "duration_ms=2000"),
+                         {"aura_spell_id": 12494, "duration_ms": 2000})
+        self.assert_each_fails([], row, "root needs duration_ms, a whole number of at least 1, has",
+                               "duration_ms=0", "duration_ms=1.5")
+        self.assert_each_fails([], {**row, "effect1_params": "duration_ms=2000"},
+                               "root needs aura_spell_id, a whole number of at least 1, has", "aura_spell_id=0")
+
+    def test_any_skill_effects_requires_target_aura_names_an_aura_row_or_slowed(self):
+        before = [CALLING, self.BUFF]
+        self.assertEqual(self.built_params(before, self.HIT, "requires_target_aura=buff")["requires_target_aura"],
+                         "buff")
+        self.assertEqual(self.built_params(before, self.SNARE, "requires_target_aura=slowed")["requires_target_aura"],
+                         "slowed")
+        self.assert_each_fails(before, self.HIT, "requires_target_aura 'ghost' is not an aura row of this Calling "
+                               "or slowed", "requires_target_aura=ghost")
+
+    def test_a_consume_auras_spread_yd_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param([CALLING, self.BUFF], self.CONSUME, "spread_yd")
+
     def test_rows_with_a_blank_row_levels_fail(self):
         self.assert_fails([CALLING, {**STRIKE, "row_level": "3"}, *self.three()], "do not fill row_levels")
 
@@ -1760,6 +1867,47 @@ class TalentRows(BuildSpells):
         self.assertEqual(len(set(icons)), 18, icons)
         warrior = {s["fields"].get("icon") for s in spells if s.get("calling") == "basic_warrior"}
         self.assertFalse(warrior & set(icons), warrior & set(icons))
+
+    def test_the_committed_initiate_has_six_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            callings = json.load(f)
+        initiate = next(c for c in callings if c["key"] == "initiate")
+        self.assertEqual(initiate["row_levels"], [4, 8, 12, 16, 20, 24])
+        self.assertEqual([(r["key"], r["level"], r["kind"], r["skill"]) for r in initiate["rows"]],
+                         [("ley_spark", 4, "skill_choice", "ley_spark"),
+                          ("ley_ward", 8, "skill_choice", "ley_ward"),
+                          ("searing_ember", 12, "skill_choice", "searing_ember"),
+                          ("biting_cold", 16, "skill_choice", "biting_cold"),
+                          ("passives", 20, "talent", None),
+                          ("catalyst", 24, "skill_choice", "catalyst")])
+        self.assertEqual([[c["key"] for c in r["choices"]] for r in initiate["rows"]],
+                         [["ley_line_tap", "arcane_substrate", "warding_spark"],
+                          ["siphoning_ward", "frost_ward", "volatile_ward"],
+                          ["thermal_feedback", "smoldering_ember", "kindling_ember"],
+                          ["combustion_engine", "splintering_cold", "frostbite"],
+                          ["shattered_blink", "arcane_momentum", "catalytic_resonance"],
+                          ["thermal_shock", "deep_freeze", "catalytic_chain"]])
+        self.assertEqual([c["spell_id"] for r in initiate["rows"] for c in r["choices"]],
+                         list(range(1000490, 1000508)))
+        self.assertEqual(next(a for a in initiate["auras"] if a["key"] == "aura_frost_ward")["spell_id"],
+                         1000508)
+        # Blink has no row, and every choice is modelled.
+        self.assertNotIn("blink", [r["skill"] for r in initiate["rows"]])
+        self.assertTrue(all(c["modelled"] for r in initiate["rows"] for c in r["choices"]))
+        # No two of the choices share an icon, and none is a plain skill's or another Calling's
+        # choice's.
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
+                  encoding="utf-8") as f:
+            spells = {s["spell_id"]: s for s in json.load(f)["spells"]}
+        icons = [spells[i]["fields"]["icon"] for i in range(1000490, 1000508)]
+        self.assertEqual(len(set(icons)), 18, icons)
+        others = {spells[s["spell_id"]]["fields"].get("icon")
+                  for c in callings for s in c["skills"] if s.get("spell_id") in spells}
+        others |= {spells[ch["spell_id"]]["fields"].get("icon")
+                   for c in callings if c["key"] != "initiate" for r in c.get("rows", [])
+                   for ch in r["choices"] if ch.get("spell_id") in spells}
+        self.assertFalse(others & set(icons), others & set(icons))
 
 
 class Vocabulary(unittest.TestCase):

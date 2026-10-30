@@ -5758,146 +5758,6 @@
     "description": "Your next Biting Cold is instant and costs no mana."
    },
    {
-    "key": "aura_arcane_substrate_cold_1",
-    "name": "Arcane Substrate",
-    "spell_id": 1000261,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "exclusive_group": "arcane_substrate",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "biting_cold",
-       "cast_time_ms": -100,
-       "family_bits": [
-        35
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Biting Cold casts 0.1 sec faster."
-   },
-   {
-    "key": "aura_arcane_substrate_cold_2",
-    "name": "Arcane Substrate",
-    "spell_id": 1000261,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "exclusive_group": "arcane_substrate",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "biting_cold",
-       "cast_time_ms": -200,
-       "family_bits": [
-        35
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Biting Cold casts 0.2 sec faster."
-   },
-   {
-    "key": "aura_arcane_substrate_cold_3",
-    "name": "Arcane Substrate",
-    "spell_id": 1000261,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "exclusive_group": "arcane_substrate",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "biting_cold",
-       "cast_time_ms": -300,
-       "family_bits": [
-        35
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Biting Cold casts 0.3 sec faster."
-   },
-   {
-    "key": "aura_arcane_substrate_cold_4",
-    "name": "Arcane Substrate",
-    "spell_id": 1000261,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "exclusive_group": "arcane_substrate",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "biting_cold",
-       "cast_time_ms": -400,
-       "family_bits": [
-        35
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Biting Cold casts 0.4 sec faster."
-   },
-   {
     "key": "aura_arcane_substrate_cold_5",
     "name": "Arcane Substrate",
     "spell_id": 1000261,
@@ -5907,7 +5767,6 @@
     "max_stacks": 1,
     "stack_rule": "refresh",
     "unique_per": "caster",
-    "exclusive_group": "arcane_substrate",
     "group_scope": "caster",
     "dispel_type": "none",
     "aura_positive": true,
@@ -5933,146 +5792,6 @@
     "description": "Your next Biting Cold casts 0.5 sec faster."
    },
    {
-    "key": "aura_arcane_substrate_ember_1",
-    "name": "Arcane Substrate",
-    "spell_id": 1000262,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "exclusive_group": "arcane_substrate",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "searing_ember",
-       "duration_ms": 1000,
-       "family_bits": [
-        34
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Searing Ember burns 1 sec longer."
-   },
-   {
-    "key": "aura_arcane_substrate_ember_2",
-    "name": "Arcane Substrate",
-    "spell_id": 1000262,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "exclusive_group": "arcane_substrate",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "searing_ember",
-       "duration_ms": 2000,
-       "family_bits": [
-        34
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Searing Ember burns 2 sec longer."
-   },
-   {
-    "key": "aura_arcane_substrate_ember_3",
-    "name": "Arcane Substrate",
-    "spell_id": 1000262,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "exclusive_group": "arcane_substrate",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "searing_ember",
-       "duration_ms": 3000,
-       "family_bits": [
-        34
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Searing Ember burns 3 sec longer."
-   },
-   {
-    "key": "aura_arcane_substrate_ember_4",
-    "name": "Arcane Substrate",
-    "spell_id": 1000262,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "exclusive_group": "arcane_substrate",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "searing_ember",
-       "duration_ms": 4000,
-       "family_bits": [
-        34
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Searing Ember burns 4 sec longer."
-   },
-   {
     "key": "aura_arcane_substrate_ember_5",
     "name": "Arcane Substrate",
     "spell_id": 1000262,
@@ -6082,7 +5801,6 @@
     "max_stacks": 1,
     "stack_rule": "refresh",
     "unique_per": "caster",
-    "exclusive_group": "arcane_substrate",
     "group_scope": "caster",
     "dispel_type": "none",
     "aura_positive": true,
@@ -6106,34 +5824,6 @@
      }
     ],
     "description": "Your next Searing Ember burns 5 sec longer."
-   },
-   {
-    "key": "aura_shattered_blink_1",
-    "name": "Shattered Blink",
-    "spell_id": 1000268,
-    "status": "placeholder",
-    "school": "frost",
-    "prevention": "silence",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "mechanic": "root",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 2000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "root",
-      "params": {},
-      "realm_only": false
-     }
-    ],
-    "description": "Frozen in place."
    },
    {
     "key": "aura_shattered_blink_2",
@@ -6162,164 +5852,6 @@
      }
     ],
     "description": "Frozen in place."
-   },
-   {
-    "key": "aura_elemental_convergence",
-    "name": "Elemental Convergence",
-    "spell_id": 1000274,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 6000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "skill_crit_pct",
-      "params": {
-       "skill": "catalyst",
-       "pct": 100
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Catalyst is a critical strike."
-   },
-   {
-    "key": "aura_ley_line_attunement",
-    "name": "Attunement",
-    "spell_id": 1000285,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 3,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 30000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "at_max_stacks",
-      "params": {
-       "becomes": "aura_ley_line_attunement_ready"
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Attunement charges. At 3, your next Biting Cold or Catalyst costs no mana."
-   },
-   {
-    "key": "aura_ley_line_attunement_ready",
-    "name": "Attuned",
-    "spell_id": 1000286,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 30000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": [
-        "biting_cold",
-        "catalyst"
-       ],
-       "cost_pct": -100,
-       "family_bits": [
-        35,
-        36
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Biting Cold or Catalyst costs no mana."
-   },
-   {
-    "key": "aura_arcane_momentum_1",
-    "name": "Arcane Momentum",
-    "spell_id": 1000290,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 5000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "skill_amount_pct",
-      "params": {
-       "skill": "ley_spark",
-       "pct": 15
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Ley-Spark deals 15% more damage."
-   },
-   {
-    "key": "aura_arcane_momentum_2",
-    "name": "Arcane Momentum",
-    "spell_id": 1000291,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 5000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "skill_amount_pct",
-      "params": {
-       "skill": "ley_spark",
-       "pct": 30
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Ley-Spark deals 30% more damage."
    },
    {
     "key": "aura_arcane_momentum_3",
@@ -6352,122 +5884,6 @@
     "description": "Ley-Spark deals 45% more damage."
    },
    {
-    "key": "aura_catalytic_resonance_1",
-    "name": "Catalytic Resonance",
-    "spell_id": 1000298,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 8000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_spell_damage_pct",
-      "params": {
-       "pct": 2
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Spell damage increased by 2%."
-   },
-   {
-    "key": "aura_catalytic_resonance_2",
-    "name": "Catalytic Resonance",
-    "spell_id": 1000298,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 8000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_spell_damage_pct",
-      "params": {
-       "pct": 4
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Spell damage increased by 4%."
-   },
-   {
-    "key": "aura_catalytic_resonance_3",
-    "name": "Catalytic Resonance",
-    "spell_id": 1000298,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 8000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_spell_damage_pct",
-      "params": {
-       "pct": 6
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Spell damage increased by 6%."
-   },
-   {
-    "key": "aura_catalytic_resonance_4",
-    "name": "Catalytic Resonance",
-    "spell_id": 1000298,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 8000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_spell_damage_pct",
-      "params": {
-       "pct": 8
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Spell damage increased by 8%."
-   },
-   {
     "key": "aura_catalytic_resonance_5",
     "name": "Catalytic Resonance",
     "spell_id": 1000298,
@@ -6497,14 +5913,14 @@
     "description": "Spell damage increased by 10%."
    },
    {
-    "key": "aura_mana_surge",
-    "name": "Mana Surge",
-    "spell_id": 1000299,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
+    "key": "aura_frost_ward",
+    "name": "Frost Ward",
+    "spell_id": 1000508,
+    "status": "wip",
+    "school": "frost",
+    "prevention": "silence",
     "max_stacks": 1,
-    "stack_rule": "refresh",
+    "stack_rule": "replace",
     "unique_per": "caster",
     "group_scope": "caster",
     "dispel_type": "none",
@@ -6512,28 +5928,937 @@
     "aura_hidden": false,
     "cancelable": true,
     "persist_death": false,
-    "duration_ms": 10000,
+    "duration_ms": 4000,
     "modelled": true,
     "effects": [
      {
-      "kind": "next_cast",
+      "kind": "mod_run_speed",
       "params": {
-       "skill": "ley_spark",
-       "instant": true,
-       "family_bits": [
-        33
-       ]
+       "pct": -50
       },
       "realm_only": false
      }
     ],
-    "description": "Ley-Spark has no cast time."
+    "description": "Movement speed slowed by 50%."
    }
   ],
-  "rows": [],
+  "rows": [
+   {
+    "key": "ley_spark",
+    "level": 4,
+    "kind": "skill_choice",
+    "skill": "ley_spark",
+    "choices": [
+     {
+      "key": "ley_line_tap",
+      "name": "Ley-Line Tap",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000490,
+      "realm_cost": 5,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 31,
+          "per_level": 2.5
+         },
+         "crit_pct_at_full_mana": 15,
+         "school": "arcane"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "refund_cost",
+        "params": {
+         "chance": 50,
+         "pct": 100,
+         "full_absorb_pct": 200,
+         "absorb_duration_ms": 10000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your primary casted filler. Deals Arcane damage. Its critical strike chance naturally scales higher based on how full your current mana pool is. Each cast has a 50% chance to refund its mana cost. At full mana, it shields you for twice its cost for 10 sec instead.",
+      "variant_of": "ley_spark"
+     },
+     {
+      "key": "arcane_substrate",
+      "name": "Arcane Substrate",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000491,
+      "realm_cost": 5,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 31,
+          "per_level": 2.5
+         },
+         "crit_pct_at_full_mana": 15,
+         "school": "arcane"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_arcane_substrate_cold_5"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_arcane_substrate_ember_5"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your primary casted filler. Deals Arcane damage. Its critical strike chance naturally scales higher based on how full your current mana pool is. Each cast also makes your next Biting Cold cast 0.5 sec faster and your next Searing Ember burn 5 sec longer.",
+      "variant_of": "ley_spark"
+     },
+     {
+      "key": "warding_spark",
+      "name": "Warding Spark",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000492,
+      "realm_cost": 5,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 31,
+          "per_level": 2.5
+         },
+         "crit_pct_at_full_mana": 15,
+         "school": "arcane"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 50,
+         "pct_of": "hit",
+         "duration_ms": 8000,
+         "if_crit": true
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your primary casted filler. Deals Arcane damage. Its critical strike chance naturally scales higher based on how full your current mana pool is. A critical hit also wards you for 50% of its damage for 8 sec.",
+      "variant_of": "ley_spark"
+     }
+    ]
+   },
+   {
+    "key": "ley_ward",
+    "level": 8,
+    "kind": "skill_choice",
+    "skill": "ley_ward",
+    "choices": [
+     {
+      "key": "siphoning_ward",
+      "name": "Siphoning Ward",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000493,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 30000,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 10,
+         "pct_of": "max_mana",
+         "duration_ms": 20000,
+         "energize_pct": 50
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec. Half of the damage it absorbs comes back to you as mana.",
+      "variant_of": "ley_ward"
+     },
+     {
+      "key": "frost_ward",
+      "name": "Frost Ward",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000494,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 30000,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 10,
+         "pct_of": "max_mana",
+         "duration_ms": 20000,
+         "attacker_aura": "aura_frost_ward"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec. An enemy whose damage it absorbs is slowed by 50% for 4 sec.",
+      "variant_of": "ley_ward"
+     },
+     {
+      "key": "volatile_ward",
+      "name": "Volatile Ward",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000495,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 30000,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 10,
+         "pct_of": "max_mana",
+         "duration_ms": 20000,
+         "burst_radius_yd": 8,
+         "burst_school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec. When the ward breaks, it bursts for the damage it absorbed as Arcane damage to enemies within 8 yards.",
+      "variant_of": "ley_ward"
+     }
+    ]
+   },
+   {
+    "key": "searing_ember",
+    "level": 12,
+    "kind": "skill_choice",
+    "skill": "searing_ember",
+    "choices": [
+     {
+      "key": "thermal_feedback",
+      "name": "Thermal Feedback",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000496,
+      "realm_cost": 4,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 21.5,
+          "per_level": 1.5
+         },
+         "school": "fire"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_searing_ember",
+         "tick_aura": "aura_thermal_feedback",
+         "tick_aura_chance": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant cast. Deals low initial Fire damage and leaves a stacking burn DoT on the target. Each tick of the burn has a 10% chance to make your next Biting Cold instant and free.",
+      "variant_of": "searing_ember"
+     },
+     {
+      "key": "smoldering_ember",
+      "name": "Smoldering Ember",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000497,
+      "realm_cost": 4,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 21.5,
+          "per_level": 1.5
+         },
+         "school": "fire"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_searing_ember",
+         "weaken_pct": 15
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant cast. Deals low initial Fire damage and leaves a stacking burn DoT on the target. A burning enemy deals 15% less damage to you.",
+      "variant_of": "searing_ember"
+     },
+     {
+      "key": "kindling_ember",
+      "name": "Kindling Ember",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000498,
+      "realm_cost": 4,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 21.5,
+          "per_level": 1.5
+         },
+         "school": "fire"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_searing_ember",
+         "tick_energize_pct_of_max": 3
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant cast. Deals low initial Fire damage and leaves a stacking burn DoT on the target. Each tick of the burn returns 3% of your maximum mana.",
+      "variant_of": "searing_ember"
+     }
+    ]
+   },
+   {
+    "key": "biting_cold",
+    "level": 16,
+    "kind": "skill_choice",
+    "skill": "biting_cold",
+    "choices": [
+     {
+      "key": "combustion_engine",
+      "name": "Combustion Engine",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000499,
+      "realm_cost": 8,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "frost",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 2000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 15,
+          "per_level": 1.5
+         },
+         "vs_aura": "aura_searing_ember",
+         "vs_aura_pct": 45,
+         "school": "frost"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_run_speed",
+        "params": {
+         "apply_aura": "aura_biting_cold"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 6 seconds. Deals 45% more damage to a target burning from your Searing Ember.",
+      "variant_of": "biting_cold"
+     },
+     {
+      "key": "splintering_cold",
+      "name": "Splintering Cold",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000500,
+      "realm_cost": 8,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "frost",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 2000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 15,
+          "per_level": 1.5
+         },
+         "school": "frost"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_run_speed",
+        "params": {
+         "apply_aura": "aura_biting_cold",
+         "radius_yd": 8
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 6 seconds. The slow also lands on every enemy within 8 yards of the target.",
+      "variant_of": "biting_cold"
+     },
+     {
+      "key": "frostbite",
+      "name": "Frostbite",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000501,
+      "realm_cost": 8,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "frost",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 2000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 15,
+          "per_level": 1.5
+         },
+         "school": "frost"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_run_speed",
+        "params": {
+         "apply_aura": "aura_biting_cold"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "root",
+        "params": {
+         "aura_spell_id": 12494,
+         "duration_ms": 2000,
+         "requires_target_aura": "slowed"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 6 seconds. A target that was already slowed is also rooted for 2 sec.",
+      "variant_of": "biting_cold"
+     }
+    ]
+   },
+   {
+    "key": "passives",
+    "level": 20,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "shattered_blink",
+      "name": "Shattered Blink",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000502,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "cast",
+         "skill": "blink",
+         "apply_aura_area": "aura_shattered_blink_2",
+         "radius_yd": 8,
+         "center": "origin"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 4 seconds."
+     },
+     {
+      "key": "arcane_momentum",
+      "name": "Arcane Momentum",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000503,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "cast",
+         "skill": "blink",
+         "apply_aura": "aura_arcane_momentum_3"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "After using Blink, the damage of your Ley-Spark is increased by 45% for 5 seconds."
+     },
+     {
+      "key": "catalytic_resonance",
+      "name": "Catalytic Resonance",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000504,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "consume",
+         "skill": "catalyst",
+         "apply_aura": "aura_catalytic_resonance_5"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Whenever Catalyst consumes a Searing Ember or a Biting Cold, you gain 10% increased spell damage for 8 seconds."
+     }
+    ]
+   },
+   {
+    "key": "catalyst",
+    "level": 24,
+    "kind": "skill_choice",
+    "skill": "catalyst",
+    "choices": [
+     {
+      "key": "thermal_shock",
+      "name": "Thermal Shock",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000505,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 12000,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "consume_aura",
+        "params": {
+         "aura": "aura_biting_cold",
+         "amount_pct": 260,
+         "school": "frost",
+         "amount": {
+          "base": 15,
+          "per_level": 1.5
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "consume_aura",
+        "params": {
+         "aura": "aura_searing_ember",
+         "energize_pct_of_max": 13,
+         "school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds 13% of your maximum Mana. If it consumes a Cold, it deals a massive burst of shatter damage. The shatter deals 30% more than Catalyst's.",
+      "variant_of": "catalyst"
+     },
+     {
+      "key": "deep_freeze",
+      "name": "Deep Freeze",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000506,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 12000,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "consume_aura",
+        "params": {
+         "aura": "aura_biting_cold",
+         "amount_pct": 200,
+         "school": "frost",
+         "amount": {
+          "base": 15,
+          "per_level": 1.5
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "consume_aura",
+        "params": {
+         "aura": "aura_searing_ember",
+         "energize_pct_of_max": 10,
+         "school": "arcane"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "stun",
+        "params": {
+         "aura_spell_id": 12355,
+         "duration_ms": 3000,
+         "requires_target_aura": "aura_biting_cold"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds 10% of your maximum Mana. If it consumes a Cold, it deals a massive burst of shatter damage. Consuming a Biting Cold also stuns the target for 3 sec.",
+      "variant_of": "catalyst"
+     },
+     {
+      "key": "catalytic_chain",
+      "name": "Catalytic Chain",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000507,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 12000,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "consume_aura",
+        "params": {
+         "aura": "aura_biting_cold",
+         "amount_pct": 200,
+         "spread_yd": 10,
+         "school": "frost",
+         "amount": {
+          "base": 15,
+          "per_level": 1.5
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "consume_aura",
+        "params": {
+         "aura": "aura_searing_ember",
+         "energize_pct_of_max": 10,
+         "spread_yd": 10,
+         "school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds 10% of your maximum Mana. If it consumes a Cold, it deals a massive burst of shatter damage. Each Ember or Cold it consumes is copied onto another enemy within 10 yards.",
+      "variant_of": "catalyst"
+     }
+    ]
+   }
+  ],
   "name": "Initiate",
   "tier": 1,
   "tier_cap": 30,
+  "row_levels": [
+   4,
+   8,
+   12,
+   16,
+   20,
+   24
+  ],
   "tier_bonus": {
    "intellect": 15,
    "spirit": 10,

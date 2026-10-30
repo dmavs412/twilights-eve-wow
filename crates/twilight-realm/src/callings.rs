@@ -135,7 +135,7 @@ impl CallingDef {
 }
 
 /// A buff a skill or talent grants: what it does, for how long, and how many uses it has.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct AuraDef {
     pub key: String,
     /// The spell the client shows the buff as.
@@ -1323,12 +1323,26 @@ pub struct Skill {
     #[serde(default)]
     pub borrowed: Option<BorrowedFamilyBit>,
     pub effects: Vec<Effect>,
+    /// What each effect, by index, asks of its target before the cast landed
+    /// (`requires_target_aura`); an effect past the end, or `None`, asks nothing.
+    #[serde(skip)]
+    pub requires_target_aura: Vec<Option<TargetAura>>,
     /// Gates, cost kind, cast shape and spellmods from the master CSV. Loaded, not enforced yet.
     #[serde(default)]
     pub meta: SpellMeta,
     /// A Skill Choice's skill key (`variant_of`), which it answers to as well as its own.
     #[serde(default)]
     pub replaces: Option<String>,
+}
+
+/// What a skill effect's `requires_target_aura` asks of the target as it stood before the cast
+/// landed (Frostbite, Deep Freeze).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TargetAura {
+    /// Any snare.
+    Slowed,
+    /// The caster's aura of this spell id.
+    Aura(u32),
 }
 
 /// The `SpellFamilyFlags` bits the client gives borrowed spells: no Warrior spell uses a bit
@@ -1469,6 +1483,12 @@ pub enum Effect {
         kill_heal_pct: u32,
         #[serde(default)]
         kill_energize: u32,
+        /// `vs_aura_pct` more on a target wearing the caster's aura of `vs_aura_spell_id` at the
+        /// hit, resolved from `vs_aura=key` (Combustion Engine).
+        #[serde(default)]
+        vs_aura_spell_id: Option<u32>,
+        #[serde(default)]
+        vs_aura_pct: u32,
     },
     /// A bleed on the target under the skill's own spell id: `tick` every `tick_ms`.
     PeriodicDamage {
@@ -1516,6 +1536,21 @@ pub enum Effect {
         /// the Calling's `bleed_drop_chance` (Open Veins). A Calling with no droplet spills none.
         #[serde(default)]
         drop_chance: Option<u32>,
+        /// After each tick, once whatever the stacks, `tick_aura_chance` percent of the time the
+        /// caster takes the aura row of `tick_aura_spell_id`, resolved from `tick_aura=key`
+        /// (Thermal Feedback).
+        #[serde(default)]
+        tick_aura_spell_id: Option<u32>,
+        #[serde(default)]
+        tick_aura_chance: u32,
+        /// While it is on a unit, every blow that unit deals the caster is this percent less
+        /// (Smoldering Ember).
+        #[serde(default)]
+        weaken_pct: u32,
+        /// After each tick, once whatever the stacks, the caster gains this percent of their
+        /// maximum power (Kindling Ember).
+        #[serde(default)]
+        tick_energize_pct_of_max: u32,
     },
     /// Heals the target `amount`, up to its maximum health.
     Heal { amount: Linear },
@@ -1603,6 +1638,24 @@ pub enum Effect {
         #[serde(default)]
         per_combo: Option<Linear>,
     },
+    /// The target cannot move, though it still swings and casts, under `aura_spell_id` for
+    /// `duration_ms` (Frostbite). Roots take no diminishing returns.
+    Root {
+        aura_spell_id: u32,
+        duration_ms: u32,
+    },
+    /// When the cast lands, `chance` percent of the time: at a bar that was full before the cast,
+    /// with `full_absorb_pct` set, a shield of that percent of the cast's cost for
+    /// `absorb_duration_ms` and nothing else; otherwise `pct` percent of the cost back (Ley-Line
+    /// Tap).
+    RefundCost {
+        chance: u32,
+        pct: u32,
+        #[serde(default)]
+        full_absorb_pct: u32,
+        #[serde(default)]
+        absorb_duration_ms: u32,
+    },
     /// A stun under the skill's spell id. With `break_on_damage`, any damage after the cast ends
     /// it. The target stays in combat: no player mechanic takes a mob out of it (#165). A mob
     /// takes diminishing returns on its own clock, apart from stuns, and a boss takes nothing.
@@ -1626,6 +1679,26 @@ pub enum Effect {
         radius_yd: f32,
         #[serde(default)]
         school: Option<School>,
+        /// Only when the cast's blow at the target was a critical strike; a new shield of the
+        /// spell replaces the old only when it is larger (Warding Spark).
+        #[serde(default)]
+        if_crit: bool,
+        /// Each soak gives the caster this percent of the soaked amount in their power, rounded
+        /// down (Siphoning Ward).
+        #[serde(default)]
+        energize_pct: u32,
+        /// Each soak of an enemy unit's damage puts the caster's aura row of this spell id on that
+        /// unit, resolved from `attacker_aura=key` (Frost Ward).
+        #[serde(default)]
+        attacker_aura_spell_id: Option<u32>,
+        /// When the whole shield is soaked, every living enemy within this many yards of the
+        /// caster takes its amount in `burst_school`, with that school's miss and crit rolls; a
+        /// shield that times out or is replaced does nothing (Volatile Ward). The build sets
+        /// `burst_school` from the row's school.
+        #[serde(default)]
+        burst_radius_yd: f32,
+        #[serde(default)]
+        burst_school: School,
     },
     /// A ground area at the cast's destination: `radius_yd` across, for `duration_ms`. Every
     /// enemy inside holds the aura row `enemy_aura_spell_id`, every friendly player inside
@@ -1679,6 +1752,10 @@ pub enum Effect {
         heal_allies_pct: u32,
         #[serde(default)]
         radius_yd: f32,
+        /// Then a fresh copy of what it took, one stack and its row's full duration, goes on the
+        /// nearest other living enemy within this many yards of the target (Catalytic Chain).
+        #[serde(default)]
+        spread_yd: f32,
     },
     /// The target's run speed changes by `pct` percent for `duration_ms`: a snare on an enemy
     /// when negative, a sprint on the caster when positive.
@@ -1688,6 +1765,10 @@ pub enum Effect {
         /// As `PeriodicDamage`'s: the aura row's spell id when `apply_aura` names one.
         #[serde(default)]
         aura_spell_id: Option<u32>,
+        /// The snare also goes on every other living enemy within this many yards of the target,
+        /// without the cast's other effects (Splintering Cold).
+        #[serde(default)]
+        radius_yd: f32,
     },
     /// The caster's dodge chance rises by `pct` percent for `duration_ms`, under the skill's
     /// spell id (Evasion).

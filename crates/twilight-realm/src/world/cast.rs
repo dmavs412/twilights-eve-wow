@@ -140,6 +140,8 @@ pub(super) struct Skills {
     blink: Option<PendingBlink>,
     /// Mobs a knockback cast hit and not yet moved: the next tick, which has the ground, slides them.
     knocks: Vec<PendingKnock>,
+    /// Shields that broke and burst, not yet paid: the world tick pays them after the skills.
+    bursts: Vec<Burst>,
     /// Seconds since the player's last step; `None` before the first.
     since_step: Option<f32>,
     /// Seconds the player has been moving without stopping, or standing still.
@@ -439,6 +441,49 @@ pub(crate) struct Aura {
     charges: u32,
 }
 
+/// A damage over time's riders (#506): after each tick, `aura_chance` percent of the time the
+/// caster takes `aura`, and gains `energize_pct_of_max` percent of their maximum power; while it
+/// is on a unit, that unit's blows at the caster are `weaken_pct` percent less.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+struct TickRiders {
+    aura: Option<&'static callings::AuraDef>,
+    aura_chance: u32,
+    energize_pct_of_max: u32,
+    weaken_pct: u32,
+}
+
+/// What a shield of the player's does besides soaking (#506): `energize_pct` percent of each soak
+/// back as power, `attacker_aura` on the enemy whose damage it soaks, and when it breaks, its whole
+/// `amount` in `burst_school` at every enemy within `burst_radius_yd`.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub(super) struct Ward {
+    amount: u32,
+    energize_pct: u32,
+    attacker_aura: Option<&'static callings::AuraDef>,
+    burst_radius_yd: f32,
+    burst_school: School,
+}
+
+/// What one of the player's shields soaked of a blow: its spell, level and riders, how much, and
+/// whether that broke it.
+#[derive(Debug, Clone, Copy)]
+pub(super) struct Soak {
+    spell_id: u32,
+    level: u8,
+    soaked: u32,
+    ward: Ward,
+    broke: bool,
+}
+
+/// A broken shield's burst, waiting for the world tick to pay it with the player's position.
+#[derive(Debug, Clone, Copy)]
+struct Burst {
+    spell_id: u32,
+    amount: u32,
+    radius_yd: f32,
+    school: School,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum AuraKind {
     /// `per_tick` damage of `school` a tick, from `caster`: a bleed, or a creature's curse on
@@ -461,6 +506,8 @@ enum AuraKind {
         /// The percent chance a tick spills the caster's blood droplet, in place of their
         /// Calling's own.
         drop_chance: Option<u32>,
+        /// What each tick gives the caster, and how much less the unit hits them for.
+        riders: TickRiders,
     },
     Rage {
         per_tick: u32,
@@ -534,6 +581,8 @@ enum AuraKind {
     Absorb {
         left: u32,
         school: Option<School>,
+        /// What it does as it soaks and when it breaks.
+        ward: Ward,
     },
     /// The player's casts are `pct` percent faster; `bits` carry it to the client's cast bars.
     CastSpeed {
@@ -976,15 +1025,15 @@ impl Skills {
             .any(|a| a.unit == unit && matches!(a.kind, AuraKind::Incapacitate { .. }))
     }
 
-    /// The player's `next_cast` buffs for `skill`.
+    /// The player's `next_cast` buffs for `skill`, or for the skill a Skill Choice replaces.
     fn next_casts<'a>(
         &'a self,
-        skill: &'a str,
+        skill: &'a Skill,
     ) -> impl Iterator<Item = (&'static callings::NextCast, i32)> + 'a {
         let me = self.me;
         self.auras.iter().filter_map(move |a| match a.kind {
             AuraKind::NextCast { next, stacks, .. }
-                if a.unit == me && next.skill.iter().any(|s| s == skill) =>
+                if a.unit == me && next.skill.iter().any(|s| skill.is(s)) =>
             {
                 Some((next, stacks as i32))
             }
@@ -995,12 +1044,12 @@ impl Skills {
     /// How long `skill`'s cast bar runs now, the player's `next_cast` buffs applied.
     fn cast_time_ms(&self, skill: &Skill) -> u32 {
         let base = skill.meta.shape.cast_time_ms;
-        if base == 0 || self.next_casts(&skill.key).any(|(n, _)| n.instant) {
+        if base == 0 || self.next_casts(skill).any(|(n, _)| n.instant) {
             return 0;
         }
         // Never below an instant cast.
         let change: i32 = self
-            .next_casts(&skill.key)
+            .next_casts(skill)
             .map(|(n, stacks)| n.cast_time_ms * stacks)
             .sum();
         let ms = (base as i32 + change).max(0) as u32;
@@ -1020,7 +1069,7 @@ impl Skills {
     }
 
     /// The percent the player's `next_cast` buffs change `skill`'s cost by, -100 at least.
-    fn next_cost_pct(&self, skill: &str) -> i32 {
+    fn next_cost_pct(&self, skill: &Skill) -> i32 {
         self.next_casts(skill)
             .map(|(n, stacks)| n.cost_pct * stacks)
             .sum::<i32>()
@@ -1028,7 +1077,7 @@ impl Skills {
     }
 
     /// The milliseconds the player's `next_cast` buffs add to the auras `skill` applies.
-    fn next_duration_ms(&self, skill: &str) -> i32 {
+    fn next_duration_ms(&self, skill: &Skill) -> i32 {
         self.next_casts(skill)
             .map(|(n, stacks)| n.duration_ms * stacks)
             .sum()
@@ -1036,14 +1085,14 @@ impl Skills {
 
     /// `skill` went off: each `next_cast` buff for it loses a charge (one with none lasts its
     /// duration), and the buffs that share a group with one used go too. What went.
-    fn use_next_casts(&mut self, skill: &str, events: &mut Vec<SessionEvent>) -> Vec<Aura> {
+    fn use_next_casts(&mut self, skill: &Skill, events: &mut Vec<SessionEvent>) -> Vec<Aura> {
         let me = self.me;
         let mut groups: Vec<&'static str> = Vec::new();
         for a in &mut self.auras {
             let AuraKind::NextCast { next, group, .. } = a.kind else {
                 continue;
             };
-            if a.unit != me || !next.skill.iter().any(|s| s == skill) {
+            if a.unit != me || !next.skill.iter().any(|s| skill.is(s)) {
                 continue;
             }
             groups.extend(group);
@@ -1211,7 +1260,9 @@ impl Skills {
             .sum()
     }
 
-    /// `damage` coming at the player, less what their shields soak; a spent shield breaks.
+    /// `damage` coming at the player, less what their shields soak; a spent shield breaks. The
+    /// world reads what each shield soaked through [`Self::soak_on`].
+    #[cfg(test)]
     pub(super) fn absorb(
         &mut self,
         damage: u32,
@@ -1229,11 +1280,24 @@ impl Skills {
         school: School,
         events: &mut Vec<SessionEvent>,
     ) -> u32 {
+        self.soak_on(me, damage, school, events).0
+    }
+
+    /// [`Self::absorb_on`], and what each shield soaked.
+    pub(super) fn soak_on(
+        &mut self,
+        me: u64,
+        damage: u32,
+        school: School,
+        events: &mut Vec<SessionEvent>,
+    ) -> (u32, Vec<Soak>) {
         let mut left = damage;
+        let mut soaks = Vec::new();
         for a in &mut self.auras {
             if let AuraKind::Absorb {
                 left: shield,
                 school: only,
+                ward,
             } = &mut a.kind
             {
                 if a.unit == me && left > 0 && only.is_none_or(|s| s == school) {
@@ -1243,6 +1307,13 @@ impl Skills {
                     if *shield == 0 {
                         a.left = 0.0;
                     }
+                    soaks.push(Soak {
+                        spell_id: a.spell_id,
+                        level: a.level,
+                        soaked,
+                        ward: *ward,
+                        broke: *shield == 0,
+                    });
                 }
             }
         }
@@ -1250,7 +1321,33 @@ impl Skills {
             |a| a.unit == me && matches!(a.kind, AuraKind::Absorb { left: 0, .. }),
             events,
         );
-        left
+        (left, soaks)
+    }
+
+    /// What the player's shield of `spell_id` has left to soak, if they wear one.
+    fn shield_left(&self, spell_id: u32) -> Option<u32> {
+        self.auras.iter().find_map(|a| match a.kind {
+            AuraKind::Absorb { left, .. } if a.unit == self.me && a.spell_id == spell_id => {
+                Some(left)
+            }
+            _ => None,
+        })
+    }
+
+    /// The percent less `unit` hits the player for, from the player's damage over time on it
+    /// (Smoldering Ember): the largest.
+    pub(super) fn weaken_pct(&self, unit: u64) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == unit)
+            .map(|a| match a.kind {
+                AuraKind::PeriodicDamage { caster, riders, .. } if caster == self.me => {
+                    riders.weaken_pct
+                }
+                _ => 0,
+            })
+            .max()
+            .unwrap_or(0)
     }
 
     /// The points more of `unit`'s swings miss, from its hit-chance debuffs.
@@ -2159,6 +2256,7 @@ impl InWorld {
             crate::rules::procs::Happened {
                 event,
                 skill: None,
+                plain: None,
                 yields_xp: false,
                 target: None,
                 amount: now,
@@ -2226,7 +2324,7 @@ impl InWorld {
         ticked.leveled |= done.leveled;
         ticked.discovered |= done.discovered;
         if !std::ptr::eq(skill, auto) {
-            let gone = self.skills.use_next_casts(&auto.key, events);
+            let gone = self.skills.use_next_casts(auto, events);
             self.faded(&gone, events);
         }
         if !self.mobs.iter().any(|m| m.guid == target && m.alive()) {
@@ -2636,9 +2734,13 @@ impl InWorld {
         for (guid, how) in landed {
             if !matches!(how, Landed::Missed(_)) {
                 let combo = self.skills.combo.on(guid);
-                for effect in &skill.effects {
+                for (i, effect) in skill.effects.iter().enumerate() {
                     // The rider's blow gives no combo point of its own.
                     if rider == Some(guid) && matches!(effect, Effect::AddComboPoints { .. }) {
+                        continue;
+                    }
+                    // An effect that asks what the target wore before the cast (Frostbite).
+                    if !self.target_held(skill, i, guid) {
                         continue;
                     }
                     // A Kick: the effects after it run only on a target whose cast it stopped.
@@ -2774,6 +2876,7 @@ impl InWorld {
                         was_ms: 0,
                         event: crate::callings::ProcEvent::DamageDone,
                         skill: Some(&skill.key),
+                        plain: skill.replaces.as_deref(),
                         yields_xp: false,
                         target: Some(first),
                         amount: self.skills.cast_dealt,
@@ -2787,13 +2890,14 @@ impl InWorld {
             }
         }
         // The next-cast buffs this cast used, landed or not.
-        let gone = self.skills.use_next_casts(&skill.key, events);
+        let gone = self.skills.use_next_casts(skill, events);
         self.faded(&gone, events);
         if let Some(&(first, _)) = crits.first() {
             self.proc(
                 crate::rules::procs::Happened {
                     event: crate::callings::ProcEvent::Crit,
                     skill: Some(&skill.key),
+                    plain: skill.replaces.as_deref(),
                     yields_xp: false,
                     target: Some(first),
                     amount: 0,
@@ -2811,6 +2915,7 @@ impl InWorld {
                 was_ms: 0,
                 event: crate::callings::ProcEvent::Cast,
                 skill: Some(&skill.key),
+                plain: skill.replaces.as_deref(),
                 yields_xp: false,
                 target: None,
                 amount: 0,
@@ -2831,6 +2936,7 @@ impl InWorld {
                     was_ms: 0,
                     event: crate::callings::ProcEvent::Finisher,
                     skill: Some(&skill.key),
+                    plain: skill.replaces.as_deref(),
                     yields_xp: false,
                     target: finisher_target,
                     amount: 0,
@@ -2851,6 +2957,26 @@ impl InWorld {
         self.sync_next_cast_mods(c, events);
         self.skills.cast_target = None;
         ticked
+    }
+
+    /// Whether effect `i` of `skill` lands on `target`: what its `requires_target_aura` asks, read
+    /// off the cast's target as it stood before the cast landed, and off any other target as it
+    /// stands now (#506).
+    fn target_held(&self, skill: &Skill, i: usize, target: u64) -> bool {
+        let Some(Some(wanted)) = skill.requires_target_aura.get(i).copied() else {
+            return true;
+        };
+        let before = self
+            .skills
+            .before
+            .as_ref()
+            .filter(|_| self.skills.cast_target == Some(target));
+        match (wanted, before) {
+            (callings::TargetAura::Slowed, Some((slowed, _))) => *slowed,
+            (callings::TargetAura::Aura(id), Some((_, auras))) => auras.contains(&id),
+            (callings::TargetAura::Slowed, None) => self.skills.slowed(target),
+            (callings::TargetAura::Aura(id), None) => self.skills.on(target, id),
+        }
     }
 
     /// What a share is of: the cast under way's totals, or the caster's maximum mana or health.
@@ -3171,7 +3297,7 @@ impl InWorld {
         };
         let cost = crate::talents::power_cost_from(c, skill, base)
             .saturating_sub(self.skills.cost_less(skill));
-        (cost as i32 * (100 + self.skills.next_cost_pct(&skill.key)) / 100) as u32
+        (cost as i32 * (100 + self.skills.next_cost_pct(skill)) / 100) as u32
     }
 
     /// The health `skill` costs: its row's share of the caster's maximum health, for a
@@ -3560,7 +3686,7 @@ impl InWorld {
         let longer = crate::talents::duration_pct(c, &skill.key);
         // ... and by a flat time (Bloodletting), and a next-cast buff's (Arcane Substrate).
         let later = (crate::talents::duration_ms(c, &skill.key) as i32
-            + self.skills.next_duration_ms(&skill.key))
+            + self.skills.next_duration_ms(skill))
         .max(0) as u32;
         let aura = |kind: AuraKind, spell_id: u32, duration_ms: u32, period_ms: u32| Aura {
             unit: target,
@@ -3657,12 +3783,18 @@ impl InWorld {
                 bleeding_pct,
                 kill_heal_pct,
                 kill_energize,
+                vs_aura_spell_id,
+                vs_aura_pct,
                 ..
             } => {
                 let raw = scaled(amount.at(level, ap), hit_pct)
                     + per_combo(more)
                     + if school.is_magic() { direct_bonus } else { 0 };
-                let cond = self.condition_pct(target, controlled_pct, 0, 0, bleeding_pct);
+                // More against a target wearing the caster's aura (Combustion Engine), beside the
+                // other conditions.
+                let worn = vs_aura_spell_id.is_some_and(|id| self.skills.on(target, id));
+                let cond = self.condition_pct(target, controlled_pct, 0, 0, bleeding_pct)
+                    + if worn { vs_aura_pct } else { 0 };
                 let raw = scaled(raw, cond);
                 let worth = self.kill_yields_xp(target);
                 self.skills.cast_dealt += self.strike(
@@ -3695,7 +3827,22 @@ impl InWorld {
                 stacks_per_tick,
                 if_worn,
                 drop_chance,
+                tick_aura_spell_id,
+                tick_aura_chance,
+                weaken_pct,
+                tick_energize_pct_of_max,
             } => {
+                let riders = TickRiders {
+                    aura: tick_aura_spell_id.and_then(|id| {
+                        callings::of(c.calling)
+                            .auras
+                            .iter()
+                            .find(|a| a.spell_id == id)
+                    }),
+                    aura_chance: tick_aura_chance,
+                    energize_pct_of_max: tick_energize_pct_of_max,
+                    weaken_pct,
+                };
                 let aura_id = aura_spell_id.unwrap_or(skill.spell_id);
                 if if_worn == Some(IfWorn::Grow) && self.skills.grow(target, aura_id, 1, events) {
                     return;
@@ -3723,6 +3870,7 @@ impl InWorld {
                         rule: stack_rule,
                         stacks_per_tick,
                         drop_chance,
+                        riders,
                     },
                     aura_id,
                     duration_ms,
@@ -3903,6 +4051,7 @@ impl InWorld {
                 pct,
                 duration_ms,
                 aura_spell_id,
+                radius_yd,
             } => {
                 let kind = run_speed(pct);
                 let a = aura(
@@ -3911,8 +4060,30 @@ impl InWorld {
                     duration_ms,
                     0,
                 );
-                self.skills.apply(a, events);
-                self.update_speed(target, events);
+                // The same snare on every other living enemy near the target (Splintering Cold).
+                let at = self
+                    .mobs
+                    .iter()
+                    .find(|m| m.guid == target)
+                    .map(|m| m.position);
+                let around: Vec<u64> = match at {
+                    Some(at) if radius_yd > 0.0 => self
+                        .mobs
+                        .iter()
+                        .filter(|m| {
+                            m.guid != target
+                                && m.alive()
+                                && m.attackable_by(self.guid)
+                                && distance(m.position, at) <= radius_yd
+                        })
+                        .map(|m| m.guid)
+                        .collect(),
+                    _ => Vec::new(),
+                };
+                for unit in std::iter::once(target).chain(around) {
+                    self.skills.apply(Aura { unit, ..a }, events);
+                    self.update_speed(unit, events);
+                }
             }
             Effect::AuraAttackPower {
                 duration_ms,
@@ -4144,8 +4315,36 @@ impl InWorld {
                 duration_ms,
                 radius_yd,
                 school,
+                if_crit,
+                energize_pct,
+                attacker_aura_spell_id,
+                burst_radius_yd,
+                burst_school,
             } => {
                 let amount = scaled_share(self.of_pct(pct_of), pct);
+                // Only off a critical strike, and then only when larger than the one up (Warding
+                // Spark).
+                if if_crit
+                    && (how != Landed::Crit
+                        || self
+                            .skills
+                            .shield_left(skill.spell_id)
+                            .is_some_and(|left| left >= amount))
+                {
+                    return;
+                }
+                let ward = Ward {
+                    amount,
+                    energize_pct,
+                    attacker_aura: attacker_aura_spell_id.and_then(|id| {
+                        callings::of(c.calling)
+                            .auras
+                            .iter()
+                            .find(|a| a.spell_id == id)
+                    }),
+                    burst_radius_yd,
+                    burst_school,
+                };
                 let allies: Vec<u64> = self
                     .friendly_players(c)
                     .into_iter()
@@ -4155,8 +4354,43 @@ impl InWorld {
                 for guid in allies {
                     // Only the caster is shielded yet; a friend in the radius gets none.
                     if guid == self.guid {
-                        self.shield(skill.spell_id, amount, duration_ms, school, level, events);
+                        self.warded_shield(
+                            skill.spell_id,
+                            amount,
+                            duration_ms,
+                            school,
+                            ward,
+                            level,
+                            events,
+                        );
                     }
+                }
+            }
+            Effect::Root {
+                aura_spell_id,
+                duration_ms,
+            } => {
+                self.skills
+                    .apply(aura(AuraKind::Root, aura_spell_id, duration_ms, 0), events);
+                if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == target) {
+                    events.extend(mob.halt());
+                }
+            }
+            Effect::RefundCost {
+                chance,
+                pct,
+                full_absorb_pct,
+                absorb_duration_ms,
+            } => {
+                if rng.below(100) < chance {
+                    self.refund_cost(
+                        skill.spell_id,
+                        pct,
+                        full_absorb_pct,
+                        absorb_duration_ms,
+                        level,
+                        events,
+                    );
                 }
             }
             Effect::GroundArea {
@@ -4338,6 +4572,7 @@ impl InWorld {
                 per_stack,
                 heal_allies_pct,
                 radius_yd,
+                spread_yd,
             } => {
                 let at = self
                     .mobs
@@ -4347,6 +4582,12 @@ impl InWorld {
                 let Some(gone) = self.skills.take_aura(target, aura_spell_id, events) else {
                     return;
                 };
+                if spread_yd > 0.0 {
+                    // A fresh copy on another enemy near the target (Catalytic Chain).
+                    self.skills.consumed = Some((gone, duration_ms));
+                    self.spread_consumed(target, spread_yd, events);
+                    self.skills.consumed = None;
+                }
                 let stacks = if per_stack { gone.kind.stacks() } else { 1 };
                 self.update_speed(target, events);
                 // Talents that raise the consume's outcomes (Thermal Shock).
@@ -4405,6 +4646,7 @@ impl InWorld {
                         was_ms: 0,
                         event: crate::callings::ProcEvent::Consume,
                         skill: Some(&skill.key),
+                        plain: skill.replaces.as_deref(),
                         yields_xp: false,
                         target: Some(target),
                         amount: 0,
@@ -4687,6 +4929,7 @@ impl InWorld {
                 was_ms: 0,
                 event: crate::callings::ProcEvent::MeleeHit,
                 skill: None,
+                plain: None,
                 yields_xp: false,
                 target: Some(target),
                 amount: 0,
@@ -4795,6 +5038,7 @@ impl InWorld {
                     was_ms: 0,
                     event,
                     skill: None,
+                    plain: None,
                     yields_xp: false,
                     target,
                     amount: 0,
@@ -4881,7 +5125,12 @@ impl InWorld {
 
     /// `amount` of the living player's own power, logged under `spell_id` as the bar's gain
     /// before its cap; nothing when the bar is already full.
-    fn energize_player(&mut self, spell_id: u32, amount: u32, events: &mut Vec<SessionEvent>) {
+    pub(super) fn energize_player(
+        &mut self,
+        spell_id: u32,
+        amount: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
         let p = &mut self.player;
         let kind = p.power.kind;
         if amount > 0 && p.alive() && p.power.gain(kind, amount) {
@@ -4987,6 +5236,7 @@ impl InWorld {
                     rule: StackRule::Stack,
                     stacks_per_tick: 0,
                     drop_chance: None,
+                    riders: TickRiders::default(),
                 },
                 charges: 0,
             };
@@ -5450,6 +5700,7 @@ impl InWorld {
                     stacks,
                     leech_pct,
                     drop_chance,
+                    riders,
                     ..
                 } => {
                     let per_tick = per_tick * stacks;
@@ -5502,9 +5753,12 @@ impl InWorld {
                                     events,
                                 );
                             }
+                            let level = c.power_level();
+                            self.tick_riders(riders, a.spell_id, level, rng, events);
                             self.skills.ticking = Some(a);
-                            let skill =
-                                crate::talents::skill(c, a.spell_id).map(|s| s.key.as_str());
+                            let cast_by = crate::talents::skill(c, a.spell_id);
+                            let skill = cast_by.map(|s| s.key.as_str());
+                            let plain = cast_by.and_then(|s| s.replaces.as_deref());
                             for event in [
                                 crate::callings::ProcEvent::PeriodicTick,
                                 crate::callings::ProcEvent::DamageDone,
@@ -5514,6 +5768,7 @@ impl InWorld {
                                         was_ms: 0,
                                         event,
                                         skill,
+                                        plain: plain,
                                         yields_xp: false,
                                         target: Some(a.unit),
                                         amount: per_tick,
@@ -5568,6 +5823,30 @@ impl InWorld {
         self.faded(&gone, events);
         self.ground_tick(dt, c, rng, events, ticked);
         self.drop_tick(dt, c, events);
+    }
+
+    /// What one tick of the player's damage over time `spell_id` gives them, once whatever its
+    /// stacks (#506): its aura at its chance (Thermal Feedback), and a percent of their maximum
+    /// power (Kindling Ember).
+    fn tick_riders(
+        &mut self,
+        riders: TickRiders,
+        spell_id: u32,
+        level: u8,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        if let Some(def) = riders.aura {
+            if rng.below(100) < riders.aura_chance {
+                self.grant_aura(def, level, 0, events);
+            }
+        }
+        if riders.energize_pct_of_max > 0 {
+            let p = &self.player.power;
+            let max = p.max / p.kind.stored(1);
+            let gain = scaled_share(max, riders.energize_pct_of_max);
+            self.energize_player(spell_id, gain, events);
+        }
     }
 
     /// Spills a blood droplet 3 to 6 yd (the row's scatter) around the mob `unit`.
@@ -5992,6 +6271,7 @@ impl InWorld {
                 rule: StackRule::Stack,
                 stacks_per_tick: 0,
                 drop_chance: None,
+                riders: TickRiders::default(),
             },
             charges: 0,
         };
@@ -6040,6 +6320,7 @@ impl InWorld {
             kind: AuraKind::Absorb {
                 left: amount,
                 school: None,
+                ward: Ward::default(),
             },
             charges: 0,
         };
@@ -6175,6 +6456,22 @@ impl InWorld {
         level: u8,
         events: &mut Vec<SessionEvent>,
     ) {
+        let ward = Ward::default();
+        self.warded_shield(spell_id, amount, duration_ms, school, ward, level, events);
+    }
+
+    /// [`Self::shield`] with `ward`'s riders (#506).
+    #[allow(clippy::too_many_arguments)]
+    fn warded_shield(
+        &mut self,
+        spell_id: u32,
+        amount: u32,
+        duration_ms: u32,
+        school: Option<School>,
+        ward: Ward,
+        level: u8,
+        events: &mut Vec<SessionEvent>,
+    ) {
         if amount == 0 {
             return;
         }
@@ -6189,10 +6486,115 @@ impl InWorld {
             kind: AuraKind::Absorb {
                 left: amount,
                 school,
+                ward: Ward { amount, ..ward },
             },
             charges: 0,
         };
         self.skills.apply(aura, events);
+    }
+
+    /// A cast's cost comes back (Ley-Line Tap): at a bar that was full before the cast, with
+    /// `full_absorb_pct` set, a shield of that percent of the cost for `absorb_ms` and nothing
+    /// else; otherwise `pct` percent of the cost, under `spell_id`. Whether the shield went up in
+    /// place of the refund.
+    pub(super) fn refund_cost(
+        &mut self,
+        spell_id: u32,
+        pct: u32,
+        full_absorb_pct: u32,
+        absorb_ms: u32,
+        level: u8,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        let cost = self.skills.last_cost;
+        if full_absorb_pct > 0 && self.skills.was_full {
+            let amount = cost * full_absorb_pct / 100;
+            self.shield(spell_id, amount, absorb_ms, None, level, events);
+            return true;
+        }
+        self.energize_player(spell_id, cost * pct / 100, events);
+        false
+    }
+
+    /// The riders of the player's shields that soaked a blow from `from` (#506): power back, the
+    /// attacker's aura on an enemy unit, and a broken shield's burst, which the world tick pays.
+    pub(super) fn warded(&mut self, from: u64, soaks: &[Soak], events: &mut Vec<SessionEvent>) {
+        for soak in soaks {
+            let ward = soak.ward;
+            self.energize_player(soak.spell_id, soak.soaked * ward.energize_pct / 100, events);
+            if let Some(def) = ward.attacker_aura {
+                if self.mobs.iter().any(|m| m.guid == from && m.alive()) {
+                    self.put_aura(def, from, soak.level, events);
+                }
+            }
+            if soak.broke && ward.burst_radius_yd > 0.0 {
+                self.skills.bursts.push(Burst {
+                    spell_id: soak.spell_id,
+                    amount: ward.amount,
+                    radius_yd: ward.burst_radius_yd,
+                    school: ward.burst_school,
+                });
+            }
+        }
+    }
+
+    /// The shields that broke since the last payment burst: each living enemy within the burst's
+    /// yards of the player takes its amount, with its school's miss and crit rolls.
+    pub(super) fn pay_bursts(
+        &mut self,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        for burst in std::mem::take(&mut self.skills.bursts) {
+            let around: Vec<u64> = self
+                .mobs
+                .iter()
+                .filter(|m| {
+                    m.alive()
+                        && m.attackable_by(self.guid)
+                        && distance(m.position, c.position) <= burst.radius_yd
+                })
+                .map(|m| m.guid)
+                .collect();
+            for guid in around {
+                let how = self.spell_verdict(guid, c, rng);
+                if matches!(how, Landed::Missed(_)) {
+                    continue;
+                }
+                self.strike(
+                    burst.spell_id,
+                    guid,
+                    burst.amount,
+                    burst.school,
+                    how,
+                    c,
+                    rng,
+                    events,
+                    ticked,
+                );
+            }
+        }
+    }
+
+    /// A magic blow at `target` with no skill behind it (a shield's burst): the level-based miss,
+    /// then the player's crit chance.
+    fn spell_verdict(&self, target: u64, c: &Char, rng: &mut Rng) -> Landed {
+        let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
+            return Landed::Hit;
+        };
+        let stats = buffed(&self.player.stats, &self.skills);
+        let from_front = in_front(mob.orientation, mob.position, c.position);
+        let offense = PlayerOffense {
+            crit_pct: stats.crit_pct,
+        };
+        let (table, crit) = ability_table(offense, mob.defense(), from_front, true);
+        match table.outcome(rng.below(ROLL)) {
+            Outcome::Miss => Landed::Missed(SPELL_MISS_MISS),
+            _ if rng.below(ROLL) < crit => Landed::Crit,
+            _ => Landed::Hit,
+        }
     }
 
     /// Puts the aura row `def` on `unit`, one aura per effect.
@@ -6246,6 +6648,7 @@ impl InWorld {
                         rule: StackRule::Stack,
                         stacks_per_tick: 0,
                         drop_chance: None,
+                        riders: TickRiders::default(),
                     }
                 }
                 callings::AuraEffect::ModHitChance { pct } => AuraKind::HitChance { pct: *pct },
@@ -6683,6 +7086,7 @@ mod tests {
             kind: AuraKind::Absorb {
                 left: 40,
                 school: None,
+                ward: Ward::default(),
             },
             charges: 0,
         };
@@ -6715,6 +7119,7 @@ mod tests {
             kind: AuraKind::Absorb {
                 left: 50,
                 school: None,
+                ward: Ward::default(),
             },
             charges: 0,
         };
@@ -6746,6 +7151,7 @@ mod tests {
             kind: AuraKind::Absorb {
                 left: 40,
                 school: Some(School::Physical),
+                ward: Ward::default(),
             },
             charges: 0,
         };

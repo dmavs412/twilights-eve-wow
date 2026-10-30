@@ -3028,6 +3028,684 @@
    }
   },
   {
+   "spell_id": 1000490,
+   "calling": "initiate",
+   "key": "ley_line_tap",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley-Line Tap",
+    "cost_percent": 5.0,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Your primary casted filler. Deals Arcane damage. Its critical strike chance naturally scales higher based on how full your current mana pool is. Each cast has a 50% chance to refund its mana cost. At full mana, it shields you for twice its cost for 10 sec instead.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_ManaBurn",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 31,
+      "per_level": 2.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 1264,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000491,
+   "calling": "initiate",
+   "key": "arcane_substrate",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Substrate",
+    "cost_percent": 5.0,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Your primary casted filler. Deals Arcane damage. Its critical strike chance naturally scales higher based on how full your current mana pool is. Each cast also makes your next Biting Cold cast 0.5 sec faster and your next Searing Ember burn 5 sec longer.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Fire_MeteorStorm",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 31,
+      "per_level": 2.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 1264,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000492,
+   "calling": "initiate",
+   "key": "warding_spark",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Warding Spark",
+    "cost_percent": 5.0,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Your primary casted filler. Deals Arcane damage. Its critical strike chance naturally scales higher based on how full your current mana pool is. A critical hit also wards you for 50% of its damage for 8 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Nature_AstralRecalGroup",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 31,
+      "per_level": 2.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 1264,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000493,
+   "calling": "initiate",
+   "key": "siphoning_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Siphoning Ward",
+    "cooldown_ms": 30000,
+    "cost_percent": 10.0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec. Half of the damage it absorbs comes back to you as mana.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Nature_Purge",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 968,
+    "duration_index": 18
+   }
+  },
+  {
+   "spell_id": 1000494,
+   "calling": "initiate",
+   "key": "frost_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Frost Ward",
+    "cooldown_ms": 30000,
+    "cost_percent": 10.0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec. An enemy whose damage it absorbs is slowed by 50% for 4 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Frost_FrostWard",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 968,
+    "duration_index": 18
+   }
+  },
+  {
+   "spell_id": 1000495,
+   "calling": "initiate",
+   "key": "volatile_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Volatile Ward",
+    "cooldown_ms": 30000,
+    "cost_percent": 10.0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec. When the ward breaks, it bursts for the damage it absorbed as Arcane damage to enemies within 8 yards.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Nature_WispSplode",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 968,
+    "duration_index": 18
+   }
+  },
+  {
+   "spell_id": 1000496,
+   "calling": "initiate",
+   "key": "thermal_feedback",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Thermal Feedback",
+    "cost_percent": 4.0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant cast. Deals low initial Fire damage and leaves a stacking burn DoT on the target. Each tick of the burn has a 10% chance to make your next Biting Cold instant and free.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Fire_Flare",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 21.5,
+      "per_level": 1.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 67,
+    "speed": 24.0,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000497,
+   "calling": "initiate",
+   "key": "smoldering_ember",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Smoldering Ember",
+    "cost_percent": 4.0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant cast. Deals low initial Fire damage and leaves a stacking burn DoT on the target. A burning enemy deals 15% less damage to you.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Fire_Incinerate",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 21.5,
+      "per_level": 1.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 67,
+    "speed": 24.0,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000498,
+   "calling": "initiate",
+   "key": "kindling_ember",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Kindling Ember",
+    "cost_percent": 4.0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant cast. Deals low initial Fire damage and leaves a stacking burn DoT on the target. Each tick of the burn returns 3% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Fire_MasterOfElements",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 21.5,
+      "per_level": 1.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 67,
+    "speed": 24.0,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000499,
+   "calling": "initiate",
+   "key": "combustion_engine",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Combustion Engine",
+    "cost_percent": 8.0,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 4,
+    "prevention_type": 1,
+    "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 6 seconds. Deals 45% more damage to a target burning from your Searing Ember.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Fire_FlameShock",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 15,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 13,
+    "speed": 28.0,
+    "range_index": 4,
+    "cast_time_index": 5,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000500,
+   "calling": "initiate",
+   "key": "splintering_cold",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Splintering Cold",
+    "cost_percent": 8.0,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 4,
+    "prevention_type": 1,
+    "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 6 seconds. The slow also lands on every enemy within 8 yards of the target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Frost_IceShard",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 15,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 13,
+    "speed": 28.0,
+    "range_index": 4,
+    "cast_time_index": 5,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000501,
+   "calling": "initiate",
+   "key": "frostbite",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Frostbite",
+    "cost_percent": 8.0,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 4,
+    "prevention_type": 1,
+    "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 6 seconds. A target that was already slowed is also rooted for 2 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Frost_FrostArmor",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 15,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 26
+     }
+    ],
+    "visual": 13,
+    "speed": 28.0,
+    "range_index": 4,
+    "cast_time_index": 5,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000502,
+   "calling": "initiate",
+   "key": "shattered_blink",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Shattered Blink",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 4 seconds.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Frost_FreezingBreath",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000503,
+   "calling": "initiate",
+   "key": "arcane_momentum",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Momentum",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "After using Blink, the damage of your Ley-Spark is increased by 45% for 5 seconds.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_Teleport",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000504,
+   "calling": "initiate",
+   "key": "catalytic_resonance",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Catalytic Resonance",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Whenever Catalyst consumes a Searing Ember or a Biting Cold, you gain 10% increased spell damage for 8 seconds.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Nature_Lightning",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000505,
+   "calling": "initiate",
+   "key": "thermal_shock",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Thermal Shock",
+    "cost": 0.0,
+    "cooldown_ms": 12000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds 13% of your maximum Mana. If it consumes a Cold, it deals a massive burst of shatter damage. The shatter deals 30% more than Catalyst's.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Frost_FrostShock",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 1263,
+    "range_index": 4,
+    "duration_index": 105
+   }
+  },
+  {
+   "spell_id": 1000506,
+   "calling": "initiate",
+   "key": "deep_freeze",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Deep Freeze",
+    "cost": 0.0,
+    "cooldown_ms": 12000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds 10% of your maximum Mana. If it consumes a Cold, it deals a massive burst of shatter damage. Consuming a Biting Cold also stuns the target for 3 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Frost_Glacier",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 1263,
+    "range_index": 4,
+    "duration_index": 105
+   }
+  },
+  {
+   "spell_id": 1000507,
+   "calling": "initiate",
+   "key": "catalytic_chain",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Catalytic Chain",
+    "cost": 0.0,
+    "cooldown_ms": 12000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds 10% of your maximum Mana. If it consumes a Cold, it deals a massive burst of shatter damage. Each Ember or Cold it consumes is copied onto another enemy within 10 yards.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Fire_Fire",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 1263,
+    "range_index": 4,
+    "duration_index": 105
+   }
+  },
+  {
    "spell_id": 1000300,
    "calling": "ranger",
    "key": "auto_shot",
@@ -4379,7 +5057,7 @@
      1,
      0
     ],
-    "icon": "Interface\\Icons\\Spell_Fire_FlameBolt",
+    "icon": "Interface\\Icons\\Spell_Fire_Flare",
     "dbc_effects": [
      {
       "effect": 3,
@@ -4394,7 +5072,7 @@
   {
    "spell_id": 1000261,
    "calling": "initiate",
-   "key": "aura_arcane_substrate_cold_1",
+   "key": "aura_arcane_substrate_cold_5",
    "rank": 1,
    "fields": {
     "implicit_targets": [
@@ -4410,14 +5088,14 @@
      }
     ],
     "name": "Arcane Substrate",
-    "aura_description": "Your next Biting Cold casts 0.1 sec faster.",
+    "aura_description": "Your next Biting Cold casts 0.5 sec faster.",
     "visual": 2736
    }
   },
   {
    "spell_id": 1000262,
    "calling": "initiate",
-   "key": "aura_arcane_substrate_ember_1",
+   "key": "aura_arcane_substrate_ember_5",
    "rank": 1,
    "fields": {
     "implicit_targets": [
@@ -4433,14 +5111,14 @@
      }
     ],
     "name": "Arcane Substrate",
-    "aura_description": "Your next Searing Ember burns 1 sec longer.",
+    "aura_description": "Your next Searing Ember burns 5 sec longer.",
     "visual": 7634
    }
   },
   {
    "spell_id": 1000268,
    "calling": "initiate",
-   "key": "aura_shattered_blink_1",
+   "key": "aura_shattered_blink_2",
    "rank": 1,
    "fields": {
     "implicit_targets": [
@@ -4451,126 +5129,15 @@
     "mechanic": 7,
     "dbc_effects": [
      {
-      "effect": 3,
+      "effect": 6,
       "base": 0,
-      "per_level": 0
+      "per_level": 0,
+      "aura": 26
      }
     ],
     "name": "Shattered Blink",
     "aura_description": "Frozen in place.",
     "visual": 17
-   }
-  },
-  {
-   "spell_id": 1000274,
-   "calling": "initiate",
-   "key": "aura_elemental_convergence",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Fire_Fireball02",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Elemental Convergence",
-    "aura_description": "Your next Catalyst is a critical strike.",
-    "visual": 2253,
-    "speed": 24.0
-   }
-  },
-  {
-   "spell_id": 1000285,
-   "calling": "initiate",
-   "key": "aura_ley_line_attunement",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Shadow_SiphonMana",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Attunement",
-    "aura_description": "Attunement charges. At 3, your next Biting Cold or Catalyst costs no mana."
-   }
-  },
-  {
-   "spell_id": 1000286,
-   "calling": "initiate",
-   "key": "aura_ley_line_attunement_ready",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Shadow_SiphonMana",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Attuned",
-    "aura_description": "Your next Biting Cold or Catalyst costs no mana."
-   }
-  },
-  {
-   "spell_id": 1000290,
-   "calling": "initiate",
-   "key": "aura_arcane_momentum_1",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Shadow_Teleport",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Arcane Momentum",
-    "aura_description": "Ley-Spark deals 15% more damage."
-   }
-  },
-  {
-   "spell_id": 1000291,
-   "calling": "initiate",
-   "key": "aura_arcane_momentum_2",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Shadow_Teleport",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Arcane Momentum",
-    "aura_description": "Ley-Spark deals 30% more damage."
    }
   },
   {
@@ -4598,7 +5165,7 @@
   {
    "spell_id": 1000298,
    "calling": "initiate",
-   "key": "aura_catalytic_resonance_1",
+   "key": "aura_catalytic_resonance_5",
    "rank": 1,
    "fields": {
     "implicit_targets": [
@@ -4614,21 +5181,21 @@
      }
     ],
     "name": "Catalytic Resonance",
-    "aura_description": "Spell damage increased by 2%.",
+    "aura_description": "Spell damage increased by 10%.",
     "visual": 4370
    }
   },
   {
-   "spell_id": 1000299,
+   "spell_id": 1000508,
    "calling": "initiate",
-   "key": "aura_mana_surge",
+   "key": "aura_frost_ward",
    "rank": 1,
    "fields": {
     "implicit_targets": [
      1,
      0
     ],
-    "icon": "Interface\\Icons\\Spell_Nature_EnchantArmor",
+    "icon": "Interface\\Icons\\Spell_Frost_FrostWard",
     "dbc_effects": [
      {
       "effect": 3,
@@ -4636,9 +5203,10 @@
       "per_level": 0
      }
     ],
-    "name": "Mana Surge",
-    "aura_description": "Ley-Spark has no cast time.",
-    "visual": 4600
+    "name": "Frost Ward",
+    "aura_description": "Movement speed slowed by 50%.",
+    "visual": 13,
+    "speed": 28.0
    }
   },
   {

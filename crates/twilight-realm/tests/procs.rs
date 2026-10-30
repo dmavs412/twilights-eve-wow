@@ -16,6 +16,7 @@ fn a_cast_proc_filtered_to_one_skill_fires_only_for_that_skill() {
     let cast = |skill| Happened {
         event: ProcEvent::Cast,
         skill,
+        plain: None,
         yields_xp: false,
         target: None,
         amount: 0,
@@ -27,6 +28,7 @@ fn a_cast_proc_filtered_to_one_skill_fires_only_for_that_skill() {
     assert!(!trigger.fires(&Happened {
         event: ProcEvent::Kill,
         skill: None,
+        plain: None,
         yields_xp: true,
         target: None,
         amount: 0,
@@ -40,6 +42,33 @@ fn a_cast_proc_filtered_to_one_skill_fires_only_for_that_skill() {
     assert!(unfiltered.fires(&cast(Some("heroic_strike"))));
 }
 
+/// A proc filtered to a skill fires for a cast of one of its Skill Choices, which answers to it
+/// (#506), and not for another skill's choice.
+#[test]
+fn a_cast_proc_filtered_to_a_skill_fires_for_its_skill_choice() {
+    let trigger = Trigger {
+        on: ProcEvent::Consume,
+        skill: Some("catalyst"),
+        yields_xp: false,
+        school: None,
+        ms: 0,
+    };
+    let consume = |skill, plain| Happened {
+        event: ProcEvent::Consume,
+        skill: Some(skill),
+        plain,
+        yields_xp: false,
+        target: None,
+        amount: 0,
+        school: None,
+        was_ms: 0,
+    };
+    assert!(trigger.fires(&consume("thermal_shock", Some("catalyst"))));
+    assert!(trigger.fires(&consume("catalyst", None)));
+    assert!(!trigger.fires(&consume("frostbite", Some("biting_cold"))));
+    assert!(!trigger.fires(&consume("thermal_shock", None)));
+}
+
 /// `moving_for` fires each time the moving clock crosses another `ms`; `still_for` only the first
 /// time the still clock reaches it.
 #[test]
@@ -47,6 +76,7 @@ fn movement_triggers_fire_as_their_clock_crosses_ms() {
     let tick = |event, was_ms, amount| Happened {
         event,
         skill: None,
+        plain: None,
         yields_xp: false,
         target: None,
         amount,

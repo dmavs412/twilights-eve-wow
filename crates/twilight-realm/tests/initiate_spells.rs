@@ -300,6 +300,113 @@ fn the_shipped_ember_stacks_to_three_and_biting_cold_snares_by_half() {
             pct: -50,
             duration_ms: 6000,
             aura_spell_id: Some(a),
+            ..
         } if *a == spell("initiate", "aura_biting_cold")
     )));
+}
+
+// Searing Ember's and Biting Cold's Skill Choices (#506), played by a shipped Initiate at 24.
+
+use common::cutthroat::energized;
+use common::initiate::*;
+use common::vanguard::STURDY;
+
+/// While Smoldering Ember burns the mob, each of its blows at the Initiate takes 15% less of their
+/// health than its report (rounded down); once the burn ends, the whole of it. Under plain
+/// Searing Ember every blow takes the whole of it.
+#[test]
+fn a_mob_burning_from_smoldering_ember_swings_for_15_percent_less_at_the_initiate() {
+    let smoldering = choice("initiate", "searing_ember", "smoldering_ember");
+    let burn = initiate("aura_searing_ember");
+    let mut s = initiate_scene(3, &[("searing_ember", smoldering)], STURDY);
+    let (me, mob) = (s.me, s.mob.guid);
+    cast_through(&mut s.realm, &mut s.view, smoldering, mob);
+    let seen = blows(&mut s.realm, &mut s.view, me, 18.0, |v| {
+        v.aura(mob, burn).is_some()
+    });
+    let (burning, after): (Vec<&Blow>, Vec<&Blow>) = seen.iter().partition(|b| b.watched);
+    assert!(!burning.is_empty() && !after.is_empty(), "{seen:?}");
+    for b in burning {
+        assert_eq!(b.lost, b.reported * 85 / 100, "{b:?}");
+    }
+    for b in after {
+        assert_eq!(b.lost, b.reported, "{b:?}");
+    }
+
+    let plain = initiate("searing_ember");
+    let mut s = initiate_scene(3, &[], STURDY);
+    let (me, mob) = (s.me, s.mob.guid);
+    cast_through(&mut s.realm, &mut s.view, plain, mob);
+    let blows = blows(&mut s.realm, &mut s.view, me, 12.0, |_| true);
+    assert!(!blows.is_empty());
+    assert!(blows.iter().all(|b| b.lost == b.reported), "{blows:?}");
+}
+
+/// Each Kindling Ember tick that finds the bar below full gives back 3% of maximum mana, logged
+/// under the burn; plain Searing Ember's ticks give nothing.
+#[test]
+fn kindling_embers_tick_gives_3_percent_of_max_mana() {
+    let kindling = choice("initiate", "searing_ember", "kindling_ember");
+    let burn = initiate("aura_searing_ember");
+    let mut s = initiate_scene(3, &[("searing_ember", kindling)], STURDY);
+    let (me, mob) = (s.me, s.mob.guid);
+    cast_through(&mut s.realm, &mut s.view, kindling, mob);
+    let events = s.view.run(&mut s.realm, 13.0);
+    let back = energized(&events, burn);
+    let want = (max_mana(&s.view, me) as f32 * 0.03).round() as u32;
+    assert!(!back.is_empty(), "a tick found room on the bar");
+    assert!(
+        back.iter().all(|&m| m == want),
+        "{back:?}, want {want} each"
+    );
+    assert!(
+        back.len() <= ticks(&events, mob, burn).len(),
+        "once a tick at most"
+    );
+
+    let plain = initiate("searing_ember");
+    let mut s = initiate_scene(3, &[], STURDY);
+    cast_through(&mut s.realm, &mut s.view, plain, s.mob.guid);
+    let events = s.view.run(&mut s.realm, 13.0);
+    assert!(energized(&events, burn).is_empty());
+}
+
+/// Splintering Cold's slow lands on its target and on the other pulled mob beside it, and not on
+/// a campmate idle at its spawn about 12 yd from the target; plain Biting Cold slows only its
+/// target.
+#[test]
+fn splintering_cold_slows_a_second_mob_within_8_yards_and_leaves_one_at_12_alone() {
+    let splinter = choice("initiate", "biting_cold", "splintering_cold");
+    let slow = initiate("aura_biting_cold");
+    let mut p = pair(3, &[("biting_cold", splinter)]);
+    let [near, other] = p.mobs.clone();
+    cast_through(&mut p.realm, &mut p.view, splinter, near.guid);
+    assert!(p.view.aura(near.guid, slow).is_some(), "the target");
+    assert!(p.view.aura(other.guid, slow).is_some(), "the mob beside it");
+
+    // The camp's first mob, idle at its spawn, as the target: its campmates stand 12.2 to 12.8 yd
+    // from it (`content/barrens.toml`, 9000036 to 9000040), and none is slowed.
+    let mut s = initiate_scene(3, &[("biting_cold", splinter)], EAST_CAMP);
+    let (me, target) = (s.me, s.mob.guid);
+    cast_through(&mut s.realm, &mut s.view, splinter, target);
+    assert!(s.view.aura(target, slow).is_some(), "the target");
+    let others: Vec<u64> = s
+        .view
+        .objects
+        .keys()
+        .copied()
+        .filter(|&g| g != target && g != me)
+        .collect();
+    assert!(!others.is_empty(), "the campmates are in view");
+    assert!(
+        others.iter().all(|&g| s.view.aura(g, slow).is_none()),
+        "no campmate 12 yd off is slowed"
+    );
+
+    let plain = initiate("biting_cold");
+    let mut p = pair(3, &[]);
+    let [near, other] = p.mobs.clone();
+    cast_through(&mut p.realm, &mut p.view, plain, near.guid);
+    assert!(p.view.aura(near.guid, slow).is_some(), "the target");
+    assert!(p.view.aura(other.guid, slow).is_none(), "plain slows one");
 }

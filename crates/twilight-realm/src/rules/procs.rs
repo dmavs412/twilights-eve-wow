@@ -24,6 +24,9 @@ pub struct Happened<'a> {
     pub event: ProcEvent,
     /// The skill cast, for a cast.
     pub skill: Option<&'a str>,
+    /// The skill a Skill Choice cast replaces, which a trigger naming that skill answers to
+    /// as well.
+    pub plain: Option<&'a str>,
     /// Whether the target of a kill yielded experience.
     pub yields_xp: bool,
     /// Who a combo point from this proc lands on: the target of a finisher, or the mob the
@@ -51,7 +54,9 @@ impl Trigger<'_> {
         };
         self.on == happened.event
             && waited
-            && self.skill.is_none_or(|s| happened.skill == Some(s))
+            && self
+                .skill
+                .is_none_or(|s| happened.skill == Some(s) || happened.plain == Some(s))
             && (!self.yields_xp || happened.yields_xp)
             && self.school.is_none_or(|s| happened.school == Some(s))
     }

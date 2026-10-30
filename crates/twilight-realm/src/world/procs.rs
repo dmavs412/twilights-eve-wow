@@ -54,10 +54,8 @@ impl InWorld {
             } else if proc.chance < 100 && rng.below(100) >= proc.chance {
                 continue;
             }
-            // A shield at a full bar, instead of the rest; the rest, without it, otherwise.
-            let shield =
-                proc.absorb_cost_pct > 0 && (!proc.absorb_at_full_power || self.skills.was_full);
-            if shield {
+            // A shield of a share of the cast, whatever the bar (Coagulation).
+            if proc.absorb_cost_pct > 0 && !proc.absorb_at_full_power {
                 let of = proc
                     .absorb_of
                     .map_or(self.skills.last_cost, |of| self.skills.of(of));
@@ -71,7 +69,22 @@ impl InWorld {
                     events,
                 );
             }
-            if proc.absorb_at_full_power && self.skills.was_full {
+            // The cast's cost back, or at a bar that was full a shield instead of the rest: the
+            // helper Ley-Line Tap's `refund_cost` effect calls too.
+            let full_absorb_pct = if proc.absorb_at_full_power {
+                proc.absorb_cost_pct
+            } else {
+                0
+            };
+            let shielded = self.refund_cost(
+                proc.spell_id,
+                proc.refund_cost_pct,
+                full_absorb_pct,
+                proc.absorb_ms,
+                c.power_level(),
+                events,
+            );
+            if shielded {
                 continue;
             }
             if proc.spread_aura > 0.0 {
@@ -87,21 +100,9 @@ impl InWorld {
                 }
             }
             let s = &self.player.stats;
-            let refund = self.skills.last_cost * proc.refund_cost_pct / 100
-                + crate::rules::power::base_mana(s.class, s.level) * proc.energize_pct_of_base
-                    / 100;
-            let p = &mut self.player;
-            let kind = p.power.kind;
-            if refund > 0 && p.alive() && p.power.gain(kind, refund) {
-                events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
-                    target: self.guid,
-                    caster: self.guid,
-                    spell_id: proc.spell_id,
-                    power: kind.id(),
-                    amount: refund,
-                }));
-                events.push(values(self.guid, &[p.power.field()]));
-            }
+            let base =
+                crate::rules::power::base_mana(s.class, s.level) * proc.energize_pct_of_base / 100;
+            self.energize_player(proc.spell_id, base, events);
             if proc.heal_pct > 0 {
                 let max = cast::buffed(&self.player.stats, &self.skills).max_health;
                 let p = &mut self.player;

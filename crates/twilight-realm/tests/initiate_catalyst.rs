@@ -221,3 +221,151 @@ fn the_shipped_catalyst_shatters_for_twice_biting_colds_frost_hit() {
         } if *aura_spell_id == spell("initiate", "aura_searing_ember")
     ));
 }
+
+// Catalyst's Skill Choices and the passive Catalytic Resonance (#506), played by a shipped
+// Initiate at 24 on the level 8 or 9 mob south of the Crossroads, or on two mobs of the camp east
+// of the Crossroads.
+
+use common::cutthroat::energized;
+use common::initiate::*;
+use common::vanguard::{Scene, STURDY};
+
+/// Puts Biting Cold and Searing Ember on the scene's mob: the Cold's hit, when both landed and the
+/// Cold did not crit.
+fn cold_and_ember(s: &mut Scene) -> Option<u32> {
+    let (cold, ember) = (initiate("biting_cold"), initiate("searing_ember"));
+    let mob = s.mob.guid;
+    let events = cast_through(&mut s.realm, &mut s.view, cold, mob);
+    cast_through(&mut s.realm, &mut s.view, ember, mob);
+    let burning = s.view.aura(mob, initiate("aura_searing_ember")).is_some();
+    plain_hits_on(&events, cold, mob)
+        .first()
+        .copied()
+        .filter(|_| burning && s.view.aura(mob, cold).is_some())
+}
+
+/// Thermal Shock's shatter is 2.6 times Biting Cold's hit (rounded) and its Ember refund 13% of
+/// maximum mana; plain Catalyst's are twice the hit and 10%.
+#[test]
+fn thermal_shocks_shatter_is_2_6_times_biting_colds_hit_and_its_refund_13_percent_of_max_mana() {
+    let shock = choice("initiate", "catalyst", "thermal_shock");
+    for (spell, rows, times, pct) in [
+        (shock, vec![("catalyst", shock)], 2.6, 0.13),
+        (initiate("catalyst"), vec![], 2.0, 0.10),
+    ] {
+        let mut seen = 0;
+        for seed in 0..10 {
+            let mut s = initiate_scene(seed, &rows, STURDY);
+            let (me, mob) = (s.me, s.mob.guid);
+            let Some(cold) = cold_and_ember(&mut s) else {
+                continue;
+            };
+            let events = cast_through(&mut s.realm, &mut s.view, spell, mob);
+            let want = (max_mana(&s.view, me) as f32 * pct).round() as u32;
+            assert_eq!(energized(&events, spell), [want], "seed {seed}: {rows:?}");
+            let Some(&shatter) = plain_hits_on(&events, spell, mob).first() else {
+                continue;
+            };
+            assert_eq!(
+                shatter,
+                (cold as f32 * times).round() as u32,
+                "seed {seed}: {rows:?}"
+            );
+            seen += 1;
+        }
+        assert!(seen > 0, "{rows:?}: a shatter that did not crit");
+    }
+}
+
+/// Deep Freeze stuns the mob for 3 s under the choice's stun aura after consuming a Biting Cold,
+/// and stuns nothing after consuming only a Searing Ember; plain Catalyst stuns nothing.
+#[test]
+fn deep_freeze_stuns_for_3_s_after_consuming_a_cold_and_not_after_only_an_ember() {
+    let freeze = choice("initiate", "catalyst", "deep_freeze");
+    let twilight_realm::callings::Effect::Stun {
+        aura_spell_id: stun,
+        duration_ms,
+        ..
+    } = choice_skill("catalyst", "deep_freeze").effects[2]
+    else {
+        panic!("Deep Freeze's third effect is its stun");
+    };
+    let (cold, ember) = (initiate("biting_cold"), initiate("searing_ember"));
+
+    let mut s = initiate_scene(3, &[("catalyst", freeze)], STURDY);
+    let mob = s.mob.guid;
+    cast_through(&mut s.realm, &mut s.view, cold, mob);
+    cast_through(&mut s.realm, &mut s.view, freeze, mob);
+    assert!(s.view.aura(mob, cold).is_none(), "the Cold is consumed");
+    assert!(s.view.aura(mob, stun).is_some(), "stunned");
+    let secs = lasts(&mut s.realm, &mut s.view, mob, stun, 5.0);
+    let want = duration_ms as f32 / 1000.0;
+    assert!((secs - want).abs() <= 0.15, "stunned {secs} s, want {want}");
+
+    let mut s = initiate_scene(3, &[("catalyst", freeze)], STURDY);
+    let mob = s.mob.guid;
+    cast_through(&mut s.realm, &mut s.view, ember, mob);
+    cast_through(&mut s.realm, &mut s.view, freeze, mob);
+    assert!(
+        s.view.aura(mob, stun).is_none(),
+        "an Ember alone stuns nothing"
+    );
+
+    let mut s = initiate_scene(3, &[], STURDY);
+    let mob = s.mob.guid;
+    cast_through(&mut s.realm, &mut s.view, cold, mob);
+    cast_through(&mut s.realm, &mut s.view, initiate("catalyst"), mob);
+    assert!(
+        s.view.aura(mob, stun).is_none(),
+        "plain Catalyst stuns nothing"
+    );
+}
+
+/// Catalytic Chain consumes the Ember on one of two pulled mobs and puts a fresh one on the other
+/// beside it; plain Catalyst leaves the other clean.
+#[test]
+fn catalytic_chain_puts_a_consumed_ember_on_a_second_mob_within_10_yards() {
+    let chain = choice("initiate", "catalyst", "catalytic_chain");
+    let (ember, burn) = (initiate("searing_ember"), initiate("aura_searing_ember"));
+    for (spell, rows, spreads) in [
+        (chain, vec![("catalyst", chain)], true),
+        (initiate("catalyst"), vec![], false),
+    ] {
+        let mut p = pair(3, &rows);
+        let [target, other] = p.mobs.clone();
+        cast_through(&mut p.realm, &mut p.view, ember, target.guid);
+        assert!(p.view.aura(other.guid, burn).is_none(), "{rows:?}: clean");
+        cast_through(&mut p.realm, &mut p.view, spell, target.guid);
+        assert!(
+            p.view.aura(target.guid, burn).is_none(),
+            "{rows:?}: consumed"
+        );
+        assert_eq!(p.view.aura(other.guid, burn).is_some(), spreads, "{rows:?}");
+    }
+}
+
+/// Under Catalytic Resonance a Catalyst that consumes an Ember grants its buff, and so does a
+/// Skill Choice of Catalyst (Thermal Shock): the proc's `skill=catalyst` answers to it. Without
+/// the Talent, no buff.
+#[test]
+fn catalytic_resonance_follows_catalyst_and_its_skill_choice() {
+    let resonance = choice("initiate", "passives", "catalytic_resonance");
+    let shock = choice("initiate", "catalyst", "thermal_shock");
+    let buff = initiate("aura_catalytic_resonance_5");
+    let ember = initiate("searing_ember");
+    for (spell, rows, granted) in [
+        (initiate("catalyst"), vec![("passives", resonance)], true),
+        (
+            shock,
+            vec![("passives", resonance), ("catalyst", shock)],
+            true,
+        ),
+        (initiate("catalyst"), vec![], false),
+    ] {
+        let mut s = initiate_scene(3, &rows, STURDY);
+        let (me, mob) = (s.me, s.mob.guid);
+        cast_through(&mut s.realm, &mut s.view, ember, mob);
+        cast_through(&mut s.realm, &mut s.view, spell, mob);
+        assert_eq!(s.view.aura(me, buff).is_some(), granted, "{rows:?}");
+    }
+}

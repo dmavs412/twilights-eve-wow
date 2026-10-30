@@ -831,6 +831,7 @@ impl InWorld {
         }
         self.pay_reflected(c, rng, events, &mut ticked);
         self.skills_tick(dt, wall, c, rng, events, &mut ticked);
+        self.pay_bursts(c, rng, events, &mut ticked);
         self.movement_tick(dt, c, rng, events, &mut ticked);
         self.fear_tick(dt, host, c, rng, events);
         self.root_tick(dt, events);
@@ -1455,7 +1456,10 @@ impl InWorld {
         // The player's own damage-taken auras: less inside their Consecration.
         let damage =
             crate::mobs::changed_by(damage, self.skills.damage_taken_pct(self.guid, school));
-        let damage = self.skills.absorb(damage, school, events);
+        // Less from a foe the player's burn weakens (Smoldering Ember).
+        let damage = crate::mobs::changed_by(damage, -(self.skills.weaken_pct(from) as i32));
+        let (damage, soaks) = self.skills.soak_on(self.guid, damage, school, events);
+        self.warded(from, &soaks, events);
         self.fed_reflect(from, damage, school);
         self.hurt |= damage > 0;
         let p = &mut self.player;
@@ -1610,6 +1614,7 @@ impl InWorld {
                 was_ms: 0,
                 event: crate::callings::ProcEvent::Kill,
                 skill: None,
+                plain: None,
                 yields_xp: base_xp > 0,
                 target: None,
                 amount: 0,

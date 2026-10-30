@@ -13,7 +13,7 @@ use serde_json::{Map, Value};
 use crate::callings::{
     self, Armour, AuraDef, AuraEffect, AuraRow, CallingDef, ClientSpellMod, Effect, RowChoice,
     RowKind, Skill, SpellMeta, StackAura, StatProfile, TalentDef, TalentEffect, TalentRow, Target,
-    TierBonus, WeaponKind,
+    TargetAura, TierBonus, WeaponKind,
 };
 use crate::rules::power::PowerKind;
 
@@ -311,8 +311,16 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
             }
         }
     }
-    // A ground area's auras (`enemy_aura=key`, `ally_aura=key`) by their rows' spell ids.
-    for side in ["enemy_aura", "ally_aura"] {
+    // A ground area's auras (`enemy_aura=key`, `ally_aura=key`), and the aura rows a shield puts on
+    // its attacker, a burn's tick gives its caster and a hit is stronger against (#506), by their
+    // rows' spell ids.
+    for side in [
+        "enemy_aura",
+        "ally_aura",
+        "attacker_aura",
+        "tick_aura",
+        "vs_aura",
+    ] {
         if let Some(key) = object.remove(side) {
             let aura = auras
                 .iter()
@@ -351,10 +359,31 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
     serde_json::from_value(Value::Object(object)).ok()
 }
 
+/// What an effect's `requires_target_aura=key|slowed` asks of the target: `Some(None)` for no ask,
+/// `None` for an aura row that is missing or unmodelled.
+fn target_aura(e: &GenEffect, auras: &[GenAura]) -> Option<Option<TargetAura>> {
+    let Some(key) = e.params.get("requires_target_aura") else {
+        return Some(None);
+    };
+    if key.as_str() == Some("slowed") {
+        return Some(Some(TargetAura::Slowed));
+    }
+    let aura = auras
+        .iter()
+        .find(|a| a.modelled && key.as_str() == Some(a.key.as_str()))?;
+    Some(Some(TargetAura::Aura(aura.spell_id)))
+}
+
 /// The skill, or `None` while it has no effects or any is a kind the realm lacks.
 fn skill(g: &GenSkill, auras: &[GenAura]) -> Option<Skill> {
     let effects: Option<Vec<Effect>> = g.effects.iter().map(|e| effect(e, auras)).collect();
     let effects = effects.filter(|e| !e.is_empty())?;
+    let requires: Option<Vec<Option<TargetAura>>> =
+        g.effects.iter().map(|e| target_aura(e, auras)).collect();
+    let mut requires = requires?;
+    while requires.last() == Some(&None) {
+        requires.pop();
+    }
     Some(Skill {
         key: g.key.clone(),
         name: g.name.clone(),
@@ -378,6 +407,7 @@ fn skill(g: &GenSkill, auras: &[GenAura]) -> Option<Skill> {
         extra_target_radius_yd: 0.0,
         borrowed: None,
         effects,
+        requires_target_aura: requires,
         meta: g.meta.clone(),
         replaces: g.variant_of.clone(),
     })

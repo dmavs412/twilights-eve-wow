@@ -49,6 +49,7 @@ KNOWN_KINDS = {
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
     "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike", "pickup",
+    "refund_cost",
 }
 ROW_KINDS = ("skill", "talent", "calling", "aura")
 # Talent Rows (ADR 0028): a `talent` row with `variant_of` is a Skill Choice of that skill, one
@@ -128,7 +129,7 @@ ART_ICON_DIR = "Interface\\Icons\\Twilight\\"
 # kind, a realm-only one, is a dummy effect (3) so `$sN` still reads its number.
 CLIENT_EFFECTS_OF = {
     "school_damage": (2, 0), "weapon_strike": (58, 0), "heal": (10, 0), "energize": (30, 0),
-    "periodic_damage": (6, 3), "periodic_heal": (6, 8), "stun": (6, 12), "absorb": (6, 69),
+    "periodic_damage": (6, 3), "periodic_heal": (6, 8), "stun": (6, 12), "absorb": (6, 69), "root": (6, 26),
 }
 DUMMY_EFFECT = (3, 0)
 # The same numbers for a Creature Spell's effect kinds: a curse, a heal, a snare.
@@ -623,6 +624,12 @@ def whole(text: str, where: str) -> int:
     return value
 
 
+def is_whole(value: object, high: int | None = None) -> bool:
+    """Whether a parsed param is a whole number of at least 1, and at most `high` when given."""
+    return (not isinstance(value, bool) and isinstance(value, int) and value >= 1
+            and (high is None or value <= high))
+
+
 def build_profiles(rows: list[dict]) -> dict[str, dict]:
     """callings.csv by Calling key: each row's power, stat profile, multipliers, armour, weapons,
     icon and spell book tab, checked (ADR 0011)."""
@@ -961,20 +968,47 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
     # stack consume's heal and its power back per stack. Cutthroat's rows (#505): a hit's percent
     # more on a bleeding target, a killing hit's heal and power, a builder's points more on a
     # bleeding target, and a proc's combo points.
+    # Initiate's rows (#506): an absorb's mana back and burst, a burn's power back, a hit's bonus
+    # against a worn aura, a snare's and a consume's reach.
     on_hit = ("bleeding_pct", "kill_heal_pct", "kill_energize")
     wholes = {"weapon_strike": ("block_value_pct", "heal_pct", *on_hit),
-              "school_damage": on_hit,
+              "school_damage": (*on_hit, "vs_aura_pct"),
               "consume_aura_stacks": ("heal_pct", "refund_per_stack"),
               "add_combo_points": ("bleeding_bonus",),
-              "proc": ("add_combo_points",)}
+              "proc": ("add_combo_points",),
+              "absorb": ("energize_pct", "burst_radius_yd"),
+              "periodic_damage": ("tick_energize_pct_of_max",),
+              "mod_run_speed": ("radius_yd",),
+              "consume_aura": ("spread_yd",)}
     for param in wholes.get(kind, ()):
         value = params.get(param, 1)
-        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        if not is_whole(value):
             raise BuildError(f"{where}: {param} needs a whole number of at least 1, has {value!r}")
-    if kind == "periodic_damage" and "drop_chance" in params:
-        chance = params["drop_chance"]
-        if isinstance(chance, bool) or not isinstance(chance, int) or not 1 <= chance <= 100:
-            raise BuildError(f"{where}: drop_chance needs a whole number from 1 to 100, has {chance!r}")
+    chances = {"periodic_damage": ("drop_chance", "tick_aura_chance", "weaken_pct")}
+    for param in chances.get(kind, ()):
+        if param in params and not is_whole(params[param], 100):
+            raise BuildError(f"{where}: {param} needs a whole number from 1 to 100, has {params[param]!r}")
+    pairs = {"periodic_damage": ("tick_aura", "tick_aura_chance"), "school_damage": ("vs_aura", "vs_aura_pct")}
+    if kind in pairs:
+        first, second = pairs[kind]
+        if (first in params) != (second in params):
+            raise BuildError(f"{where}: {first} and {second} go together")
+    if kind == "absorb" and not isinstance(params.get("if_crit", False), bool):
+        raise BuildError(f"{where}: absorb if_crit is yes or no, has {params['if_crit']!r}")
+    if kind == "refund_cost":
+        if not is_whole(params.get("chance"), 100):
+            raise BuildError(f"{where}: refund_cost needs a chance from 1 to 100, has {params.get('chance')!r}")
+        if not is_whole(params.get("pct")):
+            raise BuildError(f"{where}: refund_cost needs pct, a whole number of at least 1, has {params.get('pct')!r}")
+        if "full_absorb_pct" in params:
+            if not is_whole(params["full_absorb_pct"]):
+                raise BuildError(f"{where}: full_absorb_pct needs a whole number of at least 1, has "
+                                 f"{params['full_absorb_pct']!r}")
+            if "absorb_duration_ms" not in params:
+                raise BuildError(f"{where}: full_absorb_pct needs absorb_duration_ms")
+        if "absorb_duration_ms" in params and not is_whole(params["absorb_duration_ms"]):
+            raise BuildError(f"{where}: absorb_duration_ms needs a whole number of at least 1, has "
+                             f"{params['absorb_duration_ms']!r}")
     if kind == "pickup_energize":
         amount = params.get("amount")
         if isinstance(amount, bool) or not isinstance(amount, int) or amount < 1:
@@ -1442,6 +1476,24 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
                 raise BuildError(f"{here}: applies_to is {parsed['applies_to']!r}, want hit, tick or both")
             if "requires_target_aura" in parsed and parsed["requires_target_aura"] not in auras:
                 raise BuildError(f"{here}: requires_target_aura {parsed['requires_target_aura']!r} is not an aura row of this Calling")
+        elif kind != "proc" and "requires_target_aura" in parsed:
+            # Any skill effect lands only on a target that wore the caster's aura, or a snare, before
+            # the cast (#506).
+            if parsed["requires_target_aura"] not in {*auras, "slowed"}:
+                raise BuildError(f"{here}: requires_target_aura {parsed['requires_target_aura']!r} is not an aura "
+                                 "row of this Calling or slowed")
+        # Initiate's rows (#506): the aura an absorb puts on the attacker it soaks, a burn's tick gives
+        # the caster, and a hit is stronger against.
+        for param in {"absorb": ("attacker_aura",), "periodic_damage": ("tick_aura",),
+                      "school_damage": ("vs_aura",)}.get(kind, ()):
+            if param in parsed and parsed[param] not in auras:
+                raise BuildError(f"{here}: {param} {parsed[param]!r} is not an aura row of this Calling")
+        if kind == "root" and row["kind"] != "aura" and modelled == "yes":
+            # A skill's root; an aura row's root effect takes no params.
+            for param in ("aura_spell_id", "duration_ms"):
+                if not is_whole(parsed.get(param)):
+                    raise BuildError(f"{here}: root needs {param}, a whole number of at least 1, has "
+                                     f"{parsed.get(param)!r}")
         if kind == "proc":
             check_proc(parsed, auras, here)
         elif "apply_aura" in parsed:
@@ -1458,6 +1510,9 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             # An effect naming an aura row takes that row's school instead.
             if out["school"] != "physical" and "apply_aura" not in parsed:
                 parsed["school"] = out["school"]
+        if kind == "absorb" and "burst_radius_yd" in parsed:
+            # A shield's burst is in the row's school (Volatile Ward); its `school` is what it soaks.
+            parsed["burst_school"] = out["school"]
         if kind in ("periodic_damage", "periodic_heal", "absorb"):
             if parsed.get("pct_of", "hit") not in ("hit", "heal", "health_cost", "max_mana", "max_health"):
                 raise BuildError(f"{here}: pct_of is {parsed['pct_of']!r}, want hit, heal, health_cost, max_mana or max_health")

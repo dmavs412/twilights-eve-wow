@@ -470,6 +470,12 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             panic!("{key}: the reference has no realm half for a knockback")
         }
         Effect::Taunt { .. } => panic!("{key}: the reference has no realm half for a taunt"),
+        // Initiate's Frostbite and Ley-Line Tap live in the master CSV only (#506);
+        // tests/initiate_blink.rs and tests/initiate_procs.rs read them.
+        Effect::Root { .. } => panic!("{key}: the reference has no realm half for a root"),
+        Effect::RefundCost { .. } => {
+            panic!("{key}: the reference has no realm half for a cost refund")
+        }
     }
 }
 

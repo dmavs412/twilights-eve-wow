@@ -3,6 +3,7 @@
 
 pub mod cutthroat;
 pub mod fight;
+pub mod initiate;
 pub mod party;
 pub mod vanguard;
 
