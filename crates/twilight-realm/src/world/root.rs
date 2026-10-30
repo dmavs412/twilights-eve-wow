@@ -61,15 +61,24 @@ impl InWorld {
         if root.left > CLOCK_EPSILON && alive {
             return;
         }
-        self.root = None;
         if alive {
-            self.move_modes += 1;
-            events.push(SessionEvent::MoveMode {
-                guid: self.guid,
-                counter: self.move_modes,
-                mode: MoveMode::Root,
-                apply: false,
-            });
+            self.end_root(events);
+        } else {
+            self.root = None;
         }
+    }
+
+    /// Lets the player go before the root's time is up (a Blink shed it), as when it runs out.
+    pub(super) fn end_root(&mut self, events: &mut Vec<SessionEvent>) {
+        if self.root.take().is_none() {
+            return;
+        }
+        self.move_modes += 1;
+        events.push(SessionEvent::MoveMode {
+            guid: self.guid,
+            counter: self.move_modes,
+            mode: MoveMode::Root,
+            apply: false,
+        });
     }
 }

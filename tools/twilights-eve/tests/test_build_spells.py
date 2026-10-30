@@ -1791,9 +1791,10 @@ class TalentRows(BuildSpells):
                           "cast_skill skill 'ghost' is not a skill of vanguard")
         self.assert_fails([STRIKE, {**row, "effect2_params": ""}], "cast_skill skill None is not a skill of vanguard")
 
-    def test_a_blinks_shed_snares_is_yes_or_no(self):
-        self.assertIs(self.built_params([], self.LEAP, "shed_snares=yes")["shed_snares"], True)
-        self.assert_each_fails([], self.LEAP, "blink shed_snares is yes or no, has", "shed_snares=2")
+    def test_a_blinks_shed_snares_and_leap_are_yes_or_no(self):
+        for flag in ("shed_snares", "leap"):
+            self.assertIs(self.built_params([], self.LEAP, f"{flag}=yes")[flag], True)
+            self.assert_each_fails([], self.LEAP, f"blink {flag} is yes or no, has", f"{flag}=2")
 
     def test_a_periodic_damages_tick_aura_on_is_caster_or_target_and_needs_tick_aura(self):
         before = [CALLING, self.BUFF]

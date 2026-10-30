@@ -320,8 +320,8 @@ fn adrenaline_rush_crits_take_six_seconds_off_vaults_cooldown() {
     face_from(&mut s.realm, &mut s.view, &mob, 25.0);
     s.realm.handle(cast(flurry, None));
     s.view.drain(&mut s.realm);
-    // 15 s, less the 0.2 s gone, less 6 s a crit.
-    let mut left = 15_000 - 200;
+    // 15 s, less the 1 s gone (the leap's 0.9, the turn's 0.1), less 6 s a crit.
+    let mut left = 15_000 - 1_000;
     let (mut crits, mut plain) = (0, 0);
     for shot in 0..8 {
         let events = s.cast_at_mob(rush);

@@ -4,6 +4,7 @@
 mod common;
 mod gear_common;
 
+use benilla_protocol::messages::{JumpInfo, MoveMode};
 use benilla_protocol::SessionEvent;
 use common::fight::{cast, refusal, View};
 use common::*;
@@ -17,8 +18,9 @@ static VAULT: std::sync::LazyLock<u32> = std::sync::LazyLock::new(|| spell("rang
 
 const SPELL_FAILED_NOT_READY: u8 = 0x3c;
 
-/// A level 10 Ranger with a bow, in the world at `seed`: the realm and the client's view.
-fn ranger(seed: u64) -> (Realm, View) {
+/// A level 10 Ranger with a bow, in the world at `seed`: the realm, the client's view and their
+/// guid.
+fn ranger(seed: u64) -> (Realm, View, u64) {
     let (guid, blob) = save_shooting(10, &[(RANGED, CRACKED_SHORTBOW, 1)]);
     let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"ranger\"");
     let mut realm = Realm::with_seed(seed);
@@ -27,20 +29,33 @@ fn ranger(seed: u64) -> (Realm, View) {
     realm.tick(0.0, &FlatGround);
     let mut view = View::default();
     view.drain(&mut realm);
-    (realm, view)
+    (realm, view, guid)
 }
 
-/// Where the player was teleported to in `events`.
-fn teleported(events: &[SessionEvent]) -> Option<[f32; 3]> {
-    events.iter().find_map(|e| match e {
-        SessionEvent::Teleport { position, .. } => Some(*position),
-        _ => None,
-    })
+/// Whether the player was teleported in `events`.
+fn teleported(events: &[SessionEvent]) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::Teleport { .. }))
 }
 
+/// The launches the realm sent `me`'s own client in `events`.
+fn launches(events: &[SessionEvent], me: u64) -> Vec<JumpInfo> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::KnockBack { guid, launch, .. } if *guid == me => Some(*launch),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Vault launches the Ranger straight back through the air for their client to fly, as the
+/// client's own jump takes off, and the arc comes down 15 yd away on flat ground. Nothing
+/// teleports them.
 #[test]
 fn vault_leaps_15_yards_back_and_waits_15_seconds() {
-    let (mut realm, mut view) = ranger(0xB0_0001);
+    let (mut realm, mut view, me) = ranger(0xB0_0001);
     let start = [-441.8, -2648.6, 0.0];
     realm.handle(RealmCommand::Move {
         motion: Default::default(),
@@ -51,10 +66,18 @@ fn vault_leaps_15_yards_back_and_waits_15_seconds() {
     realm.handle(cast(*VAULT, None));
     let events = view.run(&mut realm, 0.1);
     assert_eq!(refusal(&events, *VAULT), None);
-    let to = teleported(&events).expect("Vault moves the Ranger");
+    let [launch] = launches(&events, me)[..] else {
+        panic!("one launch: {events:?}");
+    };
     // Facing east (orientation 0), so straight back is west.
-    assert!((to[0] - (start[0] - 15.0)).abs() < 0.01, "to {to:?}");
-    assert!((to[1] - start[1]).abs() < 0.01, "to {to:?}");
+    assert!(
+        (launch.cos_angle + 1.0).abs() < 1e-4 && launch.sin_angle.abs() < 1e-4,
+        "{launch:?}"
+    );
+    assert!(launch.zspeed < 0.0, "upwards, down-positive: {launch:?}");
+    let air = 2.0 * -launch.zspeed / GRAVITY;
+    assert!((launch.xy_speed * air - 15.0).abs() < 0.01, "{launch:?}");
+    assert!(!teleported(&events), "a leap, not a teleport: {events:?}");
 
     view.run(&mut realm, 14.0);
     realm.handle(cast(*VAULT, None));
@@ -73,7 +96,8 @@ fn vault_leaps_15_yards_back_and_waits_15_seconds() {
 use common::fight::{flat, stand_at, Mob};
 use common::initiate::lasts;
 use common::ranger::{
-    face_from, gone_off, leap, mana, ranger_choice, ranger_save, ranger_scene, shots, ROWS_OPEN,
+    face_from, gone_off, leap, mana, ranger_choice, ranger_save, ranger_scene, shots, GRAVITY,
+    ROWS_OPEN,
 };
 use common::vanguard::{scene_of, Scene, STURDY};
 
@@ -144,10 +168,10 @@ fn parting_shot_fires_the_current_snapshot_after_the_leap_and_nothing_at_a_dead_
         s.view.drain(&mut s.realm);
         let before = mana(&s.view, s.me);
         let events = leap(&mut s.realm, &mut s.view, parting);
-        let teleport = events
+        let launch = events
             .iter()
-            .position(|e| matches!(e, SessionEvent::Teleport { .. }))
-            .expect("the leap lands");
+            .position(|e| matches!(e, SessionEvent::KnockBack { .. }))
+            .expect("the leap launches");
         let go = events
             .iter()
             .position(|e| {
@@ -155,7 +179,7 @@ fn parting_shot_fires_the_current_snapshot_after_the_leap_and_nothing_at_a_dead_
                     if *spell_id == shot && *target == Some(mob))
             })
             .unwrap_or_else(|| panic!("{rows:?}: the shot goes off at the scorpid: {events:?}"));
-        assert!(go > teleport, "after the leap lands");
+        assert!(go > launch, "after the leap");
         assert_eq!(gone_off(&events, shot), 1);
         assert_eq!(mana(&s.view, s.me), before, "the shot is free");
     }
@@ -187,6 +211,32 @@ fn parting_shot_fires_the_current_snapshot_after_the_leap_and_nothing_at_a_dead_
     assert_eq!(gone_off(&events, snapshot), 0, "nothing at a dead target");
 }
 
+/// Parting Shot's Snapshot waits while the leap is in the air, and goes off from where the client
+/// says the Ranger landed: 30 yd off, inside Snapshot's 35.
+#[test]
+fn parting_shot_waits_for_the_leap_to_land() {
+    let parting = ranger_choice("vault", "parting_shot");
+    let snapshot = spell("ranger", "snapshot");
+    let mut s = ranger_scene(0x511_0001, &[("vault", parting)], STURDY);
+    let mob = s.mob.guid;
+    let at = s.mob.clone();
+    face_from(&mut s.realm, &mut s.view, &at, 15.0);
+    s.realm.handle(RealmCommand::SetSelection { guid: mob });
+    s.view.drain(&mut s.realm);
+    s.realm.handle(cast(parting, None));
+    let mut events = s.view.drain(&mut s.realm);
+    assert_eq!(launches(&events, s.me).len(), 1, "{events:?}");
+    events.extend(s.view.run(&mut s.realm, 0.7));
+    assert_eq!(gone_off(&events, snapshot), 0, "not in the air: {events:?}");
+    s.realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: [at.position[0] - 30.0, at.position[1], 0.0],
+        orientation: 0.0,
+    });
+    let events = s.view.run(&mut s.realm, 0.2);
+    assert_eq!(gone_off(&events, snapshot), 1, "on landing: {events:?}");
+}
+
 /// The run speeds the client was told of for `me` in `events`, in order.
 fn speeds(events: &[SessionEvent], me: u64) -> Vec<f32> {
     events
@@ -198,13 +248,13 @@ fn speeds(events: &[SessionEvent], me: u64) -> Vec<f32> {
         .collect()
 }
 
-/// A Ranger of 24 with `rows` set beside the sturdy scorpid, which casts the Snaring affix's
-/// Hamstring: once it has snared them, the realm, the view, their guid and the snare's spell.
-fn hamstrung(rows: &[(&str, u32)]) -> (Realm, View, u64, u32) {
-    let hamstring = creature_spell("hunter_hamstring");
+/// A Ranger of 24 with `rows` set beside the sturdy scorpid, which casts the Creature Spell `key`
+/// (the Snaring affix's Hamstring, a root): once it has caught them, the realm, the view, their
+/// guid and the spell.
+fn caught_by(key: &str, rows: &[(&str, u32)]) -> (Realm, View, u64, u32) {
+    let caught = creature_spell(key);
     let (me, blob) = ranger_save(ROWS_OPEN);
-    let mut realm =
-        Realm::with_seed(0x507_8000).with_creature_spells(STURDY_ENTRY, &["hunter_hamstring"]);
+    let mut realm = Realm::with_seed(0x507_8000).with_creature_spells(STURDY_ENTRY, &[key]);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid: me });
     realm.tick(0.0, &FlatGround);
@@ -241,11 +291,45 @@ fn hamstrung(rows: &[(&str, u32)]) -> (Realm, View, u64, u32) {
     stand_at(&mut realm, &mob, 2.0);
     for _ in 0..150 {
         view.run(&mut realm, 0.1);
-        if view.aura(me, hamstring).is_some() {
-            return (realm, view, me, hamstring);
+        if view.aura(me, caught).is_some() {
+            return (realm, view, me, caught);
         }
     }
-    panic!("the scorpid never hamstrung the Ranger");
+    panic!("the scorpid's {key} never caught the Ranger");
+}
+
+/// Vault sheds a root: the aura comes off and the client is let go to fly the leap, and the realm
+/// takes the landing it reports.
+#[test]
+fn vault_sheds_a_root_and_takes_the_landing_the_client_reports() {
+    let (mut realm, mut view, me, root) = caught_by("test_root", &[]);
+    let from = realm.player_positions()[0].1;
+    realm.handle(cast(*VAULT, None));
+    let events = view.drain(&mut realm);
+    assert_eq!(refusal(&events, *VAULT), None, "{events:?}");
+    let [launch] = launches(&events, me)[..] else {
+        panic!("one launch: {events:?}");
+    };
+    assert!(view.aura(me, root).is_none(), "the root is shed");
+    assert!(
+        events.iter().any(|e| matches!(
+            e,
+            SessionEvent::MoveMode { guid, mode: MoveMode::Root, apply: false, .. } if *guid == me
+        )),
+        "the client is let go: {events:?}"
+    );
+    let to = [
+        from[0] + launch.cos_angle * 15.0,
+        from[1] + launch.sin_angle * 15.0,
+        from[2],
+    ];
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: to,
+        orientation: 0.0,
+    });
+    view.run(&mut realm, 0.1);
+    assert_eq!(realm.player_positions()[0].1, to, "where the client landed");
 }
 
 /// Unbound Leap: the leap takes a snare off the Ranger and they run 40% faster for 3 s. Plain
@@ -254,7 +338,7 @@ fn hamstrung(rows: &[(&str, u32)]) -> (Realm, View, u64, u32) {
 fn unbound_leap_sheds_a_snare_and_runs_40_pct_faster_for_3_seconds() {
     const RUN: f32 = 7.0;
     let unbound = ranger_choice("vault", "unbound_leap");
-    let (mut realm, mut view, me, snare) = hamstrung(&[("vault", unbound)]);
+    let (mut realm, mut view, me, snare) = caught_by("hunter_hamstring", &[("vault", unbound)]);
     let events = leap(&mut realm, &mut view, unbound);
     assert!(view.aura(me, snare).is_none(), "the snare is shed");
     assert_eq!(
@@ -265,7 +349,7 @@ fn unbound_leap_sheds_a_snare_and_runs_40_pct_faster_for_3_seconds() {
     let after = view.run(&mut realm, 3.1);
     assert_eq!(speeds(&after, me).last().copied(), Some(RUN), "{after:?}");
 
-    let (mut realm, mut view, me, snare) = hamstrung(&[]);
+    let (mut realm, mut view, me, snare) = caught_by("hunter_hamstring", &[]);
     leap(&mut realm, &mut view, spell("ranger", "vault"));
     assert!(
         view.aura(me, snare).is_some(),

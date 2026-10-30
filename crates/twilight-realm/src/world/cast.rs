@@ -8,8 +8,8 @@
 
 use benilla_protocol::messages::ObjectType;
 use benilla_protocol::messages::{
-    ActionButton, MonsterMoveFacing, PeriodicAuraLog, PeriodicTick, SpeedKind, SpellCooldown,
-    SpellDamageLog, SpellEnergizeLog,
+    ActionButton, JumpInfo, MonsterMoveFacing, PeriodicAuraLog, PeriodicTick, SpeedKind,
+    SpellCooldown, SpellDamageLog, SpellEnergizeLog,
 };
 use benilla_protocol::{EntityKind, ObjectFields, SessionEvent};
 
@@ -138,6 +138,9 @@ pub(super) struct Skills {
     consumed: Option<(Aura, u32)>,
     /// A Blink cast and not yet landed: the next tick, which has the ground, moves the caster.
     blink: Option<PendingBlink>,
+    /// Seconds left of the player's leap through the air: their client flies it and reports where
+    /// it lands.
+    airborne: f32,
     /// Mobs a knockback cast hit and not yet moved: the next tick, which has the ground, slides them.
     knocks: Vec<PendingKnock>,
     /// Shields that broke and burst, not yet paid: the world tick pays them after the skills.
@@ -160,7 +163,7 @@ pub(super) struct Skills {
     /// The unit the player last selected (`CMSG_SET_SELECTION`); 0 for none.
     pub(super) selection: u64,
     /// `cast_skill`s cast and not yet gone off: the tick after the cast, which has the ground and
-    /// lands any Blink first, casts them (Parting Shot).
+    /// lands any Blink first, casts them, or the tick a leap comes down in (Parting Shot).
     follow_ups: Vec<FollowUp>,
     /// The channel under way, if any.
     channel: Option<Channel>,
@@ -311,6 +314,11 @@ const MOVING_GRACE_SECS: f32 = 0.75;
 /// step before the Blink stops short.
 const BLINK_STEP_YD: f32 = 1.0;
 const BLINK_MAX_CLIMB_YD: f32 = 1.5;
+
+/// A leap's take-off speed upwards (yd/s), the client's own jump's, and the client's gravity
+/// (yd/s²): on flat ground a leap is in the air `2 * LEAP_TAKE_OFF_YD_S / GRAVITY_YD_S2` seconds.
+const LEAP_TAKE_OFF_YD_S: f32 = 7.955_547;
+const GRAVITY_YD_S2: f32 = 19.291_105;
 
 /// A cast with a cast bar: an item's, or a skill's.
 #[derive(Debug, Clone, Copy)]
@@ -2357,16 +2365,23 @@ impl InWorld {
     }
 
     /// Casts the skill each `cast_skill` of the last tick's casts names, now that their Blinks
-    /// have landed: the version set on its row, free, at the cast's target, if it is alive, in
-    /// the skill's range and in sight of where the caster stands (Parting Shot).
+    /// have landed, or once the player's leap has had its `dt`s in the air: the version set on its
+    /// row, free, at the cast's target, if it is alive, in the skill's range and in sight of where
+    /// the caster stands (Parting Shot).
     pub(super) fn land_follow_ups(
         &mut self,
+        dt: f32,
         host: &dyn crate::Host,
         c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
+        let s = &mut self.skills;
+        s.airborne = (s.airborne - dt).max(0.0);
+        if s.airborne > 0.0 {
+            return;
+        }
         for f in std::mem::take(&mut self.skills.follow_ups) {
             let Some(target) = f.target else {
                 continue;
@@ -4918,6 +4933,7 @@ impl InWorld {
                 distance_yd,
                 backward,
                 shed_snares,
+                leap,
             } => {
                 let me = self.guid;
                 let gone = self.skills.remove_where(
@@ -4932,13 +4948,22 @@ impl InWorld {
                 );
                 // A shed snare gives the run speed back (Unbound Leap).
                 self.faded(&gone, events);
+                // A shed root lets the client go.
+                if gone.iter().any(|a| a.kind == AuraKind::Root) {
+                    self.end_root(events);
+                }
                 let back = if backward { std::f32::consts::PI } else { 0.0 };
-                self.skills.blink = Some(PendingBlink {
-                    from: c.position,
-                    orientation: (c.orientation + back).rem_euclid(std::f32::consts::TAU),
-                    faces: c.orientation,
-                    distance_yd,
-                });
+                let way = (c.orientation + back).rem_euclid(std::f32::consts::TAU);
+                if leap {
+                    self.leap(way, distance_yd, events);
+                } else {
+                    self.skills.blink = Some(PendingBlink {
+                        from: c.position,
+                        orientation: way,
+                        faces: c.orientation,
+                        distance_yd,
+                    });
+                }
             }
             Effect::CastSkill { skill_spell_id } => {
                 // At the cast's enemy target, or the unit the player has selected (a self cast
@@ -6832,6 +6857,24 @@ impl InWorld {
             gone += step;
         }
         self.teleport(c, at, b.faces, events);
+    }
+
+    /// Launches the player along `way` as the client's jump takes off, fast enough that the arc
+    /// comes down `distance_yd` away on flat ground. Their client flies it as a knockback and
+    /// reports where it lands, as for a jump; the realm ignores its ack.
+    fn leap(&mut self, way: f32, distance_yd: f32, events: &mut Vec<SessionEvent>) {
+        let air_secs = 2.0 * LEAP_TAKE_OFF_YD_S / GRAVITY_YD_S2;
+        self.skills.airborne = air_secs;
+        events.push(SessionEvent::KnockBack {
+            guid: self.guid,
+            counter: 0,
+            launch: JumpInfo {
+                zspeed: -LEAP_TAKE_OFF_YD_S,
+                cos_angle: way.cos(),
+                sin_angle: way.sin(),
+                xy_speed: distance_yd / air_secs,
+            },
+        });
     }
 
     /// Slides the mobs a knockback hit since the last tick: each steps straight away from where

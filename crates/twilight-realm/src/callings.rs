@@ -1820,8 +1820,12 @@ pub enum Effect {
         /// Sheds every aura that lowers their run speed too (Unbound Leap).
         #[serde(default)]
         shed_snares: bool,
+        /// Leaps through the air instead of teleporting: the client flies an arc that comes down
+        /// `distance_yd` away on flat ground, and walls and slopes stop it short (Vault).
+        #[serde(default)]
+        leap: bool,
     },
-    /// Once the cast and any Blink it queued have landed, the caster casts the skill of
+    /// Once the cast and any Blink or leap it started have landed, the caster casts the skill of
     /// `skill_spell_id` (resolved by the build from `skill=key`), the version set on its row, at
     /// their target: free, off the global cooldown, with no cast bar. Nothing without a living
     /// target in its range and in sight of where the caster stands (Parting Shot).

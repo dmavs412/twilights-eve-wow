@@ -1031,8 +1031,9 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
             raise BuildError(f"{where}: tick_aura_on is {params['tick_aura_on']!r}, want caster or target")
         if "tick_aura_on" in params and "tick_aura" not in params:
             raise BuildError(f"{where}: tick_aura_on needs tick_aura")
-    if kind == "blink" and not isinstance(params.get("shed_snares", False), bool):
-        raise BuildError(f"{where}: blink shed_snares is yes or no, has {params['shed_snares']!r}")
+    for flag in ("shed_snares", "leap"):
+        if kind == "blink" and not isinstance(params.get(flag, False), bool):
+            raise BuildError(f"{where}: blink {flag} is yes or no, has {params[flag]!r}")
     if kind == "absorb" and not isinstance(params.get("if_crit", False), bool):
         raise BuildError(f"{where}: absorb if_crit is yes or no, has {params['if_crit']!r}")
     if kind == "refund_cost":

@@ -7117,7 +7117,8 @@
       "kind": "blink",
       "params": {
        "distance_yd": 15,
-       "backward": true
+       "backward": true,
+       "leap": true
       },
       "realm_only": false
      }
@@ -8041,7 +8042,8 @@
         "kind": "blink",
         "params": {
          "distance_yd": 15,
-         "backward": true
+         "backward": true,
+         "leap": true
         },
         "realm_only": false
        },
@@ -8088,7 +8090,8 @@
         "kind": "blink",
         "params": {
          "distance_yd": 15,
-         "backward": true
+         "backward": true,
+         "leap": true
         },
         "realm_only": false
        },
@@ -8132,7 +8135,8 @@
         "params": {
          "distance_yd": 15,
          "backward": true,
-         "shed_snares": true
+         "shed_snares": true,
+         "leap": true
         },
         "realm_only": false
        },

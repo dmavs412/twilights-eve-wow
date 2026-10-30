@@ -115,9 +115,15 @@ pub fn face_from(realm: &mut Realm, view: &mut View, mob: &Mob, yards: f32) {
     view.run(realm, 0.1);
 }
 
-/// Casts the leap `spell_id` (Vault or a Vault choice) and acknowledges the teleport it lands as
-/// the next tick: every event meanwhile. Panics when it is refused or never lands.
+/// The client's gravity (yd/s²), which brings a leap down.
+pub const GRAVITY: f32 = 19.291_105;
+
+/// Casts the leap `spell_id` (Vault or a Vault choice) and flies it as the client would: the
+/// realm runs while the Ranger is in the air, the client reports the spot the launch reaches on
+/// flat ground in the tick it lands, and the realm runs that tick. Every event meanwhile. Panics
+/// when it is refused or launches nothing.
 pub fn leap(realm: &mut Realm, view: &mut View, spell_id: u32) -> Vec<SessionEvent> {
+    let from = realm.player_positions()[0].1;
     realm.handle(cast(spell_id, None));
     let mut events = view.drain(realm);
     assert_eq!(
@@ -125,15 +131,27 @@ pub fn leap(realm: &mut Realm, view: &mut View, spell_id: u32) -> Vec<SessionEve
         None,
         "the leap goes off: {events:?}"
     );
-    events.extend(view.run(realm, 0.1));
-    let counter = events
+    let launch = events
         .iter()
         .find_map(|e| match e {
-            SessionEvent::Teleport { counter, .. } => Some(*counter),
+            SessionEvent::KnockBack { launch, .. } => Some(*launch),
             _ => None,
         })
-        .expect("the leap lands as a teleport");
-    realm.handle(RealmCommand::TeleportAck { counter });
-    events.extend(view.drain(realm));
+        .expect("the leap launches the Ranger");
+    let air = 2.0 * -launch.zspeed / GRAVITY;
+    let reach = launch.xy_speed * air;
+    events.extend(view.run(realm, (air * 10.0).floor() / 10.0));
+    // Straight back, so they face the other way.
+    let facing = launch.sin_angle.atan2(launch.cos_angle) + std::f32::consts::PI;
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: [
+            from[0] + launch.cos_angle * reach,
+            from[1] + launch.sin_angle * reach,
+            from[2],
+        ],
+        orientation: facing.rem_euclid(std::f32::consts::TAU),
+    });
+    events.extend(view.run(realm, 0.1));
     events
 }

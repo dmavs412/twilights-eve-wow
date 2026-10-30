@@ -789,8 +789,8 @@ impl InWorld {
             }
         }
         self.land_blink(host, c, events);
-        // A cast's own skill goes off once its Blink has landed (Parting Shot).
-        self.land_follow_ups(host, c, rng, events, &mut ticked);
+        // A cast's own skill goes off once its Blink or leap has landed (Parting Shot).
+        self.land_follow_ups(dt, host, c, rng, events, &mut ticked);
         self.land_knockbacks(host, events);
         let me = c.position;
         self.cross_phase(c, events);
