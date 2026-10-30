@@ -49,6 +49,11 @@
 
         local function BenillaMist_Seat()
             local mists = GetMapMists()
+            -- The painted canvas supplies one opaque closed-region fog layer. The additive
+            -- stock Highlights would brighten its borders and expose zone-shaped seams.
+            if GetMapCanvas() then
+                mists = {}
+            end
             local count = table.getn(mists)
             local width = WorldMapDetailFrame:GetWidth()
             local height = WorldMapDetailFrame:GetHeight()

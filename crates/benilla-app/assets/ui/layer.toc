@@ -35,6 +35,8 @@ BossBar.xml
 WorldMapMarks.xml
 # The map canvas: zone plates on one canvas, wheel zoom, drag pan and the zone dropdown (#410).
 WorldMapCanvas.xml
+# Survey terrain detail, zoom-aware live map markers and category filters.
+WorldMapNavigation.xml
 # The mist over Closed Zones on the world map: `GetMapMists()` seatings, drifting (ADR 0015).
 WorldMapMist.xml
 # The Reeling Bar, its Angler badge and its banners (ADR 0018).

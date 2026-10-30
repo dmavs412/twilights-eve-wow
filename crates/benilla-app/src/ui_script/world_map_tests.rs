@@ -7,6 +7,9 @@ use benilla_ui::script::{
     ARROW_MODEL,
 };
 
+#[path = "world_map_navigation_tests.rs"]
+mod navigation;
+
 /// The map plus everything its OnLoad touches, in the shipped list's own order.
 fn harness() -> UiScript {
     let mut s = UiScript::new().unwrap();
@@ -42,6 +45,7 @@ fn harness() -> UiScript {
         "ScrollTemplates.xml",
         "WorldMapMarks.xml",
         "WorldMapCanvas.xml",
+        "WorldMapNavigation.xml",
         "WorldMapMist.xml",
     ] {
         super::test_ui::load_ui(&s, file);
@@ -1229,9 +1233,9 @@ fn the_canvas_opens_on_the_players_zone_centred_on_the_player() {
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 
-/// Zoom 1 fits the canvas and the deepest zoom is four times Elwynn's stock size.
+/// Zoom 1 fits the canvas and the deepest zoom resolves individual buildings and NPCs.
 #[test]
-fn the_canvas_zooms_from_the_whole_canvas_to_four_times_elwynn() {
+fn the_canvas_zooms_from_the_whole_canvas_to_eight_times_elwynn() {
     let _data = benilla_formats::wow_data_or_skip!();
     let mut s = canvas_harness();
     let at = centre(&s, "WorldMapZoomFrame");
@@ -1239,7 +1243,7 @@ fn the_canvas_zooms_from_the_whole_canvas_to_four_times_elwynn() {
     assert_eq!(zoom_of(&s), 1.0);
     assert_eq!(s.eval::<i64>("return GetCurrentMapContinent()").unwrap(), 2);
     wheel(&mut s, at, 20, 1.0);
-    assert!((zoom_of(&s) - 6.184).abs() < 1e-3, "{}", zoom_of(&s));
+    assert!((zoom_of(&s) - 12.368).abs() < 1e-3, "{}", zoom_of(&s));
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 
@@ -1478,7 +1482,7 @@ fn the_canvas_plate_draws_the_painted_pieces() {
     assert_eq!(
         s.eval::<String>("return BenillaCanvasPlateTile1:GetTexture()")
             .unwrap(),
-        r"Interface\Benilla\map\canvas_1"
+        r"Interface\Benilla\map\world-map-geography_1"
     );
     let (tl, tt, teff) = s
         .eval::<(f64, f64, f64)>(
@@ -1515,19 +1519,16 @@ fn the_canvas_plate_draws_the_painted_pieces() {
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 
-/// The fixture's misted Westfall gets a fog plate on its mist seat, under the live mist.
+/// Closed regions share a full-canvas fog layer; stock additive Highlights must not draw over it.
 #[test]
-fn a_misted_zone_has_a_fog_plate_on_its_mist_seat() {
+fn closed_regions_have_one_aligned_fog_layer_without_additive_highlights() {
     let _data = benilla_formats::wow_data_or_skip!();
     let s = canvas_harness();
     assert_eq!(
         s.eval::<String>("return BenillaCanvasFog1Tile1:GetTexture()")
             .unwrap(),
-        r"Interface\Benilla\map\fog_westfall_1"
+        r"Interface\Benilla\map\world-map-hush-fog_1"
     );
-    let (scroll_x, scroll_y) = s
-        .eval::<(f64, f64)>("local m = GetMapMists()[1] return m.scrollX, m.scrollY")
-        .unwrap();
     let (l, t, eff, shown) = s
         .eval::<(f64, f64, f64, bool)>(
             "local t = BenillaCanvasFog1Tile1 \
@@ -1536,8 +1537,24 @@ fn a_misted_zone_has_a_fog_plate_on_its_mist_seat() {
         .unwrap();
     assert!(shown);
     let got = ((l * eff) as f32, (t * eff) as f32);
-    let want = map_point(&s, scroll_x, scroll_y);
+    let want = map_point(&s, 0.0, 0.0);
     assert!(near(got, want), "{got:?} vs {want:?}");
+    assert!(
+        s.eval::<bool>(
+            "return math.abs(BenillaCanvasFog1:GetWidth() - 5015) < 0.01 \
+         and math.abs(BenillaCanvasFog1:GetHeight() - 3343) < 0.01 \
+         and BenillaCanvasFog1Tile280:IsShown() \
+         and not (WorldMapMist1 and WorldMapMist1:IsShown())"
+        )
+        .unwrap(),
+        "fog dimensions or mist suppression: {:?}",
+        s.eval::<(f64, f64, bool, bool)>(
+            "return BenillaCanvasFog1:GetWidth(), BenillaCanvasFog1:GetHeight(), \
+         not not BenillaCanvasFog1Tile280:IsShown(), \
+         not (WorldMapMist1 and WorldMapMist1:IsShown())"
+        )
+        .unwrap()
+    );
     assert!(
         s.eval::<bool>(
             "return BenillaCanvasFog1:GetFrameLevel() < WorldMapMistFrame:GetFrameLevel() \

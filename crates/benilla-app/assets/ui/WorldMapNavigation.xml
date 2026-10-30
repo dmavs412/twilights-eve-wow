@@ -1,0 +1,192 @@
+<Ui>
+    <!-- Navigation overlays for the M-key map. Every pin uses the live landmark UV;
+         overview labels, clustering and the terrain detail layer never change that UV. -->
+    <Script><![CDATA[
+        local detailTiles = {}
+        local zoneLabels = {}
+        local enabled = { quests = true, services = true, dungeons = true }
+        local controls = nil
+        local active = false
+        local currentZoom = 1
+
+        local function category(icon)
+            if icon == 64 or icon == 65 then return "quests" end
+            if icon == 70 then return "dungeons" end
+            if icon and icon >= 66 and icon <= 69 then return "services" end
+            return nil
+        end
+
+        local function kind(icon)
+            if icon == 64 then return "Available quest" end
+            if icon == 65 then return "Quest ready to turn in" end
+            if icon == 66 then return "Trainer" end
+            if icon == 67 then return "Vendor" end
+            if icon == 68 then return "Innkeeper" end
+            if icon == 69 then return "Flight master" end
+            if icon == 70 then return "Dungeon entrance" end
+            return "Landmark"
+        end
+
+        local function ensureControls()
+            if controls then return end
+            controls = CreateFrame("Frame", "BenillaMapNavigationControls", WorldMapFrame)
+            controls:SetWidth(360)
+            controls:SetHeight(28)
+            controls:SetPoint("BOTTOMLEFT", WorldMapZoomFrame, "BOTTOMLEFT", 8, 6)
+            controls:SetFrameLevel(WorldMapButton:GetFrameLevel() + 5)
+            local keys = { "quests", "services", "dungeons" }
+            local titles = { "Quests", "Services", "Dungeons" }
+            for i = 1, 3 do
+                local button = CreateFrame("Button", "BenillaMapFilter" .. i, controls, "UIPanelButtonTemplate")
+                button:SetWidth(94)
+                button:SetHeight(22)
+                button:SetPoint("LEFT", controls, "LEFT", (i - 1) * 98, 0)
+                button.key = keys[i]
+                button.title = titles[i]
+                button:SetText(titles[i] .. ": On")
+                button:SetScript("OnClick", function()
+                    enabled[this.key] = not enabled[this.key]
+                    this:SetText(this.title .. (enabled[this.key] and ": On" or ": Off"))
+                    WorldMapTooltip:Hide()
+                    WorldMapFrame_Update()
+                end)
+            end
+        end
+
+        local function updateMarks()
+            local groups = {}
+            local width, height = WorldMapButton:GetWidth(), WorldMapButton:GetHeight()
+            for i = 1, GetNumMapLandmarks() do
+                local poi = getglobal("WorldMapFramePOI" .. i)
+                local name, description, icon, u, v = GetMapLandmarkInfo(i)
+                if poi then
+                    poi.benillaGroup = nil
+                    if poi.benillaCount then poi.benillaCount:Hide() end
+                    if poi.benillaName then poi.benillaName:Hide() end
+                    local cat = category(icon)
+                    if cat and enabled[cat] then
+                        local group = nil
+                        -- A constant screen radius separates neighbouring NPCs naturally as
+                        -- the terrain zooms. Distinct marker types retain their own symbols.
+                        for j = 1, table.getn(groups) do
+                            local g = groups[j]
+                            local dx, dy = (u - g.u) * width, (v - g.v) * height
+                            if icon == g.icon and dx * dx + dy * dy < 18 * 18 then
+                                group = g
+                                break
+                            end
+                        end
+                        local row = { name = name, description = description, icon = icon }
+                        if group then
+                            table.insert(group.rows, row)
+                            poi:Hide()
+                        else
+                            group = { poi = poi, icon = icon, u = u, v = v, rows = { row } }
+                            table.insert(groups, group)
+                            poi:Show()
+                        end
+                    elseif cat then
+                        poi:Hide()
+                    end
+                end
+            end
+            for i = 1, table.getn(groups) do
+                local g = groups[i]
+                local poi = g.poi
+                poi.benillaGroup = g.rows
+                local count = table.getn(g.rows)
+                if count > 1 then
+                    if not poi.benillaCount then
+                        poi.benillaCount = poi:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+                        poi.benillaCount:SetPoint("BOTTOMRIGHT", poi, "BOTTOMRIGHT", 5, -4)
+                    end
+                    poi.benillaCount:SetText(count)
+                    poi.benillaCount:Show()
+                elseif currentZoom >= 4 then
+                    if not poi.benillaName then
+                        poi.benillaName = poi:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+                        poi.benillaName:SetPoint("LEFT", poi, "RIGHT", 3, 0)
+                    end
+                    poi.benillaName:SetText(g.rows[1].name)
+                    -- Nearby labels must not cover other targets. Tooltips always retain names.
+                    local clear = true
+                    for j = 1, i - 1 do
+                        local other = groups[j]
+                        if math.abs((g.u - other.u) * width) < 150 and math.abs((g.v - other.v) * height) < 18 then
+                            clear = false
+                        end
+                    end
+                    if clear then poi.benillaName:Show() end
+                end
+            end
+        end
+
+        function BenillaMapNavigation_Update(plate, canvas, zoom)
+            active = canvas ~= nil
+            currentZoom = zoom
+            if not active then
+                if controls then controls:Hide() end
+                for i = 1, table.getn(zoneLabels) do zoneLabels[i]:Hide() end
+                for i = 1, table.getn(detailTiles) do detailTiles[i]:Hide() end
+                return
+            end
+            ensureControls()
+            controls:Show()
+            -- Detail is inside the geography plate, above its background and below its
+            -- exploration covers. The closed-zone fog stays above both terrain layers.
+            local alpha = math.max(0, math.min(1, (zoom - 2) / 2))
+            local count = 0
+            for row = 0, 13 do
+                for col = 0, 19 do
+                    count = count + 1
+                    local tile = detailTiles[count]
+                    if not tile then
+                        tile = plate:CreateTexture("BenillaMapTerrainDetail" .. count, "BORDER")
+                        tile:SetWidth(math.min(256, 5015 - col * 256))
+                        tile:SetHeight(math.min(256, 3343 - row * 256))
+                        tile:SetPoint("TOPLEFT", plate, "TOPLEFT", col * 256, -row * 256)
+                        tile:SetTexture("Interface\\Benilla\\map\\world-map-detail_" .. count)
+                        detailTiles[count] = tile
+                    end
+                    tile:SetAlpha(alpha)
+                    if alpha > 0 then tile:Show() else tile:Hide() end
+                end
+            end
+            for i = 1, table.getn(canvas) do
+                local entry = canvas[i]
+                local label = zoneLabels[i]
+                if not label then
+                    label = WorldMapButton:CreateFontString("BenillaMapZoneLabel" .. i, "OVERLAY", "GameFontNormalLarge")
+                    zoneLabels[i] = label
+                end
+                label:ClearAllPoints()
+                label:SetPoint("CENTER", WorldMapButton, "TOPLEFT",
+                    (entry.left + entry.width / 2) * WorldMapButton:GetWidth(),
+                    -(entry.top + entry.height / 2) * WorldMapButton:GetHeight())
+                label:SetText(entry.name)
+                label:SetTextColor(1, 0.86, 0.56)
+                if zoom < 3 then label:Show() else label:Hide() end
+            end
+            updateMarks()
+        end
+
+        local oldEnter = WorldMapPOI_OnEnter
+        function WorldMapPOI_OnEnter()
+            local rows = this.benillaGroup
+            if not active or not rows or table.getn(rows) < 2 then return oldEnter() end
+            WorldMapTooltip:SetOwner(this, "ANCHOR_RIGHT")
+            WorldMapTooltip:SetText(table.getn(rows) .. " nearby locations")
+            for i = 1, table.getn(rows) do
+                local row = rows[i]
+                WorldMapTooltip:AddLine(row.name .. " - " .. kind(row.icon), 1, 0.82, 0.3, 1)
+                if row.description and row.description ~= "" then
+                    for line in string.gfind(row.description, "[^\n]+") do
+                        WorldMapTooltip:AddLine(line, 1, 1, 1, 1)
+                    end
+                end
+            end
+            WorldMapTooltip:AddLine("Scroll to zoom in and separate locations.", 0.7, 0.7, 0.7, 1)
+            WorldMapTooltip:Show()
+        end
+    ]]></Script>
+</Ui>

@@ -1053,17 +1053,39 @@ fn cover(chain: &mut Chain, zone: &Zone, o: &WorldMapOverlay, p: &Piece) -> Resu
     Ok(out)
 }
 
-fn args() -> Result<(PathBuf, PathBuf, Option<PathBuf>)> {
+/// Deterministic smooth value noise; sampled in canvas space so zone seams cannot appear.
+fn cloud_noise(x: f32, y: f32) -> f32 {
+    let (ix, iy) = (x.floor() as u32, y.floor() as u32);
+    let smooth = |t: f32| t * t * (3.0 - 2.0 * t);
+    let (tx, ty) = (smooth(x.fract()), smooth(y.fract()));
+    let hash = |x: u32, y: u32| {
+        let mut h = x
+            .wrapping_mul(374761393)
+            .wrapping_add(y.wrapping_mul(668265263));
+        h = (h ^ (h >> 13)).wrapping_mul(1274126177);
+        (h ^ (h >> 16)) as f32 / u32::MAX as f32
+    };
+    let lerp = |a: f32, b: f32, t: f32| a + (b - a) * t;
+    lerp(
+        lerp(hash(ix, iy), hash(ix + 1, iy), tx),
+        lerp(hash(ix, iy + 1), hash(ix + 1, iy + 1), tx),
+        ty,
+    )
+}
+
+fn args() -> Result<(PathBuf, PathBuf, Option<PathBuf>, bool)> {
     let mut data = None;
     let mut out = None;
     let mut fill = None;
+    let mut exact = false;
     let mut it = std::env::args().skip(1);
     while let Some(a) = it.next() {
         match a.as_str() {
             "--data" => data = it.next().map(PathBuf::from),
             "--out" => out = it.next().map(PathBuf::from),
             "--fill" => fill = it.next().map(PathBuf::from),
-            _ => bail!("usage: map_draft --data <WoW Data> --out <dir> [--fill <landmarks.json>]"),
+            "--exact" => exact = true,
+            _ => bail!("usage: map_draft --data <WoW Data> --out <dir> [--fill <landmarks.json>] [--exact]"),
         }
     }
     let data = match data {
@@ -1074,11 +1096,12 @@ fn args() -> Result<(PathBuf, PathBuf, Option<PathBuf>)> {
         data,
         out.unwrap_or_else(|| PathBuf::from("target/map_draft")),
         fill,
+        exact,
     ))
 }
 
 fn main() -> Result<()> {
-    let (data, out, fill_with) = args()?;
+    let (data, out, fill_with, exact) = args()?;
     let mut chain = benilla_formats::open_chain(&data)?;
     let wma = load_world_map_area_catalog(&mut chain)?;
     let wmo = load_world_map_overlay_catalog(&mut chain)?;
@@ -1123,6 +1146,7 @@ fn main() -> Result<()> {
     );
 
     std::fs::create_dir_all(out.join("covers"))?;
+    std::fs::create_dir_all(out.join("stock"))?;
     let elwynn = on_map
         .iter()
         .find(|(_, a)| a.name == "Elwynn")
@@ -1131,6 +1155,7 @@ fn main() -> Result<()> {
     let parchment = elwynn.parchment();
     let mut img = Picture::blank(size.0, size.1);
     let mut art_layer = vec![[0.0f32; 4]; (size.0 * size.1) as usize];
+    let mut playable = Picture::blank(size.0, size.1);
     for y in 0..size.1 {
         for x in 0..size.0 {
             img.put(x, y, [parchment[0], parchment[1], parchment[2], 1.0]);
@@ -1140,6 +1165,7 @@ fn main() -> Result<()> {
     let mut fogs = Vec::new();
     let mut placed_fogs = Vec::new();
     let mut covers = Vec::new();
+    let mut stock = Vec::new();
     let mut written = Vec::new();
     let filler = match &fill_with {
         Some(path) => {
@@ -1158,6 +1184,30 @@ fn main() -> Result<()> {
         for &(id, area) in rows.iter() {
             let zone = Zone::load(&mut chain, area, wmo.for_area(id))?;
             let at = place(canvas, size, zone.rect);
+            if !is_misted {
+                // Export the complete original map, including the city's streets and backdrop.
+                // No silhouette, cutout, painting, warp, interpolation, or resized landmarks.
+                let mut original = Picture::blank(ART_W, ART_H);
+                for y in 0..ART_H {
+                    for x in 0..ART_W {
+                        original.put(x, y, zone.explored.texel(x, y));
+                    }
+                }
+                let name = format!("stock/{}.png", zone.file);
+                original.save(&out.join(&name))?;
+                stock.push(json!({
+                    "file": name,
+                    "area_id": area.area_id,
+                    "size": [ART_W, ART_H],
+                    "loc_rect": [zone.rect.left, zone.rect.right, zone.rect.top, zone.rect.bottom],
+                    "canvas_rect_pixels": at,
+                    "yards_per_source_pixel": [
+                        (zone.rect.left - zone.rect.right) / ART_W as f32,
+                        (zone.rect.top - zone.rect.bottom) / ART_H as f32
+                    ],
+                    "accuracy": "Original illustrated game artwork; DBC-aligned, not a yard-accurate terrain survey"
+                }));
+            }
             println!(
                 "{:>4} {:<18} at {:8.1} {:8.1} {:8.1} {:8.1}{}",
                 area.area_id,
@@ -1169,6 +1219,24 @@ fn main() -> Result<()> {
                 if is_misted { "  misted" } else { "" }
             );
             draw(&mut img, &mut art_layer, at, &zone);
+            if !is_misted && exact {
+                for y in 0..size.1 {
+                    let v = ((f64::from(y) + 0.5 - at[1]) / (at[3] - at[1])) as f32;
+                    if !(0.0..1.0).contains(&v) {
+                        continue;
+                    }
+                    for x in 0..size.0 {
+                        let u = ((f64::from(x) + 0.5 - at[0]) / (at[2] - at[0])) as f32;
+                        if !(0.0..1.0).contains(&u) {
+                            continue;
+                        }
+                        let a = zone.silhouette(u, v);
+                        if a > 0.05 {
+                            playable.put(x, y, [1.0; 4]);
+                        }
+                    }
+                }
+            }
             if is_misted {
                 let name = format!("fog_{}.png", zone.file.to_lowercase());
                 let f = fog(at, &zone);
@@ -1205,6 +1273,104 @@ fn main() -> Result<()> {
         }
     }
     img.save(&out.join("canvas.png"))?;
+    if exact {
+        // Preserve the shipped canvas pixel-for-pixel: its landmarks are already stock art
+        // seated at DBC coordinates. Never ask an image model to redraw the geography.
+        let source =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/twilights-eve/map/canvas.png");
+        let mut mapped = Picture::open(&source)?;
+        anyhow::ensure!(
+            (mapped.w, mapped.h) == size,
+            "source canvas dimensions differ from DBC layout"
+        );
+        anyhow::ensure!(
+            size == (5015, 3343),
+            "necropolis crop needs re-anchoring for a changed canvas extent"
+        );
+        // Extend the coarse Highlight outlines enough to retain connecting rivers and passes,
+        // then feather outward. The city uses its real silhouette rather than a square card.
+        soften_alpha(&mut playable, 36);
+        for p in playable.rgba.chunks_mut(4) {
+            p[3] = if p[3] > 2 { 255 } else { 0 };
+        }
+        let mut closed = Picture::blank(size.0, size.1);
+        for y in 0..size.1 {
+            for x in 0..size.0 {
+                closed.put(x, y, [1.0, 1.0, 1.0, 1.0 - playable.texel(x, y)[3]]);
+            }
+        }
+        soften_alpha(&mut closed, 20);
+        for y in 0..size.1 {
+            for x in 0..size.0 {
+                let a = closed.texel(x, y)[3];
+                // Restrained continuous cloud texture in canvas coordinates, never per-zone panels.
+                let (xf, yf) = (x as f32, y as f32);
+                let cloud = cloud_noise(xf / 180.0, yf / 180.0) * 0.6
+                    + cloud_noise(xf / 70.0, yf / 70.0) * 0.28
+                    + cloud_noise(xf / 24.0, yf / 24.0) * 0.12;
+                let light = 0.68 + cloud * 0.23;
+                closed.put(x, y, [light + 0.035, light + 0.025, light, a]);
+            }
+        }
+        closed.save(&out.join("exact_fog.png"))?;
+        playable.save(&out.join("playable_mask.png"))?;
+        let patch_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/twilights-eve/map/necropolis-patch.png");
+        let patch = Picture::open(&patch_path)?;
+        // Only this local clearing can change. Mountains and all other landmarks are untouched.
+        for y in 2435..2620 {
+            for x in 1925..2135 {
+                let edge = ((x - 1925).min(2134 - x).min(y - 2435).min(2619 - y)) as f32;
+                let t = (edge / 14.0).clamp(0.0, 1.0);
+                let a = t * t * (3.0 - 2.0 * t);
+                let s = patch.sample((x - 1850) as f32 / 360.0, (y - 2370) as f32 / 300.0);
+                let d = mapped.texel(x, y);
+                mapped.put(
+                    x,
+                    y,
+                    [
+                        s[0] * a + d[0] * (1.0 - a),
+                        s[1] * a + d[1] * (1.0 - a),
+                        s[2] * a + d[2] * (1.0 - a),
+                        1.0,
+                    ],
+                );
+            }
+        }
+        mapped.save(&out.join("exact_geography.png"))?;
+        blend(
+            &mut mapped,
+            [0.0, 0.0, size.0 as f64, size.1 as f64],
+            &closed,
+        );
+        mapped.save(&out.join("exact.png"))?;
+        let original = Picture::open(&source)?;
+        let mut unchanged_open_pixels = 0u64;
+        for y in 0..size.1 {
+            for x in 0..size.0 {
+                let patch = (1925..2135).contains(&x) && (2435..2620).contains(&y);
+                if !patch && closed.texel(x, y)[3] == 0.0 {
+                    anyhow::ensure!(
+                        mapped.texel(x, y) == original.texel(x, y),
+                        "open landmark pixel changed at {x},{y}"
+                    );
+                    unchanged_open_pixels += 1;
+                }
+            }
+        }
+        std::fs::write(
+            out.join("exact_validation.json"),
+            serde_json::to_string_pretty(&json!({
+                "size": [size.0, size.1],
+                "loc_rect": [canvas.left, canvas.right, canvas.top, canvas.bottom],
+                "playable_area_ids": listed,
+                "unchanged_clear_pixels_outside_necropolis": unchanged_open_pixels,
+                "necropolis_edit_rect_pixels": [1925, 2435, 2135, 2620],
+                "fog": "baked for the current playable zones; rerun when zones open",
+                "geography": "existing canvas pixels preserved; no generated redraw or coordinate warp"
+            }))?,
+        )?;
+    }
     written.insert(0, "canvas.png".to_string());
     if let Some((painting, warp, spec)) = &filler {
         let mut filled = fill(size.0, size.1, &art_layer, painting, warp, &spec.keep);
@@ -1247,6 +1413,7 @@ fn main() -> Result<()> {
         },
         "fog": fogs,
         "covers": covers,
+        "stock": stock,
     });
     std::fs::write(
         out.join("manifest.json"),

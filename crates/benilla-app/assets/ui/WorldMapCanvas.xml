@@ -1,13 +1,18 @@
 <Ui>
     <!--
         The map canvas (spec #410, painted by #421): while `GetMapCanvas()` answers, the world map
-        is one painted image under a mouse wheel zoom and a left-drag pan. Off the canvas the stock
+        is one painted regional map under a mouse wheel zoom and a left-drag pan. Off the canvas the stock
         map is left as it is, with no zoom.
 
-        The canvas plate draws `Interface\Benilla\map\canvas_<n>`, the image cut into 256 px
+        The canvas plate draws `Interface\Benilla\map\world-map-geography_<n>`, cut into 256 px
         pieces by `import_art.py` with its tile flag, with a cover over each unexplored overlay of a listed
-        zone. A fog plate per `GetMapMists()` entry draws `fog_<file>_<n>` on the zone's mist
-        seat. All of them work in the image's pixels, scaled so the image fills the detail frame.
+        zone, and Davis's painted place names `world-map-names_<n>` under the covers. One
+        full-canvas `world-map-hush-fog_<n>` plate, painted from the open-land mask, covers all
+        closed regions, including gaps between the old zone silhouettes. Repaint it when a zone opens.
+        Both layers use the image's pixels, scaled so the image fills the detail frame.
+        The geography and close terrain detail share the terrain survey's sampling grid.
+        Zone names and live locations are UI overlays. Burning Steppes stays inside
+        the canvas extent, fogged while held. Exploration covers use the same cloud material.
 
         `WorldMapDetailFrame` becomes the scroll child of a new `WorldMapZoomFrame` that takes its
         anchors and size, and `WorldMapButton` moves into the detail frame, so the scroll frame
@@ -20,7 +25,7 @@
     <Script><![CDATA[
         local ZOOM_STEP = 1.25
         -- The deepest zoom, in multiples of the widest zone's stock size.
-        local ZOOM_DEPTH = 4
+        local ZOOM_DEPTH = 8
         local MAX_PLATES = 8
         local TILE = 256
         -- The painted image's size, from `data/twilights-eve/map/manifest.json`.
@@ -118,17 +123,25 @@
 
         -- A plate's textures in a grid of 256 px pieces over a width by height image, each named
         -- `prefix .. n` and cut short in the last column and row, as `import_art.py --tile` cuts.
-        local function BenillaCanvas_Grid(plate, prefix, width, height)
+        -- A `tag` gives a second grid on the same plate its own list and texture names, drawn in
+        -- `layer`; without one the grid is the plate's BACKGROUND `Tile` grid.
+        local function BenillaCanvas_Grid(plate, prefix, width, height, tag, layer)
+            local list = plate.tiles
+            if tag then
+                list = plate[tag] or {}
+                plate[tag] = list
+            end
             local wide = math.ceil(width / TILE)
             local tall = math.ceil(height / TILE)
             local count = 0
             for j = 1, tall do
                 for k = 1, wide do
                     count = count + 1
-                    local tile = plate.tiles[count]
+                    local tile = list[count]
                     if not tile then
-                        tile = plate:CreateTexture(plate:GetName() .. "Tile" .. count, "BACKGROUND")
-                        plate.tiles[count] = tile
+                        tile = plate:CreateTexture(plate:GetName() .. (tag or "Tile") .. count,
+                            layer or "BACKGROUND")
+                        list[count] = tile
                     end
                     tile:SetWidth(math.min(TILE, width - TILE * (k - 1)))
                     tile:SetHeight(math.min(TILE, height - TILE * (j - 1)))
@@ -138,8 +151,8 @@
                     tile:Show()
                 end
             end
-            for i = count + 1, table.getn(plate.tiles) do
-                plate.tiles[i]:Hide()
+            for i = count + 1, table.getn(list) do
+                list[i]:Hide()
             end
         end
 
@@ -186,7 +199,7 @@
                         count = count + 1
                         local piece = plate.pieces[count]
                         if not piece then
-                            piece = plate:CreateTexture("BenillaCanvasCover" .. count, "ARTWORK")
+                            piece = plate:CreateTexture("BenillaCanvasCover" .. count, "OVERLAY")
                             plate.pieces[count] = piece
                         end
                         piece:SetWidth(pixelWidth * scale)
@@ -231,7 +244,11 @@
                 canvasPlate:SetWidth(CANVAS_WIDTH)
                 canvasPlate:SetHeight(CANVAS_HEIGHT)
                 canvasPlate:SetPoint("TOPLEFT", detail, "TOPLEFT", 0, 0)
-                BenillaCanvas_Grid(canvasPlate, ART .. "canvas_", CANVAS_WIDTH, CANVAS_HEIGHT)
+                BenillaCanvas_Grid(canvasPlate, ART .. "world-map-geography_", CANVAS_WIDTH, CANVAS_HEIGHT)
+                -- The painted place names sit above the survey detail (BORDER) and below the
+                -- covers (OVERLAY), so an unexplored place keeps its name under its cloud.
+                BenillaCanvas_Grid(canvasPlate, ART .. "world-map-names_", CANVAS_WIDTH, CANVAS_HEIGHT,
+                    "Name", "ARTWORK")
             end
             canvasPlate:SetScale(BenillaCanvas_ArtScale())
             local count = 0
@@ -247,40 +264,33 @@
             canvasPlate:Show()
         end
 
-        -- One fog plate per misted zone on its mist seat, in the fog image's pixels.
+        -- A continuous fog layer aligned to the same world rect as the geography.
         local function BenillaCanvas_SeatFogs()
-            local mists = GetMapMists()
-            for n = 1, table.getn(mists) do
-                local mist = mists[n]
-                local fog = fogs[n]
-                if not fog then
-                    fog = BenillaCanvas_NewPlate("BenillaCanvasFog" .. n, level + 2)
-                    fogs[n] = fog
-                end
-                local width = math.floor(mist.textureX * CANVAS_WIDTH + 0.5)
-                local height = math.floor(mist.textureY * CANVAS_HEIGHT + 0.5)
-                if fog.file ~= mist.file then
-                    fog.file = mist.file
-                    BenillaCanvas_Grid(fog, ART .. "fog_" .. string.lower(mist.file) .. "_", width, height)
-                end
-                fog:SetWidth(width)
-                fog:SetHeight(height)
-                fog:SetScale(BenillaCanvas_ArtScale())
-                fog:ClearAllPoints()
-                fog:SetPoint("TOPLEFT", detail, "TOPLEFT", mist.scrollX * CANVAS_WIDTH,
-                    -mist.scrollY * CANVAS_HEIGHT)
-                fog:Show()
+            local fog = fogs[1]
+            if not fog then
+                fog = BenillaCanvas_NewPlate("BenillaCanvasFog1", level + 2)
+                fogs[1] = fog
+                BenillaCanvas_Grid(fog, ART .. "world-map-hush-fog_", CANVAS_WIDTH, CANVAS_HEIGHT)
             end
-            for n = table.getn(mists) + 1, table.getn(fogs) do
-                fogs[n]:Hide()
-            end
+            fog:SetWidth(CANVAS_WIDTH)
+            fog:SetHeight(CANVAS_HEIGHT)
+            fog:SetScale(BenillaCanvas_ArtScale())
+            fog:ClearAllPoints()
+            fog:SetPoint("TOPLEFT", detail, "TOPLEFT", 0, 0)
+            fog:Show()
         end
 
         local function BenillaCanvas_SeatPlates()
             if onCanvas then
                 BenillaCanvas_SeatCanvas()
                 BenillaCanvas_SeatFogs()
+                if BenillaMapNavigation_Update then
+                    BenillaMapNavigation_Update(canvasPlate, canvas, zoom)
+                end
                 return
+            end
+            if BenillaMapNavigation_Update then
+                BenillaMapNavigation_Update(nil, nil, zoom)
             end
             if canvasPlate then
                 canvasPlate:Hide()

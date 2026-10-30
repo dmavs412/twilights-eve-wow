@@ -1950,6 +1950,8 @@ fn the_layer_does_not_grow() {
         "WorldMapMarks.xml",
         // The map canvas (#410): zone plates on one canvas, wheel zoom and drag pan.
         "WorldMapCanvas.xml",
+        // Survey detail and progressive navigation markers on the M-key map.
+        "WorldMapNavigation.xml",
         // The mist over Closed Zones on the world map (ADR 0015): `GetMapMists()` seatings.
         "WorldMapMist.xml",
         // The Reeling Bar (ADR 0018): the client-run fishing bar, which no stock file has.
