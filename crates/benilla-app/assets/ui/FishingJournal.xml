@@ -48,7 +48,7 @@
         The Cooking bookmark (ADR 0025, #496) is greyed until GetCookingJournal() counts a page.
         It has no bottom tabs: choosing it hides them and shows one frame,
         BenillaFishingJournalCookPages, a grid of six Dish Pages paged with the arrows. A Dish Page
-        is a parchment card with the family and band ("Combat Well Fed · Band 10"), the meal's
+        is a brown-and-gold card in an expanded 880 x 760 collection, with the family and band ("Combat Well Fed · Band 10"), the meal's
         icon and name in its quality colour, "+Stamina · needs ..." with the ingredients, "Times
         cooked N" and the first cook's day, time and kitchen (or "Not cooked yet"). The frame reads
         only GetCookingJournal(), GetDishPage(i) and GetDishPageIngredient(i, j);
@@ -609,6 +609,7 @@
                 name:SetWidth(100)
                 name:SetHeight(26)
             end
+            BenillaCookJournal_Build()
         end
 
         function BenillaJournalTalent_OnEnter()
@@ -697,6 +698,7 @@
             if frame.profession and not BenillaJournal_Known(frame.profession) then
                 frame.profession = "fishing"
             end
+            BenillaCookJournal_Layout(frame.profession == "cooking")
             BenillaJournal_ShowPage(frame.pageName or BENILLA_JOURNAL_PAGES[1])
             BenillaJournal_PaintProfessions()
             if frame.profession == "herbalism" then
@@ -750,6 +752,118 @@
 
         -- ── The Cooking bookmark ──
 
+        function BenillaCookJournal_Place(region, parent, x, y, w, h)
+            region:ClearAllPoints()
+            region:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -y)
+            region:SetWidth(w)
+            region:SetHeight(h)
+        end
+
+        -- Native brown panels and gold rules keep the collection in the kitchen's visual language.
+        function BenillaCookJournal_Build()
+            local root, pages = BenillaFishingJournal, BenillaFishingJournalCookPages
+            local place = BenillaCookJournal_Place
+            local bg = root:CreateTexture("BenillaCookJournalBackdrop", "BORDER")
+            bg:SetTexture(1, 1, 1, 1)
+            bg:SetAllPoints(root)
+            bg:SetGradient("VERTICAL", 0.12, 0.08, 0.045, 0.22, 0.157, 0.094)
+            bg:Hide()
+            root.cookRules = {}
+            for _, edge in ipairs({ { "TOPLEFT", "TOPRIGHT", true }, { "BOTTOMLEFT", "BOTTOMRIGHT", true },
+                { "TOPLEFT", "BOTTOMLEFT", false }, { "TOPRIGHT", "BOTTOMRIGHT", false } }) do
+                local line = root:CreateTexture(nil, "BORDER")
+                line:SetTexture(0.659, 0.522, 0.235, 1)
+                line:SetPoint(edge[1], root, edge[1], 0, 0)
+                line:SetPoint(edge[2], root, edge[2], 0, 0)
+                if edge[3] then line:SetHeight(1) else line:SetWidth(1) end
+                line:Hide()
+                table.insert(root.cookRules, line)
+            end
+            local emblem = pages:CreateTexture(nil, "ARTWORK")
+            emblem:SetTexture(BENILLA_JOURNAL_ART .. "prof_cooking")
+            place(emblem, pages, 24, 18, 44, 44)
+            local font = getglobal("GameFontHighlightSmall") and "GameFontHighlightSmall" or nil
+            local subtitle = pages:CreateFontString("BenillaCookJournalSubtitle", "ARTWORK", font)
+            subtitle:SetJustifyH("LEFT")
+            subtitle:SetTextColor(0.788, 0.690, 0.541)
+            place(subtitle, pages, 80, 52, 720, 16)
+            local caption = pages:CreateFontString(nil, "ARTWORK", font)
+            caption:SetJustifyH("LEFT")
+            caption:SetTextColor(0.788, 0.690, 0.541)
+            caption:SetText("YOUR RECIPE COLLECTION")
+            place(caption, pages, 24, 86, 600, 16)
+            local hint = pages:CreateFontString(nil, "ARTWORK", font)
+            hint:SetJustifyH("LEFT")
+            hint:SetTextColor(0.788, 0.690, 0.541)
+            hint:SetText("Hover a dish to inspect it. Learn new recipes at a kitchen.")
+            place(hint, pages, 24, 720, 600, 16)
+            place(BenillaFishingJournalCookCount, pages, 704, 24, 132, 18)
+            BenillaFishingJournalCookCount:SetJustifyH("RIGHT")
+            BenillaFishingJournalCookCount:SetTextColor(1, 0.82, 0)
+            place(BenillaFishingJournalCookScreen, pages, 728, 720, 68, 20)
+            BenillaFishingJournalCookScreen:SetTextColor(0.788, 0.690, 0.541)
+            place(BenillaFishingJournalCookPrev, pages, 686, 714, 30, 30)
+            place(BenillaFishingJournalCookNext, pages, 810, 714, 30, 30)
+            for n = 1, BENILLA_JOURNAL_DISH_SLOTS do
+                local card = getglobal("BenillaFishingJournalDish" .. n)
+                local name = card:GetName()
+                place(card, pages, 24 + math.mod(n - 1, 2) * 426,
+                    112 + math.floor((n - 1) / 2) * 198, 406, 182)
+                for _, suffix in ipairs({ "Needs", "Cooked" }) do
+                    getglobal(name .. suffix):SetTextColor(0.92, 0.88, 0.78)
+                end
+                for _, suffix in ipairs({ "Kind", "First" }) do
+                    getglobal(name .. suffix):SetTextColor(0.788, 0.690, 0.541)
+                end
+            end
+        end
+
+        -- Expand only the cooking collection; the other two professions keep their compact book.
+        function BenillaCookJournal_Layout(cooking)
+            local root = BenillaFishingJournal
+            if root.cookLayout ~= cooking then
+                root.cookLayout = cooking
+                root:SetWidth(cooking and 880 or 420)
+                root:SetHeight(cooking and 760 or 660)
+                root:ClearAllPoints()
+                root:SetPoint("CENTER", UIParent, "CENTER", cooking and -18 or 0, cooking and 0 or 16)
+                for _, part in ipairs({ "Backing", "TopLeft", "TopRight", "BottomLeft", "BottomRight",
+                    "Top", "Bottom", "Left", "Right", "Middle", "Plaque" }) do
+                    local texture = getglobal("BenillaFishingJournal" .. part)
+                    if cooking then texture:Hide() else texture:Show() end
+                end
+                for _, line in ipairs(root.cookRules) do
+                    if cooking then line:Show() else line:Hide() end
+                end
+                local title = BenillaFishingJournalTitle
+                title:ClearAllPoints()
+                if cooking then
+                    BenillaCookJournalBackdrop:Show()
+                    BenillaCookJournal_Place(title, root, 80, 22, 600, 26)
+                    title:SetJustifyH("LEFT")
+                else
+                    BenillaCookJournalBackdrop:Hide()
+                    title:SetWidth(0)
+                    title:SetHeight(0)
+                    title:SetPoint("CENTER", BenillaFishingJournalPlaque, "CENTER", 0, 1)
+                    title:SetJustifyH("CENTER")
+                end
+            end
+            if cooking then
+                root:SetScale(math.min(1, (GetScreenWidth() - 24) / 916, (GetScreenHeight() - 24) / 760))
+            else
+                root:SetScale(1)
+            end
+        end
+
+        function BenillaCookJournal_OnEnter()
+            if this.meal and GameTooltip then
+                GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink("item:" .. this.meal .. ":0:0:0")
+                GameTooltip:Show()
+            end
+        end
+
         function BenillaCookJournal_Turn(step)
             BenillaFishingJournal.cookPage = (BenillaFishingJournal.cookPage or 1) + step
             BenillaFishingJournal_Paint()
@@ -799,10 +913,19 @@
             local screen = math.max(1, math.min(frame.cookPage or 1, screens))
             frame.cookPage = screen
             BenillaFishingJournalCookCount:SetText(count .. " known")
+            local total, tried = 0, 0
+            for i = 1, count do
+                local _, _, _, _, _, _, _, cooked = GetDishPage(i)
+                total = total + (cooked or 0)
+                if cooked and cooked > 0 then tried = tried + 1 end
+            end
+            BenillaCookJournalSubtitle:SetText(tried .. " recipes cooked · " .. total .. " meals prepared")
             BenillaFishingJournalCookScreen:SetText((screens > 1) and (screen .. " / " .. screens) or "")
             if screens > 1 then
                 BenillaFishingJournalCookPrev:Show()
                 BenillaFishingJournalCookNext:Show()
+                if screen > 1 then BenillaFishingJournalCookPrev:Enable() else BenillaFishingJournalCookPrev:Disable() end
+                if screen < screens then BenillaFishingJournalCookNext:Enable() else BenillaFishingJournalCookNext:Disable() end
             else
                 BenillaFishingJournalCookPrev:Hide()
                 BenillaFishingJournalCookNext:Hide()
@@ -1575,29 +1698,35 @@
         </Scripts>
     </Button>
 
-    <!-- One Dish Page: a parchment card with the family and band, the meal's icon and name on a band, what it does and needs, and its cook counts. -->
-    <Frame name="BenillaJournalDishPageTemplate" virtual="true" hidden="true">
-        <Size><AbsDimension x="154" y="164"/></Size>
+    <!-- A roomy recipe card: meal, effect and ingredients, then cooking history. -->
+    <Frame name="BenillaJournalDishPageTemplate" virtual="true" hidden="true" enableMouse="true">
+        <Size><AbsDimension x="406" y="182"/></Size>
         <Layers>
             <Layer level="BACKGROUND">
-                <Texture setAllPoints="true"><Color r="0.35" g="0.2" b="0.06" a="0.16"/></Texture>
-                <Texture><Size><AbsDimension x="154" y="1"/></Size><Anchors><Anchor point="TOPLEFT"/></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
-                <Texture><Size><AbsDimension x="154" y="1"/></Size><Anchors><Anchor point="BOTTOMLEFT"/></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
-                <Texture><Size><AbsDimension x="1" y="164"/></Size><Anchors><Anchor point="TOPLEFT"/></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
-                <Texture><Size><AbsDimension x="1" y="164"/></Size><Anchors><Anchor point="TOPRIGHT"/></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                <Texture setAllPoints="true"><Color r="0.075" g="0.047" b="0.024" a="1"/></Texture>
+            </Layer>
+            <Layer level="BORDER">
+                <Texture><Size><AbsDimension x="1" y="1"/></Size><Anchors><Anchor point="TOPLEFT"/><Anchor point="TOPRIGHT"/></Anchors><Color r="0.431" g="0.337" b="0.161" a="1"/></Texture>
+                <Texture><Size><AbsDimension x="1" y="1"/></Size><Anchors><Anchor point="BOTTOMLEFT"/><Anchor point="BOTTOMRIGHT"/></Anchors><Color r="0.431" g="0.337" b="0.161" a="1"/></Texture>
+                <Texture><Size><AbsDimension x="1" y="1"/></Size><Anchors><Anchor point="TOPLEFT"/><Anchor point="BOTTOMLEFT"/></Anchors><Color r="0.431" g="0.337" b="0.161" a="1"/></Texture>
+                <Texture><Size><AbsDimension x="1" y="1"/></Size><Anchors><Anchor point="TOPRIGHT"/><Anchor point="BOTTOMRIGHT"/></Anchors><Color r="0.431" g="0.337" b="0.161" a="1"/></Texture>
             </Layer>
             <Layer level="ARTWORK">
-                <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="150" y="34"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="2" y="-22"/></Offset></Anchor></Anchors></Texture>
-                <Texture name="$parentIcon"><Size><AbsDimension x="28" y="28"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-25"/></Offset></Anchor></Anchors></Texture>
+                <Texture><Size><AbsDimension x="382" y="1"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-76"/></Offset></Anchor></Anchors><Color r="0.431" g="0.337" b="0.161" a="0.65"/></Texture>
+                <Texture name="$parentIcon"><Size><AbsDimension x="40" y="40"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-30"/></Offset></Anchor></Anchors></Texture>
             </Layer>
             <Layer level="OVERLAY">
-                <FontString name="$parentKind" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="142" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-5"/></Offset></Anchor></Anchors></FontString>
-                <FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="110" y="30"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="40" y="-24"/></Offset></Anchor></Anchors></FontString>
-                <FontString name="$parentNeeds" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size><AbsDimension x="142" y="50"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-62"/></Offset></Anchor></Anchors></FontString>
-                <FontString name="$parentCooked" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="142" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-114"/></Offset></Anchor></Anchors></FontString>
-                <FontString name="$parentFirst" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size><AbsDimension x="142" y="30"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-130"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentKind" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="382" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-10"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT" justifyV="CENTER"><Size><AbsDimension x="330" y="40"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="64" y="-30"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentNeeds" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size><AbsDimension x="382" y="44"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-84"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentCooked" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="382" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-132"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentFirst" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size><AbsDimension x="382" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-150"/></Offset></Anchor></Anchors></FontString>
             </Layer>
         </Layers>
+        <Scripts>
+            <OnEnter>BenillaCookJournal_OnEnter()</OnEnter>
+            <OnLeave>if GameTooltip then GameTooltip:Hide() end</OnLeave>
+        </Scripts>
     </Frame>
 
     <Frame name="BenillaFishingJournal" parent="UIParent" frameStrata="HIGH" movable="true" enableMouse="true" hidden="true">

@@ -12,13 +12,13 @@
         result panel and KITCHEN_CLOSED hides the window. Escape and the close button call
         KitchenClose().
 
-        One 820 x 600 frame in the Journal's art (`Interface\Benilla\journal\*`) with two bottom tabs.
-        Cook: the recipe book on the left (260 wide, scrolling: 11 effect groups of four bands, the
+        One 960 x 800 brown-and-gold frame, fitted to the viewport, with two header tabs.
+        Cook: the recipe book and recent cooking notes on the left (260 wide, scrolling: 11 effect groups of four bands, the
         fish dishes, the legends and Experiment), and on the right the lesson strip, the pot (title,
         sub-line, slot count in Experiment, four slots, the prediction, Cook and Refill or Empty the
-        pot), the pantry (scrolling, grouped Fish, herb categories, legends) and the last five log
-        lines. Orders & bait: today's three orders on the left and the fish that cut into bait on the
-        right. The result panel sits over the middle after a cook.
+        pot), and the pantry (scrolling, grouped Fish, herb categories, legends). Orders & bait:
+        today's three orders on the left and the fish that cut into bait on the right.
+        The result panel sits over the middle after a cook, dimming and blocking the window beneath.
     -->
     <Script><![CDATA[
         BENILLA_KITCHEN_ART = "Interface\\Benilla\\journal\\"
@@ -154,6 +154,158 @@
             return BenillaKitchen_Lines(frame, e[1], e[2], e[3])
         end
 
+        -- The same brown-and-gold frame language as the Forager's Grid, with copper accents
+        -- around the hearth. All art remains native UI geometry and live item icons.
+        function BenillaKitchen_Place(region, parent, x, y, w, h)
+            region:ClearAllPoints()
+            region:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -y)
+            if w then region:SetWidth(w) end
+            if h then region:SetHeight(h) end
+        end
+
+        function BenillaKitchen_Panel(frame)
+            local bg = frame:CreateTexture(nil, "BACKGROUND")
+            bg:SetTexture(1, 1, 1, 1)
+            bg:SetAllPoints(frame)
+            bg:SetGradient("VERTICAL", 0.12, 0.08, 0.045, 0.22, 0.157, 0.094)
+            BenillaKitchen_Lines(frame, 0.659, 0.522, 0.235)
+        end
+
+        function BenillaKitchen_Inset(parent, x, y, w, h)
+            local fill = parent:CreateTexture(nil, "BACKGROUND")
+            fill:SetTexture(0.055, 0.035, 0.018, 0.65)
+            BenillaKitchen_Place(fill, parent, x, y, w, h)
+            for _, edge in ipairs({ { x, y, w, 1 }, { x, y + h - 1, w, 1 },
+                { x, y, 1, h }, { x + w - 1, y, 1, h } }) do
+                local line = parent:CreateTexture(nil, "BORDER")
+                line:SetTexture(0.431, 0.337, 0.161, 1)
+                BenillaKitchen_Place(line, parent, edge[1], edge[2], edge[3], edge[4])
+            end
+        end
+
+        function BenillaKitchen_Fit()
+            BenillaKitchen:SetScale(math.min(1, (GetScreenWidth() - 24) / 960,
+                (GetScreenHeight() - 24) / 800))
+        end
+
+        function BenillaKitchen_Layout()
+            local place = BenillaKitchen_Place
+            local page = BenillaKitchenCookPage
+            BenillaKitchen:SetWidth(960)
+            BenillaKitchen:SetHeight(800)
+            BenillaKitchen:ClearAllPoints()
+            BenillaKitchen:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+            for _, part in ipairs({ "Backing", "TopLeft", "TopRight", "BottomLeft", "BottomRight",
+                "Top", "Bottom", "Left", "Right", "Middle", "Plaque" }) do
+                getglobal("BenillaKitchen" .. part):Hide()
+            end
+            BenillaKitchen_Panel(BenillaKitchen)
+            local emblem = BenillaKitchen:CreateTexture("BenillaKitchenEmblem", "ARTWORK")
+            emblem:SetTexture(BENILLA_KITCHEN_ART .. "prof_cooking")
+            place(emblem, BenillaKitchen, 20, 18, 46, 46)
+            place(BenillaKitchenTitle, BenillaKitchen, 80, 18, 700, 26)
+            BenillaKitchenTitle:SetJustifyH("LEFT")
+            place(BenillaKitchenCookName, BenillaKitchen, 80, 49, 700, 14)
+            BenillaKitchenCookName:SetTextColor(0.788, 0.690, 0.541)
+            place(BenillaKitchenTab1, BenillaKitchen, 24, 74, 150, 30)
+            place(BenillaKitchenTab2, BenillaKitchen, 178, 74, 190, 30)
+            place(page, BenillaKitchen, 24, 126, 912, 644)
+            place(BenillaKitchenOrdersPage, BenillaKitchen, 24, 126, 912, 644)
+            BenillaKitchen_Inset(page, -10, -10, 284, 654)
+            BenillaKitchen_Inset(page, 278, 76, 644, 324)
+            BenillaKitchen_Inset(page, 278, 410, 644, 234)
+            place(BenillaKitchenBookTitle, page, 4, 4, 126, 18)
+            place(BenillaKitchenBookCount, page, 130, 6, 126, 14)
+            place(BenillaKitchenBook, page, 4, 30, 256, 482)
+            BenillaKitchenBook:EnableMouseWheel(true)
+            BenillaKitchenExperiment:SetHeight(50)
+            BenillaKitchenExperimentSub:SetWidth(184)
+            BenillaKitchenExperimentSub:SetHeight(26)
+            BenillaKitchenExperimentSub:SetJustifyV("TOP")
+            place(BenillaKitchenLesson, page, 288, 0, 624, 66)
+            place(BenillaKitchenLessonTitle, BenillaKitchenLesson, 12, 8, 510, 16)
+            place(BenillaKitchenLessonText, BenillaKitchenLesson, 12, 30, 600, 32)
+            place(BenillaKitchenPotTitle, page, 288, 88, 450, 22)
+            place(BenillaKitchenPotSub, page, 288, 116, 624, 38)
+            place(BenillaKitchenSizeLabel, page, 750, 92, 58, 14)
+            for n = 2, 4 do
+                place(getglobal("BenillaKitchenSize" .. n), page, 816 + (n - 2) * 34, 84, 28, 26)
+            end
+            for n = 1, BENILLA_KITCHEN_SLOTS do
+                local slot = getglobal("BenillaKitchenSlot" .. n)
+                local name = slot:GetName()
+                place(slot, page, 288 + (n - 1) * 160, 166, 144, 80)
+                place(getglobal(name .. "Label"), slot, 8, 8, 128, 14)
+                place(getglobal(name .. "Icon"), slot, 8, 30, 40, 40)
+                place(getglobal(name .. "Name"), slot, 56, 30, 80, 40)
+                place(getglobal(name .. "Empty"), slot, 8, 32, 128, 38)
+            end
+            place(BenillaKitchenPredict, page, 288, 258, 624, 90)
+            place(BenillaKitchenPredictHead, BenillaKitchenPredict, 12, 8, 600, 12)
+            place(BenillaKitchenPredictMeal, BenillaKitchenPredict, 12, 26, 600, 22)
+            place(BenillaKitchenPredictUse, BenillaKitchenPredict, 12, 52, 600, 14)
+            place(BenillaKitchenPredictWhy, BenillaKitchenPredict, 12, 68, 600, 18)
+            place(BenillaKitchenCook, page, 288, 358, 170, 32)
+            place(BenillaKitchenRefill, page, 470, 358, 144, 32)
+            place(BenillaKitchenPantryTitle, page, 288, 420, 60, 18)
+            place(BenillaKitchenPantryHint, page, 356, 422, 554, 16)
+            BenillaKitchenPantryHint:SetText("Click an ingredient to add it. Untried ingredients reveal recipes.")
+            place(BenillaKitchenPantryEmpty, page, 288, 450, 624, 28)
+            place(BenillaKitchenPantryScroll, page, 288, 448, 624, 184)
+            BenillaKitchenPantryScroll:EnableMouseWheel(true)
+            BenillaKitchenPantryChild:SetWidth(624)
+            local logTitle = BenillaKitchen_Text(page, "BenillaKitchenLogTitle", "GameFontNormalSmall")
+            logTitle:SetText("FROM THE KITCHEN")
+            place(logTitle, page, 4, 534, 256, 14)
+            for n = 1, BENILLA_KITCHEN_LOG_LINES do
+                place(getglobal("BenillaKitchenLog" .. n), page, 4, 556 + (n - 1) * 16, 256, 14)
+            end
+            local orders = BenillaKitchenOrdersPage
+            BenillaKitchen_Inset(orders, -10, -10, 474, 654)
+            BenillaKitchen_Inset(orders, 480, -10, 442, 654)
+            place(BenillaKitchenOrdersTitle, orders, 8, 8, 290, 24)
+            place(BenillaKitchenOrdersWhen, orders, 294, 12, 150, 16)
+            for n = 1, 3 do
+                place(getglobal("BenillaKitchenOrder" .. n), orders, 8, 50 + (n - 1) * 96, 440, 82)
+            end
+            place(BenillaKitchenCutTitle, orders, 496, 8, 400, 24)
+            place(BenillaKitchenCutHint, orders, 496, 42, 400, 38)
+            for n = 1, BENILLA_KITCHEN_CUT_ROWS do
+                place(getglobal("BenillaKitchenCut" .. n), orders, 496, 94 + (n - 1) * 42, 400, 36)
+                getglobal("BenillaKitchenCut" .. n .. "Text"):SetWidth(388)
+                BenillaKitchen_ChipBack(getglobal("BenillaKitchenCut" .. n))
+            end
+            place(BenillaKitchenCutButton, orders, 496, 450, 160, 32)
+            BenillaKitchenResult:SetWidth(500)
+            BenillaKitchenResult:SetHeight(390)
+            BenillaKitchen_Panel(BenillaKitchenResult)
+            local icon = BenillaKitchenResult:CreateTexture("BenillaKitchenResultIcon", "ARTWORK")
+            place(icon, BenillaKitchenResult, 226, 20, 48, 48)
+            place(BenillaKitchenResultKick, BenillaKitchenResult, 20, 82, 460, 16)
+            place(BenillaKitchenResultMeal, BenillaKitchenResult, 20, 106, 460, 32)
+            place(BenillaKitchenResultUse, BenillaKitchenResult, 20, 148, 460, 32)
+            place(BenillaKitchenResultLine, BenillaKitchenResult, 20, 188, 460, 38)
+            for n = 1, BENILLA_KITCHEN_NEWS do
+                place(getglobal("BenillaKitchenResultNews" .. n), BenillaKitchenResult,
+                    20, 238 + (n - 1) * 24, 460, 22)
+            end
+            BenillaKitchenResultEat:SetHeight(32)
+            BenillaKitchenResultKeep:SetHeight(32)
+            BenillaKitchen_ChipBack(BenillaKitchenTab1)
+            BenillaKitchen_ChipBack(BenillaKitchenTab2)
+            local shade = CreateFrame("Frame", "BenillaKitchenResultShade", BenillaKitchen)
+            shade:SetAllPoints(BenillaKitchen)
+            shade:SetFrameStrata("DIALOG")
+            shade:EnableMouse(true)
+            shade:EnableMouseWheel(true)
+            local dim = shade:CreateTexture(nil, "BACKGROUND")
+            dim:SetAllPoints(shade)
+            dim:SetTexture(0, 0, 0, 0.65)
+            shade:Hide()
+            BenillaKitchenResult:SetFrameLevel(shade:GetFrameLevel() + 1)
+            BenillaKitchen_Fit()
+        end
+
         function BenillaKitchen_Build()
             for n = 1, BENILLA_KITCHEN_SLOTS do
                 local slot = CreateFrame("Button", "BenillaKitchenSlot" .. n, BenillaKitchenCookPage, "BenillaKitchenSlotTemplate")
@@ -195,6 +347,7 @@
             if UISpecialFrames then
                 tinsert(UISpecialFrames, "BenillaKitchen")
             end
+            BenillaKitchen_Layout()
         end
 
         -- The open kitchen's book and pantry, read into Lua tables.
@@ -483,7 +636,7 @@
             else
                 BenillaKitchenExperimentSelected:Hide()
             end
-            y = y + 40
+            y = y + 52
             for n = rows + 1, st.rows do
                 getglobal("BenillaKitchenRow" .. n):Hide()
             end
@@ -682,7 +835,7 @@
                         local b = BenillaKitchen_Pooled("Button", "BenillaKitchenPantryItem", items, child, "BenillaKitchenPantryTemplate")
                         local col = math.mod(n - 1, BENILLA_KITCHEN_PANTRY_COLUMNS)
                         b:ClearAllPoints()
-                        b:SetPoint("TOPLEFT", child, "TOPLEFT", col * 164, -y)
+                        b:SetPoint("TOPLEFT", child, "TOPLEFT", col * 210, -y)
                         if col == BENILLA_KITCHEN_PANTRY_COLUMNS - 1 or n == table.getn(list) then
                             y = y + 36
                         end
@@ -851,7 +1004,11 @@
             local tabs = { "cook", "orders" }
             for n, t in ipairs(tabs) do
                 local bg = getglobal("BenillaKitchenTab" .. n .. "Bg")
-                bg:SetTexture(BENILLA_KITCHEN_ART .. (t == tab and "bottom_tab_selected" or "bottom_tab"))
+                if t == tab then
+                    bg:SetTexture(0.34, 0.23, 0.10, 1)
+                else
+                    bg:SetTexture(0.10, 0.065, 0.035, 1)
+                end
             end
         end
 
@@ -860,6 +1017,7 @@
             if not name then
                 return
             end
+            BenillaKitchen_Fit()
             local st = BenillaKitchenState
             st.cook = cook
             BenillaKitchen_Load()
@@ -924,6 +1082,8 @@
             end
             BenillaKitchenResultKick:SetText(mush and "No recipe matched" or "You cooked")
             BenillaKitchenResultMeal:SetText(BenillaKitchen_Coloured(meal))
+            local _, _, resultTexture = BenillaKitchen_ItemInfo(meal)
+            BenillaKitchenResultIcon:SetTexture(resultTexture or (BENILLA_KITCHEN_ART .. "prof_cooking"))
             BenillaKitchenResultUse:SetText(BenillaKitchen_UseLine(meal))
             BenillaKitchenResultLine:SetText(line)
             for n = 1, BENILLA_KITCHEN_NEWS do
@@ -1082,7 +1242,7 @@
 
     <!-- One pantry item: icon, name, level and count left, and the Untried tag. -->
     <Button name="BenillaKitchenPantryTemplate" virtual="true">
-        <Size><AbsDimension x="160" y="32"/></Size>
+        <Size><AbsDimension x="204" y="32"/></Size>
         <Layers>
             <Layer level="ARTWORK">
                 <Texture name="$parentIcon">
@@ -1090,7 +1250,7 @@
                     <Anchors><Anchor point="LEFT"><Offset><AbsDimension x="3" y="0"/></Offset></Anchor></Anchors>
                 </Texture>
                 <FontString name="$parentName" inherits="GameFontHighlightSmall" justifyH="LEFT">
-                    <Size><AbsDimension x="126" y="12"/></Size>
+                    <Size><AbsDimension x="170" y="12"/></Size>
                     <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="32" y="-4"/></Offset></Anchor></Anchors>
                 </FontString>
                 <FontString name="$parentMeta" inherits="GameFontDisableSmall" justifyH="LEFT">
@@ -1155,7 +1315,7 @@
         </Scripts>
     </Button>
 
-    <!-- A bottom tab: Cook (1) or Orders & bait (2). -->
+    <!-- A header tab: Cook (1) or Orders & bait (2). -->
     <Button name="BenillaKitchenTabTemplate" virtual="true">
         <Size><AbsDimension x="150" y="30"/></Size>
         <Layers>
@@ -1438,6 +1598,10 @@
                         <Scripts><OnClick>BenillaKitchenResult:Hide()</OnClick></Scripts>
                     </Button>
                 </Frames>
+                <Scripts>
+                    <OnShow>if BenillaKitchenResultShade then BenillaKitchenResultShade:Show() end</OnShow>
+                    <OnHide>if BenillaKitchenResultShade then BenillaKitchenResultShade:Hide() end</OnHide>
+                </Scripts>
             </Frame>
         </Frames>
         <Scripts>
