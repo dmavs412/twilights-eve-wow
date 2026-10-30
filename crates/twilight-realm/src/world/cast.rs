@@ -3351,19 +3351,10 @@ impl InWorld {
         else {
             return;
         };
-        let Some(other) = self
-            .mobs
-            .iter()
-            .filter(|m| {
-                m.guid != tick.unit
-                    && m.alive()
-                    && m.attackable_by(self.guid)
-                    && !self.skills.on(m.guid, tick.spell_id)
-            })
-            .map(|m| (m.guid, distance(m.position, at)))
-            .filter(|&(_, d)| d <= radius_yd)
-            .min_by(|a, b| a.1.total_cmp(&b.1))
-            .map(|(guid, _)| guid)
+        let Some(other) = enemies_within(&self.mobs, self.guid, at, radius_yd)
+            .filter(|m| m.guid != tick.unit && !self.skills.on(m.guid, tick.spell_id))
+            .min_by(|a, b| distance(a.position, at).total_cmp(&distance(b.position, at)))
+            .map(|m| m.guid)
         else {
             return;
         };
@@ -3630,16 +3621,14 @@ impl InWorld {
                 }
                 Ok(Vec::new())
             }
-            Target::SelfArea => Ok(self
-                .mobs
-                .iter()
-                .filter(|m| {
-                    m.attackable_by(self.guid)
-                        && distance(m.position, c.position) <= skill.radius_yd
-                })
-                .take(skill.max_targets as usize)
-                .map(|m| m.guid)
-                .collect()),
+            Target::SelfArea => {
+                Ok(
+                    enemies_within(&self.mobs, self.guid, c.position, skill.radius_yd)
+                        .take(skill.max_targets as usize)
+                        .map(|m| m.guid)
+                        .collect(),
+                )
+            }
             Target::Enemy => {
                 let guid = target.ok_or(SPELL_FAILED_BAD_TARGETS)?;
                 let i = self
@@ -4380,17 +4369,12 @@ impl InWorld {
                     .find(|m| m.guid == target)
                     .map(|m| m.position);
                 let around: Vec<u64> = match at {
-                    Some(at) if radius_yd > 0.0 => self
-                        .mobs
-                        .iter()
-                        .filter(|m| {
-                            m.guid != target
-                                && m.alive()
-                                && m.attackable_by(self.guid)
-                                && distance(m.position, at) <= radius_yd
-                        })
-                        .map(|m| m.guid)
-                        .collect(),
+                    Some(at) if radius_yd > 0.0 => {
+                        enemies_within(&self.mobs, self.guid, at, radius_yd)
+                            .filter(|m| m.guid != target)
+                            .map(|m| m.guid)
+                            .collect()
+                    }
                     _ => Vec::new(),
                 };
                 for unit in std::iter::once(target).chain(around) {
@@ -4556,12 +4540,8 @@ impl InWorld {
                     .find(|m| m.guid == target)
                     .map(|m| m.position);
                 if let (true, Some(at)) = (radius_yd > 0.0, at) {
-                    let around: Vec<u64> = self
-                        .mobs
-                        .iter()
-                        .filter(|m| {
-                            m.guid != target && m.alive() && distance(m.position, at) <= radius_yd
-                        })
+                    let around: Vec<u64> = enemies_within(&self.mobs, self.guid, at, radius_yd)
+                        .filter(|m| m.guid != target)
                         .map(|m| m.guid)
                         .collect();
                     for unit in around {
@@ -5209,15 +5189,8 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
-        let around: Vec<u64> = self
-            .mobs
-            .iter()
-            .filter(|m| {
-                m.guid != target
-                    && m.alive()
-                    && m.attackable_by(self.guid)
-                    && distance(m.position, at) <= radius_yd
-            })
+        let around: Vec<u64> = enemies_within(&self.mobs, self.guid, at, radius_yd)
+            .filter(|m| m.guid != target)
             .map(|m| m.guid)
             .collect();
         for guid in around {
@@ -5412,14 +5385,11 @@ impl InWorld {
         else {
             return;
         };
-        let other = self
-            .mobs
-            .iter()
-            .filter(|m| m.guid != from && m.attackable_by(self.guid))
-            .map(|m| (m.guid, distance(m.position, c.position)))
-            .filter(|(_, d)| *d <= radius_yd)
-            .min_by(|a, b| a.1.total_cmp(&b.1))
-            .map(|(guid, _)| guid);
+        let at = c.position;
+        let other = enemies_within(&self.mobs, self.guid, at, radius_yd)
+            .filter(|m| m.guid != from)
+            .min_by(|a, b| distance(a.position, at).total_cmp(&distance(b.position, at)))
+            .map(|m| m.guid);
         let Some(other) = other.filter(|_| damage > 0) else {
             return;
         };
@@ -6591,14 +6561,10 @@ impl InWorld {
         ) else {
             return;
         };
-        let Some(other) = self
-            .mobs
-            .iter()
-            .filter(|m| m.guid != from && m.alive())
-            .map(|m| (m.guid, distance(m.position, at)))
-            .filter(|&(_, d)| d <= radius_yd)
-            .min_by(|a, b| a.1.total_cmp(&b.1))
-            .map(|(guid, _)| guid)
+        let Some(other) = enemies_within(&self.mobs, self.guid, at, radius_yd)
+            .filter(|m| m.guid != from)
+            .min_by(|a, b| distance(a.position, at).total_cmp(&distance(b.position, at)))
+            .map(|m| m.guid)
         else {
             return;
         };
@@ -7037,12 +7003,7 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
-        let around: Vec<u64> = self
-            .mobs
-            .iter()
-            .filter(|m| {
-                m.alive() && m.attackable_by(self.guid) && distance(m.position, at) <= radius_yd
-            })
+        let around: Vec<u64> = enemies_within(&self.mobs, self.guid, at, radius_yd)
             .map(|m| m.guid)
             .collect();
         for guid in around {
@@ -7713,6 +7674,36 @@ mod tests {
         assert_eq!(skills.auras.len(), 2);
         assert!(skills.auras.iter().all(|a| a.kind.stacks() == 5));
     }
+
+    /// The units an area reaches around a point (the growing area, a snare's spread, a bonus hit,
+    /// a burst) are the living ones the caster may attack: a friendly creature, one whose
+    /// Audience leaves the caster out and a dead one, each 2 yd from the target, are skipped.
+    #[test]
+    fn the_growing_area_skips_a_unit_the_caster_cannot_attack() {
+        use crate::phased::Phase;
+        use crate::shard::{Place, Shard};
+        const ME: u64 = 1;
+        let place = Place {
+            map: 0,
+            phase: Phase::Dungeon(1),
+        };
+        let mut mobs = Shard::new(place, 7).mobs;
+        assert!(mobs.len() >= 4, "the Abbey holds creatures");
+        let at = mobs[0].position;
+        for (i, m) in mobs.iter_mut().enumerate().skip(1) {
+            let yd = if i < 4 { 2.0 } else { 100.0 };
+            m.position = [at[0] + yd, at[1], at[2]];
+        }
+        mobs[1].template = crate::mobs::content()
+            .template
+            .iter()
+            .find(|t| t.friendly)
+            .expect("a friendly template");
+        mobs[2].audience = Some(crate::audience::Audience::of(&[ME + 1]));
+        mobs[3].state = State::Dead;
+        let reached: Vec<u64> = enemies_within(&mobs, ME, at, 5.0).map(|m| m.guid).collect();
+        assert_eq!(reached, [mobs[0].guid]);
+    }
 }
 
 /// The aura a run speed change of `pct` percent puts up: a sprint, or a snare when negative.
@@ -7724,6 +7715,17 @@ fn run_speed(pct: i32) -> AuraKind {
     } else {
         AuraKind::RunSpeed { pct: pct as u32 }
     }
+}
+
+/// The living units among `mobs` that `caster` may attack, within `radius_yd` of `at`.
+fn enemies_within(
+    mobs: &[crate::mobs::Mob],
+    caster: u64,
+    at: [f32; 3],
+    radius_yd: f32,
+) -> impl Iterator<Item = &crate::mobs::Mob> {
+    mobs.iter()
+        .filter(move |m| m.attackable_by(caster) && distance(m.position, at) <= radius_yd)
 }
 
 /// The school a skill's damage is in: its first damaging effect's, physical with none.
