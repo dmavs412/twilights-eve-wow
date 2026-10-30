@@ -4,7 +4,7 @@
 
 use benilla_ui::script::{CookingJournalView, DishPageView, ItemTemplateView, UiScript};
 
-use super::test_ui::load_ui as load_xml;
+use super::test_ui::{assert_panel_color, load_ui as load_xml};
 
 const CHOWDER: u32 = 962025;
 const PERCH: u32 = 960401;
@@ -107,11 +107,29 @@ fn choosing_cooking_hides_the_tabs_and_draws_the_dish_page() {
     frame(&mut s);
     choose_cooking(&mut s);
 
+    assert_panel_color(&mut s, "BenillaFishingJournal", [0.17, 0.1185, 0.0695, 1.0]);
     assert!(s
         .eval::<bool>("return BenillaFishingJournalProf3.selected")
         .unwrap());
     assert_eq!(text(&s, "BenillaFishingJournalTitle"), "Cooking Journal");
     assert!(shown(&s, "BenillaFishingJournalCookPages"));
+    for part in [
+        "TopLeft",
+        "TopRight",
+        "BottomLeft",
+        "BottomRight",
+        "Top",
+        "Bottom",
+        "Left",
+        "Right",
+        "Plaque",
+    ] {
+        assert!(
+            shown(&s, &format!("BenillaFishingJournal{part}")),
+            "cooking journal hides its {part} frame art"
+        );
+    }
+    assert!(!shown(&s, "BenillaFishingJournalMiddle"));
     for frame in [
         "BenillaFishingJournalTab1",
         "BenillaFishingJournalTab2",

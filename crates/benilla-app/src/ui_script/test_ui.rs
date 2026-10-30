@@ -5,6 +5,36 @@
 
 use benilla_ui::script::{QuadContent, UiScript};
 
+/// Check the actual drawn color of a window's largest solid panel, after Lua styling.
+/// Opening and label checks cannot catch a white fill masking a later gradient.
+pub(super) fn assert_panel_color(script: &mut UiScript, owner: &str, expected: [f32; 4]) {
+    script.resolve();
+    let painted = script
+        .extract()
+        .into_iter()
+        .filter(|q| script.quad_owner_name(q.target).as_deref() == Some(owner))
+        .filter_map(|q| match (q.rect, q.content) {
+            (
+                Some(rect),
+                QuadContent::Texture {
+                    path: None,
+                    color: Some(color),
+                    ..
+                },
+            ) => Some((rect.width() * rect.height(), color)),
+            _ => None,
+        })
+        .max_by(|a, b| a.0.total_cmp(&b.0))
+        .map(|(_, color)| color)
+        .unwrap_or_else(|| panic!("{owner} has no drawn solid panel"));
+    for (actual, wanted) in painted.into_iter().zip(expected) {
+        assert!(
+            (actual - wanted).abs() < 1e-6,
+            "{owner} draws {painted:?}, expected {expected:?}"
+        );
+    }
+}
+
 /// Load one interface file into `s`, panicking on any loader error; returns the frames it built
 /// (0 for a `.lua`). A chain entry needs client data, so a test naming one opens with
 /// `benilla_formats::wow_data_or_skip!()`.

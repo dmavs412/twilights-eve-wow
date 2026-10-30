@@ -7,7 +7,7 @@ use benilla_ui::script::{
     HerbalistView, ItemTemplateView, ScriptValue, UiScript,
 };
 
-use super::test_ui::load_ui as load_xml;
+use super::test_ui::{assert_panel_color, load_ui as load_xml};
 
 const ART: &str = "Interface\\Benilla\\herbalism\\";
 
@@ -442,6 +442,7 @@ fn the_pull_log_puts_the_newest_entry_at_the_top() {
 fn the_title_sits_inside_the_margin() {
     let mut s = window();
     push(&mut s, grid(|_| {}));
+    assert_panel_color(&mut s, "BenillaHerbPatch", [0.1865, 0.1315, 0.0785, 1.0]);
     let inset = s
         .eval::<f32>("return BenillaHerbTitle:GetLeft() - BenillaHerbPatch:GetLeft()")
         .unwrap();

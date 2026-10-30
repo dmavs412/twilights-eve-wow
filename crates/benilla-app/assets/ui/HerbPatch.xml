@@ -144,7 +144,6 @@
         -- The panel recipe: a brown gradient, a gold line on each edge and a black line outside it.
         function BenillaHerb_Panel(frame)
             local bg = frame:CreateTexture(nil, "BACKGROUND")
-            bg:SetTexture(1, 1, 1, 1)
             bg:SetAllPoints(frame)
             bg:SetGradient("VERTICAL", 0.153, 0.106, 0.063, 0.220, 0.157, 0.094)
             BenillaHerb_Lines(frame, 0, 0.659, 0.522, 0.235, 1)

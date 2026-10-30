@@ -48,7 +48,7 @@
         The Cooking bookmark (ADR 0025, #496) is greyed until GetCookingJournal() counts a page.
         It has no bottom tabs: choosing it hides them and shows one frame,
         BenillaFishingJournalCookPages, a grid of six Dish Pages paged with the arrows. A Dish Page
-        is a brown-and-gold card in an expanded 880 x 760 collection, with the family and band ("Combat Well Fed · Band 10"), the meal's
+        is a brown-and-gold card in an expanded 880 x 800 collection, with the family and band ("Combat Well Fed · Band 10"), the meal's
         icon and name in its quality colour, "+Stamina · needs ..." with the ingredients, "Times
         cooked N" and the first cook's day, time and kitchen (or "Not cooked yet"). The frame reads
         only GetCookingJournal(), GetDishPage(i) and GetDishPageIngredient(i, j);
@@ -759,56 +759,46 @@
             region:SetHeight(h)
         end
 
-        -- Native brown panels and gold rules keep the collection in the kitchen's visual language.
+        -- Brown recipe pages inside the same painted nine-slice frame as the other professions.
         function BenillaCookJournal_Build()
             local root, pages = BenillaFishingJournal, BenillaFishingJournalCookPages
             local place = BenillaCookJournal_Place
-            local bg = root:CreateTexture("BenillaCookJournalBackdrop", "BORDER")
-            bg:SetTexture(1, 1, 1, 1)
-            bg:SetAllPoints(root)
+            local bg = root:CreateTexture("BenillaCookJournalBackdrop", "BACKGROUND")
+            bg:SetPoint("TOPLEFT", root, "TOPLEFT", 8, -8)
+            bg:SetPoint("BOTTOMRIGHT", root, "BOTTOMRIGHT", -8, 8)
             bg:SetGradient("VERTICAL", 0.12, 0.08, 0.045, 0.22, 0.157, 0.094)
             bg:Hide()
-            root.cookRules = {}
-            for _, edge in ipairs({ { "TOPLEFT", "TOPRIGHT", true }, { "BOTTOMLEFT", "BOTTOMRIGHT", true },
-                { "TOPLEFT", "BOTTOMLEFT", false }, { "TOPRIGHT", "BOTTOMRIGHT", false } }) do
-                local line = root:CreateTexture(nil, "BORDER")
-                line:SetTexture(0.659, 0.522, 0.235, 1)
-                line:SetPoint(edge[1], root, edge[1], 0, 0)
-                line:SetPoint(edge[2], root, edge[2], 0, 0)
-                if edge[3] then line:SetHeight(1) else line:SetWidth(1) end
-                line:Hide()
-                table.insert(root.cookRules, line)
-            end
-            local emblem = pages:CreateTexture(nil, "ARTWORK")
-            emblem:SetTexture(BENILLA_JOURNAL_ART .. "prof_cooking")
-            place(emblem, pages, 24, 18, 44, 44)
             local font = getglobal("GameFontHighlightSmall") and "GameFontHighlightSmall" or nil
             local subtitle = pages:CreateFontString("BenillaCookJournalSubtitle", "ARTWORK", font)
             subtitle:SetJustifyH("LEFT")
             subtitle:SetTextColor(0.788, 0.690, 0.541)
-            place(subtitle, pages, 80, 52, 720, 16)
+            place(subtitle, pages, 52, 62, 720, 16)
             local caption = pages:CreateFontString(nil, "ARTWORK", font)
             caption:SetJustifyH("LEFT")
             caption:SetTextColor(0.788, 0.690, 0.541)
             caption:SetText("YOUR RECIPE COLLECTION")
-            place(caption, pages, 24, 86, 600, 16)
+            place(caption, pages, 52, 88, 600, 16)
             local hint = pages:CreateFontString(nil, "ARTWORK", font)
             hint:SetJustifyH("LEFT")
             hint:SetTextColor(0.788, 0.690, 0.541)
             hint:SetText("Hover a dish to inspect it. Learn new recipes at a kitchen.")
-            place(hint, pages, 24, 720, 600, 16)
-            place(BenillaFishingJournalCookCount, pages, 704, 24, 132, 18)
+            place(hint, pages, 52, 726, 560, 16)
+            place(BenillaFishingJournalCookCount, pages, 692, 86, 136, 18)
             BenillaFishingJournalCookCount:SetJustifyH("RIGHT")
             BenillaFishingJournalCookCount:SetTextColor(1, 0.82, 0)
-            place(BenillaFishingJournalCookScreen, pages, 728, 720, 68, 20)
+            place(BenillaFishingJournalCookScreen, pages, 722, 720, 68, 20)
             BenillaFishingJournalCookScreen:SetTextColor(0.788, 0.690, 0.541)
-            place(BenillaFishingJournalCookPrev, pages, 686, 714, 30, 30)
-            place(BenillaFishingJournalCookNext, pages, 810, 714, 30, 30)
+            place(BenillaFishingJournalCookPrev, pages, 680, 716, 26, 26)
+            place(BenillaFishingJournalCookNext, pages, 802, 716, 26, 26)
             for n = 1, BENILLA_JOURNAL_DISH_SLOTS do
                 local card = getglobal("BenillaFishingJournalDish" .. n)
                 local name = card:GetName()
-                place(card, pages, 24 + math.mod(n - 1, 2) * 426,
-                    112 + math.floor((n - 1) / 2) * 198, 406, 182)
+                place(card, pages, 52 + math.mod(n - 1, 2) * 398,
+                    112 + math.floor((n - 1) / 2) * 198, 378, 182)
+                getglobal(name .. "Name"):SetWidth(302)
+                for _, suffix in ipairs({ "Kind", "Needs", "Cooked", "First" }) do
+                    getglobal(name .. suffix):SetWidth(354)
+                end
                 for _, suffix in ipairs({ "Needs", "Cooked" }) do
                     getglobal(name .. suffix):SetTextColor(0.92, 0.88, 0.78)
                 end
@@ -824,23 +814,21 @@
             if root.cookLayout ~= cooking then
                 root.cookLayout = cooking
                 root:SetWidth(cooking and 880 or 420)
-                root:SetHeight(cooking and 760 or 660)
+                root:SetHeight(cooking and 800 or 660)
                 root:ClearAllPoints()
                 root:SetPoint("CENTER", UIParent, "CENTER", cooking and -18 or 0, cooking and 0 or 16)
-                for _, part in ipairs({ "Backing", "TopLeft", "TopRight", "BottomLeft", "BottomRight",
-                    "Top", "Bottom", "Left", "Right", "Middle", "Plaque" }) do
+                for _, part in ipairs({ "Backing", "Middle" }) do
                     local texture = getglobal("BenillaFishingJournal" .. part)
                     if cooking then texture:Hide() else texture:Show() end
-                end
-                for _, line in ipairs(root.cookRules) do
-                    if cooking then line:Show() else line:Hide() end
                 end
                 local title = BenillaFishingJournalTitle
                 title:ClearAllPoints()
                 if cooking then
                     BenillaCookJournalBackdrop:Show()
-                    BenillaCookJournal_Place(title, root, 80, 22, 600, 26)
-                    title:SetJustifyH("LEFT")
+                    title:SetPoint("CENTER", BenillaFishingJournalPlaque, "CENTER", 0, 1)
+                    title:SetWidth(220)
+                    title:SetHeight(24)
+                    title:SetJustifyH("CENTER")
                 else
                     BenillaCookJournalBackdrop:Hide()
                     title:SetWidth(0)
@@ -850,7 +838,7 @@
                 end
             end
             if cooking then
-                root:SetScale(math.min(1, (GetScreenWidth() - 24) / 916, (GetScreenHeight() - 24) / 760))
+                root:SetScale(math.min(1, (GetScreenWidth() - 24) / 916, (GetScreenHeight() - 24) / 800))
             else
                 root:SetScale(1)
             end
@@ -1712,7 +1700,7 @@
                 <Texture><Size><AbsDimension x="1" y="1"/></Size><Anchors><Anchor point="TOPRIGHT"/><Anchor point="BOTTOMRIGHT"/></Anchors><Color r="0.431" g="0.337" b="0.161" a="1"/></Texture>
             </Layer>
             <Layer level="ARTWORK">
-                <Texture><Size><AbsDimension x="382" y="1"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-76"/></Offset></Anchor></Anchors><Color r="0.431" g="0.337" b="0.161" a="0.65"/></Texture>
+                <Texture><Size><AbsDimension x="354" y="1"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-76"/></Offset></Anchor></Anchors><Color r="0.431" g="0.337" b="0.161" a="0.65"/></Texture>
                 <Texture name="$parentIcon"><Size><AbsDimension x="40" y="40"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-30"/></Offset></Anchor></Anchors></Texture>
             </Layer>
             <Layer level="OVERLAY">

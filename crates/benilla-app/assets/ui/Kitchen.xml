@@ -165,7 +165,6 @@
 
         function BenillaKitchen_Panel(frame)
             local bg = frame:CreateTexture(nil, "BACKGROUND")
-            bg:SetTexture(1, 1, 1, 1)
             bg:SetAllPoints(frame)
             bg:SetGradient("VERTICAL", 0.12, 0.08, 0.045, 0.22, 0.157, 0.094)
             BenillaKitchen_Lines(frame, 0.659, 0.522, 0.235)

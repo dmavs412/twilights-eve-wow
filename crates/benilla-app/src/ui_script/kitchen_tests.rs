@@ -8,7 +8,7 @@ use benilla_ui::script::{
     KitchenOrderView, KitchenPredictionView, KitchenRecipeView, KitchenView, UiScript,
 };
 
-use super::test_ui::load_ui as load_xml;
+use super::test_ui::{assert_panel_color, load_ui as load_xml};
 
 const PERCH: u32 = 960101;
 const ONION: u32 = 960201;
@@ -281,6 +281,7 @@ fn a_pantry_click_in_experiment_fills_the_first_slot() {
 #[test]
 fn a_cooked_pot_shows_the_result_panel() {
     let mut s = open();
+    assert_panel_color(&mut s, "BenillaKitchen", [0.17, 0.1185, 0.0695, 1.0]);
     s.set_kitchen_cooked(Some(KitchenCookedView {
         meal: STEW,
         mush: false,
@@ -292,6 +293,7 @@ fn a_cooked_pot_shows_the_result_panel() {
     s.fire_event("KITCHEN_COOKED", Vec::new());
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
     assert!(shown(&s, "BenillaKitchenResult"));
+    assert_panel_color(&mut s, "BenillaKitchenResult", [0.17, 0.1185, 0.0695, 1.0]);
     assert_eq!(plain(&s, "BenillaKitchenResultKick"), "You cooked");
     assert_eq!(plain(&s, "BenillaKitchenResultMeal"), "Hunter's Fish Stew");
     assert_eq!(

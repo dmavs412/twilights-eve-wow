@@ -185,7 +185,7 @@ fn the_eleventh_row_is_inside_the_scroll_child() {
     assert_eq!(
         s.eval::<f64>("return BenillaTalentsScrollChild:GetHeight()")
             .unwrap(),
-        11.0 * 48.0
+        11.0 * 80.0
     );
 }
 
