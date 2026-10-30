@@ -168,6 +168,10 @@ _Avoid_: talent tree, talent point, tab, tier (of a tree), respec
 One of the three choices in a skill's Talent Row: the skill with one strength added and nothing taken away, its own spell with its own name and icon. While set it replaces the plain skill in the spell book and on the action bar. In the sheet, a `talent` row with `variant_of`.
 _Avoid_: variant, card, glyph, rank
 
+**Change Line**:
+One sentence naming what a Skill Choice changes from its plain skill, saying what it replaces: "Stuns for 3 sec instead of 1 sec." The Talents panel's hover shows it in place of the full description; the spell book keeps the full text. In the sheet, the `change` cell; its numbers are tokens, and a level-scaled one shows the value at the player's level. ADR 0028.
+_Avoid_: diff, delta, summary, short description
+
 **Talent**:
 One of the three choices in a Talent Row that belongs to no skill: a passive (one-rank effects) or an active (a skill of its own), learned while set. In the sheet, a `talent` row with `row_key`.
 _Avoid_: perk, trait

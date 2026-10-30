@@ -15,6 +15,9 @@ nothing reads it.
   in the spell book and on the bar. In the sheet, a `talent` row with `variant_of`.
 - **Talent.** One of the three choices of a Talent row: a passive (one-rank effects) or an active
   (its own skill). In the sheet, a `talent` row with `row_key`. Acolyte's sixth row is the first.
+- **Change Line.** One sentence naming what a Skill Choice changes from the plain skill: "Stuns for
+  3 sec instead of 1 sec." The Talents panel's hover shows it in place of the full description
+  (grilled 2026-10-30). In the sheet, the `change` cell.
 
 ## Rules
 
@@ -51,6 +54,14 @@ Four columns join the master CSV: `variant_of`, `row_key`, `row_level` (#499) an
 - A Talent is `kind=talent`, `row_key=<key>`, `row_level` (equal across the three), `rank=1`, no
   `variant_of`, the old talent effect vocabulary with one rank. An active one has `target` or
   `cast_kind` and is built as a skill. Exactly three rows per `row_key`.
+- A Skill Choice fills `change`, its Change Line (grilled 2026-10-30). The `description` stays
+  the full text the spell book shows. The build refuses a blank `change` on a Skill Choice, a
+  filled one on any other row, a digit outside a token, and a token that names no field. A token
+  is `{field}` for the choice's built row, `{plain.field}` for the plain skill's, or
+  `{<key>.field}` for another row of the same Calling (an aura the choice applies). The build
+  writes a fixed value (cost, cooldown, a duration) into the built line, and leaves a
+  level-scaled amount for the realm to fill at the player's level when it sends `TalentRows`.
+  The text says what it replaces: "Costs {cost} rage instead of {plain.cost}."
 - The tree columns stay in the header and must stay empty; the `talent_tab` kind is gone.
 - No spell icon is on the rows of two Callings. One Calling's skill and the aura rows it puts up
   may share an icon.
@@ -76,7 +87,10 @@ click.
   unless `atInnkeeper`, then normal and click changes).
 - A line at the bottom: "Set rows change at an innkeeper." or, with `atInnkeeper`, "At the
   innkeeper: any open row can be changed."
-- Hovering a cell shows the choice's spell tooltip (name, description) from its Spell.dbc row.
+- Hovering a Skill Choice's cell shows its name, a grey line "Upgrades <skill>", and its Change
+  Line in white, as the realm sent it. No cost, range, cast time or cooldown lines. Hovering a
+  Talent's cell shows its full spell tooltip from its Spell.dbc row. The spell book and the action
+  bar show a set Skill Choice's full spell tooltip.
 - Ten rows fit; past that the strips scroll.
 - A Calling with no rows (Zealot) shows "No talents yet." where the strips would be.
 
@@ -84,6 +98,7 @@ click.
 
 Rows open at Charge 2, Fire Blast 4, Gouge 6, Heroic Strike 8. The plain rows are the real ones
 in `master.csv`. Every choice's numbers are the prototype's; Davis's first play note tunes them.
+The Changes column is the grill's record; the game reads each choice's `change` cell.
 
 | Row | Choice | Changes | Icon |
 |---|---|---|---|

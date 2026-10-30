@@ -74,3 +74,22 @@ placeholder rows at once. Row content, the innkeeper rule, the panel and Advance
 The talent trees go for every Calling, Zealot's TOML tree included. The balance model reads every
 open row set to its most damaging choice, and nothing makes up the old trees' passive power,
 since only Vanguard's talents ever worked in play (#187).
+
+## Amended 2026-10-30: the panel shows the Change Line
+
+Davis found a Skill Choice's tooltip hard to read: its description repeats the whole plain skill
+to change one detail. The Talents panel's hover now shows a Skill Choice's name, "Upgrades
+<skill>" and its Change Line, one sentence saying what it replaces ("Stuns for 3 sec instead of
+1 sec."). The spell book and the action bar keep the full tooltip, and a Talent row's choice keeps
+its full tooltip on the panel too.
+
+- The Change Line is the `change` cell of a Skill Choice row, hand-written. The `description`
+  stays the full text.
+- Its numbers are tokens naming a field of a built row: the choice's (`{cooldown}`), the plain
+  skill's (`{plain.cooldown}`) or another row of the Calling (`{searing_burn.effect1.amount}`).
+  The build refuses a digit outside a token, so a retune cannot leave the line stale.
+- The build checks every token and writes a fixed value (cost, cooldown, a duration) into the
+  built line. A level-scaled amount stays a token, and the realm fills it at the player's level
+  when it sends `TalentRows`; the choice's view carries the finished text. 1.12's `$` tokens
+  cannot name a cost, a cooldown or a realm-only effect, so the client's Spell.dbc text cannot
+  carry these lines. The client DBC patch does not change.
