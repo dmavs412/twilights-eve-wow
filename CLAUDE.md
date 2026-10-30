@@ -29,6 +29,9 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   rlibs with corrupt MSVC debug info, and later links fail (`LNK1103`, or unresolved symbols) on
   a crate you never touched. The cure is `cargo clean -p <crate>` for each crate the linker names.
   The build-lock hook refuses `timeout` in front of cargo.
+- **Do the work in this session.** Search with Grep, read with Read. The Agent tool is denied
+  in `.claude/settings.json`, so no subagents and no skills that fan out (implement-spec,
+  wayfinder, code-review, research). If a task seems to need one, say so and do it inline.
 - **Keep context small.** Read the lines you need. Report in a few lines. Davis runs `/clear` or
   `/compact` between tasks; say so when a task is done and the next one starts cold.
 - **Unattended runs.** `scripts/overnight.ps1` works through open issues labelled
