@@ -142,6 +142,42 @@ moving does not hold that skill or a Skill Choice of it (Auto Shot's `interrupt_
 build resolves `crit_cooldown_skill` and `cast_skill`'s `skill` to the named skill's spell id, as
 `reset_cooldowns`' keys, and fails a key that is not a skill of the Calling, `cast_while_moving`'s
 too. A buff's `extra_strike` answers to a Skill Choice of its skill.
+Acolyte's rows (#508) add more, each a whole number of at least 1 unless said otherwise, a
+`chance` running 1 to 100. A pair with one half missing fails the build. `periodic_damage` takes
+the pair `tick_spread_chance=N;tick_spread_yd=N`. After each tick, once whatever the stacks, at N%
+a copy of the aura goes on the nearest other living enemy within N yd of the wearer that does not
+wear it. The copy carries the stacks, the time left and the params, so it spreads too. It takes
+`tick_aura_chance_per_stack=N`, a number above 0 and at most 100, in place of `tick_aura_chance`:
+the chance after each tick is N times the stacks the tick dealt its damage at, capped at 100.
+`tick_aura` takes exactly one of the two. It takes the pair
+`weaken_per_stack_pct=N;weaken_max_pct=N`, each 1 to 100. While the aura is on a unit, every hit
+that unit deals, to anyone, is N% less a stack, never more than the most: swings, spells and
+periodic damage. It adds to `weaken_pct`, and the two never cut more than all of a hit.
+`school_damage` takes the pair `vs_aura_per_stack=yes;vs_aura_max_pct=N` with `vs_aura`: the
+bonus is `vs_aura_pct` times the stacks of the caster's aura on the target at the hit, never
+more than N%. It takes the pair `splash_pct=N;splash_yd=N`. After a hit that dealt damage, every
+other living enemy within N yd of the target takes N% of it in the same school, as a talent
+proc's `splash_pct` does; the splash is not part of what the cast dealt. `grow_aura` takes
+`radius_yd=N`: the aura also grows by `stacks` on every other living enemy within N yd of the
+target that wears the caster's aura of that row. `drain` takes the pair
+`tick_grow_aura=key;tick_grow_chance=N`. After each tick that hits, at N% the caster's damage over
+time of that row on the target gains a stack, its timer left alone; nothing without it. It takes
+the pair `overheal_absorb_max_pct=N;overheal_absorb_ms=N`. Each tick's heal past the caster's
+maximum health grows a shield on them under the skill's spell id, up to N% of their maximum
+health, lasting N ms from its last growth. `pct_of=full_heal`, for `absorb`, `periodic_heal`
+and `periodic_damage`, is what the cast's heals would have healed with no maximum health to stop
+them. `heal` takes the pair `overheal_burst_yd=N;overheal_burst_school=school`. After the heal
+lands, what it healed past the target's maximum health hits every living enemy within N yd of
+the target in that school, with that school's miss and crit rolls. A heal on another player
+bursts in that player's session. `ground_area` takes the pair `grow_aura=key;grow_every_ms=N`:
+every N ms while the area lasts, each living enemy inside that wears the caster's damage over
+time of that row gains a stack, its timer left alone. It takes `follow_caster=yes`: the area's
+centre is the caster's position at each check. The build refuses it on a row with `target=dest`
+or `area_center=ground`. The area's DynamicObject cannot move, so each time the caster is 2 yd or
+more from it, it goes and a new one comes at their feet. `tick_grow_aura` and `grow_aura` name an
+aura row of the Calling with a `periodic_damage` effect, as `grow_aura`'s `aura` does. The realm
+ends a channel on a step only when its skill's `interrupt_on` holds `move`, as the client's
+`channel_interrupt_flags` do (Unbroken Siphon's `interrupt_on=pushback|kick`).
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

@@ -359,7 +359,7 @@ Shadows (the utility) get no row. The numbers are the grill's; Davis's first pla
 | Talent row | Necrotic Detonation | active, 20 s cooldown: consumes the target's Creeping Blight for 12 + 1 per level a stack as Shadow, and heals allies within 10 yd for 150% of it | `Spell_Shadow_UnsummonBuilding` |
 | Talent row | Masochism | Blood Lance and Dark Mending give back 30% of the health they cost over 5 s | `Spell_Nature_MoonGlow` |
 | Talent row | Will to Survive | below 50% health, the Acolyte takes 30% more healing | `Spell_Holy_Renew` |
-| Siphon Life | Feeding Siphon | each tick has a 30% chance to add a stack to the target's Creeping Blight | `Spell_Shadow_LifeDrain` |
+| Siphon Life | Feeding Siphon | each tick has a 30% chance to add a stack to the target's Creeping Blight | `Spell_Shadow_DarkRitual` |
 | Siphon Life | Gorging Siphon | healing past max health becomes a shield, up to 20% of max health, for 10 s | `Spell_Shadow_VampiricAura` |
 | Siphon Life | Unbroken Siphon | can be channeled while moving | `Spell_Shadow_Haunting` |
 | Dark Mending | Coagulation | also leaves a shield on the ally of 30% of the heal that soaks Physical damage for 10 s | `Spell_Holy_Heal02` |
@@ -406,6 +406,18 @@ and Davis accepted them.
 - Every row has a choice that adds damage (Epidemic, Exsanguinate, Necrotic Detonation, Feeding
   Siphon, Dark Surplus, Breeding Ground), so the balance model (`docs/balance/rules.md`) can set
   every row to a damage choice.
+
+Readings taken in the build (#508): Feeding Siphon's `Spell_Shadow_LifeDrain` has been Cutthroat's
+Open Veins' since #505, after the grill checked the icons, so it takes `Spell_Shadow_DarkRitual`,
+unused on the sheet and in the 1.12 archives. Shroud of Rot's cloud is a DynamicObject, which
+cannot move: each time the Acolyte is 2 yd or more from it, the realm takes it away and puts a new
+one at their feet for the same area. A step ends a channel only when its skill's `interrupt_on`
+holds `move`, as the client's flags read it, so Unbroken Siphon keeps going. The weakening by
+stacks adds to Smoldering Ember's flat cut, and reads any damage over time on the unit, not only
+the Acolyte's. Gorging Siphon's shield restarts its 10 s only when it grows; at its most it runs
+out 10 s after the tick that filled it. Dark Surplus on another player bursts in that player's
+session, around them. Noxious Vapors' hit-chance cut reaches a mob's swings and its melee
+Creature Spells, not its other spells.
 
 ## Tickets
 
