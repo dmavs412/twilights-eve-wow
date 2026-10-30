@@ -127,9 +127,8 @@ pub(crate) enum Help {
         healer: u64,
         spell_id: u32,
         amount: u32,
-        /// What it heals past their maximum bursts at the enemies within so many yards of them,
-        /// in that school (Dark Surplus).
-        burst: Option<(f32, crate::rules::school::School)>,
+        /// What it heals past their maximum bursts at the enemies around them (Dark Surplus).
+        burst: Option<cast::OverhealBurst>,
     },
     Aura {
         to: u64,

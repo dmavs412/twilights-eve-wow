@@ -231,12 +231,22 @@ struct Area {
     enemy_aura: Option<&'static callings::AuraDef>,
     ally_aura: Option<&'static callings::AuraDef>,
     inside: Vec<u64>,
-    /// The caster's damage over time each enemy inside that wears it gains a stack of, the
-    /// seconds between, and until the next (Breeding Ground).
-    grow: Option<(u32, f32, f32)>,
+    /// The clock that grows the caster's damage over time on the enemies inside (Breeding
+    /// Ground).
+    grow: Option<AreaGrowth>,
     /// Centred on the caster at each check rather than where it was cast; `centre` is then
     /// where its DynamicObject stands (Shroud of Rot).
     follow: bool,
+}
+
+/// A ground area's clock: every `every` seconds, each enemy inside that wears the caster's damage
+/// over time `spell_id` gains a stack of it, its timer left as it is (Breeding Ground).
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct AreaGrowth {
+    spell_id: u32,
+    every: f32,
+    /// Seconds until the next stack.
+    next: f32,
 }
 
 /// How far the caster walks from a following area's DynamicObject before it is shown again at
@@ -504,6 +514,14 @@ pub(super) struct Ward {
     attacker_aura: Option<&'static callings::AuraDef>,
     burst_radius_yd: f32,
     burst_school: School,
+}
+
+/// What a heal heals past the healed player's maximum bursts into: each enemy within `radius_yd`
+/// of them takes it in `school` (Dark Surplus).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct OverhealBurst {
+    pub(crate) radius_yd: f32,
+    pub(crate) school: School,
 }
 
 /// What one of the player's shields soaked of a blow: its spell, level and riders, how much, and
@@ -2714,12 +2732,12 @@ impl InWorld {
             }
             // Each enemy inside wearing the caster's damage over time gains a stack on the
             // clock; its timer stays (Breeding Ground).
-            if let Some((id, every, next)) = &mut area.grow {
-                *next -= dt;
-                while *next <= CLOCK_EPSILON {
-                    *next += *every;
+            if let Some(grow) = &mut area.grow {
+                grow.next -= dt;
+                while grow.next <= CLOCK_EPSILON {
+                    grow.next += grow.every;
                     for &unit in now.iter().filter(|&&u| u != self.guid) {
-                        self.skills.grow(unit, *id, 1, events);
+                        self.skills.grow(unit, grow.spell_id, 1, events);
                     }
                 }
             }
@@ -4710,7 +4728,11 @@ impl InWorld {
                 let every = clock::secs(grow_every_ms);
                 let grow = grow_aura_spell_id
                     .filter(|_| grow_every_ms > 0)
-                    .map(|id| (id, every, every));
+                    .map(|spell_id| AreaGrowth {
+                        spell_id,
+                        every,
+                        next: every,
+                    });
                 let area = Area {
                     object: self.skills.next_patch(self.guid),
                     caster: self.guid,
@@ -4807,8 +4829,10 @@ impl InWorld {
                 overheal_burst_school,
             } => {
                 let amount = sized(amount) + direct_bonus;
-                let burst =
-                    (overheal_burst_yd > 0.0).then_some((overheal_burst_yd, overheal_burst_school));
+                let burst = (overheal_burst_yd > 0.0).then_some(OverhealBurst {
+                    radius_yd: overheal_burst_yd,
+                    school: overheal_burst_school,
+                });
                 if target == self.guid {
                     let (healed, full) = self.heal_bursting(
                         self.guid,
@@ -7011,21 +7035,21 @@ impl InWorld {
         healer: u64,
         spell_id: u32,
         amount: u32,
-        burst: Option<(f32, School)>,
+        burst: Option<OverhealBurst>,
         c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) -> (u32, u32) {
         let (healed, full) = self.heal_full_from(healer, c, spell_id, amount, events);
-        if let (Some((yd, school)), true) = (burst, full > healed) {
+        if let (Some(burst), true) = (burst, full > healed) {
             let at = c.position;
             self.burst_at(
                 spell_id,
                 full - healed,
-                school,
+                burst.school,
                 at,
-                yd,
+                burst.radius_yd,
                 c,
                 rng,
                 events,
