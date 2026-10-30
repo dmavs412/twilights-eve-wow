@@ -69,6 +69,17 @@ pub fn rows_in(events: &[SessionEvent]) -> Option<&[TalentRowView]> {
     })
 }
 
+/// What the login of the save `(guid, blob)` on `seed`'s dice shows of each row: its key, level,
+/// whether it is open, the choice set on it (0 for none) and its skill.
+pub fn login_rows((guid, blob): (u64, String), seed: u64) -> Vec<(String, u8, bool, u32, String)> {
+    let (_, _, entry) = enter(guid, &blob, seed);
+    rows_in(&entry)
+        .expect("the login sends the rows")
+        .iter()
+        .map(|r| (r.key.clone(), r.level, r.open, r.set, r.skill.clone()))
+        .collect()
+}
+
 pub fn learned(events: &[SessionEvent], spell: u32) -> bool {
     events
         .iter()

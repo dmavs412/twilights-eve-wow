@@ -5,7 +5,7 @@
 mod common;
 
 use common::cutthroat::*;
-use common::vanguard::{enter, learned, removed, rows_in, set_row};
+use common::vanguard::{enter, learned, login_rows, removed, rows_in, set_row};
 use common::*;
 
 const SEED: u64 = 0x5EED_0505;
@@ -46,24 +46,13 @@ const ROWS: [(&str, u8, &str, [&str; 3]); 6] = [
     ),
 ];
 
-/// The rows the login of a Cutthroat of `level` sends, as `(key, level, open, set, skill)`.
-fn login_rows(level: u8) -> Vec<(String, u8, bool, u32, String)> {
-    let (guid, blob) = cutthroat_save(level, false);
-    let (_, _, entry) = enter(guid, &blob, SEED);
-    rows_in(&entry)
-        .expect("the login sends the rows")
-        .iter()
-        .map(|r| (r.key.clone(), r.level, r.open, r.set, r.skill.clone()))
-        .collect()
-}
-
 #[test]
 fn at_level_24_the_login_lists_six_rows_open_and_empty_with_their_choices() {
     let want: Vec<(String, u8, bool, u32, String)> = ROWS
         .iter()
         .map(|(key, level, skill, _)| (key.to_string(), *level, true, 0, skill.to_string()))
         .collect();
-    assert_eq!(login_rows(ROWS_OPEN), want);
+    assert_eq!(login_rows(cutthroat_save(ROWS_OPEN, false), SEED), want);
 
     let (guid, blob) = cutthroat_save(ROWS_OPEN, false);
     let (_, _, entry) = enter(guid, &blob, SEED);
@@ -79,7 +68,7 @@ fn at_level_24_the_login_lists_six_rows_open_and_empty_with_their_choices() {
 
 #[test]
 fn at_level_3_every_row_is_locked() {
-    let rows = login_rows(3);
+    let rows = login_rows(cutthroat_save(3, false), SEED);
     assert_eq!(rows.len(), 6);
     assert!(rows.iter().all(|r| !r.2 && r.3 == 0), "{rows:?}");
 }

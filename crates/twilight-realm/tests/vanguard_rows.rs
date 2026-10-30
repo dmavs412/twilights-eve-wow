@@ -54,24 +54,13 @@ const ROWS: [(&str, u8, &str, [&str; 3]); 6] = [
     ),
 ];
 
-/// The rows the login of a Vanguard of `level` sends, as `(key, level, open, set, skill)`.
-fn login_rows(level: u8) -> Vec<(String, u8, bool, u32, String)> {
-    let (guid, blob) = vanguard_save(level, true);
-    let (_, _, entry) = enter(guid, &blob, SEED);
-    rows_in(&entry)
-        .expect("the login sends the rows")
-        .iter()
-        .map(|r| (r.key.clone(), r.level, r.open, r.set, r.skill.clone()))
-        .collect()
-}
-
 #[test]
 fn at_level_24_the_login_lists_six_rows_open_and_empty_with_their_choices() {
     let want: Vec<(String, u8, bool, u32, String)> = ROWS
         .iter()
         .map(|(key, level, skill, _)| (key.to_string(), *level, true, 0, skill.to_string()))
         .collect();
-    assert_eq!(login_rows(24), want);
+    assert_eq!(login_rows(vanguard_save(24, true), SEED), want);
 
     let (guid, blob) = vanguard_save(24, true);
     let (_, _, entry) = enter(guid, &blob, SEED);
@@ -84,7 +73,7 @@ fn at_level_24_the_login_lists_six_rows_open_and_empty_with_their_choices() {
 
 #[test]
 fn at_level_3_every_row_is_locked() {
-    let rows = login_rows(3);
+    let rows = login_rows(vanguard_save(3, true), SEED);
     assert_eq!(rows.len(), 6);
     assert!(rows.iter().all(|r| !r.2 && r.3 == 0), "{rows:?}");
 }

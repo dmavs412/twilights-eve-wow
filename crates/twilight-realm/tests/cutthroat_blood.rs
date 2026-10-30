@@ -8,8 +8,9 @@
 mod common;
 
 use benilla_protocol::{EntityKind, SessionEvent};
-use common::cutthroat::{energized, energy, set_rows, ROWS_OPEN};
+use common::cutthroat::{cutthroat_save, energized, energy, set_rows, ROWS_OPEN};
 use common::fight::*;
+use common::vanguard::enter;
 use common::*;
 use twilight_realm::{Realm, RealmCommand};
 
@@ -29,28 +30,11 @@ static BLOOD_RUSH: std::sync::LazyLock<u32> =
 /// A droplet's guid, spell id and centre, as its create shows it.
 type Droplet = (u64, [f32; 3]);
 
-/// A level 10 Cutthroat, fists only, in the world at `seed`; its guid.
-fn cutthroat(seed: u64) -> (Realm, View, u64) {
-    cutthroat_with(seed, 10, &[])
-}
-
-/// [`cutthroat`] at `level`, each `(row, choice)` set.
-fn cutthroat_with(seed: u64, level: u8, rows: &[(&str, u32)]) -> (Realm, View, u64) {
-    let mut maker = realm();
-    assert_eq!(create(&mut maker, "Garrote", HUMAN, 0), CHAR_CREATE_SUCCESS);
-    let me = roster(&mut maker)[0].guid;
-    let blob = maker
-        .export_character(me)
-        .unwrap()
-        .replace("level = 1\n", &format!("level = {level}\n"))
-        .replace("calling = \"basic_warrior\"", "calling = \"cutthroat\"");
-    let blob = drop_slot(&drop_slot(&blob, 15), 16);
-    let mut realm = Realm::with_seed(seed);
-    realm.import_character(&blob).unwrap();
-    realm.handle(RealmCommand::EnterWorld { guid: me });
-    realm.tick(0.0, &FlatGround);
-    let mut view = View::default();
-    view.drain(&mut realm);
+/// A Cutthroat of `level`, fists only, in the world at `seed` with each `(row, choice)` set: the
+/// realm, the view and its guid.
+fn cutthroat(seed: u64, level: u8, rows: &[(&str, u32)]) -> (Realm, View, u64) {
+    let (me, blob) = cutthroat_save(level, true);
+    let (mut realm, mut view, _) = enter(me, &blob, seed);
     set_rows(&mut realm, &mut view, rows);
     view.run(&mut realm, 1.0);
     (realm, view, me)
@@ -126,7 +110,7 @@ fn ticks(events: &[SessionEvent], spell_id: u32) -> usize {
 fn rupture_ticks_spill_droplets_three_to_six_yards_from_the_mob() {
     let mut count = 0;
     for seed in 0..20 {
-        let (mut realm, mut view, _) = cutthroat(seed);
+        let (mut realm, mut view, _) = cutthroat(seed, 10, &[]);
         let (mob, events) = rupture_a_mob(&mut realm, &mut view, *RUPTURE, 9.0);
         for (_, at) in droplets(&events) {
             let away = flat(at, mob.position);
@@ -170,7 +154,7 @@ fn until_droplet(
 #[test]
 fn walking_over_a_droplet_grants_a_stack_of_bloodlust_and_takes_it_away() {
     for seed in 0..20 {
-        let (mut realm, mut view, me) = cutthroat(seed);
+        let (mut realm, mut view, me) = cutthroat(seed, 10, &[]);
         let Some((_, (object, at))) = until_droplet(&mut realm, &mut view, 9.0) else {
             continue;
         };
@@ -201,7 +185,7 @@ fn walking_over_a_droplet_grants_a_stack_of_bloodlust_and_takes_it_away() {
 #[test]
 fn a_droplet_nobody_touches_is_destroyed_eight_seconds_after_its_create() {
     for seed in 0..20 {
-        let (mut realm, mut view, me) = cutthroat(seed);
+        let (mut realm, mut view, me) = cutthroat(seed, 10, &[]);
         let Some((_, (object, _))) = until_droplet(&mut realm, &mut view, 9.0) else {
             continue;
         };
@@ -363,14 +347,14 @@ fn open_veins_rupture_spills_a_droplet_on_every_tick() {
     let (mut checked, mut plain_ticks, mut plain_drops) = (0, 0, 0);
     for seed in 0..6 {
         let rows = [("rupture", *OPEN_VEINS)];
-        let (mut realm, mut view, _) = cutthroat_with(seed, ROWS_OPEN, &rows);
+        let (mut realm, mut view, _) = cutthroat(seed, ROWS_OPEN, &rows);
         let (_, events) = rupture_a_mob(&mut realm, &mut view, *OPEN_VEINS, 9.0);
         let ticked = ticks(&events, *OPEN_VEINS);
         if ticked > 0 {
             assert_eq!(droplets(&events).len(), ticked, "seed {seed}");
             checked += 1;
         }
-        let (mut realm, mut view, _) = cutthroat_with(seed, ROWS_OPEN, &[]);
+        let (mut realm, mut view, _) = cutthroat(seed, ROWS_OPEN, &[]);
         let (_, events) = rupture_a_mob(&mut realm, &mut view, *RUPTURE, 9.0);
         plain_ticks += ticks(&events, *RUPTURE);
         plain_drops += droplets(&events).len();
@@ -386,7 +370,7 @@ fn open_veins_rupture_spills_a_droplet_on_every_tick() {
 /// dice: the events of the step it was picked up in and the Energy before it, or `None` when no
 /// droplet spilled.
 fn pick_up(seed: u64, rows: &[(&str, u32)]) -> Option<(Vec<SessionEvent>, u32)> {
-    let (mut realm, mut view, me) = cutthroat_with(seed, ROWS_OPEN, rows);
+    let (mut realm, mut view, me) = cutthroat(seed, ROWS_OPEN, rows);
     let (_, (object, at)) = until_droplet(&mut realm, &mut view, 9.0)?;
     let before = energy(&view, me);
     realm.handle(RealmCommand::Move {

@@ -6,10 +6,11 @@ mod common;
 
 use benilla_protocol::messages::PeriodicTick;
 use benilla_protocol::SessionEvent;
-use common::cutthroat::{set_rows, ROWS_OPEN};
+use common::cutthroat::{cutthroat_save, set_rows, ROWS_OPEN};
 use common::fight::*;
+use common::vanguard::enter;
 use common::*;
-use twilight_realm::{Realm, RealmCommand};
+use twilight_realm::Realm;
 
 const SEED: u64 = 0x5EED_0107;
 const LEVEL: u8 = 10;
@@ -19,27 +20,11 @@ static EVASION: std::sync::LazyLock<u32> =
 static SECOND_WIND: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| choice("cutthroat", "evasion", "second_wind"));
 
-/// A level 10 Cutthroat in the world: the realm, its guid and what the client has seen.
-fn cutthroat() -> (Realm, u64, View) {
-    cutthroat_with(LEVEL, &[])
-}
-
-/// [`cutthroat`] at `level`, each `(row, choice)` set.
-fn cutthroat_with(level: u8, rows: &[(&str, u32)]) -> (Realm, u64, View) {
-    let mut maker = realm();
-    assert_eq!(create(&mut maker, "Garrote", HUMAN, 0), CHAR_CREATE_SUCCESS);
-    let guid = roster(&mut maker)[0].guid;
-    let blob = maker
-        .export_character(guid)
-        .unwrap()
-        .replace("level = 1\n", &format!("level = {level}\n"))
-        .replace("calling = \"basic_warrior\"", "calling = \"cutthroat\"");
-    let mut realm = Realm::with_seed(SEED);
-    realm.import_character(&blob).unwrap();
-    realm.handle(RealmCommand::EnterWorld { guid });
-    realm.tick(0.0, &FlatGround);
-    let mut view = View::default();
-    view.drain(&mut realm);
+/// A Cutthroat of `level` in the world with each `(row, choice)` set: the realm, its guid and
+/// what the client has seen.
+fn cutthroat(level: u8, rows: &[(&str, u32)]) -> (Realm, u64, View) {
+    let (guid, blob) = cutthroat_save(level, false);
+    let (mut realm, mut view, _) = enter(guid, &blob, SEED);
     set_rows(&mut realm, &mut view, rows);
     (realm, guid, view)
 }
@@ -50,7 +35,7 @@ fn dodge(view: &View, me: u64) -> f32 {
 
 #[test]
 fn evasion_adds_fifty_percent_dodge_for_fifteen_seconds() {
-    let (mut realm, me, mut view) = cutthroat();
+    let (mut realm, me, mut view) = cutthroat(LEVEL, &[]);
     let base = dodge(&view, me);
     realm.handle(cast(*EVASION, None));
     assert_eq!(refusal(&view.drain(&mut realm), *EVASION), None, "the cast");
@@ -82,7 +67,7 @@ fn heal_ticks(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
 
 #[test]
 fn second_wind_heals_thirty_percent_of_max_health_over_its_fifteen_seconds_and_raises_dodge() {
-    let (mut realm, me, mut view) = cutthroat_with(ROWS_OPEN, &[("evasion", *SECOND_WIND)]);
+    let (mut realm, me, mut view) = cutthroat(ROWS_OPEN, &[("evasion", *SECOND_WIND)]);
     let max = view.fields(me).unit_max_health().unwrap();
     let base = dodge(&view, me);
     realm.handle(cast(*SECOND_WIND, None));
@@ -103,7 +88,7 @@ fn second_wind_heals_thirty_percent_of_max_health_over_its_fifteen_seconds_and_r
         "healed {total} of {max}: {ticks:?}"
     );
 
-    let (mut realm, _, mut view) = cutthroat_with(ROWS_OPEN, &[]);
+    let (mut realm, _, mut view) = cutthroat(ROWS_OPEN, &[]);
     realm.handle(cast(*EVASION, None));
     let mut events = view.drain(&mut realm);
     events.extend(view.run(&mut realm, 16.0));
