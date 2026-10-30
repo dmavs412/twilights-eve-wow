@@ -136,6 +136,35 @@ pub(crate) fn skill(c: &Char, spell_id: u32) -> Option<&'static Skill> {
     own.chain(chosen).find(|s| s.spell_id == spell_id)
 }
 
+/// The version of `c`'s skill `key` they cast now: the Skill Choice set on its row, or the skill
+/// itself when its level has reached it. A set choice's own key finds that choice.
+pub(crate) fn current(c: &Char, key: &str) -> Option<&'static Skill> {
+    set_choices(c)
+        .filter_map(RowChoice::skill)
+        .find(|s| s.is(key))
+        .or_else(|| {
+            callings::of(c.calling)
+                .skills
+                .iter()
+                .find(|s| s.key == key && u32::from(s.learn_level) <= u32::from(c.level))
+        })
+}
+
+/// [`current`] for the skill of the Calling with the plain spell id `spell_id`.
+pub(crate) fn current_of(c: &Char, spell_id: u32) -> Option<&'static Skill> {
+    let plain = callings::of(c.calling)
+        .skills
+        .iter()
+        .chain(&callings::of(c.calling).hidden_skills)
+        .find(|s| s.spell_id == spell_id)?;
+    current(c, &plain.key).or_else(|| {
+        callings::of(c.calling)
+            .hidden_skills
+            .iter()
+            .find(|s| s.spell_id == spell_id)
+    })
+}
+
 /// Why a row could not be set.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Refusal {

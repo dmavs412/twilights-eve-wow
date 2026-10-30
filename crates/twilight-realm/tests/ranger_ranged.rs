@@ -379,3 +379,92 @@ fn the_sheet_shows_ranged_attack_power() {
         "{min}-{max}"
     );
 }
+
+/// The root or stun aura the Skill Choice `key` of the row for `skill` puts on its target, and for
+/// how long.
+fn control_of(skill: &str, key: &str) -> (u32, u32) {
+    use twilight_realm::callings::Effect;
+    common::ranger::ranger_choice_skill(skill, key)
+        .effects
+        .iter()
+        .find_map(|e| match *e {
+            Effect::Root {
+                aura_spell_id,
+                duration_ms,
+            } => Some((aura_spell_id, duration_ms)),
+            Effect::Stun {
+                aura_spell_id,
+                duration_ms,
+                ..
+            } => Some((aura_spell_id, duration_ms)),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("{key} roots or stuns"))
+}
+
+/// A Ranger of 24 with the choice `key` set on the row for `row`, or with the row empty and
+/// casting the plain skill when `plain`, after a cast at the sturdy scorpid that hit it: the first
+/// seed whose shot did not miss.
+fn landed_on_mob(row: &str, key: &str, plain: bool) -> common::vanguard::Scene {
+    use common::initiate::cast_through;
+    use common::ranger::{ranger, ranger_choice, ranger_scene};
+    use common::vanguard::STURDY;
+    let id = if plain {
+        ranger(row)
+    } else {
+        ranger_choice(row, key)
+    };
+    let rows = if plain { vec![] } else { vec![(row, id)] };
+    for seed in 0..20 {
+        let mut s = ranger_scene(0x507_1000 + seed, &rows, STURDY);
+        let mob = s.mob.guid;
+        let events = cast_through(&mut s.realm, &mut s.view, id, mob);
+        let hit = events.iter().any(|e| {
+            matches!(e, SessionEvent::SpellGo { spell_id, hits, .. } if *spell_id == id && hits.contains(&mob))
+        });
+        if hit {
+            return s;
+        }
+    }
+    panic!("{key} never landed");
+}
+
+/// Pinning Barb (#507): Barbed Arrow's bleed and snare, and a 2 s root under the stock Improved
+/// Wing Clip aura. Plain Barbed Arrow roots nothing.
+#[test]
+fn pinning_barb_roots_the_mob_for_2_seconds() {
+    use common::initiate::lasts;
+    let (root, ms) = control_of("barbed_arrow", "pinning_barb");
+    let mut s = landed_on_mob("barbed_arrow", "pinning_barb", false);
+    let mob = s.mob.guid;
+    assert!(s.view.aura(mob, root).is_some(), "rooted");
+    let secs = lasts(&mut s.realm, &mut s.view, mob, root, 5.0);
+    let want = ms as f32 / 1000.0;
+    assert!((secs - want).abs() <= 0.15, "rooted {secs} s, want {want}");
+
+    let s = landed_on_mob("barbed_arrow", "pinning_barb", true);
+    assert!(
+        s.view.aura(s.mob.guid, root).is_none(),
+        "plain Barbed Arrow roots nothing"
+    );
+}
+
+/// Staggering Shaft (#507): Puncturing Shaft's hit, and a 2 s stun under the stock Improved
+/// Concussive Shot aura. Plain Puncturing Shaft stuns nothing.
+#[test]
+fn staggering_shaft_stuns_the_mob_for_2_seconds() {
+    use common::initiate::lasts;
+    let (stun, ms) = control_of("puncturing_shaft", "staggering_shaft");
+    let mut s = landed_on_mob("puncturing_shaft", "staggering_shaft", false);
+    let mob = s.mob.guid;
+    assert!(s.view.aura(mob, stun).is_some(), "stunned");
+    let secs = lasts(&mut s.realm, &mut s.view, mob, stun, 5.0);
+    let want = ms as f32 / 1000.0;
+    assert!((secs - want).abs() <= 0.15, "stunned {secs} s, want {want}");
+
+    let s = landed_on_mob("puncturing_shaft", "staggering_shaft", true);
+    assert!(
+        s.view.aura(s.mob.guid, stun).is_none(),
+        "plain Puncturing Shaft stuns nothing"
+    );
+}

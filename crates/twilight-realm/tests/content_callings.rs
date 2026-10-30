@@ -476,6 +476,11 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::RefundCost { .. } => {
             panic!("{key}: the reference has no realm half for a cost refund")
         }
+        // Ranger's Parting Shot lives in the master CSV only (#507); tests/ranger_movement.rs
+        // reads it.
+        Effect::CastSkill { .. } => {
+            panic!("{key}: the reference has no realm half for a cast of another skill")
+        }
     }
 }
 

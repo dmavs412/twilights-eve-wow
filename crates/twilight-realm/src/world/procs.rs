@@ -163,7 +163,8 @@ impl InWorld {
                 }
             }
             if let Some((key, ms)) = proc.cooldown {
-                if let Some(skill) = crate::callings::of(c.calling).skill_by_key(key) {
+                // The version of the skill set on its row, as a strike's crit cools (#507).
+                if let Some(skill) = crate::talents::current(c, key) {
                     self.skills.change_cooldown(skill.spell_id, ms, events);
                 }
             }

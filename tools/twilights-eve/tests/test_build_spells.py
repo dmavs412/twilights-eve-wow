@@ -1746,6 +1746,75 @@ class TalentRows(BuildSpells):
     def test_a_consume_auras_spread_yd_is_a_whole_number_of_at_least_1(self):
         self.assert_whole_param([CALLING, self.BUFF], self.CONSUME, "spread_yd")
 
+    # Ranger's rows (#507): a skill that names another of the Calling, a leap, an aura naming a skill.
+    LEAP = {**STRIKE, "key": "leap", "spell_id": "1000079", "target": "self", "effect1_kind": "blink",
+            "effect1_params": "distance_yd=15;backward=yes", "effect4_kind": "", "effect4_params": ""}
+
+    def test_a_weapon_strikes_repeat_chance_runs_from_1_to_100(self):
+        self.assertEqual(self.built_params([], STRIKE, "repeat_chance=30")["repeat_chance"], 30)
+        self.assert_each_fails([], STRIKE, "repeat_chance needs a whole number from 1 to 100, has",
+                               "repeat_chance=0", "repeat_chance=101", "repeat_chance=1.5")
+
+    def test_a_weapon_strikes_crit_cooldown_names_a_skill_and_its_ms_and_they_go_together(self):
+        params = self.built_params([], STRIKE, "crit_cooldown_skill=strike;crit_cooldown_ms=6000")
+        # The build resolves the key to the skill's spell id, as reset_cooldowns' are.
+        self.assertEqual((params["crit_cooldown_spell_id"], params["crit_cooldown_ms"]), (1000078, 6000))
+        self.assertNotIn("crit_cooldown_skill", params)
+        self.assert_each_fails([], STRIKE, "crit_cooldown_skill 'ghost' is not a skill of vanguard",
+                               "crit_cooldown_skill=ghost;crit_cooldown_ms=6000")
+        self.assert_each_fails([], STRIKE, "crit_cooldown_ms needs a whole number of at least 1, has",
+                               "crit_cooldown_skill=strike;crit_cooldown_ms=0")
+        self.assert_each_fails([], STRIKE, "crit_cooldown_skill and crit_cooldown_ms go together",
+                               "crit_cooldown_skill=strike", "crit_cooldown_ms=6000")
+
+    def test_a_weapon_strikes_crit_damage_pct_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param([], STRIKE, "crit_damage_pct")
+
+    def test_a_weapon_strikes_below_instant_needs_below_health_pct_and_no_bonus(self):
+        params = self.built_params([], STRIKE, "below_health_pct=30;below_instant=yes")
+        self.assertEqual((params["below_health_pct"], params["below_instant"]), (30, True))
+        self.assertNotIn("below_bonus_pct", params)
+        self.assert_each_fails([], STRIKE, "below_instant needs below_health_pct", "below_instant=yes")
+        self.assert_each_fails([], STRIKE, "below_instant is yes or no, has",
+                               "below_health_pct=30;below_instant=2")
+
+    def test_cast_skill_names_a_skill_of_the_calling_and_resolves_to_its_spell_id(self):
+        row = {**self.LEAP, "effect2_kind": "cast_skill", "effect2_params": "skill=strike"}
+        done, data = self.run_build([STRIKE, row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        leap = next(s for s in data[0]["skills"] if s["key"] == "leap")
+        self.assertEqual(leap["effects"][1]["params"], {"skill_spell_id": 1000078})
+        # A realm-only kind: the client's row shows it as a dummy effect.
+        patch = {o["spell_id"]: o["fields"] for o in self.patch["spells"]}
+        self.assertEqual(patch[1000079]["dbc_effects"][1]["effect"], 3)
+        self.assert_fails([STRIKE, {**row, "effect2_params": "skill=ghost"}],
+                          "cast_skill skill 'ghost' is not a skill of vanguard")
+        self.assert_fails([STRIKE, {**row, "effect2_params": ""}], "cast_skill skill None is not a skill of vanguard")
+
+    def test_a_blinks_shed_snares_is_yes_or_no(self):
+        self.assertIs(self.built_params([], self.LEAP, "shed_snares=yes")["shed_snares"], True)
+        self.assert_each_fails([], self.LEAP, "blink shed_snares is yes or no, has", "shed_snares=2")
+
+    def test_a_periodic_damages_tick_aura_on_is_caster_or_target_and_needs_tick_aura(self):
+        before = [CALLING, self.BUFF]
+        params = self.built_params(before, self.BLEED, "tick_aura=buff;tick_aura_chance=20;tick_aura_on=target")
+        self.assertEqual(params["tick_aura_on"], "target")
+        self.assert_each_fails(before, self.BLEED, "tick_aura_on is 'self', want caster or target",
+                               "tick_aura=buff;tick_aura_chance=20;tick_aura_on=self")
+        self.assert_each_fails(before, self.BLEED, "tick_aura_on needs tick_aura", "tick_aura_on=target")
+
+    def test_a_periodic_damages_tick_energize_pct_of_base_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param([], self.BLEED, "tick_energize_pct_of_base")
+
+    def test_cast_while_moving_is_an_aura_kind_naming_a_skill_of_the_calling(self):
+        aura = {**self.BUFF, "effect1_kind": "cast_while_moving", "effect1_params": "skill=strike"}
+        done, data = self.run_build([CALLING, STRIKE, aura])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["auras"][0]["effects"][0], {"kind": "cast_while_moving",
+                                                            "params": {"skill": "strike"}, "realm_only": False})
+        self.assert_fails([CALLING, STRIKE, {**aura, "effect1_params": "skill=ghost"}],
+                          "cast_while_moving skill 'ghost' is not a skill of vanguard")
+
     def test_rows_with_a_blank_row_levels_fail(self):
         self.assert_fails([CALLING, {**STRIKE, "row_level": "3"}, *self.three()], "do not fill row_levels")
 
@@ -1906,6 +1975,52 @@ class TalentRows(BuildSpells):
                   for c in callings for s in c["skills"] if s.get("spell_id") in spells}
         others |= {spells[ch["spell_id"]]["fields"].get("icon")
                    for c in callings if c["key"] != "initiate" for r in c.get("rows", [])
+                   for ch in r["choices"] if ch.get("spell_id") in spells}
+        self.assertFalse(others & set(icons), others & set(icons))
+
+    def test_the_committed_ranger_has_six_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            callings = json.load(f)
+        ranger = next(c for c in callings if c["key"] == "ranger")
+        self.assertEqual(ranger["row_levels"], [4, 8, 12, 16, 20, 24])
+        self.assertEqual([(r["key"], r["level"], r["kind"], r["skill"]) for r in ranger["rows"]],
+                         [("talents", 4, "talent", None),
+                          ("snapshot", 8, "skill_choice", "snapshot"),
+                          ("vault", 12, "skill_choice", "vault"),
+                          ("barbed_arrow", 16, "skill_choice", "barbed_arrow"),
+                          ("puncturing_shaft", 20, "skill_choice", "puncturing_shaft"),
+                          ("rapid_fire", 24, "skill_choice", "rapid_fire")])
+        self.assertEqual([[c["key"] for c in r["choices"]] for r in ranger["rows"]],
+                         [["explosive_payload", "guerilla_tactics", "point_blank"],
+                          ["twin_arrows", "rhythmic_draw", "adrenaline_rush"],
+                          ["parting_gift", "parting_shot", "unbound_leap"],
+                          ["jagged_barbs", "pinning_barb", "bloodscent"],
+                          ["piercing_force", "staggering_shaft", "killshot"],
+                          ["flurry", "rapid_assault", "running_fire"]])
+        self.assertEqual([c["spell_id"] for r in ranger["rows"] for c in r["choices"]],
+                         list(range(1000520, 1000538)))
+        auras = {a["key"]: a["spell_id"] for a in ranger["auras"]}
+        self.assertEqual((auras["aura_parting_gift"], auras["aura_running_fire"]), (1000538, 1000539))
+        # Field Dressing and Explosive Shot have no row; every choice is modelled.
+        self.assertFalse({"field_dressing", "explosive_shot"} & {r["skill"] for r in ranger["rows"]})
+        self.assertTrue(all(c["modelled"] for r in ranger["rows"] for c in r["choices"]))
+        # Explosive Payload is an active Talent; the old tree's aura rows no row names are gone.
+        self.assertEqual(ranger["rows"][0]["choices"][0]["target"], "self")
+        gone = {f"aura_guerilla_tactics_{n}" for n in range(1, 5)} | {f"aura_rhythmic_draw_{n}" for n in range(1, 5)}
+        gone |= {"aura_flurry_1", "aura_entrenched_1", "aura_entrenched_2"} | {f"aura_sundered_{n}" for n in range(1, 5)}
+        self.assertFalse(gone & set(auras), gone & set(auras))
+        # No two of the choices share an icon, and none is a plain skill's or another Calling's
+        # choice's.
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
+                  encoding="utf-8") as f:
+            spells = {s["spell_id"]: s for s in json.load(f)["spells"]}
+        icons = [spells[i]["fields"]["icon"] for i in range(1000520, 1000538)]
+        self.assertEqual(len(set(icons)), 18, icons)
+        others = {spells[s["spell_id"]]["fields"].get("icon")
+                  for c in callings for s in c["skills"] if s.get("spell_id") in spells}
+        others |= {spells[ch["spell_id"]]["fields"].get("icon")
+                   for c in callings if c["key"] != "ranger" for r in c.get("rows", [])
                    for ch in r["choices"] if ch.get("spell_id") in spells}
         self.assertFalse(others & set(icons), others & set(icons))
 

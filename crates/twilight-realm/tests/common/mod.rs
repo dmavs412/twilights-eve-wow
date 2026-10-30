@@ -5,6 +5,7 @@ pub mod cutthroat;
 pub mod fight;
 pub mod initiate;
 pub mod party;
+pub mod ranger;
 pub mod vanguard;
 
 /// The Zealot as a Tier 0 Calling, "test_zealot", for a fight a weak body has to take hits in:

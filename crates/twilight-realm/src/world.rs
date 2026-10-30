@@ -577,8 +577,10 @@ impl InWorld {
             .map(|m| m.template.entry)
     }
 
-    /// `CMSG_SET_SELECTION`: the player's target, which the client shows in `UNIT_FIELD_TARGET`.
+    /// `CMSG_SET_SELECTION`: the player's target, which the client shows in `UNIT_FIELD_TARGET`
+    /// and a self cast's `cast_skill` goes off at.
     pub(crate) fn select(&mut self, target: u64, events: &mut Vec<SessionEvent>) {
+        self.skills.selection = target;
         events.push(values(self.guid, &guid_pairs(UNIT_FIELD_TARGET, target)));
     }
 
@@ -774,6 +776,8 @@ impl InWorld {
             }
         }
         self.land_blink(host, c, events);
+        // A cast's own skill goes off once its Blink has landed (Parting Shot).
+        self.land_follow_ups(host, c, rng, events, &mut ticked);
         self.land_knockbacks(host, events);
         let me = c.position;
         self.cross_phase(c, events);

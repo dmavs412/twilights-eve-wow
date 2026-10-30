@@ -7416,130 +7416,6 @@
     "description": "Ranged attack speed increased by 40%. Auto-shots refund mana."
    },
    {
-    "key": "aura_guerilla_tactics_1",
-    "name": "Guerilla Tactics",
-    "spell_id": 1000306,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 3,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "skill_amount_pct",
-      "params": {
-       "skill": "snapshot",
-       "pct": 10
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Snapshot deals 10% more damage per stack."
-   },
-   {
-    "key": "aura_guerilla_tactics_2",
-    "name": "Guerilla Tactics",
-    "spell_id": 1000307,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 3,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "skill_amount_pct",
-      "params": {
-       "skill": "snapshot",
-       "pct": 20
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Snapshot deals 20% more damage per stack."
-   },
-   {
-    "key": "aura_guerilla_tactics_3",
-    "name": "Guerilla Tactics",
-    "spell_id": 1000308,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 3,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "skill_amount_pct",
-      "params": {
-       "skill": "snapshot",
-       "pct": 30
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Snapshot deals 30% more damage per stack."
-   },
-   {
-    "key": "aura_guerilla_tactics_4",
-    "name": "Guerilla Tactics",
-    "spell_id": 1000309,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 3,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "skill_amount_pct",
-      "params": {
-       "skill": "snapshot",
-       "pct": 40
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Snapshot deals 40% more damage per stack."
-   },
-   {
     "key": "aura_guerilla_tactics_5",
     "name": "Guerilla Tactics",
     "spell_id": 1000310,
@@ -7569,218 +7445,6 @@
      }
     ],
     "description": "Your next Snapshot deals 50% more damage per stack."
-   },
-   {
-    "key": "aura_entrenched_1",
-    "name": "Entrenched",
-    "spell_id": 1000340,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "break_on": {
-     "move": true
-    },
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_ranged_haste_pct",
-      "params": {
-       "pct": 5
-      },
-      "realm_only": false
-     },
-     {
-      "kind": "mod_ranged_crit_pct",
-      "params": {
-       "pct": 3
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Ranged attack speed increased by 5% and ranged critical strike chance by 3%."
-   },
-   {
-    "key": "aura_entrenched_2",
-    "name": "Entrenched",
-    "spell_id": 1000341,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "break_on": {
-     "move": true
-    },
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_ranged_haste_pct",
-      "params": {
-       "pct": 10
-      },
-      "realm_only": false
-     },
-     {
-      "kind": "mod_ranged_crit_pct",
-      "params": {
-       "pct": 6
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Ranged attack speed increased by 10% and ranged critical strike chance by 6%."
-   },
-   {
-    "key": "aura_rhythmic_draw_1",
-    "name": "Rhythmic Draw",
-    "spell_id": 1000311,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 15,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "puncturing_shaft",
-       "cast_time_ms": -100,
-       "family_bits": [
-        35
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Puncturing Shaft casts 0.1 sec faster per stack."
-   },
-   {
-    "key": "aura_rhythmic_draw_2",
-    "name": "Rhythmic Draw",
-    "spell_id": 1000312,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 15,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "puncturing_shaft",
-       "cast_time_ms": -200,
-       "family_bits": [
-        35
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Puncturing Shaft casts 0.2 sec faster per stack."
-   },
-   {
-    "key": "aura_rhythmic_draw_3",
-    "name": "Rhythmic Draw",
-    "spell_id": 1000313,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 15,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "puncturing_shaft",
-       "cast_time_ms": -300,
-       "family_bits": [
-        35
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Puncturing Shaft casts 0.3 sec faster per stack."
-   },
-   {
-    "key": "aura_rhythmic_draw_4",
-    "name": "Rhythmic Draw",
-    "spell_id": 1000314,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 15,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "puncturing_shaft",
-       "cast_time_ms": -400,
-       "family_bits": [
-        35
-       ]
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next Puncturing Shaft casts 0.4 sec faster per stack."
    },
    {
     "key": "aura_rhythmic_draw_5",
@@ -7815,48 +7479,6 @@
      }
     ],
     "description": "Your next Puncturing Shaft casts 0.5 sec faster per stack."
-   },
-   {
-    "key": "aura_flurry_1",
-    "name": "Flurry",
-    "spell_id": 1000324,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 15000,
-    "charges": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "next_cast",
-      "params": {
-       "skill": "snapshot",
-       "cost_pct": -100,
-       "family_bits": [
-        34
-       ]
-      },
-      "realm_only": false
-     },
-     {
-      "kind": "skill_crit_pct",
-      "params": {
-       "skill": "snapshot",
-       "pct": 100
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Your next 1 Snapshot cost no mana and are critical strikes."
    },
    {
     "key": "aura_flurry_2",
@@ -7916,7 +7538,7 @@
     "aura_hidden": false,
     "cancelable": true,
     "persist_death": false,
-    "duration_ms": 8000,
+    "duration_ms": 10000,
     "modelled": true,
     "effects": [
      {
@@ -7930,122 +7552,6 @@
      }
     ],
     "description": "Each Snapshot fires an extra arrow for 50% weapon damage."
-   },
-   {
-    "key": "aura_sundered_1",
-    "name": "Sundered",
-    "spell_id": 1000332,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 3,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 10000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_armor",
-      "params": {
-       "amount": -50
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Armor reduced by 50 per stack."
-   },
-   {
-    "key": "aura_sundered_2",
-    "name": "Sundered",
-    "spell_id": 1000333,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 3,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 10000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_armor",
-      "params": {
-       "amount": -100
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Armor reduced by 100 per stack."
-   },
-   {
-    "key": "aura_sundered_3",
-    "name": "Sundered",
-    "spell_id": 1000334,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 3,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 10000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_armor",
-      "params": {
-       "amount": -150
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Armor reduced by 150 per stack."
-   },
-   {
-    "key": "aura_sundered_4",
-    "name": "Sundered",
-    "spell_id": 1000335,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 3,
-    "stack_rule": "stack",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 10000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_armor",
-      "params": {
-       "amount": -200
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Armor reduced by 200 per stack."
    },
    {
     "key": "aura_sundered_5",
@@ -8111,6 +7617,80 @@
     "description": "Your next Auto Shot explodes, dealing 150% weapon damage as Fire to the target and all enemies within 8 yards."
    },
    {
+    "key": "aura_parting_gift",
+    "name": "Parting Gift",
+    "spell_id": 1000538,
+    "status": "wip",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "root",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 4000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "root",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Rooted. Cannot move."
+   },
+   {
+    "key": "aura_running_fire",
+    "name": "Rapid Fire",
+    "spell_id": 1000539,
+    "status": "wip",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_ranged_haste_pct",
+      "params": {
+       "pct": 40
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "damage_done",
+       "skill": "auto_shot",
+       "energize_pct_of_base": 1
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "cast_while_moving",
+      "params": {
+       "skill": "auto_shot"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ranged attack speed increased by 40%. Auto-shots refund mana. Auto Shot fires while moving."
+   },
+   {
     "key": "aura_snare_trap",
     "name": "Snare Trap",
     "spell_id": 1000408,
@@ -8143,10 +7723,908 @@
     "description": "Incapacitated. Any damage ends it."
    }
   ],
-  "rows": [],
+  "rows": [
+   {
+    "key": "talents",
+    "level": 4,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "explosive_payload",
+      "name": "Explosive Payload",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000520,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_explosive_payload"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "15-second cooldown. Instantly replaces your next auto-shot with a volatile explosive shell. On impact, it deals 150% weapon damage as Fire damage to the primary target and all enemies within 8 yards."
+     },
+     {
+      "key": "guerilla_tactics",
+      "name": "Guerilla Tactics",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000521,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "moving_for",
+         "ms": 2000,
+         "apply_aura": "aura_guerilla_tactics_5"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 50%. Stacks up to 3 times."
+     },
+     {
+      "key": "point_blank",
+      "name": "Point Blank",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000522,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "no_min_range",
+        "params": {
+         "skill": "ranged"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "skill_amount_pct",
+        "params": {
+         "skill": "puncturing_shaft",
+         "pct": 20,
+         "max_distance_yd": 8
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 20% more damage to targets within 8 yards.",
+      "spellmods": [
+       {
+        "type": "pct",
+        "op": "MIN_RANGE",
+        "family_mask": 1228360646656,
+        "value": -100,
+        "target": [
+         "auto_shot",
+         "snapshot",
+         "puncturing_shaft",
+         "barbed_arrow",
+         "explosive_shot"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "snapshot",
+    "level": 8,
+    "kind": "skill_choice",
+    "skill": "snapshot",
+    "choices": [
+     {
+      "key": "twin_arrows",
+      "name": "Twin Arrows",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000523,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 13,
+          "per_level": 1.3,
+          "per_ap": 0
+         },
+         "repeat_chance": 30
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant cast. Low mana cost. Your primary mobile filler. Fires a quick physical arrow at the target. Has a 30% chance to fire a second, free Snapshot at the same target instantly.",
+      "variant_of": "snapshot"
+     },
+     {
+      "key": "rhythmic_draw",
+      "name": "Rhythmic Draw",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000524,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 13,
+          "per_level": 1.3,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_rhythmic_draw_5"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant cast. Low mana cost. Your primary mobile filler. Fires a quick physical arrow at the target. Each Snapshot cuts the cast time of your next Puncturing Shaft by 0.5 sec, stacking up to 15 times.",
+      "variant_of": "snapshot"
+     },
+     {
+      "key": "adrenaline_rush",
+      "name": "Adrenaline Rush",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000525,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 13,
+          "per_level": 1.3,
+          "per_ap": 0
+         },
+         "crit_cooldown_ms": 6000,
+         "crit_cooldown_spell_id": 1000304
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant cast. Low mana cost. Your primary mobile filler. Fires a quick physical arrow at the target. Its critical strikes take 6 sec off the cooldown of Vault.",
+      "variant_of": "snapshot"
+     }
+    ]
+   },
+   {
+    "key": "vault",
+    "level": 12,
+    "kind": "skill_choice",
+    "skill": "vault",
+    "choices": [
+     {
+      "key": "parting_gift",
+      "name": "Parting Gift",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000526,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "blink",
+        "params": {
+         "distance_yd": 15,
+         "backward": true
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 2.5,
+         "duration_ms": 20000,
+         "arm_ms": 0,
+         "first_only": true,
+         "enemy_aura": "aura_parting_gift"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance. Leaves a trap where you stood that roots the first enemy to step on it for 4 sec. The trap lasts 20 sec.",
+      "variant_of": "vault"
+     },
+     {
+      "key": "parting_shot",
+      "name": "Parting Shot",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000527,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "blink",
+        "params": {
+         "distance_yd": 15,
+         "backward": true
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "cast_skill",
+        "params": {
+         "skill_spell_id": 1000301
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance. On landing, fires a free Snapshot at your target.",
+      "variant_of": "vault"
+     },
+     {
+      "key": "unbound_leap",
+      "name": "Unbound Leap",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000528,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "blink",
+        "params": {
+         "distance_yd": 15,
+         "backward": true,
+         "shed_snares": true
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_run_speed",
+        "params": {
+         "pct": 40,
+         "duration_ms": 3000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance. The leap also removes movement slowing effects, and increases your run speed by 40% for 3 sec.",
+      "variant_of": "vault"
+     }
+    ]
+   },
+   {
+    "key": "barbed_arrow",
+    "level": 16,
+    "kind": "skill_choice",
+    "skill": "barbed_arrow",
+    "choices": [
+     {
+      "key": "jagged_barbs",
+      "name": "Jagged Barbs",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000529,
+      "realm_cost": 5,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_barbed_arrow",
+         "tick_aura": "aura_sundered_5",
+         "tick_aura_chance": 20,
+         "tick_aura_on": "target"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_run_speed",
+        "params": {
+         "apply_aura": "aura_barbed_arrow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Sinks a jagged arrow into the target, dealing physical damage over time and slowing their movement speed by 30% for 8 seconds. Each time it deals damage, it has a 20% chance to sunder the target's armor by 250 for 10 sec, stacking up to 3 times.",
+      "variant_of": "barbed_arrow"
+     },
+     {
+      "key": "pinning_barb",
+      "name": "Pinning Barb",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000530,
+      "realm_cost": 5,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_barbed_arrow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_run_speed",
+        "params": {
+         "apply_aura": "aura_barbed_arrow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "root",
+        "params": {
+         "aura_spell_id": 19229,
+         "duration_ms": 2000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Sinks a jagged arrow into the target, dealing physical damage over time and slowing their movement speed by 30% for 8 seconds. Also roots the target for 2 sec.",
+      "variant_of": "barbed_arrow"
+     },
+     {
+      "key": "bloodscent",
+      "name": "Bloodscent",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000531,
+      "realm_cost": 5,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_barbed_arrow",
+         "tick_energize_pct_of_base": 2
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_run_speed",
+        "params": {
+         "apply_aura": "aura_barbed_arrow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Sinks a jagged arrow into the target, dealing physical damage over time and slowing their movement speed by 30% for 8 seconds. Each time it deals damage, you regain 2% of your base mana.",
+      "variant_of": "barbed_arrow"
+     }
+    ]
+   },
+   {
+    "key": "puncturing_shaft",
+    "level": 20,
+    "kind": "skill_choice",
+    "skill": "puncturing_shaft",
+    "choices": [
+     {
+      "key": "piercing_force",
+      "name": "Piercing Force",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000532,
+      "realm_cost": 8,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 45,
+          "per_level": 5,
+          "per_ap": 0
+         },
+         "armor_ignore": {
+          "base": 350,
+          "per_level": 10
+         },
+         "crit_damage_pct": 25
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. It ignores 250 more armor, and its critical strikes deal 250% damage instead of 200%.",
+      "variant_of": "puncturing_shaft"
+     },
+     {
+      "key": "staggering_shaft",
+      "name": "Staggering Shaft",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000533,
+      "realm_cost": 8,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 45,
+          "per_level": 5,
+          "per_ap": 0
+         },
+         "armor_ignore": {
+          "base": 100,
+          "per_level": 10
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "stun",
+        "params": {
+         "aura_spell_id": 19410,
+         "duration_ms": 2000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. Also stuns the target for 2 sec.",
+      "variant_of": "puncturing_shaft"
+     },
+     {
+      "key": "killshot",
+      "name": "Killshot",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000534,
+      "realm_cost": 8,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 45,
+          "per_level": 5,
+          "per_ap": 0
+         },
+         "armor_ignore": {
+          "base": 100,
+          "per_level": 10
+         },
+         "below_health_pct": 30,
+         "below_instant": true
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. Instant cast against a target below 30% health.",
+      "variant_of": "puncturing_shaft"
+     }
+    ]
+   },
+   {
+    "key": "rapid_fire",
+    "level": 24,
+    "kind": "skill_choice",
+    "skill": "rapid_fire",
+    "choices": [
+     {
+      "key": "flurry",
+      "name": "Flurry",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000535,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 60000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_rapid_fire"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_flurry_2"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit. Your next 2 Snapshots after it cost no mana and are critical strikes.",
+      "variant_of": "rapid_fire"
+     },
+     {
+      "key": "rapid_assault",
+      "name": "Rapid Assault",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000536,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 60000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_rapid_fire"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_rapid_assault"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit. While it lasts, each Snapshot fires an extra free arrow for 50% weapon damage.",
+      "variant_of": "rapid_fire"
+     },
+     {
+      "key": "running_fire",
+      "name": "Running Fire",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000537,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 60000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_running_fire"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit. While it lasts, Auto Shot keeps firing while you move.",
+      "variant_of": "rapid_fire"
+     }
+    ]
+   }
+  ],
   "name": "Ranger",
   "tier": 1,
   "tier_cap": 30,
+  "row_levels": [
+   4,
+   8,
+   12,
+   16,
+   20,
+   24
+  ],
   "tier_bonus": {
    "agility": 15,
    "stamina": 10,

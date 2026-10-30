@@ -376,6 +376,9 @@ pub enum AuraEffect {
         #[serde(default)]
         opener_crit: bool,
     },
+    /// Moving does not hold or interrupt the player's `skill`, or a Skill Choice of it (Running
+    /// Fire's Auto Shot).
+    CastWhileMoving { skill: String },
 }
 
 /// A proc an aura row carries: while the aura is on the player, when `on` happens, `chance`
@@ -1455,6 +1458,25 @@ pub enum Effect {
         kill_heal_pct: u32,
         #[serde(default)]
         kill_energize: u32,
+        /// After a cast whose strike landed, this percent of the time the skill goes off again
+        /// at once at the same target, free; a repeat never repeats (Twin Arrows).
+        #[serde(default)]
+        repeat_chance: u32,
+        /// A critical strike takes `crit_cooldown_ms` off the cooldown of the skill of
+        /// `crit_cooldown_spell_id` (resolved by the build from `crit_cooldown_skill=key`), as
+        /// set on its row, never below 0 (Adrenaline Rush).
+        #[serde(default)]
+        crit_cooldown_spell_id: Option<u32>,
+        #[serde(default)]
+        crit_cooldown_ms: u32,
+        /// A critical strike deals this percent more, multiplied with every other crit bonus
+        /// (Piercing Force).
+        #[serde(default)]
+        crit_damage_pct: u32,
+        /// No cast bar when the cast starts at a target under `below_health_pct` of its health
+        /// (Killshot).
+        #[serde(default)]
+        below_instant: bool,
     },
     /// Flat damage of a school. Physical goes against armour, and through the melee table when
     /// `melee_hit_table`; any other school ignores armour, rolls only the level-based miss, and
@@ -1537,12 +1559,15 @@ pub enum Effect {
         #[serde(default)]
         drop_chance: Option<u32>,
         /// After each tick, once whatever the stacks, `tick_aura_chance` percent of the time the
-        /// caster takes the aura row of `tick_aura_spell_id`, resolved from `tick_aura=key`
-        /// (Thermal Feedback).
+        /// aura row of `tick_aura_spell_id`, resolved from `tick_aura=key`, goes on the caster
+        /// (Thermal Feedback) or, with `tick_aura_on` `target`, on the ticking unit (Jagged
+        /// Barbs).
         #[serde(default)]
         tick_aura_spell_id: Option<u32>,
         #[serde(default)]
         tick_aura_chance: u32,
+        #[serde(default)]
+        tick_aura_on: TickAuraOn,
         /// While it is on a unit, every blow that unit deals the caster is this percent less
         /// (Smoldering Ember).
         #[serde(default)]
@@ -1551,6 +1576,10 @@ pub enum Effect {
         /// maximum power (Kindling Ember).
         #[serde(default)]
         tick_energize_pct_of_max: u32,
+        /// After each tick, once whatever the stacks, the caster gains this percent of their base
+        /// mana (Bloodscent).
+        #[serde(default)]
+        tick_energize_pct_of_base: u32,
     },
     /// Heals the target `amount`, up to its maximum health.
     Heal { amount: Linear },
@@ -1725,7 +1754,15 @@ pub enum Effect {
         /// Straight back from the facing instead (Vault).
         #[serde(default)]
         backward: bool,
+        /// Sheds every aura that lowers their run speed too (Unbound Leap).
+        #[serde(default)]
+        shed_snares: bool,
     },
+    /// Once the cast and any Blink it queued have landed, the caster casts the skill of
+    /// `skill_spell_id` (resolved by the build from `skill=key`), the version set on its row, at
+    /// their target: free, off the global cooldown, with no cast bar. Nothing without a living
+    /// target in its range and in sight of where the caster stands (Parting Shot).
+    CastSkill { skill_spell_id: u32 },
     /// Takes the caster's aura `aura_spell_id` off the target, then pays its outcome: damage of
     /// `amount_pct` percent of the hit `amount` of the skill `amount_of` names, in its `school`, and
     /// `energize_pct_of_max` percent of the caster's power bar. Nothing when the aura is absent.
@@ -1905,6 +1942,17 @@ fn one_u8() -> u8 {
 pub enum IfWorn {
     /// The aura gains a stack and keeps its timer, instead of starting over.
     Grow,
+}
+
+/// Whom a periodic damage effect's `tick_aura` goes on (the `tick_aura_on` param).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TickAuraOn {
+    /// The caster (Thermal Feedback).
+    #[default]
+    Caster,
+    /// The unit the aura ticks on (Jagged Barbs).
+    Target,
 }
 
 /// What a new application of an aura does to the stacks it already holds (the `stack_rule`

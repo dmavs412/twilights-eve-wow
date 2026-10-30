@@ -4013,6 +4013,719 @@
    }
   },
   {
+   "spell_id": 1000520,
+   "calling": "ranger",
+   "key": "explosive_payload",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Explosive Payload",
+    "cost": 0,
+    "cooldown_ms": 15000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "15-second cooldown. Instantly replaces your next auto-shot with a volatile explosive shell. On impact, it deals 150% weapon damage as Fire damage to the primary target and all enemies within 8 yards.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\INV_Misc_Bomb_04",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 361,
+    "cast_time_index": 1,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000521,
+   "calling": "ranger",
+   "key": "guerilla_tactics",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Guerilla Tactics",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 50%. Stacks up to 3 times.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Ability_Parry",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000522,
+   "calling": "ranger",
+   "key": "point_blank",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Point Blank",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 20% more damage to targets within 8 yards.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Ability_EyeOfTheOwl",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "MIN_RANGE",
+     "family_mask": 1228360646656,
+     "value": -100
+    }
+   ]
+  },
+  {
+   "spell_id": 1000523,
+   "calling": "ranger",
+   "key": "twin_arrows",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Twin Arrows",
+    "cooldown_ms": 0,
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Instant cast. Low mana cost. Your primary mobile filler. Fires a quick physical arrow at the target. Has a 30% chance to fire a second, free Snapshot at the same target instantly.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Holy_PrayerOfHealing",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 13,
+      "per_level": 1.3
+     }
+    ],
+    "visual": 3299,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000524,
+   "calling": "ranger",
+   "key": "rhythmic_draw",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Rhythmic Draw",
+    "cooldown_ms": 0,
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Instant cast. Low mana cost. Your primary mobile filler. Fires a quick physical arrow at the target. Each Snapshot cuts the cast time of your next Puncturing Shaft by 0.5 sec, stacking up to 15 times.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Nature_StrangleVines",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 13,
+      "per_level": 1.3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3299,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000525,
+   "calling": "ranger",
+   "key": "adrenaline_rush",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Adrenaline Rush",
+    "cooldown_ms": 0,
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Instant cast. Low mana cost. Your primary mobile filler. Fires a quick physical arrow at the target. Its critical strikes take 6 sec off the cooldown of Vault.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Ability_Hunter_SwiftStrike",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 13,
+      "per_level": 1.3
+     }
+    ],
+    "visual": 3299,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000526,
+   "calling": "ranger",
+   "key": "parting_gift",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Parting Gift",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance. Leaves a trap where you stood that roots the first enemy to step on it for 4 sec. The trap lasts 20 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Nature_TimeStop",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 738,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000527,
+   "calling": "ranger",
+   "key": "parting_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Parting Shot",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance. On landing, fires a free Snapshot at your target.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Hunter_CriticalShot",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 738,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000528,
+   "calling": "ranger",
+   "key": "unbound_leap",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Unbound Leap",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance. The leap also removes movement slowing effects, and increases your run speed by 40% for 3 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Mount_WhiteTiger",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 738,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000529,
+   "calling": "ranger",
+   "key": "jagged_barbs",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Jagged Barbs",
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Sinks a jagged arrow into the target, dealing physical damage over time and slowing their movement speed by 30% for 8 seconds. Each time it deals damage, it has a 20% chance to sunder the target's armor by 250 for 10 sec, stacking up to 3 times.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_PierceDamage",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3179,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000530,
+   "calling": "ranger",
+   "key": "pinning_barb",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Pinning Barb",
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Sinks a jagged arrow into the target, dealing physical damage over time and slowing their movement speed by 30% for 8 seconds. Also roots the target for 2 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Rogue_Trip",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 26
+     }
+    ],
+    "visual": 3179,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000531,
+   "calling": "ranger",
+   "key": "bloodscent",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Bloodscent",
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Sinks a jagged arrow into the target, dealing physical damage over time and slowing their movement speed by 30% for 8 seconds. Each time it deals damage, you regain 2% of your base mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Frost_WizardMark",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3179,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000532,
+   "calling": "ranger",
+   "key": "piercing_force",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Piercing Force",
+    "cost_percent": 8.0,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. It ignores 250 more armor, and its critical strikes deal 250% damage instead of 200%.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_SearingArrow",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 45,
+      "per_level": 5
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1000533,
+   "calling": "ranger",
+   "key": "staggering_shaft",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Staggering Shaft",
+    "cost_percent": 8.0,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. Also stuns the target for 2 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Hunter_AimedShot",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 45,
+      "per_level": 5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1000534,
+   "calling": "ranger",
+   "key": "killshot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Killshot",
+    "cost_percent": 8.0,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. Instant cast against a target below 30% health.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Hunter_SniperShot",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 45,
+      "per_level": 5
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1000535,
+   "calling": "ranger",
+   "key": "flurry",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Flurry",
+    "cost": 0.0,
+    "cooldown_ms": 60000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit. Your next 2 Snapshots after it cost no mana and are critical strikes.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Ensnare",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3301,
+    "speed": 40.0,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000536,
+   "calling": "ranger",
+   "key": "rapid_assault",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Rapid Assault",
+    "cost": 0.0,
+    "cooldown_ms": 60000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit. While it lasts, each Snapshot fires an extra free arrow for 50% weapon damage.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_UpgradeMoonGlaive",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3301,
+    "speed": 40.0,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000537,
+   "calling": "ranger",
+   "key": "running_fire",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Running Fire",
+    "cost": 0.0,
+    "cooldown_ms": 60000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit. While it lasts, Auto Shot keeps firing while you move.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Marksmanship",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3301,
+    "speed": 40.0,
+    "duration_index": 8
+   }
+  },
+  {
    "spell_id": 1000349,
    "calling": "acolyte",
    "key": "creeping_blight",
@@ -5210,94 +5923,6 @@
    }
   },
   {
-   "spell_id": 1000306,
-   "calling": "ranger",
-   "key": "aura_guerilla_tactics_1",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Ability_Parry",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Guerilla Tactics",
-    "aura_description": "Your next Snapshot deals 10% more damage per stack."
-   }
-  },
-  {
-   "spell_id": 1000307,
-   "calling": "ranger",
-   "key": "aura_guerilla_tactics_2",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Ability_Parry",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Guerilla Tactics",
-    "aura_description": "Your next Snapshot deals 20% more damage per stack."
-   }
-  },
-  {
-   "spell_id": 1000308,
-   "calling": "ranger",
-   "key": "aura_guerilla_tactics_3",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Ability_Parry",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Guerilla Tactics",
-    "aura_description": "Your next Snapshot deals 30% more damage per stack."
-   }
-  },
-  {
-   "spell_id": 1000309,
-   "calling": "ranger",
-   "key": "aura_guerilla_tactics_4",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Ability_Parry",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Guerilla Tactics",
-    "aura_description": "Your next Snapshot deals 40% more damage per stack."
-   }
-  },
-  {
    "spell_id": 1000310,
    "calling": "ranger",
    "key": "aura_guerilla_tactics_5",
@@ -5320,148 +5945,6 @@
    }
   },
   {
-   "spell_id": 1000340,
-   "calling": "ranger",
-   "key": "aura_entrenched_1",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Ability_Mount_JungleTiger",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     },
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Entrenched",
-    "aura_description": "Ranged attack speed increased by 5% and ranged critical strike chance by 3%."
-   }
-  },
-  {
-   "spell_id": 1000341,
-   "calling": "ranger",
-   "key": "aura_entrenched_2",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Ability_Mount_JungleTiger",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     },
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Entrenched",
-    "aura_description": "Ranged attack speed increased by 10% and ranged critical strike chance by 6%."
-   }
-  },
-  {
-   "spell_id": 1000311,
-   "calling": "ranger",
-   "key": "aura_rhythmic_draw_1",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Nature_StrangleVines",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Rhythmic Draw",
-    "aura_description": "Your next Puncturing Shaft casts 0.1 sec faster per stack."
-   }
-  },
-  {
-   "spell_id": 1000312,
-   "calling": "ranger",
-   "key": "aura_rhythmic_draw_2",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Nature_StrangleVines",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Rhythmic Draw",
-    "aura_description": "Your next Puncturing Shaft casts 0.2 sec faster per stack."
-   }
-  },
-  {
-   "spell_id": 1000313,
-   "calling": "ranger",
-   "key": "aura_rhythmic_draw_3",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Nature_StrangleVines",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Rhythmic Draw",
-    "aura_description": "Your next Puncturing Shaft casts 0.3 sec faster per stack."
-   }
-  },
-  {
-   "spell_id": 1000314,
-   "calling": "ranger",
-   "key": "aura_rhythmic_draw_4",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Nature_StrangleVines",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Rhythmic Draw",
-    "aura_description": "Your next Puncturing Shaft casts 0.4 sec faster per stack."
-   }
-  },
-  {
    "spell_id": 1000315,
    "calling": "ranger",
    "key": "aura_rhythmic_draw_5",
@@ -5481,33 +5964,6 @@
     ],
     "name": "Rhythmic Draw",
     "aura_description": "Your next Puncturing Shaft casts 0.5 sec faster per stack."
-   }
-  },
-  {
-   "spell_id": 1000324,
-   "calling": "ranger",
-   "key": "aura_flurry_1",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Ability_Ensnare",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     },
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Flurry",
-    "aura_description": "Your next 1 Snapshot cost no mana and are critical strikes."
    }
   },
   {
@@ -5547,7 +6003,7 @@
      1,
      0
     ],
-    "icon": "Interface\\Icons\\Ability_Whirlwind",
+    "icon": "Interface\\Icons\\Ability_UpgradeMoonGlaive",
     "dbc_effects": [
      {
       "effect": 3,
@@ -5561,94 +6017,6 @@
    }
   },
   {
-   "spell_id": 1000332,
-   "calling": "ranger",
-   "key": "aura_sundered_1",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Ability_Hunter_Quickshot",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Sundered",
-    "aura_description": "Armor reduced by 50 per stack."
-   }
-  },
-  {
-   "spell_id": 1000333,
-   "calling": "ranger",
-   "key": "aura_sundered_2",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Ability_Hunter_Quickshot",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Sundered",
-    "aura_description": "Armor reduced by 100 per stack."
-   }
-  },
-  {
-   "spell_id": 1000334,
-   "calling": "ranger",
-   "key": "aura_sundered_3",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Ability_Hunter_Quickshot",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Sundered",
-    "aura_description": "Armor reduced by 150 per stack."
-   }
-  },
-  {
-   "spell_id": 1000335,
-   "calling": "ranger",
-   "key": "aura_sundered_4",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Ability_Hunter_Quickshot",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Sundered",
-    "aura_description": "Armor reduced by 200 per stack."
-   }
-  },
-  {
    "spell_id": 1000336,
    "calling": "ranger",
    "key": "aura_sundered_5",
@@ -5658,7 +6026,7 @@
      1,
      0
     ],
-    "icon": "Interface\\Icons\\Ability_Hunter_Quickshot",
+    "icon": "Interface\\Icons\\Ability_PierceDamage",
     "dbc_effects": [
      {
       "effect": 3,
@@ -5680,7 +6048,7 @@
      1,
      0
     ],
-    "icon": "Interface\\Icons\\Ability_GolemStormBolt",
+    "icon": "Interface\\Icons\\INV_Misc_Bomb_04",
     "dbc_effects": [
      {
       "effect": 3,
@@ -5691,6 +6059,65 @@
     "name": "Explosive Payload",
     "aura_description": "Your next Auto Shot explodes, dealing 150% weapon damage as Fire to the target and all enemies within 8 yards.",
     "visual": 361
+   }
+  },
+  {
+   "spell_id": 1000538,
+   "calling": "ranger",
+   "key": "aura_parting_gift",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Nature_TimeStop",
+    "mechanic": 7,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 26
+     }
+    ],
+    "name": "Parting Gift",
+    "aura_description": "Rooted. Cannot move.",
+    "visual": 3302
+   }
+  },
+  {
+   "spell_id": 1000539,
+   "calling": "ranger",
+   "key": "aura_running_fire",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Hunter_RunningShot",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Rapid Fire",
+    "aura_description": "Ranged attack speed increased by 40%. Auto-shots refund mana. Auto Shot fires while moving.",
+    "visual": 3301,
+    "speed": 40.0
    }
   },
   {

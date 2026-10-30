@@ -251,3 +251,265 @@ fn rapid_fire_shoots_40_pct_faster_and_refunds_mana_on_hits() {
         "{hits} hits, {refunds} refunds"
     );
 }
+
+// Ranger's Talent Rows (#507): a shipped Ranger of 24, its row set, 25 yd west of the sturdy
+// scorpid south of the Crossroads.
+
+use common::initiate::{cast_bar, cast_through};
+use common::ranger::{face_from, gone_off, leap, mana, ranger_choice, ranger_scene, shots};
+use common::vanguard::STURDY;
+
+/// Twin Arrows: a landed shot goes off again at once about 30% of the time, the repeat costing
+/// nothing, and a repeat never repeats. Plain Snapshot never goes off twice.
+#[test]
+fn twin_arrows_fires_a_second_snapshot_on_a_winning_roll_and_never_a_third() {
+    let twin = ranger_choice("snapshot", "twin_arrows");
+    let (mut twice, mut casts, mut cost) = (0, 0, None);
+    for seed in 0..40 {
+        let mut s = ranger_scene(0x507_2000 + seed, &[("snapshot", twin)], STURDY);
+        let before = mana(&s.view, s.me);
+        let events = s.cast_at_mob(twin);
+        let spent = before - mana(&s.view, s.me);
+        assert_eq!(*cost.get_or_insert(spent), spent, "seed {seed}: one cost");
+        let gone = gone_off(&events, twin);
+        assert!((1..=2).contains(&gone), "seed {seed}: {gone} shots");
+        if gone == 2 {
+            assert!(
+                !shots(&events, twin).is_empty(),
+                "seed {seed}: only a landed shot repeats"
+            );
+        }
+        casts += 1;
+        twice += usize::from(gone == 2);
+    }
+    assert!((4..=20).contains(&twice), "{twice} of {casts} repeated");
+
+    let snapshot = spell("ranger", "snapshot");
+    for seed in 0..10 {
+        let mut s = ranger_scene(0x507_2000 + seed, &[], STURDY);
+        let events = s.cast_at_mob(snapshot);
+        assert_eq!(gone_off(&events, snapshot), 1, "seed {seed}");
+    }
+}
+
+/// What `events` set Vault's cooldown to, in ms.
+fn vault_cooldown(events: &[SessionEvent], vault: u32) -> Option<u32> {
+    events.iter().find_map(|e| match e {
+        SessionEvent::SpellCooldowns { cooldowns, .. } => cooldowns
+            .iter()
+            .find(|(id, _)| *id == vault)
+            .map(|(_, ms)| *ms),
+        _ => None,
+    })
+}
+
+/// Adrenaline Rush: a crit takes 6 s off Vault's cooldown, and a hit that does not crit takes
+/// none. Flurry, on the Rapid Fire row, makes the first two Snapshots crit.
+#[test]
+fn adrenaline_rush_crits_take_six_seconds_off_vaults_cooldown() {
+    let rush = ranger_choice("snapshot", "adrenaline_rush");
+    let flurry = ranger_choice("rapid_fire", "flurry");
+    let vault = spell("ranger", "vault");
+    let mut s = ranger_scene(
+        0x507_3000,
+        &[("snapshot", rush), ("rapid_fire", flurry)],
+        STURDY,
+    );
+    leap(&mut s.realm, &mut s.view, vault);
+    let mob = s.mob.clone();
+    face_from(&mut s.realm, &mut s.view, &mob, 25.0);
+    s.realm.handle(cast(flurry, None));
+    s.view.drain(&mut s.realm);
+    // 15 s, less the 0.2 s gone, less 6 s a crit.
+    let mut left = 15_000 - 200;
+    let (mut crits, mut plain) = (0, 0);
+    for shot in 0..8 {
+        let events = s.cast_at_mob(rush);
+        let landed = shots(&events, rush);
+        let crit = landed.iter().any(|&(_, _, crit)| crit);
+        let cut = vault_cooldown(&events, vault);
+        if crit {
+            left -= 6_000;
+            let ms = cut.unwrap_or_else(|| panic!("shot {shot}: a crit cuts Vault: {events:?}"));
+            assert!(
+                ms.abs_diff(left) <= 150,
+                "shot {shot}: {ms} ms left, want {left}"
+            );
+            crits += 1;
+        } else {
+            assert_eq!(cut, None, "shot {shot}: only a crit cuts it");
+            plain += usize::from(!landed.is_empty());
+        }
+        if crits >= 2 && plain >= 1 {
+            break;
+        }
+    }
+    assert!(
+        crits >= 2 && plain >= 1,
+        "{crits} crits, {plain} plain hits"
+    );
+}
+
+/// One Puncturing Shaft, or the Shaft choice `key`, at the sturdy scorpid on `seed`: what it
+/// dealt and whether it crit, or `None` for a miss.
+fn shaft(key: Option<&str>, seed: u64) -> Option<(u32, bool)> {
+    let (id, rows) = match key {
+        Some(key) => {
+            let id = ranger_choice("puncturing_shaft", key);
+            (id, vec![("puncturing_shaft", id)])
+        }
+        None => (spell("ranger", "puncturing_shaft"), vec![]),
+    };
+    let mut s = ranger_scene(seed, &rows, STURDY);
+    let mob = s.mob.guid;
+    let events = cast_through(&mut s.realm, &mut s.view, id, mob);
+    shots(&events, id)
+        .first()
+        .map(|&(_, dealt, crit)| (dealt, crit))
+}
+
+/// Piercing Force: on the same dice a crit deals 1.25 times plain Puncturing Shaft's (250% where
+/// it dealt 200%). The scorpid's armour is under what either Shaft ignores at 24.
+#[test]
+fn piercing_force_crits_deal_a_quarter_more_than_puncturing_shafts() {
+    let mut crits = 0;
+    for seed in 0..400 {
+        let seed = 0x507_4000 + seed;
+        let (Some((plain, true)), Some((force, true))) =
+            (shaft(None, seed), shaft(Some("piercing_force"), seed))
+        else {
+            continue;
+        };
+        let want = plain as f32 * 1.25;
+        assert!(
+            (force as f32 - want).abs() <= 1.0,
+            "seed {seed}: {plain} then {force}"
+        );
+        crits += 1;
+    }
+    assert!(crits >= 3, "{crits} crits on both");
+}
+
+/// The cast bar Killshot starts with at the sturdy scorpid once Snapshots have brought it inside
+/// `health` percent of its health. Point Blank keeps the Ranger shooting once it reaches them.
+fn killshot_bar_at(health: std::ops::RangeInclusive<u32>) -> Option<u32> {
+    let killshot = ranger_choice("puncturing_shaft", "killshot");
+    let point_blank = ranger_choice("talents", "point_blank");
+    let snapshot = spell("ranger", "snapshot");
+    let mut s = ranger_scene(
+        0x507_5000,
+        &[("puncturing_shaft", killshot), ("talents", point_blank)],
+        STURDY,
+    );
+    let mob = s.mob.guid;
+    for _ in 0..80 {
+        let f = s.view.fields(mob);
+        let now = f.unit_health().unwrap() * 100 / f.unit_max_health().unwrap();
+        assert!(now > 0, "the scorpid died before {health:?}%");
+        if health.contains(&now) {
+            s.realm.handle(cast(killshot, Some(mob)));
+            let events = s.view.drain(&mut s.realm);
+            assert_eq!(refusal(&events, killshot), None, "{events:?}");
+            return cast_bar(&events, killshot);
+        }
+        s.realm.handle(cast(snapshot, Some(mob)));
+        s.view.drain(&mut s.realm);
+        s.view.run(&mut s.realm, 0.3);
+    }
+    panic!("the scorpid never came inside {health:?}%");
+}
+
+/// Killshot: no cast bar against a target under 30% of its health, Puncturing Shaft's 3 s at
+/// half health.
+#[test]
+fn killshot_is_instant_under_30_pct_health_and_a_3_second_cast_at_half() {
+    assert_eq!(killshot_bar_at(1..=29), Some(0), "under 30%");
+    assert_eq!(killshot_bar_at(35..=60), Some(3000), "at half health");
+}
+
+/// Point Blank, the old talent at its full rank: a shot 6 yd from the scorpid is too close
+/// without it and goes with it, and its Puncturing Shaft there deals 20% more than the same roll
+/// from 10 yd.
+#[test]
+fn point_blank_shoots_inside_8_yards_with_a_fifth_more_on_the_shaft() {
+    const SPELL_FAILED_TOO_CLOSE: u8 = 0x76;
+    let point_blank = ranger_choice("talents", "point_blank");
+    let snapshot = spell("ranger", "snapshot");
+    let shaft = spell("ranger", "puncturing_shaft");
+    for (rows, refused) in [
+        (vec![], Some(SPELL_FAILED_TOO_CLOSE)),
+        (vec![("talents", point_blank)], None),
+    ] {
+        let mut s = ranger_scene(0x507_6100, &rows, STURDY);
+        let mob = s.mob.clone();
+        face_from(&mut s.realm, &mut s.view, &mob, 6.0);
+        s.realm.handle(cast(snapshot, Some(mob.guid)));
+        let events = s.view.drain(&mut s.realm);
+        assert_eq!(refusal(&events, snapshot), refused, "{rows:?}");
+    }
+
+    let mut compared = 0;
+    for seed in 0..20 {
+        let mut dealt = Vec::new();
+        for yards in [10.0, 6.0] {
+            let mut s = ranger_scene(0x507_6200 + seed, &[("talents", point_blank)], STURDY);
+            let mob = s.mob.clone();
+            face_from(&mut s.realm, &mut s.view, &mob, yards);
+            let events = cast_through(&mut s.realm, &mut s.view, shaft, mob.guid);
+            dealt.push(
+                shots(&events, shaft)
+                    .first()
+                    .filter(|&&(_, _, crit)| !crit)
+                    .map(|&(_, d, _)| d),
+            );
+        }
+        if let [Some(far), Some(near)] = dealt[..] {
+            let want = far as f32 * 1.2;
+            assert!(
+                (near as f32 - want).abs() <= 1.5,
+                "seed {seed}: {far} then {near}"
+            );
+            compared += 1;
+        }
+    }
+    assert!(compared >= 5, "{compared} plain hits compared");
+}
+
+/// Explosive Payload, set on the Talent row: its buff turns the next Auto Shot into Explosive
+/// Shot, a Fire blast in the Auto Shot's place.
+#[test]
+fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
+    const SPELL_SCHOOL_FIRE: u8 = 2;
+    let payload = ranger_choice("talents", "explosive_payload");
+    let blast = spell("ranger", "explosive_shot");
+    let mut s = ranger_scene(0x507_6300, &[("talents", payload)], STURDY);
+    let mob = s.mob.guid;
+    s.realm.handle(cast(payload, None));
+    assert_eq!(refusal(&s.view.drain(&mut s.realm), payload), None);
+    s.realm.handle(cast(*AUTO_SHOT, Some(mob)));
+    let events = s.view.run(&mut s.realm, 0.5);
+    let hits = events.iter().find_map(|e| match e {
+        SessionEvent::SpellGo {
+            spell_id,
+            hits,
+            misses,
+            ..
+        } if *spell_id == blast => Some(hits.len() + misses.len()),
+        _ => None,
+    });
+    assert!(
+        hits.is_some_and(|n| n >= 1),
+        "the blast goes off: {events:?}"
+    );
+    assert!(events.iter().all(|e| match e {
+        SessionEvent::SpellDamageLog(l) if l.spell_id == blast => l.school == SPELL_SCHOOL_FIRE,
+        _ => true,
+    }));
+    assert_eq!(gone_off(&events, *AUTO_SHOT), 0, "in the Auto Shot's place");
+    assert!(
+        s.view
+            .aura(s.me, spell("ranger", "aura_explosive_payload"))
+            .is_none(),
+        "the buff is spent"
+    );
+}

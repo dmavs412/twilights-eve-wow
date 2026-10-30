@@ -49,7 +49,7 @@ KNOWN_KINDS = {
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
     "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike", "pickup",
-    "refund_cost",
+    "refund_cost", "cast_skill", "cast_while_moving",
 }
 ROW_KINDS = ("skill", "talent", "calling", "aura")
 # Talent Rows (ADR 0028): a `talent` row with `variant_of` is a Skill Choice of that skill, one
@@ -970,29 +970,40 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
     # bleeding target, and a proc's combo points.
     # Initiate's rows (#506): an absorb's mana back and burst, a burn's power back, a hit's bonus
     # against a worn aura, a snare's and a consume's reach.
+    # Ranger's rows (#507): a strike's crit bonus and the cooldown its crit cuts, a tick's base
+    # mana back, a strike's repeat chance.
     on_hit = ("bleeding_pct", "kill_heal_pct", "kill_energize")
-    wholes = {"weapon_strike": ("block_value_pct", "heal_pct", *on_hit),
+    wholes = {"weapon_strike": ("block_value_pct", "heal_pct", *on_hit, "crit_damage_pct", "crit_cooldown_ms"),
               "school_damage": (*on_hit, "vs_aura_pct"),
               "consume_aura_stacks": ("heal_pct", "refund_per_stack"),
               "add_combo_points": ("bleeding_bonus",),
               "proc": ("add_combo_points",),
               "absorb": ("energize_pct", "burst_radius_yd"),
-              "periodic_damage": ("tick_energize_pct_of_max",),
+              "periodic_damage": ("tick_energize_pct_of_max", "tick_energize_pct_of_base"),
               "mod_run_speed": ("radius_yd",),
               "consume_aura": ("spread_yd",)}
     for param in wholes.get(kind, ()):
         value = params.get(param, 1)
         if not is_whole(value):
             raise BuildError(f"{where}: {param} needs a whole number of at least 1, has {value!r}")
-    chances = {"periodic_damage": ("drop_chance", "tick_aura_chance", "weaken_pct")}
+    chances = {"periodic_damage": ("drop_chance", "tick_aura_chance", "weaken_pct"),
+               "weapon_strike": ("repeat_chance",)}
     for param in chances.get(kind, ()):
         if param in params and not is_whole(params[param], 100):
             raise BuildError(f"{where}: {param} needs a whole number from 1 to 100, has {params[param]!r}")
-    pairs = {"periodic_damage": ("tick_aura", "tick_aura_chance"), "school_damage": ("vs_aura", "vs_aura_pct")}
+    pairs = {"periodic_damage": ("tick_aura", "tick_aura_chance"), "school_damage": ("vs_aura", "vs_aura_pct"),
+             "weapon_strike": ("crit_cooldown_skill", "crit_cooldown_ms")}
     if kind in pairs:
         first, second = pairs[kind]
         if (first in params) != (second in params):
             raise BuildError(f"{where}: {first} and {second} go together")
+    if kind == "periodic_damage":
+        if params.get("tick_aura_on", "caster") not in ("caster", "target"):
+            raise BuildError(f"{where}: tick_aura_on is {params['tick_aura_on']!r}, want caster or target")
+        if "tick_aura_on" in params and "tick_aura" not in params:
+            raise BuildError(f"{where}: tick_aura_on needs tick_aura")
+    if kind == "blink" and not isinstance(params.get("shed_snares", False), bool):
+        raise BuildError(f"{where}: blink shed_snares is yes or no, has {params['shed_snares']!r}")
     if kind == "absorb" and not isinstance(params.get("if_crit", False), bool):
         raise BuildError(f"{where}: absorb if_crit is yes or no, has {params['if_crit']!r}")
     if kind == "refund_cost":
@@ -1024,10 +1035,16 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
             pct = params["cleave_pct"]
             if isinstance(pct, bool) or not isinstance(pct, int) or not 1 <= pct <= 100:
                 raise BuildError(f"{where}: cleave_pct needs a whole number from 1 to 100, has {pct!r}")
-        if ("below_health_pct" in params) != ("below_bonus_pct" in params):
-            raise BuildError(f"{where}: below_health_pct and below_bonus_pct go together")
+        # Under a health share a strike hits harder, has no cast bar (Killshot, #507), or both.
+        if not isinstance(params.get("below_instant", False), bool):
+            raise BuildError(f"{where}: below_instant is yes or no, has {params['below_instant']!r}")
+        if "below_instant" in params and "below_health_pct" not in params:
+            raise BuildError(f"{where}: below_instant needs below_health_pct")
+        if ("below_health_pct" in params) != ("below_bonus_pct" in params or "below_instant" in params):
+            raise BuildError(f"{where}: below_health_pct and below_bonus_pct go together, or below_health_pct "
+                             "and below_instant")
         if "below_health_pct" in params:
-            health, bonus = params["below_health_pct"], params["below_bonus_pct"]
+            health, bonus = params["below_health_pct"], params.get("below_bonus_pct", 1)
             if isinstance(health, bool) or not isinstance(health, int) or not 1 <= health <= 100:
                 raise BuildError(f"{where}: below_health_pct needs a whole number from 1 to 100, has {health!r}")
             if isinstance(bonus, bool) or not isinstance(bonus, int) or bonus <= 0:
@@ -1566,6 +1583,38 @@ def resolve_reset_cooldowns(calling: dict) -> None:
             effect["params"]["spell_ids"] = [ids[k] for k in skills]
 
 
+def resolve_skill_keys(calling: dict) -> None:
+    """The params that name another skill of the Calling (#507): a strike's `crit_cooldown_skill`
+    and a `cast_skill`'s `skill` become that skill's spell id, as `reset_cooldowns`' do, on a skill,
+    a Skill Choice or a Talent row's choice; the realm casts or cools the version set on its row.
+    A `cast_while_moving` aura keeps its key, checked."""
+    ids = {s["key"]: s["spell_id"] for s in calling["skills"]}
+    owners = [(s["key"], s) for s in calling["skills"]]
+    for row in calling.get("rows", []):
+        owners += [(choice["key"], choice) for choice in row["choices"]]
+    for key, owner in owners:
+        where = f"{calling['key']}/{key}"
+        for effect in owner.get("effects", []):
+            params = effect["params"]
+            if effect["kind"] == "weapon_strike" and "crit_cooldown_skill" in params:
+                named = params.pop("crit_cooldown_skill")
+                if named not in ids:
+                    raise BuildError(f"{where} weapon_strike: crit_cooldown_skill {named!r} is not a skill of "
+                                     f"{calling['key']}")
+                params["crit_cooldown_spell_id"] = ids[named]
+            if effect["kind"] == "cast_skill":
+                named = params.pop("skill", None)
+                if named not in ids:
+                    raise BuildError(f"{where} cast_skill: cast_skill skill {named!r} is not a skill of "
+                                     f"{calling['key']}")
+                params["skill_spell_id"] = ids[named]
+    for aura in calling["auras"]:
+        for effect in aura.get("effects", []):
+            if effect["kind"] == "cast_while_moving" and effect["params"].get("skill") not in ids:
+                raise BuildError(f"{calling['key']}/{aura['key']} cast_while_moving: cast_while_moving skill "
+                                 f"{effect['params'].get('skill')!r} is not a skill of {calling['key']}")
+
+
 def resolve_ground_spell(calling: dict) -> None:
     """A `ground_effect`'s `ground_spell=key` becomes that skill's spell id: the patch's
     DynamicObject and its tick logs name it. The client draws the object from its own row, so the
@@ -2013,6 +2062,7 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
 
     for calling in callings.values():
         resolve_reset_cooldowns({**calling, "skills": calling["skills"] + choice_skills(calling)})
+        resolve_skill_keys(calling)
     overrides.extend(build_creature_spells(creature_spells or [], rows, art, art_dir))
     if content_dir:
         overrides.extend(fishing_spell(content_dir))

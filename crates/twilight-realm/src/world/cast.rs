@@ -14,7 +14,7 @@ use benilla_protocol::messages::{
 use benilla_protocol::{EntityKind, ObjectFields, SessionEvent};
 
 use super::power::Combo;
-use super::{in_front, melee_reach, InWorld, Ticked};
+use super::{eye, in_front, melee_reach, InWorld, Ticked};
 use crate::callings::{self, CritBleedOf, Effect, IfWorn, Seal, Skill, StackRule, Target, Weapon};
 use crate::characters::Char;
 use crate::clock;
@@ -152,8 +152,16 @@ pub(super) struct Skills {
     /// The unit target of the cast under way, for a proc that repeats it or reads the target as
     /// it stood before the cast.
     pub(super) cast_target: Option<u64>,
-    /// A free repeat is under way (Twin Arrows): it pays nothing and repeats nothing.
+    /// A free cast is under way (a repeat, a `cast_skill`): it pays nothing and starts no
+    /// cooldown.
+    free: bool,
+    /// A free repeat is under way (Twin Arrows): it repeats nothing.
     repeating: bool,
+    /// The unit the player last selected (`CMSG_SET_SELECTION`); 0 for none.
+    pub(super) selection: u64,
+    /// `cast_skill`s cast and not yet gone off: the tick after the cast, which has the ground and
+    /// lands any Blink first, casts them (Parting Shot).
+    follow_ups: Vec<FollowUp>,
     /// The channel under way, if any.
     channel: Option<Channel>,
     /// The ground areas up, and the point the cast under way was aimed at.
@@ -241,6 +249,14 @@ struct PendingBlink {
     orientation: f32,
     faces: f32,
     distance_yd: f32,
+}
+
+/// A `cast_skill` waiting for its cast's Blink to land: the plain skill's spell id, whose version
+/// set on its row goes off, and the unit it goes off at.
+#[derive(Debug, Clone, Copy)]
+struct FollowUp {
+    skill_spell_id: u32,
+    target: Option<u64>,
 }
 
 /// A mob a knockback hit, where the caster stood, and how far it slides.
@@ -441,14 +457,18 @@ pub(crate) struct Aura {
     charges: u32,
 }
 
-/// A damage over time's riders (#506): after each tick, `aura_chance` percent of the time the
-/// caster takes `aura`, and gains `energize_pct_of_max` percent of their maximum power; while it
-/// is on a unit, that unit's blows at the caster are `weaken_pct` percent less.
+/// A damage over time's riders (#506, #507): after each tick, `aura_chance` percent of the time
+/// `aura` goes on the caster, or on the ticking unit when `aura_on_target`, and the caster gains
+/// `energize_pct_of_max` percent of their maximum power and `energize_pct_of_base` percent of
+/// their base mana; while it is on a unit, that unit's blows at the caster are `weaken_pct`
+/// percent less.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 struct TickRiders {
     aura: Option<&'static callings::AuraDef>,
     aura_chance: u32,
+    aura_on_target: bool,
     energize_pct_of_max: u32,
+    energize_pct_of_base: u32,
     weaken_pct: u32,
 }
 
@@ -682,6 +702,10 @@ enum AuraKind {
     Stealth {
         opener_crit: bool,
     },
+    /// Moving does not hold the player's `skill` (Running Fire).
+    CastWhileMoving {
+        skill: &'static str,
+    },
     /// A count of stacks that does nothing itself; a skill that consumes it reads the count
     /// (Conviction). The aura row's `max_stacks` and `stack_rule` govern a new application.
     Stacks {
@@ -743,6 +767,9 @@ impl AuraKind {
             (AuraKind::NextCast { next: a, .. }, AuraKind::NextCast { next: b, .. }) => {
                 std::ptr::eq(a, b)
             }
+            (AuraKind::CastWhileMoving { skill: a }, AuraKind::CastWhileMoving { skill: b }) => {
+                a == b
+            }
             _ => std::mem::discriminant(&self) == std::mem::discriminant(&other),
         }
     }
@@ -774,6 +801,7 @@ impl AuraKind {
                 | AuraKind::SkillCost { .. }
                 | AuraKind::SkillStacks { .. }
                 | AuraKind::Stealth { .. }
+                | AuraKind::CastWhileMoving { .. }
                 | AuraKind::Stacks { .. }
                 | AuraKind::Marker { helpful: true, .. }
                 // Less damage taken (Consecrated Ground) is a buff; more is a debuff.
@@ -1166,8 +1194,9 @@ impl Skills {
             .sum()
     }
 
-    /// The extra strikes the player's buffs add to each cast of `skill`: `(weapon, pct)`.
-    fn extra_strikes(&self, skill: &str) -> Vec<(Weapon, u32)> {
+    /// The extra strikes the player's buffs add to each cast of `skill`, or of a Skill Choice of
+    /// it: `(weapon, pct)`.
+    fn extra_strikes(&self, skill: &Skill) -> Vec<(Weapon, u32)> {
         self.auras
             .iter()
             .filter(|a| a.unit == self.me)
@@ -1176,10 +1205,19 @@ impl Skills {
                     skill: s,
                     weapon,
                     weapon_pct,
-                } if s == skill => Some((weapon, weapon_pct)),
+                } if skill.is(s) => Some((weapon, weapon_pct)),
                 _ => None,
             })
             .collect()
+    }
+
+    /// Whether a buff of the player's lets them move while `skill`, or a Skill Choice of it,
+    /// goes on (Running Fire's Auto Shot).
+    fn casts_while_moving(&self, skill: &Skill) -> bool {
+        self.auras.iter().any(|a| {
+            a.unit == self.me
+                && matches!(a.kind, AuraKind::CastWhileMoving { skill: s } if skill.is(s))
+        })
     }
 
     /// `spell_id`'s cooldown changes by `ms` (shorter when negative), and the client is told.
@@ -2148,7 +2186,12 @@ impl InWorld {
             self.start_channel(skill, target, &targets, c, events);
             return ticked;
         }
-        let cast_ms = self.skills.cast_time_ms(skill);
+        // A strike that is instant at a low target has no bar there (Killshot).
+        let cast_ms = if self.instant_below(skill, target) {
+            0
+        } else {
+            self.skills.cast_time_ms(skill)
+        };
         if cast_ms > 0 {
             // A cast bar: the global cooldown starts now, the rest when it fills.
             if skill.gcd_ms > 0 {
@@ -2174,32 +2217,99 @@ impl InWorld {
         self.go(skill, target, targets, true, c, rng, events)
     }
 
-    /// A proc's free repeat of `skill` at the cast's target, if it still stands in reach: no cost,
-    /// no cooldown, no global cooldown, and it repeats nothing itself (Twin Arrows).
+    /// Whether `skill` cast at `target` has no cast bar because the target is under its strike's
+    /// `below_health_pct` (Killshot), read as the cast starts.
+    fn instant_below(&self, skill: &Skill, target: Option<u64>) -> bool {
+        let Some(pct) = skill.effects.iter().find_map(|e| match *e {
+            Effect::WeaponStrike {
+                below_instant: true,
+                below_health_pct,
+                ..
+            } => Some(below_health_pct),
+            _ => None,
+        }) else {
+            return false;
+        };
+        self.mobs.iter().any(|m| {
+            Some(m.guid) == target
+                && m.alive()
+                && u64::from(m.health) * 100 < u64::from(m.stats.max_health) * u64::from(pct)
+        })
+    }
+
+    /// A proc's free repeat of the skill `key` cast (the version of it the player casts now) at
+    /// the cast's target (Twin Arrows' old proc).
     pub(super) fn repeat_cast(
         &mut self,
-        skill: Option<&str>,
+        key: Option<&str>,
         c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
-        let (Some(key), Some(target)) = (skill, self.skills.cast_target) else {
+        let (Some(key), Some(target)) = (key, self.skills.cast_target) else {
             return;
         };
-        if self.skills.repeating {
+        if let Some(skill) = crate::talents::current(c, key) {
+            self.free_cast(skill, target, true, c, rng, events, ticked);
+        }
+    }
+
+    /// `skill` goes off at once at `target` if it stands in reach: no cost, no cooldown, no global
+    /// cooldown and no cast bar. A `repeat` (Twin Arrows) repeats nothing itself, and nothing
+    /// repeats inside one; a `cast_skill`'s cast (Parting Shot) may be repeated.
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn free_cast(
+        &mut self,
+        skill: &'static Skill,
+        target: u64,
+        repeat: bool,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        if repeat && self.skills.repeating {
             return;
         }
-        let Some(skill) = callings::of(c.calling).skill_by_key(key) else {
-            return;
-        };
-        self.skills.repeating = true;
+        let (free, repeating) = (self.skills.free, self.skills.repeating);
+        self.skills.free = true;
+        self.skills.repeating |= repeat;
         if let Ok(targets) = self.check(skill, Some(target), false, c) {
             let done = self.go(skill, Some(target), targets, true, c, rng, events);
             ticked.leveled |= done.leveled;
             ticked.discovered |= done.discovered;
         }
-        self.skills.repeating = false;
+        self.skills.free = free;
+        self.skills.repeating = repeating;
+    }
+
+    /// Casts the skill each `cast_skill` of the last tick's casts names, now that their Blinks
+    /// have landed: the version set on its row, free, at the cast's target, if it is alive, in
+    /// the skill's range and in sight of where the caster stands (Parting Shot).
+    pub(super) fn land_follow_ups(
+        &mut self,
+        host: &dyn crate::Host,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        for f in std::mem::take(&mut self.skills.follow_ups) {
+            let Some(target) = f.target else {
+                continue;
+            };
+            let Some(skill) = crate::talents::current_of(c, f.skill_spell_id) else {
+                continue;
+            };
+            let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
+                continue;
+            };
+            if !host.line_of_sight(self.map, eye(c.position), eye(mob.position)) {
+                continue;
+            }
+            self.free_cast(skill, target, false, c, rng, events, ticked);
+        }
     }
 
     /// The player stepped: they are moving, and their `break_on=move` auras come off.
@@ -2297,7 +2407,11 @@ impl InWorld {
         if self.player.shot_timer > 0.0 || self.skills.casting.is_some() || self.fear.is_some() {
             return;
         }
-        if self.moving() && skill.meta.shape.interrupt_on.iter().any(|i| i == "move") {
+        // A buff may let the shot go on the move (Running Fire).
+        if self.moving()
+            && skill.meta.shape.interrupt_on.iter().any(|i| i == "move")
+            && !self.skills.casts_while_moving(skill)
+        {
             return;
         }
         // A next-cast buff may make this shot another skill (Explosive Payload).
@@ -2597,7 +2711,7 @@ impl InWorld {
         if skill.wants_ranged() {
             let extra = self
                 .skills
-                .extra_strikes(&skill.key)
+                .extra_strikes(skill)
                 .iter()
                 .filter(|(w, _)| *w == Weapon::Ranged)
                 .count() as u32;
@@ -2772,7 +2886,7 @@ impl InWorld {
                     );
                 }
                 // The player's buffs that add a strike to each cast of the skill (Rapid Assault).
-                for (weapon, weapon_pct) in self.skills.extra_strikes(&skill.key) {
+                for (weapon, weapon_pct) in self.skills.extra_strikes(skill) {
                     let strike = Effect::WeaponStrike {
                         weapon,
                         bonus: formulas::Linear {
@@ -2793,6 +2907,11 @@ impl InWorld {
                         bleeding_pct: 0,
                         kill_heal_pct: 0,
                         kill_energize: 0,
+                        repeat_chance: 0,
+                        crit_cooldown_spell_id: None,
+                        crit_cooldown_ms: 0,
+                        crit_damage_pct: 0,
+                        below_instant: false,
                         weapon_pct,
                         school: School::Physical,
                         crit_if_target_in: None,
@@ -2956,6 +3075,17 @@ impl InWorld {
         self.update_aura_states(events);
         self.sync_next_cast_mods(c, events);
         self.skills.cast_target = None;
+        // A strike that landed may go off again at once, free; a repeat never repeats (Twin
+        // Arrows).
+        let repeat = skill.effects.iter().find_map(|e| match *e {
+            Effect::WeaponStrike { repeat_chance, .. } if repeat_chance > 0 => Some(repeat_chance),
+            _ => None,
+        });
+        if let (Some(chance), Some(again), true) = (repeat, target, any_landed) {
+            if !self.skills.repeating && rng.below(100) < chance {
+                self.free_cast(skill, again, true, c, rng, events, &mut ticked);
+            }
+        }
         ticked
     }
 
@@ -3327,7 +3457,7 @@ impl InWorld {
         if !p.alive() {
             return Err(SPELL_FAILED_CASTER_DEAD);
         }
-        let free = self.skills.repeating;
+        let free = self.skills.free;
         if !free
             && (self.skills.cooldown_left(skill.spell_id) > READY_SLACK_SECS
                 || (gcd && skill.gcd_ms > 0 && self.skills.gcd > READY_SLACK_SECS))
@@ -3483,8 +3613,8 @@ impl InWorld {
 
     /// Takes the cast's costs and starts its cooldowns.
     fn pay(&mut self, skill: &Skill, gcd: bool, c: &Char, events: &mut Vec<SessionEvent>) {
-        // A free repeat pays nothing and starts no cooldown.
-        if self.skills.repeating {
+        // A free cast pays nothing and starts no cooldown.
+        if self.skills.free {
             return;
         }
         let cost = self.power_cost(c, skill);
@@ -3716,6 +3846,9 @@ impl InWorld {
                 bleeding_pct,
                 kill_heal_pct,
                 kill_energize,
+                crit_cooldown_spell_id,
+                crit_cooldown_ms,
+                crit_damage_pct,
                 ..
             } => {
                 let cond = self.condition_pct(
@@ -3747,12 +3880,21 @@ impl InWorld {
                     school,
                     how,
                     ignore,
+                    crit_damage_pct,
                     c,
                     rng,
                     events,
                     ticked,
                 );
                 self.skills.cast_dealt += dealt;
+                // A crit cuts another skill's cooldown, the version set on its row (Adrenaline
+                // Rush).
+                if let (Landed::Crit, Some(id)) = (how, crit_cooldown_spell_id) {
+                    if let Some(cooled) = crate::talents::current_of(c, id) {
+                        let ms = -(crit_cooldown_ms as i32);
+                        self.skills.change_cooldown(cooled.spell_id, ms, events);
+                    }
+                }
                 if dealt > 0 && heal_pct > 0 {
                     self.heal_player(c, skill.spell_id, dealt * heal_pct / 100, events);
                 }
@@ -3829,8 +3971,10 @@ impl InWorld {
                 drop_chance,
                 tick_aura_spell_id,
                 tick_aura_chance,
+                tick_aura_on,
                 weaken_pct,
                 tick_energize_pct_of_max,
+                tick_energize_pct_of_base,
             } => {
                 let riders = TickRiders {
                     aura: tick_aura_spell_id.and_then(|id| {
@@ -3840,7 +3984,9 @@ impl InWorld {
                             .find(|a| a.spell_id == id)
                     }),
                     aura_chance: tick_aura_chance,
+                    aura_on_target: tick_aura_on == callings::TickAuraOn::Target,
                     energize_pct_of_max: tick_energize_pct_of_max,
+                    energize_pct_of_base: tick_energize_pct_of_base,
                     weaken_pct,
                 };
                 let aura_id = aura_spell_id.unwrap_or(skill.spell_id);
@@ -4542,24 +4688,40 @@ impl InWorld {
             Effect::Blink {
                 distance_yd,
                 backward,
+                shed_snares,
             } => {
                 let me = self.guid;
-                self.skills.remove_where(
+                let gone = self.skills.remove_where(
                     |a| {
                         a.unit == me
-                            && matches!(
+                            && (matches!(
                                 a.kind,
                                 AuraKind::Stun | AuraKind::Incapacitate { .. } | AuraKind::Root
-                            )
+                            ) || (shed_snares && matches!(a.kind, AuraKind::MoveSlow { .. })))
                     },
                     events,
                 );
+                // A shed snare gives the run speed back (Unbound Leap).
+                self.faded(&gone, events);
                 let back = if backward { std::f32::consts::PI } else { 0.0 };
                 self.skills.blink = Some(PendingBlink {
                     from: c.position,
                     orientation: (c.orientation + back).rem_euclid(std::f32::consts::TAU),
                     faces: c.orientation,
                     distance_yd,
+                });
+            }
+            Effect::CastSkill { skill_spell_id } => {
+                // At the cast's enemy target, or the unit the player has selected (a self cast
+                // carries none); it goes off once any Blink has landed (Parting Shot).
+                let at = self.skills.cast_target.filter(|&t| t != self.guid).or((self
+                    .skills
+                    .selection
+                    != 0)
+                    .then_some(self.skills.selection));
+                self.skills.follow_ups.push(FollowUp {
+                    skill_spell_id,
+                    target: at,
                 });
             }
             Effect::ConsumeAura {
@@ -4846,11 +5008,13 @@ impl InWorld {
         ticked: &mut Ticked,
     ) -> u32 {
         self.strike_through(
-            spell_id, target, raw, school, how, 0, c, rng, events, ticked,
+            spell_id, target, raw, school, how, 0, 0, c, rng, events, ticked,
         )
     }
 
-    /// [`Self::strike`] skipping `armor_ignore` more of the target's armour, never below none.
+    /// [`Self::strike`] skipping `armor_ignore` more of the target's armour, never below none, and
+    /// a crit dealing `crit_more_pct` percent more on top of every other crit bonus (Piercing
+    /// Force).
     #[allow(clippy::too_many_arguments)]
     fn strike_through(
         &mut self,
@@ -4860,6 +5024,7 @@ impl InWorld {
         school: School,
         how: Landed,
         armor_ignore: u32,
+        crit_more_pct: u32,
         c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
@@ -4887,6 +5052,7 @@ impl InWorld {
                 crate::talents::skill_crit_damage_pct(c, spell.map(|s| s.key.as_str()), builder)
                     + self.player.stats.crit_damage_pct,
             );
+            damage = (u64::from(damage) * u64::from(100 + crit_more_pct) / 100) as u32;
         }
         damage = self.dealt(c, damage);
         if school.is_magic() {
@@ -5754,7 +5920,7 @@ impl InWorld {
                                 );
                             }
                             let level = c.power_level();
-                            self.tick_riders(riders, a.spell_id, level, rng, events);
+                            self.tick_riders(riders, a.unit, a.spell_id, level, rng, events);
                             self.skills.ticking = Some(a);
                             let cast_by = crate::talents::skill(c, a.spell_id);
                             let skill = cast_by.map(|s| s.key.as_str());
@@ -5825,12 +5991,15 @@ impl InWorld {
         self.drop_tick(dt, c, events);
     }
 
-    /// What one tick of the player's damage over time `spell_id` gives them, once whatever its
-    /// stacks (#506): its aura at its chance (Thermal Feedback), and a percent of their maximum
-    /// power (Kindling Ember).
+    /// What one tick on `unit` of the player's damage over time `spell_id` does, once whatever its
+    /// stacks (#506, #507): its aura at its chance, on the player (Thermal Feedback) or on `unit`
+    /// (Jagged Barbs), and a percent of their maximum power (Kindling Ember) and of their base
+    /// mana (Bloodscent).
+    #[allow(clippy::too_many_arguments)]
     fn tick_riders(
         &mut self,
         riders: TickRiders,
+        unit: u64,
         spell_id: u32,
         level: u8,
         rng: &mut Rng,
@@ -5838,13 +6007,24 @@ impl InWorld {
     ) {
         if let Some(def) = riders.aura {
             if rng.below(100) < riders.aura_chance {
-                self.grant_aura(def, level, 0, events);
+                if !riders.aura_on_target {
+                    self.grant_aura(def, level, 0, events);
+                } else if self.mobs.iter().any(|m| m.guid == unit && m.alive()) {
+                    // Not on a unit the tick killed.
+                    self.put_aura(def, unit, level, events);
+                }
             }
         }
         if riders.energize_pct_of_max > 0 {
             let p = &self.player.power;
             let max = p.max / p.kind.stored(1);
             let gain = scaled_share(max, riders.energize_pct_of_max);
+            self.energize_player(spell_id, gain, events);
+        }
+        if riders.energize_pct_of_base > 0 {
+            let s = &self.player.stats;
+            let base = crate::rules::power::base_mana(s.class, s.level);
+            let gain = base * riders.energize_pct_of_base / 100;
             self.energize_player(spell_id, gain, events);
         }
     }
@@ -6746,6 +6926,9 @@ impl InWorld {
                 },
                 callings::AuraEffect::Stealth { opener_crit } => AuraKind::Stealth {
                     opener_crit: *opener_crit,
+                },
+                callings::AuraEffect::CastWhileMoving { skill } => AuraKind::CastWhileMoving {
+                    skill: skill.as_str(),
                 },
             };
             let period = match effect {
