@@ -4128,12 +4128,8 @@ impl InWorld {
                 weaken_max_pct,
             } => {
                 let riders = TickRiders {
-                    aura: tick_aura_spell_id.and_then(|id| {
-                        callings::of(c.calling)
-                            .auras
-                            .iter()
-                            .find(|a| a.spell_id == id)
-                    }),
+                    aura: tick_aura_spell_id
+                        .and_then(|id| callings::of(c.calling).aura_by_spell(id)),
                     aura_chance: tick_aura_chance,
                     aura_chance_per_stack: tick_aura_chance_per_stack,
                     aura_on_target: tick_aura_on == callings::TickAuraOn::Target,
@@ -4590,12 +4586,8 @@ impl InWorld {
                     left: clock::secs(duration_ms + longer),
                     period: clock::secs(tick_ms),
                     next_tick: clock::secs(tick_ms),
-                    caster_aura: caster_aura_spell_id.and_then(|id| {
-                        callings::of(c.calling)
-                            .auras
-                            .iter()
-                            .find(|a| a.spell_id == id)
-                    }),
+                    caster_aura: caster_aura_spell_id
+                        .and_then(|id| callings::of(c.calling).aura_by_spell(id)),
                     caster_inside: false,
                 };
                 let old: Vec<Ground> = self
@@ -4649,12 +4641,8 @@ impl InWorld {
                 let ward = Ward {
                     amount,
                     energize_pct,
-                    attacker_aura: attacker_aura_spell_id.and_then(|id| {
-                        callings::of(c.calling)
-                            .auras
-                            .iter()
-                            .find(|a| a.spell_id == id)
-                    }),
+                    attacker_aura: attacker_aura_spell_id
+                        .and_then(|id| callings::of(c.calling).aura_by_spell(id)),
                     burst_radius_yd,
                     burst_school,
                 };
@@ -4717,9 +4705,8 @@ impl InWorld {
                 grow_every_ms,
                 follow_caster,
             } => {
-                let auras = &callings::of(c.calling).auras;
-                let row =
-                    |id: Option<u32>| id.and_then(|id| auras.iter().find(|a| a.spell_id == id));
+                let of = callings::of(c.calling);
+                let row = |id: Option<u32>| id.and_then(|id| of.aura_by_spell(id));
                 let every = clock::secs(grow_every_ms);
                 let grow = grow_aura_spell_id
                     .filter(|_| grow_every_ms > 0)
@@ -4823,16 +4810,18 @@ impl InWorld {
                 let burst =
                     (overheal_burst_yd > 0.0).then_some((overheal_burst_yd, overheal_burst_school));
                 if target == self.guid {
-                    let (healed, full) =
-                        self.heal_full_from(self.guid, c, skill.spell_id, amount, events);
+                    let (healed, full) = self.heal_bursting(
+                        self.guid,
+                        skill.spell_id,
+                        amount,
+                        burst,
+                        c,
+                        rng,
+                        events,
+                        ticked,
+                    );
                     self.skills.cast_healed += healed;
                     self.skills.cast_full_healed += full;
-                    // What it healed past the maximum bursts around the healed (Dark Surplus).
-                    if let (Some((yd, school)), true) = (burst, full > healed) {
-                        let at = c.position;
-                        let over = full - healed;
-                        self.burst_at(skill.spell_id, over, school, at, yd, c, rng, events, ticked);
-                    }
                 } else if crate::shard::is_player(target) {
                     // Their session heals them, and bursts what it could not heal.
                     self.skills.cast_full_healed += amount;
@@ -6247,9 +6236,7 @@ impl InWorld {
         if let Some(def) = riders.aura {
             // So much a stack, counted as the talent proc's `chance_per_stack` counts them.
             let lands = if riders.aura_chance_per_stack > 0.0 {
-                let per_mille = (riders.aura_chance_per_stack * 10.0 * tick.kind.stacks() as f32)
-                    .round() as u32;
-                rng.below(1000) < per_mille
+                super::procs::lands_per_stack(riders.aura_chance_per_stack, tick.kind.stacks(), rng)
             } else {
                 rng.below(100) < riders.aura_chance
             };
@@ -6934,7 +6921,7 @@ impl InWorld {
     ) -> bool {
         let cost = self.skills.last_cost;
         if full_absorb_pct > 0 && self.skills.was_full {
-            let amount = cost * full_absorb_pct / 100;
+            let amount = scaled_share(cost, full_absorb_pct);
             self.shield(spell_id, amount, absorb_ms, None, level, events);
             return true;
         }
@@ -7013,6 +7000,39 @@ impl InWorld {
             }
             self.strike(spell_id, guid, amount, school, how, c, rng, events, ticked);
         }
+    }
+
+    /// Heals the player `amount` of `healer`'s `spell_id`. With `burst`, what it heals past their
+    /// maximum bursts at the enemies within so many yards of them, in that school (Dark
+    /// Surplus). What it healed, and what it would have healed with no maximum.
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn heal_bursting(
+        &mut self,
+        healer: u64,
+        spell_id: u32,
+        amount: u32,
+        burst: Option<(f32, School)>,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) -> (u32, u32) {
+        let (healed, full) = self.heal_full_from(healer, c, spell_id, amount, events);
+        if let (Some((yd, school)), true) = (burst, full > healed) {
+            let at = c.position;
+            self.burst_at(
+                spell_id,
+                full - healed,
+                school,
+                at,
+                yd,
+                c,
+                rng,
+                events,
+                ticked,
+            );
+        }
+        (healed, full)
     }
 
     /// A magic blow at `target` with no skill behind it (a shield's burst): the level-based miss,

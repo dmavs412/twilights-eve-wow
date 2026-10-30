@@ -774,12 +774,17 @@ impl InWorld {
                     burst,
                     ..
                 } => {
-                    let (healed, full) = self.heal_full_from(healer, c, spell_id, amount, events);
                     // The healer's overhealing bursts where it lands (Dark Surplus), dealt here.
-                    if let (Some((yd, school)), true) = (burst, full > healed) {
-                        let (at, over) = (c.position, full - healed);
-                        self.burst_at(spell_id, over, school, at, yd, c, rng, events, &mut ticked);
-                    }
+                    self.heal_bursting(
+                        healer,
+                        spell_id,
+                        amount,
+                        burst,
+                        c,
+                        rng,
+                        events,
+                        &mut ticked,
+                    );
                 }
                 Help::Aura { aura, .. } => self.wear(aura, events),
             }
@@ -1468,10 +1473,12 @@ impl InWorld {
         self.skills.break_stealth(events);
         let damage = self.fed_damage_taken(from, level, damage, school);
         // The player's own damage-taken auras: less inside their Consecration.
-        let damage =
-            crate::mobs::changed_by(damage, self.skills.damage_taken_pct(self.guid, school));
+        let damage = crate::rules::talents::changed_by(
+            damage,
+            self.skills.damage_taken_pct(self.guid, school),
+        );
         // Less from a foe the player's burn or anyone's stacks weaken.
-        let damage = crate::mobs::changed_by(damage, -(self.weaken_pct(from) as i32));
+        let damage = crate::rules::talents::changed_by(damage, -(self.weaken_pct(from) as i32));
         let (damage, soaks) = self.skills.soak_on(self.guid, damage, school, events);
         self.warded(from, &soaks, events);
         self.fed_reflect(from, damage, school);

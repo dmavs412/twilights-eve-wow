@@ -126,6 +126,11 @@ impl CallingDef {
             .find(|s| s.key == key)
     }
 
+    /// The aura row the client shows as `spell_id`.
+    pub fn aura_by_spell(&self, spell_id: u32) -> Option<&AuraDef> {
+        self.auras.iter().find(|a| a.spell_id == spell_id)
+    }
+
     /// The hidden ability with this `realm_spell_id`.
     pub fn hidden_skill(&self, realm_spell_id: u32) -> Option<&Skill> {
         self.hidden_skills

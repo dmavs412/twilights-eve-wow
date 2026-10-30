@@ -18,6 +18,7 @@ use crate::rng::Rng;
 use crate::rules::melee::MobDefense;
 use crate::rules::school::School;
 use crate::rules::stats::{MobStats, UnitClass};
+use crate::rules::talents::changed_by;
 use crate::space::distance;
 use crate::Host;
 
@@ -1264,11 +1265,6 @@ pub(crate) struct Stance {
     pub(crate) damage_taken_pct: i32,
     /// Seconds left; `None` holds until it leaves combat or dies.
     pub(crate) secs_left: Option<f32>,
-}
-
-/// `damage` changed by `pct` percent, never below 0.
-pub(crate) fn changed_by(damage: u32, pct: i32) -> u32 {
-    (i64::from(damage) * i64::from(100 + pct) / 100).max(0) as u32
 }
 
 /// A creature's run from its target at low health: what is left of its time and its yards.

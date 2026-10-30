@@ -6,6 +6,12 @@ pub fn scaled(amount: u32, pct: u32) -> u32 {
     (f64::from(amount) * f64::from(100 + pct) / 100.0).round() as u32
 }
 
+/// `damage` changed by `pct` percent, up or down, rounded toward zero and never below 0 (a
+/// creature's stance, a damage-taken aura, a weakening).
+pub fn changed_by(damage: u32, pct: i32) -> u32 {
+    (i64::from(damage) * i64::from(100 + pct) / 100).max(0) as u32
+}
+
 /// One tick of Deep Wounds: `pct`% of the main hand's average swing (attack power included, as
 /// vmangos reads `UNIT_FIELD_MINDAMAGE`/`MAXDAMAGE`), spread over its four ticks, at least 1.
 pub fn deep_wound_tick(min_damage: f32, max_damage: f32, pct: u32) -> u32 {

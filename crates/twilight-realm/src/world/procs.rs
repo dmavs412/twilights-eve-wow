@@ -12,6 +12,13 @@ use crate::rng::Rng;
 use crate::rules::procs::Happened;
 use crate::rules::talents::scaled;
 
+/// Whether a chance of `pct_per_stack` percent a stack lands at `stacks`, rolled in thousandths
+/// so a fraction of a percent counts.
+pub(super) fn lands_per_stack(pct_per_stack: f32, stacks: u32, rng: &mut Rng) -> bool {
+    let per_mille = (pct_per_stack * 10.0 * stacks as f32).round() as u32;
+    rng.below(1000) < per_mille
+}
+
 impl InWorld {
     /// Runs every learned proc, and every proc of the player's buffs, that `happened` sets off.
     /// A heal moves health by a percent of the maximum, each aura key names a buff of the sheet
@@ -47,8 +54,7 @@ impl InWorld {
             }
             if proc.chance_per_stack > 0.0 {
                 let stacks = self.skills.ticking_stacks();
-                let per_mille = (proc.chance_per_stack * 10.0 * stacks as f32).round() as u32;
-                if rng.below(1000) >= per_mille {
+                if !lands_per_stack(proc.chance_per_stack, stacks, rng) {
                     continue;
                 }
             } else if proc.chance < 100 && rng.below(100) >= proc.chance {
