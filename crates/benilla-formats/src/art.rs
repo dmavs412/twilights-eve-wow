@@ -8,12 +8,8 @@ use std::sync::OnceLock;
 /// `{name: base64 PNG}`, written by `build_spells.py` from the PNGs the master CSV's `icon` cells name.
 const CLIENT_ART: &str = include_str!("../../../data/twilights-eve/client_art.json");
 
-/// The folders, lowercased with `/`, embedded art lives under: a spell's icon, and the four
-/// quarters of a talent tab's background (`<stem>-TopLeft` and the rest).
-const ART_DIRS: [&str; 2] = [
-    "interface/icons/twilight/",
-    "interface/talentframe/twilight/",
-];
+/// The folder, lowercased with `/`, embedded art lives under: a spell's or an item's icon.
+const ART_DIRS: [&str; 1] = ["interface/icons/twilight/"];
 
 /// The PNG bytes behind an art path (any case, `/` or `\`, with or without `.blp`), or `None`
 /// when the path is not embedded art.

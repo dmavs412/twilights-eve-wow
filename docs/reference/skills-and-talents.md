@@ -1,15 +1,14 @@
 # Twilight's Eve: skills, talents and Advancement data (tickets #8, #14, #15)
 
-The data is in `data/twilights-eve/callings.json`. Every spell, talent and tab id in it is a
-real 1.12.1 record. `tools/twilights-eve/extract_spells.py verify` checks them against the
-client's DBCs, read straight off the MPQ patch chain (Spell.dbc comes from patch-2.MPQ, and
-the talent tables, SpellIcon and SpellRange come from patch.MPQ). It also writes the full field
-dump to `data/twilights-eve/spells-extracted.json` and prints level tables. The checks cover
-names, ranks, icons, family flags, the client-side fields (cost, range, stances, aura states,
-cooldowns, duration, GCD, on-next-swing, not-in-combat), whether talent rank spells form a
-prefix of the real ranks, seats, prerequisite arrows, tier reachability, the point schedule,
-and the spell-mod op, value and family bit of each of `client_spellmods`. The script uses only the
-standard library and runs on any Python 3.9+ (`--data` defaults to `$WOW_DATA`).
+The data is in `data/twilights-eve/callings.json`. Every skill's spell id in it is a real 1.12.1
+record. `tools/twilights-eve/extract_spells.py verify` checks them against the client's DBCs,
+read straight off the MPQ patch chain (Spell.dbc comes from patch-2.MPQ, and the talent tables,
+SpellIcon and SpellRange come from patch.MPQ). It also writes the full field dump to
+`data/twilights-eve/spells-extracted.json` and prints level tables. The checks cover names, ranks,
+icons, family flags and the client-side fields (cost, range, stances, aura states, cooldowns,
+duration, GCD, on-next-swing, not-in-combat). The file holds no talent tree: the Talent Rows live
+in the master CSV (ADR 0028). The script uses only the standard library and runs on any Python
+3.9+ (`--data` defaults to `$WOW_DATA`).
 
 ```
 python tools/twilights-eve/extract_spells.py verify

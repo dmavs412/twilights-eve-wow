@@ -484,14 +484,6 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
     }
 }
 
-/// The client names these " (WIP)": the spell of every Talent row choice with no effect and no
-/// skill. No Calling has a Talent row yet, so the old tree's talents are no longer among them.
-#[test]
-fn the_wip_rank_spells_are_the_talent_row_choices_with_no_effect() {
-    let ids: Vec<u32> = callings::wip_rank_spell_ids().collect();
-    assert_eq!(ids, Vec::<u32>::new());
-}
-
 #[test]
 fn the_vanguard_plays_righteous_smash_bulwark_charge_and_zealous_cleave() {
     let kit: Vec<&str> = callings::calling("vanguard")

@@ -3,7 +3,7 @@
 
     python tools/twilights-eve/callings_to_csv.py [--callings FILE] [--out FILE]
 
-One row per skill, one row per talent rank per Calling tab. The column set is documented in
+One row per skill. The column set is documented in
 docs/spell_pipeline.md. Effect params are `key=value` pairs joined by `;` with nested keys dotted
 and lists joined by `|`. After this run, master.csv is the hand-edited truth and callings.json is
 history.
@@ -101,29 +101,6 @@ def skill_row(calling, s):
     return row
 
 
-def talent_rows(calling, tab, t):
-    pre = t.get("prereq") or {}
-    mods = t.get("client_spellmods") or []
-    for rank, spell in enumerate(t["rank_spells"], 1):
-        row = {
-            "kind": "talent", "calling": calling, "class": 1, "key": t["key"], "name": t.get("name", ""), "rank": rank,
-            "spell_id": spell, "talent_id": t.get("talent_id", ""), "source_tab_id": t.get("source_tab_id", ""),
-            "tab": tab.get("name", ""), "tab_row": t.get("tier", ""), "tab_column": t.get("column", ""),
-            "prereq_key": pre.get("key", ""), "prereq_rank": pre.get("rank", ""),
-            "exceptional": yn(t.get("exceptional")),
-            "modelled": "no" if str(t.get("realm_effect", "")).startswith("Not modelled") else "yes",
-            "description": t.get("realm_effect", ""),
-            "notes": t.get("client_spellmods_note", ""),
-        }
-        for i, m in enumerate(mods[:2], 1):
-            row[f"spellmod{i}_type"] = m.get("type", "")
-            row[f"spellmod{i}_op"] = m.get("op", "")
-            row[f"spellmod{i}_family_bit"] = m.get("family_bit", "")
-            vals = m.get("values", [])
-            row[f"spellmod{i}_value"] = vals[rank - 1] if rank - 1 < len(vals) else ""
-        yield row
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--callings", default=DEFAULT_IN)
@@ -135,17 +112,12 @@ def main():
     for cname, c in d["callings"].items():
         for s in c.get("skills", []):
             rows.append(skill_row(cname, s))
-        tree = c.get("talent_tree") or {}
-        for tab in tree.get("tabs", []):
-            for t in tab.get("talents", []):
-                rows.extend(talent_rows(cname, tab, t))
     with open(a.out, "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=COLUMNS, lineterminator="\n")
         w.writeheader()
         for r in rows:
             w.writerow({k: r.get(k, "") for k in COLUMNS})
-    skills = sum(1 for r in rows if r["kind"] == "skill")
-    print(f"{a.out}: {len(rows)} rows ({skills} skills, {len(rows) - skills} talent ranks), {len(COLUMNS)} columns")
+    print(f"{a.out}: {len(rows)} skill rows, {len(COLUMNS)} columns")
 
 
 if __name__ == "__main__":

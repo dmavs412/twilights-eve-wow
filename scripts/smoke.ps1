@@ -2,14 +2,13 @@
 .SYNOPSIS
 Cast every spell of every Calling on the Test Grounds' training dummies, from a play/ copy (#200).
 
-Creates one character in a home folder of its own, then for each batch rewrites that character's
-save (its Calling, level 60, and a batch of that Calling's talents, every rank) and enters the
-world with WOW_PROBE_TEST_GROUNDS and WOW_PROBE_SPELLS. A Calling's talents take as many batches
-as the 59 points of a level-60 save need. In Callings a spell comes from a talent, so every rank
-of every talent is every spell.
+Creates one character in a home folder of its own, then for each Calling rewrites that character's
+save (its Calling, level 60) and enters the world with WOW_PROBE_TEST_GROUNDS and
+WOW_PROBE_SPELLS, which casts every spell in the spell book. The save's Talent Rows stay empty, so
+the plain skills are cast and no Skill Choice is.
 
 Writes smoke-report.jsonl (one line per spell: calling, spell id, name, cast ok / error, damage,
-aura) and a screenshot per batch under .claude/smoke/<timestamp>/. Exits non-zero on any failed
+aura) and a screenshot per Calling under .claude/smoke/<timestamp>/. Exits non-zero on any failed
 cast, naming it, or on running out of time, naming the Calling it stopped at.
 
 .EXAMPLE
@@ -29,7 +28,6 @@ param(
 $Root = Split-Path $PSScriptRoot -Parent
 Set-Location $Root
 
-$PointsAtSixty = 59
 $CharName = "Smoker"
 # The longest one launch may take before it is stopped; the overall budget is the real limit.
 $LaunchLimitSec = 600
@@ -87,26 +85,12 @@ function Invoke-Game([hashtable]$vars, [string]$name) {
     return $done
 }
 
-# ---- the batches: every talent rank of each Calling, packed into 59-point saves -----------------
+# ---- the batches: one launch per Calling of the sheet --------------------------------------------
 $spells = Get-Content (Join-Path $Root 'data\twilights-eve\server_spells.json') -Raw | ConvertFrom-Json
 $batches = @()
 foreach ($c in $spells) {
     if ($Callings -and $Callings -notcontains $c.key) { continue }
-    $talents = @()
-    foreach ($tab in $c.talent_tabs) {
-        foreach ($t in $tab.talents) {
-            $talents += , @([int]$t.ranks[0].talent_id, @($t.ranks).Count)
-        }
-    }
-    $batch = @(); $points = 0
-    foreach ($t in $talents) {
-        if ($points + $t[1] -gt $PointsAtSixty -and $batch.Count) {
-            $batches += , @{ calling = $c.key; talents = $batch }
-            $batch = @(); $points = 0
-        }
-        $batch += , $t; $points += $t[1]
-    }
-    $batches += , @{ calling = $c.key; talents = $batch }
+    $batches += , @{ calling = $c.key }
 }
 Write-Log ("{0} batch(es) over {1} Calling(s), {2} min budget, {3}" -f $batches.Count,
     @($batches | ForEach-Object { $_.calling } | Select-Object -Unique).Count, $BudgetMin, $exe)
@@ -129,7 +113,6 @@ $n = 0
 foreach ($b in $batches) {
     $n++
     if ((Get-Date) -ge $deadline) { $timedOut = $b.calling; break }
-    $rows = ($b.talents | ForEach-Object { "[{0}, {1}]" -f $_[0], $_[1] }) -join ", "
     $text = $pristine -replace 'calling = "[a-z_]+"', ('calling = "{0}"' -f $b.calling)
     $text = $text -replace '(?m)^level = \d+', 'level = 60'
     # New characters start in the Barrens; the goto probe teleports within the current map, so
@@ -137,12 +120,10 @@ foreach ($b in $batches) {
     $text = ([regex]'(?m)^map = \d+').Replace($text, 'map = 0', 1)
     $text = ([regex]'(?m)^zone = \d+').Replace($text, 'zone = 12', 1)
     $text = ([regex]'(?m)^position = \[.*\]').Replace($text, 'position = [-9464.0, 62.0, 56.0]', 1)
-    $text = $text -replace '(?m)^talents = \[.*\]\r?\n', ''
-    $text = $text -replace '(?m)^(xp = \d+)', ("`$1`ntalents = [$rows]")
     [IO.File]::WriteAllText($save.FullName, $text, (New-Object Text.UTF8Encoding $false))
 
     $name = "{0:D2}-{1}" -f $n, $b.calling
-    Write-Log "batch $name ($(@($b.talents).Count) talents)"
+    Write-Log "batch $name"
     $before = if (Test-Path $report) { @(Get-Content $report).Count } else { 0 }
     $ran = Invoke-Game @{
         WOW_CHAR = $CharName

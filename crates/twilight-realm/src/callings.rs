@@ -730,13 +730,6 @@ pub struct TalentDef {
     pub rank_spellmods: Vec<Vec<SpellMod>>,
 }
 
-impl TalentDef {
-    /// A Talent the realm does not model yet: no effect and no skill. It can still be set.
-    pub fn is_wip(&self) -> bool {
-        self.effects.is_empty() && self.skill.is_none()
-    }
-}
-
 /// One thing a talent does; `per_rank[r - 1]` is its size at rank `r`.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -2295,17 +2288,4 @@ pub fn borrowed_skills() -> impl Iterator<Item = &'static Skill> {
         .flat_map(every_skill)
         .filter(|s| s.borrowed.is_some())
         .filter(move |s| seen.insert(s.spell_id))
-}
-
-/// Every WIP Talent choice's spell, of every Calling's rows: the spells the client names
-/// "<Name> (WIP)" (ADR 0003).
-pub fn wip_rank_spell_ids() -> impl Iterator<Item = u32> {
-    all()
-        .into_iter()
-        .flat_map(|c| &c.rows)
-        .flat_map(|row| &row.choices)
-        .filter_map(|choice| match choice {
-            RowChoice::Talent(t) if t.is_wip() => Some(t.rank_spells[0]),
-            _ => None,
-        })
 }

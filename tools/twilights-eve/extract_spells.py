@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Verify and dump the 1.12.1 spell and talent records behind data/twilights-eve/callings.json.
+"""Verify and dump the 1.12.1 spell records behind data/twilights-eve/callings.json, and list the
+stock talents.
 
 Reads the client's own tables (Spell, SpellIcon, SpellRange, SpellDuration, SpellCastTimes,
 SpellRadius, Talent, TalentTab) straight off the MPQ patch chain with the stdlib-only reader in
@@ -13,8 +14,8 @@ Usage (any Python 3.9+, no installs):
     python tools/twilights-eve/extract_spells.py search  "Heroic Strike" [--family 4]
     python tools/twilights-eve/extract_spells.py talents [--class 1]
 
-`verify` checks every spell, talent and tab id in callings.json against the DBCs (names, rank
-spells, grid seats, prerequisites, icons) and writes the full field dump to
+`verify` checks every skill's spell id in callings.json against the DBCs (names, ranks, icons,
+costs, cooldowns) and writes the full field dump to
 data/twilights-eve/spells-extracted.json. It exits non-zero on any mismatch, so it can gate a
 data change. --data defaults to $WOW_DATA, then C:\\Users\\davis\\wow-data\\Data.
 """
@@ -65,10 +66,6 @@ SPELLMOD_OPS = {
 C_ICON, C_ACTIVE_ICON, C_NAME, C_RANK, C_DESC, C_AURA_DESC = 117, 118, 120, 129, 138, 147
 C_GCD_CATEGORY, C_GCD, C_MAX_TARGET_LEVEL, C_FAMILY = 157, 158, 159, 160
 C_FAMILY_FLAGS_LO, C_FAMILY_FLAGS_HI, C_MAX_TARGETS, C_DMG_CLASS, C_PREVENTION = 161, 162, 163, 164, 165
-
-# The lowest SpellFamilyFlags bit the client gives a borrowed spell (ADR 0003), as the realm's
-# `callings::BORROWED_FAMILY_BITS` says. No Spell.dbc row names such a bit.
-BORROWED_FAMILY_BIT_FLOOR = 33
 
 POWER_NAMES = {0: "mana", 1: "rage", 2: "focus", 3: "energy", 4: "happiness", 0xFFFFFFFE: "health"}
 SCHOOLS = {0: "physical", 1: "holy", 2: "fire", 3: "nature", 4: "frost", 5: "shadow", 6: "arcane"}
@@ -288,7 +285,6 @@ class Tables:
 
 # --- verify -----------------------------------------------------------------------------------
 
-SPELLMOD_BY_NAME = {v: k for k, v in SPELLMOD_OPS.items()}
 CLIENT_KEYS = ("cost", "cooldown_ms", "cast_time_ms", "range_yd", "stances", "caster_aura_state",
                "target_aura_state", "duration_ms", "gcd_ms", "not_in_combat", "on_next_swing")
 
@@ -322,7 +318,7 @@ def level_table(calling: Dict[str, Any], tier_bonus: Dict[str, Any]) -> Dict[str
 
 def verify(tables: Tables, callings: Dict[str, Any]) -> Tuple[List[str], Dict[str, Any]]:
     errors: List[str] = []
-    dump: Dict[str, Any] = {"sources": tables.sources, "spells": {}, "talents": {}, "tabs": {}, "tab_capacity": {}, "level_tables": {}}
+    dump: Dict[str, Any] = {"sources": tables.sources, "spells": {}, "level_tables": {}}
 
     def check_spell(sid: int, where: str, want: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         f = tables.spell_fields(sid)
@@ -362,91 +358,6 @@ def verify(tables: Tables, callings: Dict[str, Any]) -> Tuple[List[str], Dict[st
             if len(calling["skills"]) > 8:
                 errors.append(f"{cname}: {len(calling['skills'])} skills; a Calling has at most 8")
             dump["level_tables"][cname] = level_table(calling, callings.get("tier_bonus", {}))
-        tree = calling.get("talent_tree") or {}
-        talent_ids = set()
-        for tab in tree.get("tabs", []):
-            src = tab.get("source_tab_id")
-            if src:
-                tf = tables.tab_fields(src)
-                if tf is None:
-                    errors.append(f"{cname}.tab {tab['name']}: TalentTab {src} missing")
-                else:
-                    dump["tabs"][str(src)] = tf
-                    if tab.get("background") != tf["background"]:
-                        errors.append(f"{cname}.tab {tab['name']}: background {tab.get('background')!r}, TalentTab says {tf['background']!r}")
-            seats: Dict[Tuple[int, int], str] = {}
-            per_tier: Dict[int, int] = {}
-            for t in tab.get("talents", []):
-                where = f"{cname}.{tab['name']}.{t['key']}"
-                tf2 = tables.talent_fields(t["talent_id"])
-                if tf2 is None:
-                    errors.append(f"{where}: talent {t['talent_id']} not in Talent.dbc")
-                    continue
-                if t["talent_id"] in talent_ids:
-                    errors.append(f"{where}: talent id {t['talent_id']} used twice in one catalog")
-                talent_ids.add(t["talent_id"])
-                dump["talents"][str(t["talent_id"])] = tf2
-                if tf2["tab"] != t["source_tab_id"]:
-                    errors.append(f"{where}: talent {t['talent_id']} is in TalentTab {tf2['tab']}, callings says {t['source_tab_id']}")
-                if tf2["name"] != t["name"]:
-                    errors.append(f"{where}: talent {t['talent_id']} rank-1 spell is {tf2['name']!r}")
-                if bool(t.get("exceptional")) != bool(tf2["flags"] & 1):
-                    errors.append(f"{where}: exceptional {t.get('exceptional')} but Talent.dbc flags {tf2['flags']}")
-                # A replacement catalog may cut ranks short, but only to a prefix of the real rank
-                # spells: ui_talent.rs rank_of() reads the highest known one.
-                if t["rank_spells"] != tf2["rank_spells"][: len(t["rank_spells"])]:
-                    errors.append(f"{where}: rank spells {t['rank_spells']} not a prefix of {tf2['rank_spells']}")
-                if not 1 <= len(t["rank_spells"]) <= 5:
-                    errors.append(f"{where}: {len(t['rank_spells'])} ranks; the client catalog holds 1..5")
-                ranks = [check_spell(sid, f"{where}.rank{k + 1}", {"name": t["name"]}) for k, sid in enumerate(t["rank_spells"])]
-                for mod in t.get("client_spellmods", []):
-                    # A cell on a borrowed spell's bit is the realm's own: no Spell.dbc row has it.
-                    if not all(ranks) or mod["family_bit"] >= BORROWED_FAMILY_BIT_FLOOR:
-                        continue
-                    want_aura = 107 if mod["type"] == "flat" else 108
-                    for k, (f, val) in enumerate(zip(ranks, mod["values"])):
-                        hit = [e for e in f["effects"] if e["aura"] == want_aura and e["misc_value"] == SPELLMOD_BY_NAME[mod["op"]]
-                               and int(e["item_type_or_family_mask"], 16) == (1 << mod["family_bit"]) and e["base_points"] + 1 == val]
-                        if not hit:
-                            errors.append(f"{where}.rank{k + 1}: no {mod['type']} {mod['op']} {val} on family bit {mod['family_bit']}")
-                seat = (t["tier"], t["column"])
-                if seat in seats:
-                    errors.append(f"{where}: seat {seat} also holds {seats[seat]}")
-                seats[seat] = t["key"]
-                if not (1 <= t["tier"] <= 7 and 1 <= t["column"] <= 4):
-                    errors.append(f"{where}: seat {seat} outside the 7x4 grid")
-                per_tier[t["tier"]] = per_tier.get(t["tier"], 0) + len(t["rank_spells"])
-                pre = t.get("prereq")
-                if pre:
-                    ptal = next((x for x in tab["talents"] if x["key"] == pre["key"]), None)
-                    if ptal is None:
-                        errors.append(f"{where}: prereq {pre['key']} not in the same tab")
-                    else:
-                        if not 1 <= pre["rank"] <= len(ptal["rank_spells"]):
-                            errors.append(f"{where}: prereq needs rank {pre['rank']} of a {len(ptal['rank_spells'])}-rank talent")
-                        if ptal["tier"] >= t["tier"]:
-                            errors.append(f"{where}: prereq {pre['key']} is not on an earlier tier")
-                        # Keep arrows straight down an empty column: the stock frame's branch
-                        # drawing handles that case cleanly.
-                        if ptal["column"] != t["column"]:
-                            errors.append(f"{where}: prereq arrow is not straight down")
-                        for tier in range(ptal["tier"] + 1, t["tier"]):
-                            if (tier, t["column"]) in seats or any(x["tier"] == tier and x["column"] == t["column"] for x in tab["talents"]):
-                                errors.append(f"{where}: prereq arrow crosses a talent at tier {tier}")
-            # Tier n opens at 5*(n-1) points in the tab; every used tier must be reachable from
-            # the tiers above it.
-            for tier in sorted(per_tier):
-                above = sum(v for k, v in per_tier.items() if k < tier)
-                if above < 5 * (tier - 1):
-                    errors.append(f"{cname}.{tab['name']}: tier {tier} needs {5 * (tier - 1)} points, only {above} ranks above it")
-            dump["tab_capacity"][f"{cname}.{tab['name']}"] = {"ranks": sum(per_tier.values()), "by_tier": per_tier}
-        pts = tree.get("points_at_cap")
-        if pts is not None:
-            want = callings["talent_points"]["at_cap"][str(calling["tier"])]
-            if pts != want:
-                errors.append(f"{cname}: points_at_cap {pts}, talent_points schedule says {want}")
-            if pts != calling["cap"] - callings["talent_points"]["first_level"] + 1:
-                errors.append(f"{cname}: points_at_cap {pts} does not match one per level from 2 to {calling['cap']}")
     return errors, dump
 
 
@@ -536,16 +447,13 @@ def main() -> int:
         with open(args.out, "w", encoding="utf-8", newline="\n") as fh:
             json.dump(dump, fh, indent=1, sort_keys=True)
             fh.write("\n")
-        n_sp, n_ta = len(dump["spells"]), len(dump["talents"])
-        print(f"checked {n_sp} spells, {n_ta} talents, {len(dump['tabs'])} tabs; wrote {args.out}")
+        print(f"checked {len(dump['spells'])} spells; wrote {args.out}")
         for cname, tbl in dump["level_tables"].items():
             print(f"\n{cname}: levels {tbl['levels']}, naked AP ~{tbl['ap_estimate']}")
             for key, rows in tbl["skills"].items():
                 for term, vals in rows.items():
                     print(f"  {key:16} {term:28} {vals}")
         print()
-        for tab, cap in dump["tab_capacity"].items():
-            print(f"  {tab}: {cap['ranks']} ranks, by tier {cap['by_tier']}")
         for e in errors:
             print("ERROR", e)
         return 1 if errors else 0
