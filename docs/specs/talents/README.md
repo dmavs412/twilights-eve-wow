@@ -331,6 +331,14 @@ accepted them.
 - Every row has a choice that adds damage, so the balance model (`docs/balance/rules.md`) can set
   every row to a damage choice.
 
+Readings taken in the build (#507): Vault is a self cast and carries no unit target, so Parting
+Shot fires at the unit the Ranger last selected; the realm now remembers the selection. Rhythmic
+Draw's stack and Twin Arrows' repeat come from a Snapshot that landed: a miss gives neither.
+Adrenaline Rush cuts the cooldown of the Vault choice set on its row, if one is. Rapid Assault's
+extra arrow now follows a Snapshot choice too; before, a buff's `extra_strike` answered only to
+its skill's own key. Running Fire's buff keeps Rapid Fire's name and icon, as Phantom Guile's buff
+keeps Evasion's. No icon was swapped: all 18 are in the 1.12 archives.
+
 ## Acolyte's rows
 
 Grilled with Davis 2026-10-29 (#508). Rows open at Creeping Blight 4, Blood Lance 8, the Talent row

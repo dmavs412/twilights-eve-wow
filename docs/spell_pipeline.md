@@ -66,7 +66,7 @@ them, the build accepts them now): `school_damage` and `weapon_strike` take `con
 more against a stunned or incapacitated target); `weapon_strike` takes `cleave_pct=N` (a second
 enemy in melee reach in front of the caster takes N% of the hit) and the pair
 `below_health_pct=H;below_bonus_pct=N` (N% more against a target under H% health; one without
-the other fails); `skill_crit_pct` takes `skill=any` for the caster's next hit with any skill.
+the other fails, unless `below_instant=yes` goes with `below_health_pct`, #507); `skill_crit_pct` takes `skill=any` for the caster's next hit with any skill.
 Vanguard's rows (#504) add four, each a whole number of at least 1: `weapon_strike` takes
 `block_value_pct=N` (N% of the caster's shield Block Value added to the strike, skill or
 next-swing, on top of a talent's; nothing without a shield) and `heal_pct=N` (the caster heals
@@ -120,6 +120,28 @@ copy of what it took, one stack and the row's full duration, goes on the nearest
 enemy within N yd of the target. A pair with one half missing, and an aura key that is not an
 aura row of the Calling, fail the build. A proc's `skill=key` and a `next_cast` aura's skills
 answer to a Skill Choice of that skill, as every talent's `skill=` does.
+Ranger's rows (#507) add more, each a whole number of at least 1 unless said otherwise.
+`weapon_strike` takes `repeat_chance=N` (1 to 100): after a cast whose strike landed, N% of the
+time the skill goes off again at once at the same target, free, off the global cooldown, and a
+repeat never repeats. It takes the pair `crit_cooldown_skill=key;crit_cooldown_ms=N`: a critical
+hit takes N ms off the cooldown of that skill of the Calling, or of the Skill Choice set on its
+row, never below 0. It takes `crit_damage_pct=N`: a critical hit deals N% more, multiplied with
+every other crit bonus. It takes `below_instant=yes` with `below_health_pct`: a cast that starts
+at a target under that share of its health has no cast bar, and `below_bonus_pct` may then be
+left out. The skill kind `cast_skill` takes `skill=key`: once the cast and any Blink it queued
+have landed, the caster casts that skill, or the Skill Choice set on its row, at the cast's enemy
+target or else the unit they last selected. The cast is free, off the global cooldown and has no
+cast bar, and its procs fire as that skill's do. With no living target in its range and in sight
+of where the caster lands, nothing goes off. The patch shows it as a dummy effect. `blink` takes
+`shed_snares=yes`: the leap also takes off every aura on the caster that lowers their run speed.
+`periodic_damage` takes `tick_aura_on=caster|target` (default `caster`, and only with
+`tick_aura`): with `target`, the tick's aura goes on the unit the damage ticks on, while it lives.
+It takes `tick_energize_pct_of_base=N`: N% of the caster's base mana after each tick, once
+whatever the stacks. The aura kind `cast_while_moving` takes `skill=key`: while the aura is up,
+moving does not hold that skill or a Skill Choice of it (Auto Shot's `interrupt_on=move`). The
+build resolves `crit_cooldown_skill` and `cast_skill`'s `skill` to the named skill's spell id, as
+`reset_cooldowns`' keys, and fails a key that is not a skill of the Calling, `cast_while_moving`'s
+too. A buff's `extra_strike` answers to a Skill Choice of its skill.
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`
