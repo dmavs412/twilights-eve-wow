@@ -2121,12 +2121,1285 @@
      }
     ],
     "description": "Damage taken reduced by 10%."
+   },
+   {
+    "key": "aura_searing_penance",
+    "name": "Shield of the Penitent",
+    "spell_id": 1000448,
+    "status": "wip",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 50
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "damage_attacker": {
+        "base": 24,
+        "per_level": 2.4
+       },
+       "school": "holy",
+       "amount_skill": "shield_of_penitent"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 50%. Each block deals 24 Holy damage to the attacker."
+   },
+   {
+    "key": "aura_shield_specialization",
+    "name": "Shield of the Penitent",
+    "spell_id": 1000449,
+    "status": "wip",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 50
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "damage_attacker": {
+        "base": 12,
+        "per_level": 1.2
+       },
+       "school": "holy",
+       "amount_skill": "shield_of_penitent"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "chance": 100,
+       "energize": 3
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 50%. Each block gives 3 Rage."
+   },
+   {
+    "key": "aura_steadfast_penitent",
+    "name": "Shield of the Penitent",
+    "spell_id": 1000450,
+    "status": "wip",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 50
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "damage_attacker": {
+        "base": 12,
+        "per_level": 1.2
+       },
+       "school": "holy",
+       "amount_skill": "shield_of_penitent"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 50%."
+   },
+   {
+    "key": "bulwark_slam_stun",
+    "name": "Bulwark Slam (stun)",
+    "spell_id": 1000451,
+    "status": "wip",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "stun",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 2000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "aura_spell_id": 7922
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stunned."
+   },
+   {
+    "key": "aura_wrathful_iron",
+    "name": "Seal of Iron",
+    "spell_id": 1000452,
+    "status": "wip",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 30000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 25,
+       "heal_pct": 4
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 25,
+       "apply_aura": "aura_seal_of_iron_armor"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 50,
+       "weapon_pct": 50,
+       "school": "holy"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Melee attacks may heal you or raise your armor, and may sear the target with Holy damage."
+   },
+   {
+    "key": "aura_seal_of_mending",
+    "name": "Seal of Iron",
+    "spell_id": 1000453,
+    "status": "wip",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 30000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 50,
+       "heal_pct": 4
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 50,
+       "apply_aura": "aura_seal_of_iron_armor"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Melee attacks may heal you or raise your armor."
+   },
+   {
+    "key": "aura_seal_of_fervor",
+    "name": "Seal of Iron",
+    "spell_id": 1000454,
+    "status": "wip",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 30000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 25,
+       "heal_pct": 4
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 25,
+       "apply_aura": "aura_seal_of_iron_armor"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 25,
+       "energize": 5
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Melee attacks may heal you or raise your armor, and may give you Rage."
    }
   ],
-  "rows": [],
+  "rows": [
+   {
+    "key": "righteous_smash",
+    "level": 4,
+    "kind": "skill_choice",
+    "skill": "righteous_smash",
+    "choices": [
+     {
+      "key": "iron_juggernaut",
+      "name": "Iron Juggernaut",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 856,
+      "spell_id": 1000430,
+      "realm_cost": 12,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "next_swing",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "on_next_swing": true,
+         "bonus": {
+          "base": 22,
+          "per_level": 2,
+          "per_ap": 0
+         },
+         "block_value_pct": 150
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your next melee swing strikes the target for weapon damage plus a bonus, plus Physical damage equal to 150% of your shield's Block Value. Every hit grants a stack of Conviction.",
+      "variant_of": "righteous_smash"
+     },
+     {
+      "key": "vengeful_conviction",
+      "name": "Vengeful Conviction",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 856,
+      "spell_id": 1000431,
+      "realm_cost": 12,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "next_swing",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "on_next_swing": true,
+         "bonus": {
+          "base": 22,
+          "per_level": 2,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your next melee swing strikes the target for weapon damage plus a bonus. Every hit grants 2 stacks of Conviction.",
+      "variant_of": "righteous_smash"
+     },
+     {
+      "key": "penitents_smash",
+      "name": "Penitent's Smash",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 856,
+      "spell_id": 1000432,
+      "realm_cost": 12,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "next_swing",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "on_next_swing": true,
+         "bonus": {
+          "base": 22,
+          "per_level": 2,
+          "per_ap": 0
+         },
+         "heal_pct": 25
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your next melee swing strikes the target for weapon damage plus a bonus, and heals you for 25% of the damage it deals. Every hit grants a stack of Conviction.",
+      "variant_of": "righteous_smash"
+     }
+    ]
+   },
+   {
+    "key": "shield_of_penitent",
+    "level": 8,
+    "kind": "skill_choice",
+    "skill": "shield_of_penitent",
+    "choices": [
+     {
+      "key": "searing_penance",
+      "name": "Searing Penance",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000433,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "shield"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_searing_penance"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 10 sec your chance to Block is increased by 50%. Every block deals 24 Holy damage to the attacker.",
+      "variant_of": "shield_of_penitent"
+     },
+     {
+      "key": "shield_specialization",
+      "name": "Shield Specialization",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000434,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "shield"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_shield_specialization"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 10 sec your chance to Block is increased by 50%. Every block deals 12 Holy damage to the attacker and gives you 3 Rage.",
+      "variant_of": "shield_of_penitent"
+     },
+     {
+      "key": "steadfast_penitent",
+      "name": "Steadfast Penitent",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000435,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "shield"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_steadfast_penitent"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 15 sec your chance to Block is increased by 50%. Every block deals 12 Holy damage to the attacker.",
+      "variant_of": "shield_of_penitent"
+     }
+    ]
+   },
+   {
+    "key": "zealous_cleave",
+    "level": 12,
+    "kind": "skill_choice",
+    "skill": "zealous_cleave",
+    "choices": [
+     {
+      "key": "sweeping_zeal",
+      "name": "Sweeping Zeal",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000436,
+      "realm_cost": 20,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "realm_radius_yd": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "cone",
+      "area_center": "caster",
+      "max_targets": 5,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "bonus": {
+          "base": 6.5,
+          "per_level": 1.3,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "consume_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "school": "holy",
+         "per_stack": {
+          "base": 5,
+          "per_level": 1
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A sweeping attack that hits up to 5 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage.",
+      "variant_of": "zealous_cleave"
+     },
+     {
+      "key": "zealous_restoration",
+      "name": "Zealous Restoration",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000437,
+      "realm_cost": 20,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "realm_radius_yd": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "cone",
+      "area_center": "caster",
+      "max_targets": 3,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "bonus": {
+          "base": 6.5,
+          "per_level": 1.3,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "consume_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "school": "holy",
+         "per_stack": {
+          "base": 5,
+          "per_level": 1
+         },
+         "heal_pct": 75
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A sweeping attack that hits up to 3 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage, and heals you for 75% of that Holy damage.",
+      "variant_of": "zealous_cleave"
+     },
+     {
+      "key": "tithe_of_zeal",
+      "name": "Tithe of Zeal",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000438,
+      "realm_cost": 20,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "realm_radius_yd": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "cone",
+      "area_center": "caster",
+      "max_targets": 3,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "bonus": {
+          "base": 6.5,
+          "per_level": 1.3,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "consume_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "school": "holy",
+         "per_stack": {
+          "base": 5,
+          "per_level": 1
+         },
+         "refund_per_stack": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A sweeping attack that hits up to 3 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage, and gives you 2 Rage for each stack consumed.",
+      "variant_of": "zealous_cleave"
+     }
+    ]
+   },
+   {
+    "key": "bulwark_charge",
+    "level": 16,
+    "kind": "skill_choice",
+    "skill": "bulwark_charge",
+    "choices": [
+     {
+      "key": "hammer_of_vanguard",
+      "name": "Hammer of the Vanguard",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 457,
+      "spell_id": 1000439,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 25,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "charge",
+        "params": {
+         "speed_yd_s": 24
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 15,
+          "per_level": 0,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "ground_effect",
+        "params": {
+         "radius_yd": 8,
+         "tick_ms": 1000,
+         "duration_ms": 8000,
+         "school": "holy",
+         "amount": {
+          "base": 4,
+          "per_level": 0.6
+         },
+         "caster_aura_spell_id": 1000455,
+         "ground_spell_id": 1000397
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 150,
+         "bonus": {
+          "base": 10,
+          "per_level": 1,
+          "per_ap": 0
+         },
+         "school": "holy"
+        },
+        "realm_only": true
+       }
+      ],
+      "description": "Charge an enemy, generating 15 Rage, and strike it on arrival for 150% weapon damage plus 10 as Holy damage, leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+      "variant_of": "bulwark_charge"
+     },
+     {
+      "key": "bulwark_slam",
+      "name": "Bulwark Slam",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 457,
+      "spell_id": 1000440,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 25,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "charge",
+        "params": {
+         "speed_yd_s": 24
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 15,
+          "per_level": 0,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "ground_effect",
+        "params": {
+         "radius_yd": 8,
+         "tick_ms": 1000,
+         "duration_ms": 8000,
+         "school": "holy",
+         "amount": {
+          "base": 4,
+          "per_level": 0.6
+         },
+         "caster_aura_spell_id": 1000455,
+         "ground_spell_id": 1000397
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "bulwark_slam_stun"
+        },
+        "realm_only": true
+       }
+      ],
+      "description": "Charge an enemy, generating 15 Rage and stunning it for 2 sec, and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+      "variant_of": "bulwark_charge"
+     },
+     {
+      "key": "fervent_charge",
+      "name": "Fervent Charge",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 457,
+      "spell_id": 1000441,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 25,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "charge",
+        "params": {
+         "speed_yd_s": 24
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 30,
+          "per_level": 0,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "ground_effect",
+        "params": {
+         "radius_yd": 8,
+         "tick_ms": 1000,
+         "duration_ms": 8000,
+         "school": "holy",
+         "amount": {
+          "base": 4,
+          "per_level": 0.6
+         },
+         "caster_aura_spell_id": 1000455,
+         "ground_spell_id": 1000397
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Charge an enemy, generating 30 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+      "variant_of": "bulwark_charge"
+     }
+    ]
+   },
+   {
+    "key": "passives",
+    "level": 20,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "avenging_light",
+      "name": "Avenging Light",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000442,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "melee_hit",
+         "chance": 100,
+         "weapon_pct": 25,
+         "school": "holy"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Every melee hit you land, white swing or skill, also deals 25% of your weapon damage as Holy damage."
+     },
+     {
+      "key": "bulwark_of_faith",
+      "name": "Bulwark of Faith",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000443,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "max_health_pct",
+        "params": {
+         "pct": 25
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Maximum health increased by 25%."
+     },
+     {
+      "key": "ceaseless_zeal",
+      "name": "Ceaseless Zeal",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000444,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "block",
+         "chance": 100,
+         "energize": 5,
+         "apply_aura": "conviction"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "proc",
+        "params": {
+         "on": "parry",
+         "chance": 100,
+         "energize": 5,
+         "apply_aura": "conviction"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Every block or parry gives you 5 Rage and a stack of Conviction."
+     }
+    ]
+   },
+   {
+    "key": "seal_of_iron",
+    "level": 24,
+    "kind": "skill_choice",
+    "skill": "seal_of_iron",
+    "choices": [
+     {
+      "key": "wrathful_iron",
+      "name": "Wrathful Iron",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000445,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_wrathful_iron"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike, and a 50% chance to sear the target for 50% of your weapon damage as Holy damage.",
+      "variant_of": "seal_of_iron"
+     },
+     {
+      "key": "seal_of_mending",
+      "name": "Seal of Mending",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000446,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_seal_of_mending"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 30 sec your melee attacks have a 50% chance to heal you slightly and a 50% chance to grant you a temporary armor spike.",
+      "variant_of": "seal_of_iron"
+     },
+     {
+      "key": "seal_of_fervor",
+      "name": "Seal of Fervor",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000447,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_seal_of_fervor"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike, and a 25% chance to give you 5 Rage.",
+      "variant_of": "seal_of_iron"
+     }
+    ]
+   }
+  ],
   "name": "Vanguard",
   "tier": 1,
   "tier_cap": 30,
+  "row_levels": [
+   4,
+   8,
+   12,
+   16,
+   20,
+   24
+  ],
   "tier_bonus": {
    "strength": 12,
    "agility": 6,

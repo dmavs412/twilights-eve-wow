@@ -76,6 +76,20 @@ pub struct CallingDef {
     /// book or at the trainer.
     #[serde(default)]
     pub hidden_skills: Vec<Skill>,
+    /// Its stacking aura rows with no effects of its own (Conviction), each as the one-stack
+    /// `AddAuraStacks` a proc's `apply_aura` gives; the sheet's alone.
+    #[serde(skip)]
+    pub stack_auras: Vec<StackAura>,
+}
+
+/// An aura row with no effects of its own and `max_stacks` above 1, whose stacks skills add and
+/// take (Conviction). A proc's `apply_aura` naming it adds `add`, one stack, as Righteous Smash's
+/// `add_aura_stacks` does, instead of putting up a buff.
+#[derive(Debug, Clone)]
+pub struct StackAura {
+    pub key: String,
+    /// An [`Effect::AddAuraStacks`] of one stack, with the row's spell id, duration and stacks.
+    pub add: Effect,
 }
 
 fn full() -> u32 {
@@ -1403,6 +1417,14 @@ pub enum Effect {
         below_health_pct: u32,
         #[serde(default)]
         below_bonus_pct: u32,
+        /// That percent of the caster's shield Block Value is added to the strike; nothing
+        /// without a shield (Iron Juggernaut).
+        #[serde(default)]
+        block_value_pct: u32,
+        /// The caster heals that percent of what the strike dealt, up to their maximum health
+        /// (Penitent's Smash).
+        #[serde(default)]
+        heal_pct: u32,
     },
     /// Flat damage of a school. Physical goes against armour, and through the melee table when
     /// `melee_hit_table`; any other school ignores armour, rolls only the level-based miss, and
@@ -1723,6 +1745,14 @@ pub enum Effect {
         per_stack: Linear,
         #[serde(default)]
         school: School,
+        /// The caster heals that percent of the bonus damage dealt, summed over every target, up
+        /// to their maximum health (Zealous Restoration).
+        #[serde(default)]
+        heal_pct: u32,
+        /// The caster gains that many points of their Calling's power per stack taken (Tithe of
+        /// Zeal).
+        #[serde(default)]
+        refund_per_stack: u32,
     },
     /// A patch on the ground where the cast ends (the caster's spot, after a Charge), `radius_yd`
     /// wide: every `tick_ms` for `duration_ms`, each enemy inside takes `amount` of `school`
@@ -1962,6 +1992,16 @@ pub fn calling(key: &str) -> Option<&'static CallingDef> {
 /// A buff of any Calling, by its key in the sheet.
 pub fn aura(key: &str) -> Option<&'static AuraDef> {
     all().iter().flat_map(|c| &c.auras).find(|a| a.key == key)
+}
+
+/// The one stack a proc's `apply_aura` adds of the stacking aura row `key` that has no effects
+/// of its own (Conviction), as [`aura`] finds a buff.
+pub fn stack_aura(key: &str) -> Option<&'static Effect> {
+    all()
+        .iter()
+        .flat_map(|c| &c.stack_auras)
+        .find(|a| a.key == key)
+        .map(|a| &a.add)
 }
 
 /// A current Calling's data.

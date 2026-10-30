@@ -993,6 +993,721 @@
    }
   },
   {
+   "spell_id": 1000430,
+   "calling": "vanguard",
+   "key": "iron_juggernaut",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Iron Juggernaut",
+    "cost": 12.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "on_next_swing": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your next melee swing strikes the target for weapon damage plus a bonus, plus Physical damage equal to 150% of your shield's Block Value. Every hit grants a stack of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Warrior_Sunder",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 22,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000431,
+   "calling": "vanguard",
+   "key": "vengeful_conviction",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Vengeful Conviction",
+    "cost": 12.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "on_next_swing": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your next melee swing strikes the target for weapon damage plus a bonus. Every hit grants 2 stacks of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Warrior_Revenge",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 22,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000432,
+   "calling": "vanguard",
+   "key": "penitents_smash",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Penitent's Smash",
+    "cost": 12.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "on_next_swing": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your next melee swing strikes the target for weapon damage plus a bonus, and heals you for 25% of the damage it deals. Every hit grants a stack of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfSacrifice",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 22,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000433,
+   "calling": "vanguard",
+   "key": "searing_penance",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Searing Penance",
+    "cost": 10.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "For 10 sec your chance to Block is increased by 50%. Every block deals 24 Holy damage to the attacker.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Holy_SearingLight",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7323,
+    "range_index": 5,
+    "cast_time_index": 1,
+    "duration_index": 347
+   }
+  },
+  {
+   "spell_id": 1000434,
+   "calling": "vanguard",
+   "key": "shield_specialization",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Shield Specialization",
+    "cost": 10.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "For 10 sec your chance to Block is increased by 50%. Every block deals 12 Holy damage to the attacker and gives you 3 Rage.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\INV_Shield_06",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7323,
+    "range_index": 5,
+    "cast_time_index": 1,
+    "duration_index": 347
+   }
+  },
+  {
+   "spell_id": 1000435,
+   "calling": "vanguard",
+   "key": "steadfast_penitent",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Steadfast Penitent",
+    "cost": 10.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "For 15 sec your chance to Block is increased by 50%. Every block deals 12 Holy damage to the attacker.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfProtection",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7323,
+    "range_index": 5,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000436,
+   "calling": "vanguard",
+   "key": "sweeping_zeal",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Sweeping Zeal",
+    "cost": 20.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A sweeping attack that hits up to 5 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Warrior_DecisiveStrike",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 6.5,
+      "per_level": 1.3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 219,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000437,
+   "calling": "vanguard",
+   "key": "zealous_restoration",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Zealous Restoration",
+    "cost": 20.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A sweeping attack that hits up to 3 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage, and heals you for 75% of that Holy damage.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Holy_HolyBolt",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 6.5,
+      "per_level": 1.3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 219,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000438,
+   "calling": "vanguard",
+   "key": "tithe_of_zeal",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Tithe of Zeal",
+    "cost": 20.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A sweeping attack that hits up to 3 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage, and gives you 2 Rage for each stack consumed.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Holy_MindVision",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 6.5,
+      "per_level": 1.3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 219,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000439,
+   "calling": "vanguard",
+   "key": "hammer_of_vanguard",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Hammer of the Vanguard",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "not_in_combat": false,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 2,
+    "description": "Charge an enemy, generating 15 Rage, and strike it on arrival for 150% weapon damage plus 10 as Holy damage, leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+    "stances": [
+     "Battle Stance"
+    ],
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Ability_ThunderBolt",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 15,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 4,
+      "per_level": 0.6,
+      "amplitude_ms": 1000
+     },
+     {
+      "effect": 58,
+      "base": 10,
+      "per_level": 1
+     }
+    ],
+    "visual": 867,
+    "range_index": 95,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000440,
+   "calling": "vanguard",
+   "key": "bulwark_slam",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Bulwark Slam",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "not_in_combat": false,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Charge an enemy, generating 15 Rage and stunning it for 2 sec, and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+    "stances": [
+     "Battle Stance"
+    ],
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Ability_Warrior_DefensiveStance",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 15,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 4,
+      "per_level": 0.6,
+      "amplitude_ms": 1000
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 867,
+    "range_index": 95,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000441,
+   "calling": "vanguard",
+   "key": "fervent_charge",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Fervent Charge",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "not_in_combat": false,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Charge an enemy, generating 30 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+    "stances": [
+     "Battle Stance"
+    ],
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 30,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 4,
+      "per_level": 0.6,
+      "amplitude_ms": 1000
+     }
+    ],
+    "visual": 867,
+    "range_index": 95,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000442,
+   "calling": "vanguard",
+   "key": "avenging_light",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Avenging Light",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Every melee hit you land, white swing or skill, also deals 25% of your weapon damage as Holy damage.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfRighteousness",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000443,
+   "calling": "vanguard",
+   "key": "bulwark_of_faith",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Bulwark of Faith",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Maximum health increased by 25%.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_Restoration",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000444,
+   "calling": "vanguard",
+   "key": "ceaseless_zeal",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Ceaseless Zeal",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Every block or parry gives you 5 Rage and a stack of Conviction.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfWisdom",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000445,
+   "calling": "vanguard",
+   "key": "wrathful_iron",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Wrathful Iron",
+    "cost": 10.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike, and a 50% chance to sear the target for 50% of your weapon damage as Holy damage.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfWrath",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5622,
+    "cast_time_index": 1,
+    "duration_index": 2
+   }
+  },
+  {
+   "spell_id": 1000446,
+   "calling": "vanguard",
+   "key": "seal_of_mending",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Seal of Mending",
+    "cost": 10.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 30 sec your melee attacks have a 50% chance to heal you slightly and a 50% chance to grant you a temporary armor spike.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Holy_GreaterHeal",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5622,
+    "cast_time_index": 1,
+    "duration_index": 2
+   }
+  },
+  {
+   "spell_id": 1000447,
+   "calling": "vanguard",
+   "key": "seal_of_fervor",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Seal of Fervor",
+    "cost": 10.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike, and a 25% chance to give you 5 Rage.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfValor",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5622,
+    "cast_time_index": 1,
+    "duration_index": 2
+   }
+  },
+  {
    "spell_id": 1000065,
    "calling": "zealot",
    "key": "seal_of_command",
@@ -2673,6 +3388,214 @@
     ],
     "name": "Consecrated Ground",
     "aura_description": "Damage taken reduced by 10%."
+   }
+  },
+  {
+   "spell_id": 1000448,
+   "calling": "vanguard",
+   "key": "aura_searing_penance",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Shield of the Penitent",
+    "aura_description": "Block chance increased by 50%. Each block deals 24 Holy damage to the attacker.",
+    "visual": 7323
+   }
+  },
+  {
+   "spell_id": 1000449,
+   "calling": "vanguard",
+   "key": "aura_shield_specialization",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Shield of the Penitent",
+    "aura_description": "Block chance increased by 50%. Each block gives 3 Rage.",
+    "visual": 7323
+   }
+  },
+  {
+   "spell_id": 1000450,
+   "calling": "vanguard",
+   "key": "aura_steadfast_penitent",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Shield of the Penitent",
+    "aura_description": "Block chance increased by 50%.",
+    "visual": 7323
+   }
+  },
+  {
+   "spell_id": 1000451,
+   "calling": "vanguard",
+   "key": "bulwark_slam_stun",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Frost_Stun",
+    "mechanic": 12,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "name": "Bulwark Slam (stun)",
+    "aura_description": "Stunned.",
+    "visual": 2816
+   }
+  },
+  {
+   "spell_id": 1000452,
+   "calling": "vanguard",
+   "key": "aura_wrathful_iron",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_HealingAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Seal of Iron",
+    "aura_description": "Melee attacks may heal you or raise your armor, and may sear the target with Holy damage.",
+    "visual": 5622
+   }
+  },
+  {
+   "spell_id": 1000453,
+   "calling": "vanguard",
+   "key": "aura_seal_of_mending",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_HealingAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Seal of Iron",
+    "aura_description": "Melee attacks may heal you or raise your armor.",
+    "visual": 5622
+   }
+  },
+  {
+   "spell_id": 1000454,
+   "calling": "vanguard",
+   "key": "aura_seal_of_fervor",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_HealingAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Seal of Iron",
+    "aura_description": "Melee attacks may heal you or raise your armor, and may give you Rage.",
+    "visual": 5622
    }
   },
   {

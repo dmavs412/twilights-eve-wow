@@ -2683,6 +2683,8 @@ impl InWorld {
                         cleave_pct: 0,
                         below_health_pct: 0,
                         below_bonus_pct: 0,
+                        block_value_pct: 0,
+                        heal_pct: 0,
                         weapon_pct,
                         school: School::Physical,
                         crit_if_target_in: None,
@@ -2719,11 +2721,27 @@ impl InWorld {
                 aura_spell_id,
                 per_stack,
                 school,
+                heal_pct,
+                refund_per_stack,
             } = *effect
             {
                 let stacks = self.skills.take_stacks(self.guid, aura_spell_id, events);
                 if stacks == 0 {
                     continue;
+                }
+                // Power back for every stack taken, landed or not (Tithe of Zeal).
+                let refund = refund_per_stack * stacks;
+                let p = &mut self.player;
+                let kind = p.power.kind;
+                if refund > 0 && p.alive() && p.power.gain(kind, refund) {
+                    events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
+                        target: self.guid,
+                        caster: self.guid,
+                        spell_id: skill.spell_id,
+                        power: kind.id(),
+                        amount: p.power.earned(kind, refund),
+                    }));
+                    events.push(values(self.guid, &[p.power.field()]));
                 }
                 let ap = buffed(&self.player.stats, &self.skills).attack_power;
                 let pct = crate::talents::amount_pct(c, &skill.key);
@@ -2741,10 +2759,10 @@ impl InWorld {
                         &mut ticked,
                     );
                 }
-                let heal = dealt * crate::talents::consume_heal_pct(c, &skill.key) / 100;
-                let max = buffed(&self.player.stats, &self.skills).max_health;
-                if heal > 0 && self.player.alive() {
-                    self.player.health = (self.player.health + heal).min(max);
+                let heal =
+                    dealt * (heal_pct + crate::talents::consume_heal_pct(c, &skill.key)) / 100;
+                if heal > 0 {
+                    self.heal_player(c, skill.spell_id, heal, events);
                 }
             }
         }
@@ -3573,13 +3591,16 @@ impl InWorld {
                 cleave_pct,
                 below_health_pct,
                 below_bonus_pct,
+                block_value_pct,
+                heal_pct,
                 ..
             } => {
                 let cond =
                     self.condition_pct(target, controlled_pct, below_health_pct, below_bonus_pct);
                 let roll = weapon_roll(&stats, weapon, rng) * weapon_pct as f32 / 100.0;
-                let shield =
-                    stats.block_value * crate::talents::block_value_pct(c, &skill.key) / 100;
+                let shield = stats.block_value
+                    * (block_value_pct + crate::talents::block_value_pct(c, &skill.key))
+                    / 100;
                 // The talents and buffs for the skill raise the whole strike (Guerilla
                 // Tactics), some only close in (Point Blank).
                 let near = self.mobs.iter().find(|m| m.guid == target).map_or(0, |m| {
@@ -3603,6 +3624,9 @@ impl InWorld {
                     ticked,
                 );
                 self.skills.cast_dealt += dealt;
+                if dealt > 0 && heal_pct > 0 {
+                    self.heal_player(c, skill.spell_id, dealt * heal_pct / 100, events);
+                }
                 if dealt > 0 && weapon != Weapon::Ranged {
                     self.melee_hit(target, c, rng, events, ticked);
                 }
@@ -4518,7 +4542,7 @@ impl InWorld {
 
     /// The landed hit of an `AddAuraStacks` effect: the caster's aura takes its stacks, or `more`
     /// when a buff raises them past that.
-    fn add_aura_stacks(
+    pub(super) fn add_aura_stacks(
         &mut self,
         effect: &Effect,
         more: u32,
@@ -5100,15 +5124,19 @@ impl InWorld {
                 controlled_pct,
                 below_health_pct,
                 below_bonus_pct,
+                block_value_pct,
+                heal_pct,
                 ..
             } => Some((
                 bonus,
                 cleave_pct,
                 self.condition_pct(target, controlled_pct, below_health_pct, below_bonus_pct),
+                block_value_pct,
+                heal_pct,
             )),
             _ => None,
         });
-        let Some((bonus, cleave_pct, more)) = strike else {
+        let Some((bonus, cleave_pct, more, block_value_pct, heal_pct)) = strike else {
             return false;
         };
         self.pay(skill, true, c, events);
@@ -5118,7 +5146,9 @@ impl InWorld {
         // A yellow attack: the main hand's, with no dual-wield miss penalty.
         stats.off_hand = None;
         let pct = crate::talents::amount_pct(c, &skill.key);
-        let shield = stats.block_value * crate::talents::block_value_pct(c, &skill.key) / 100;
+        let shield = stats.block_value
+            * (block_value_pct + crate::talents::block_value_pct(c, &skill.key))
+            / 100;
         let extra = (scaled(bonus.at(c.power_level(), stats.attack_power), pct) + shield) as f32;
         stats.min_damage += extra;
         stats.max_damage += extra;
@@ -5223,6 +5253,9 @@ impl InWorld {
                 )
             }));
             self.hurt(guid, swing.damage, c, rng, events, ticked);
+            if swing.damage > 0 && heal_pct > 0 {
+                self.heal_player(c, spell_id, swing.damage * heal_pct / 100, events);
+            }
             if swing.outcome == Outcome::Crit {
                 self.crit_landed(guid, swing.damage, c, events);
             }

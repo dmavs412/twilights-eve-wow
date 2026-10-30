@@ -1551,6 +1551,36 @@ class TalentRows(BuildSpells):
         self.assert_fails([{**STRIKE, "effect1_params": params + ";below_health_pct=30"}],
                           "below_health_pct and below_bonus_pct go together")
 
+    def assert_whole_param(self, before: list[dict], row: dict, param: str) -> None:
+        """`param=2` on `row`'s first effect builds into its params; 0, 1.5 and yes each fail."""
+        params = row["effect1_params"]
+        done, data = self.run_build([*before, {**row, "effect1_params": f"{params};{param}=2"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"][param], 2)
+        for bad in ("0", "1.5", "yes"):
+            with self.subTest(bad=bad):
+                self.assert_fails([*before, {**row, "effect1_params": f"{params};{param}={bad}"}],
+                                  f"{param} needs a whole number of at least 1, has")
+
+    def consume(self) -> tuple[list[dict], dict]:
+        aura = {**AURA, "key": "conviction", "effect1_kind": "", "effect1_params": "", "modelled": "yes",
+                "max_stacks": "5"}
+        row = {**STRIKE, "effect1_kind": "consume_aura_stacks",
+               "effect1_params": "aura=conviction;school=holy;per_stack.base=5;per_stack.per_level=1"}
+        return [CALLING, aura], row
+
+    def test_a_weapon_strikes_block_value_pct_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param([], STRIKE, "block_value_pct")
+
+    def test_a_weapon_strikes_heal_pct_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param([], STRIKE, "heal_pct")
+
+    def test_a_stack_consumes_heal_pct_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param(*self.consume(), "heal_pct")
+
+    def test_a_stack_consumes_refund_per_stack_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param(*self.consume(), "refund_per_stack")
+
     def test_rows_with_a_blank_row_levels_fail(self):
         self.assert_fails([CALLING, {**STRIKE, "row_level": "3"}, *self.three()], "do not fill row_levels")
 
@@ -1613,6 +1643,33 @@ class TalentRows(BuildSpells):
                          [("charge", 2), ("fire_blast", 4), ("gouge", 6), ("heroic_strike", 8)])
         self.assertTrue(all(len(r["choices"]) == 3 for r in warrior["rows"]))
         self.assertEqual(warrior["row_levels"], [2, 4, 6, 8])
+
+    def test_the_committed_vanguard_has_six_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            vanguard = next(c for c in json.load(f) if c["key"] == "vanguard")
+        self.assertEqual(vanguard["row_levels"], [4, 8, 12, 16, 20, 24])
+        self.assertEqual([(r["key"], r["level"], r["kind"], r["skill"]) for r in vanguard["rows"]],
+                         [("righteous_smash", 4, "skill_choice", "righteous_smash"),
+                          ("shield_of_penitent", 8, "skill_choice", "shield_of_penitent"),
+                          ("zealous_cleave", 12, "skill_choice", "zealous_cleave"),
+                          ("bulwark_charge", 16, "skill_choice", "bulwark_charge"),
+                          ("passives", 20, "talent", None),
+                          ("seal_of_iron", 24, "skill_choice", "seal_of_iron")])
+        self.assertEqual([[c["key"] for c in r["choices"]] for r in vanguard["rows"]],
+                         [["iron_juggernaut", "vengeful_conviction", "penitents_smash"],
+                          ["searing_penance", "shield_specialization", "steadfast_penitent"],
+                          ["sweeping_zeal", "zealous_restoration", "tithe_of_zeal"],
+                          ["hammer_of_vanguard", "bulwark_slam", "fervent_charge"],
+                          ["avenging_light", "bulwark_of_faith", "ceaseless_zeal"],
+                          ["wrathful_iron", "seal_of_mending", "seal_of_fervor"]])
+        self.assertEqual([c["spell_id"] for r in vanguard["rows"] for c in r["choices"]],
+                         list(range(1000430, 1000448)))
+        # No two of the choices share an icon.
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
+                  encoding="utf-8") as f:
+            icons = [s["fields"]["icon"] for s in json.load(f)["spells"] if 1000430 <= s["spell_id"] < 1000448]
+        self.assertEqual(len(set(icons)), 18, icons)
 
 
 class Vocabulary(unittest.TestCase):

@@ -15,7 +15,8 @@ use crate::rules::talents::scaled;
 impl InWorld {
     /// Runs every learned proc, and every proc of the player's buffs, that `happened` sets off.
     /// A heal moves health by a percent of the maximum, each aura key names a buff of the sheet
-    /// that goes on the player, and damage lands on the event's target.
+    /// that goes on the player (or a stacking aura with no effects, which takes one stack), and
+    /// damage lands on the event's target.
     pub(super) fn proc(
         &mut self,
         happened: Happened,
@@ -138,6 +139,9 @@ impl InWorld {
             for key in &proc.auras {
                 if let Some(def) = crate::callings::aura(key) {
                     self.grant_aura(def, c.power_level(), 0, events);
+                } else if let Some(add) = crate::callings::stack_aura(key) {
+                    // A stacking aura with no effects of its own (Conviction) takes a stack.
+                    self.add_aura_stacks(add, 0, c.power_level(), events);
                 }
             }
             for key in &proc.area_auras {

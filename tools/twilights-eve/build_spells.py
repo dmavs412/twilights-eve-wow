@@ -957,6 +957,14 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
             raise BuildError(f"{where}: pickup_heal_pct needs a positive whole pct, has {pct!r}")
     if kind == "consume_aura_stacks" and not isinstance(params.get("per_stack"), dict):
         raise BuildError(f"{where}: consume_aura_stacks lacks a per_stack formula (per_stack.base, per_stack.per_level)")
+    # Vanguard's rows (#504): a strike's share of the shield's Block Value and its heal, and a
+    # stack consume's heal and its power back per stack.
+    wholes = {"weapon_strike": ("block_value_pct", "heal_pct"),
+              "consume_aura_stacks": ("heal_pct", "refund_per_stack")}
+    for param in wholes.get(kind, ()):
+        value = params.get(param, 1)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise BuildError(f"{where}: {param} needs a whole number of at least 1, has {value!r}")
     # Talent Rows' params (#500 reads them): that percent more against a stunned or incapacitated
     # target, a second enemy in melee reach taking that percent, and a bonus under a health share.
     if kind in ("school_damage", "weapon_strike") and "controlled_pct" in params:

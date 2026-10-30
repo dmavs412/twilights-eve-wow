@@ -3,6 +3,7 @@
 
 pub mod fight;
 pub mod party;
+pub mod vanguard;
 
 /// The Zealot as a Tier 0 Calling, "test_zealot", for a fight a weak body has to take hits in:
 /// a Tier 2 level 1 Zealot has Power Level 30 and no longer builds rage from level 3 mobs. Pass

@@ -2,6 +2,9 @@
 //! `max_targets`, `area_shape` and `area_center` read by the cast, played through the realm's
 //! seam by a level 1 Vanguard who has pulled the scorpid camp south of the Crossroads onto
 //! them. Each target rolls its own outcome, so the cast's targets are its hits and its misses.
+//! Two of its row's choices (#504) are played by a level 12 Vanguard on the sturdy mob at the
+//! camp's edge: Zealous Restoration heals a share of the Conviction Holy (`heal_pct`), and Tithe
+//! of Zeal gives rage back per stack taken (`refund_per_stack`).
 
 mod common;
 
@@ -203,4 +206,144 @@ fn an_enemy_behind_the_caster_is_not_hit() {
     let mut want: Vec<u64> = front.iter().map(|m| m.guid).collect();
     want.sort_unstable();
     assert_eq!(landed, want, "only the two in front are hit");
+}
+
+// ── Zealous Restoration and Tithe of Zeal, on the shipped Vanguard (#504) ───────────────────────
+
+/// The client's school index for Holy.
+const HOLY: u8 = 1;
+
+static ZEALOUS_CLEAVE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("vanguard", "zealous_cleave"));
+static ZEALOUS_RESTORATION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| choice("vanguard", "zealous_cleave", "zealous_restoration"));
+static TITHE_OF_ZEAL: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| choice("vanguard", "zealous_cleave", "tithe_of_zeal"));
+static RIGHTEOUS_SMASH: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("vanguard", "righteous_smash"));
+static BULWARK_CHARGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("vanguard", "bulwark_charge"));
+static CONVICTION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("vanguard", "conviction"));
+
+/// What a cast of `cleave` (Zealous Cleave or a choice of its row) did, by a level 12 Vanguard on
+/// `seed`'s dice with the row set to it, who charged the sturdy mob, fought it until a Righteous
+/// Smash left a Conviction stack, and had 20 rage and 30 health lost: the stacks it took, the
+/// Holy bonus it dealt, and what it healed and gave back under its own spell id.
+struct Consumed {
+    stacks: u32,
+    holy: u32,
+    healed: Vec<u32>,
+    energized: Vec<u32>,
+}
+
+fn consume(seed: u64, cleave: u32) -> Consumed {
+    let rows: &[(&str, u32)] = if cleave == *ZEALOUS_CLEAVE {
+        &[]
+    } else {
+        &[("zealous_cleave", cleave)]
+    };
+    let mut s = vanguard::scene(12, true, seed, rows, vanguard::STURDY);
+    s.cast_at_mob(*BULWARK_CHARGE);
+    let (me, mob, full) = (s.me, s.mob.guid, s.view.health(s.me));
+    s.realm.handle(RealmCommand::AttackSwing { guid: mob });
+    let stacks = |view: &View| {
+        view.aura(me, *CONVICTION)
+            .map_or(0, |a| u32::from(a.stacks))
+    };
+    for _ in 0..600 {
+        let view = &s.view;
+        if stacks(view) > 0 && view.rage(me) >= 20 && view.health(me) + 30 <= full {
+            break;
+        }
+        if stacks(view) == 0 && view.rage(me) >= 12 {
+            s.realm.handle(cast(*RIGHTEOUS_SMASH, Some(mob)));
+        }
+        s.view.run(&mut s.realm, 0.1);
+        assert!(s.view.health(me) > 0, "seed {seed}: died before the cleave");
+    }
+    s.realm.handle(RealmCommand::AttackStop);
+    s.view.drain(&mut s.realm);
+    let before = stacks(&s.view);
+    assert!(
+        before > 0,
+        "seed {seed}: no Conviction stack within a minute"
+    );
+    let events = s.cast_at_mob(cleave);
+    assert_eq!(
+        stacks(&s.view),
+        0,
+        "seed {seed}: the cast takes every stack"
+    );
+    Consumed {
+        stacks: before,
+        holy: events
+            .iter()
+            .filter_map(|e| match e {
+                SessionEvent::SpellDamageLog(l) if l.spell_id == cleave && l.school == HOLY => {
+                    Some(l.damage)
+                }
+                _ => None,
+            })
+            .sum(),
+        healed: events
+            .iter()
+            .filter_map(|e| match e {
+                SessionEvent::SpellHealLog(h) if h.spell_id == cleave => Some(h.amount),
+                _ => None,
+            })
+            .collect(),
+        energized: events
+            .iter()
+            .filter_map(|e| match e {
+                SessionEvent::SpellEnergizeLog(l) if l.spell_id == cleave => Some(l.amount),
+                _ => None,
+            })
+            .collect(),
+    }
+}
+
+#[test]
+fn zealous_restoration_heals_75_percent_of_the_conviction_holy() {
+    let mut landed = 0;
+    for seed in 0..4 {
+        let c = consume(seed, *ZEALOUS_RESTORATION);
+        if c.holy == 0 {
+            // The strike missed: no bonus, no heal.
+            assert!(c.healed.iter().all(|h| *h == 0), "seed {seed}");
+            continue;
+        }
+        // 5 + 1 a Power Level of Holy a stack, on the one target.
+        let tier = callings::calling("vanguard").unwrap().tier;
+        let power_level = u32::from(twilight_realm::rules::stats::power_level(tier, 12));
+        assert_eq!(c.holy, c.stacks * (5 + power_level), "seed {seed}");
+        assert_eq!(c.healed, [c.holy * 75 / 100], "seed {seed}");
+        landed += 1;
+    }
+    assert!(landed >= 2, "{landed} cleaves landed");
+}
+
+#[test]
+fn tithe_of_zeal_gives_2_rage_a_stack_taken() {
+    for seed in 0..3 {
+        let c = consume(seed, *TITHE_OF_ZEAL);
+        // Every rage gain is scaled by the tuning's multiplier as the bar takes it in.
+        let gain = twilight_realm::rules::rage::gain();
+        assert_eq!(
+            c.energized,
+            [(f64::from(2 * c.stacks) * gain) as u32],
+            "seed {seed}"
+        );
+        assert!(c.healed.is_empty(), "seed {seed}");
+    }
+}
+
+#[test]
+fn zealous_cleave_neither_heals_nor_gives_rage() {
+    for seed in 0..2 {
+        let c = consume(seed, *ZEALOUS_CLEAVE);
+        assert!(c.stacks > 0, "seed {seed}");
+        assert!(c.healed.is_empty(), "seed {seed}");
+        assert!(c.energized.is_empty(), "seed {seed}");
+    }
 }

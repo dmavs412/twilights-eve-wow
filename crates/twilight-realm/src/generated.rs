@@ -12,8 +12,8 @@ use serde_json::{Map, Value};
 
 use crate::callings::{
     self, Armour, AuraDef, AuraEffect, AuraRow, CallingDef, ClientSpellMod, Effect, RowChoice,
-    RowKind, Skill, SpellMeta, StatProfile, TalentDef, TalentEffect, TalentRow, Target, TierBonus,
-    WeaponKind,
+    RowKind, Skill, SpellMeta, StackAura, StatProfile, TalentDef, TalentEffect, TalentRow, Target,
+    TierBonus, WeaponKind,
 };
 use crate::rules::power::PowerKind;
 
@@ -220,8 +220,34 @@ fn calling(g: GenCalling) -> CallingDef {
             .collect(),
         rows: g.rows.iter().map(|r| row(&g.key, r, &g.auras)).collect(),
         auras: g.auras.iter().filter_map(aura).collect(),
+        stack_auras: g
+            .auras
+            .iter()
+            .filter_map(|a| stack_aura(a, &g.auras))
+            .collect(),
         key: g.key.clone(),
     }
+}
+
+/// A modelled aura row with no effects and `max_stacks` above 1 (Conviction), as the one stack a
+/// proc's `apply_aura` adds: resolved as a skill's `add_aura_stacks` of it is.
+fn stack_aura(g: &GenAura, auras: &[GenAura]) -> Option<StackAura> {
+    if !g.modelled || !g.effects.is_empty() || g.row.max_stacks <= 1 {
+        return None;
+    }
+    let mut params = Map::new();
+    params.insert("aura".into(), g.key.clone().into());
+    let add = effect(
+        &GenEffect {
+            kind: "add_aura_stacks".into(),
+            params,
+        },
+        auras,
+    )?;
+    Some(StackAura {
+        key: g.key.clone(),
+        add,
+    })
 }
 
 impl GenSkill {

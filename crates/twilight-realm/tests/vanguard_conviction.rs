@@ -2,7 +2,9 @@
 //! `max_stacks`), and Zealous Cleave takes them all for Holy damage a stack. The engine half is
 //! played through the realm's seam on a test Calling (`Realm::with_callings`), whose two skills
 //! carry the same generic effects as the Vanguard's, so every hit lands; the content half reads
-//! the Vanguard's rows.
+//! the Vanguard's rows. Two Talent Row choices (#504) are played on the shipped Vanguard by the
+//! scorpid camp: Penitent's Smash heals a share of its strike (`heal_pct`), and Ceaseless Zeal's
+//! block or parry adds a Conviction stack and rage.
 
 mod common;
 
@@ -254,4 +256,164 @@ fn righteous_smash_adds_a_stack_and_zealous_cleave_takes_them() {
         _ => None,
     });
     assert_eq!(consumed, Some(conviction_id));
+}
+
+// ── Penitent's Smash and Ceaseless Zeal, on the shipped Vanguard (#504) ─────────────────────────
+
+static RIGHTEOUS_SMASH: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| common::spell("vanguard", "righteous_smash"));
+static PENITENTS_SMASH: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| choice("vanguard", "righteous_smash", "penitents_smash"));
+static BULWARK_CHARGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| common::spell("vanguard", "bulwark_charge"));
+
+/// What the player healed under `spell_id` in `events`.
+fn healed(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellHealLog(h) if h.spell_id == spell_id => Some(h.amount),
+            _ => None,
+        })
+        .collect()
+}
+
+/// A level 4 Vanguard on `seed`'s dice with `rows` set, who charged the camp's first mob and then
+/// stood in its blows until 30 health down.
+fn hurt_at_the_camp(seed: u64, rows: &[(&str, u32)]) -> vanguard::Scene {
+    let mut s = vanguard::scene(4, true, seed, rows, CAMP);
+    s.cast_at_mob(*BULWARK_CHARGE);
+    let full = s.view.health(s.me);
+    let me = s.me;
+    s.run_until(30.0, "30 health lost", |view, _| {
+        view.health(me) + 30 <= full
+    });
+    s
+}
+
+/// Queues `smash` and swings at the scene's mob: the events up to the strike's.
+fn smash(s: &mut vanguard::Scene, smash: u32) -> Vec<SessionEvent> {
+    s.realm.handle(cast(smash, Some(s.mob.guid)));
+    assert_eq!(refusal(&s.view.drain(&mut s.realm), smash), None, "queued");
+    s.realm
+        .handle(RealmCommand::AttackSwing { guid: s.mob.guid });
+    s.run_until(10.0, "the smash", |_, events| {
+        events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == smash))
+    })
+}
+
+#[test]
+fn penitents_smash_heals_a_quarter_of_its_damage() {
+    let mut landed = 0;
+    for seed in 0..4 {
+        let mut s = hurt_at_the_camp(seed, &[("righteous_smash", *PENITENTS_SMASH)]);
+        let events = smash(&mut s, *PENITENTS_SMASH);
+        let dealt: Vec<u32> = damage_of(&events, *PENITENTS_SMASH);
+        match dealt[..] {
+            [] => assert!(healed(&events, *PENITENTS_SMASH).is_empty(), "seed {seed}"),
+            [damage] => {
+                assert_eq!(
+                    healed(&events, *PENITENTS_SMASH),
+                    [damage * 25 / 100],
+                    "seed {seed}"
+                );
+                landed += 1;
+            }
+            _ => panic!("seed {seed}: one target, {dealt:?}"),
+        }
+    }
+    assert!(landed >= 2, "{landed} smashes landed");
+}
+
+#[test]
+fn righteous_smash_heals_nothing() {
+    for seed in 0..2 {
+        let mut s = hurt_at_the_camp(seed, &[]);
+        let events = smash(&mut s, *RIGHTEOUS_SMASH);
+        assert!(
+            !damage_of(&events, *RIGHTEOUS_SMASH).is_empty(),
+            "seed {seed}"
+        );
+        assert!(healed(&events, *RIGHTEOUS_SMASH).is_empty(), "seed {seed}");
+    }
+}
+
+static CEASELESS_ZEAL: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| choice("vanguard", "passives", "ceaseless_zeal"));
+static SHIELD_OF_THE_PENITENT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| common::spell("vanguard", "shield_of_penitent"));
+static SHIPPED_CONVICTION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| common::spell("vanguard", "conviction"));
+
+/// The blows at `me` in `events` that `me` blocked or parried.
+fn defended(events: &[SessionEvent], me: u64) -> usize {
+    events
+        .iter()
+        .filter(|e| {
+            matches!(e, SessionEvent::AttackerState(s) if s.victim == me
+                && (s.blocked > 0
+                    || s.victim_state == vanguard::BLOCKS
+                    || s.victim_state == vanguard::PARRY))
+        })
+        .count()
+}
+
+/// The power `spell_id` gave in `events`, one entry a gain.
+fn energized(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellEnergizeLog(l) if l.spell_id == spell_id => Some(l.amount),
+            _ => None,
+        })
+        .collect()
+}
+
+/// A level 20 Vanguard on `seed`'s dice with `rows` set, who charged the sturdy mob, put up
+/// Shield of the Penitent for its blocks, and stands in the mob's blows with the swing stopped.
+fn shielded(seed: u64, rows: &[(&str, u32)]) -> vanguard::Scene {
+    let mut s = vanguard::scene(20, true, seed, rows, vanguard::STURDY);
+    s.cast_at_mob(*BULWARK_CHARGE);
+    s.realm.handle(cast(*SHIELD_OF_THE_PENITENT, None));
+    let events = s.view.drain(&mut s.realm);
+    assert_eq!(
+        refusal(&events, *SHIELD_OF_THE_PENITENT),
+        None,
+        "the shield"
+    );
+    s
+}
+
+#[test]
+fn under_ceaseless_zeal_each_block_or_parry_gives_5_rage_and_a_conviction_stack() {
+    let mut s = shielded(SEED, &[("passives", *CEASELESS_ZEAL)]);
+    let me = s.me;
+    let (mut total, mut gains) = (0, Vec::new());
+    s.run_until(20.0, "three blocks or parries", |view, events| {
+        total += defended(events, me);
+        gains.extend(energized(events, *CEASELESS_ZEAL));
+        let stacks = view.aura(me, *SHIPPED_CONVICTION).map_or(0, |a| a.stacks);
+        assert_eq!(
+            usize::from(stacks),
+            total.min(5),
+            "a stack each, not a refresh"
+        );
+        total >= 3
+    });
+    assert_eq!(gains, vec![5; total]);
+}
+
+#[test]
+fn without_ceaseless_zeal_a_block_or_parry_adds_no_conviction() {
+    let mut s = shielded(SEED, &[]);
+    let me = s.me;
+    let mut total = 0;
+    let events = s.run_until(20.0, "a block or parry", |_, events| {
+        total += defended(events, me);
+        total >= 1
+    });
+    assert_eq!(s.view.aura(me, *SHIPPED_CONVICTION), None);
+    assert!(energized(&events, *CEASELESS_ZEAL).is_empty());
 }
