@@ -26,3 +26,5 @@ creatures per dungeon.
 
 Later dungeons add data, not code: timed events, game objects (levers, doors), escort routes and
 per-Run rolls are generic components driven from each dungeon's content file.
+
+ADR 0029 scales a Run's creatures with the Head Count, the living players inside its Phase.
