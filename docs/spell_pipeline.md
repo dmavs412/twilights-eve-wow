@@ -67,6 +67,15 @@ more against a stunned or incapacitated target); `weapon_strike` takes `cleave_p
 enemy in melee reach in front of the caster takes N% of the hit) and the pair
 `below_health_pct=H;below_bonus_pct=N` (N% more against a target under H% health; one without
 the other fails); `skill_crit_pct` takes `skill=any` for the caster's next hit with any skill.
+Vanguard's rows (#504) add four, each a whole number of at least 1: `weapon_strike` takes
+`block_value_pct=N` (N% of the caster's shield Block Value added to the strike, skill or
+next-swing, on top of a talent's; nothing without a shield) and `heal_pct=N` (the caster heals
+N% of what the strike dealt, up to their maximum health); `consume_aura_stacks` takes
+`heal_pct=N` (the caster heals N% of the bonus damage the stacks dealt, summed over every
+target) and `refund_per_stack=N` (the caster gains N points of their Calling's power per stack
+taken, landed or not, scaled as every rage gain is). A `proc`'s `apply_aura` naming a stacking
+aura row with no effects of its own (Conviction) adds one stack of it, as an `add_aura_stacks`
+of one does, instead of putting up a buff.
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

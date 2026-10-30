@@ -137,7 +137,7 @@ passives (row key `passives`). The numbers are the grill's; Davis's first play n
 | Shield of the Penitent | Searing Penance | each block deals double Holy: 24 + 2.4/level | `Spell_Holy_SearingLight` |
 | Shield of the Penitent | Shield Specialization | each block while it is up gives 3 Rage | `INV_Shield_06` |
 | Shield of the Penitent | Steadfast Penitent | lasts 15 s instead of 10, as long as its cooldown | `Spell_Holy_SealOfProtection` |
-| Zealous Cleave | Sweeping Zeal | hits up to 5 enemies instead of 3 | `Ability_Warrior_Rampage` |
+| Zealous Cleave | Sweeping Zeal | hits up to 5 enemies instead of 3 | `Ability_Warrior_DecisiveStrike` |
 | Zealous Cleave | Zealous Restoration | heals the Vanguard for 75% of the Conviction Holy damage it deals | `Spell_Holy_HolyBolt` |
 | Zealous Cleave | Tithe of Zeal | refunds 2 Rage per Conviction stack spent | `Spell_Holy_MindVision` |
 | Bulwark Charge | Hammer of the Vanguard | the charge ends in a Holy strike for 150% weapon damage + 10 + 1/level | `Ability_ThunderBolt` |
@@ -145,7 +145,7 @@ passives (row key `passives`). The numbers are the grill's; Davis's first play n
 | Bulwark Charge | Fervent Charge | generates 30 Rage instead of 15 | `Spell_Holy_SealOfFury` |
 | Talent row | Avenging Light | every landed melee hit, white swing or skill, also deals 25% of weapon damage as Holy | `Spell_Holy_SealOfRighteousness` |
 | Talent row | Bulwark of Faith | max health +25% | `Spell_Holy_Restoration` |
-| Talent row | Ceaseless Zeal | every block or parry gives 5 Rage and 1 Conviction | `Spell_Holy_SealOfBlood` |
+| Talent row | Ceaseless Zeal | every block or parry gives 5 Rage and 1 Conviction | `Spell_Holy_SealOfWisdom` |
 | Seal of Iron | Wrathful Iron | hits also have a 50% chance to sear for 50% of weapon damage as Holy | `Spell_Holy_SealOfWrath` |
 | Seal of Iron | Seal of Mending | both procs fire at 50% instead of 25% | `Spell_Holy_GreaterHeal` |
 | Seal of Iron | Seal of Fervor | hits also have a 25% chance to give 5 Rage | `Spell_Holy_SealOfValor` |
@@ -161,6 +161,9 @@ Readings taken in the grill:
 - Avenging Light, Wrathful Iron and Seal of Fervor fire on every landed melee hit the realm's
   `melee_hit` sees: white swings, next-swing strikes and skill strikes, once per target a Cleave
   hits.
+
+Readings taken in the build (#504): `Ability_Warrior_Rampage` and `Spell_Holy_SealOfBlood` are not
+in the 1.12 archives, so Sweeping Zeal and Ceaseless Zeal take the free stock icons above.
 
 ## Cutthroat's rows
 
