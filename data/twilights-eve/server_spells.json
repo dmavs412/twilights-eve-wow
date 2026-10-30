@@ -7526,7 +7526,7 @@
     "key": "aura_rapid_assault",
     "name": "Rapid Assault",
     "spell_id": 1000326,
-    "status": "placeholder",
+    "status": "wip",
     "school": "physical",
     "prevention": "pacify",
     "max_stacks": 1,

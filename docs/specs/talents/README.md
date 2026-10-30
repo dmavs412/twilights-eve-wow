@@ -52,6 +52,8 @@ Four columns join the master CSV: `variant_of`, `row_key`, `row_level` (#499) an
   `variant_of`, the old talent effect vocabulary with one rank. An active one has `target` or
   `cast_kind` and is built as a skill. Exactly three rows per `row_key`.
 - The tree columns stay in the header and must stay empty; the `talent_tab` kind is gone.
+- No spell icon is on the rows of two Callings. One Calling's skill and the aura rows it puts up
+  may share an icon.
 
 `server_spells.json` gets `rows` per Calling, in level order:
 `{ key, level, kind: "skill_choice" | "talent", skill: <key or null>, choices: [built row x3] }`,
@@ -89,14 +91,14 @@ in `master.csv`. Every choice's numbers are the prototype's; Davis's first play 
 | Charge | Rallying Charge | generates 20 rage instead of 8.5 + 0.14 L | `Ability_Warrior_BattleShout` |
 | Charge | Reckless Charge | usable in combat | `Ability_Rogue_Sprint` |
 | Fire Blast | Searing Blast | the target burns for 60% of the hit over 6 s | `Spell_Fire_Immolation` |
-| Fire Blast | Flash Burn | cooldown 4 s instead of 8 s | `Spell_Fire_FlameBolt` |
+| Fire Blast | Flash Burn | cooldown 4 s instead of 8 s | `Spell_Fire_FireBolt` |
 | Fire Blast | Backdraft | double damage to a stunned or incapacitated target | `Spell_Fire_SoulBurn` |
 | Gouge | Deep Gouge | three times the damage | `Ability_BackStab` |
 | Gouge | Blindside | incapacitates 6 s instead of 4 s; the caster's next hit is a critical strike | `Ability_Rogue_KidneyShot` |
 | Gouge | Quick Gouge | 5 rage instead of 15, cooldown 6 s instead of 10 s | `Ability_Rogue_SliceDice` |
 | Heroic Strike | Cleave | a second enemy in reach takes 50% of the hit | `Ability_Warrior_Cleave` |
-| Heroic Strike | Finisher | 50% more damage to an enemy below 30% health | `Ability_Rogue_Eviscerate` |
-| Heroic Strike | Frenzy | each strike within 5 s of the last adds 25% to the bonus, three stacks | `Spell_Shadow_UnholyFrenzy` |
+| Heroic Strike | Finisher | 50% more damage to an enemy below 30% health | `Ability_CriticalStrike` |
+| Heroic Strike | Frenzy | each strike within 5 s of the last adds 25% to the bonus, three stacks | `Ability_GhoulFrenzy` |
 
 Readings taken in the grill: Blindside's crit is the caster's next hit on any target within 10 s
 (the prototype says "on it"); a Searing Blast burn tick still ends a Gouge, as the prototype shows.
@@ -137,7 +139,7 @@ passives (row key `passives`). The numbers are the grill's; Davis's first play n
 | Shield of the Penitent | Searing Penance | each block deals double Holy: 24 + 2.4/level | `Spell_Holy_SearingLight` |
 | Shield of the Penitent | Shield Specialization | each block while it is up gives 3 Rage | `INV_Shield_06` |
 | Shield of the Penitent | Steadfast Penitent | lasts 15 s instead of 10, as long as its cooldown | `Spell_Holy_SealOfProtection` |
-| Zealous Cleave | Sweeping Zeal | hits up to 5 enemies instead of 3 | `Ability_Warrior_DecisiveStrike` |
+| Zealous Cleave | Sweeping Zeal | hits up to 5 enemies instead of 3 | `Ability_Druid_Swipe` |
 | Zealous Cleave | Zealous Restoration | heals the Vanguard for 75% of the Conviction Holy damage it deals | `Spell_Holy_HolyBolt` |
 | Zealous Cleave | Tithe of Zeal | refunds 2 Rage per Conviction stack spent | `Spell_Holy_MindVision` |
 | Bulwark Charge | Hammer of the Vanguard | the charge ends in a Holy strike for 150% weapon damage + 10 + 1/level | `Ability_ThunderBolt` |
@@ -187,7 +189,7 @@ survival row soon. Stealth has no row. Its place went to a Talent row of blood d
 | Rupture | Open Veins | every tick spills a blood droplet, instead of half of them | `Spell_Shadow_LifeDrain` |
 | Rupture | Sanguine Rupture | heals 80% of its damage instead of 40% | `Ability_Hunter_Pet_Bat` |
 | Talent row | Blood Frenzy | Bloodlust stacks to 10 instead of 5 | `Ability_Racial_BloodRage` |
-| Talent row | Thirst | each droplet picked up heals 10% of max health | `Spell_Shadow_LifeDrain02` |
+| Talent row | Thirst | each droplet picked up heals 10% of max health | `Spell_Shadow_ImprovedVampiricEmbrace` |
 | Talent row | Blood Rush | each droplet picked up gives 10 Energy | `Spell_Shadow_ShadowWordDominate` |
 | Garrote | Brazen Garrote | needs no Stealth | `Spell_Shadow_Curse` |
 | Garrote | Choking Garrote | also stuns the target 3 s | `Ability_CheapShot` |
@@ -418,6 +420,27 @@ the Acolyte's. Gorging Siphon's shield restarts its 10 s only when it grows; at 
 out 10 s after the tick that filled it. Dark Surplus on another player bursts in that player's
 session, around them. Noxious Vapors' hit-chance cut reaches a mob's swings and its melee
 Creature Spells, not its other spells.
+
+## Icons across Callings
+
+The review of #498 found eleven stock icons on the rows of two or three Callings. The row whose
+own or borrowed stock spell shows the icon in 1.12, or whose icon a grill chose, keeps it. Each
+other row takes a stock icon in the 1.12 archives that no other sheet row and no content file
+uses:
+
+| Icon | Keeps it | Moves | New icon |
+| --- | --- | --- | --- |
+| `Ability_Warrior_DecisiveStrike` | Cutthroat's Practiced Strike (grilled) | Vanguard's Sweeping Zeal | `Ability_Druid_Swipe` |
+| `Spell_Shadow_LifeDrain02` | Acolyte's Siphon Life (Drain Life's) | Cutthroat's Thirst | `Spell_Shadow_ImprovedVampiricEmbrace` |
+| `Ability_BullRush` | Basic Warrior's Bull Rush | Vanguard's Bulwark Taunt | `Ability_Physical_Taunt` |
+| `Ability_Rogue_Ambush` | Basic Warrior's Heroic Strike | Vanguard's Righteous Smash and its Conviction | `Ability_Smash` |
+| `Ability_Rogue_Eviscerate` | Cutthroat's Eviscerate | Basic Warrior's Finisher | `Ability_CriticalStrike` |
+| `Ability_Warrior_Charge` | Basic Warrior's Charge | Vanguard's Bulwark Charge; Zealot's Charge | `Spell_Holy_PersuitofJustice`; `Ability_Druid_Dash` |
+| `Ability_Warrior_Cleave` | Basic Warrior's Cleave | Vanguard's Zealous Cleave | `Ability_SteelMelee` |
+| `Spell_Fire_FlameBolt` | Initiate's Searing Ember (Fireball's) | Basic Warrior's Flash Burn | `Spell_Fire_FireBolt` |
+| `Spell_Fire_SelfDestruct` | Acolyte's Miasma (Flamestrike's) | Ranger's Explosive Shot | `Spell_Fire_Fireball02` |
+| `Spell_Frost_Stun` | Basic Warrior's Charge and Bull Rush stuns | Vanguard's Bulwark Slam stun | `Ability_Warrior_DefensiveStance`, Bulwark Slam's own |
+| `Spell_Shadow_UnholyFrenzy` | Acolyte's Blood Lance (Mind Blast's) | Basic Warrior's Frenzy, talent and aura | `Ability_GhoulFrenzy` |
 
 ## Tickets
 

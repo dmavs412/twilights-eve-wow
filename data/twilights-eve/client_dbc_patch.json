@@ -470,7 +470,7 @@
     ],
     "spell_family": 4,
     "family_flags": 68719476736,
-    "icon": "Interface\\Icons\\Spell_Fire_FlameBolt",
+    "icon": "Interface\\Icons\\Spell_Fire_FireBolt",
     "dbc_effects": [
      {
       "effect": 2,
@@ -705,7 +705,7 @@
     ],
     "spell_family": 4,
     "family_flags": 8589934592,
-    "icon": "Interface\\Icons\\Ability_Rogue_Eviscerate",
+    "icon": "Interface\\Icons\\Ability_CriticalStrike",
     "dbc_effects": [
      {
       "effect": 58,
@@ -742,7 +742,7 @@
     ],
     "spell_family": 4,
     "family_flags": 8589934592,
-    "icon": "Interface\\Icons\\Spell_Shadow_UnholyFrenzy",
+    "icon": "Interface\\Icons\\Ability_GhoulFrenzy",
     "dbc_effects": [
      {
       "effect": 58,
@@ -784,7 +784,7 @@
     ],
     "spell_family": 4,
     "family_flags": 8589934592,
-    "icon": "Interface\\Icons\\Ability_Rogue_Ambush",
+    "icon": "Interface\\Icons\\Ability_Smash",
     "dbc_effects": [
      {
       "effect": 58,
@@ -829,7 +829,7 @@
     ],
     "spell_family": 4,
     "family_flags": 17179869184,
-    "icon": "Interface\\Icons\\Ability_Warrior_Charge",
+    "icon": "Interface\\Icons\\Spell_Holy_PersuitofJustice",
     "dbc_effects": [
      {
       "effect": 3,
@@ -938,7 +938,7 @@
     ],
     "spell_family": 4,
     "family_flags": 137438953472,
-    "icon": "Interface\\Icons\\Ability_Warrior_Cleave",
+    "icon": "Interface\\Icons\\Ability_SteelMelee",
     "dbc_effects": [
      {
       "effect": 58,
@@ -1254,7 +1254,7 @@
     ],
     "spell_family": 4,
     "family_flags": 137438953472,
-    "icon": "Interface\\Icons\\Ability_Warrior_DecisiveStrike",
+    "icon": "Interface\\Icons\\Ability_Druid_Swipe",
     "dbc_effects": [
      {
       "effect": 58,
@@ -1918,7 +1918,7 @@
     ],
     "spell_family": 4,
     "family_flags": 274877906944,
-    "icon": "Interface\\Icons\\Ability_Warrior_Charge",
+    "icon": "Interface\\Icons\\Ability_Druid_Dash",
     "dbc_effects": [
      {
       "effect": 3,
@@ -2641,7 +2641,7 @@
      0
     ],
     "passive": true,
-    "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain02",
+    "icon": "Interface\\Icons\\Spell_Shadow_ImprovedVampiricEmbrace",
     "dbc_effects": [
      {
       "effect": 3,
@@ -3998,7 +3998,7 @@
     "ranged": true,
     "spell_family": 4,
     "family_flags": 1099511627776,
-    "icon": "Interface\\Icons\\Spell_Fire_SelfDestruct",
+    "icon": "Interface\\Icons\\Spell_Fire_Fireball02",
     "dbc_effects": [
      {
       "effect": 58,
@@ -5661,7 +5661,7 @@
     ],
     "spell_family": 4,
     "family_flags": 1099511627776,
-    "icon": "Interface\\Icons\\Ability_BullRush",
+    "icon": "Interface\\Icons\\Ability_Physical_Taunt",
     "dbc_effects": [
      {
       "effect": 3,
@@ -6205,7 +6205,7 @@
      6,
      0
     ],
-    "icon": "Interface\\Icons\\Spell_Frost_Stun",
+    "icon": "Interface\\Icons\\Ability_Warrior_DefensiveStance",
     "mechanic": 12,
     "dbc_effects": [
      {
