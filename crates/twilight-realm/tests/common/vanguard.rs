@@ -81,7 +81,7 @@ pub fn removed(events: &[SessionEvent], spell: u32) -> bool {
         .any(|e| matches!(e, SessionEvent::SpellRemoved { spell_id } if *spell_id == spell))
 }
 
-/// A Vanguard in the world west of a mob, its client's view and its guid.
+/// A character in the world west of a mob, its client's view and its guid.
 pub struct Scene {
     pub realm: Realm,
     pub view: View,
@@ -93,7 +93,13 @@ pub struct Scene {
 /// choice)` set, 25 yd west of the mob at `spot` and facing it.
 pub fn scene(level: u8, shield: bool, seed: u64, rows: &[(&str, u32)], spot: [f32; 3]) -> Scene {
     let (me, blob) = vanguard_save(level, shield);
-    let (mut realm, mut view, _) = enter(me, &blob, seed);
+    scene_of(me, &blob, seed, rows, spot)
+}
+
+/// The character of the save `blob`, entered as `me` on `seed`'s dice with each `(row, choice)`
+/// set, 25 yd west of the mob at `spot` and facing it (a Cutthroat's scene too, #505).
+pub fn scene_of(me: u64, blob: &str, seed: u64, rows: &[(&str, u32)], spot: [f32; 3]) -> Scene {
+    let (mut realm, mut view, _) = enter(me, blob, seed);
     for (row, choice) in rows {
         let events = set_row(&mut realm, &mut view, row, *choice);
         assert!(
@@ -146,7 +152,7 @@ impl Scene {
     }
 
     /// Ticks until `done` holds for one tick's events, at most `secs`: every event seen, the
-    /// last tick's among them. Panics if the Vanguard dies or time runs out.
+    /// last tick's among them. Panics if the character dies or time runs out.
     pub fn run_until(
         &mut self,
         secs: f32,

@@ -380,7 +380,8 @@ pub enum AuraEffect {
 
 /// A proc an aura row carries: while the aura is on the player, when `on` happens, `chance`
 /// percent of the time: heal `heal_pct` of the maximum health, give `energize` of the player's
-/// power, put up the aura row `apply_aura`, and deal `damage_attacker` (a formula),
+/// power, put up the aura row `apply_aura`, add `add_combo_points` on the event's target, and
+/// deal `damage_attacker` (a formula),
 /// `block_value_pct` of the shield's Block Value or `weapon_pct` of the average weapon swing in
 /// `school` to the event's target.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -411,6 +412,9 @@ pub struct AuraProc {
     /// Give this percent of the player's base mana.
     #[serde(default)]
     pub energize_pct_of_base: u32,
+    /// Add this many combo points on the event's target (Phantom Guile's dodge).
+    #[serde(default)]
+    pub add_combo_points: u32,
 }
 
 /// What a `next_cast` aura does to the next cast of one of `skill`: an instant cast, a cast bar
@@ -823,6 +827,8 @@ pub enum TalentEffect {
     AuraMaxStacks { aura: String, per_rank: Vec<u32> },
     /// Picking up a droplet heals this percent of the maximum health (Thirst).
     PickupHealPct { per_rank: Vec<u32> },
+    /// Picking up a droplet gives this much of the character's own power (Blood Rush).
+    PickupEnergize { per_rank: Vec<u32> },
     /// Droplets are picked up from this many yards farther away (Long Reach).
     PickupRadiusYd { per_rank: Vec<f32> },
     /// The character runs this many percent faster, always.
@@ -1163,7 +1169,7 @@ impl TalentEffect {
         match self {
             Self::PickupRadiusYd { .. } => &[],
             Self::AuraMaxStacks { per_rank, .. } => per_rank,
-            Self::PickupHealPct { per_rank } => per_rank,
+            Self::PickupHealPct { per_rank } | Self::PickupEnergize { per_rank } => per_rank,
             Self::SkillCost { per_rank, .. }
             | Self::SkillExtraTarget { per_rank, .. }
             | Self::SkillBonusCombo { per_rank, .. }
@@ -1425,6 +1431,16 @@ pub enum Effect {
         /// (Penitent's Smash).
         #[serde(default)]
         heal_pct: u32,
+        /// That percent more on a target bleeding from the caster at the hit.
+        #[serde(default)]
+        bleeding_pct: u32,
+        /// After a hit that kills a target whose kill yields experience, the caster heals
+        /// `kill_heal_pct` percent of their maximum health and gains `kill_energize` of their
+        /// power (Executioner's Toll).
+        #[serde(default)]
+        kill_heal_pct: u32,
+        #[serde(default)]
+        kill_energize: u32,
     },
     /// Flat damage of a school. Physical goes against armour, and through the melee table when
     /// `melee_hit_table`; any other school ignores armour, rolls only the level-based miss, and
@@ -1445,6 +1461,14 @@ pub enum Effect {
         /// That percent more on a target wearing a stun or incapacitate at the hit (Backdraft).
         #[serde(default)]
         controlled_pct: u32,
+        /// That percent more on a target bleeding from the caster at the hit (Open Wounds).
+        #[serde(default)]
+        bleeding_pct: u32,
+        /// As a [`Effect::WeaponStrike`]'s: a heal and power after a kill that yields experience.
+        #[serde(default)]
+        kill_heal_pct: u32,
+        #[serde(default)]
+        kill_energize: u32,
     },
     /// A bleed on the target under the skill's own spell id: `tick` every `tick_ms`.
     PeriodicDamage {
@@ -1488,6 +1512,10 @@ pub enum Effect {
         /// What an application does when the caster's aura is already on the target (`if_worn`).
         #[serde(default)]
         if_worn: Option<IfWorn>,
+        /// The percent chance each Physical tick spills the Calling's blood droplet, in place of
+        /// the Calling's `bleed_drop_chance` (Open Veins). A Calling with no droplet spills none.
+        #[serde(default)]
+        drop_chance: Option<u32>,
     },
     /// Heals the target `amount`, up to its maximum health.
     Heal { amount: Linear },
@@ -1537,7 +1565,12 @@ pub enum Effect {
     /// a rise, a drop or a wall, and does nothing while it slides. A boss is not moved.
     Knockback { distance_yd: f32 },
     /// `amount` combo points on the target, five at most; points on another target are lost.
-    AddComboPoints { amount: u32 },
+    /// `bleeding_bonus` more on a target bleeding from the caster (Serrated Strikes).
+    AddComboPoints {
+        amount: u32,
+        #[serde(default)]
+        bleeding_bonus: u32,
+    },
     /// The caster runs to the target.
     Charge { speed_yd_s: f32 },
     /// `amount` of `power` now, logged as an energize; nothing at all when the target's bar is

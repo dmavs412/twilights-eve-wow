@@ -1492,6 +1492,23 @@ impl InWorld {
         }
     }
 
+    /// The kill of `mob`: its elite kind here, and the experience it pays whoever kills it.
+    fn kill_xp(&self, mob: &Mob) -> (xp::Elite, u32) {
+        let elite = if mob.template.elite() {
+            self.elite_kind()
+        } else {
+            xp::Elite::No
+        };
+        (elite, xp::kill_xp(mob.level(), elite))
+    }
+
+    /// Whether killing the living mob `guid` yields experience, as [`Self::kill`] reads it;
+    /// `None` when no living mob has that guid.
+    pub(super) fn kill_yields_xp(&self, guid: u64) -> Option<bool> {
+        let mob = self.mobs.iter().find(|m| m.guid == guid && m.alive())?;
+        Some(self.kill_xp(mob).1 > 0)
+    }
+
     /// `mob` dies at the player's hand: the fight ends, and the kill is credited, here and now
     /// when alone, or by the realm to everyone near a shard's mob.
     fn kill(
@@ -1502,7 +1519,7 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
-        let elite_kind = self.elite_kind();
+        let (elite, base_xp) = self.kill_xp(&self.mobs[i]);
         let mob = &mut self.mobs[i];
         let entry = mob.template.entry;
         let boss = Self::is_boss(mob);
@@ -1553,12 +1570,7 @@ impl InWorld {
         pairs.extend(guid_pairs(UNIT_FIELD_TARGET, 0));
         events.push(values(mob.guid, &pairs));
 
-        let elite = if mob.template.elite() {
-            elite_kind
-        } else {
-            xp::Elite::No
-        };
-        let (victim, base_xp) = (mob.guid, xp::kill_xp(mob.level(), elite));
+        let victim = mob.guid;
         let money = if self.lent {
             let (lo, hi) = crate::rules::loot::money(mob.level());
             rng.urand(lo, hi)

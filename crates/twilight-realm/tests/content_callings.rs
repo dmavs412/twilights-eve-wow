@@ -412,7 +412,7 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             assert_eq!(base, linear(&want["base"]), "{key}");
             assert_eq!(per_extra_rage, linear(&want["per_extra_rage"]), "{key}");
         }
-        Effect::AddComboPoints { amount } => {
+        Effect::AddComboPoints { amount, .. } => {
             assert_eq!(kind, "add_combo_points", "{key}");
             assert_eq!(amount, ms(want, "amount"));
         }

@@ -2160,6 +2160,652 @@
    }
   },
   {
+   "spell_id": 1000460,
+   "calling": "cutthroat",
+   "key": "serrated_strikes",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Serrated Strikes",
+    "cost": 35.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your primary 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point, or 2 against a bleeding target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\INV_Sword_17",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 8,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 253,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000461,
+   "calling": "cutthroat",
+   "key": "flurry_of_blades",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Flurry of Blades",
+    "cost": 35.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your primary 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point. A second enemy in reach takes 50% of the strike.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Warrior_PunishingBlow",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 8,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 253,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000462,
+   "calling": "cutthroat",
+   "key": "practiced_strike",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Practiced Strike",
+    "cost": 25.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your primary 25-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Warrior_DecisiveStrike",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 8,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 253,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000463,
+   "calling": "cutthroat",
+   "key": "phantom_guile",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Phantom Guile",
+    "cost": 0.0,
+    "cooldown_ms": 120000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your Dodge chance by 50% for 15 sec. Each attack you dodge while it lasts gives you 10 Energy and 1 combo point on your target.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_Charm",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 72,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000464,
+   "calling": "cutthroat",
+   "key": "elusiveness",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Elusiveness",
+    "cost": 0.0,
+    "cooldown_ms": 60000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your Dodge chance by 50% for 15 sec. Cooldown 1 min instead of 2 min.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Nature_Invisibilty",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 72,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000465,
+   "calling": "cutthroat",
+   "key": "second_wind",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Second Wind",
+    "cost": 0.0,
+    "cooldown_ms": 120000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your Dodge chance by 50% for 15 sec, and heals you for 30% of your maximum health over 15 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Nature_Rejuvenation",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 3000
+     }
+    ],
+    "visual": 72,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000466,
+   "calling": "cutthroat",
+   "key": "open_wounds",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Open Wounds",
+    "cost": 35.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: Physical damage that grows with each combo point, 50% more against a bleeding target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_DeathScream",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 5.2,
+      "per_level": 1.3
+     }
+    ],
+    "visual": 671,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000467,
+   "calling": "cutthroat",
+   "key": "executioners_toll",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Executioner's Toll",
+    "cost": 35.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: Physical damage that grows with each combo point. A killing blow on an enemy that yields experience heals you for 20% of your maximum health and gives you 80 Energy.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_Fumble",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 5.2,
+      "per_level": 1.3
+     }
+    ],
+    "visual": 671,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000468,
+   "calling": "cutthroat",
+   "key": "kidney_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Kidney Shot",
+    "cost": 35.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: Physical damage that grows with each combo point, and stuns the target for 1 sec per combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Gauntlets_04",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 5.2,
+      "per_level": 1.3
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 671,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000469,
+   "calling": "cutthroat",
+   "key": "bloodletting",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Bloodletting",
+    "cost": 25.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. It deals 50% more damage than Rupture. You heal for 40% of the damage it deals. Each tick may spill a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\INV_Weapon_Crossbow_11",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 250,
+    "range_index": 2,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000470,
+   "calling": "cutthroat",
+   "key": "open_veins",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Open Veins",
+    "cost": 25.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals. Every tick spills a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 250,
+    "range_index": 2,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000471,
+   "calling": "cutthroat",
+   "key": "sanguine_rupture",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Sanguine Rupture",
+    "cost": 25.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 80% of the damage it deals. Each tick may spill a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Hunter_Pet_Bat",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 250,
+    "range_index": 2,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000472,
+   "calling": "cutthroat",
+   "key": "blood_frenzy",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Blood Frenzy",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Bloodlust stacks up to 10 times instead of 5.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Ability_Racial_BloodRage",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000473,
+   "calling": "cutthroat",
+   "key": "thirst",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Thirst",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Each blood droplet you pick up heals you for 10% of your maximum health.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain02",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000474,
+   "calling": "cutthroat",
+   "key": "blood_rush",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Blood Rush",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Each blood droplet you pick up gives you 10 Energy.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_ShadowWordDominate",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000475,
+   "calling": "cutthroat",
+   "key": "brazen_garrote",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Brazen Garrote",
+    "cost": 40,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Garrote the enemy, causing it to bleed every 3 sec for 18 sec. Awards 1 combo point. Each tick may spill a blood droplet nearby. Needs no Stealth.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Shadow_Curse",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 757,
+    "range_index": 2,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1000476,
+   "calling": "cutthroat",
+   "key": "choking_garrote",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Choking Garrote",
+    "cost": 40,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "From Stealth: garrote the enemy, causing it to bleed every 3 sec for 18 sec. Stuns the target for 3 sec. Awards 1 combo point. Each tick may spill a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_CheapShot",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 757,
+    "range_index": 2,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1000477,
+   "calling": "cutthroat",
+   "key": "initiative",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Initiative",
+    "cost": 40,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "From Stealth: garrote the enemy, causing it to bleed every 3 sec for 18 sec. Awards 3 combo points. Each tick may spill a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Shadow_Possession",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 757,
+    "range_index": 2,
+    "duration_index": 85
+   }
+  },
+  {
    "spell_id": 1000246,
    "calling": "initiate",
    "key": "ley_spark",
@@ -3693,6 +4339,34 @@
     "name": "Garrote",
     "aura_description": "Bleeding.",
     "visual": 757
+   }
+  },
+  {
+   "spell_id": 1000478,
+   "calling": "cutthroat",
+   "key": "aura_phantom_guile",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Shadow_ShadowWard",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Evasion",
+    "aura_description": "Dodge chance increased by 50%. Each dodge gives 10 Energy and 1 combo point.",
+    "visual": 72
    }
   },
   {

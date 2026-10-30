@@ -109,6 +109,11 @@ pub(crate) fn pickup_heal_pct(c: &Char) -> u32 {
     sum(c, |e| matches!(e, TalentEffect::PickupHealPct { .. }))
 }
 
+/// The points of the character's own power a droplet's pickup gives.
+pub(crate) fn pickup_energize(c: &Char) -> u32 {
+    sum(c, |e| matches!(e, TalentEffect::PickupEnergize { .. }))
+}
+
 /// The yards farther away a droplet is picked up.
 pub(crate) fn pickup_radius_yd(c: &Char) -> f32 {
     learned(c)
@@ -836,7 +841,7 @@ pub(crate) fn aura_proc(
         heal_pct: p.heal_pct,
         auras: p.apply_aura.iter().cloned().collect(),
         energize: p.energize,
-        combo_points: 0,
+        combo_points: p.add_combo_points,
         damage: p.damage_attacker,
         block_value_pct: p.block_value_pct,
         school: p.school,

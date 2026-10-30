@@ -2,11 +2,13 @@
 //! mob, walking over one grants a stack of Bloodlust, and one nobody touches fades after 8 s.
 //! Played through the realm's seam by a level 10 Cutthroat at fixed seeds. A test Calling that
 //! spills a droplet on every tick shows Bloodlust stops at five stacks and a droplet 5 yd away
-//! grants none.
+//! grants none. Two choices of Cutthroat's rows (#505), at level 24: Open Veins' Rupture spills a
+//! droplet on every tick, and with Blood Rush each droplet picked up gives 10 Energy.
 
 mod common;
 
 use benilla_protocol::{EntityKind, SessionEvent};
+use common::cutthroat::{energized, energy, set_rows, ROWS_OPEN};
 use common::fight::*;
 use common::*;
 use twilight_realm::{Realm, RealmCommand};
@@ -19,19 +21,28 @@ static DROPLET: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("cutthroat", "aura_blood_droplet"));
 static BLOODLUST: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("cutthroat", "aura_bloodlust"));
+static OPEN_VEINS: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| choice("cutthroat", "rupture", "open_veins"));
+static BLOOD_RUSH: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| choice("cutthroat", "passives", "blood_rush"));
 
 /// A droplet's guid, spell id and centre, as its create shows it.
 type Droplet = (u64, [f32; 3]);
 
 /// A level 10 Cutthroat, fists only, in the world at `seed`; its guid.
 fn cutthroat(seed: u64) -> (Realm, View, u64) {
+    cutthroat_with(seed, 10, &[])
+}
+
+/// [`cutthroat`] at `level`, each `(row, choice)` set.
+fn cutthroat_with(seed: u64, level: u8, rows: &[(&str, u32)]) -> (Realm, View, u64) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Garrote", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let me = roster(&mut maker)[0].guid;
     let blob = maker
         .export_character(me)
         .unwrap()
-        .replace("level = 1\n", "level = 10\n")
+        .replace("level = 1\n", &format!("level = {level}\n"))
         .replace("calling = \"basic_warrior\"", "calling = \"cutthroat\"");
     let blob = drop_slot(&drop_slot(&blob, 15), 16);
     let mut realm = Realm::with_seed(seed);
@@ -40,6 +51,7 @@ fn cutthroat(seed: u64) -> (Realm, View, u64) {
     realm.tick(0.0, &FlatGround);
     let mut view = View::default();
     view.drain(&mut realm);
+    set_rows(&mut realm, &mut view, rows);
     view.run(&mut realm, 1.0);
     (realm, view, me)
 }
@@ -79,9 +91,14 @@ fn droplets(events: &[SessionEvent]) -> Vec<Droplet> {
         .collect()
 }
 
-/// Sinister Strike for a combo point, then a Rupture, and the 10 s after it: the mob and every
-/// event since the Rupture.
-fn rupture_a_mob(realm: &mut Realm, view: &mut View, secs: f32) -> (Mob, Vec<SessionEvent>) {
+/// Sinister Strike for a combo point, then `rupture` (Rupture or a choice of its row), and the
+/// `secs` after it: the mob and every event since the Rupture.
+fn rupture_a_mob(
+    realm: &mut Realm,
+    view: &mut View,
+    rupture: u32,
+    secs: f32,
+) -> (Mob, Vec<SessionEvent>) {
     realm.handle(RealmCommand::Move {
         motion: Default::default(),
         position: [CAMP[0] + 40.0, CAMP[1], 0.0],
@@ -91,10 +108,18 @@ fn rupture_a_mob(realm: &mut Realm, view: &mut View, secs: f32) -> (Mob, Vec<Ses
     stand_at(realm, &mob, 2.0);
     realm.handle(cast(*SINISTER_STRIKE, Some(mob.guid)));
     view.run(realm, 1.6);
-    realm.handle(cast(*RUPTURE, Some(mob.guid)));
+    realm.handle(cast(rupture, Some(mob.guid)));
     let mut events = view.drain(realm);
     events.extend(view.run(realm, secs));
     (mob, events)
+}
+
+/// How many times `spell_id` ticked in `events`.
+fn ticks(events: &[SessionEvent], spell_id: u32) -> usize {
+    events
+        .iter()
+        .filter(|e| matches!(e, SessionEvent::PeriodicAuraLog(l) if l.spell_id == spell_id))
+        .count()
 }
 
 #[test]
@@ -102,7 +127,7 @@ fn rupture_ticks_spill_droplets_three_to_six_yards_from_the_mob() {
     let mut count = 0;
     for seed in 0..20 {
         let (mut realm, mut view, _) = cutthroat(seed);
-        let (mob, events) = rupture_a_mob(&mut realm, &mut view, 9.0);
+        let (mob, events) = rupture_a_mob(&mut realm, &mut view, *RUPTURE, 9.0);
         for (_, at) in droplets(&events) {
             let away = flat(at, mob.position);
             assert!((3.0..=6.0).contains(&away), "seed {seed}: {away} yd");
@@ -329,4 +354,74 @@ fn standing_five_yards_from_a_droplet_grants_no_bloodlust() {
     let (mut realm, mut view, me) = bleeder();
     stand_near_droplets(&mut realm, &mut view, 5.0, 1);
     assert_eq!(bloodlust_stacks(&view, me), 0);
+}
+
+// ── Cutthroat's rows (#505) ─────────────────────────────────────────────────────────────────────
+
+#[test]
+fn open_veins_rupture_spills_a_droplet_on_every_tick() {
+    let (mut checked, mut plain_ticks, mut plain_drops) = (0, 0, 0);
+    for seed in 0..6 {
+        let rows = [("rupture", *OPEN_VEINS)];
+        let (mut realm, mut view, _) = cutthroat_with(seed, ROWS_OPEN, &rows);
+        let (_, events) = rupture_a_mob(&mut realm, &mut view, *OPEN_VEINS, 9.0);
+        let ticked = ticks(&events, *OPEN_VEINS);
+        if ticked > 0 {
+            assert_eq!(droplets(&events).len(), ticked, "seed {seed}");
+            checked += 1;
+        }
+        let (mut realm, mut view, _) = cutthroat_with(seed, ROWS_OPEN, &[]);
+        let (_, events) = rupture_a_mob(&mut realm, &mut view, *RUPTURE, 9.0);
+        plain_ticks += ticks(&events, *RUPTURE);
+        plain_drops += droplets(&events).len();
+    }
+    assert!(checked >= 3, "only {checked} Ruptures landed");
+    assert!(
+        plain_drops < plain_ticks,
+        "plain Rupture spilled {plain_drops} in {plain_ticks} ticks"
+    );
+}
+
+/// A level 24 Cutthroat with `rows` set walks onto the first droplet its Rupture spills on `seed`'s
+/// dice: the events of the step it was picked up in and the Energy before it, or `None` when no
+/// droplet spilled.
+fn pick_up(seed: u64, rows: &[(&str, u32)]) -> Option<(Vec<SessionEvent>, u32)> {
+    let (mut realm, mut view, me) = cutthroat_with(seed, ROWS_OPEN, rows);
+    let (_, (object, at)) = until_droplet(&mut realm, &mut view, 9.0)?;
+    let before = energy(&view, me);
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: at,
+        orientation: 0.0,
+    });
+    let events = view.run(&mut realm, 0.2);
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::ObjectDestroyed(g) if *g == object)),
+        "seed {seed}: the droplet is picked up"
+    );
+    Some((events, before))
+}
+
+#[test]
+fn with_blood_rush_a_droplet_picked_up_gives_ten_energy() {
+    let mut checked = 0;
+    for seed in 0..10 {
+        let Some((events, before)) = pick_up(seed, &[("passives", *BLOOD_RUSH)]) else {
+            continue;
+        };
+        // A full bar takes no more and logs nothing.
+        if before >= 100 {
+            continue;
+        }
+        assert_eq!(energized(&events, *DROPLET), [10], "seed {seed}");
+        let (events, _) = pick_up(seed, &[]).expect("the same droplet");
+        assert!(energized(&events, *DROPLET).is_empty(), "seed {seed}");
+        checked += 1;
+    }
+    assert!(
+        checked >= 2,
+        "only {checked} droplets came while the bar had room"
+    );
 }

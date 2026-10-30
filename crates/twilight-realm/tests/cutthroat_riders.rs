@@ -1,119 +1,39 @@
 //! The Cutthroat's Sinister Strike in a crowd: it strikes its target alone, and gives one combo
-//! point on a target bleeding from the caster's Rupture. Played through the realm's seam by a
-//! level 10 Cutthroat, at fixed seeds.
+//! point on a target bleeding from the caster's Rupture. Flurry of Blades, a choice of its row
+//! (#505), also strikes a second mob in reach. Played through the realm's seam by a level 10
+//! Cutthroat (24 for the choice), at fixed seeds.
 
 mod common;
 
-use benilla_protocol::{EntityKind, SessionEvent};
+use benilla_protocol::SessionEvent;
+use common::cutthroat::{camp_mobs, combo, cutthroat_save, damage_of, Pack, ROWS_OPEN};
 use common::fight::*;
+use common::vanguard::enter;
 use common::*;
 use twilight_realm::{Realm, RealmCommand};
 
 const FIRST_SEED: u64 = 0x5EED_0112;
-/// Melee reach, with room for a mob that stopped a step short.
-const REACH: f32 = 5.0;
 
 static SINISTER_STRIKE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("cutthroat", "sinister_strike"));
 static RUPTURE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("cutthroat", "rupture"));
+static FLURRY_OF_BLADES: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| choice("cutthroat", "sinister_strike", "flurry_of_blades"));
 
 /// A level 10 Cutthroat in the world at `seed`, `unarmed` to make the fight last: the realm, its
 /// guid and what the client has seen.
 fn cutthroat(seed: u64, unarmed: bool) -> (Realm, u64, View) {
-    let mut maker = realm();
-    assert_eq!(create(&mut maker, "Garrote", HUMAN, 0), CHAR_CREATE_SUCCESS);
-    let me = roster(&mut maker)[0].guid;
-    let mut blob = maker
-        .export_character(me)
-        .unwrap()
-        .replace("level = 1\n", "level = 10\n")
-        .replace("calling = \"basic_warrior\"", "calling = \"cutthroat\"");
-    if unarmed {
-        blob = drop_slot(&drop_slot(&blob, 15), 16);
-    }
-    let mut realm = Realm::with_seed(seed);
-    realm.import_character(&blob).unwrap();
-    realm.handle(RealmCommand::EnterWorld { guid: me });
-    realm.tick(0.0, &FlatGround);
-    let mut view = View::default();
-    view.drain(&mut realm);
+    let (me, blob) = cutthroat_save(10, unarmed);
+    let (mut realm, mut view, _) = enter(me, &blob, seed);
     view.run(&mut realm, 1.0);
     (realm, me, view)
 }
 
-/// The camp's mobs the client has been told of in `events`.
-fn camp_mobs(events: &[SessionEvent]) -> Vec<Mob> {
-    events
-        .iter()
-        .filter_map(|e| match e {
-            SessionEvent::ObjectCreate {
-                guid,
-                kind: EntityKind::Unit,
-                position,
-                ..
-            } if flat(*position, CAMP) < 15.0 => Some(Mob {
-                guid: *guid,
-                position: *position,
-            }),
-            _ => None,
-        })
-        .collect()
-}
-
-/// The scorpid camp pulled onto a Cutthroat west of it, facing east.
-struct Pack {
-    realm: Realm,
-    view: View,
-    me: u64,
-    mobs: Vec<Mob>,
-}
-
-const WEST: [f32; 3] = [CAMP[0] - 25.0, CAMP[1], 0.0];
-
-/// A Cutthroat at `seed` with the camp pulled onto them: every mob has stopped within reach.
+/// A level 10 Cutthroat at `seed` with the camp pulled onto them: every mob has stopped within
+/// reach.
 fn pulled(seed: u64) -> Pack {
-    let (mut realm, me, mut view) = cutthroat(seed, false);
-    realm.handle(RealmCommand::Move {
-        motion: Default::default(),
-        position: WEST,
-        orientation: 0.0,
-    });
-    let streamed = view.run(&mut realm, 1.0);
-    let mut mobs = camp_mobs(&streamed);
-    assert_eq!(mobs.len(), 4, "the scorpid camp streams in");
-    for mob in &mobs {
-        pull(&mut realm, &mut view, mob);
-    }
-    realm.handle(RealmCommand::Move {
-        motion: Default::default(),
-        position: WEST,
-        orientation: 0.0,
-    });
-    for _ in 0..600 {
-        for e in view.run(&mut realm, 0.1) {
-            if let SessionEvent::MonsterMove { guid, path, .. } = e {
-                if let (Some(mob), Some(end)) =
-                    (mobs.iter_mut().find(|m| m.guid == guid), path.last())
-                {
-                    mob.position = *end;
-                }
-            }
-        }
-        assert!(view.health(me) > 0, "died waiting for the camp");
-        if mobs.iter().all(|m| flat(m.position, WEST) <= REACH - 1.0) {
-            // The paths end in reach; the mobs have still to walk them.
-            view.run(&mut realm, 10.0);
-            assert!(view.health(me) > 0, "died waiting for the camp");
-            return Pack {
-                realm,
-                view,
-                me,
-                mobs,
-            };
-        }
-    }
-    panic!("the camp never came to hand");
+    common::cutthroat::pulled(seed, 10, false, &[])
 }
 
 /// Casts Sinister Strike at `target`: the guids it landed on or missed, sorted.
@@ -144,15 +64,6 @@ fn strike(pack: &mut Pack, target: &Mob) -> Vec<u64> {
     landed
 }
 
-/// The combo points the client shows, and the guid they are on.
-fn combo(view: &View, me: u64) -> (u8, u64) {
-    let f = view.fields(me);
-    (
-        f.player_combo_points().unwrap_or(0),
-        f.player_combo_target(),
-    )
-}
-
 #[test]
 fn sinister_strike_hits_one_dummy() {
     for seed in FIRST_SEED..FIRST_SEED + 20 {
@@ -160,6 +71,51 @@ fn sinister_strike_hits_one_dummy() {
         let primary = pack.mobs[0].clone();
         assert_eq!(strike(&mut pack, &primary), [primary.guid]);
     }
+}
+
+/// Casts `spell_id` at `target`: the damage it logged on each mob, in the order logged.
+fn struck(pack: &mut Pack, spell_id: u32, target: &Mob) -> Vec<(u64, u32)> {
+    pack.realm.handle(cast(spell_id, Some(target.guid)));
+    let events = pack.view.drain(&mut pack.realm);
+    assert_eq!(refusal(&events, spell_id), None, "spell {spell_id}");
+    damage_of(&events, spell_id)
+        .into_iter()
+        .map(|(guid, damage, _)| (guid, damage))
+        .collect()
+}
+
+#[test]
+fn flurry_of_blades_with_two_mobs_in_reach_damages_both() {
+    let rows = [("sinister_strike", *FLURRY_OF_BLADES)];
+    let mut checked = 0;
+    for seed in FIRST_SEED..FIRST_SEED + 10 {
+        let mut pack = common::cutthroat::pulled(seed, ROWS_OPEN, false, &rows);
+        let primary = pack.mobs[0].clone();
+        let hits = struck(&mut pack, *FLURRY_OF_BLADES, &primary);
+        let Some(&(_, first)) = hits.iter().find(|h| h.0 == primary.guid) else {
+            continue;
+        };
+        let others: Vec<&(u64, u32)> = hits.iter().filter(|h| h.0 != primary.guid).collect();
+        assert_eq!(
+            others.len(),
+            1,
+            "seed {seed}: a second mob takes a share: {hits:?}"
+        );
+        assert_eq!(
+            others[0].1,
+            first / 2,
+            "seed {seed}: half the strike: {hits:?}"
+        );
+        // The plain strike on the same dice strikes its target alone.
+        let mut plain = common::cutthroat::pulled(seed, ROWS_OPEN, false, &[]);
+        let hits = struck(&mut plain, *SINISTER_STRIKE, &primary);
+        assert!(
+            hits.iter().all(|h| h.0 == primary.guid),
+            "seed {seed}: {hits:?}"
+        );
+        checked += 1;
+    }
+    assert!(checked >= 3, "only {checked} strikes landed");
 }
 
 /// A camp mob struck by Sinister Strike, Rupture and Sinister Strike again, gaps between, by a

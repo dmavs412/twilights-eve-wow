@@ -458,6 +458,9 @@ enum AuraKind {
         rule: StackRule,
         /// Stacks gained after each tick deals its damage.
         stacks_per_tick: u32,
+        /// The percent chance a tick spills the caster's blood droplet, in place of their
+        /// Calling's own.
+        drop_chance: Option<u32>,
     },
     Rage {
         per_tick: u32,
@@ -2685,6 +2688,9 @@ impl InWorld {
                         below_bonus_pct: 0,
                         block_value_pct: 0,
                         heal_pct: 0,
+                        bleeding_pct: 0,
+                        kill_heal_pct: 0,
+                        kill_energize: 0,
                         weapon_pct,
                         school: School::Physical,
                         crit_if_target_in: None,
@@ -2730,19 +2736,7 @@ impl InWorld {
                     continue;
                 }
                 // Power back for every stack taken, landed or not (Tithe of Zeal).
-                let refund = refund_per_stack * stacks;
-                let p = &mut self.player;
-                let kind = p.power.kind;
-                if refund > 0 && p.alive() && p.power.gain(kind, refund) {
-                    events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
-                        target: self.guid,
-                        caster: self.guid,
-                        spell_id: skill.spell_id,
-                        power: kind.id(),
-                        amount: p.power.earned(kind, refund),
-                    }));
-                    events.push(values(self.guid, &[p.power.field()]));
-                }
+                self.energize_player(skill.spell_id, refund_per_stack * stacks, events);
                 let ap = buffed(&self.player.stats, &self.skills).attack_power;
                 let pct = crate::talents::amount_pct(c, &skill.key);
                 let each = scaled(per_stack.at(level, ap), pct) * stacks;
@@ -3593,10 +3587,19 @@ impl InWorld {
                 below_bonus_pct,
                 block_value_pct,
                 heal_pct,
+                bleeding_pct,
+                kill_heal_pct,
+                kill_energize,
                 ..
             } => {
-                let cond =
-                    self.condition_pct(target, controlled_pct, below_health_pct, below_bonus_pct);
+                let cond = self.condition_pct(
+                    target,
+                    controlled_pct,
+                    below_health_pct,
+                    below_bonus_pct,
+                    bleeding_pct,
+                );
+                let worth = self.kill_yields_xp(target);
                 let roll = weapon_roll(&stats, weapon, rng) * weapon_pct as f32 / 100.0;
                 let shield = stats.block_value
                     * (block_value_pct + crate::talents::block_value_pct(c, &skill.key))
@@ -3627,6 +3630,8 @@ impl InWorld {
                 if dealt > 0 && heal_pct > 0 {
                     self.heal_player(c, skill.spell_id, dealt * heal_pct / 100, events);
                 }
+                let reward = (kill_heal_pct, kill_energize);
+                self.killing_blow(c, target, worth, reward, skill.spell_id, events);
                 if dealt > 0 && weapon != Weapon::Ranged {
                     self.melee_hit(target, c, rng, events, ticked);
                 }
@@ -3649,12 +3654,17 @@ impl InWorld {
                 amount,
                 per_combo: more,
                 controlled_pct,
+                bleeding_pct,
+                kill_heal_pct,
+                kill_energize,
                 ..
             } => {
                 let raw = scaled(amount.at(level, ap), hit_pct)
                     + per_combo(more)
                     + if school.is_magic() { direct_bonus } else { 0 };
-                let raw = scaled(raw, self.condition_pct(target, controlled_pct, 0, 0));
+                let cond = self.condition_pct(target, controlled_pct, 0, 0, bleeding_pct);
+                let raw = scaled(raw, cond);
+                let worth = self.kill_yields_xp(target);
                 self.skills.cast_dealt += self.strike(
                     skill.spell_id,
                     target,
@@ -3666,6 +3676,8 @@ impl InWorld {
                     events,
                     ticked,
                 );
+                let reward = (kill_heal_pct, kill_energize);
+                self.killing_blow(c, target, worth, reward, skill.spell_id, events);
             }
             Effect::PeriodicDamage {
                 tick_ms,
@@ -3682,6 +3694,7 @@ impl InWorld {
                 stack_rule,
                 stacks_per_tick,
                 if_worn,
+                drop_chance,
             } => {
                 let aura_id = aura_spell_id.unwrap_or(skill.spell_id);
                 if if_worn == Some(IfWorn::Grow) && self.skills.grow(target, aura_id, 1, events) {
@@ -3709,6 +3722,7 @@ impl InWorld {
                         leech_pct,
                         rule: stack_rule,
                         stacks_per_tick,
+                        drop_chance,
                     },
                     aura_id,
                     duration_ms,
@@ -3863,19 +3877,17 @@ impl InWorld {
                     mob.taunted = Some((me, clock::secs(duration_ms)));
                 }
             }
-            Effect::AddComboPoints { amount } => {
-                // Serrated Strikes: a chance of one more point, more so on a bleeding target.
-                let bleeding = self.skills.auras.iter().any(|a| {
-                    a.unit == target
-                        && matches!(
-                            a.kind,
-                            AuraKind::PeriodicDamage { school: School::Physical, caster, .. }
-                                if caster == self.guid
-                        )
-                });
+            Effect::AddComboPoints {
+                amount,
+                bleeding_bonus,
+            } => {
+                let bleeding = self.bleeding(target);
+                // A talent's chance of one more point, more so on a bleeding target.
                 let chance = crate::talents::bonus_combo_pct(c, &skill.key, bleeding);
                 let more = u32::from(chance > 0 && rng.below(100) < chance);
-                self.skills.combo.add(target, amount + more);
+                // The skill's own points more on a bleeding target (Serrated Strikes).
+                let bonus = if bleeding { bleeding_bonus } else { 0 };
+                self.skills.combo.add(target, amount + more + bonus);
                 self.skills.send_combo(events);
             }
             Effect::AttackSpeedSlow { pct, duration_ms } => {
@@ -4867,6 +4879,23 @@ impl InWorld {
         events.push(values(self.guid, &[p.power.field()]));
     }
 
+    /// `amount` of the living player's own power, logged under `spell_id` as the bar's gain
+    /// before its cap; nothing when the bar is already full.
+    fn energize_player(&mut self, spell_id: u32, amount: u32, events: &mut Vec<SessionEvent>) {
+        let p = &mut self.player;
+        let kind = p.power.kind;
+        if amount > 0 && p.alive() && p.power.gain(kind, amount) {
+            events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
+                target: self.guid,
+                caster: self.guid,
+                spell_id,
+                power: kind.id(),
+                amount: p.power.earned(kind, amount),
+            }));
+            events.push(values(self.guid, &[p.power.field()]));
+        }
+    }
+
     /// `unit` is stunned for `duration_ms`, under `spell_id` (Mace Specialization).
     pub(super) fn stun(
         &mut self,
@@ -4957,6 +4986,7 @@ impl InWorld {
                     leech_pct: 0,
                     rule: StackRule::Stack,
                     stacks_per_tick: 0,
+                    drop_chance: None,
                 },
                 charges: 0,
             };
@@ -5038,13 +5068,15 @@ impl InWorld {
     }
 
     /// The percent more a strike deals `target`: `controlled_pct` when it wears a stun or an
-    /// incapacitate, and `below_bonus_pct` when its health is under `below_health_pct`.
+    /// incapacitate, `below_bonus_pct` when its health is under `below_health_pct`, and
+    /// `bleeding_pct` when it is [`Self::bleeding`].
     fn condition_pct(
         &self,
         target: u64,
         controlled_pct: u32,
         below_health_pct: u32,
         below_bonus_pct: u32,
+        bleeding_pct: u32,
     ) -> u32 {
         let controlled = if controlled_pct > 0 && self.skills.stunned(target) {
             controlled_pct
@@ -5057,7 +5089,48 @@ impl InWorld {
             .find(|m| m.guid == target)
             .filter(|m| m.health * 100 < m.stats.max_health * below_health_pct)
             .map_or(0, |_| below_bonus_pct);
-        controlled + low
+        let bleeding = if bleeding_pct > 0 && self.bleeding(target) {
+            bleeding_pct
+        } else {
+            0
+        };
+        controlled + low + bleeding
+    }
+
+    /// After a hit at `target`, which [`InWorld::kill_yields_xp`] read as `worth` just before:
+    /// when the hit killed it and the kill yields experience, the player heals `heal_pct` percent
+    /// of their maximum health and gains `energize` of their power, under `spell_id`
+    /// (Executioner's Toll).
+    fn killing_blow(
+        &mut self,
+        c: &Char,
+        target: u64,
+        worth: Option<bool>,
+        (heal_pct, energize): (u32, u32),
+        spell_id: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let killed = self.mobs.iter().any(|m| m.guid == target && !m.alive());
+        if worth != Some(true) || !killed {
+            return;
+        }
+        if heal_pct > 0 {
+            let max = buffed(&self.player.stats, &self.skills).max_health;
+            self.heal_player(c, spell_id, scaled_share(max, heal_pct), events);
+        }
+        self.energize_player(spell_id, energize, events);
+    }
+
+    /// `target` wears a Physical damage over time the player put on it (Rupture, Garrote).
+    fn bleeding(&self, target: u64) -> bool {
+        self.skills.auras.iter().any(|a| {
+            a.unit == target
+                && matches!(
+                    a.kind,
+                    AuraKind::PeriodicDamage { school: School::Physical, caster, .. }
+                        if caster == self.guid
+                )
+        })
     }
 
     /// The nearest other living enemy in melee reach in front of the caster takes `damage` of
@@ -5126,17 +5199,27 @@ impl InWorld {
                 below_bonus_pct,
                 block_value_pct,
                 heal_pct,
+                bleeding_pct,
+                kill_heal_pct,
+                kill_energize,
                 ..
             } => Some((
                 bonus,
                 cleave_pct,
-                self.condition_pct(target, controlled_pct, below_health_pct, below_bonus_pct),
+                self.condition_pct(
+                    target,
+                    controlled_pct,
+                    below_health_pct,
+                    below_bonus_pct,
+                    bleeding_pct,
+                ),
                 block_value_pct,
                 heal_pct,
+                (kill_heal_pct, kill_energize),
             )),
             _ => None,
         });
-        let Some((bonus, cleave_pct, more, block_value_pct, heal_pct)) = strike else {
+        let Some((bonus, cleave_pct, more, block_value_pct, heal_pct, reward)) = strike else {
             return false;
         };
         self.pay(skill, true, c, events);
@@ -5252,10 +5335,12 @@ impl InWorld {
                     swing.outcome == Outcome::Crit,
                 )
             }));
+            let worth = self.kill_yields_xp(guid);
             self.hurt(guid, swing.damage, c, rng, events, ticked);
             if swing.damage > 0 && heal_pct > 0 {
                 self.heal_player(c, spell_id, swing.damage * heal_pct / 100, events);
             }
+            self.killing_blow(c, guid, worth, reward, spell_id, events);
             if swing.outcome == Outcome::Crit {
                 self.crit_landed(guid, swing.damage, c, events);
             }
@@ -5364,6 +5449,7 @@ impl InWorld {
                     caster,
                     stacks,
                     leech_pct,
+                    drop_chance,
                     ..
                 } => {
                     let per_tick = per_tick * stacks;
@@ -5401,9 +5487,10 @@ impl InWorld {
                         // (Thermal Feedback, Morbid Fascination, Epidemic).
                         if caster == self.guid {
                             if school == School::Physical {
+                                // The bleed's own chance (Open Veins), or the Calling's.
                                 let of = crate::callings::of(c.calling);
-                                if of.bleed_drop.is_some() && rng.below(100) < of.bleed_drop_chance
-                                {
+                                let chance = drop_chance.unwrap_or(of.bleed_drop_chance);
+                                if of.bleed_drop.is_some() && rng.below(100) < chance {
                                     self.drop_blood(c, a.unit, rng, events);
                                 }
                             }
@@ -5558,10 +5645,14 @@ impl InWorld {
         }
         self.skills.drops.retain(|d| d.left > 0.0);
         let heal_pct = crate::talents::pickup_heal_pct(c);
+        let energize = crate::talents::pickup_energize(c);
         for (spell_id, key) in grants {
             if heal_pct > 0 {
                 let max = buffed(&self.player.stats, &self.skills).max_health;
                 self.heal_player(c, spell_id, scaled_share(max, heal_pct), events);
+            }
+            if energize > 0 {
+                self.energize_player(spell_id, energize, events);
             }
             if let Some(def) = crate::callings::aura(key) {
                 let more = crate::talents::aura_max_stacks(c, key);
@@ -5900,6 +5991,7 @@ impl InWorld {
                 leech_pct: 0,
                 rule: StackRule::Stack,
                 stacks_per_tick: 0,
+                drop_chance: None,
             },
             charges: 0,
         };
@@ -6153,6 +6245,7 @@ impl InWorld {
                         leech_pct: 0,
                         rule: StackRule::Stack,
                         stacks_per_tick: 0,
+                        drop_chance: None,
                     }
                 }
                 callings::AuraEffect::ModHitChance { pct } => AuraKind::HitChance { pct: *pct },

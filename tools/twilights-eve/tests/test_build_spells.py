@@ -1581,6 +1581,64 @@ class TalentRows(BuildSpells):
     def test_a_stack_consumes_refund_per_stack_is_a_whole_number_of_at_least_1(self):
         self.assert_whole_param(*self.consume(), "refund_per_stack")
 
+    # Cutthroat's rows (#505).
+    HIT = {**STRIKE, "effect1_kind": "school_damage", "effect1_params": "amount.base=5;amount.per_level=1"}
+    COMBO = {**STRIKE, "effect1_kind": "add_combo_points", "effect1_params": "amount=1"}
+    BLEED = {**STRIKE, "effect1_kind": "periodic_damage",
+             "effect1_params": "tick_ms=2000;duration_ms=6000;tick.base=6;tick.per_level=0.6"}
+
+    def test_add_combo_points_bleeding_bonus_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param([], self.COMBO, "bleeding_bonus")
+
+    def test_a_hits_bleeding_pct_is_a_whole_number_of_at_least_1(self):
+        for row in (STRIKE, self.HIT):
+            with self.subTest(kind=row["effect1_kind"]):
+                self.assert_whole_param([], row, "bleeding_pct")
+
+    def test_a_hits_kill_heal_pct_is_a_whole_number_of_at_least_1(self):
+        for row in (STRIKE, self.HIT):
+            with self.subTest(kind=row["effect1_kind"]):
+                self.assert_whole_param([], row, "kill_heal_pct")
+
+    def test_a_hits_kill_energize_is_a_whole_number_of_at_least_1(self):
+        for row in (STRIKE, self.HIT):
+            with self.subTest(kind=row["effect1_kind"]):
+                self.assert_whole_param([], row, "kill_energize")
+
+    def test_a_bleeds_drop_chance_is_a_whole_number_from_1_to_100(self):
+        params = self.BLEED["effect1_params"]
+        done, data = self.run_build([{**self.BLEED, "effect1_params": f"{params};drop_chance=100"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"]["drop_chance"], 100)
+        for bad in ("0", "101", "1.5", "yes"):
+            with self.subTest(bad=bad):
+                self.assert_fails([{**self.BLEED, "effect1_params": f"{params};drop_chance={bad}"}],
+                                  "drop_chance needs a whole number from 1 to 100, has")
+
+    def test_an_aura_procs_add_combo_points_is_a_whole_number_of_at_least_1(self):
+        proc = {**AURA, "modelled": "yes", "effect1_kind": "proc",
+                "effect1_params": "on=dodge;chance=100;energize=10;add_combo_points=1"}
+        done, data = self.run_build([CALLING, proc])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["auras"][0]["effects"][0]["params"]["add_combo_points"], 1)
+        for bad in ("0", "1.5", "yes"):
+            with self.subTest(bad=bad):
+                params = f"on=dodge;chance=100;energize=10;add_combo_points={bad}"
+                self.assert_fails([CALLING, {**proc, "effect1_params": params}],
+                                  "add_combo_points needs a whole number of at least 1, has")
+
+    def test_pickup_energize_is_a_talent_kind_with_a_whole_amount_of_at_least_1(self):
+        rush = row_talent("x", effect1_kind="pickup_energize", effect1_params="amount=10")
+        done, data = self.run_build(talent_row(rush))
+        self.assertEqual(done.returncode, 0, done.stderr)
+        (row,) = data[0]["rows"]
+        self.assertEqual(row["choices"][0]["effects"][0], {"kind": "pickup_energize", "params": {"amount": 10},
+                                                           "realm_only": False})
+        for bad in ("0", "1.5", "yes"):
+            with self.subTest(bad=bad):
+                self.assert_fails(talent_row({**rush, "effect1_params": f"amount={bad}"}),
+                                  "pickup_energize needs a whole amount of at least 1, has")
+
     def test_rows_with_a_blank_row_levels_fail(self):
         self.assert_fails([CALLING, {**STRIKE, "row_level": "3"}, *self.three()], "do not fill row_levels")
 
@@ -1670,6 +1728,38 @@ class TalentRows(BuildSpells):
                   encoding="utf-8") as f:
             icons = [s["fields"]["icon"] for s in json.load(f)["spells"] if 1000430 <= s["spell_id"] < 1000448]
         self.assertEqual(len(set(icons)), 18, icons)
+
+    def test_the_committed_cutthroat_has_six_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            cutthroat = next(c for c in json.load(f) if c["key"] == "cutthroat")
+        self.assertEqual(cutthroat["row_levels"], [4, 8, 12, 16, 20, 24])
+        self.assertEqual([(r["key"], r["level"], r["kind"], r["skill"]) for r in cutthroat["rows"]],
+                         [("sinister_strike", 4, "skill_choice", "sinister_strike"),
+                          ("evasion", 8, "skill_choice", "evasion"),
+                          ("eviscerate", 12, "skill_choice", "eviscerate"),
+                          ("rupture", 16, "skill_choice", "rupture"),
+                          ("passives", 20, "talent", None),
+                          ("garrote", 24, "skill_choice", "garrote")])
+        self.assertEqual([[c["key"] for c in r["choices"]] for r in cutthroat["rows"]],
+                         [["serrated_strikes", "flurry_of_blades", "practiced_strike"],
+                          ["phantom_guile", "elusiveness", "second_wind"],
+                          ["open_wounds", "executioners_toll", "kidney_shot"],
+                          ["bloodletting", "open_veins", "sanguine_rupture"],
+                          ["blood_frenzy", "thirst", "blood_rush"],
+                          ["brazen_garrote", "choking_garrote", "initiative"]])
+        self.assertEqual([c["spell_id"] for r in cutthroat["rows"] for c in r["choices"]],
+                         list(range(1000460, 1000478)))
+        self.assertEqual(next(a for a in cutthroat["auras"] if a["key"] == "aura_phantom_guile")["spell_id"],
+                         1000478)
+        # No two of the choices share an icon, and none is one of Basic Warrior's choices'.
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
+                  encoding="utf-8") as f:
+            spells = json.load(f)["spells"]
+        icons = [s["fields"]["icon"] for s in spells if 1000460 <= s["spell_id"] < 1000478]
+        self.assertEqual(len(set(icons)), 18, icons)
+        warrior = {s["fields"].get("icon") for s in spells if s.get("calling") == "basic_warrior"}
+        self.assertFalse(warrior & set(icons), warrior & set(icons))
 
 
 class Vocabulary(unittest.TestCase):

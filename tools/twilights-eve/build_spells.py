@@ -44,7 +44,7 @@ CLIENT_EFFECTS = 3
 # snake_case of an enum variant in crates/twilight-realm/src (test_build_spells checks that), so a
 # kind the realm has dropped cannot linger here and mislead a ticket.
 KNOWN_KINDS = {
-    "absorb", "interrupt", "taunt", "knockback", "add_aura_stacks", "grow_aura","add_combo_points", "at_max_stacks", "healing_taken_pct", "max_health_pct", "mod_cast_speed_pct", "mod_ranged_haste_pct", "mod_ranged_crit_pct", "mod_damage_done_pct", "mod_melee_haste_pct", "drain", "ground_area", "heal", "mod_damage_taken_pct", "mod_healing_taken_pct", "mod_hit_chance", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "aura_max_stacks", "pickup_heal_pct", "pickup_radius_yd", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "absorb", "interrupt", "taunt", "knockback", "add_aura_stacks", "grow_aura","add_combo_points", "at_max_stacks", "healing_taken_pct", "max_health_pct", "mod_cast_speed_pct", "mod_ranged_haste_pct", "mod_ranged_crit_pct", "mod_damage_done_pct", "mod_melee_haste_pct", "drain", "ground_area", "heal", "mod_damage_taken_pct", "mod_healing_taken_pct", "mod_hit_chance", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "aura_max_stacks", "pickup_heal_pct", "pickup_energize", "pickup_radius_yd","consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -958,13 +958,27 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
     if kind == "consume_aura_stacks" and not isinstance(params.get("per_stack"), dict):
         raise BuildError(f"{where}: consume_aura_stacks lacks a per_stack formula (per_stack.base, per_stack.per_level)")
     # Vanguard's rows (#504): a strike's share of the shield's Block Value and its heal, and a
-    # stack consume's heal and its power back per stack.
-    wholes = {"weapon_strike": ("block_value_pct", "heal_pct"),
-              "consume_aura_stacks": ("heal_pct", "refund_per_stack")}
+    # stack consume's heal and its power back per stack. Cutthroat's rows (#505): a hit's percent
+    # more on a bleeding target, a killing hit's heal and power, a builder's points more on a
+    # bleeding target, and a proc's combo points.
+    on_hit = ("bleeding_pct", "kill_heal_pct", "kill_energize")
+    wholes = {"weapon_strike": ("block_value_pct", "heal_pct", *on_hit),
+              "school_damage": on_hit,
+              "consume_aura_stacks": ("heal_pct", "refund_per_stack"),
+              "add_combo_points": ("bleeding_bonus",),
+              "proc": ("add_combo_points",)}
     for param in wholes.get(kind, ()):
         value = params.get(param, 1)
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             raise BuildError(f"{where}: {param} needs a whole number of at least 1, has {value!r}")
+    if kind == "periodic_damage" and "drop_chance" in params:
+        chance = params["drop_chance"]
+        if isinstance(chance, bool) or not isinstance(chance, int) or not 1 <= chance <= 100:
+            raise BuildError(f"{where}: drop_chance needs a whole number from 1 to 100, has {chance!r}")
+    if kind == "pickup_energize":
+        amount = params.get("amount")
+        if isinstance(amount, bool) or not isinstance(amount, int) or amount < 1:
+            raise BuildError(f"{where}: pickup_energize needs a whole amount of at least 1, has {amount!r}")
     # Talent Rows' params (#500 reads them): that percent more against a stunned or incapacitated
     # target, a second enemy in melee reach taking that percent, and a bonus under a health share.
     if kind in ("school_damage", "weapon_strike") and "controlled_pct" in params:
