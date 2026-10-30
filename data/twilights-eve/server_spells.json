@@ -7329,7 +7329,8 @@
        "duration_ms": 60000,
        "arm_ms": 2000,
        "first_only": true,
-       "enemy_aura": "aura_snare_trap"
+       "enemy_aura": "aura_snare_trap",
+       "object_display": 3071
       },
       "realm_only": false
      }

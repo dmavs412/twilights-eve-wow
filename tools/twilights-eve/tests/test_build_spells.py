@@ -1948,6 +1948,11 @@ class TalentRows(BuildSpells):
         self.assert_each_fails([], {**self.SHROUD, "target": "dest"}, "follow_caster needs a caster-centred area",
                                "follow_caster=yes")
 
+    def test_a_ground_areas_object_display_is_a_whole_number(self):
+        self.assertEqual(self.built_params([], self.AREA, "object_display=3071")["object_display"], 3071)
+        self.assert_each_fails([], self.AREA, "object_display needs a whole number of at least 1, has",
+                               "object_display=0", "object_display=trap")
+
     def test_rows_with_a_blank_row_levels_fail(self):
         self.assert_fails([CALLING, {**STRIKE, "row_level": "3"}, *self.three()], "do not fill row_levels")
 

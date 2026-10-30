@@ -1809,6 +1809,11 @@ pub enum Effect {
         /// (Shroud of Rot).
         #[serde(default)]
         follow_caster: bool,
+        /// A GameObject of this `GameObjectDisplayInfo` stands at the area's centre while it
+        /// lasts, scenery no one can click, seen by whoever sees the area (Snare Trap). 0 shows
+        /// none.
+        #[serde(default)]
+        object_display: u32,
     },
     /// The caster teleports `distance_yd` along their facing, as far as the ground lets them, and
     /// sheds their stuns and roots first.

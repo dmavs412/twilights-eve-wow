@@ -29,7 +29,7 @@ power_cost = 0
 cooldown_ms = 0
 gcd_ms = 0
 target = "self"
-effects = [{ kind = "ground_area", radius_yd = 2.5, duration_ms = 60000, arm_ms = 2000, first_only = true, enemy_aura_spell_id = 3355 }]
+effects = [{ kind = "ground_area", radius_yd = 2.5, duration_ms = 60000, arm_ms = 2000, first_only = true, enemy_aura_spell_id = 3355, object_display = 3071 }]
 
 [[calling.aura]]
 key = "aura_snare_trap"
@@ -41,6 +41,14 @@ row = { break_on = { damage = true } }
 
 const TRAP: u32 = 1499;
 const TRAPPED: u32 = 3355;
+/// `GameObjectDisplayInfo` of Freezing Trap's GameObject: the trap the player sees.
+const TRAP_DISPLAY: u32 = 3071;
+/// `GAMEOBJECT_FLAGS` and `GAMEOBJECT_TYPE_ID`; `GO_FLAG_NOT_SELECTABLE` and
+/// `GAMEOBJECT_TYPE_GENERIC`.
+const GAMEOBJECT_FLAGS: u16 = 9;
+const GAMEOBJECT_TYPE_ID: u16 = 21;
+const NOT_SELECTABLE: u32 = 0x10;
+const GENERIC: u32 = 5;
 /// The Vile Familiar, and where its pack spawns. Its entry is flagged a boss by one test, so the
 /// other tests use the scorpid camp.
 const FAMILIAR: u32 = 3101;
@@ -123,6 +131,33 @@ fn patch_objects(events: &[SessionEvent]) -> Vec<(u64, [f32; 3])> {
         .collect()
 }
 
+/// The GameObjects `events` create with the trap's display: guid and position. Each must be
+/// scenery no one can click.
+fn trap_shows(events: &[SessionEvent]) -> Vec<(u64, [f32; 3])> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                kind: EntityKind::GameObject,
+                display_id: Some(TRAP_DISPLAY),
+                position,
+                fields,
+                ..
+            } => {
+                let raw: Vec<(u16, u32)> = fields.raw_fields().collect();
+                assert!(raw.contains(&(GAMEOBJECT_TYPE_ID, GENERIC)), "a GENERIC");
+                assert!(
+                    raw.contains(&(GAMEOBJECT_FLAGS, NOT_SELECTABLE)),
+                    "that no one can click"
+                );
+                Some((*guid, *position))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
 fn destroyed(events: &[SessionEvent], object: u64) -> bool {
     events
         .iter()
@@ -142,6 +177,23 @@ fn until_trapped(realm: &mut Realm, view: &mut View, mob: &Mob, secs: f32) -> Ve
 }
 
 #[test]
+fn laying_the_trap_shows_its_object_at_the_casters_feet() {
+    let (mut realm, _, mobs, mut view) = world(CAMP);
+    let feet = [
+        mobs[0].position[0] + 8.0,
+        mobs[0].position[1],
+        mobs[0].position[2],
+    ];
+    beside(&mut realm, &mobs[0], 8.0);
+    let laid = lay(&mut realm, &mut view);
+    let shows = trap_shows(&laid);
+    let [(_, at)] = shows[..] else {
+        panic!("one trap GameObject, has {shows:?}");
+    };
+    assert!(flat(at, feet) < 0.01, "at the caster's feet, is at {at:?}");
+}
+
+#[test]
 fn a_mob_inside_catches_nothing_while_the_trap_arms_and_the_aura_once_it_has() {
     let (mut realm, _, mobs, mut view) = world(CAMP);
     let mob = &mobs[0];
@@ -150,15 +202,20 @@ fn a_mob_inside_catches_nothing_while_the_trap_arms_and_the_aura_once_it_has() {
     let [(object, _)] = patch_objects(&laid)[..] else {
         panic!("one trap object");
     };
+    let [(shown, _)] = trap_shows(&laid)[..] else {
+        panic!("one trap GameObject");
+    };
     let early = view.run(&mut realm, 1.5);
     assert!(
         view.aura(mob.guid, TRAPPED).is_none(),
         "not caught at 1.5 s"
     );
     assert!(!destroyed(&early, object), "the trap is still down");
+    assert!(!destroyed(&early, shown), "and still shows");
     let late = until_trapped(&mut realm, &mut view, mob, 1.5);
     assert!(view.aura(mob.guid, TRAPPED).is_some(), "caught once armed");
     assert!(destroyed(&late, object), "and the trap is spent");
+    assert!(destroyed(&late, shown), "and no longer shows");
     let aura_for = |secs: f32, realm: &mut Realm, view: &mut View| {
         view.run(realm, secs);
         view.aura(mob.guid, TRAPPED).is_some()
@@ -226,9 +283,13 @@ fn a_boss_walks_through_and_the_trap_stays_armed() {
 #[test]
 fn laying_a_second_trap_removes_the_first() {
     let (mut realm, _, _, mut view) = world(CAMP);
-    let first = patch_objects(&lay(&mut realm, &mut view));
+    let laid = lay(&mut realm, &mut view);
+    let first = patch_objects(&laid);
     let [(old, _)] = first[..] else {
         panic!("one trap object, has {first:?}");
+    };
+    let [(old_shown, _)] = trap_shows(&laid)[..] else {
+        panic!("one trap GameObject");
     };
     realm.handle(RealmCommand::Move {
         motion: Default::default(),
@@ -237,9 +298,30 @@ fn laying_a_second_trap_removes_the_first() {
     });
     let events = lay(&mut realm, &mut view);
     assert!(destroyed(&events, old), "the first trap goes");
+    assert!(destroyed(&events, old_shown), "and its GameObject");
     let second = patch_objects(&events);
     assert_eq!(second.len(), 1, "and one new trap comes");
     assert_ne!(second[0].0, old);
+    let shown = trap_shows(&events);
+    assert_eq!(shown.len(), 1, "showing one new GameObject");
+    assert_ne!(shown[0].0, old_shown);
+}
+
+#[test]
+fn a_trap_that_runs_out_takes_its_object_with_it() {
+    let (mut realm, _, _, mut view) = world(CAMP);
+    // Well clear of the camp, so nothing walks into it.
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: [CAMP[0] + 60.0, CAMP[1], 0.0],
+        orientation: std::f32::consts::PI,
+    });
+    let laid = lay(&mut realm, &mut view);
+    let [(shown, _)] = trap_shows(&laid)[..] else {
+        panic!("one trap GameObject");
+    };
+    let events = view.run(&mut realm, 61.0);
+    assert!(destroyed(&events, shown), "gone after 60 s");
 }
 
 #[test]
@@ -272,6 +354,7 @@ fn the_shipped_snare_trap_is_an_armed_first_entry_area_with_an_incapacitate_aura
             first_only: true,
             enemy_aura_spell_id: Some(e),
             ally_aura_spell_id: None,
+            object_display: 3071,
             ..
         }] if e == aura
     ));

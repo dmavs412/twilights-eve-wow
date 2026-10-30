@@ -21,6 +21,7 @@ use crate::clock;
 use crate::fields::*;
 use crate::items;
 use crate::mobs::State;
+use crate::phased::{gameobject_create, GameObject, GENERIC, HIGHGUID_GAMEOBJECT, NOT_SELECTABLE};
 use crate::rng::Rng;
 use crate::rules::haste::{haste_cut_damage, hasted_attack_time};
 use crate::rules::melee::{Outcome, PlayerOffense, ROLL};
@@ -240,6 +241,54 @@ struct Area {
     /// Centred on the caster at each check rather than where it was cast; `centre` is then
     /// where its DynamicObject stands (Shroud of Rot).
     follow: bool,
+    /// The GameObject that stands at `centre` beside the DynamicObject: its guid and display
+    /// (Snare Trap).
+    shown: Option<(u64, u32)>,
+}
+
+impl Area {
+    /// What a client is sent to show it, each create with its guid: the DynamicObject, then the
+    /// GameObject if it has one.
+    fn shows(&self) -> Vec<(u64, SessionEvent)> {
+        let mut shows = vec![(
+            self.object,
+            patch_create(
+                self.object,
+                self.caster,
+                self.spell_id,
+                self.centre,
+                self.radius_yd,
+            ),
+        )];
+        if let Some((guid, display_id)) = self.shown {
+            let create = gameobject_create(&GameObject {
+                guid,
+                entry: self.spell_id,
+                display_id,
+                type_id: GENERIC,
+                flags: NOT_SELECTABLE,
+                faction: 0,
+                position: self.centre,
+                orientation: 0.0,
+            });
+            shows.push((guid, create));
+        }
+        shows
+    }
+
+    /// The destroys that take it off a client.
+    fn hides(&self) -> impl Iterator<Item = SessionEvent> {
+        std::iter::once(self.object)
+            .chain(self.shown.map(|(guid, _)| guid))
+            .map(SessionEvent::ObjectDestroyed)
+    }
+}
+
+/// The guid of the GameObject that stands with the area whose DynamicObject is `patch`: its low
+/// guid under `HIGHGUID_GAMEOBJECT`, with the low guid's top bit set to keep it clear of every
+/// other GameObject's.
+fn shown_guid(patch: u64) -> u64 {
+    HIGHGUID_GAMEOBJECT << 48 | 1 << 47 | (patch & 0x7FFF_FFFF_FFFF)
 }
 
 /// A ground area's clock: every `every` seconds, each enemy inside that wears the caster's damage
@@ -395,28 +444,29 @@ impl Skills {
         HIGHGUID_DYNAMICOBJECT << 48 | (caster & 0xFFFF_FFFF) << 16 | u64::from(self.patches_made)
     }
 
-    /// Every patch on the ground as its DynamicObject's guid, centre and create: what another
-    /// client in view of it is sent.
+    /// Every patch on the ground as its DynamicObject's guid, centre and create, and an area's
+    /// GameObject beside it: what another client in view of it is sent.
     pub(super) fn patches(&self) -> Vec<(u64, [f32; 3], SessionEvent)> {
         let grounds = self
             .grounds
             .iter()
             .map(|g| (g.object, g.caster, g.spell_id, g.centre, g.radius_yd));
-        let areas = self
-            .areas
-            .iter()
-            .map(|a| (a.object, a.caster, a.spell_id, a.centre, a.radius_yd));
         let drops = self
             .drops
             .iter()
             .map(|d| (d.object, self.me, d.spell_id, d.centre, d.radius_yd));
+        let areas = self.areas.iter().flat_map(|a| {
+            a.shows()
+                .into_iter()
+                .map(|(guid, create)| (guid, a.centre, create))
+        });
         grounds
-            .chain(areas)
             .chain(drops)
             .map(|(guid, caster, spell_id, centre, radius_yd)| {
                 let create = patch_create(guid, caster, spell_id, centre, radius_yd);
                 (guid, centre, create)
             })
+            .chain(areas)
             .collect()
     }
 }
@@ -2678,16 +2728,13 @@ impl InWorld {
             let centre = if area.follow {
                 let off = distance(area.centre, c.position) >= FOLLOW_RESHOW_YD;
                 if off && area.left > CLOCK_EPSILON {
-                    events.push(SessionEvent::ObjectDestroyed(area.object));
+                    events.extend(area.hides());
                     area.object = self.skills.next_patch(self.guid);
+                    area.shown = area
+                        .shown
+                        .map(|(_, display)| (shown_guid(area.object), display));
                     area.centre = c.position;
-                    events.push(patch_create(
-                        area.object,
-                        area.caster,
-                        area.spell_id,
-                        area.centre,
-                        area.radius_yd,
-                    ));
+                    events.extend(area.shows().into_iter().map(|(_, create)| create));
                 }
                 c.position
             } else {
@@ -2722,9 +2769,9 @@ impl InWorld {
                 if let (Some(&unit), Some(def)) = (now.first(), area.enemy_aura) {
                     self.put_aura(def, unit, c.power_level(), events);
                     area.left = 0.0;
-                    events.push(SessionEvent::ObjectDestroyed(area.object));
+                    events.extend(area.hides());
                 } else if area.left <= CLOCK_EPSILON {
-                    events.push(SessionEvent::ObjectDestroyed(area.object));
+                    events.extend(area.hides());
                 }
                 continue;
             }
@@ -2758,7 +2805,7 @@ impl InWorld {
             }
             area.inside = now;
             if area.left <= CLOCK_EPSILON {
-                events.push(SessionEvent::ObjectDestroyed(area.object));
+                events.extend(area.hides());
             }
         }
         areas.retain(|a| a.left > CLOCK_EPSILON);
@@ -4737,6 +4784,7 @@ impl InWorld {
                 grow_aura_spell_id,
                 grow_every_ms,
                 follow_caster,
+                object_display,
             } => {
                 let of = callings::of(c.calling);
                 let row = |id: Option<u32>| id.and_then(|id| of.aura_by_spell(id));
@@ -4748,8 +4796,9 @@ impl InWorld {
                         every,
                         next: every,
                     });
+                let object = self.skills.next_patch(self.guid);
                 let area = Area {
-                    object: self.skills.next_patch(self.guid),
+                    object,
                     caster: self.guid,
                     spell_id: skill.spell_id,
                     // A skill that is not aimed at the ground drops it at the caster's feet, not
@@ -4768,6 +4817,7 @@ impl InWorld {
                     inside: Vec::new(),
                     grow,
                     follow: follow_caster,
+                    shown: (object_display > 0).then(|| (shown_guid(object), object_display)),
                 };
                 // A new one from the same caster replaces the old.
                 let old: Vec<Area> = self
@@ -4779,18 +4829,12 @@ impl InWorld {
                     .collect();
                 for gone in &old {
                     self.leave_area(gone, &gone.inside, events);
-                    events.push(SessionEvent::ObjectDestroyed(gone.object));
+                    events.extend(gone.hides());
                 }
                 self.skills
                     .areas
                     .retain(|a| !(a.caster == area.caster && a.spell_id == area.spell_id));
-                events.push(patch_create(
-                    area.object,
-                    area.caster,
-                    area.spell_id,
-                    area.centre,
-                    area.radius_yd,
-                ));
+                events.extend(area.shows().into_iter().map(|(_, create)| create));
                 self.skills.areas.push(area);
                 self.area_tick(0.0, c, events);
             }

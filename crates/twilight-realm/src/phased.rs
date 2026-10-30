@@ -32,7 +32,7 @@ const PORTAL_DISPLAY: u32 = 672;
 /// `GAMEOBJECT_TYPE_GENERIC`, flagged `GO_FLAG_NOT_SELECTABLE`, in `GO_STATE_READY`: scenery. The
 /// client never lets a player use a GENERIC, whatever its flags (`0x5f47f0`).
 pub(crate) const GENERIC: u32 = 5;
-const NOT_SELECTABLE: u32 = 0x10;
+pub(crate) const NOT_SELECTABLE: u32 = 0x10;
 /// `GAMEOBJECT_TYPE_GOOBER`: a GameObject a player clicks. The client shows the interact cursor
 /// and sends `CMSG_GAMEOBJ_USE`, and the realm decides what the click does.
 pub(crate) const GOOBER: u32 = 10;
