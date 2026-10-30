@@ -98,7 +98,13 @@ const WEST: [f32; 3] = [CAMP[0] - 25.0, CAMP[1], 0.0];
 /// set, and the camp pulled onto them: every mob has stopped within reach.
 pub fn pulled(seed: u64, level: u8, unarmed: bool, rows: &[(&str, u32)]) -> Pack {
     let (me, blob) = cutthroat_save(level, unarmed);
-    let (mut realm, mut view, _) = enter(me, &blob, seed);
+    pulled_of(me, &blob, seed, rows)
+}
+
+/// The character of the save `blob`, entered as `me` on `seed`'s dice with each `(row, choice)`
+/// set, and the scorpid camp pulled onto them (an Acolyte's pack too, #508).
+pub fn pulled_of(me: u64, blob: &str, seed: u64, rows: &[(&str, u32)]) -> Pack {
+    let (mut realm, mut view, _) = enter(me, blob, seed);
     set_rows(&mut realm, &mut view, rows);
     view.run(&mut realm, 1.0);
     realm.handle(RealmCommand::Move {

@@ -972,32 +972,64 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
     # against a worn aura, a snare's and a consume's reach.
     # Ranger's rows (#507): a strike's crit bonus and the cooldown its crit cuts, a tick's base
     # mana back, a strike's repeat chance.
+    # Acolyte's rows (#508): a tick's spread and its weakening by stacks, a hit's bonus by stacks and
+    # its splash, a grow's reach, a drain tick's grow and overheal shield, a heal's overheal burst,
+    # and an area's grow.
     on_hit = ("bleeding_pct", "kill_heal_pct", "kill_energize")
     wholes = {"weapon_strike": ("block_value_pct", "heal_pct", *on_hit, "crit_damage_pct", "crit_cooldown_ms"),
-              "school_damage": (*on_hit, "vs_aura_pct"),
+              "school_damage": (*on_hit, "vs_aura_pct", "vs_aura_max_pct", "splash_pct", "splash_yd"),
               "consume_aura_stacks": ("heal_pct", "refund_per_stack"),
               "add_combo_points": ("bleeding_bonus",),
               "proc": ("add_combo_points",),
               "absorb": ("energize_pct", "burst_radius_yd"),
-              "periodic_damage": ("tick_energize_pct_of_max", "tick_energize_pct_of_base"),
+              "periodic_damage": ("tick_energize_pct_of_max", "tick_energize_pct_of_base", "tick_spread_yd"),
               "mod_run_speed": ("radius_yd",),
-              "consume_aura": ("spread_yd",)}
+              "consume_aura": ("spread_yd",),
+              "grow_aura": ("radius_yd",),
+              "drain": ("overheal_absorb_max_pct", "overheal_absorb_ms"),
+              "heal": ("overheal_burst_yd",),
+              "ground_area": ("grow_every_ms",)}
     for param in wholes.get(kind, ()):
         value = params.get(param, 1)
         if not is_whole(value):
             raise BuildError(f"{where}: {param} needs a whole number of at least 1, has {value!r}")
-    chances = {"periodic_damage": ("drop_chance", "tick_aura_chance", "weaken_pct"),
-               "weapon_strike": ("repeat_chance",)}
+    chances = {"periodic_damage": ("drop_chance", "tick_aura_chance", "weaken_pct", "tick_spread_chance",
+                                   "weaken_per_stack_pct", "weaken_max_pct"),
+               "weapon_strike": ("repeat_chance",),
+               "drain": ("tick_grow_chance",)}
     for param in chances.get(kind, ()):
         if param in params and not is_whole(params[param], 100):
             raise BuildError(f"{where}: {param} needs a whole number from 1 to 100, has {params[param]!r}")
-    pairs = {"periodic_damage": ("tick_aura", "tick_aura_chance"), "school_damage": ("vs_aura", "vs_aura_pct"),
-             "weapon_strike": ("crit_cooldown_skill", "crit_cooldown_ms")}
-    if kind in pairs:
-        first, second = pairs[kind]
+    pairs = {"periodic_damage": (("tick_spread_chance", "tick_spread_yd"), ("weaken_per_stack_pct", "weaken_max_pct")),
+             "school_damage": (("vs_aura", "vs_aura_pct"), ("vs_aura_per_stack", "vs_aura_max_pct"),
+                               ("splash_pct", "splash_yd")),
+             "weapon_strike": (("crit_cooldown_skill", "crit_cooldown_ms"),),
+             "drain": (("tick_grow_aura", "tick_grow_chance"), ("overheal_absorb_max_pct", "overheal_absorb_ms")),
+             "heal": (("overheal_burst_yd", "overheal_burst_school"),),
+             "ground_area": (("grow_aura", "grow_every_ms"),)}
+    for first, second in pairs.get(kind, ()):
         if (first in params) != (second in params):
             raise BuildError(f"{where}: {first} and {second} go together")
+    if kind == "school_damage":
+        if not isinstance(params.get("vs_aura_per_stack", False), bool):
+            raise BuildError(f"{where}: vs_aura_per_stack is yes or no, has {params['vs_aura_per_stack']!r}")
+        if "vs_aura_per_stack" in params and "vs_aura" not in params:
+            raise BuildError(f"{where}: vs_aura_per_stack and vs_aura_max_pct need vs_aura")
+    if kind == "heal" and params.get("overheal_burst_school", "shadow") not in SCHOOLS:
+        raise BuildError(f"{where}: overheal_burst_school is {params['overheal_burst_school']!r}, want one of "
+                         f"{', '.join(SCHOOLS)}")
+    if kind == "ground_area" and not isinstance(params.get("follow_caster", False), bool):
+        raise BuildError(f"{where}: ground_area follow_caster is yes or no, has {params['follow_caster']!r}")
     if kind == "periodic_damage":
+        # A tick's aura rolls one chance: flat, or so much a stack (Virulence).
+        per_stack = params.get("tick_aura_chance_per_stack")
+        if per_stack is not None and (isinstance(per_stack, bool) or not isinstance(per_stack, (int, float))
+                                      or not 0 < per_stack <= 100):
+            raise BuildError(f"{where}: tick_aura_chance_per_stack needs a number above 0 and at most 100, has "
+                             f"{per_stack!r}")
+        chances_given = ("tick_aura_chance" in params) + ("tick_aura_chance_per_stack" in params)
+        if ("tick_aura" in params or chances_given) and ("tick_aura" not in params or chances_given != 1):
+            raise BuildError(f"{where}: tick_aura takes one of tick_aura_chance and tick_aura_chance_per_stack")
         if params.get("tick_aura_on", "caster") not in ("caster", "target"):
             raise BuildError(f"{where}: tick_aura_on is {params['tick_aura_on']!r}, want caster or target")
         if "tick_aura_on" in params and "tick_aura" not in params:
@@ -1505,6 +1537,19 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
                       "school_damage": ("vs_aura",)}.get(kind, ()):
             if param in parsed and parsed[param] not in auras:
                 raise BuildError(f"{here}: {param} {parsed[param]!r} is not an aura row of this Calling")
+        # Acolyte's rows (#508): the damage over time a drain's tick and an area's clock grow, checked
+        # as grow_aura's aura is.
+        for param in {"drain": ("tick_grow_aura",), "ground_area": ("grow_aura",)}.get(kind, ()):
+            if param not in parsed:
+                continue
+            if parsed[param] not in auras:
+                raise BuildError(f"{here}: {param} {parsed[param]!r} is not an aura row of this Calling")
+            if "periodic_damage" not in auras[parsed[param]]:
+                raise BuildError(f"{here}: {param} {parsed[param]!r} has no periodic_damage effect to grow")
+        if kind == "ground_area" and parsed.get("follow_caster") is True and (
+                row["target"] == "dest" or row["area_center"] == "ground"):
+            raise BuildError(f"{here}: follow_caster needs a caster-centred area, not target=dest or "
+                             "area_center=ground")
         if kind == "root" and row["kind"] != "aura" and modelled == "yes":
             # A skill's root; an aura row's root effect takes no params.
             for param in ("aura_spell_id", "duration_ms"):
@@ -1531,8 +1576,9 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             # A shield's burst is in the row's school (Volatile Ward); its `school` is what it soaks.
             parsed["burst_school"] = out["school"]
         if kind in ("periodic_damage", "periodic_heal", "absorb"):
-            if parsed.get("pct_of", "hit") not in ("hit", "heal", "health_cost", "max_mana", "max_health"):
-                raise BuildError(f"{here}: pct_of is {parsed['pct_of']!r}, want hit, heal, health_cost, max_mana or max_health")
+            if parsed.get("pct_of", "hit") not in ("hit", "heal", "full_heal", "health_cost", "max_mana", "max_health"):
+                raise BuildError(f"{here}: pct_of is {parsed['pct_of']!r}, want hit, heal, full_heal, health_cost, "
+                                 "max_mana or max_health")
             if kind == "periodic_damage" and parsed.get("pct_of") in ("max_mana", "max_health"):
                 raise BuildError(f"{here}: periodic_damage takes no {parsed['pct_of']} share")
             if parsed.get("ally", "lowest_health") != "lowest_health":

@@ -9153,248 +9153,6 @@
     "description": "Your next Blood Lance casts 0.5 sec faster."
    },
    {
-    "key": "aura_noxious_vapors_1",
-    "name": "Noxious Vapors",
-    "spell_id": 1000360,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 2000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_hit_chance",
-      "params": {
-       "pct": -5
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Chance to hit reduced by 5%."
-   },
-   {
-    "key": "aura_noxious_vapors_2",
-    "name": "Noxious Vapors",
-    "spell_id": 1000361,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 2000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_hit_chance",
-      "params": {
-       "pct": -10
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Chance to hit reduced by 10%."
-   },
-   {
-    "key": "aura_festering_wounds_1",
-    "name": "Festering Wounds",
-    "spell_id": 1000371,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 4000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_damage_taken_pct",
-      "params": {
-       "pct": 5,
-       "school": "physical"
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Physical damage taken from others increased by 5%."
-   },
-   {
-    "key": "aura_festering_wounds_2",
-    "name": "Festering Wounds",
-    "spell_id": 1000372,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 4000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "mod_damage_taken_pct",
-      "params": {
-       "pct": 10,
-       "school": "physical"
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Physical damage taken from others increased by 10%."
-   },
-   {
-    "key": "aura_masochism_1",
-    "name": "Masochism",
-    "spell_id": 1000379,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 5000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "periodic_heal",
-      "params": {
-       "tick_ms": 1000,
-       "pct_of": "health_cost",
-       "pct": 6
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Recovering 6% of the health spent over 5 sec."
-   },
-   {
-    "key": "aura_masochism_2",
-    "name": "Masochism",
-    "spell_id": 1000380,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 5000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "periodic_heal",
-      "params": {
-       "tick_ms": 1000,
-       "pct_of": "health_cost",
-       "pct": 12
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Recovering 12% of the health spent over 5 sec."
-   },
-   {
-    "key": "aura_masochism_3",
-    "name": "Masochism",
-    "spell_id": 1000381,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 5000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "periodic_heal",
-      "params": {
-       "tick_ms": 1000,
-       "pct_of": "health_cost",
-       "pct": 18
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Recovering 18% of the health spent over 5 sec."
-   },
-   {
-    "key": "aura_masochism_4",
-    "name": "Masochism",
-    "spell_id": 1000382,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 5000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "periodic_heal",
-      "params": {
-       "tick_ms": 1000,
-       "pct_of": "health_cost",
-       "pct": 24
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Recovering 24% of the health spent over 5 sec."
-   },
-   {
     "key": "aura_masochism_5",
     "name": "Masochism",
     "spell_id": 1000383,
@@ -9426,12 +9184,12 @@
     "description": "Recovering 30% of the health spent over 5 sec."
    },
    {
-    "key": "aura_crimson_surge_1",
-    "name": "Crimson Surge",
-    "spell_id": 1000387,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
+    "key": "aura_noxious_vapors",
+    "name": "Miasma",
+    "spell_id": 1000568,
+    "status": "wip",
+    "school": "shadow",
+    "prevention": "silence",
     "max_stacks": 1,
     "stack_rule": "refresh",
     "unique_per": "caster",
@@ -9441,33 +9199,36 @@
     "aura_hidden": false,
     "cancelable": true,
     "persist_death": false,
-    "duration_ms": 6000,
+    "duration_ms": 10000,
     "modelled": true,
     "effects": [
      {
-      "kind": "mod_cast_speed_pct",
+      "kind": "periodic_damage",
       "params": {
-       "pct": 10,
-       "family_bits": [
-        34,
-        33,
-        35,
-        39,
-        38,
-        36,
-        37
-       ]
+       "tick_ms": 1000,
+       "tick": {
+        "base": 4,
+        "per_level": 0.4
+       },
+       "school": "shadow"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_hit_chance",
+      "params": {
+       "pct": -10
       },
       "realm_only": false
      }
     ],
-    "description": "Casting speed increased by 10%."
+    "description": "Taking Shadow damage every second. Chance to hit with melee and ranged attacks reduced by 10%."
    },
    {
-    "key": "aura_crimson_surge_2",
-    "name": "Crimson Surge",
-    "spell_id": 1000388,
-    "status": "placeholder",
+    "key": "aura_sanguine_flow",
+    "name": "Sanguine Flow",
+    "spell_id": 1000569,
+    "status": "wip",
     "school": "physical",
     "prevention": "pacify",
     "max_stacks": 1,
@@ -9480,26 +9241,22 @@
     "cancelable": true,
     "persist_death": false,
     "duration_ms": 6000,
+    "charges": 1,
     "modelled": true,
     "effects": [
      {
-      "kind": "mod_cast_speed_pct",
+      "kind": "next_cast",
       "params": {
-       "pct": 20,
+       "skill": "blood_lance",
+       "instant": true,
        "family_bits": [
-        34,
-        33,
-        35,
-        39,
-        38,
-        36,
-        37
+        34
        ]
       },
       "realm_only": false
      }
     ],
-    "description": "Casting speed increased by 20%."
+    "description": "Your next Blood Lance is instant."
    },
    {
     "key": "aura_grasping_shadows",
@@ -9532,10 +9289,923 @@
     "description": "Movement speed slowed by 60%."
    }
   ],
-  "rows": [],
+  "rows": [
+   {
+    "key": "creeping_blight",
+    "level": 4,
+    "kind": "skill_choice",
+    "skill": "creeping_blight",
+    "choices": [
+     {
+      "key": "epidemic",
+      "name": "Epidemic",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000550,
+      "realm_cost": 5,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_creeping_blight",
+         "tick_spread_chance": 30,
+         "tick_spread_yd": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. Each tick has a 30% chance to copy the Blight, with its stacks and time left, onto another enemy within 10 yards that does not have it.",
+      "variant_of": "creeping_blight"
+     },
+     {
+      "key": "virulence",
+      "name": "Virulence",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000551,
+      "realm_cost": 5,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_creeping_blight",
+         "tick_aura": "aura_virulence",
+         "tick_aura_chance_per_stack": 2.5
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. Each tick has a 2.5% chance per stack to make your next Blood Lance cast 0.5 sec faster.",
+      "variant_of": "creeping_blight"
+     },
+     {
+      "key": "withering_blight",
+      "name": "Withering Blight",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000552,
+      "realm_cost": 5,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_creeping_blight",
+         "weaken_per_stack_pct": 2,
+         "weaken_max_pct": 20
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. The target deals 2% less damage per stack, up to 20%.",
+      "variant_of": "creeping_blight"
+     }
+    ]
+   },
+   {
+    "key": "blood_lance",
+    "level": 8,
+    "kind": "skill_choice",
+    "skill": "blood_lance",
+    "choices": [
+     {
+      "key": "exsanguinate",
+      "name": "Exsanguinate",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000553,
+      "realm_cost": 3,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 36,
+          "per_level": 2
+         },
+         "vs_aura": "aura_creeping_blight",
+         "vs_aura_pct": 5,
+         "vs_aura_per_stack": true,
+         "vs_aura_max_pct": 50,
+         "school": "shadow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "tick_ms": 2000,
+         "duration_ms": 6000,
+         "pct_of": "hit",
+         "pct": 20,
+         "ally": "lowest_health",
+         "radius_yd": 15,
+         "center": "target"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grow_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "stacks": 1
+        },
+        "realm_only": true
+       }
+      ],
+      "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. If the target has your Creeping Blight, it gains a stack. Deals 5% more damage for each stack of your Creeping Blight on the target, up to 50%.",
+      "variant_of": "blood_lance"
+     },
+     {
+      "key": "splintering_lance",
+      "name": "Splintering Lance",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000554,
+      "realm_cost": 3,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 36,
+          "per_level": 2
+         },
+         "splash_pct": 30,
+         "splash_yd": 8,
+         "school": "shadow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "tick_ms": 2000,
+         "duration_ms": 6000,
+         "pct_of": "hit",
+         "pct": 20,
+         "ally": "lowest_health",
+         "radius_yd": 15,
+         "center": "target"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grow_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "stacks": 1,
+         "radius_yd": 8
+        },
+        "realm_only": true
+       }
+      ],
+      "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. If the target has your Creeping Blight, it gains a stack. Enemies within 8 yards of the target take 30% of the hit, and each of them with your Creeping Blight gains a stack.",
+      "variant_of": "blood_lance"
+     },
+     {
+      "key": "sanguine_barrier",
+      "name": "Sanguine Barrier",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000555,
+      "realm_cost": 3,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 36,
+          "per_level": 2
+         },
+         "school": "shadow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "tick_ms": 2000,
+         "duration_ms": 6000,
+         "pct_of": "hit",
+         "pct": 20,
+         "ally": "lowest_health",
+         "radius_yd": 15,
+         "center": "target"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 20,
+         "pct_of": "hit",
+         "duration_ms": 6000
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grow_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "stacks": 1
+        },
+        "realm_only": true
+       }
+      ],
+      "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. If the target has your Creeping Blight, it gains a stack. The ally who gets the Heal-over-Time also gets a shield absorbing 20% of the damage dealt for 6 sec.",
+      "variant_of": "blood_lance"
+     }
+    ]
+   },
+   {
+    "key": "talents",
+    "level": 12,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "necrotic_detonation",
+      "name": "Necrotic Detonation",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000556,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 20000,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "consume_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "amount": {
+          "base": 12,
+          "per_level": 1
+         },
+         "per_stack": true,
+         "heal_allies_pct": 150,
+         "radius_yd": 10,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "20-second cooldown. Instantly erupts all active Creeping Blights on your target. Deals massive immediate Shadow damage based on the number of stacks, and instantly heals all allies within 10 yards of the target for 150% of the damage dealt."
+     },
+     {
+      "key": "masochism",
+      "name": "Masochism",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000557,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "cast",
+         "cost_kind": "health",
+         "apply_aura": "aura_masochism_5"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Casting spells that cost Health grants you a buff that regenerates 30% of the Health spent over the next 5 seconds."
+     },
+     {
+      "key": "will_to_survive",
+      "name": "Will to Survive",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000558,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "healing_taken_pct",
+        "params": {
+         "pct": 30,
+         "below_health_pct": 50
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "While you are below 50% health, all healing you receive (including your own Leech and Siphon Life) is increased by 30%."
+     }
+    ]
+   },
+   {
+    "key": "siphon_life",
+    "level": 16,
+    "kind": "skill_choice",
+    "skill": "siphon_life",
+    "choices": [
+     {
+      "key": "feeding_siphon",
+      "name": "Feeding Siphon",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000559,
+      "realm_cost": 8,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 5000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "drain",
+        "params": {
+         "amount": {
+          "base": 15,
+          "per_level": 0.8
+         },
+         "heal_pct": 100,
+         "tick_grow_aura": "aura_creeping_blight",
+         "tick_grow_chance": 30,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool. Each tick has a 30% chance to add a stack to your Creeping Blight on the target.",
+      "variant_of": "siphon_life"
+     },
+     {
+      "key": "gorging_siphon",
+      "name": "Gorging Siphon",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000560,
+      "realm_cost": 8,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 5000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "drain",
+        "params": {
+         "amount": {
+          "base": 15,
+          "per_level": 0.8
+         },
+         "heal_pct": 100,
+         "overheal_absorb_max_pct": 20,
+         "overheal_absorb_ms": 10000,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool. Healing past your maximum health becomes a shield, up to 20% of your maximum health, for 10 sec.",
+      "variant_of": "siphon_life"
+     },
+     {
+      "key": "unbroken_siphon",
+      "name": "Unbroken Siphon",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000561,
+      "realm_cost": 8,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 5000,
+      "interrupt_on": [
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "drain",
+        "params": {
+         "amount": {
+          "base": 15,
+          "per_level": 0.8
+         },
+         "heal_pct": 100,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool. Can be channeled while moving.",
+      "variant_of": "siphon_life"
+     }
+    ]
+   },
+   {
+    "key": "dark_mending",
+    "level": 20,
+    "kind": "skill_choice",
+    "skill": "dark_mending",
+    "choices": [
+     {
+      "key": "coagulation",
+      "name": "Coagulation",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000562,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 8000,
+      "realm_range_max": 40,
+      "target": "ally",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "heal",
+        "params": {
+         "amount": {
+          "base": 80,
+          "per_level": 10
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_dark_mending"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 30,
+         "pct_of": "full_heal",
+         "duration_ms": 10000,
+         "school": "physical"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown. Also leaves a shield on the ally absorbing Physical damage equal to 30% of the heal for 10 sec.",
+      "variant_of": "dark_mending"
+     },
+     {
+      "key": "dark_surplus",
+      "name": "Dark Surplus",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000563,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 8000,
+      "realm_range_max": 40,
+      "target": "ally",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "heal",
+        "params": {
+         "amount": {
+          "base": 80,
+          "per_level": 10
+         },
+         "overheal_burst_yd": 8,
+         "overheal_burst_school": "shadow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_dark_mending"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown. Healing past the ally's maximum health bursts as Shadow damage on enemies within 8 yards of the ally.",
+      "variant_of": "dark_mending"
+     },
+     {
+      "key": "sanguine_flow",
+      "name": "Sanguine Flow",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000564,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 8000,
+      "realm_range_max": 40,
+      "target": "ally",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "heal",
+        "params": {
+         "amount": {
+          "base": 80,
+          "per_level": 10
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_dark_mending"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_sanguine_flow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown. Your next Blood Lance within 6 sec is instant.",
+      "variant_of": "dark_mending"
+     }
+    ]
+   },
+   {
+    "key": "miasma",
+    "level": 24,
+    "kind": "skill_choice",
+    "skill": "miasma",
+    "choices": [
+     {
+      "key": "noxious_vapors",
+      "name": "Noxious Vapors",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000565,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 15000,
+      "realm_range_max": 30,
+      "realm_radius_yd": 8,
+      "target": "dest",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 8,
+         "duration_ms": 10000,
+         "enemy_aura": "aura_noxious_vapors",
+         "ally_aura": "aura_miasma_ally"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 15% increased healing from all sources. Enemies inside have 10% less chance to hit with melee and ranged attacks.",
+      "variant_of": "miasma"
+     },
+     {
+      "key": "breeding_ground",
+      "name": "Breeding Ground",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000566,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 15000,
+      "realm_range_max": 30,
+      "realm_radius_yd": 8,
+      "target": "dest",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 8,
+         "duration_ms": 10000,
+         "enemy_aura": "aura_miasma",
+         "ally_aura": "aura_miasma_ally",
+         "grow_aura": "aura_creeping_blight",
+         "grow_every_ms": 2000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 15% increased healing from all sources. Every 2 sec, each enemy inside with your Creeping Blight gains a stack.",
+      "variant_of": "miasma"
+     },
+     {
+      "key": "shroud_of_rot",
+      "name": "Shroud of Rot",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000567,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 15000,
+      "realm_radius_yd": 8,
+      "target": "self",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "caster",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 8,
+         "duration_ms": 10000,
+         "enemy_aura": "aura_miasma",
+         "ally_aura": "aura_miasma_ally",
+         "follow_caster": true
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Surrounds you with a cloud of dark mist for 10 seconds that moves with you. Enemies inside take Shadow damage; allies inside receive 15% increased healing from all sources.",
+      "variant_of": "miasma"
+     }
+    ]
+   }
+  ],
   "name": "Acolyte",
   "tier": 1,
   "tier_cap": 30,
+  "row_levels": [
+   4,
+   8,
+   12,
+   16,
+   20,
+   24
+  ],
   "tier_bonus": {
    "spirit": 15,
    "stamina": 12,

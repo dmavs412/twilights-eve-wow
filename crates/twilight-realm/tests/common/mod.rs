@@ -1,6 +1,7 @@
 //! Shared helpers: a realm on flat ground, and the steps a player script repeats.
 #![allow(dead_code, unused_imports)]
 
+pub mod acolyte;
 pub mod cutthroat;
 pub mod fight;
 pub mod initiate;

@@ -1700,8 +1700,8 @@ class TalentRows(BuildSpells):
                                "tick_aura=ghost;tick_aura_chance=10")
         self.assert_each_fails(before, self.BLEED, "tick_aura_chance needs a whole number from 1 to 100, has",
                                "tick_aura=buff;tick_aura_chance=0", "tick_aura=buff;tick_aura_chance=101")
-        self.assert_each_fails(before, self.BLEED, "tick_aura and tick_aura_chance go together",
-                               "tick_aura=buff", "tick_aura_chance=10")
+        self.assert_each_fails(before, self.BLEED, "tick_aura takes one of tick_aura_chance and "
+                               "tick_aura_chance_per_stack", "tick_aura=buff", "tick_aura_chance=10")
 
     def test_a_periodic_damages_weaken_pct_runs_from_1_to_100(self):
         self.assertEqual(self.built_params([], self.BLEED, "weaken_pct=15")["weaken_pct"], 15)
@@ -1814,6 +1814,138 @@ class TalentRows(BuildSpells):
                                                             "params": {"skill": "strike"}, "realm_only": False})
         self.assert_fails([CALLING, STRIKE, {**aura, "effect1_params": "skill=ghost"}],
                           "cast_while_moving skill 'ghost' is not a skill of vanguard")
+
+    # Acolyte's rows (#508): an aura row with a periodic_damage to grow, a drain, a heal and an area.
+    DOT = {**AURA, "key": "dot", "modelled": "yes", "effect1_kind": "periodic_damage",
+           "effect1_params": "tick_ms=3000;tick.base=6;tick.per_level=0.4"}
+    DRAIN = {**STRIKE, "effect1_kind": "drain", "effect1_params": "amount.base=15;amount.per_level=0.8;heal_pct=100"}
+    HEAL = {**STRIKE, "target": "ally", "effect1_kind": "heal", "effect1_params": "amount.base=80;amount.per_level=10"}
+    GROW = {**STRIKE, "effect1_kind": "grow_aura", "effect1_params": "aura=dot;stacks=1"}
+    AREA = {**STRIKE, "target": "dest", "area_shape": "circle", "area_center": "ground", "visual": "11433",
+            "client_radius_index": "14", "effect1_kind": "ground_area", "effect1_params": "radius_yd=8;duration_ms=10000"}
+    SHROUD = {**AREA, "target": "self", "area_center": "caster"}
+
+    def test_a_periodic_damages_tick_spread_chance_and_yards_go_together(self):
+        params = self.built_params([], self.BLEED, "tick_spread_chance=30;tick_spread_yd=10")
+        self.assertEqual((params["tick_spread_chance"], params["tick_spread_yd"]), (30, 10))
+        self.assert_each_fails([], self.BLEED, "tick_spread_chance needs a whole number from 1 to 100, has",
+                               "tick_spread_chance=0;tick_spread_yd=10", "tick_spread_chance=101;tick_spread_yd=10")
+        self.assert_each_fails([], self.BLEED, "tick_spread_yd needs a whole number of at least 1, has",
+                               "tick_spread_chance=30;tick_spread_yd=0")
+        self.assert_each_fails([], self.BLEED, "tick_spread_chance and tick_spread_yd go together",
+                               "tick_spread_chance=30", "tick_spread_yd=10")
+
+    def test_a_periodic_damages_tick_aura_takes_one_chance_flat_or_per_stack(self):
+        before = [CALLING, self.BUFF]
+        params = self.built_params(before, self.BLEED, "tick_aura=buff;tick_aura_chance_per_stack=2.5")
+        self.assertEqual(params["tick_aura_chance_per_stack"], 2.5)
+        self.assertNotIn("tick_aura_chance", params)
+        self.assert_each_fails(before, self.BLEED, "tick_aura_chance_per_stack needs a number above 0 and at most "
+                               "100, has", "tick_aura=buff;tick_aura_chance_per_stack=0",
+                               "tick_aura=buff;tick_aura_chance_per_stack=101",
+                               "tick_aura=buff;tick_aura_chance_per_stack=yes")
+        self.assert_each_fails(before, self.BLEED, "tick_aura takes one of tick_aura_chance and "
+                               "tick_aura_chance_per_stack",
+                               "tick_aura=buff;tick_aura_chance=10;tick_aura_chance_per_stack=2.5", "tick_aura=buff",
+                               "tick_aura_chance_per_stack=2.5")
+
+    def test_a_periodic_damages_weaken_per_stack_and_its_most_run_from_1_to_100_and_go_together(self):
+        params = self.built_params([], self.BLEED, "weaken_per_stack_pct=2;weaken_max_pct=20")
+        self.assertEqual((params["weaken_per_stack_pct"], params["weaken_max_pct"]), (2, 20))
+        for param in ("weaken_per_stack_pct", "weaken_max_pct"):
+            other = "weaken_max_pct=20" if param == "weaken_per_stack_pct" else "weaken_per_stack_pct=2"
+            self.assert_each_fails([], self.BLEED, f"{param} needs a whole number from 1 to 100, has",
+                                   f"{other};{param}=0", f"{other};{param}=101")
+        self.assert_each_fails([], self.BLEED, "weaken_per_stack_pct and weaken_max_pct go together",
+                               "weaken_per_stack_pct=2", "weaken_max_pct=20")
+
+    def test_a_school_damages_vs_aura_per_stack_and_its_most_go_together_with_vs_aura(self):
+        before = [CALLING, self.BUFF]
+        params = self.built_params(before, self.HIT, "vs_aura=buff;vs_aura_pct=5;vs_aura_per_stack=yes;vs_aura_max_pct=50")
+        self.assertEqual((params["vs_aura_per_stack"], params["vs_aura_max_pct"]), (True, 50))
+        self.assert_each_fails(before, self.HIT, "vs_aura_max_pct needs a whole number of at least 1, has",
+                               "vs_aura=buff;vs_aura_pct=5;vs_aura_per_stack=yes;vs_aura_max_pct=0")
+        self.assert_each_fails(before, self.HIT, "vs_aura_per_stack is yes or no, has",
+                               "vs_aura=buff;vs_aura_pct=5;vs_aura_per_stack=2;vs_aura_max_pct=50")
+        self.assert_each_fails(before, self.HIT, "vs_aura_per_stack and vs_aura_max_pct go together",
+                               "vs_aura=buff;vs_aura_pct=5;vs_aura_per_stack=yes",
+                               "vs_aura=buff;vs_aura_pct=5;vs_aura_max_pct=50")
+        self.assert_each_fails(before, self.HIT, "vs_aura_per_stack and vs_aura_max_pct need vs_aura",
+                               "vs_aura_per_stack=yes;vs_aura_max_pct=50")
+
+    def test_a_school_damages_splash_pct_and_yards_go_together(self):
+        params = self.built_params([], self.HIT, "splash_pct=30;splash_yd=8")
+        self.assertEqual((params["splash_pct"], params["splash_yd"]), (30, 8))
+        self.assert_each_fails([], self.HIT, "splash_pct needs a whole number of at least 1, has",
+                               "splash_pct=0;splash_yd=8")
+        self.assert_each_fails([], self.HIT, "splash_yd needs a whole number of at least 1, has",
+                               "splash_pct=30;splash_yd=0")
+        self.assert_each_fails([], self.HIT, "splash_pct and splash_yd go together", "splash_pct=30", "splash_yd=8")
+
+    def test_grow_auras_radius_yd_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param([CALLING, self.DOT], self.GROW, "radius_yd")
+
+    def test_a_drains_tick_grow_aura_names_a_periodic_aura_and_goes_with_its_chance(self):
+        before = [CALLING, self.DOT, self.BUFF]
+        params = self.built_params(before, self.DRAIN, "tick_grow_aura=dot;tick_grow_chance=30")
+        self.assertEqual((params["tick_grow_aura"], params["tick_grow_chance"]), ("dot", 30))
+        self.assert_each_fails(before, self.DRAIN, "tick_grow_aura 'ghost' is not an aura row of this Calling",
+                               "tick_grow_aura=ghost;tick_grow_chance=30")
+        self.assert_each_fails(before, self.DRAIN, "tick_grow_aura 'buff' has no periodic_damage effect to grow",
+                               "tick_grow_aura=buff;tick_grow_chance=30")
+        self.assert_each_fails(before, self.DRAIN, "tick_grow_chance needs a whole number from 1 to 100, has",
+                               "tick_grow_aura=dot;tick_grow_chance=0", "tick_grow_aura=dot;tick_grow_chance=101")
+        self.assert_each_fails(before, self.DRAIN, "tick_grow_aura and tick_grow_chance go together",
+                               "tick_grow_aura=dot", "tick_grow_chance=30")
+
+    def test_a_drains_overheal_shield_takes_a_most_and_a_duration_together(self):
+        params = self.built_params([], self.DRAIN, "overheal_absorb_max_pct=20;overheal_absorb_ms=10000")
+        self.assertEqual((params["overheal_absorb_max_pct"], params["overheal_absorb_ms"]), (20, 10000))
+        self.assert_each_fails([], self.DRAIN, "overheal_absorb_max_pct needs a whole number of at least 1, has",
+                               "overheal_absorb_max_pct=0;overheal_absorb_ms=10000")
+        self.assert_each_fails([], self.DRAIN, "overheal_absorb_ms needs a whole number of at least 1, has",
+                               "overheal_absorb_max_pct=20;overheal_absorb_ms=0")
+        self.assert_each_fails([], self.DRAIN, "overheal_absorb_max_pct and overheal_absorb_ms go together",
+                               "overheal_absorb_max_pct=20", "overheal_absorb_ms=10000")
+
+    def test_pct_of_full_heal_is_a_share_an_absorb_a_heal_over_time_and_a_dot_take(self):
+        ward = {**self.WARD, "effect1_params": "pct=30;pct_of=full_heal;duration_ms=10000"}
+        done, data = self.run_build([ward])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"]["pct_of"], "full_heal")
+        self.assertEqual(self.built_params([], self.BLEED, "pct_of=full_heal;pct=15")["pct_of"], "full_heal")
+        self.assert_each_fails([], self.BLEED, "pct_of is 'ghost', want hit, heal, full_heal", "pct_of=ghost;pct=15")
+
+    def test_a_heals_overheal_burst_takes_yards_and_a_school_together(self):
+        params = self.built_params([], self.HEAL, "overheal_burst_yd=8;overheal_burst_school=shadow")
+        self.assertEqual((params["overheal_burst_yd"], params["overheal_burst_school"]), (8, "shadow"))
+        self.assert_each_fails([], self.HEAL, "overheal_burst_yd needs a whole number of at least 1, has",
+                               "overheal_burst_yd=0;overheal_burst_school=shadow")
+        self.assert_each_fails([], self.HEAL, "overheal_burst_school is 'gloom', want one of",
+                               "overheal_burst_yd=8;overheal_burst_school=gloom")
+        self.assert_each_fails([], self.HEAL, "overheal_burst_yd and overheal_burst_school go together",
+                               "overheal_burst_yd=8", "overheal_burst_school=shadow")
+
+    def test_a_ground_areas_grow_aura_names_a_periodic_aura_and_goes_with_its_period(self):
+        before = [CALLING, self.DOT, self.BUFF]
+        params = self.built_params(before, self.AREA, "grow_aura=dot;grow_every_ms=2000")
+        self.assertEqual((params["grow_aura"], params["grow_every_ms"]), ("dot", 2000))
+        self.assert_each_fails(before, self.AREA, "grow_aura 'ghost' is not an aura row of this Calling",
+                               "grow_aura=ghost;grow_every_ms=2000")
+        self.assert_each_fails(before, self.AREA, "grow_aura 'buff' has no periodic_damage effect to grow",
+                               "grow_aura=buff;grow_every_ms=2000")
+        self.assert_each_fails(before, self.AREA, "grow_every_ms needs a whole number of at least 1, has",
+                               "grow_aura=dot;grow_every_ms=0")
+        self.assert_each_fails(before, self.AREA, "grow_aura and grow_every_ms go together",
+                               "grow_aura=dot", "grow_every_ms=2000")
+
+    def test_a_ground_areas_follow_caster_is_yes_or_no_and_only_on_a_caster_centred_area(self):
+        self.assertIs(self.built_params([], self.SHROUD, "follow_caster=yes")["follow_caster"], True)
+        self.assert_each_fails([], self.SHROUD, "ground_area follow_caster is yes or no, has", "follow_caster=2")
+        self.assert_each_fails([], self.AREA, "follow_caster needs a caster-centred area, not target=dest or "
+                               "area_center=ground", "follow_caster=yes")
+        self.assert_each_fails([], {**self.SHROUD, "target": "dest"}, "follow_caster needs a caster-centred area",
+                               "follow_caster=yes")
 
     def test_rows_with_a_blank_row_levels_fail(self):
         self.assert_fails([CALLING, {**STRIKE, "row_level": "3"}, *self.three()], "do not fill row_levels")
@@ -2021,6 +2153,58 @@ class TalentRows(BuildSpells):
                   for c in callings for s in c["skills"] if s.get("spell_id") in spells}
         others |= {spells[ch["spell_id"]]["fields"].get("icon")
                    for c in callings if c["key"] != "ranger" for r in c.get("rows", [])
+                   for ch in r["choices"] if ch.get("spell_id") in spells}
+        self.assertFalse(others & set(icons), others & set(icons))
+
+    def test_the_committed_acolyte_has_six_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            callings = json.load(f)
+        acolyte = next(c for c in callings if c["key"] == "acolyte")
+        self.assertEqual(acolyte["row_levels"], [4, 8, 12, 16, 20, 24])
+        self.assertEqual([(r["key"], r["level"], r["kind"], r["skill"]) for r in acolyte["rows"]],
+                         [("creeping_blight", 4, "skill_choice", "creeping_blight"),
+                          ("blood_lance", 8, "skill_choice", "blood_lance"),
+                          ("talents", 12, "talent", None),
+                          ("siphon_life", 16, "skill_choice", "siphon_life"),
+                          ("dark_mending", 20, "skill_choice", "dark_mending"),
+                          ("miasma", 24, "skill_choice", "miasma")])
+        self.assertEqual([[c["key"] for c in r["choices"]] for r in acolyte["rows"]],
+                         [["epidemic", "virulence", "withering_blight"],
+                          ["exsanguinate", "splintering_lance", "sanguine_barrier"],
+                          ["necrotic_detonation", "masochism", "will_to_survive"],
+                          ["feeding_siphon", "gorging_siphon", "unbroken_siphon"],
+                          ["coagulation", "dark_surplus", "sanguine_flow"],
+                          ["noxious_vapors", "breeding_ground", "shroud_of_rot"]])
+        self.assertEqual([c["spell_id"] for r in acolyte["rows"] for c in r["choices"]],
+                         list(range(1000550, 1000568)))
+        auras = {a["key"]: a["spell_id"] for a in acolyte["auras"]}
+        self.assertEqual((auras["aura_noxious_vapors"], auras["aura_sanguine_flow"]), (1000568, 1000569))
+        # Hush and Grasping Shadows have no row; every choice is modelled.
+        self.assertFalse({"hush", "grasping_shadows"} & {r["skill"] for r in acolyte["rows"]})
+        self.assertTrue(all(c["modelled"] for r in acolyte["rows"] for c in r["choices"]))
+        # Necrotic Detonation is an active Talent; the old tree's aura rows no row names are gone.
+        self.assertEqual(acolyte["rows"][2]["choices"][0]["target"], "enemy")
+        gone = {"aura_noxious_vapors_1", "aura_noxious_vapors_2", "aura_crimson_surge_1", "aura_crimson_surge_2",
+                "aura_festering_wounds_1", "aura_festering_wounds_2"} | {f"aura_masochism_{n}" for n in range(1, 5)}
+        self.assertFalse(gone & set(auras), gone & set(auras))
+        self.assertIn("aura_masochism_5", auras)
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
+                  encoding="utf-8") as f:
+            spells = {s["spell_id"]: s for s in json.load(f)["spells"]}
+        # Unbroken Siphon's channel is not cancelled by a step; plain Siphon Life's is.
+        move = 0x01
+        self.assertEqual(spells[1000561]["fields"]["channel_interrupt_flags"] & move, 0)
+        siphon = next(s for s in acolyte["skills"] if s["key"] == "siphon_life")["spell_id"]
+        self.assertEqual(spells[siphon]["fields"]["channel_interrupt_flags"] & move, move)
+        # No two of the choices share an icon, and none is a plain skill's or another Calling's
+        # choice's.
+        icons = [spells[i]["fields"]["icon"] for i in range(1000550, 1000568)]
+        self.assertEqual(len(set(icons)), 18, icons)
+        others = {spells[s["spell_id"]]["fields"].get("icon")
+                  for c in callings for s in c["skills"] if s.get("spell_id") in spells}
+        others |= {spells[ch["spell_id"]]["fields"].get("icon")
+                   for c in callings if c["key"] != "acolyte" for r in c.get("rows", [])
                    for ch in r["choices"] if ch.get("spell_id") in spells}
         self.assertFalse(others & set(icons), others & set(icons))
 

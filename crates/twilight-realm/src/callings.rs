@@ -1041,6 +1041,8 @@ fn yes() -> bool {
 pub enum PctOf {
     Hit,
     Heal,
+    /// What the cast's heals would have healed with no maximum health to stop them (Coagulation).
+    FullHeal,
     /// The health the cast cost.
     HealthCost,
     /// The caster's maximum mana at cast time.
@@ -1511,6 +1513,18 @@ pub enum Effect {
         vs_aura_spell_id: Option<u32>,
         #[serde(default)]
         vs_aura_pct: u32,
+        /// With `vs_aura_per_stack`, the bonus is `vs_aura_pct` once per stack of that aura on the
+        /// target at the hit, never more than `vs_aura_max_pct` (Exsanguinate).
+        #[serde(default)]
+        vs_aura_per_stack: bool,
+        #[serde(default)]
+        vs_aura_max_pct: u32,
+        /// After a hit that dealt damage, every other living enemy within `splash_yd` of the target
+        /// takes `splash_pct` percent of it in the same school (Splintering Lance).
+        #[serde(default)]
+        splash_pct: u32,
+        #[serde(default)]
+        splash_yd: f32,
     },
     /// A bleed on the target under the skill's own spell id: `tick` every `tick_ms`.
     PeriodicDamage {
@@ -1580,9 +1594,34 @@ pub enum Effect {
         /// mana (Bloodscent).
         #[serde(default)]
         tick_energize_pct_of_base: u32,
+        /// After each tick, once whatever the stacks, `tick_spread_chance` percent of the time a
+        /// copy of the aura, with its stacks, time left and riders, goes on the nearest other
+        /// living enemy within `tick_spread_yd` of the wearer that does not wear it (Epidemic).
+        #[serde(default)]
+        tick_spread_chance: u32,
+        #[serde(default)]
+        tick_spread_yd: f32,
+        /// In place of `tick_aura_chance`: the chance is this times the stacks the tick dealt its
+        /// damage at, capped at 100 (Virulence).
+        #[serde(default)]
+        tick_aura_chance_per_stack: f32,
+        /// While it is on a unit, every hit that unit deals, to anyone, is this percent less a
+        /// stack, never more than `weaken_max_pct` (Withering Blight).
+        #[serde(default)]
+        weaken_per_stack_pct: u32,
+        #[serde(default)]
+        weaken_max_pct: u32,
     },
-    /// Heals the target `amount`, up to its maximum health.
-    Heal { amount: Linear },
+    /// Heals the target `amount`, up to its maximum health. With `overheal_burst_yd`, what it
+    /// heals past the maximum hits every living enemy within that many yards of the target in
+    /// `overheal_burst_school`, with that school's miss and crit rolls (Dark Surplus).
+    Heal {
+        amount: Linear,
+        #[serde(default)]
+        overheal_burst_yd: f32,
+        #[serde(default)]
+        overheal_burst_school: School,
+    },
     /// Deals `amount` in `school` to the target and heals the caster `heal_pct` percent of what
     /// it dealt (Siphon Life's tick).
     Drain {
@@ -1591,6 +1630,20 @@ pub enum Effect {
         heal_pct: u32,
         #[serde(default)]
         school: School,
+        /// After a tick that hits, `tick_grow_chance` percent of the time the caster's damage over
+        /// time of `tick_grow_aura_spell_id` on the target, resolved from `tick_grow_aura=key`,
+        /// gains a stack (Feeding Siphon).
+        #[serde(default)]
+        tick_grow_aura_spell_id: Option<u32>,
+        #[serde(default)]
+        tick_grow_chance: u32,
+        /// What a tick heals past the caster's maximum health grows a shield on them under the
+        /// skill's spell id, up to `overheal_absorb_max_pct` percent of their maximum health,
+        /// lasting `overheal_absorb_ms` from its last growth (Gorging Siphon).
+        #[serde(default)]
+        overheal_absorb_max_pct: u32,
+        #[serde(default)]
+        overheal_absorb_ms: u32,
     },
     /// A heal every `tick_ms` for `duration_ms`: `tick` a tick, and `pct` percent of what this
     /// cast dealt or healed (`pct_of`) spread over the ticks. With `ally`, it goes on the friendly
@@ -1746,6 +1799,17 @@ pub enum Effect {
         arm_ms: u32,
         #[serde(default)]
         first_only: bool,
+        /// Every `grow_every_ms` while it lasts, each living enemy inside that wears the caster's
+        /// damage over time of `grow_aura_spell_id`, resolved from `grow_aura=key`, gains a stack,
+        /// its timer left alone (Breeding Ground).
+        #[serde(default)]
+        grow_aura_spell_id: Option<u32>,
+        #[serde(default)]
+        grow_every_ms: u32,
+        /// The area's centre is the caster's position at each check, not where it was cast
+        /// (Shroud of Rot).
+        #[serde(default)]
+        follow_caster: bool,
     },
     /// The caster teleports `distance_yd` along their facing, as far as the ground lets them, and
     /// sheds their stuns and roots first.
@@ -1884,10 +1948,14 @@ pub enum Effect {
     },
     /// `stacks` more on the caster's periodic damage `aura_spell_id` on the target, held to its
     /// `max_stacks`, when the hit lands. The timer stays. A target without the aura gets nothing.
+    /// With `radius_yd`, every other living enemy within that many yards of the target that
+    /// wears the aura grows too (Splintering Lance).
     GrowAura {
         aura_spell_id: u32,
         #[serde(default = "one")]
         stacks: u32,
+        #[serde(default)]
+        radius_yd: f32,
     },
     /// Takes every stack of the caster's aura `aura_spell_id`, and strikes each target the cast
     /// hit for `per_stack` of `school` damage a stack. No stacks, no bonus.

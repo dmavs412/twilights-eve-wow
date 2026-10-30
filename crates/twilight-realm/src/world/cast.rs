@@ -176,6 +176,8 @@ pub(super) struct Skills {
     /// What the cast under way has dealt and healed so far: a share of either (`pct_of`) reads it.
     cast_dealt: u32,
     cast_healed: u32,
+    /// What the cast's heals would have healed with no maximum health to stop them.
+    cast_full_healed: u32,
     /// The health the last cast cost.
     pub(super) last_health_cost: u32,
     /// What the last cast cost, and whether the bar was full before it paid: its procs read them.
@@ -229,7 +231,17 @@ struct Area {
     enemy_aura: Option<&'static callings::AuraDef>,
     ally_aura: Option<&'static callings::AuraDef>,
     inside: Vec<u64>,
+    /// The caster's damage over time each enemy inside that wears it gains a stack of, the
+    /// seconds between, and until the next (Breeding Ground).
+    grow: Option<(u32, f32, f32)>,
+    /// Centred on the caster at each check rather than where it was cast; `centre` is then
+    /// where its DynamicObject stands (Shroud of Rot).
+    follow: bool,
 }
+
+/// How far the caster walks from a following area's DynamicObject before it is shown again at
+/// their feet: the object itself cannot move.
+const FOLLOW_RESHOW_YD: f32 = 2.0;
 
 /// A channelled skill under way: its spell and target, seconds left, and its tick clock.
 #[derive(Debug, Clone, Copy)]
@@ -239,6 +251,8 @@ struct Channel {
     left: f32,
     period: f32,
     next_tick: f32,
+    /// A step ends it: its skill is interrupted on `move` (not Unbroken Siphon's).
+    step_ends: bool,
 }
 
 /// Where a Blink starts, the way it faces, and how far it goes.
@@ -461,15 +475,23 @@ pub(crate) struct Aura {
 /// `aura` goes on the caster, or on the ticking unit when `aura_on_target`, and the caster gains
 /// `energize_pct_of_max` percent of their maximum power and `energize_pct_of_base` percent of
 /// their base mana; while it is on a unit, that unit's blows at the caster are `weaken_pct`
-/// percent less.
+/// percent less. Acolyte's (#508): `aura_chance_per_stack` times the tick's stacks in place of
+/// `aura_chance`; `spread_chance` percent of the time a copy goes on another enemy within
+/// `spread_yd`; while it is on a unit, that unit's hits at anyone are `weaken_per_stack_pct` a
+/// stack less, at most `weaken_max_pct`.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 struct TickRiders {
     aura: Option<&'static callings::AuraDef>,
     aura_chance: u32,
+    aura_chance_per_stack: f32,
     aura_on_target: bool,
     energize_pct_of_max: u32,
     energize_pct_of_base: u32,
     weaken_pct: u32,
+    spread_chance: u32,
+    spread_yd: f32,
+    weaken_per_stack_pct: u32,
+    weaken_max_pct: u32,
 }
 
 /// What a shield of the player's does besides soaking (#506): `energize_pct` percent of each soak
@@ -1372,12 +1394,12 @@ impl Skills {
         })
     }
 
-    /// The percent less `unit` hits the player for, from the player's damage over time on it
-    /// (Smoldering Ember): the largest.
+    /// The percent less `unit` hits the player for: the largest flat cut of the player's damage
+    /// over time on it (Smoldering Ember), plus the largest cut by stacks of any damage over time
+    /// on it, which weakens its hits at anyone (Withering Blight). Never more than all of it.
     pub(super) fn weaken_pct(&self, unit: u64) -> u32 {
-        self.auras
-            .iter()
-            .filter(|a| a.unit == unit)
+        let on = || self.auras.iter().filter(|a| a.unit == unit);
+        let flat = on()
             .map(|a| match a.kind {
                 AuraKind::PeriodicDamage { caster, riders, .. } if caster == self.me => {
                     riders.weaken_pct
@@ -1385,6 +1407,31 @@ impl Skills {
                 _ => 0,
             })
             .max()
+            .unwrap_or(0);
+        let stacked = on()
+            .map(|a| match a.kind {
+                AuraKind::PeriodicDamage { stacks, riders, .. } => {
+                    (riders.weaken_per_stack_pct * stacks).min(riders.weaken_max_pct)
+                }
+                _ => 0,
+            })
+            .max()
+            .unwrap_or(0);
+        (flat + stacked).min(100)
+    }
+
+    /// The stacks of the player's damage over time `spell_id` on `unit`; 0 without it.
+    pub(super) fn stacks_on(&self, unit: u64, spell_id: u32) -> u32 {
+        self.auras
+            .iter()
+            .find_map(|a| match a.kind {
+                AuraKind::PeriodicDamage { caster, stacks, .. }
+                    if a.unit == unit && a.spell_id == spell_id && caster == self.me =>
+                {
+                    Some(stacks)
+                }
+                _ => None,
+            })
             .unwrap_or(0)
     }
 
@@ -1407,6 +1454,7 @@ impl Skills {
         match of {
             callings::PctOf::Hit => self.cast_dealt,
             callings::PctOf::Heal => self.cast_healed,
+            callings::PctOf::FullHeal => self.cast_full_healed,
             callings::PctOf::HealthCost => self.last_health_cost,
             // The caster's maximums live on the player; `of_pct` reads them.
             callings::PctOf::MaxMana | callings::PctOf::MaxHealth => 0,
@@ -2508,6 +2556,7 @@ impl InWorld {
             left: clock::secs(shape.channel_ms),
             period,
             next_tick: period,
+            step_ends: shape.interrupt_on.iter().any(|i| i == "move"),
         });
         let p = &self.player;
         events.push(values(self.guid, &[p.power.field()]));
@@ -2585,6 +2634,26 @@ impl InWorld {
         for area in &mut areas {
             area.left -= dt;
             area.arming = (area.arming - dt).max(0.0);
+            // A following area is centred on its caster; its DynamicObject, which cannot move, is
+            // shown again at their feet once they have walked off it (Shroud of Rot).
+            let centre = if area.follow {
+                let off = distance(area.centre, c.position) >= FOLLOW_RESHOW_YD;
+                if off && area.left > CLOCK_EPSILON {
+                    events.push(SessionEvent::ObjectDestroyed(area.object));
+                    area.object = self.skills.next_patch(self.guid);
+                    area.centre = c.position;
+                    events.push(patch_create(
+                        area.object,
+                        area.caster,
+                        area.spell_id,
+                        area.centre,
+                        area.radius_yd,
+                    ));
+                }
+                c.position
+            } else {
+                area.centre
+            };
             let now: Vec<u64> = if area.left <= CLOCK_EPSILON || area.arming > CLOCK_EPSILON {
                 Vec::new()
             } else {
@@ -2593,7 +2662,7 @@ impl InWorld {
                     .iter()
                     .filter(|m| {
                         m.alive()
-                            && distance(m.position, area.centre) <= area.radius_yd
+                            && distance(m.position, centre) <= area.radius_yd
                             && !(area.first_only && !m.remote && m.template.raises_boss_bar())
                     })
                     .map(|m| m.guid)
@@ -2602,7 +2671,7 @@ impl InWorld {
                     now.extend(
                         self.friendly_players(c)
                             .into_iter()
-                            .filter(|(_, p, _)| distance(*p, area.centre) <= area.radius_yd)
+                            .filter(|(_, p, _)| distance(*p, centre) <= area.radius_yd)
                             .map(|(guid, _, _)| guid),
                     );
                 }
@@ -2635,6 +2704,17 @@ impl InWorld {
                 };
                 if let Some(def) = row {
                     self.put_aura(def, unit, c.power_level(), events);
+                }
+            }
+            // Each enemy inside wearing the caster's damage over time gains a stack on the
+            // clock; its timer stays (Breeding Ground).
+            if let Some((id, every, next)) = &mut area.grow {
+                *next -= dt;
+                while *next <= CLOCK_EPSILON {
+                    *next += *every;
+                    for &unit in now.iter().filter(|&&u| u != self.guid) {
+                        self.skills.grow(unit, *id, 1, events);
+                    }
                 }
             }
             area.inside = now;
@@ -2722,6 +2802,7 @@ impl InWorld {
         self.skills.cast_target = target;
         self.skills.cast_dealt = 0;
         self.skills.cast_healed = 0;
+        self.skills.cast_full_healed = 0;
         // A cast that breaks stealth does so as it goes; its first blow from stealth is a crit.
         let opener = self.skills.opens_from_stealth(skill, events);
 
@@ -3243,6 +3324,7 @@ impl InWorld {
                     healer: self.guid,
                     spell_id,
                     amount: each,
+                    burst: None,
                 });
             }
         }
@@ -3266,7 +3348,12 @@ impl InWorld {
         let Some(other) = self
             .mobs
             .iter()
-            .filter(|m| m.guid != tick.unit && m.alive() && !self.skills.on(m.guid, tick.spell_id))
+            .filter(|m| {
+                m.guid != tick.unit
+                    && m.alive()
+                    && m.attackable_by(self.guid)
+                    && !self.skills.on(m.guid, tick.spell_id)
+            })
             .map(|m| (m.guid, distance(m.position, at)))
             .filter(|&(_, d)| d <= radius_yd)
             .min_by(|a, b| a.1.total_cmp(&b.1))
@@ -3368,11 +3455,24 @@ impl InWorld {
         amount: u32,
         events: &mut Vec<SessionEvent>,
     ) -> u32 {
+        self.heal_full_from(healer, c, spell_id, amount, events).0
+    }
+
+    /// [`Self::heal_from`]: what was healed, and what would have been with no maximum to stop
+    /// it (#508).
+    pub(crate) fn heal_full_from(
+        &mut self,
+        healer: u64,
+        c: &Char,
+        spell_id: u32,
+        amount: u32,
+        events: &mut Vec<SessionEvent>,
+    ) -> (u32, u32) {
         let max = buffed(&self.player.stats, &self.skills).max_health;
         let amount = scaled(amount, self.healing_taken(c, max));
         let p = &mut self.player;
         if !p.alive() {
-            return 0;
+            return (0, 0);
         }
         let healed = amount.min(max.saturating_sub(p.health));
         p.health += healed;
@@ -3386,7 +3486,26 @@ impl InWorld {
             },
         ));
         events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, p.health)]));
-        healed
+        (healed, amount)
+    }
+
+    /// The player's shield of `spell_id` grows by `more`, up to `max_pct` percent of their maximum
+    /// health; when it grew, it lasts `duration_ms` from now (Gorging Siphon).
+    fn grow_shield(
+        &mut self,
+        spell_id: u32,
+        more: u32,
+        max_pct: u32,
+        duration_ms: u32,
+        level: u8,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let cap = buffed(&self.player.stats, &self.skills).max_health * max_pct / 100;
+        let now = self.skills.shield_left(spell_id).unwrap_or(0);
+        let grown = (now + more).min(cap);
+        if grown > now {
+            self.shield(spell_id, grown, duration_ms, None, level, events);
+        }
     }
 
     /// Sends the spell-mod cells the player's `next_cast` buffs move, each with the talents'
@@ -3927,19 +4046,33 @@ impl InWorld {
                 kill_energize,
                 vs_aura_spell_id,
                 vs_aura_pct,
+                vs_aura_per_stack,
+                vs_aura_max_pct,
+                splash_pct,
+                splash_yd,
                 ..
             } => {
                 let raw = scaled(amount.at(level, ap), hit_pct)
                     + per_combo(more)
                     + if school.is_magic() { direct_bonus } else { 0 };
-                // More against a target wearing the caster's aura (Combustion Engine), beside the
-                // other conditions.
-                let worn = vs_aura_spell_id.is_some_and(|id| self.skills.on(target, id));
-                let cond = self.condition_pct(target, controlled_pct, 0, 0, bleeding_pct)
-                    + if worn { vs_aura_pct } else { 0 };
+                // More against a target wearing the caster's aura (Combustion Engine), or so much
+                // a stack of it, to a most (Exsanguinate), beside the other conditions.
+                let worn = match vs_aura_spell_id {
+                    Some(id) if vs_aura_per_stack => {
+                        (vs_aura_pct * self.skills.stacks_on(target, id)).min(vs_aura_max_pct)
+                    }
+                    Some(id) if self.skills.on(target, id) => vs_aura_pct,
+                    _ => 0,
+                };
+                let cond = self.condition_pct(target, controlled_pct, 0, 0, bleeding_pct) + worn;
                 let raw = scaled(raw, cond);
                 let worth = self.kill_yields_xp(target);
-                self.skills.cast_dealt += self.strike(
+                let at = self
+                    .mobs
+                    .iter()
+                    .find(|m| m.guid == target)
+                    .map(|m| m.position);
+                let dealt = self.strike(
                     skill.spell_id,
                     target,
                     raw,
@@ -3950,8 +4083,26 @@ impl InWorld {
                     events,
                     ticked,
                 );
+                self.skills.cast_dealt += dealt;
                 let reward = (kill_heal_pct, kill_energize);
                 self.killing_blow(c, target, worth, reward, skill.spell_id, events);
+                // The enemies around the target take a share, which the cast's tally leaves out
+                // (Splintering Lance).
+                if let (true, Some(at)) = (dealt > 0 && splash_pct > 0, at) {
+                    let share = dealt * splash_pct / 100;
+                    self.splash(
+                        skill.spell_id,
+                        target,
+                        at,
+                        splash_yd,
+                        share,
+                        school,
+                        c,
+                        rng,
+                        events,
+                        ticked,
+                    );
+                }
             }
             Effect::PeriodicDamage {
                 tick_ms,
@@ -3975,6 +4126,11 @@ impl InWorld {
                 weaken_pct,
                 tick_energize_pct_of_max,
                 tick_energize_pct_of_base,
+                tick_spread_chance,
+                tick_spread_yd,
+                tick_aura_chance_per_stack,
+                weaken_per_stack_pct,
+                weaken_max_pct,
             } => {
                 let riders = TickRiders {
                     aura: tick_aura_spell_id.and_then(|id| {
@@ -3984,10 +4140,15 @@ impl InWorld {
                             .find(|a| a.spell_id == id)
                     }),
                     aura_chance: tick_aura_chance,
+                    aura_chance_per_stack: tick_aura_chance_per_stack,
                     aura_on_target: tick_aura_on == callings::TickAuraOn::Target,
                     energize_pct_of_max: tick_energize_pct_of_max,
                     energize_pct_of_base: tick_energize_pct_of_base,
                     weaken_pct,
+                    spread_chance: tick_spread_chance,
+                    spread_yd: tick_spread_yd,
+                    weaken_per_stack_pct,
+                    weaken_max_pct,
                 };
                 let aura_id = aura_spell_id.unwrap_or(skill.spell_id);
                 if if_worn == Some(IfWorn::Grow) && self.skills.grow(target, aura_id, 1, events) {
@@ -4379,8 +4540,28 @@ impl InWorld {
             Effect::GrowAura {
                 aura_spell_id,
                 stacks,
+                radius_yd,
             } => {
                 self.skills.grow(target, aura_spell_id, stacks, events);
+                // And on each enemy around the target that wears it (Splintering Lance).
+                let at = self
+                    .mobs
+                    .iter()
+                    .find(|m| m.guid == target)
+                    .map(|m| m.position);
+                if let (true, Some(at)) = (radius_yd > 0.0, at) {
+                    let around: Vec<u64> = self
+                        .mobs
+                        .iter()
+                        .filter(|m| {
+                            m.guid != target && m.alive() && distance(m.position, at) <= radius_yd
+                        })
+                        .map(|m| m.guid)
+                        .collect();
+                    for unit in around {
+                        self.skills.grow(unit, aura_spell_id, stacks, events);
+                    }
+                }
             }
             Effect::GrantAura { aura_spell_id } => {
                 let auras = &callings::of(c.calling).auras;
@@ -4546,10 +4727,17 @@ impl InWorld {
                 ally_aura_spell_id,
                 arm_ms,
                 first_only,
+                grow_aura_spell_id,
+                grow_every_ms,
+                follow_caster,
             } => {
                 let auras = &callings::of(c.calling).auras;
                 let row =
                     |id: Option<u32>| id.and_then(|id| auras.iter().find(|a| a.spell_id == id));
+                let every = clock::secs(grow_every_ms);
+                let grow = grow_aura_spell_id
+                    .filter(|_| grow_every_ms > 0)
+                    .map(|id| (id, every, every));
                 let area = Area {
                     object: self.skills.next_patch(self.guid),
                     caster: self.guid,
@@ -4568,6 +4756,8 @@ impl InWorld {
                     enemy_aura: row(enemy_aura_spell_id),
                     ally_aura: row(ally_aura_spell_id),
                     inside: Vec::new(),
+                    grow,
+                    follow: follow_caster,
                 };
                 // A new one from the same caster replaces the old.
                 let old: Vec<Area> = self
@@ -4598,6 +4788,10 @@ impl InWorld {
                 amount,
                 heal_pct,
                 school,
+                tick_grow_aura_spell_id,
+                tick_grow_chance,
+                overheal_absorb_max_pct,
+                overheal_absorb_ms,
             } => {
                 let dealt = self.strike(
                     skill.spell_id,
@@ -4612,20 +4806,56 @@ impl InWorld {
                 );
                 self.skills.cast_dealt += dealt;
                 if dealt > 0 && heal_pct > 0 {
-                    self.heal_player(c, skill.spell_id, scaled_share(dealt, heal_pct), events);
+                    let asked = scaled_share(dealt, heal_pct);
+                    let healed = self.heal_player(c, skill.spell_id, asked, events);
+                    // What it could not heal grows a shield (Gorging Siphon).
+                    if overheal_absorb_max_pct > 0 && asked > healed {
+                        self.grow_shield(
+                            skill.spell_id,
+                            asked - healed,
+                            overheal_absorb_max_pct,
+                            overheal_absorb_ms,
+                            level,
+                            events,
+                        );
+                    }
+                }
+                // A tick that hits may grow the caster's damage over time on the target (Feeding
+                // Siphon); nothing without it.
+                if let (true, Some(id)) = (dealt > 0, tick_grow_aura_spell_id) {
+                    if rng.below(100) < tick_grow_chance {
+                        self.skills.grow(target, id, 1, events);
+                    }
                 }
             }
-            Effect::Heal { amount } => {
+            Effect::Heal {
+                amount,
+                overheal_burst_yd,
+                overheal_burst_school,
+            } => {
                 let amount = sized(amount) + direct_bonus;
+                let burst =
+                    (overheal_burst_yd > 0.0).then_some((overheal_burst_yd, overheal_burst_school));
                 if target == self.guid {
-                    let healed = self.heal_player(c, skill.spell_id, amount, events);
+                    let (healed, full) =
+                        self.heal_full_from(self.guid, c, skill.spell_id, amount, events);
                     self.skills.cast_healed += healed;
+                    self.skills.cast_full_healed += full;
+                    // What it healed past the maximum bursts around the healed (Dark Surplus).
+                    if let (Some((yd, school)), true) = (burst, full > healed) {
+                        let at = c.position;
+                        let over = full - healed;
+                        self.burst_at(skill.spell_id, over, school, at, yd, c, rng, events, ticked);
+                    }
                 } else if crate::shard::is_player(target) {
+                    // Their session heals them, and bursts what it could not heal.
+                    self.skills.cast_full_healed += amount;
                     self.helps.push(super::Help::Heal {
                         to: target,
                         healer: self.guid,
                         spell_id: skill.spell_id,
                         amount,
+                        burst,
                     });
                 }
             }
@@ -4954,6 +5184,39 @@ impl InWorld {
         )));
         self.hurt(target, damage, c, rng, events, ticked);
         damage
+    }
+
+    /// `share` of `school` damage at every other living enemy within `radius_yd` of `at`, where
+    /// `target` stood when it was hit, each logged under `spell_id`: a splash (a talent proc's,
+    /// Splintering Lance's).
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn splash(
+        &mut self,
+        spell_id: u32,
+        target: u64,
+        at: [f32; 3],
+        radius_yd: f32,
+        share: u32,
+        school: School,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let around: Vec<u64> = self
+            .mobs
+            .iter()
+            .filter(|m| {
+                m.guid != target
+                    && m.alive()
+                    && m.attackable_by(self.guid)
+                    && distance(m.position, at) <= radius_yd
+            })
+            .map(|m| m.guid)
+            .collect();
+        for guid in around {
+            self.bonus_hit(spell_id, guid, share, school, c, rng, events, ticked);
+        }
     }
 
     /// The landed hit of an `AddAuraStacks` effect: the caster's aura takes its stacks, or `more`
@@ -5920,8 +6183,8 @@ impl InWorld {
                                 );
                             }
                             let level = c.power_level();
-                            self.tick_riders(riders, a.unit, a.spell_id, level, rng, events);
                             self.skills.ticking = Some(a);
+                            self.tick_riders(riders, a, level, rng, events);
                             let cast_by = crate::talents::skill(c, a.spell_id);
                             let skill = cast_by.map(|s| s.key.as_str());
                             let plain = cast_by.and_then(|s| s.replaces.as_deref());
@@ -5991,22 +6254,30 @@ impl InWorld {
         self.drop_tick(dt, c, events);
     }
 
-    /// What one tick on `unit` of the player's damage over time `spell_id` does, once whatever its
-    /// stacks (#506, #507): its aura at its chance, on the player (Thermal Feedback) or on `unit`
-    /// (Jagged Barbs), and a percent of their maximum power (Kindling Ember) and of their base
-    /// mana (Bloodscent).
-    #[allow(clippy::too_many_arguments)]
+    /// What one tick of the player's damage over time `tick` does, once whatever its stacks (#506,
+    /// #507, #508): its aura at its chance, flat or by the stacks the tick dealt its damage at, on
+    /// the player (Thermal Feedback) or on the ticking unit (Jagged Barbs); a percent of their
+    /// maximum power (Kindling Ember) and of their base mana (Bloodscent); and a copy of it on
+    /// another enemy at its spread chance (Epidemic), which reads the tick from `ticking`.
     fn tick_riders(
         &mut self,
         riders: TickRiders,
-        unit: u64,
-        spell_id: u32,
+        tick: Aura,
         level: u8,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) {
+        let (unit, spell_id) = (tick.unit, tick.spell_id);
         if let Some(def) = riders.aura {
-            if rng.below(100) < riders.aura_chance {
+            // So much a stack, counted as the talent proc's `chance_per_stack` counts them.
+            let lands = if riders.aura_chance_per_stack > 0.0 {
+                let per_mille = (riders.aura_chance_per_stack * 10.0 * tick.kind.stacks() as f32)
+                    .round() as u32;
+                rng.below(1000) < per_mille
+            } else {
+                rng.below(100) < riders.aura_chance
+            };
+            if lands {
                 if !riders.aura_on_target {
                     self.grant_aura(def, level, 0, events);
                 } else if self.mobs.iter().any(|m| m.guid == unit && m.alive()) {
@@ -6026,6 +6297,9 @@ impl InWorld {
             let base = crate::rules::power::base_mana(s.class, s.level);
             let gain = base * riders.energize_pct_of_base / 100;
             self.energize_player(spell_id, gain, events);
+        }
+        if riders.spread_chance > 0 && rng.below(100) < riders.spread_chance {
+            self.spread_ticking(riders.spread_yd, events);
         }
     }
 
@@ -6728,33 +7002,49 @@ impl InWorld {
         ticked: &mut Ticked,
     ) {
         for burst in std::mem::take(&mut self.skills.bursts) {
-            let around: Vec<u64> = self
-                .mobs
-                .iter()
-                .filter(|m| {
-                    m.alive()
-                        && m.attackable_by(self.guid)
-                        && distance(m.position, c.position) <= burst.radius_yd
-                })
-                .map(|m| m.guid)
-                .collect();
-            for guid in around {
-                let how = self.spell_verdict(guid, c, rng);
-                if matches!(how, Landed::Missed(_)) {
-                    continue;
-                }
-                self.strike(
-                    burst.spell_id,
-                    guid,
-                    burst.amount,
-                    burst.school,
-                    how,
-                    c,
-                    rng,
-                    events,
-                    ticked,
-                );
+            let at = c.position;
+            let Burst {
+                spell_id,
+                amount,
+                radius_yd,
+                school,
+            } = burst;
+            self.burst_at(
+                spell_id, amount, school, at, radius_yd, c, rng, events, ticked,
+            );
+        }
+    }
+
+    /// `amount` of `school` under `spell_id` at each living enemy within `radius_yd` of `at`, with
+    /// the school's miss and crit rolls: a broken shield's burst (Volatile Ward), a heal's
+    /// overhealing (Dark Surplus).
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn burst_at(
+        &mut self,
+        spell_id: u32,
+        amount: u32,
+        school: School,
+        at: [f32; 3],
+        radius_yd: f32,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let around: Vec<u64> = self
+            .mobs
+            .iter()
+            .filter(|m| {
+                m.alive() && m.attackable_by(self.guid) && distance(m.position, at) <= radius_yd
+            })
+            .map(|m| m.guid)
+            .collect();
+        for guid in around {
+            let how = self.spell_verdict(guid, c, rng);
+            if matches!(how, Landed::Missed(_)) {
+                continue;
             }
+            self.strike(spell_id, guid, amount, school, how, c, rng, events, ticked);
         }
     }
 
@@ -7109,6 +7399,16 @@ impl InWorld {
         if self.skills.casting.is_some_and(|c| c.skill.is_none()) {
             self.interrupt_cast(events);
         }
+    }
+
+    /// A step off the spot: it stops the timed cast under way, and a channel whose skill a step
+    /// interrupts (`interrupt_on` `move`, as the cast bar reads it); a channel that is not goes on
+    /// (Unbroken Siphon).
+    pub(crate) fn interrupt_on_step(&mut self, events: &mut Vec<SessionEvent>) {
+        if self.skills.channel.is_some_and(|ch| !ch.step_ends) {
+            return;
+        }
+        self.interrupt_cast(events);
     }
 
     /// The timed cast under way stops short (`Spell::cancel`): the bar shows "Interrupted", and

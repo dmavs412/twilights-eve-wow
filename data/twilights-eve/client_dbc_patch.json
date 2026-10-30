@@ -4921,6 +4921,685 @@
    }
   },
   {
+   "spell_id": 1000550,
+   "calling": "acolyte",
+   "key": "epidemic",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Epidemic",
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. Each tick has a 30% chance to copy the Blight, with its stacks and time left, onto another enemy within 10 yards that does not have it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_Contagion",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 71,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000551,
+   "calling": "acolyte",
+   "key": "virulence",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Virulence",
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. Each tick has a 2.5% chance per stack to make your next Blood Lance cast 0.5 sec faster.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_Requiem",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 71,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000552,
+   "calling": "acolyte",
+   "key": "withering_blight",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Withering Blight",
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. The target deals 2% less damage per stack, up to 20%.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_CurseOfMannoroth",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 71,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000553,
+   "calling": "acolyte",
+   "key": "exsanguinate",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Exsanguinate",
+    "cost": 3.0,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. If the target has your Creeping Blight, it gains a stack. Deals 5% more damage for each stack of your Creeping Blight on the target, up to 50%.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_BloodBoil",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 36,
+      "per_level": 2
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7273,
+    "speed": 30.0,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000554,
+   "calling": "acolyte",
+   "key": "splintering_lance",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Splintering Lance",
+    "cost": 3.0,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. If the target has your Creeping Blight, it gains a stack. Enemies within 8 yards of the target take 30% of the hit, and each of them with your Creeping Blight gains a stack.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_CorpseExplode",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 36,
+      "per_level": 2
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7273,
+    "speed": 30.0,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000555,
+   "calling": "acolyte",
+   "key": "sanguine_barrier",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Sanguine Barrier",
+    "cost": 3.0,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. If the target has your Creeping Blight, it gains a stack. The ally who gets the Heal-over-Time also gets a shield absorbing 20% of the damage dealt for 6 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_SacrificialShield",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 36,
+      "per_level": 2
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7273,
+    "speed": 30.0,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000556,
+   "calling": "acolyte",
+   "key": "necrotic_detonation",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Necrotic Detonation",
+    "cost": 0,
+    "cooldown_ms": 20000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "20-second cooldown. Instantly erupts all active Creeping Blights on your target. Deals massive immediate Shadow damage based on the number of stacks, and instantly heals all allies within 10 yards of the target for 150% of the damage dealt.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Shadow_UnsummonBuilding",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 12,
+      "per_level": 1
+     }
+    ],
+    "visual": 3582,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000557,
+   "calling": "acolyte",
+   "key": "masochism",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Masochism",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting spells that cost Health grants you a buff that regenerates 30% of the Health spent over the next 5 seconds.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Nature_MoonGlow",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000558,
+   "calling": "acolyte",
+   "key": "will_to_survive",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Will to Survive",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "While you are below 50% health, all healing you receive (including your own Leech and Siphon Life) is increased by 30%.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_Renew",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000559,
+   "calling": "acolyte",
+   "key": "feeding_siphon",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Feeding Siphon",
+    "cost_percent": 8.0,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool. Each tick has a 30% chance to add a stack to your Creeping Blight on the target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_DarkRitual",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 15,
+      "per_level": 0.8
+     }
+    ],
+    "visual": 177,
+    "range_index": 4,
+    "duration_index": 7
+   }
+  },
+  {
+   "spell_id": 1000560,
+   "calling": "acolyte",
+   "key": "gorging_siphon",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Gorging Siphon",
+    "cost_percent": 8.0,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool. Healing past your maximum health becomes a shield, up to 20% of your maximum health, for 10 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_VampiricAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 15,
+      "per_level": 0.8
+     }
+    ],
+    "visual": 177,
+    "range_index": 4,
+    "duration_index": 7
+   }
+  },
+  {
+   "spell_id": 1000561,
+   "calling": "acolyte",
+   "key": "unbroken_siphon",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Unbroken Siphon",
+    "cost_percent": 8.0,
+    "channeled": true,
+    "channel_interrupt_flags": 10,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool. Can be channeled while moving.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_Haunting",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 15,
+      "per_level": 0.8
+     }
+    ],
+    "visual": 177,
+    "range_index": 4,
+    "duration_index": 7
+   }
+  },
+  {
+   "spell_id": 1000562,
+   "calling": "acolyte",
+   "key": "coagulation",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Coagulation",
+    "cost": 15.0,
+    "cooldown_ms": 8000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown. Also leaves a shield on the ally absorbing Physical damage equal to 30% of the heal for 10 sec.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_Heal02",
+    "dbc_effects": [
+     {
+      "effect": 10,
+      "base": 80,
+      "per_level": 10
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 3077,
+    "range_index": 5,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000563,
+   "calling": "acolyte",
+   "key": "dark_surplus",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Dark Surplus",
+    "cost": 15.0,
+    "cooldown_ms": 8000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown. Healing past the ally's maximum health bursts as Shadow damage on enemies within 8 yards of the ally.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Shadow_AbominationExplosion",
+    "dbc_effects": [
+     {
+      "effect": 10,
+      "base": 80,
+      "per_level": 10
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 3077,
+    "range_index": 5,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000564,
+   "calling": "acolyte",
+   "key": "sanguine_flow",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Sanguine Flow",
+    "cost": 15.0,
+    "cooldown_ms": 8000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown. Your next Blood Lance within 6 sec is instant.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Shadow_DeathPact",
+    "dbc_effects": [
+     {
+      "effect": 10,
+      "base": 80,
+      "per_level": 10
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3077,
+    "range_index": 5,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000565,
+   "calling": "acolyte",
+   "key": "noxious_vapors",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Noxious Vapors",
+    "cooldown_ms": 15000,
+    "cost_percent": 15.0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 15% increased healing from all sources. Enemies inside have 10% less chance to hit with melee and ranged attacks.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Shadow_PlagueCloud",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 2255,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000566,
+   "calling": "acolyte",
+   "key": "breeding_ground",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Breeding Ground",
+    "cooldown_ms": 15000,
+    "cost_percent": 15.0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 15% increased healing from all sources. Every 2 sec, each enemy inside with your Creeping Blight gains a stack.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Shadow_CreepingPlague",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 2255,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000567,
+   "calling": "acolyte",
+   "key": "shroud_of_rot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Shroud of Rot",
+    "cooldown_ms": 15000,
+    "cost_percent": 15.0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Surrounds you with a cloud of dark mist for 10 seconds that moves with you. Enemies inside take Shadow damage; allies inside receive 15% increased healing from all sources.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Shadow_AuraOfDarkness",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 2255,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
    "spell_id": 1000398,
    "calling": "vanguard",
    "key": "rebuke",
@@ -6166,190 +6845,6 @@
    }
   },
   {
-   "spell_id": 1000360,
-   "calling": "acolyte",
-   "key": "aura_noxious_vapors_1",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Noxious Vapors",
-    "aura_description": "Chance to hit reduced by 5%."
-   }
-  },
-  {
-   "spell_id": 1000361,
-   "calling": "acolyte",
-   "key": "aura_noxious_vapors_2",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Noxious Vapors",
-    "aura_description": "Chance to hit reduced by 10%."
-   }
-  },
-  {
-   "spell_id": 1000371,
-   "calling": "acolyte",
-   "key": "aura_festering_wounds_1",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Magic_LesserInvisibilty",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Festering Wounds",
-    "aura_description": "Physical damage taken from others increased by 5%."
-   }
-  },
-  {
-   "spell_id": 1000372,
-   "calling": "acolyte",
-   "key": "aura_festering_wounds_2",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Magic_LesserInvisibilty",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "name": "Festering Wounds",
-    "aura_description": "Physical damage taken from others increased by 10%."
-   }
-  },
-  {
-   "spell_id": 1000379,
-   "calling": "acolyte",
-   "key": "aura_masochism_1",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Nature_MoonGlow",
-    "dbc_effects": [
-     {
-      "effect": 6,
-      "base": 0,
-      "per_level": 0,
-      "aura": 8,
-      "amplitude_ms": 1000
-     }
-    ],
-    "name": "Masochism",
-    "aura_description": "Recovering 6% of the health spent over 5 sec."
-   }
-  },
-  {
-   "spell_id": 1000380,
-   "calling": "acolyte",
-   "key": "aura_masochism_2",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Nature_MoonGlow",
-    "dbc_effects": [
-     {
-      "effect": 6,
-      "base": 0,
-      "per_level": 0,
-      "aura": 8,
-      "amplitude_ms": 1000
-     }
-    ],
-    "name": "Masochism",
-    "aura_description": "Recovering 12% of the health spent over 5 sec."
-   }
-  },
-  {
-   "spell_id": 1000381,
-   "calling": "acolyte",
-   "key": "aura_masochism_3",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Nature_MoonGlow",
-    "dbc_effects": [
-     {
-      "effect": 6,
-      "base": 0,
-      "per_level": 0,
-      "aura": 8,
-      "amplitude_ms": 1000
-     }
-    ],
-    "name": "Masochism",
-    "aura_description": "Recovering 18% of the health spent over 5 sec."
-   }
-  },
-  {
-   "spell_id": 1000382,
-   "calling": "acolyte",
-   "key": "aura_masochism_4",
-   "rank": 1,
-   "fields": {
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "icon": "Interface\\Icons\\Spell_Nature_MoonGlow",
-    "dbc_effects": [
-     {
-      "effect": 6,
-      "base": 0,
-      "per_level": 0,
-      "aura": 8,
-      "amplitude_ms": 1000
-     }
-    ],
-    "name": "Masochism",
-    "aura_description": "Recovering 24% of the health spent over 5 sec."
-   }
-  },
-  {
    "spell_id": 1000383,
    "calling": "acolyte",
    "key": "aura_masochism_5",
@@ -6374,38 +6869,46 @@
    }
   },
   {
-   "spell_id": 1000387,
+   "spell_id": 1000568,
    "calling": "acolyte",
-   "key": "aura_crimson_surge_1",
+   "key": "aura_noxious_vapors",
    "rank": 1,
    "fields": {
     "implicit_targets": [
      1,
      0
     ],
-    "icon": "Interface\\Icons\\Spell_Holy_HealingFocus",
+    "icon": "Interface\\Icons\\Spell_Shadow_PlagueCloud",
     "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 1000
+     },
      {
       "effect": 3,
       "base": 0,
       "per_level": 0
      }
     ],
-    "name": "Crimson Surge",
-    "aura_description": "Casting speed increased by 10%."
+    "name": "Miasma",
+    "aura_description": "Taking Shadow damage every second. Chance to hit with melee and ranged attacks reduced by 10%.",
+    "visual": 33
    }
   },
   {
-   "spell_id": 1000388,
+   "spell_id": 1000569,
    "calling": "acolyte",
-   "key": "aura_crimson_surge_2",
+   "key": "aura_sanguine_flow",
    "rank": 1,
    "fields": {
     "implicit_targets": [
      1,
      0
     ],
-    "icon": "Interface\\Icons\\Spell_Holy_HealingFocus",
+    "icon": "Interface\\Icons\\Spell_Shadow_DeathPact",
     "dbc_effects": [
      {
       "effect": 3,
@@ -6413,8 +6916,8 @@
       "per_level": 0
      }
     ],
-    "name": "Crimson Surge",
-    "aura_description": "Casting speed increased by 20%."
+    "name": "Sanguine Flow",
+    "aura_description": "Your next Blood Lance is instant."
    }
   },
   {

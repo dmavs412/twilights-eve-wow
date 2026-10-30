@@ -127,6 +127,9 @@ pub(crate) enum Help {
         healer: u64,
         spell_id: u32,
         amount: u32,
+        /// What it heals past their maximum bursts at the enemies within so many yards of them,
+        /// in that school (Dark Surplus).
+        burst: Option<(f32, crate::rules::school::School)>,
     },
     Aura {
         to: u64,
@@ -768,9 +771,15 @@ impl InWorld {
                     healer,
                     spell_id,
                     amount,
+                    burst,
                     ..
                 } => {
-                    self.heal_from(healer, c, spell_id, amount, events);
+                    let (healed, full) = self.heal_full_from(healer, c, spell_id, amount, events);
+                    // The healer's overhealing bursts where it lands (Dark Surplus), dealt here.
+                    if let (Some((yd, school)), true) = (burst, full > healed) {
+                        let (at, over) = (c.position, full - healed);
+                        self.burst_at(spell_id, over, school, at, yd, c, rng, events, &mut ticked);
+                    }
                 }
                 Help::Aura { aura, .. } => self.wear(aura, events),
             }

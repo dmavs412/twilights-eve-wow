@@ -178,20 +178,19 @@ impl InWorld {
                 else {
                     continue;
                 };
-                let around: Vec<u64> = self
-                    .mobs
-                    .iter()
-                    .filter(|m| {
-                        m.guid != target
-                            && m.alive()
-                            && crate::space::distance(m.position, at) <= proc.radius_yd
-                    })
-                    .map(|m| m.guid)
-                    .collect();
-                for guid in around {
-                    let school = happened.school.unwrap_or_default();
-                    self.bonus_hit(proc.spell_id, guid, share, school, c, rng, events, ticked);
-                }
+                let school = happened.school.unwrap_or_default();
+                self.splash(
+                    proc.spell_id,
+                    target,
+                    at,
+                    proc.radius_yd,
+                    share,
+                    school,
+                    c,
+                    rng,
+                    events,
+                    ticked,
+                );
             }
             if proc.repeat_cast {
                 self.repeat_cast(happened.skill, c, rng, events, ticked);

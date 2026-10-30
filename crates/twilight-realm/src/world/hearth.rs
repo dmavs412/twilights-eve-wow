@@ -153,7 +153,7 @@ impl InWorld {
             return false;
         }
         if stepped {
-            self.interrupt_cast(events);
+            self.interrupt_on_step(events);
             self.stepped(events);
         }
         true
