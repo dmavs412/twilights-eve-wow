@@ -17,7 +17,7 @@ fn reference() -> Value {
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
 }
 
-/// The one-time stock-to-sheet tables (#204, #205): `spells` and `talents`.
+/// The one-time stock-to-sheet table (#204), `spells`, by name.
 fn old_ids() -> &'static std::collections::HashMap<String, std::collections::HashMap<u64, u64>> {
     static TABLES: std::sync::OnceLock<
         std::collections::HashMap<String, std::collections::HashMap<u64, u64>>,
@@ -43,11 +43,6 @@ fn old_ids() -> &'static std::collections::HashMap<String, std::collections::Has
 /// the one-time table (#204), or the stock id where the sheet has no row for it.
 fn ours(stock: u64) -> u64 {
     old_ids()["spells"].get(&stock).copied().unwrap_or(stock)
-}
-
-/// A stock `Talent.dbc` id the reference names, as the content names it now (#205).
-fn our_talent(stock: u64) -> u64 {
-    old_ids()["talents"].get(&stock).copied().unwrap_or(stock)
 }
 
 /// The stock id the content's `id` stands for, for a lookup in the stock dump.
@@ -508,26 +503,8 @@ fn the_vanguard_plays_righteous_smash_bulwark_charge_and_zealous_cleave() {
     );
 }
 
-#[test]
-fn talent_tab_ids_are_unique_across_callings() {
-    let mut ids: Vec<u32> = ["basic_warrior", "vanguard", "zealot"]
-        .iter()
-        .flat_map(|c| {
-            callings::calling(c)
-                .unwrap()
-                .talent_tabs
-                .iter()
-                .map(|t| t.id)
-        })
-        .collect();
-    let all = ids.len();
-    ids.sort_unstable();
-    ids.dedup();
-    assert_eq!(ids.len(), all, "{ids:?}");
-}
-
-/// The fields schema #63 added reach the content: Charge's gate and cast shape, an aura row's
-/// columns, and a talent rank's spellmods. Loaded only; nothing enforces them yet.
+/// The fields schema #63 added reach the content: Charge's gate and cast shape, and an aura row's
+/// columns. Loaded only; nothing enforces them yet.
 #[test]
 fn the_schema_fields_reach_the_content() {
     let warrior = callings::calling("basic_warrior").unwrap();
@@ -559,72 +536,6 @@ fn the_schema_fields_reach_the_content() {
     assert_eq!(buff.row.dispel_type.as_deref(), Some("none"));
     assert!(buff.row.aura_positive && buff.row.cancelable);
     assert!(!buff.row.aura_hidden && !buff.row.persist_death);
-
-    let spark = warrior
-        .talent_tabs
-        .iter()
-        .flat_map(|t| &t.talents)
-        .find(|t| t.key == "initiates_spark")
-        .unwrap();
-    assert_eq!(spark.rank_spellmods.len(), spark.rank_spells.len());
-    let first = &spark.rank_spellmods[0][0];
-    assert_eq!((first.kind.as_str(), first.op.as_str()), ("pct", "DAMAGE"));
-    // Fire Blast is the Basic Warrior's fourth skill on the sheet: bit 33 + 3.
-    assert_eq!(first.family_bit, Some(36));
-    assert_eq!(first.value, 10.0);
-    assert_eq!(first.target, ["fire_blast"]);
-}
-
-/// Basic Warrior's tree is the master CSV's, as `build_spells.py` wrote it: the realm shows each
-/// talent on its borrowed `Talent.dbc` id and rank spells, and models only what the sheet marks
-/// modelled and the realm has a kind for.
-#[test]
-fn the_basic_warrior_talent_tree_is_the_sheets() {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../data/twilights-eve/server_spells.json");
-    let file: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    let want = file
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|c| c["key"] == "basic_warrior")
-        .unwrap();
-    let got = callings::calling("basic_warrior").unwrap();
-    assert_eq!(got.name, want["name"].as_str().unwrap());
-    assert_eq!(u64::from(got.cap), want["tier_cap"].as_u64().unwrap());
-    let tabs = want["talent_tabs"].as_array().unwrap();
-    assert_eq!(got.talent_tabs.len(), tabs.len());
-    for (tab, want) in got.talent_tabs.iter().zip(tabs) {
-        assert_eq!(u64::from(tab.id), want["id"].as_u64().unwrap());
-        assert_eq!(tab.name, want["name"].as_str().unwrap());
-        assert_eq!(tab.background, want["background"].as_str().unwrap());
-        let talents = want["talents"].as_array().unwrap();
-        assert_eq!(tab.talents.len(), talents.len());
-        for (t, want) in tab.talents.iter().zip(talents) {
-            let key = want["key"].as_str().unwrap();
-            let ranks = want["ranks"].as_array().unwrap();
-            assert_eq!(t.key, key);
-            assert_eq!(
-                u64::from(t.talent_id),
-                our_talent(ranks[0]["talent_id"].as_u64().unwrap()),
-                "{key}"
-            );
-            assert_eq!(u64::from(t.tier), want["seat"]["row"].as_u64().unwrap());
-            assert_eq!(
-                u64::from(t.column),
-                want["seat"]["column"].as_u64().unwrap()
-            );
-            let spells: Vec<u64> = ranks
-                .iter()
-                .map(|r| ours(r["spell_id"].as_u64().unwrap()))
-                .collect();
-            let got_spells: Vec<u64> = t.rank_spells.iter().map(|&s| u64::from(s)).collect();
-            assert_eq!(got_spells, spells, "{key}");
-            for e in &t.effects {
-                assert_eq!(e.rank_count(), spells.len(), "{key}: a size per rank");
-            }
-        }
-    }
 }
 
 /// A Calling's source is data: the sheet's `calling` row moves it out of the TOML.
@@ -642,33 +553,6 @@ fn only_the_zealot_keeps_a_table_in_the_toml() {
     assert!(callings::calling("vanguard").is_some());
 }
 
-/// Recruit keeps its id and art; every talent on the sheet is modelled.
-#[test]
-fn the_basic_warrior_tree_is_recruit_on_the_warrior_arms_art() {
-    let tree = &callings::calling("basic_warrior").unwrap().talent_tabs;
-    let tabs: Vec<(u32, &str, &str)> = tree
-        .iter()
-        .map(|t| (t.id, t.name.as_str(), t.background.as_str()))
-        .collect();
-    assert_eq!(tabs, [(900, "Recruit", "WarriorArms")]);
-    let modelled: Vec<&str> = tree[0]
-        .talents
-        .iter()
-        .filter(|t| !t.is_wip())
-        .map(|t| t.key.as_str())
-        .collect();
-    assert_eq!(
-        modelled,
-        [
-            "field_medic",
-            "initiates_spark",
-            "cutthroats_momentum",
-            "savage_strikes",
-            "vanguards_resolve"
-        ]
-    );
-}
-
 #[test]
 fn the_basic_warrior_kit_is_heroic_strike_charge_gouge_and_fire_blast() {
     let kit: Vec<&str> = callings::calling("basic_warrior")
@@ -678,220 +562,6 @@ fn the_basic_warrior_kit_is_heroic_strike_charge_gouge_and_fire_blast() {
         .map(|s| s.key.as_str())
         .collect();
     assert_eq!(kit, ["heroic_strike", "charge", "gouge", "fire_blast"]);
-}
-
-/// The Zealot talents the realm shows and lets the player learn, but does not model yet: those
-/// waiting on a kind no talent has yet (cooldowns, haste, hit, movement, Strength, holy crit) or
-/// on a proc the realm does not roll.
-const ZEALOT_NOT_MODELLED: &[&str] = &[
-    "improved_judgement",
-    "vindication",
-    "eye_for_an_eye",
-    "pursuit_of_justice",
-    "improved_hammer_of_justice",
-    "vengeance",
-    "holy_power",
-    "anger_management",
-    "flurry",
-    "divine_strength",
-    "precision",
-    "redoubt",
-    "reckoning",
-];
-
-#[test]
-fn the_zealot_talent_tree_matches_the_reference() {
-    check_tree("zealot", ZEALOT_NOT_MODELLED);
-    let tree = &callings::calling("zealot").unwrap().talent_tabs;
-    let names: Vec<&str> = tree.iter().map(|t| t.name.as_str()).collect();
-    assert_eq!(names, ["Crusade", "Blade", "Faith"]);
-}
-
-/// A tab's talent keys, tier by tier, each row sorted.
-fn rows(calling: &str, tab: usize) -> Vec<Vec<String>> {
-    let tab = &callings::calling(calling).unwrap().talent_tabs[tab];
-    let last = tab.talents.iter().map(|t| t.tier).max().unwrap();
-    (1..=last)
-        .map(|tier| {
-            let mut row: Vec<String> = tab
-                .talents
-                .iter()
-                .filter(|t| t.tier == tier)
-                .map(|t| t.key.clone())
-                .collect();
-            row.sort();
-            row
-        })
-        .collect()
-}
-
-/// The rows of each Zealot tab, as the handoff lists them.
-#[test]
-fn the_zealot_tabs_seat_the_handoffs_rows() {
-    assert_eq!(
-        rows("zealot", 0),
-        [
-            vec!["benediction", "improved_seal_of_the_crusader"],
-            vec!["deflection", "improved_judgement"],
-            vec!["conviction", "vindication"],
-            vec!["eye_for_an_eye", "pursuit_of_justice"],
-            vec![
-                "improved_hammer_of_justice",
-                "two_handed_weapon_specialization"
-            ],
-            vec!["vengeance"],
-            vec!["holy_power"],
-        ]
-    );
-    // The handoff's first two rows share the first: Improved Charge and Anger Management alone
-    // hold 3 ranks, short of the 5 that open a second row.
-    assert_eq!(
-        rows("zealot", 1),
-        [
-            vec![
-                "anger_management",
-                "deep_wounds",
-                "impale",
-                "improved_charge"
-            ],
-            vec![
-                "axe_specialization",
-                "mace_specialization",
-                "sword_specialization"
-            ],
-            vec!["flurry"],
-        ]
-    );
-    assert_eq!(
-        rows("zealot", 2),
-        [
-            vec!["divine_strength", "toughness"],
-            vec!["precision", "redoubt"],
-            vec!["anticipation", "one_handed_weapon_specialization"],
-            vec!["reckoning"],
-        ]
-    );
-}
-
-/// The client names a rank spell WIP once for every Calling, so a talent two Callings share (the
-/// Vanguard's Righteous Fury borrows Cruelty's row, which the Zealot's Blade has too) is WIP in both
-/// or neither.
-#[test]
-fn a_talent_two_callings_share_does_the_same_in_both() {
-    let tree = |c: &str| -> Vec<&'static callings::TalentDef> {
-        callings::calling(c)
-            .unwrap()
-            .talent_tabs
-            .iter()
-            .flat_map(|tab| &tab.talents)
-            .collect()
-    };
-    let all: Vec<_> = ["basic_warrior", "vanguard", "zealot"]
-        .iter()
-        .flat_map(|c| tree(c))
-        .collect();
-    for a in &all {
-        for b in all.iter().filter(|b| b.talent_id == a.talent_id) {
-            assert_eq!(a.rank_spells, b.rank_spells, "{}", a.key);
-            assert_eq!(a.is_wip(), b.is_wip(), "{}", a.key);
-        }
-    }
-}
-
-/// A Calling's tree against the reference; the talents in `unmodelled` have no effect yet.
-fn check_tree(calling: &str, unmodelled: &[&str]) {
-    let reference = reference();
-    let want = &reference["callings"][calling]["talent_tree"]["tabs"];
-    let got = &callings::calling(calling).unwrap().talent_tabs;
-    let want = want.as_array().unwrap();
-    assert_eq!(got.len(), want.len(), "{calling}: the tabs");
-    for (tab, want) in got.iter().zip(want) {
-        assert_eq!(u64::from(tab.id), want["catalog_tab_id"].as_u64().unwrap());
-        assert_eq!(tab.name, want["name"].as_str().unwrap());
-        assert_eq!(tab.background, want["background"].as_str().unwrap());
-        let talents = want["talents"].as_array().unwrap();
-        assert_eq!(tab.talents.len(), talents.len());
-        for (t, want) in tab.talents.iter().zip(talents) {
-            let key = want["key"].as_str().unwrap();
-            assert_eq!(t.key, key);
-            assert_eq!(
-                u64::from(t.talent_id),
-                our_talent(want["talent_id"].as_u64().unwrap()),
-                "{key}"
-            );
-            assert_eq!(u64::from(t.tier), want["tier"].as_u64().unwrap(), "{key}");
-            assert_eq!(
-                u64::from(t.column),
-                want["column"].as_u64().unwrap(),
-                "{key}"
-            );
-            let ranks: Vec<u32> = want["rank_spells"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|v| ours(v.as_u64().unwrap()) as u32)
-                .collect();
-            assert_eq!(t.rank_spells, ranks, "{key}");
-            assert_eq!(
-                t.exceptional,
-                want["exceptional"].as_bool().unwrap_or(false),
-                "{key}"
-            );
-            match (&t.prereq, want.get("prereq")) {
-                (None, None) => {}
-                (Some(p), Some(w)) => {
-                    assert_eq!(p.key, w["key"].as_str().unwrap(), "{key}");
-                    assert_eq!(u64::from(p.rank), w["rank"].as_u64().unwrap(), "{key}");
-                }
-                (p, w) => panic!("{key}: prereq {p:?} against {w:?}"),
-            }
-            let none = Vec::new();
-            let want_mods = want
-                .get("client_spellmods")
-                .map_or(&none, |w| w.as_array().unwrap());
-            assert_eq!(
-                t.client_spellmods.len(),
-                want_mods.len(),
-                "{key}: spell mods"
-            );
-            for (m, w) in t.client_spellmods.iter().zip(want_mods) {
-                assert_eq!(m.flat, w["type"] == "flat", "{key}");
-                // vmangos `SpellModOp`.
-                let op = match w["op"].as_str().unwrap() {
-                    "COST" => 14,
-                    "EFFECT1" => 3,
-                    "ALL_EFFECTS" => 8,
-                    op => panic!("{key}: op {op}"),
-                };
-                assert_eq!(m.op, op, "{key}");
-                assert_eq!(u64::from(m.family_bit), w["family_bit"].as_u64().unwrap());
-                let values: Vec<i32> = w["values"]
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .map(|v| v.as_i64().unwrap() as i32)
-                    .collect();
-                assert_eq!(m.per_rank, values, "{key}");
-            }
-            assert_eq!(
-                t.is_wip(),
-                unmodelled.contains(&key),
-                "{key}: the realm decides what it does"
-            );
-            // An active talent's one rank is the skill it teaches.
-            if let Some(skill) = &t.skill {
-                assert!(t.exceptional, "{key}: a skill from a passive talent");
-                assert_eq!(t.rank_spells, [skill.spell_id], "{key}");
-            }
-            for e in &t.effects {
-                assert_eq!(
-                    e.rank_count(),
-                    t.rank_spells.len(),
-                    "{key}: an effect for every rank"
-                );
-            }
-        }
-    }
 }
 
 // ── The Advancement Quests and the Tier 1 trainers ──────────────────────────────────────────────

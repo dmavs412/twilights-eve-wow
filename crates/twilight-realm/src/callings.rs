@@ -68,9 +68,6 @@ pub struct CallingDef {
     /// The Talent Rows, in level order (ADR 0028); the sheet's alone, none for a TOML Calling.
     #[serde(skip)]
     pub rows: Vec<TalentRow>,
-    /// The Talent Tree: its tabs, as the stock talent frame shows them.
-    #[serde(default, rename = "talent_tab")]
-    pub talent_tabs: Vec<TalentTab>,
     /// The buffs its skills and talents grant by key (a `proc`'s `apply_aura`).
     #[serde(default, rename = "aura")]
     pub auras: Vec<AuraDef>,
@@ -687,67 +684,30 @@ impl RowChoice {
     }
 }
 
-/// One page of a Talent Tree.
-#[derive(Debug, Deserialize)]
-pub struct TalentTab {
-    /// The client catalog's tab id, unique among every Calling's tabs.
-    pub id: u32,
-    pub name: String,
-    /// The `Interface\TalentFrame\<background>-…` art base.
-    pub background: String,
-    #[serde(rename = "talent")]
-    pub talents: Vec<TalentDef>,
-}
-
-/// One talent: a real `Talent.dbc` row re-seated on the Calling's grid, and what it does.
-#[derive(Debug, Deserialize)]
+/// A Talent row's choice (ADR 0028): one rank of the old talent vocabulary, and what it does.
+#[derive(Debug)]
 pub struct TalentDef {
     pub key: String,
-    /// The sheet's name; empty for a TOML talent.
-    #[serde(default)]
+    /// The sheet's name.
     pub name: String,
-    /// The `Talent.dbc` id the client's `CMSG_LEARN_TALENT` carries.
-    pub talent_id: u32,
-    /// 1-based; tier `n` needs `5 × (n − 1)` points spent in the tab.
-    pub tier: u8,
-    /// 1-based, of 4.
-    pub column: u8,
-    /// The spell each rank teaches; their count is the talent's ranks.
+    /// The spell its one rank teaches, the one spell setting it learns.
     pub rank_spells: Vec<u32>,
-    #[serde(default)]
-    pub prereq: Option<Prereq>,
-    /// An active talent (the Lua API's `isExceptional`).
-    #[serde(default)]
-    pub exceptional: bool,
-    /// What it does, rank by rank.
+    /// What it does, its one rank's size in each.
     pub effects: Vec<TalentEffect>,
-    /// An active talent's skill, which its one rank teaches: cast as any Calling skill once
-    /// learned.
-    #[serde(default)]
+    /// An active Talent's skill: cast as any Calling skill while the row is set to it.
     pub skill: Option<Skill>,
     /// The spell-mod cells that make the stock client's costs and tooltips agree with the realm:
-    /// one per family bit, since a talent can touch several skills (Benediction).
-    #[serde(default)]
+    /// one per family bit, since a talent can touch several skills.
     pub client_spellmods: Vec<ClientSpellMod>,
-    /// Each rank row's spellmod groups from the master CSV, by rank. Loaded, not enforced yet;
-    /// the client cells above still come from the TOML.
-    #[serde(default)]
+    /// Its row's spellmod groups from the master CSV. Loaded, not enforced yet.
     pub rank_spellmods: Vec<Vec<SpellMod>>,
 }
 
 impl TalentDef {
-    /// A talent the realm does not model yet: no effect and no skill. It is still learnable and
-    /// still counts toward its tab's tier gates.
+    /// A Talent the realm does not model yet: no effect and no skill. It can still be set.
     pub fn is_wip(&self) -> bool {
         self.effects.is_empty() && self.skill.is_none()
     }
-}
-
-/// A talent another needs, and the rank (1-based) it needs.
-#[derive(Debug, Deserialize)]
-pub struct Prereq {
-    pub key: String,
-    pub rank: u8,
 }
 
 /// One thing a talent does; `per_rank[r - 1]` is its size at rank `r`.

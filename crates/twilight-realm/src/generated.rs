@@ -11,9 +11,9 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 
 use crate::callings::{
-    self, Armour, AuraDef, AuraEffect, AuraRow, CallingDef, ClientSpellMod, Effect, Prereq,
-    RowChoice, RowKind, Skill, SpellMeta, StatProfile, TalentDef, TalentEffect, TalentRow,
-    TalentTab, Target, TierBonus, WeaponKind,
+    self, Armour, AuraDef, AuraEffect, AuraRow, CallingDef, ClientSpellMod, Effect, RowChoice,
+    RowKind, Skill, SpellMeta, StatProfile, TalentDef, TalentEffect, TalentRow, Target, TierBonus,
+    WeaponKind,
 };
 use crate::rules::power::PowerKind;
 
@@ -50,8 +50,6 @@ struct GenCalling {
     armour: Vec<Armour>,
     #[serde(default)]
     skills: Vec<GenSkill>,
-    #[serde(default)]
-    talent_tabs: Vec<GenTab>,
     #[serde(default)]
     rows: Vec<GenRow>,
     #[serde(default)]
@@ -134,32 +132,7 @@ struct GenSkill {
     meta: SpellMeta,
 }
 
-#[derive(Deserialize)]
-struct GenTab {
-    id: Option<u32>,
-    name: String,
-    background: Option<String>,
-    #[serde(default)]
-    order: u32,
-    talents: Vec<GenTalent>,
-}
-
-#[derive(Deserialize)]
-struct Seat {
-    row: u8,
-    column: u8,
-}
-
-#[derive(Deserialize)]
-struct GenTalent {
-    key: String,
-    seat: Seat,
-    #[serde(default)]
-    exceptional: bool,
-    prereq: Option<Prereq>,
-    ranks: Vec<GenRank>,
-}
-
+/// A Talent row's choice: one talent rank.
 #[derive(Deserialize)]
 struct GenRank {
     #[serde(default)]
@@ -167,9 +140,6 @@ struct GenRank {
     #[serde(default)]
     name: String,
     spell_id: u32,
-    /// None on a Talent row's choice.
-    #[serde(default)]
-    talent_id: u32,
     #[serde(default)]
     effects: Vec<GenEffect>,
     /// An active talent's skill columns; `target` set marks one.
@@ -215,8 +185,6 @@ fn calling(g: GenCalling) -> CallingDef {
             g.key
         )
     };
-    let mut tabs: Vec<&GenTab> = g.talent_tabs.iter().collect();
-    tabs.sort_by_key(|t| t.order);
     CallingDef {
         name: g.name.clone().unwrap_or_else(|| missing("name")),
         tier,
@@ -250,7 +218,6 @@ fn calling(g: GenCalling) -> CallingDef {
             .filter(|s| s.off_the_spell_book())
             .filter_map(|s| skill(s, &g.auras))
             .collect(),
-        talent_tabs: tabs.into_iter().map(|t| tab(&g.key, t, &g.auras)).collect(),
         rows: g.rows.iter().map(|r| row(&g.key, r, &g.auras)).collect(),
         auras: g.auras.iter().filter_map(aura).collect(),
         key: g.key.clone(),
@@ -418,14 +385,7 @@ fn row(calling: &str, g: &GenRow, auras: &[GenAura]) -> TalentRow {
             RowKind::Talent => {
                 let rank: GenRank =
                     serde_json::from_value(v.clone()).unwrap_or_else(|e| unreadable(e));
-                let t = GenTalent {
-                    key: rank.key.clone(),
-                    seat: Seat { row: 1, column: 1 },
-                    exceptional: rank.target.is_some(),
-                    prereq: None,
-                    ranks: vec![rank],
-                };
-                talent(&t, auras).map(|t| RowChoice::Talent(TalentDef { talent_id: 0, ..t }))
+                Some(RowChoice::Talent(talent(&rank, auras)))
             }
         })
         .collect();
@@ -438,30 +398,12 @@ fn row(calling: &str, g: &GenRow, auras: &[GenAura]) -> TalentRow {
     }
 }
 
-fn tab(calling: &str, g: &GenTab, auras: &[GenAura]) -> TalentTab {
-    let missing = |field: &str| -> ! {
-        panic!(
-            "server_spells.json {calling}/{}: the talent_tab row has no {field}",
-            g.name
-        )
-    };
-    TalentTab {
-        id: g.id.unwrap_or_else(|| missing("id")),
-        name: g.name.clone(),
-        background: g
-            .background
-            .clone()
-            .unwrap_or_else(|| missing("background")),
-        talents: g.talents.iter().filter_map(|t| talent(t, auras)).collect(),
-    }
-}
-
-/// The talent, or `None` for a row with no ranks. A one-rank talent with a `target` is an active
-/// one: its rank's effects are the skill it teaches, under the rank's spell id.
-fn talent(g: &GenTalent, auras: &[GenAura]) -> Option<TalentDef> {
-    let first = g.ranks.first()?;
-    let teaches = match (&g.ranks[..], first.target) {
-        ([rank], Some(target)) => skill(
+/// A Talent row's choice. One with a `target` is an active one: its effects are the skill it
+/// teaches, under its spell id.
+fn talent(rank: &GenRank, auras: &[GenAura]) -> TalentDef {
+    let ranks = std::slice::from_ref(rank);
+    let teaches = rank.target.and_then(|target| {
+        skill(
             &GenSkill {
                 key: rank.key.clone(),
                 name: rank.name.clone(),
@@ -484,30 +426,21 @@ fn talent(g: &GenTalent, auras: &[GenAura]) -> Option<TalentDef> {
                 meta: rank.meta.clone(),
             },
             auras,
-        ),
-        _ => None,
-    };
-    Some(TalentDef {
-        key: g.key.clone(),
-        name: first.name.clone(),
-        talent_id: first.talent_id,
-        tier: g.seat.row,
-        column: g.seat.column,
-        rank_spells: g.ranks.iter().map(|r| r.spell_id).collect(),
-        prereq: g.prereq.as_ref().map(|p| Prereq {
-            key: p.key.clone(),
-            rank: p.rank,
-        }),
-        exceptional: g.exceptional,
+        )
+    });
+    TalentDef {
+        key: rank.key.clone(),
+        name: rank.name.clone(),
+        rank_spells: vec![rank.spell_id],
         effects: if teaches.is_some() {
             Vec::new()
         } else {
-            talent_effects(&g.ranks)
+            talent_effects(ranks)
         },
         skill: teaches,
-        client_spellmods: client_spellmods(&g.ranks),
-        rank_spellmods: g.ranks.iter().map(|r| r.meta.spellmods.clone()).collect(),
-    })
+        client_spellmods: client_spellmods(ranks),
+        rank_spellmods: vec![rank.meta.spellmods.clone()],
+    }
 }
 
 /// The cells the client's spell-mod tables take for each rank's spellmod groups: one per family
@@ -587,60 +520,6 @@ fn talent_effect(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// Every passive talent the sheet gives effects loads with them: a talent that silently
-    /// loads as WIP, because one slot is a kind the realm lacks, does nothing when learned.
-    #[test]
-    fn every_passive_talent_with_effects_loads_them() {
-        let all: Vec<Value> = serde_json::from_str(SERVER_SPELLS).expect("server_spells parses");
-        let mut lost = Vec::new();
-        for c in all.into_iter().filter(|c| c.get("tier").is_some()) {
-            let g: GenCalling = serde_json::from_value(c).expect("a calling reads");
-            for t in g.talent_tabs.iter().flat_map(|tab| &tab.talents) {
-                let Some(first) = t.ranks.first() else {
-                    continue;
-                };
-                if first.effects.is_empty() || (t.ranks.len() == 1 && first.target.is_some()) {
-                    continue;
-                }
-                if talent_effects(&t.ranks).is_empty() {
-                    let kinds: Vec<String> = (0..first.effects.len())
-                        .filter(|s| talent_effect(&t.ranks, *s).is_none())
-                        .map(|s| {
-                            format!(
-                                "{} {:?}",
-                                first.effects[s].kind,
-                                first.effects[s].params.keys().collect::<Vec<_>>()
-                            )
-                        })
-                        .collect();
-                    lost.push(format!("{}/{}: {}", g.key, t.key, kinds.join(", ")));
-                }
-            }
-        }
-        assert!(
-            lost.is_empty(),
-            "talents with no effects:\n{}",
-            lost.join("\n")
-        );
-    }
-
-    /// A talent row with no ranks is dropped; the tab still reads.
-    #[test]
-    fn a_talent_with_no_ranks_is_dropped() {
-        let tab_json = serde_json::json!({
-            "id": 1, "name": "Arms", "background": "WarriorArms",
-            "talents": [
-                {"key": "empty", "seat": {"row": 0, "column": 0}, "ranks": []},
-                {"key": "one", "seat": {"row": 0, "column": 1},
-                 "ranks": [{"spell_id": 5, "talent_id": 9}]},
-            ],
-        });
-        let g: GenTab = serde_json::from_value(tab_json).expect("a tab reads");
-        let tab = tab("Warrior", &g, &[]);
-        let keys: Vec<&str> = tab.talents.iter().map(|t| t.key.as_str()).collect();
-        assert_eq!(keys, ["one"]);
-    }
 
     /// A `client_visible=no` skill loads as a hidden ability, found by its realm spell id, and is
     /// not in the spell book's skills.

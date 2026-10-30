@@ -47,12 +47,6 @@ EMBER = {
 }
 
 
-def talent(key: str, rank: int, row: int, column: int, **extra: str) -> dict:
-    return {"kind": "talent", "calling": "vanguard", "key": key, "name": key.title(),
-            "rank": str(rank), "tab": "Arms", "tab_row": str(row), "tab_column": str(column),
-            "modelled": "yes", **extra}
-
-
 CALLING = {
     "kind": "calling", "calling": "vanguard", "key": "vanguard", "name": "Vanguard",
     "tier": "0",
@@ -62,8 +56,6 @@ CALLING = {
 PROFILE = {"icon": "", "power": "rage", "stat_profile": "warrior", "item_class": "warrior", "health_pct": "100",
            "mana_pct": "100", "energy_per_tick": "", "bleed_drop": "", "bleed_drop_chance": "",
            "armor": "cloth|mail", "weapons": "one_hand_sword|dagger", "spellbook": "", "blurb": ""}
-TAB = {"kind": "talent_tab", "calling": "vanguard", "key": "arms", "name": "Arms", "tab_id": "900",
-       "background": "WarriorArms", "tab_order": "0"}
 AURA = {"kind": "aura", "calling": "vanguard", "key": "buff", "name": "Buff", "rank": "1", "spell_id": "1014177",
         "duration_ms": "10000", "charges": "1", "effect1_kind": "skill_crit_pct",
         "effect1_params": "skill=strike;pct=50", "modelled": "no"}
@@ -83,17 +75,10 @@ class BuildSpells(unittest.TestCase):
                   extra_columns: tuple = ()) -> tuple[subprocess.CompletedProcess, list | None]:
         tmp = tempfile.mkdtemp()
         path = os.path.join(tmp, "master.csv")
-        # A fixture that leaves `status`, a talent's `max_rank` or a visible skill or talent's `visual`
-        # out gets the usual value (`visual=none`); one that sets the cell, even to "", keeps it, so a
-        # test can aim at the missing case.
-        ranks: dict[tuple, int] = {}
-        for row in rows:
-            if row["kind"] == "talent":
-                ranks[(row["calling"], row["key"])] = ranks.get((row["calling"], row["key"]), 0) + 1
-        # A Skill Choice or a Talent row (ADR 0028) carries no max_rank: the tree columns stay empty.
-        tree = lambda row: row["kind"] == "talent" and not (row.get("variant_of") or row.get("row_key"))
+        # A fixture that leaves `status` or a visible skill or talent's `visual` out gets the usual
+        # value (`visual=none`); one that sets the cell, even to "", keeps it, so a test can aim at
+        # the missing case.
         rows = [{"status": "placeholder",
-                 **({"max_rank": str(ranks[(row["calling"], row["key"])])} if tree(row) else {}),
                  **({"visual": "none"} if (row["kind"] == "skill" or row.get("cast_kind"))
                     and row.get("client_visible") != "no" else {}),
                  **row} for row in rows]
@@ -439,7 +424,7 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
     def test_every_patch_row_carries_the_power_type_of_its_calling(self):
         for power, power_type in (("rage", 1), ("energy", 3), ("mana", 0), ("focus", 2)):
             self.profiles = {"vanguard": {"power": power}}
-            rows = [STRIKE, talent("cruelty", 1, 0, 1, spell_id="1012320")]
+            rows = [STRIKE, *talent_row(row_talent("cruelty", spell_id="1012320"))]
             done, data = self.run_build(rows)
             self.assertEqual(done.returncode, 0, done.stderr)
             self.assertEqual(data[0]["power"], power)
@@ -605,28 +590,8 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
         done, _ = self.run_build([{**STRIKE, "visual": "none"}])
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertNotIn("visual_spell", self.patch["spells"][0]["fields"])
-        active = talent("rush", 1, 0, 0, spell_id="1012320", talent_id="1000138", target="enemy",
-                        cast_kind="instant", visual="", exceptional="yes")
-        self.assert_fails([CALLING, active], "rush): a castable row needs a visual")
-
-    def test_an_active_talent_that_is_not_exceptional_fails(self):
-        # The client lists only an exceptional talent's spell in the spell book (#257), so an
-        # active one left passive cannot be cast (#317).
-        for active in ({"target": "self", "cast_kind": "instant"}, {"target": "enemy"}):
-            rush = talent("rush", 1, 0, 0, spell_id="1012320", talent_id="1000138", visual="none", **active)
-            self.assert_fails([CALLING, rush], "rush): an active talent needs exceptional=yes")
-            done, _ = self.run_build([CALLING, {**rush, "exceptional": "yes"}])
-            self.assertEqual(done.returncode, 0, done.stderr)
-            self.assertTrue(self.patch["talents"][0]["exceptional"])
-
-    def test_the_committed_active_talents_are_exceptional(self):
-        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
-                  encoding="utf-8") as f:
-            patch = json.load(f)
-        exceptional = {t["key"] for t in patch["talents"] if t.get("exceptional")}
-        for key in ("sanguine_shell", "elemental_convergence", "mana_surge", "rapid_assault",
-                    "explosive_payload", "necrotic_detonation", "hammer_of_vanguard"):
-            self.assertIn(key, exceptional)
+        active = row_talent("rush", spell_id="1012320", target="enemy", cast_kind="instant", visual="")
+        self.assert_fails(talent_row(active), "rush): a castable row needs a visual")
 
     def test_a_ground_patch_needs_a_row_with_a_real_visual(self):
         area = {**STRIKE, "target": "dest", "realm_radius_yd": "8", "client_radius_index": "14",
@@ -675,31 +640,6 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
                             "effect1_params": "amount.base=5;amount.per_level=0;per_combo=5"}],
                           "formula block")
 
-    def test_talents_group_into_tabs_with_ranks_and_prereqs(self):
-        rows = [talent("cruelty", 1, 0, 1), talent("cruelty", 2, 0, 1),
-                talent("fury", 1, 1, 1, prereq_key="cruelty", prereq_rank="2")]
-        done, data = self.run_build(rows)
-        self.assertEqual(done.returncode, 0, done.stderr)
-        tab = data[0]["talent_tabs"][0]
-        self.assertEqual(tab["name"], "Arms")
-        cruelty, fury = tab["talents"]
-        self.assertEqual([r["rank"] for r in cruelty["ranks"]], [1, 2])
-        self.assertEqual(fury["seat"], {"row": 1, "column": 1})
-        self.assertEqual(fury["prereq"], {"key": "cruelty", "rank": 2})
-
-    def test_unresolved_prereq_fails(self):
-        self.assert_fails([talent("fury", 1, 1, 1, prereq_key="cruelty", prereq_rank="1")], "prereq")
-
-    def test_prereq_rank_beyond_the_talent_fails(self):
-        rows = [talent("cruelty", 1, 0, 1), talent("fury", 1, 1, 1, prereq_key="cruelty", prereq_rank="3")]
-        self.assert_fails(rows, "has no rank 3")
-
-    def test_shared_seat_fails(self):
-        self.assert_fails([talent("cruelty", 1, 0, 1), talent("fury", 1, 0, 1)], "seat")
-
-    def test_missing_seat_fails(self):
-        self.assert_fails([talent("cruelty", 1, 0, 1, tab_row="")], "tab_row")
-
     def test_patch_carries_client_columns_and_every_effect(self):
         row = {**STRIKE, "client_cost": "10", "client_stances": "Battle Stance|Defensive Stance",
                "cast_kind": "next_swing", "effect2_kind": "stun", "effect2_params": "duration_ms=500",
@@ -718,44 +658,37 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
         self.assertEqual(fields["implicit_targets"], [6, 0])
         self.assertNotIn("realm_cost", fields)
 
-    def test_patch_emits_spellmods_and_seats_per_rank(self):
-        mod = {"spellmod1_type": "flat", "spellmod1_op": "COST", "spellmod1_target": "shout"}
+    def test_patch_emits_a_talents_spellmods(self):
+        mod = {"spellmod1_type": "flat", "spellmod1_op": "COST", "spellmod1_target": "shout", "spellmod1_value": "-1"}
         rows = [{**STRIKE, "key": "shout", "spell_id": "1006192"},
-                talent("cruelty", 1, 0, 1, spell_id="1012320", talent_id="1000138", spellmod1_value="-1", **mod),
-                talent("cruelty", 2, 0, 1, spell_id="1012852", talent_id="1000138", spellmod1_value="-2", **mod),
-                talent("fury", 1, 1, 1, spell_id="1012300", prereq_key="cruelty", prereq_rank="2")]
+                *talent_row(row_talent("cruelty", spell_id="1012320", **mod))]
         done, _ = self.run_build(rows)
         self.assertEqual(done.returncode, 0, done.stderr)
         mods = {o["spell_id"]: o.get("spellmods") for o in self.patch["spells"]}
         self.assertEqual(mods[1012320], [{"type": "flat", "op": "COST", "family_bit": 33, "value": -1}])
-        self.assertEqual(mods[1012852][0]["value"], -2)
-        self.assertIsNone(mods[1012300])
-        cruelty, fury = self.patch["talents"]
-        self.assertEqual(cruelty, {"calling": "vanguard", "key": "cruelty", "tab": "Arms", "row": 0, "column": 1,
-                                   "tab": "Arms", "talent_id": 1000138, "rank_spell_ids": [1012320, 1012852]})
-        self.assertEqual(fury["prereq"], {"key": "cruelty", "rank": 2})
 
     def skill(self, key: str, spell_id: int) -> dict:
         return {**STRIKE, "key": key, "spell_id": str(spell_id)}
 
-    def mod_talent(self, target: str, **extra: str) -> dict:
-        return talent("boon", 1, 0, 0, spell_id="1012320", talent_id="1000138", spellmod1_type="pct",
-                      spellmod1_op="DAMAGE", spellmod1_target=target, spellmod1_value="10", **extra)
+    def mod_talent(self, target: str, **extra: str) -> list[dict]:
+        """A Talent row whose first Talent, boon, raises the damage of the skills `target` names."""
+        return talent_row(row_talent("boon", spell_id="1012320", spellmod1_type="pct", spellmod1_op="DAMAGE",
+                                     spellmod1_target=target, spellmod1_value="10", **extra))
 
     def test_each_skill_takes_its_own_family_bit_in_sheet_order(self):
-        rows = [self.skill("a", 1020375), self.skill("b", 1020305), self.skill("c", 1006546), self.mod_talent("a|c")]
+        rows = [self.skill("a", 1020375), self.skill("b", 1020305), self.skill("c", 1006546), *self.mod_talent("a|c")]
         done, data = self.run_build(rows)
         self.assertEqual(done.returncode, 0, done.stderr)
         want = {"type": "pct", "op": "DAMAGE", "family_mask": (1 << 33) | (1 << 35), "value": 10}
         client = next(o for o in self.patch["spells"] if o["spell_id"] == 1012320)
         self.assertEqual(client["spellmods"], [want])
-        rank = data[0]["talent_tabs"][0]["talents"][0]["ranks"][0]
-        self.assertEqual(rank["spellmods"], [{**want, "target": ["a", "c"]}])
+        boon = data[0]["rows"][0]["choices"][0]
+        self.assertEqual(boon["spellmods"], [{**want, "target": ["a", "c"]}])
         b = next(o for o in self.patch["spells"] if o["spell_id"] == 1020305)["fields"]
         self.assertEqual((b["spell_family"], b["family_flags"]), (4, 1 << 34))
 
     def test_a_single_skill_is_a_bit_index(self):
-        done, _ = self.run_build([self.skill("a", 1020375), self.mod_talent("a")])
+        done, _ = self.run_build([self.skill("a", 1020375), *self.mod_talent("a")])
         self.assertEqual(done.returncode, 0, done.stderr)
         client = next(o for o in self.patch["spells"] if o["spell_id"] == 1012320)
         self.assertEqual(client["spellmods"][0]["family_bit"], 33)
@@ -772,15 +705,16 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
         self.assertIn(1000078, [o["spell_id"] for o in self.patch["spells"]])
 
     def test_spellbook_on_a_talent_fails(self):
-        self.assert_fails([talent("boon", 1, 0, 0, spell_id="1012320", talent_id="1000138", spellbook="no")],
+        self.assert_fails(talent_row(row_talent("boon", spell_id="1012320", spellbook="no")),
                           "spellbook is set on a talent row")
 
     def test_an_unknown_op_fails(self):
-        row = {**self.mod_talent("a"), "spellmod1_op": "MAKE_BIGGER"}
-        self.assert_fails([self.skill("a", 1020375), row], "spellmod1_op is 'MAKE_BIGGER'")
+        rows = self.mod_talent("a")
+        rows[1] = {**rows[1], "spellmod1_op": "MAKE_BIGGER"}
+        self.assert_fails([self.skill("a", 1020375), *rows], "spellmod1_op is 'MAKE_BIGGER'")
 
     def test_an_unknown_target_key_fails(self):
-        self.assert_fails([self.skill("a", 1020375), self.mod_talent("zz")], "'zz' is not a skill")
+        self.assert_fails([self.skill("a", 1020375), *self.mod_talent("zz")], "'zz' is not a skill")
 
     def test_five_groups_are_read_and_a_sixth_column_fails(self):
         rows = [self.skill(k, 1000100 + i) for i, k in enumerate("abcde")]
@@ -788,7 +722,7 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
         for n, key in enumerate("abcde", start=1):
             groups |= {f"spellmod{n}_type": "pct", f"spellmod{n}_op": "DAMAGE", f"spellmod{n}_target": key,
                        f"spellmod{n}_value": str(n)}
-        done, _ = self.run_build(rows + [talent("boon", 1, 0, 0, spell_id="1012320", **groups)])
+        done, _ = self.run_build(rows + talent_row(row_talent("boon", spell_id="1012320", **groups)))
         self.assertEqual(done.returncode, 0, done.stderr)
         client = next(o for o in self.patch["spells"] if o["spell_id"] == 1012320)
         self.assertEqual([m["family_bit"] for m in client["spellmods"]], [33, 34, 35, 36, 37])
@@ -864,24 +798,6 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
     def test_second_calling_row_fails(self):
         self.assert_fails([CALLING, {**CALLING, "key": "again"}], "second calling row")
 
-    def test_talent_tab_row_names_id_background_and_order(self):
-        done, data = self.run_build([CALLING, TAB, talent("cruelty", 1, 0, 1, tab="arms")])
-        self.assertEqual(done.returncode, 0, done.stderr)
-        tab = data[0]["talent_tabs"][0]
-        self.assertEqual((tab["name"], tab["id"], tab["background"], tab["order"]), ("Arms", 900, "WarriorArms", 0))
-        self.assertEqual(tab["talents"][0]["key"], "cruelty")
-
-    def test_talent_in_an_undeclared_tab_fails_when_the_calling_declares_tabs(self):
-        self.assert_fails([TAB, talent("cruelty", 1, 0, 1, tab="fury")], "not a talent_tab key")
-
-    def test_a_tab_naming_a_display_name_fails(self):
-        self.assert_fails([TAB, talent("cruelty", 1, 0, 1, tab="Arms")], "cruelty tab 'Arms' is not a talent_tab key")
-
-    def test_a_calling_with_no_talent_tab_rows_keeps_the_bare_name(self):
-        done, data = self.run_build([CALLING, talent("cruelty", 1, 0, 1, tab="Arms")])
-        self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertEqual(data[0]["talent_tabs"][0]["name"], "Arms")
-
     def test_client_visible_no_emits_the_realm_id_and_nothing_to_the_patch(self):
         hidden = {"kind": "aura", "calling": "vanguard", "key": "bleed", "name": "Bleed", "rank": "1",
                   "client_visible": "no", "spell_id": "1000001", "modelled": "no"}
@@ -924,58 +840,6 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
         done, _ = self.run_build([STRIKE, {**AURA, "spell_id": "1000078"}])
         self.assertEqual(done.returncode, 0, done.stderr)
 
-    def test_two_talents_on_one_talent_id_fail(self):
-        rows = [talent("a", 1, 0, 0, talent_id="1000027"), talent("b", 1, 0, 1, talent_id="1000027")]
-        self.assert_fails([CALLING, TAB, *rows], "talent_id 1000027 is already claimed")
-
-    def test_a_stock_talent_id_fails(self):
-        self.assert_fails([talent("a", 1, 0, 0, talent_id="27")], "talent_id 27 is not the sheet's own")
-
-    def test_the_patch_carries_each_callings_tabs_and_full_seats(self):
-        rows = [CALLING, {**TAB, "key": "arms", "name": "Arms", "tab_order": "2"},
-                {**TAB, "key": "fury", "name": "Fury", "tab_id": "903", "tab_order": "1"},
-                talent("a", 1, 1, 2, tab="arms", talent_id="1000001", spell_id="1000101", exceptional="yes"),
-                talent("b", 1, 2, 2, tab="arms", talent_id="1000002", spell_id="1000102", prereq_key="a")]
-        done, _ = self.run_build(rows)
-        self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertEqual([t["key"] for t in self.patch["talent_tabs"]], ["fury", "arms"], "in order")
-        arms = self.patch["talent_tabs"][1]
-        self.assertEqual(arms, {"calling": "vanguard", "key": "arms", "id": 900, "name": "Arms",
-                                "background": "WarriorArms", "order": 2})
-        a, b = self.patch["talents"]
-        self.assertEqual((a["tab_id"], a["row"], a["column"], a["exceptional"]), (900, 1, 2, True))
-        self.assertEqual((b["talent_id"], b["prereq"]), (1000002, {"key": "a", "rank": 1}))
-        self.assertNotIn("exceptional", b)
-
-    def test_a_png_tab_background_embeds_its_four_quarters(self):
-        rows = [CALLING, {**TAB, "background": "dusk.png"}, talent("a", 1, 1, 1, tab="arms")]
-        self.assert_fails(rows, "dusk-TopLeft.png is not in")
-        for quarter in ("TopLeft", "TopRight", "BottomLeft", "BottomRight"):
-            self.extra_art[f"dusk-{quarter}.png"] = PNG
-        done, _ = self.run_build(rows)
-        self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertEqual(self.patch["talent_tabs"][0]["background"], "Twilight\\dusk")
-        with open(os.path.join(self.out_dir, "client_art.json"), encoding="utf-8") as f:
-            self.assertEqual(sorted(json.load(f)), [f"dusk-{q}" for q in sorted(("TopLeft", "TopRight",
-                                                                                   "BottomLeft", "BottomRight"))])
-
-    def test_max_rank_is_required_on_a_talent(self):
-        self.assert_fails([talent("cruelty", 1, 0, 1, max_rank="")], "cruelty): a talent rank row needs max_rank")
-
-    def test_max_rank_above_five_fails(self):
-        self.assert_fails([talent("cruelty", 1, 0, 1, max_rank="6")], "max_rank 6 is not 1 to 5")
-
-    def test_max_rank_mismatch_fails(self):
-        self.assert_fails([talent("cruelty", 1, 0, 1, max_rank="2"), talent("cruelty", 2, 0, 1, max_rank="3")],
-                          "disagree on max_rank")
-
-    def test_a_rank_gap_fails(self):
-        self.assert_fails([talent("cruelty", 1, 0, 1, max_rank="3"), talent("cruelty", 3, 0, 1, max_rank="3")],
-                          "ranks are not 1..max_rank")
-
-    def test_a_skill_leaves_max_rank_empty(self):
-        self.assert_fails([{**STRIKE, "max_rank": "1"}], "only talent ranks carry it")
-
     def test_a_missing_or_unknown_status_fails(self):
         self.assert_fails([{**STRIKE, "status": ""}], "status is ''")
         self.assert_fails([{**STRIKE, "status": "finished"}], "status is 'finished'")
@@ -985,12 +849,6 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIn("status: 1 placeholder, 1 wip, 0 done", done.stdout)
         self.assertIn("wip: vanguard/other", done.stdout)
-
-    def test_duplicate_talent_tab_fails(self):
-        self.assert_fails([TAB, {**TAB, "key": "arms2"}], "duplicate talent_tab")
-
-    def test_talent_tab_needs_a_whole_id(self):
-        self.assert_fails([{**TAB, "tab_id": "9.5"}], "tab_id")
 
     def test_aura_row_is_listed_with_duration_charges_and_effects(self):
         done, data = self.run_build([CALLING, AURA])
@@ -1056,13 +914,6 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
         fields = {o["spell_id"]: o["fields"] for o in self.patch["spells"]}
         self.assertEqual(fields[1000078]["description"], "Hits.")
         self.assertNotIn("description", fields[1000079])
-
-    def test_seats_are_whole_numbers(self):
-        done, data = self.run_build([talent("cruelty", 1, 0, 1, tab_row="2", tab_column="3")])
-        self.assertEqual(done.returncode, 0, done.stderr)
-        seat = data[0]["talent_tabs"][0]["talents"][0]["seat"]
-        self.assertEqual(json.dumps(seat), '{"row": 2, "column": 3}')
-        self.assert_fails([talent("cruelty", 1, 0, 1, tab_row="1.0")], "not a whole number")
 
     def test_weapon_rolls_use_the_realms_names(self):
         self.assert_fails([{**STRIKE, "effect1_params": "weapon=Wn;bonus.base=1;bonus.per_level=1"}], "weapon is")
@@ -1429,8 +1280,7 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
                   "aura_hidden": "no", "cancelable": "yes", "persist_death": "no", "aura_description": "x",
                   "break_on": "damage=yes", "grants_form": "30"}
         for column, value in values.items():
-            for row, kind in ((STRIKE, "skill"), (talent("rage", 1, 0, 0), "talent"), (CALLING, "calling"),
-                              (TAB, "talent_tab")):
+            for row, kind in ((STRIKE, "skill"), (row_talent("rage"), "talent"), (CALLING, "calling")):
                 if column in ("dispel_type", "mechanic") and "spell_id" in row:
                     continue  # a row with its own spell shows its dispel type and mechanic
                 with self.subTest(column=column, kind=kind):
@@ -1518,7 +1368,7 @@ class ResolveRows(unittest.TestCase):
         }
 
     def resolved(self, **fields):
-        patch = {"spells": [{"spell_id": 1, "fields": fields}], "talents": []}
+        patch = {"spells": [{"spell_id": 1, "fields": fields}]}
         self.module.resolve_dbc_rows(patch, **self.tables)
         return patch["spells"][0]["fields"]
 
@@ -1532,15 +1382,13 @@ class ResolveRows(unittest.TestCase):
 
     def test_a_radius_index_must_hold_the_realms_yards(self):
         radii = [(13, 10.0), (14, 8.0)]
-        patch = {"spells": [{"spell_id": 1, "fields": {"radius_yd": 8, "dbc_effects": [{"radius_index": 14}]}}],
-                 "talents": []}
+        patch = {"spells": [{"spell_id": 1, "fields": {"radius_yd": 8, "dbc_effects": [{"radius_index": 14}]}}]}
         self.module.resolve_dbc_rows(patch, **self.tables, radii=radii)
         self.assertNotIn("radius_yd", patch["spells"][0]["fields"])
-        bad = {"spells": [{"spell_id": 1, "fields": {"radius_yd": 8, "dbc_effects": [{"radius_index": 13}]}}],
-               "talents": []}
+        bad = {"spells": [{"spell_id": 1, "fields": {"radius_yd": 8, "dbc_effects": [{"radius_index": 13}]}}]}
         with self.assertRaisesRegex(self.module.BuildError, "radius index 13 is 10.0 yd, the realm's radius is 8"):
             self.module.resolve_dbc_rows(bad, **self.tables, radii=radii)
-        unknown = {"spells": [{"spell_id": 1, "fields": {"dbc_effects": [{"radius_index": 99}]}}], "talents": []}
+        unknown = {"spells": [{"spell_id": 1, "fields": {"dbc_effects": [{"radius_index": 99}]}}]}
         with self.assertRaisesRegex(self.module.BuildError, "radius index 99 is not a SpellRadius.dbc row"):
             self.module.resolve_dbc_rows(unknown, **self.tables, radii=radii)
 
@@ -1551,23 +1399,6 @@ class ResolveRows(unittest.TestCase):
             self.resolved(cast_time_ms=1234)
         with self.assertRaisesRegex(self.module.BuildError, "duration 999 ms"):
             self.resolved(duration_ms=999)
-
-
-class PointBlank(unittest.TestCase):
-    """Point Blank's ranks carry the Twilight MIN_RANGE cell (ADR 0010) on every ranged skill of
-    the Ranger the client can see; a hidden skill has no client row to modify."""
-
-    def test_every_rank_sends_min_range_on_every_ranged_skill(self):
-        with open(MASTER, encoding="utf-8", newline="") as f:
-            rows = list(csv.DictReader(f))
-        ranged = {r["key"] for r in rows if r["calling"] == "ranger" and r["kind"] == "skill"
-                  and r["defense_type"] == "ranged" and r["client_visible"] != "no"}
-        ranks = [r for r in rows if r["calling"] == "ranger" and r["key"] == "point_blank"]
-        self.assertEqual(len(ranks), 2)
-        for r in ranks:
-            self.assertEqual((r["spellmod1_type"], r["spellmod1_op"], r["spellmod1_value"]),
-                             ("pct", "MIN_RANGE", "-100"))
-            self.assertEqual(set(r["spellmod1_target"].split("|")), ranged)
 
 
 class CheckOutputs(unittest.TestCase):
@@ -1609,6 +1440,12 @@ def row_talent(key: str, row_key: str = "fury", level: str = "4", **extra: str) 
             "effect1_params": "stat=strength;amount=1", "modelled": "yes", **extra}
 
 
+def talent_row(first: dict) -> list[dict]:
+    """A Talent row at level 4 whose first Talent is `first`, and the calling row that opens it:
+    the smallest sheet a Talent builds in."""
+    return [{**CALLING, "row_levels": "4"}, first, row_talent("y"), row_talent("z")]
+
+
 class TalentRows(BuildSpells):
     """Skill Choice rows and Talent rows (ADR 0028, #499)."""
 
@@ -1642,8 +1479,9 @@ class TalentRows(BuildSpells):
         for spell_id in (1000501, 1000502, 1000503):
             self.assertEqual(patch[spell_id]["family_flags"], 1 << 33)
             self.assertNotIn("passive", patch[spell_id])
-        self.assertNotIn("talent_tabs", [t for t in self.patch["talents"]])
-        self.assertEqual(self.patch["talents"], [])
+        # The client reads a choice from its own Spell.dbc row; the patch has no tree.
+        self.assertNotIn("talent_tabs", self.patch)
+        self.assertNotIn("talents", self.patch)
 
     def test_rows_sort_by_level_then_sheet_order(self):
         shout = {**STRIKE, "key": "shout", "spell_id": "1000079", "row_level": "2"}
@@ -1659,7 +1497,7 @@ class TalentRows(BuildSpells):
         self.assertEqual([c["key"] for c in fury["choices"]], ["x", "y", "z"])
         self.assertEqual(fury["choices"][0]["effects"][0]["kind"], "mod_stat")
         self.assertNotIn("max_rank", fury["choices"][0])
-        self.assertEqual(data[0]["talent_tabs"], [])
+        self.assertNotIn("talent_tabs", data[0])
 
     def test_two_choices_fail(self):
         rows = [CALLING, {**STRIKE, "row_level": "3"}, choice("a", 1000501), choice("b", 1000502)]
@@ -1681,7 +1519,7 @@ class TalentRows(BuildSpells):
 
     def test_a_tree_column_on_a_choice_fails(self):
         rows = [CALLING, {**STRIKE, "row_level": "3"}, *self.three(tab="Arms")]
-        self.assert_fails(rows, "tab: set on a Skill Choice row")
+        self.assert_fails(rows, "(vanguard/a) tab: a Talent Tree column, retired by ADR 0028")
 
     def test_variant_of_with_row_key_fails(self):
         rows = [CALLING, {**STRIKE, "row_level": "3"}, *self.three(row_key="fury")]
@@ -1747,6 +1585,25 @@ class TalentRows(BuildSpells):
         done, data = self.run_build(rows + self.other(""))
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual({c["key"]: c.get("row_levels") for c in data}, {"vanguard": [2, 4], "other": None})
+
+    def test_a_talent_with_neither_variant_of_nor_row_key_fails(self):
+        tree = {"kind": "talent", "calling": "vanguard", "key": "cruelty", "name": "Cruelty", "rank": "1",
+                "modelled": "yes"}
+        self.assert_fails([CALLING, tree], "(vanguard/cruelty): a talent row needs variant_of or row_key")
+
+    def test_a_filled_tree_column_fails_on_any_row(self):
+        columns = ("talent_id", "source_tab_id", "tab", "tab_row", "tab_column", "prereq_key", "prereq_rank",
+                   "max_rank", "tab_id", "background", "tab_order", "exceptional")
+        for column in columns:
+            for rows in ([{**STRIKE, column: "1"}], [{**CALLING, column: "1"}], [{**AURA, column: "1"}],
+                         [{**CALLING, "row_levels": "4"}, row_talent("x", **{column: "1"}), row_talent("y"),
+                          row_talent("z")]):
+                with self.subTest(column=column, kind=rows[-1]["kind"]):
+                    self.assert_fails(rows, f"{column}: a Talent Tree column, retired by ADR 0028")
+
+    def test_a_talent_tab_row_fails(self):
+        tab = {"kind": "talent_tab", "calling": "vanguard", "key": "arms", "name": "Arms"}
+        self.assert_fails([CALLING, tab], "kind is 'talent_tab', want one of skill, talent, calling, aura")
 
     def test_the_committed_basic_warrior_has_four_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),

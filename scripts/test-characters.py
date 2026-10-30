@@ -2,12 +2,12 @@
 
 Each one stands in the Test Grounds facing the dummies, wears its Calling's outfit
 (crates/twilight-realm/content/starting_outfits.toml, worn by the same slot rule the realm
-uses; an entry that is not gear, such as arrows, is a stack in the backpack), carries a hearthstone, and has its Calling's talents at every
-rank, as many as a level-60 save's 59 points hold. The save folder is backed up first.
+uses; an entry that is not gear, such as arrows, is a stack in the backpack) and carries a hearthstone.
+Its Talent Rows start empty (ADR 0028). The save folder is backed up first.
 
     ~/.local/bin/python3.15 scripts/test-characters.py [--greens LEVEL] [save-folder]
 
-`--greens LEVEL` makes them level LEVEL instead, with LEVEL - 1 talent points, each wearing its
+`--greens LEVEL` makes them level LEVEL instead, each wearing its
 Calling's GREEN_KITS: the green of each world Loot Band line (gear.csv's `line`) at the highest
 level at or below LEVEL, so `--greens 20` dresses them in what a level-20 kill drops.
 
@@ -111,8 +111,6 @@ def main():
     args = parser.parse_args()
     HOME = args.home
     level = args.greens or 60
-    # One Talent Point a level from level 2 (`rules::talents::points_at`).
-    points_at_level = level - 1
 
     spells = json.loads((ROOT / "data/twilights-eve/server_spells.json").read_text("utf-8"))
     outfits = tomllib.loads(
@@ -131,13 +129,6 @@ def main():
 
     guids = []
     for guid, c in enumerate(spells, FIRST_GUID):
-        points, talents = 0, []
-        for tab in c["talent_tabs"]:
-            for t in tab["talents"]:
-                ranks = len(t["ranks"])
-                if points + ranks <= points_at_level:
-                    talents.append(f"[{t['ranks'][0]['talent_id']}, {ranks}]")
-                    points += ranks
         if args.greens:
             entries = green_kit(c["key"], level, gear)
         else:
@@ -157,8 +148,6 @@ def main():
                 START,
                 "action_bar = []",
                 "money = 100000",
-                f"talents = [{', '.join(talents)}]",
-                "talent_wipes = 0",
                 "",
                 "[bind]",
                 "map = 0",

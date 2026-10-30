@@ -8,7 +8,7 @@ mod common;
 use benilla_protocol::SessionEvent;
 use common::fight::*;
 use common::*;
-use twilight_realm::callings::{self, AuraEffect, Effect, ProcEvent, TalentEffect};
+use twilight_realm::callings::{self, AuraEffect, Effect, ProcEvent};
 use twilight_realm::{Realm, RealmCommand};
 
 const SEED: u64 = 0x5EED_0105;
@@ -203,7 +203,7 @@ fn without_the_seal_there_are_no_procs() {
 }
 
 #[test]
-fn the_vanguards_rows_carry_the_seal_and_wrathful_iron() {
+fn the_seal_of_iron_grants_an_aura_of_two_melee_procs() {
     let v = callings::calling("vanguard").unwrap();
     let seal = v
         .skills
@@ -238,17 +238,6 @@ fn the_vanguards_rows_carry_the_seal_and_wrathful_iron() {
         procs[1].apply_aura.as_deref(),
         Some("aura_seal_of_iron_armor")
     );
-    let wrathful = v
-        .talent_tabs
-        .iter()
-        .flat_map(|t| &t.talents)
-        .find(|t| t.key == "wrathful_iron")
-        .unwrap();
-    assert!(matches!(
-        &wrathful.effects[..],
-        [TalentEffect::Proc { on: ProcEvent::MeleeHit, while_aura: Some(a), weapon_pct: 25, chances, .. }]
-            if a == "aura_seal_of_iron" && chances == &[10, 20, 30, 40, 50]
-    ));
 }
 
 /// The seal's two procs are one buff on the bar, not two.

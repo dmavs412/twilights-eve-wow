@@ -213,14 +213,4 @@ fn the_shipped_siphon_life_is_a_five_second_drain_and_blood_ties_waits_on_the_cl
         siphon.effects[..],
         [Effect::Drain { heal_pct: 100, .. }]
     ));
-    let blood_ties = acolyte
-        .talent_tabs
-        .iter()
-        .flat_map(|t| &t.talents)
-        .find(|t| t.key == "blood_ties")
-        .unwrap();
-    assert!(
-        blood_ties.effects.is_empty(),
-        "the client cannot target an ally"
-    );
 }

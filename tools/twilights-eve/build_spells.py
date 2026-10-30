@@ -4,22 +4,20 @@
     python tools/twilights-eve/build_spells.py [--csv FILE] [--out-dir DIR] [--data DIR] [--no-dbc-check]
 
 Reads data/twilights-eve/master.csv and writes server_spells.json, the realm's view: a list of
-Callings, each with its skills and talent tabs, every row carrying its realm columns, a `modelled`
-flag and its effects as {kind, params, realm_only}. Effects 4 and 5 are realm-only. A row with
-modelled=no carries no effects.
+Callings, each with its skills, its Talent Rows (ADR 0028) and its auras, every row carrying its
+realm columns, a `modelled` flag and its effects as {kind, params, realm_only}. Effects 4 and 5 are
+realm-only. A row with modelled=no carries no effects.
 
-It also writes client_dbc_patch.json, {spells, talents}: `spells` holds one complete Spell.dbc row
-per row with a spell_id (ADR 0011: its client columns, every effect, its spellmods), `talents`
-each talent's seat, talent_id, prereq and per-rank spell ids. The column set and the formula
-fields are in docs/spell_pipeline.md.
+It also writes client_dbc_patch.json, whose `spells` holds one complete Spell.dbc row per row with a
+spell_id (ADR 0011: its client columns, every effect, its spellmods), a Skill Choice's and a
+Talent's among them. The column set and the formula fields are in docs/spell_pipeline.md.
 
 Exits non-zero, writing nothing, on malformed params, a bad formula, realm_cost below
-client_cost, a prereq or seat that does not resolve, a duplicate key, or an unknown effect kind on
-a modelled row.
+client_cost, a duplicate key, an unknown effect kind on a modelled row, a `talent` row that is
+neither a Skill Choice nor a Talent, or a filled Talent Tree column (ADR 0028 retired them).
 
 It also refuses rows that break the client/realm seam (`check_seam`): a multi-effect aura with no
-spell id for its buff slot, and a talent rank with no spell. Fixtures for each bug are in
-tools/twilights-eve/fixtures/.
+spell id for its buff slot. Fixtures for each bug are in tools/twilights-eve/fixtures/.
 """
 
 from __future__ import annotations
@@ -52,13 +50,13 @@ KNOWN_KINDS = {
     "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
     "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike", "pickup",
 }
-ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
+ROW_KINDS = ("skill", "talent", "calling", "aura")
 # Talent Rows (ADR 0028): a `talent` row with `variant_of` is a Skill Choice of that skill, one
-# with `row_key` a Talent of that row; `row_level` opens a skill's row or a Talent row. The tree
-# columns stay empty on both (#502 removes the tree).
+# with `row_key` a Talent of that row; `row_level` opens a skill's row or a Talent row.
 ROW_COLUMNS = ("variant_of", "row_key", "row_level")
-TREE_COLUMNS = ("tab", "tab_row", "tab_column", "prereq_key", "prereq_rank", "max_rank", "talent_id",
-                "source_tab_id")
+# The Talent Tree's columns, retired by ADR 0028: they stay in the header and empty on every row.
+TREE_COLUMNS = ("talent_id", "source_tab_id", "tab", "tab_row", "tab_column", "prereq_key", "prereq_rank",
+                "max_rank", "tab_id", "background", "tab_order", "exceptional")
 # The cells a Skill Choice never inherits from its skill: they are the choice's own, empty or not.
 CHOICE_OWN_COLUMNS = ("kind", "key", "name", "rank", "spell_id", "icon", "visual", "status", "description",
                       "assumptions", "notes", "modelled", "variant_of")
@@ -101,9 +99,8 @@ REALM_NUMBERS = (
     "realm_cost", "realm_cooldown_ms", "realm_gcd_ms", "realm_range_min", "realm_range_max",
     "realm_radius_yd",
 )
-ID_COLUMNS = ("talent_id", "source_tab_id", "icon_id")
+ID_COLUMNS = ("icon_id",)
 STATUSES = ("placeholder", "wip", "done")
-MAX_TALENT_RANKS = 5
 # Every spell row is from scratch (ADR 0011): its own spell id, no borrowed stock row.
 FROM_SCRATCH_MIN_ID = 1_000_000
 # Columns of the borrowing era, refused by name so an old sheet fails loudly.
@@ -127,10 +124,6 @@ DEFAULT_CONTENT = os.path.join(REPO, "crates", "twilight-realm", "content")
 # The first synthetic ItemDisplayInfo id; an item with a painted icon takes its own from here up.
 ITEM_DISPLAY_MIN = 995000
 ART_ICON_DIR = "Interface\\Icons\\Twilight\\"
-# A talent tab's PNG background: the four quarters the talent frame draws, named
-# `<stem>-<quarter>.png`; the client finds them under `Interface\TalentFrame\Twilight\`.
-TAB_ART_PREFIX = "Twilight\\"
-TAB_ART_QUARTERS = ("TopLeft", "TopRight", "BottomLeft", "BottomRight")
 # Spell.dbc effect and aura numbers of the effect kinds a from-scratch row can show; any other
 # kind, a realm-only one, is a dummy effect (3) so `$sN` still reads its number.
 CLIENT_EFFECTS_OF = {
@@ -245,7 +238,6 @@ class BuildError(Exception):
 # The id columns the DBC check verifies, and the table each one must exist in.
 DBC_ID_COLUMNS = {
     "icon_id": "SpellIcon.dbc",
-    "source_tab_id": "TalentTab.dbc",
 }
 
 
@@ -279,7 +271,7 @@ def check_dbc_ids(rows: list[dict], data_dir: str | None) -> None:
 SPELL_VISUAL, SPELL_SPEED = 115, 37
 
 
-def check_seam(server: list[dict], patch: dict) -> None:
+def check_seam(server: list[dict]) -> None:
     """Fail on a row that would break the client/realm seam, naming each on its own line."""
     bad = []
     # The effects of one aura share one buff slot, keyed by the aura's spell id; with none they
@@ -289,11 +281,6 @@ def check_seam(server: list[dict], patch: dict) -> None:
             if len(aura["effects"]) > 1 and "spell_id" not in aura:
                 bad.append(f"{calling['key']}/{aura['key']}: {len(aura['effects'])} effects and no spell id "
                            "to share one buff slot")
-    # A talent with a seat on the client names a spell for every rank.
-    for seat in patch["talents"]:
-        if "talent_id" in seat and None in seat["rank_spell_ids"]:
-            bad.append(f"{seat['calling']}/{seat['key']}: rank {seat['rank_spell_ids'].index(None) + 1} "
-                       "resolves to no spell (no spell_id)")
     if bad:
         raise BuildError(f"{len(bad)} rows break the client/realm seam:\n" + "\n".join(bad))
 
@@ -441,12 +428,10 @@ def build_creature_spells(spells: list[dict], rows: list[dict], art: list[str], 
 
 
 def check_unique_ids(rows: list[dict]) -> None:
-    """Fail when two talents or skills claim one spell_id or talent_id: the client keeps one
-    Spell.dbc / Talent.dbc row per id, so the patch would overwrite one with the other. An aura of
-    the same Calling may share its skill's or talent's spell id (it joins that row's override). A
-    talent id is the sheet's own (ADR 0011), 1,000,000 up."""
+    """Fail when two talents or skills claim one spell_id: the client keeps one Spell.dbc row per
+    id, so the patch would overwrite one with the other. An aura of the same Calling may share its
+    skill's or talent's spell id (it joins that row's override)."""
     spells: dict[str, list[tuple[str, str, str, str]]] = {}
-    talents: dict[str, list[tuple[str, str, str]]] = {}
     bad = []
     for line, row in enumerate(rows, start=2):
         who = (row["calling"], row["key"])
@@ -459,16 +444,6 @@ def check_unique_ids(rows: list[dict]) -> None:
                     bad.append(f"{where}: spell_id {text} is already claimed by {other[3]}")
                     break
             claims.append((*who, row["kind"], where))
-        if row["kind"] == "talent" and row["talent_id"]:
-            text = row["talent_id"].strip()
-            if not text.isdigit() or int(text) < FROM_SCRATCH_MIN_ID:
-                bad.append(f"{where}: talent_id {text} is not the sheet's own (1,000,000 up)")
-            claims = talents.setdefault(text, [])
-            for other in claims:
-                if other[:2] != who:
-                    bad.append(f"{where}: talent_id {text} is already claimed by {other[2]}")
-                    break
-            claims.append((*who, where))
     if bad:
         raise BuildError(f"{len(bad)} ids claimed by more than one row; give the later row its own "
                          "id:\n" + "\n".join(bad))
@@ -723,14 +698,6 @@ def build_calling(row: dict, where: str) -> dict:
     if row["shapeshift_form"]:
         out["shapeshift_form"] = whole(row["shapeshift_form"], f"{where} shapeshift_form")
     return out
-
-
-def build_talent_tab(row: dict, where: str) -> dict:
-    for column in ("tab_id", "background", "tab_order"):
-        if not row[column]:
-            raise BuildError(f"{where}: a talent_tab row needs {column}")
-    return {"name": row["name"], "id": whole(row["tab_id"], f"{where} tab_id"), "background": row["background"],
-            "order": whole(row["tab_order"], f"{where} tab_order"), "talents": []}
 
 
 def yes_no(text: str, where: str, column: str) -> bool:
@@ -1045,16 +1012,6 @@ def spellbook(row: dict, hidden: bool, where: str) -> bool:
     if flag == "no" and hidden:
         raise BuildError(f"{where}: spellbook=no on a client_visible=no row, which is never in the spell book")
     return flag != "no"
-
-
-def max_rank(row: dict, where: str) -> int:
-    """A talent rank row's `max_rank`: a whole number from 1 to 5."""
-    if not row["max_rank"]:
-        raise BuildError(f"{where}: a talent rank row needs max_rank")
-    value = whole(row["max_rank"], f"{where} max_rank")
-    if not 1 <= value <= MAX_TALENT_RANKS:
-        raise BuildError(f"{where}: max_rank {value} is not 1 to {MAX_TALENT_RANKS}")
-    return value
 
 
 def parse_requires(text: str, where: str) -> dict:
@@ -1413,11 +1370,6 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
         realm, client = number(row["realm_cost"], where), number(row["client_cost"], where)
         if realm < client:
             raise BuildError(f"{where}: realm_cost {realm} is below client_cost {client}")
-    # The client lists a learned talent's spell in the spell book only when the talent is
-    # exceptional (#257), so an active talent left passive cannot be cast (#317).
-    if row["kind"] == "talent" and row["rank"] == "1" and (row["target"] or row["cast_kind"]) \
-            and row["exceptional"] != "yes":
-        raise BuildError(f"{where}: an active talent needs exceptional=yes, or its spell never reaches the spell book")
     # The client draws the cooldown sweep from its own value, so a skill whose two cooldowns
     # differ shows no sweep, or the wrong one, unless its notes say the difference is meant.
     if row["kind"] == "skill" and not hidden and "cooldowns differ" not in row["notes"]:
@@ -1519,13 +1471,13 @@ def resolve_amount_of(calling: dict) -> None:
 
 
 def resolve_reset_cooldowns(calling: dict) -> None:
-    """A `reset_cooldowns`'s `skill=key|key` becomes the skills' spell ids, on a skill or an
-    active talent's rank."""
+    """A `reset_cooldowns`'s `skill=key|key` becomes the skills' spell ids, on a skill or a Talent
+    row's choice."""
     ids = {s["key"]: s["spell_id"] for s in calling["skills"]}
     owners = [(s["key"], s) for s in calling["skills"]]
-    for tab in calling["talent_tabs"]:
-        for talent in tab["talents"]:
-            owners += [(talent["key"], rank) for rank in talent["ranks"]]
+    for row in calling.get("rows", []):
+        if row["kind"] == "talent":
+            owners += [(choice["key"], choice) for choice in row["choices"]]
     for key, owner in owners:
         for effect in owner.get("effects", []):
             if effect["kind"] != "reset_cooldowns":
@@ -1811,22 +1763,6 @@ def client_calling(calling: dict, name: str) -> dict:
     }
 
 
-def tab_background(tab: dict, calling: str, art: list[str], art_dir: str) -> str:
-    """A tab's art as the talent frame names it: a stock `Interface\\TalentFrame\\` base, or for
-    `<stem>.png` the four embedded quarters `<stem>-TopLeft.png` and the rest, each checked."""
-    background = tab["background"]
-    if not background.lower().endswith(".png"):
-        return background
-    stem = background[:-4]
-    for quarter in TAB_ART_QUARTERS:
-        name = f"{stem}-{quarter}"
-        if not os.path.isfile(os.path.join(art_dir, name + ".png")):
-            raise BuildError(f"{calling}/{tab['key']} background: {name}.png is not in {art_dir}")
-        if name not in art:
-            art.append(name)
-    return TAB_ART_PREFIX + stem
-
-
 def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
           calling_rows: list[dict] | None = None,
           creature_spells: list[dict] | None = None,
@@ -1883,7 +1819,6 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
     art: list[str] = []
     aura_overrides: list[tuple[dict, str]] = []
     seen: set[tuple] = set()
-    talent_rows: dict[tuple, list[tuple[dict, dict, str]]] = {}
     # A calling's aura keys, each with the effect kinds it holds, are read before any row, so row
     # order never matters.
     auras = {c: {r["key"]: {r[f"effect{i}_kind"] for i in range(1, MAX_EFFECTS + 1) if r[f"effect{i}_kind"]}
@@ -1901,6 +1836,9 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
             raise BuildError(f"{where}: kind is {kind!r}, want one of {', '.join(ROW_KINDS)}")
         if not row["calling"] or not row["key"]:
             raise BuildError(f"{where}: calling and key are required")
+        for column in TREE_COLUMNS:
+            if row.get(column):
+                raise BuildError(f"{where} {column}: a Talent Tree column, retired by ADR 0028; leave it empty")
         if row["status"] not in STATUSES:
             raise BuildError(f"{where}: status is {row['status']!r}, want one of {', '.join(STATUSES)}")
         if kind != "skill" and row["learn_level"]:
@@ -1910,15 +1848,14 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
             raise BuildError(f"{where}: variant_of and row_key belong to a talent row; this is a {kind} row")
         if choice_of and talent_row:
             raise BuildError(f"{where}: variant_of and row_key are both set; a row is a Skill Choice or a Talent")
+        if kind == "talent" and not (choice_of or talent_row):
+            raise BuildError(f"{where}: a talent row needs variant_of or row_key; the Talent Tree is gone (ADR 0028)")
         row_kind = "Skill Choice" if choice_of else "Talent" if talent_row else kind
         if choice_of or talent_row:
-            for column in TREE_COLUMNS:
-                if row[column]:
-                    raise BuildError(f"{where} {column}: set on a {row_kind} row; the tree columns stay empty")
             if row["rank"] != "1":
                 raise BuildError(f"{where}: a {row_kind} row is rank 1, has {row['rank']!r}")
         if row["row_level"]:
-            if choice_of or kind not in ("skill", "talent") or (kind == "talent" and not talent_row):
+            if choice_of or kind not in ("skill", "talent"):
                 raise BuildError(f"{where} row_level: set on a {row_kind} row; only skill rows and Talent rows carry it")
             whole(row["row_level"], f"{where} row_level")
         if kind != "aura":
@@ -1929,22 +1866,13 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
         profile = profiles[row["calling"]]
         calling = callings.setdefault(row["calling"], {"key": row["calling"],
                                                       **{k: v for k, v in profile.items() if k != "name"},
-                                                      "skills": [],
-                                                      "talent_tabs": [], "auras": [], "rows": []})
+                                                      "skills": [], "auras": [], "rows": []})
         if kind == "calling":
             if "name" in calling:
                 raise BuildError(f"{where}: second calling row for {row['calling']}")
             calling.update(build_calling(row, where))
             if calling["name"] != profile["name"]:
                 raise BuildError(f"{where}: name {calling['name']!r} differs from callings.csv's {profile['name']!r}")
-            continue
-        if kind == "talent_tab":
-            tab = build_talent_tab(row, where)
-            tab["key"] = row["key"]
-            if any(t["key"] == tab["key"] or t["name"] == tab["name"] or t["id"] == tab["id"]
-                   for t in calling["talent_tabs"]):
-                raise BuildError(f"{where}: duplicate talent_tab {tab['name']!r}")
-            calling["talent_tabs"].append(tab)
             continue
         source = row
         if choice_of:
@@ -1953,10 +1881,6 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
             # The merged row builds exactly as a skill: a visible, castable spell-book row.
             source = {**overlay(skills_by_key[(row["calling"], choice_of)][1], row, where), "kind": "skill"}
         built = build_row(source, where, auras[row["calling"]])
-        if kind == "talent" and not (choice_of or talent_row):
-            built["max_rank"] = max_rank(row, where)
-        elif row["max_rank"]:
-            raise BuildError(f"{where}: max_rank is set on a {kind} row; only talent ranks carry it")
         identity = (row["calling"], kind, row["key"], built["rank"])
         if identity in seen:
             raise BuildError(f"{where}: duplicate {kind} rank")
@@ -1982,10 +1906,8 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
         elif choice_of:
             built["variant_of"] = choice_of
             choices.setdefault((row["calling"], choice_of), []).append((line, built, where))
-        elif talent_row:
-            row_talents.setdefault((row["calling"], talent_row), []).append((line, row, built, where))
         else:
-            talent_rows.setdefault((row["calling"], row["key"]), []).append((row, built, where))
+            row_talents.setdefault((row["calling"], talent_row), []).append((line, row, built, where))
 
     check_visuals(rows)
     # An aura's Spell.dbc fields join the override of a skill that is the same spell, whatever the row order.
@@ -2012,79 +1934,13 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
             raise BuildError(f"tier {calling['tier']}: {first['key']}'s row_levels {first['row_levels']} "
                              f"differs from {calling['key']}'s {calling['row_levels']}")
 
-    for (calling_key, key), ranks in talent_rows.items():
-        calling = callings[calling_key]
-        first, _, where = ranks[0]
-        for column in ("tab", "tab_row", "tab_column"):
-            values = {r[column] for r, _, _ in ranks}
-            if len(values) != 1 or not first[column]:
-                raise BuildError(f"{where}: talent {key} has no single {column}")
-        tab_name = first["tab"]
-        seat = {"row": whole(first["tab_row"], f"{where} tab_row"),
-                "column": whole(first["tab_column"], f"{where} tab_column")}
-        tab = next((t for t in calling["talent_tabs"] if t.get("key", t["name"]) == tab_name), None)
-        if tab is None:
-            if any("id" in t for t in calling["talent_tabs"]):
-                raise BuildError(f"{where}: talent {key} tab {tab_name!r} is not a talent_tab key of {calling['key']}")
-            tab = {"name": tab_name, "talents": []}
-            calling["talent_tabs"].append(tab)
-        for other in tab["talents"]:
-            if other["seat"] == seat:
-                raise BuildError(f"{where}: talent {key} sits on {other['key']}'s seat in {tab_name}")
-        talent = {"key": key, "name": first["name"], "seat": seat,
-                  "exceptional": first["exceptional"] == "yes",
-                  "ranks": sorted((b for _, b, _ in ranks), key=lambda b: b["rank"])}
-        wanted = {b["max_rank"] for b in talent["ranks"]}
-        if len(wanted) != 1:
-            raise BuildError(f"{where}: talent {key} ranks disagree on max_rank ({sorted(wanted)})")
-        if [b["rank"] for b in talent["ranks"]] != list(range(1, wanted.pop() + 1)):
-            raise BuildError(f"{where}: talent {key} ranks are not 1..max_rank")
-        for b in talent["ranks"]:
-            del b["max_rank"]
-        if first["prereq_key"]:
-            talent["prereq"] = {"key": first["prereq_key"], "rank": whole(first["prereq_rank"] or "1", where)}
-        tab["talents"].append(talent)
-
-    for calling in callings.values():
-        for tab in calling["talent_tabs"]:
-            for talent in tab["talents"]:
-                prereq = talent.get("prereq")
-                if not prereq:
-                    continue
-                target = next((t for t in tab["talents"] if t["key"] == prereq["key"]), None)
-                where = f"{calling['key']}/{talent['key']}"
-                if target is None:
-                    raise BuildError(f"{where}: prereq {prereq['key']!r} is not a talent in {tab['name']}")
-                if prereq["rank"] > len(target["ranks"]):
-                    raise BuildError(f"{where}: prereq {prereq['key']} has no rank {prereq['rank']}")
     for calling in callings.values():
         resolve_reset_cooldowns({**calling, "skills": calling["skills"] + choice_skills(calling)})
-    seats = []
-    tabs = []
-    for calling in callings.values():
-        for tab in sorted(calling["talent_tabs"], key=lambda t: t.get("order", 0)):
-            if "id" in tab:
-                tabs.append({"calling": calling["key"], "key": tab["key"], "id": tab["id"], "name": tab["name"],
-                             "background": tab_background(tab, calling["key"], art, art_dir),
-                             "order": tab["order"]})
-            for talent in tab["talents"]:
-                seat = {"calling": calling["key"], "key": talent["key"], "tab": tab["name"], **talent["seat"]}
-                if "id" in tab:
-                    seat["tab_id"] = tab["id"]
-                if "talent_id" in talent["ranks"][0]:
-                    seat["talent_id"] = talent["ranks"][0]["talent_id"]
-                seat["rank_spell_ids"] = [r.get("spell_id") for r in talent["ranks"]]
-                if talent["exceptional"]:
-                    seat["exceptional"] = True
-                if "prereq" in talent:
-                    seat["prereq"] = talent["prereq"]
-                seats.append(seat)
     overrides.extend(build_creature_spells(creature_spells or [], rows, art, art_dir))
     if content_dir:
         overrides.extend(fishing_spell(content_dir))
     patch: dict = {"callings": [client_calling(c, profiles[c["key"]]["name"]) for c in callings.values()],
-                   "spells": overrides,
-                   "talent_tabs": tabs, "talents": seats}
+                   "spells": overrides}
     displays = item_displays(content_dir, art, art_dir) if content_dir else []
     if displays:
         patch["item_displays"] = displays
@@ -2125,7 +1981,7 @@ def main(argv: list[str] | None = None) -> int:
         art = patch.pop("art", [])
         if not args.no_dbc_check:
             check_dbc_ids(rows, args.data)
-        check_seam(server, patch)
+        check_seam(server)
         if not args.no_dbc_check:
             resolve_dbc_rows(patch, **read_row_tables(args.data))
             print(f"DBC check: every id is in the DBCs in {args.data}")
@@ -2133,7 +1989,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"build_spells: {error}", file=sys.stderr)
         return 1
 
-    # A talent's ranks usually share one note; print it once.
+    # Rows of one key usually share one note; print it once.
     carried = list(dict.fromkeys((f"{row['calling']}/{row['key']}", row["assumptions"]) for row in rows if row["assumptions"]))
     counts = {s: sum(1 for row in rows if row["status"] == s) for s in STATUSES}
     print("status: " + ", ".join(f"{n} {s}" for s, n in counts.items()))
@@ -2162,7 +2018,7 @@ def main(argv: list[str] | None = None) -> int:
             json.dump(data, f, indent=1, ensure_ascii=False)
             f.write("\n")
     print(f"wrote {args.out_dir}: {len(server)} Callings, {len(rows)} rows, "
-          f"{len(patch['spells'])} spell overrides, {len(patch['talents'])} talent seats")
+          f"{len(patch['spells'])} spell overrides")
     return 0
 
 

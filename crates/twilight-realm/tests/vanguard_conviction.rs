@@ -9,7 +9,7 @@ mod common;
 use benilla_protocol::SessionEvent;
 use common::fight::*;
 use common::*;
-use twilight_realm::callings::{self, Effect, StackRule, TalentEffect};
+use twilight_realm::callings::{self, Effect, StackRule};
 use twilight_realm::{Realm, RealmCommand};
 
 const SEED: u64 = 0x5EED_0101;
@@ -254,22 +254,4 @@ fn righteous_smash_adds_a_stack_and_zealous_cleave_takes_them() {
         _ => None,
     });
     assert_eq!(consumed, Some(conviction_id));
-}
-
-#[test]
-fn zealous_restoration_heals_twenty_five_fifty_seventy_five_percent() {
-    let vanguard = callings::calling("vanguard").unwrap();
-    let talent = vanguard
-        .talent_tabs
-        .iter()
-        .flat_map(|t| &t.talents)
-        .find(|t| t.key == "zealous_restoration")
-        .unwrap();
-    assert_eq!(
-        talent.effects,
-        [TalentEffect::ConsumeHealPct {
-            skill: "zealous_cleave".into(),
-            per_rank: vec![25, 50, 75]
-        }]
-    );
 }

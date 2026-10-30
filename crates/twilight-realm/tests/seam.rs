@@ -31,7 +31,7 @@ fn text<'a>(v: &'a Value, key: &str) -> &'a str {
 }
 
 /// Every realm row that has a spell id, as `(where, row)`: a Calling's skills, its auras and each
-/// rank of each talent.
+/// choice of each Talent Row.
 fn realm_rows(server: &Value) -> Vec<(String, &Value)> {
     let mut rows = Vec::new();
     for calling in server.as_array().into_iter().flatten() {
@@ -41,12 +41,9 @@ fn realm_rows(server: &Value) -> Vec<(String, &Value)> {
                 rows.push((format!("{c}/{}", text(row, "key")), row));
             }
         }
-        for tab in list(calling, "talent_tabs") {
-            for talent in list(tab, "talents") {
-                for rank in list(talent, "ranks") {
-                    let n = rank.get("rank").and_then(Value::as_u64).unwrap_or(0);
-                    rows.push((format!("{c}/{} rank {n}", text(talent, "key")), rank));
-                }
+        for row in list(calling, "rows") {
+            for choice in list(row, "choices") {
+                rows.push((format!("{c}/{}", text(choice, "key")), choice));
             }
         }
     }
@@ -154,66 +151,6 @@ fn check_buff_slots(server: &Value) -> Vec<String> {
                     text(calling, "key"),
                     text(aura, "key")
                 ));
-            }
-        }
-    }
-    bad
-}
-
-/// Every rank of every talent resolves to a spell on both sides: the realm's rank row has a spell
-/// id, the client's seat lists the same ids, and each is a row of the client's spells.
-fn check_talent_ranks(server: &Value, patch: &Value) -> Vec<String> {
-    let client = client_rows(patch);
-    let mut realm: BTreeMap<(String, String), Vec<Option<u64>>> = BTreeMap::new();
-    for calling in server.as_array().into_iter().flatten() {
-        for tab in list(calling, "talent_tabs") {
-            for talent in list(tab, "talents") {
-                let ids = list(talent, "ranks")
-                    .iter()
-                    .map(|r| r.get("spell_id").and_then(Value::as_u64))
-                    .collect();
-                realm.insert(
-                    (text(calling, "key").into(), text(talent, "key").into()),
-                    ids,
-                );
-            }
-        }
-    }
-    let mut bad = Vec::new();
-    for seat in list(patch, "talents") {
-        if seat.get("talent_id").is_none() {
-            continue;
-        }
-        let at = format!("{}/{}", text(seat, "calling"), text(seat, "key"));
-        let ids: Vec<Option<u64>> = list(seat, "rank_spell_ids")
-            .iter()
-            .map(Value::as_u64)
-            .collect();
-        for (i, id) in ids.iter().enumerate() {
-            match id {
-                None => bad.push(format!("{at}: rank {} resolves to no spell", i + 1)),
-                Some(id) if !client.contains_key(id) => bad.push(format!(
-                    "{at}: rank {} is spell {id}, which is not a row of the client patch",
-                    i + 1
-                )),
-                _ => {}
-            }
-        }
-        match realm.get(&(text(seat, "calling").into(), text(seat, "key").into())) {
-            None => bad.push(format!(
-                "{at}: the client seat has no talent on the realm side"
-            )),
-            Some(realm_ids) => {
-                for (i, id) in realm_ids.iter().enumerate() {
-                    if id.is_none() {
-                        bad.push(format!("{at}: realm rank {} has no spell id", i + 1));
-                    }
-                }
-                if *realm_ids != ids {
-                    bad.push(format!(
-                        "{at}: the realm's rank spells {realm_ids:?} differ from the client's {ids:?}"
-                    ));
-                }
             }
         }
     }
@@ -444,12 +381,6 @@ fn shipped_auras_share_one_buff_slot() {
 }
 
 #[test]
-fn shipped_talent_ranks_resolve_on_both_sides() {
-    let (server, patch) = shipped();
-    assert_clean("talent rank problems", check_talent_ranks(&server, &patch));
-}
-
-#[test]
 fn shipped_spawns_and_quests_name_creatures_that_exist() {
     let c = shipped_creatures();
     assert!(c.templates.len() > 100 && c.spawns.len() > 1000);
@@ -463,11 +394,11 @@ fn shipped_spawns_and_quests_name_creatures_that_exist() {
 // Fixtures: each rebuilds the bug its check catches.
 
 fn fixture_server(row: Value) -> Value {
-    json!([{ "key": "bulwark", "skills": [row], "auras": [], "talent_tabs": [] }])
+    json!([{ "key": "bulwark", "skills": [row], "auras": [] }])
 }
 
 fn fixture_patch(spell_id: u64, fields: Value) -> Value {
-    json!({ "spells": [{ "spell_id": spell_id, "fields": fields }], "talents": [] })
+    json!({ "spells": [{ "spell_id": spell_id, "fields": fields }] })
 }
 
 #[test]
@@ -506,7 +437,7 @@ fn an_aura_of_two_effects_without_a_spell_id_fails() {
     // 0a96886: Seal of Iron's two procs each took their own buff slot.
     let aura =
         json!({ "key": "seal_of_iron", "effects": [{ "kind": "proc" }, { "kind": "proc" }] });
-    let server = json!([{ "key": "vanguard", "skills": [], "talent_tabs": [], "auras": [aura] }]);
+    let server = json!([{ "key": "vanguard", "skills": [], "auras": [aura] }]);
     let bad = check_buff_slots(&server);
     assert_eq!(bad.len(), 1, "{bad:?}");
     assert!(bad[0].contains("vanguard/seal_of_iron"));
@@ -514,52 +445,6 @@ fn an_aura_of_two_effects_without_a_spell_id_fails() {
         "key": "seal_of_iron", "spell_id": 1000300, "effects": [{ "kind": "proc" }, { "kind": "proc" }]
     }]}]);
     assert!(check_buff_slots(&with_id).is_empty());
-}
-
-fn talent_fixture(realm_ids: &[Value], client_ids: Value) -> (Value, Value) {
-    let ranks: Vec<Value> = realm_ids
-        .iter()
-        .enumerate()
-        .map(|(i, id)| json!({ "rank": i + 1, "spell_id": id }))
-        .collect();
-    let server = json!([{ "key": "bulwark", "skills": [], "auras": [], "talent_tabs": [{
-        "talents": [{ "key": "iron_will", "ranks": ranks }]
-    }]}]);
-    let patch = json!({
-        "spells": [{ "spell_id": 1000400, "fields": {} }],
-        "talents": [{ "calling": "bulwark", "key": "iron_will", "talent_id": 1000500,
-                      "rank_spell_ids": client_ids }]
-    });
-    (server, patch)
-}
-
-#[test]
-fn a_talent_rank_with_no_spell_fails() {
-    let (server, patch) = talent_fixture(&[json!(1000400), json!(null)], json!([1000400, null]));
-    let bad = check_talent_ranks(&server, &patch);
-    assert!(
-        bad.iter().all(|b| b.starts_with("bulwark/iron_will")),
-        "{bad:?}"
-    );
-    assert!(bad
-        .iter()
-        .any(|b| b.contains("rank 2 resolves to no spell")));
-    assert!(bad
-        .iter()
-        .any(|b| b.contains("realm rank 2 has no spell id")));
-    let (server, patch) = talent_fixture(&[json!(1000400)], json!([1000400]));
-    assert!(check_talent_ranks(&server, &patch).is_empty());
-}
-
-#[test]
-fn a_talent_rank_the_client_does_not_hold_fails() {
-    let (server, patch) = talent_fixture(&[json!(1000401)], json!([1000401]));
-    let bad = check_talent_ranks(&server, &patch);
-    assert!(
-        bad.iter()
-            .any(|b| b.contains("1000401") && b.contains("not a row of the client patch")),
-        "{bad:?}"
-    );
 }
 
 #[test]

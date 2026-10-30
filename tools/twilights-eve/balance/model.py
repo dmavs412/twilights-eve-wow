@@ -1573,7 +1573,8 @@ def build(calling, level):
         progress = False
         for key, want in wish:
             have = out.get(key, 0)
-            if have >= want:
+            # The sheet has no tree since #502 (ADR 0028), so a build's tree talents are skipped.
+            if have >= want or (calling, key) not in TALENT_ROW:
                 continue
             tab, row = TALENT_ROW[(calling, key)]
             if spent[tab] < 5 * (row - 1):

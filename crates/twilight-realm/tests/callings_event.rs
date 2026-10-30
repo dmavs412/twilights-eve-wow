@@ -1,5 +1,5 @@
 //! The roster comes with each character's Calling key, so a client on a friends server labels
-//! select and builds the talent frame without a realm of its own.
+//! select without a realm of its own.
 
 mod common;
 

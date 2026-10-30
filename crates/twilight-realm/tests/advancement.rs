@@ -436,14 +436,6 @@ fn advancement_makes_a_level_1_vanguard_with_the_new_skills_and_tree() {
         "exactly the kit"
     );
     assert!(!known.contains(&*BULL_RUSH), "Bull Rush forgotten");
-    let tabs: Vec<&str> = realm
-        .current_calling()
-        .unwrap()
-        .talent_tabs
-        .iter()
-        .map(|t| t.name.as_str())
-        .collect();
-    assert_eq!(tabs, ["The Bastion", "The Righteous"]);
     // The new Calling's default bar.
     let bar = events
         .iter()
@@ -940,14 +932,6 @@ fn the_cutthroats_mark_makes_a_level_1_cutthroat_on_energy() {
         .collect(),
         "Sinister Strike, Stealth, Rupture, Garrote, Eviscerate and Evasion"
     );
-    let tabs: Vec<&str> = realm
-        .current_calling()
-        .unwrap()
-        .talent_tabs
-        .iter()
-        .map(|t| t.name.as_str())
-        .collect();
-    assert_eq!(tabs, ["The Skirmisher", "The Tracker"]);
     assert_eq!(now.unit_shapeshift_form(), 0, "no stance");
     assert_eq!(now.unit_power(3), Some(100), "a full energy bar");
 }
@@ -981,23 +965,15 @@ fn the_initiates_spark_makes_a_level_1_initiate_on_mana() {
         .collect(),
         "Biting Cold, Searing Ember, Blink, Ley-Spark, Catalyst and Ley Ward"
     );
-    let tabs: Vec<&str> = realm
-        .current_calling()
-        .unwrap()
-        .talent_tabs
-        .iter()
-        .map(|t| t.name.as_str())
-        .collect();
-    assert_eq!(tabs, ["The Weaver", "The Channeler"]);
     assert_eq!(now.unit_shapeshift_form(), 0, "no stance");
     assert!(now.unit_power(0).is_some_and(|m| m > 0), "a mana bar");
 }
 
 /// The Ranger and the Acolyte take their quest at the cap and start over at level 1 on mana, with
-/// their talent tabs and whichever of their skills already play.
+/// whichever of their skills already play.
 #[test]
 fn the_rangers_draw_and_the_acolytes_vein_make_level_1_casters_on_mana() {
-    for (entry, quest, key, skills, tab_names) in [
+    for (entry, quest, key, skills) in [
         (
             RANGER_TRAINER,
             THE_RANGERS_DRAW,
@@ -1014,7 +990,6 @@ fn the_rangers_draw_and_the_acolytes_vein_make_level_1_casters_on_mana() {
                     "field_dressing",
                 ],
             ),
-            ["The Swiftbow", "The Arbalest"],
         ),
         (
             ACOLYTE_TRAINER,
@@ -1030,7 +1005,6 @@ fn the_rangers_draw_and_the_acolytes_vein_make_level_1_casters_on_mana() {
                     "blood_lance",
                 ],
             ),
-            ["The Rot-Weaver", "The Hemomancer"],
         ),
     ] {
         let (mut realm, me, mut events) = capped_warrior();
@@ -1048,14 +1022,6 @@ fn the_rangers_draw_and_the_acolytes_vein_make_level_1_casters_on_mana() {
             skills.into_iter().collect(),
             "{key}: the Ranger's seven skills; the Acolyte's five"
         );
-        let tabs: Vec<&str> = realm
-            .current_calling()
-            .unwrap()
-            .talent_tabs
-            .iter()
-            .map(|t| t.name.as_str())
-            .collect();
-        assert_eq!(tabs, tab_names, "{key}");
         assert_eq!(now.unit_shapeshift_form(), 0, "{key}: no stance");
         assert!(
             now.unit_power(0).is_some_and(|m| m > 0),

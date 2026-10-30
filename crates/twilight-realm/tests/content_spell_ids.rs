@@ -21,13 +21,8 @@ const ID_KEYS: &[(&str, &str, Ids)] = &[
     ("use_spell", "use_spell_name", Ids::One),
     // Every rank's aura is the one spell's name.
     ("aura_spell_ids", "aura_spell_name", Ids::SameName),
-    // A talent's ranks: one name, and "Rank N" for the Nth when there is more than one.
-    ("rank_spells", "spell_name", Ids::Ranks),
     ("equip_spells", "equip_spell_names", Ids::Parallel),
 ];
-
-/// The lowest id of a spell the client patch inserts.
-const FROM_SCRATCH_MIN_ID: u32 = 1_000_000;
 
 /// Keys with "spell" in them that hold no spell id.
 const NOT_IDS: &[&str] = &["client_spellmods"];
@@ -38,18 +33,15 @@ enum Ids {
     One,
     /// A list of ids, all under the one name.
     SameName,
-    /// A list of ids under the one name, the Nth at "Rank N".
-    Ranks,
     /// A list of ids and a list of names, pairwise.
     Parallel,
 }
 
-/// One id the content names: where, the id, the name it says and the rank, if it says one.
+/// One id the content names: where, the id and the name it says.
 struct Named {
     at: String,
     id: u32,
     name: String,
-    rank: Option<String>,
 }
 
 #[test]
@@ -63,7 +55,7 @@ fn every_content_spell_id_is_the_spell_its_name_says() {
 
     let named = content_spell_ids();
     let ids: BTreeSet<u32> = named.iter().map(|n| n.id).collect();
-    // Callings' skills, talent ranks and procs, the Hearthstone, food and drink, equip spells.
+    // Callings' skills and procs, the Hearthstone, food and drink, equip spells.
     assert!(ids.len() > 170, "only {} ids found", ids.len());
 
     let wrong: Vec<String> = named.iter().filter_map(|n| mismatch(n, &spells)).collect();
@@ -88,15 +80,7 @@ fn mismatch(n: &Named, spells: &SpellCatalog) -> Option<String> {
             n.at, n.id, row.name, n.name
         ));
     }
-    match &n.rank {
-        // A row of the sheet's own (ADR 0011) has no rank text: its ranks are its talent's.
-        Some(_) if n.id >= FROM_SCRATCH_MIN_ID => None,
-        Some(want) if want != rank => Some(format!(
-            "{}: {} is {:?} {rank:?} in Spell.dbc, not {want:?}",
-            n.at, n.id, row.name
-        )),
-        _ => None,
-    }
+    None
 }
 
 /// Every id in every `content/*.toml`, paired with its name.
@@ -169,30 +153,23 @@ fn pairs(t: &toml::Table, at: &str, out: &mut Vec<Named>) {
                 .unwrap_or_else(|| panic!("{at}: `{name_key}` is not a string"))
                 .to_owned()
         };
-        let one = |id: u32, name: String, rank: Option<String>| Named {
+        let one = |id: u32, name: String| Named {
             at: format!("{at}.{key}"),
             id,
             name,
-            rank,
         };
         match layout {
-            Ids::One => out.push(one(id(&t[key]), text(name), None)),
-            Ids::SameName | Ids::Ranks => {
-                let ids = t[key].as_array().unwrap();
-                for (i, v) in ids.iter().enumerate() {
-                    let ranked = matches!(layout, Ids::Ranks) && ids.len() > 1;
-                    out.push(one(
-                        id(v),
-                        text(name),
-                        ranked.then(|| format!("Rank {}", i + 1)),
-                    ));
+            Ids::One => out.push(one(id(&t[key]), text(name))),
+            Ids::SameName => {
+                for v in t[key].as_array().unwrap() {
+                    out.push(one(id(v), text(name)));
                 }
             }
             Ids::Parallel => {
                 let (ids, names) = (t[key].as_array().unwrap(), name.as_array().unwrap());
                 assert_eq!(ids.len(), names.len(), "{at}: `{key}` and `{name_key}`");
                 for (v, n) in ids.iter().zip(names) {
-                    out.push(one(id(v), text(n), None));
+                    out.push(one(id(v), text(n)));
                 }
             }
         }
