@@ -9,19 +9,20 @@
         window with one chat line, except after a grid whose `over` is set: that window stays open
         with its end card until Close.
 
-        One 600 x 736 column with an 18 unit margin, top to bottom: the header (title, time and size,
+        One 734 x 748 column with an 18 unit margin, top to bottom: the header (title, time and size,
         plants in Bloom; pulls left, pips and the basket tally on the right), the Herbalism level bar,
-        the Tool and Item chips, the known-plant chips, the bed of 5 x 5 tiles of 68 with a 4 gap in its
-        hedge, the buttons, the legend (or the end card), and the Basket. The pull log is a 260 wide
-        panel joined to the right edge. The panels are flat colour; the tile art is
+        the Tool and Item chips, the known-plant chips, the bed of 5 x 5 tiles of 92 with a 4 gap in its
+        hedge, and the buttons. The pull log, legend (or end card), and Basket share a 270 wide
+        panel joined to the right edge. The window fits the viewport and grows for wrapped chips.
+        The panels use brown gradients and gold rules; the tile art is
         `Interface\Benilla\herbalism\*`, painted RGBA `.tga` files.
     -->
     <Script><![CDATA[
         BENILLA_HERB_ART = "Interface\\Benilla\\herbalism\\"
         BENILLA_HERB_SIZE = 5
         BENILLA_HERB_MARGIN = 18
-        BENILLA_HERB_WIDTH = 600
-        BENILLA_HERB_TILE = 68
+        BENILLA_HERB_WIDTH = 734
+        BENILLA_HERB_TILE = 92
         BENILLA_HERB_GAP = 4
         BENILLA_HERB_HEDGE = 12
         BENILLA_HERB_BED_TOP = 188
@@ -161,7 +162,7 @@
 
         function BenillaHerb_Chip(name)
             local chip = CreateFrame("Frame", name, BenillaHerbPatch)
-            chip:SetHeight(18)
+            chip:SetHeight(24)
             BenillaHerb_ChipBack(chip)
             local text = BenillaHerb_Text(chip, name .. "Text", "GameFontHighlightSmall")
             text:SetPoint("LEFT", chip, "LEFT", 6, 0)
@@ -232,14 +233,14 @@
             end
 
             -- The Basket's rows, two per line.
-            local half = (BENILLA_HERB_WIDTH - 2 * margin - 8) / 2
+            local half = 242
             for n = 1, BENILLA_HERB_BASKET_ROWS do
                 local name = "BenillaHerbBasket" .. n
-                local row = CreateFrame("Frame", name, BenillaHerbPatch)
+                local row = CreateFrame("Frame", name, BenillaHerbLogPanel)
                 row:SetWidth(half)
                 row:SetHeight(16)
                 row:SetPoint("TOPLEFT", BenillaHerbBasketTitle, "BOTTOMLEFT",
-                    math.mod(n - 1, 2) * (half + 8), -4 - math.floor((n - 1) / 2) * 18)
+                    0, -4 - (n - 1) * 18)
                 BenillaHerb_ChipBack(row)
                 local glyph = row:CreateTexture(name .. "Glyph", "ARTWORK")
                 glyph:SetWidth(14)
@@ -254,13 +255,13 @@
 
             -- The legend: two samples per line in two columns, then the hover hint.
             local samples = {
-                { "stake", "Stake: plants still hidden in the touching tiles" },
-                { "bush_hidden_1", "Glowing bush: you know a plant is here", true },
-                { "bush_wilted_1", "Wilted bush: known weed" },
-                { "bush_thorn_1", "Red bush: known thorn" },
+                { "stake", "Stake: nearby hidden plants" },
+                { "bush_hidden_1", "Glow: a known plant", true },
+                { "bush_wilted_1", "Wilted: a known weed" },
+                { "bush_thorn_1", "Red: a known thorn" },
             }
             for n, s in ipairs(samples) do
-                local x, y = math.mod(n - 1, 2) * 290, -math.floor((n - 1) / 2) * 14
+                local x, y = 0, -(n - 1) * 18
                 local w = s[1] == "stake" and 7 or 14
                 local tex = BenillaHerb_Texture(BenillaHerbLegend, "BenillaHerbLegendSample" .. n, "ARTWORK", s[1], w, 14)
                 tex:SetPoint("TOPLEFT", BenillaHerbLegend, "TOPLEFT", x + (14 - w) / 2, y)
@@ -270,25 +271,26 @@
                 end
                 local text = BenillaHerb_Text(BenillaHerbLegend, "BenillaHerbLegendText" .. n, "GameFontHighlightSmall")
                 text:SetPoint("TOPLEFT", BenillaHerbLegend, "TOPLEFT", x + 18, y - 1)
+                text:SetWidth(224)
                 text:SetText(s[2])
             end
-            BenillaHerbLegendHint:SetText("Hover a pulled spot to see the tiles its number counts.")
+            BenillaHerbLegendHint:SetText("Hover a stake to see its neighbors.")
             BenillaHerb_ChipBack(BenillaHerbEnd)
 
             -- The pull log's entries, newest at the top.
             for n = 1, BENILLA_HERB_LOG_ENTRIES do
                 local name = "BenillaHerbLogEntry" .. n
                 local entry = CreateFrame("Frame", name, BenillaHerbLogPanel)
-                entry:SetWidth(260 - 28)
-                entry:SetHeight(36)
-                entry:SetPoint("TOPLEFT", BenillaHerbLogPanel, "TOPLEFT", 14, -40 - (n - 1) * 40)
+                entry:SetWidth(270 - 28)
+                entry:SetHeight(34)
+                entry:SetPoint("TOPLEFT", BenillaHerbLogPanel, "TOPLEFT", 14, -40 - (n - 1) * 36)
                 BenillaHerb_ChipBack(entry)
                 local bar = entry:CreateTexture(name .. "Bar", "ARTWORK")
                 bar:SetWidth(3)
                 bar:SetPoint("TOPLEFT", entry, "TOPLEFT", 0, 0)
                 bar:SetPoint("BOTTOMLEFT", entry, "BOTTOMLEFT", 0, 0)
                 local title = BenillaHerb_Text(entry, name .. "Title", "GameFontNormal")
-                title:SetWidth(150)
+                title:SetWidth(160)
                 title:SetJustifyH("LEFT")
                 title:SetPoint("TOPLEFT", entry, "TOPLEFT", 9, -5)
                 local place = BenillaHerb_Text(entry, name .. "Place", "GameFontHighlightSmall")
@@ -441,7 +443,7 @@
                 local w = getglobal(chip:GetName() .. "Text"):GetStringWidth() + 12
                 if x > 0 and x + w > width then
                     x = 0
-                    y = y + 20
+                    y = y + 28
                 end
                 chip:SetWidth(w)
                 chip:ClearAllPoints()
@@ -449,6 +451,7 @@
                 chip:Show()
                 x = x + w + 6
             end
+            return y + 24
         end
 
         -- Chip `n` of `pool` (named `prefix` .. n), made on first use, showing `text`.
@@ -495,7 +498,7 @@
             for k = n + 1, table.getn(BenillaHerbState.chips) do
                 BenillaHerbState.chips[k]:Hide()
             end
-            BenillaHerb_PlaceChips(shown, 112)
+            local toolBottom = BenillaHerb_PlaceChips(shown, 116)
 
             local known = {}
             local _, _, glintAt = GetHerbRevealAt()
@@ -515,7 +518,13 @@
             for k = GetHerbKnown() + 1, table.getn(BenillaHerbState.known) do
                 BenillaHerbState.known[k]:Hide()
             end
-            BenillaHerb_PlaceChips(known, 134)
+            local knownBottom = BenillaHerb_PlaceChips(known, math.max(148, toolBottom + 8))
+            local extra = math.max(0, knownBottom + 20 - BENILLA_HERB_BED_TOP)
+            BenillaHerbBed:ClearAllPoints()
+            BenillaHerbBed:SetPoint("TOP", BenillaHerbPatch, "TOP", 0, -BENILLA_HERB_BED_TOP - extra)
+            BenillaHerbPatch:SetHeight(748 + extra)
+            BenillaHerbLogPanel:SetHeight(748 + extra)
+            BenillaHerbPatch:SetScale(math.min(1, (GetScreenHeight() - 20) / (748 + extra), (GetScreenWidth() - 20) / 1004))
             for k = 1, GetHerbKnown() do
                 local _, present = GetHerbKnownItem(k)
                 if not present then
@@ -1002,6 +1011,9 @@
             local x, y
             if not l then
                 x, y = (pl + pr - w) / 2, (pt + pb + h) / 2
+            elseif l >= pr then
+                -- Sidebar targets leave the main column free for the callout.
+                x, y = pl + BENILLA_HERB_MARGIN, math.max(math.min(t, pt), pb + h)
             elseif r + gap + w <= pr then
                 x, y = r + gap, math.max(math.min(t, pt), pb + h)
             else
@@ -1091,7 +1103,7 @@
     ]]></Script>
 
     <Button name="BenillaHerbTileTemplate" virtual="true">
-        <Size><AbsDimension x="68" y="68"/></Size>
+        <Size><AbsDimension x="92" y="92"/></Size>
         <Layers>
             <Layer level="BACKGROUND">
                 <Texture name="$parentBush" setAllPoints="true"/>
@@ -1115,7 +1127,7 @@
                     <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="3" y="-4"/></Offset></Anchor></Anchors>
                 </FontString>
                 <FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="CENTER">
-                    <Size><AbsDimension x="66" y="12"/></Size>
+                    <Size><AbsDimension x="90" y="12"/></Size>
                     <Anchors><Anchor point="BOTTOM"><Offset><AbsDimension x="0" y="3"/></Offset></Anchor></Anchors>
                 </FontString>
             </Layer>
@@ -1128,8 +1140,8 @@
     </Button>
 
     <Frame name="BenillaHerbPatch" parent="UIParent" frameStrata="HIGH" movable="true" enableMouse="true" hidden="true">
-        <Size><AbsDimension x="600" y="736"/></Size>
-        <Anchors><Anchor point="CENTER"><Offset><AbsDimension x="-130" y="0"/></Offset></Anchor></Anchors>
+        <Size><AbsDimension x="734" y="748"/></Size>
+        <Anchors><Anchor point="CENTER"><Offset><AbsDimension x="-135" y="0"/></Offset></Anchor></Anchors>
         <Layers>
             <Layer level="ARTWORK">
                 <FontString name="BenillaHerbTitle" inherits="GameFontNormalHuge" justifyH="LEFT">
@@ -1157,17 +1169,30 @@
                 <FontString name="BenillaHerbXPText" inherits="GameFontHighlightSmall" justifyH="RIGHT">
                     <Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-18" y="-93"/></Offset></Anchor></Anchors>
                 </FontString>
-                <FontString name="BenillaHerbBasketTitle" inherits="GameFontNormal" justifyH="LEFT">
-                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="18" y="-648"/></Offset></Anchor></Anchors>
-                </FontString>
-                <FontString name="BenillaHerbBasketEmpty" inherits="GameFontHighlightSmall" justifyH="LEFT">
-                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="18" y="-668"/></Offset></Anchor></Anchors>
-                </FontString>
+
+
             </Layer>
         </Layers>
         <Frames>
+            <Frame name="BenillaHerbLogPanel">
+                <Size><AbsDimension x="270" y="748"/></Size>
+                <Anchors><Anchor point="TOPLEFT" relativePoint="TOPRIGHT"/></Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                <FontString name="BenillaHerbBasketEmpty" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbLogPanel"><Offset><AbsDimension x="14" y="-626"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="BenillaHerbBasketTitle" inherits="GameFontNormal" justifyH="LEFT">
+                    <Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbLogPanel"><Offset><AbsDimension x="14" y="-606"/></Offset></Anchor></Anchors>
+                </FontString>
+                        <FontString name="BenillaHerbLogTitle" inherits="GameFontNormal" justifyH="LEFT">
+                            <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="14" y="-18"/></Offset></Anchor></Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
             <StatusBar name="BenillaHerbXPBar">
-                <Size><AbsDimension x="370" y="10"/></Size>
+                <Size><AbsDimension x="524" y="10"/></Size>
                 <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="120" y="-95"/></Offset></Anchor></Anchors>
                 <Layers>
                     <Layer level="BACKGROUND">
@@ -1178,70 +1203,62 @@
                 <BarColor r="0.541" g="0.361" b="1"/>
             </StatusBar>
             <Frame name="BenillaHerbBed">
-                <Size><AbsDimension x="380" y="380"/></Size>
+                <Size><AbsDimension x="500" y="500"/></Size>
                 <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-188"/></Offset></Anchor></Anchors>
             </Frame>
             <Button name="BenillaHerbSkill" inherits="UIPanelButtonTemplate" hidden="true">
-                <Size><AbsDimension x="140" y="22"/></Size>
-                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="18" y="-574"/></Offset></Anchor></Anchors>
+                <Size><AbsDimension x="140" y="32"/></Size>
+                <Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbBed" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="-68" y="-12"/></Offset></Anchor></Anchors>
                 <Scripts><OnClick>BenillaHerbSkill_OnClick()</OnClick></Scripts>
             </Button>
             <Button name="BenillaHerbAcross" inherits="UIPanelButtonTemplate" hidden="true">
-                <Size><AbsDimension x="70" y="22"/></Size>
-                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="162" y="-574"/></Offset></Anchor></Anchors>
+                <Size><AbsDimension x="70" y="32"/></Size>
+                <Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbBed" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="76" y="-12"/></Offset></Anchor></Anchors>
                 <Scripts><OnClick>BenillaHerbAcross_OnClick()</OnClick></Scripts>
             </Button>
             <Button name="BenillaHerbConsumable" inherits="UIPanelButtonTemplate" hidden="true">
-                <Size><AbsDimension x="210" y="22"/></Size>
-                <Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-134" y="-574"/></Offset></Anchor></Anchors>
+                <Size><AbsDimension x="210" y="32"/></Size>
+                <Anchors><Anchor point="TOPRIGHT" relativeTo="BenillaHerbBed" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="-18" y="-12"/></Offset></Anchor></Anchors>
                 <Scripts><OnClick>BenillaHerbConsumable_OnClick()</OnClick></Scripts>
             </Button>
             <Button name="BenillaHerbLeave" inherits="UIPanelButtonTemplate">
-                <Size><AbsDimension x="110" y="22"/></Size>
-                <Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-18" y="-574"/></Offset></Anchor></Anchors>
+                <Size><AbsDimension x="110" y="32"/></Size>
+                <Anchors><Anchor point="TOPRIGHT" relativeTo="BenillaHerbBed" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="98" y="-12"/></Offset></Anchor></Anchors>
                 <Scripts><OnClick>HerbLeave()</OnClick></Scripts>
             </Button>
             <Button name="BenillaHerbClose" inherits="UIPanelButtonTemplate" hidden="true">
-                <Size><AbsDimension x="110" y="22"/></Size>
-                <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-574"/></Offset></Anchor></Anchors>
+                <Size><AbsDimension x="110" y="32"/></Size>
+                <Anchors><Anchor point="TOP" relativeTo="BenillaHerbBed" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-12"/></Offset></Anchor></Anchors>
                 <Scripts><OnClick>BenillaHerbClose_OnClick()</OnClick></Scripts>
             </Button>
             <Frame name="BenillaHerbLegend">
-                <Size><AbsDimension x="564" y="40"/></Size>
-                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="18" y="-602"/></Offset></Anchor></Anchors>
+                <Size><AbsDimension x="242" y="94"/></Size>
+                <Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbLogPanel"><Offset><AbsDimension x="14" y="-490"/></Offset></Anchor></Anchors>
                 <Layers>
                     <Layer level="ARTWORK">
                         <FontString name="BenillaHerbLegendHint" inherits="GameFontHighlightSmall" justifyH="CENTER">
-                            <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-29"/></Offset></Anchor></Anchors>
+                            <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-78"/></Offset></Anchor></Anchors>
                         </FontString>
                     </Layer>
                 </Layers>
             </Frame>
             <Frame name="BenillaHerbEnd" hidden="true">
-                <Size><AbsDimension x="564" y="40"/></Size>
-                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="18" y="-602"/></Offset></Anchor></Anchors>
+                <Size><AbsDimension x="242" y="94"/></Size>
+                <Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbLogPanel"><Offset><AbsDimension x="14" y="-490"/></Offset></Anchor></Anchors>
                 <Layers>
                     <Layer level="ARTWORK">
                         <FontString name="BenillaHerbEndReason" inherits="GameFontNormal" justifyH="LEFT">
+                            <Size><AbsDimension x="226" y="16"/></Size>
                             <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="8" y="-6"/></Offset></Anchor></Anchors>
                         </FontString>
                         <FontString name="BenillaHerbEndSummary" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                            <Size><AbsDimension x="226" y="44"/></Size>
                             <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="8" y="-24"/></Offset></Anchor></Anchors>
                         </FontString>
                     </Layer>
                 </Layers>
             </Frame>
-            <Frame name="BenillaHerbLogPanel">
-                <Size><AbsDimension x="260" y="736"/></Size>
-                <Anchors><Anchor point="TOPLEFT" relativePoint="TOPRIGHT"/></Anchors>
-                <Layers>
-                    <Layer level="ARTWORK">
-                        <FontString name="BenillaHerbLogTitle" inherits="GameFontNormal" justifyH="LEFT">
-                            <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="14" y="-18"/></Offset></Anchor></Anchors>
-                        </FontString>
-                    </Layer>
-                </Layers>
-            </Frame>
+
             <Button name="BenillaHerbTourHelp" inherits="UIPanelButtonTemplate" text="?">
                 <Size><AbsDimension x="24" y="24"/></Size>
                 <Anchors><Anchor point="LEFT" relativeTo="BenillaHerbTitle" relativePoint="RIGHT"><Offset><AbsDimension x="8" y="0"/></Offset></Anchor></Anchors>

@@ -449,6 +449,29 @@ fn the_title_sits_inside_the_margin() {
 }
 
 #[test]
+fn the_garden_and_sidebar_fit_small_screens() {
+    for (width, height) in [(1024.0, 768.0), (800.0, 600.0)] {
+        let mut s = window();
+        s.set_screen_size(width, height);
+        push(&mut s, grid(|_| {}));
+        assert!(
+            s.eval::<bool>(
+                "local scale = BenillaHerbPatch:GetEffectiveScale() \
+                 return BenillaHerbPatch:GetLeft() >= 0 \
+                 and BenillaHerbLogPanel:GetRight() * scale <= GetScreenWidth() \
+                 and BenillaHerbPatch:GetTop() * scale <= GetScreenHeight() \
+                 and BenillaHerbPatch:GetBottom() >= 0 \
+                 and BenillaHerbLogEntry12:GetBottom() >= BenillaHerbLegend:GetTop() \
+                 and BenillaHerbBasket6:GetBottom() >= BenillaHerbLogPanel:GetBottom() \
+                 and BenillaHerbSkill:GetTop() < BenillaHerbBed:GetBottom()",
+            )
+            .unwrap(),
+            "garden overflow at {width} x {height}"
+        );
+    }
+}
+
+#[test]
 fn closing_hides_the_window_and_pushing_none_does_too() {
     let mut s = window();
     push(&mut s, mixed());
