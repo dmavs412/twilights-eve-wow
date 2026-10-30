@@ -208,6 +208,11 @@ Davis chose the rows, their order and the 18 choices. The readings below are min
 - Kidney Shot's and Choking Garrote's stuns take diminishing returns as Bull Rush's do.
 - Phantom Guile's combo point goes on the Cutthroat's current target, as the old talent's did.
 
+Readings taken in the build (#505): Phantom Guile grants its buff with `grant_aura`, as Searing
+Penance does, because a `dodge_pct` effect takes only the dodge from its aura row and not the
+proc. Every mob's kill pays experience today (ADR 0012), so Executioner's Toll pays out on every
+killing blow. A kill that paid none would give nothing, but no mob pays none.
+
 ## Initiate's rows
 
 Grilled with Davis 2026-10-29 (#506). Rows open at Ley-Spark 4, Ley Ward 8, Searing Ember 12,
