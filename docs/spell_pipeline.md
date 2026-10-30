@@ -89,6 +89,37 @@ instead of the Calling's `bleed_drop_chance`, and a Calling with no `bleed_drop`
 which for a dodge is the mob the character is attacking. The talent kind `pickup_energize` takes
 `amount=N`: each droplet picked up gives N of the character's own power, as `pickup_heal_pct`
 heals.
+Initiate's rows (#506) add more. Each is a whole number of at least 1 unless said otherwise, and
+a `chance` or a percent marked so runs 1 to 100. The skill kind `refund_cost` takes `chance=N`
+and `pct=N`, with `full_absorb_pct=N` and `absorb_duration_ms=N` together. When the cast lands it
+rolls N% once. On a hit, from a bar that was full before the cast and with `full_absorb_pct`
+set, a shield of that percent of the cost goes up for `absorb_duration_ms` and nothing comes
+back; otherwise `pct`% of the cost comes back. A talent proc's `refund_cost_pct`,
+`absorb_cost_pct` and `at_full_power=absorb` call the same realm helper. The patch shows it as a
+dummy effect. The skill kind `root` takes `aura_spell_id=N` and `duration_ms=N`: the target cannot
+move but still swings and casts, under that id for that long, with no diminishing returns. An
+aura row's `root` takes no params. Any skill effect takes `requires_target_aura=key|slowed`. The
+effect lands only when the cast's target wore the caster's aura of that row, or for `slowed` any
+snare, before the cast landed; another target is read as it stands. `absorb` takes four:
+`if_crit=yes` (the shield goes up only off the cast's critical strike, and replaces one of the
+same spell only when larger); `energize_pct=N` (each soak gives N% of the soaked amount as the
+caster's power, rounded down); `attacker_aura=key` (each soak of an enemy unit's blow, spell or
+tick puts that aura row on it); and `burst_radius_yd=N`. With `burst_radius_yd`, a shield soaked
+whole hits every living enemy within N yd of the caster for its amount, in the row's school
+(the build writes it as `burst_school`), with that school's miss and crit rolls. A shield that
+times out or is replaced does nothing. `periodic_damage` takes three. The pair
+`tick_aura=key;tick_aura_chance=N` (N from 1 to 100) gives the caster that aura row at N% after
+each tick, as `grant_aura` does. `weaken_pct=N` (1 to 100) makes the unit wearing it hit the
+caster N% less: swings, spells and periodic damage. `tick_energize_pct_of_max=N` gives N% of the
+caster's maximum power after each tick. The tick riders go once a tick, whatever the stacks.
+`school_damage` takes the pair `vs_aura=key;vs_aura_pct=N`: N% more when the target wears the
+caster's aura of that row at the hit, summed with `controlled_pct` and `bleeding_pct`.
+`mod_run_speed` takes `radius_yd=N`: the snare also goes on every other living enemy within N
+yd of the target, without the cast's other effects. `consume_aura` takes `spread_yd=N`: a fresh
+copy of what it took, one stack and the row's full duration, goes on the nearest other living
+enemy within N yd of the target. A pair with one half missing, and an aura key that is not an
+aura row of the Calling, fail the build. A proc's `skill=key` and a `next_cast` aura's skills
+answer to a Skill Choice of that skill, as every talent's `skill=` does.
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

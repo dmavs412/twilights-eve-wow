@@ -266,6 +266,15 @@ them.
 - Splintering Cold's slow is Biting Cold's own aura, so Catalyst shatters it on any of those
   enemies.
 
+Readings taken in the build (#506): the two Arcane Substrate rider rows lost their shared
+`exclusive_group`, which is what made the realm spend both on the first cast; each now goes with
+its own skill's next cast. Ley-Line Tap's `refund_cost` and the old talent proc's
+`refund_cost_pct` and `at_full_power=absorb` call one realm helper; the proc's half stays for a
+later Talent. A proc's `skill=` and a `next_cast` buff's skills answer to a Skill Choice of that
+skill, so Catalytic Resonance follows Thermal Shock and Arcane Substrate's Cold rider shortens
+Frostbite. Frostbite's `root` shows as a root aura in the client patch, as a stun does. No icon was
+swapped: all 18 are in the 1.12 archives.
+
 ## Ranger's rows
 
 Grilled with Davis 2026-10-29 (#507). Rows open at the Talent row 4, Snapshot 8, Vault 12, Barbed
