@@ -1249,6 +1249,10 @@ pub(crate) struct Mob {
     pub(crate) flee_due: bool,
     /// The stance a Creature Spell put it in (#473).
     pub(crate) stance: Option<Stance>,
+    /// The percent less its hits land for, by the player whose damage over time on it weakens
+    /// by stacks (Withering Blight), as that player's session last counted it. A session reads
+    /// the others' entries, so the cut reaches its blows at every player.
+    pub(crate) withered: HashMap<u64, u32>,
 }
 
 /// A creature's stance (#473): the damage it deals and takes, each changed by a percent.
@@ -1417,6 +1421,7 @@ impl Mob {
             fled: false,
             flee_due: false,
             stance: None,
+            withered: HashMap::new(),
         })
     }
 
@@ -1504,6 +1509,7 @@ impl Mob {
             fled: false,
             flee_due: false,
             stance: None,
+            withered: HashMap::new(),
         }
     }
 

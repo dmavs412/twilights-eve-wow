@@ -348,6 +348,14 @@ impl Shard {
             .retain(|m| m.hunts.is_none_or(|owner| present.contains(&owner)));
     }
 
+    /// The weakening by stacks of a player who has left lifts from the mobs: no session of
+    /// theirs counts it any more.
+    pub(crate) fn drop_withering(&mut self, present: &[u64]) {
+        for m in &mut self.mobs {
+            m.withered.retain(|by, _| present.contains(by));
+        }
+    }
+
     /// A mob of `spawn` died: it comes back once every player has been away `wait` seconds.
     pub(crate) fn died(&mut self, spawn: u32, wait: f32) {
         // An Encounter's creatures never come back by themselves.

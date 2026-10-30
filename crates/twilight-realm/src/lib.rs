@@ -1173,6 +1173,7 @@ impl Realm {
             let positions: Vec<[f32; 3]> = players.iter().map(|p| p.position).collect();
             let present: Vec<u64> = players.iter().map(|p| p.guid).collect();
             shard.drop_hunts(&present);
+            shard.drop_withering(&present);
             let made = shard.update(dt, &positions, host);
             let mut owners = shard.owners(players);
             let shard = &self.shards[map];

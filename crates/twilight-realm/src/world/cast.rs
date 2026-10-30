@@ -1394,12 +1394,12 @@ impl Skills {
         })
     }
 
-    /// The percent less `unit` hits the player for: the largest flat cut of the player's damage
-    /// over time on it (Smoldering Ember), plus the largest cut by stacks of any damage over time
-    /// on it, which weakens its hits at anyone (Withering Blight). Never more than all of it.
-    pub(super) fn weaken_pct(&self, unit: u64) -> u32 {
-        let on = || self.auras.iter().filter(|a| a.unit == unit);
-        let flat = on()
+    /// The percent less `unit` hits the player for from the largest flat cut of the player's
+    /// damage over time on it (Smoldering Ember).
+    pub(super) fn burn_weaken_pct(&self, unit: u64) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == unit)
             .map(|a| match a.kind {
                 AuraKind::PeriodicDamage { caster, riders, .. } if caster == self.me => {
                     riders.weaken_pct
@@ -1407,8 +1407,15 @@ impl Skills {
                 _ => 0,
             })
             .max()
-            .unwrap_or(0);
-        let stacked = on()
+            .unwrap_or(0)
+    }
+
+    /// The percent less `unit` hits anyone for from the largest cut by stacks of a damage over
+    /// time this session holds on it (Withering Blight).
+    pub(super) fn withered_pct(&self, unit: u64) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == unit)
             .map(|a| match a.kind {
                 AuraKind::PeriodicDamage { stacks, riders, .. } => {
                     (riders.weaken_per_stack_pct * stacks).min(riders.weaken_max_pct)
@@ -1416,8 +1423,7 @@ impl Skills {
                 _ => 0,
             })
             .max()
-            .unwrap_or(0);
-        (flat + stacked).min(100)
+            .unwrap_or(0)
     }
 
     /// The stacks of the player's damage over time `spell_id` on `unit`; 0 without it.

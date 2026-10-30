@@ -855,6 +855,7 @@ impl InWorld {
         self.call_for_help(host, events);
         self.timed_calls(host, events);
         self.update_aura_states(events);
+        self.share_withering();
         if !self.player.alive() && !self.player.dead {
             self.die(c, events);
         }
@@ -1469,8 +1470,8 @@ impl InWorld {
         // The player's own damage-taken auras: less inside their Consecration.
         let damage =
             crate::mobs::changed_by(damage, self.skills.damage_taken_pct(self.guid, school));
-        // Less from a foe the player's burn weakens (Smoldering Ember).
-        let damage = crate::mobs::changed_by(damage, -(self.skills.weaken_pct(from) as i32));
+        // Less from a foe the player's burn or anyone's stacks weaken.
+        let damage = crate::mobs::changed_by(damage, -(self.weaken_pct(from) as i32));
         let (damage, soaks) = self.skills.soak_on(self.guid, damage, school, events);
         self.warded(from, &soaks, events);
         self.fed_reflect(from, damage, school);
@@ -1486,6 +1487,39 @@ impl InWorld {
             &[(UNIT_FIELD_HEALTH, p.health), p.power.field()],
         ));
         self.interrupt_item_cast(events);
+    }
+
+    /// The percent less `from` hits the player for: the flat cut of the player's burn on it
+    /// (Smoldering Ember), plus the largest cut by stacks on it from any player's damage over
+    /// time (Withering Blight). Never more than all of it.
+    fn weaken_pct(&self, from: u64) -> u32 {
+        let others = self
+            .mobs
+            .iter()
+            .filter(|m| m.guid == from)
+            .flat_map(|m| &m.withered)
+            .filter(|&(&by, _)| by != self.guid)
+            .map(|(_, &pct)| pct)
+            .max()
+            .unwrap_or(0);
+        let stacked = self.skills.withered_pct(from).max(others);
+        (self.skills.burn_weaken_pct(from) + stacked).min(100)
+    }
+
+    /// Counts on each mob the cut by stacks the player's damage over time there makes to its
+    /// hits, so its blows in another player's session are cut too (Withering Blight).
+    fn share_withering(&mut self) {
+        let me = self.guid;
+        for mob in &mut self.mobs {
+            match self.skills.withered_pct(mob.guid) {
+                0 => {
+                    mob.withered.remove(&me);
+                }
+                pct => {
+                    mob.withered.insert(me, pct);
+                }
+            }
+        }
     }
 
     /// The player loses `damage` from `from`: as [`Self::player_takes`], save that the foe's

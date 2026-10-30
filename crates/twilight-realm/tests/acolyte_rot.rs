@@ -671,3 +671,70 @@ fn a_weakening_by_stacks_at_15_stacks_stops_at_20_percent() {
         "a blow that tells 20% from 30%: {blows:?}"
     );
 }
+
+/// A Razormane Hunter at Thorn Hill, levels 11 and 12.
+const HUNTER: u32 = 3265;
+const THORN_HILL: [f32; 3] = [-38.801, -3234.81, 91.889];
+
+/// A weakening by stacks cuts the mob's hits at anyone, not only at the one who put it on: two
+/// level 20 test Priests, each in their own session; the Razormane Hunter fights player 1, and
+/// player 0 puts 10 stacks of `wither` (2% a stack) on it from 25 yards. Each of its blows at
+/// player 1 then takes 20% less of their health than it reports.
+#[test]
+fn a_weakening_by_stacks_cuts_the_mobs_blows_at_another_player() {
+    use common::party::{NoGround, Party};
+    let wither = 980;
+    let realm = Realm::with_seed(3).with_callings(TEST_CALLINGS);
+    let mut party = Party::edited(realm, &[20, 20], 0, Box::new(NoGround), |_, blob| {
+        blob.replace("calling = \"basic_warrior\"", "calling = \"test_priest\"")
+    });
+    let near = [THORN_HILL[0] + 25.0, THORN_HILL[1], THORN_HILL[2]];
+    party.go(0, near, std::f32::consts::PI);
+    party.go(1, THORN_HILL, 0.0);
+    party.run(0.0);
+    let (hunter, _) = party.unit(1, HUNTER, THORN_HILL);
+    let them = party.guids[1];
+    assert!(
+        party.seen(1).iter().any(|e| matches!(e,
+            SessionEvent::AttackStart { attacker, victim } if *attacker == hunter && *victim == them)),
+        "the hunter fights player 1"
+    );
+    for _ in 0..10 {
+        party.cmd(0, cast(wither, Some(hunter)));
+        assert_eq!(refusal(party.seen(0), wither), None, "wither is cast");
+    }
+    let mut caster = View::default();
+    caster.see(party.seen(0));
+    assert_eq!(caster.aura(hunter, wither).map(|a| a.stacks), Some(10));
+    let mut theirs = View::default();
+    theirs.see(party.seen(1));
+    let mut blows = Vec::new();
+    // Ten seconds of blows, stopping while a full one cannot kill.
+    for _ in 0..100 {
+        let health = theirs.health(them);
+        if health < 100 {
+            break;
+        }
+        let got = party.run(0.1);
+        theirs.see(&got[1]);
+        // One blow in the tick, from the withered hunter: a campmate it pulled has no stacks.
+        if let [(from, reported)] = got[1]
+            .iter()
+            .filter_map(|e| match e {
+                SessionEvent::AttackerState(a) if a.victim == them && a.damage > 0 => {
+                    Some((a.attacker, a.damage))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>()[..]
+        {
+            if from == hunter {
+                blows.push((reported, health - theirs.health(them)));
+            }
+        }
+    }
+    assert!(!blows.is_empty(), "the hunter lands blows on player 1");
+    for &(reported, lost) in &blows {
+        assert_eq!(lost, reported * 80 / 100, "{blows:?}");
+    }
+}
