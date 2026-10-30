@@ -9,9 +9,11 @@ building has several floors and only its author knows which one, so the row is f
 nearest floors and its author writes the Z. Rows with `grounded = false` and maps without
 terrain data are left alone.
 
-A Rumour point (`{ x = ..., y = ... }` in a `points = [...]` array) has no Z: it stands on the
-terrain, so a point inside a WMO box is flagged (rumour-indoor). Every row and point then passes
-the body rules of ADR 0021:
+A point (`{ x = ..., y = ... }` in a `points = [...]` array: a Rumour's, or a herbs.toml Herb
+Spot) stands on the terrain, so a point inside a WMO box is flagged (rumour-indoor). A point that
+writes a Z (`{ x = ..., y = ..., z = ... }`, the Herb Spots) must be at the terrain's height within
+the row limits, and `--fix` writes the terrain's. Every row and point then passes the body rules
+of ADR 0021:
 - water: no water surface (ADT MCLQ or WMO MLIQ) more than 1.5 yd over its feet, unless it is a
   GameObject or a creature that swims (`swims = true` on our template, vmangos InhabitType & 2
   on an imported one). A Hub NPC is never exempt.
@@ -107,11 +109,13 @@ ID = re.compile(r"^\s*id\s*=\s*(\d+)")
 QUEST = re.compile(r"^\s*quest\s*=\s*(\d+)")
 GIVER = re.compile(r"^\s*giver\s*=\s*(\d+)")
 POINTS = re.compile(r"^\s*points\s*=\s*\[")
-XY = re.compile(r"\{\s*x\s*=\s*(?P<x>-?[\d.]+)\s*,\s*y\s*=\s*(?P<y>-?[\d.]+)")
+XY = re.compile(r"\{\s*x\s*=\s*(?P<x>-?[\d.]+)\s*,\s*y\s*=\s*(?P<y>-?[\d.]+)"
+                r"(?:\s*,\s*z\s*=\s*(?P<z>-?[\d.]+))?")
+KEY = re.compile(r'^\s*key\s*=\s*"([^"]*)"')
 STRING = re.compile(r'"[^"]*"')
 
 Row = collections.namedtuple("Row", "idx label map grounded x y z kind entry on_top display")
-Point = collections.namedtuple("Point", "idx span label map x y kind entry")
+Point = collections.namedtuple("Point", "idx span label map x y z kind entry")
 
 
 def _read_lines(path):
@@ -195,8 +199,10 @@ def rows(path):
 
 def xy_points(path):
     """(lines, [Point]) for every `{ x = <num>, y = <num>` inside a `points = [` array: a
-    `[[rumour]]`'s spots for its giver, and a `[[rumour.spawn]]`'s. A point's `span` is the
-    (start, end) columns of its x and of its y. A spawn table takes its map from its Rumour."""
+    `[[rumour]]`'s spots for its giver, a `[[rumour.spawn]]`'s, and a herbs.toml `[[zone]]`'s Herb
+    Spots. A point's `z` is None unless it writes one, and its `span` is the (start, end) columns
+    of its x, of its y and of its z (None without one). A spawn table takes its map from its
+    Rumour."""
     lines = _read_lines(path)
     file_map = FILE_DEFAULT_MAP.get(os.path.basename(path), 0)
     out = []
@@ -211,12 +217,15 @@ def xy_points(path):
         if table["kind"] == "rumour.spawn":
             base = "rumour %s spawn %s" % (rumour["id"], table.get("quest"))
             entry = table.get("entry")
+        elif table["kind"] == "zone":
+            base = "herb zone %s" % table.get("key")
+            entry = None
         else:
             base = "rumour %s" % (table.get("id") if table["kind"] == "rumour" else table["kind"])
             entry = table.get("giver")
-        for n, (i, span, x, y) in enumerate(found, 1):
+        for n, (i, span, x, y, z) in enumerate(found, 1):
             out.append(Point(i, span, "%s point %d" % (base, n), tmap if tmap is not None else rumour_map,
-                             x, y, table["kind"], entry))
+                             x, y, z, table["kind"], entry))
         found.clear()
 
     for i, raw in enumerate(lines):
@@ -230,6 +239,10 @@ def xy_points(path):
                     rumour = {"id": None, "map": None, "giver": None}
                 continue
             if line.lstrip().startswith("#"):
+                continue
+            m = KEY.match(line)
+            if m:
+                table["key"] = m.group(1)
                 continue
             for key, rx in (("id", ID), ("map", MAP), ("giver", GIVER), ("quest", QUEST), ("entry", ENTRY)):
                 m = rx.match(line)
@@ -247,7 +260,9 @@ def xy_points(path):
                 continue
             start = 0
         for m in XY.finditer(line, start):
-            found.append((i, (m.span("x"), m.span("y")), float(m.group("x")), float(m.group("y"))))
+            z = m.group("z")
+            found.append((i, (m.span("x"), m.span("y"), m.span("z") if z else None),
+                          float(m.group("x")), float(m.group("y")), float(z) if z else None))
         code = STRING.sub("", line[start:]).split("#")[0]
         depth += code.count("[") - code.count("]")
     close()
@@ -467,12 +482,16 @@ def set_xyz(lines, idx, x, y, z):
                   + m.group("tail") + cr)
 
 
-def set_xy(lines, idx, span, x, y):
-    """Rewrite one point's x and y at `span` on line `idx`. Spans of points to its right move, so
-    a caller rewrites a line's points right to left."""
-    (x0, x1), (y0, y1) = span
+def set_xy(lines, idx, span, x, y, z=None):
+    """Rewrite one point's x and y at `span` on line `idx`, and its z when given and the point
+    writes one. Spans of points to its right move, so a caller rewrites a line's points right to
+    left."""
+    (x0, x1), (y0, y1), zspan = span
     line = lines[idx]
-    lines[idx] = line[:x0] + "%.1f" % x + line[x1:y0] + "%.1f" % y + line[y1:]
+    tail = line[y1:]
+    if z is not None and zspan is not None:
+        tail = line[y1:zspan[0]] + "%.2f" % z + line[zspan[1]:]
+    lines[idx] = line[:x0] + "%.1f" % x + line[x1:y0] + "%.1f" % y + tail
 
 
 class World:
@@ -689,27 +708,42 @@ def main():
                 counts["no-terrain"] += 1
                 continue
             counts["points"] += 1
+            terrain = world.terrain(p.map)
+            z_to = None  # the terrain's Z, for a point whose own Z is off it
+            if p.z is not None:
+                g = terrain.ground_z(p.x, p.y)
+                d = p.z - g
+                if d > ABOVE_LIMIT or -d > BELOW_LIMIT:
+                    counts[verb] += 1
+                    per_file[name] += 1
+                    print("%s %s:%d %s z=%.2f terrain=%.2f diff=%+.2f" % (verb, name, p.idx + 1, p.label, p.z, g, d))
+                    z_to = g
             new = known_or_flag(failed, name, p.label, p.x, p.y, BODY_RULES + ("rumour-indoor",))
-            if not new:
-                continue
-            if not a.fix:
-                counts[verb] += 1
-                per_file[name] += 1
-                print("%s %s:%d %s%s (%.1f %.1f)" % (" ".join(new), name, p.idx + 1, p.label, inside(failed), p.x, p.y))
+            if not new or not a.fix:
+                if new:
+                    counts[verb] += 1
+                    per_file[name] += 1
+                    print("%s %s:%d %s%s (%.1f %.1f)" % (" ".join(new), name, p.idx + 1, p.label, inside(failed), p.x, p.y))
+                if a.fix and z_to is not None:
+                    moves.append((p.idx, p.span, p.x, p.y, z_to))
                 continue
             moved = nudge(p.x, p.y, lambda cx, cy, p=p: world.point_rules(p, cx, cy) == {})
             if moved is None:
                 counts["nudge-failed"] += 1
                 per_file[name] += 1
                 print("nudge failed %s:%d %s %s" % (name, p.idx + 1, p.label, " ".join(new)))
+                if z_to is not None:
+                    moves.append((p.idx, p.span, p.x, p.y, z_to))
                 continue
+            cx, cy, _ = moved
+            cz = terrain.ground_z(cx, cy) if p.z is not None else None
             counts[verb] += 1
             per_file[name] += 1
-            print("nudged %s:%d %s %s: (%.1f %.1f) to (%.1f %.1f)"
-                  % (name, p.idx + 1, p.label, " ".join(new), p.x, p.y, moved[0], moved[1]))
-            moves.append((p.idx, p.span, moved[0], moved[1]))
-        for idx, span, cx, cy in sorted(moves, key=lambda m: (m[0], -m[1][0][0])):
-            set_xy(lines, idx, span, cx, cy)
+            print("nudged %s:%d %s %s: (%.1f %.1f) to (%.1f %.1f%s)"
+                  % (name, p.idx + 1, p.label, " ".join(new), p.x, p.y, cx, cy, "" if cz is None else " %.2f" % cz))
+            moves.append((p.idx, p.span, cx, cy, cz))
+        for idx, span, cx, cy, cz in sorted(moves, key=lambda m: (m[0], -m[1][0][0])):
+            set_xy(lines, idx, span, cx, cy, cz)
             changed = True
         if changed:
             with open(path, "w", encoding="utf-8", newline="") as f:

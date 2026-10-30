@@ -125,15 +125,17 @@ pub(crate) struct Zone {
     /// Thorns in this zone's patches in place of `[grid]`'s; a test zone sets 0.
     #[serde(default)]
     pub(crate) thorns: Option<u32>,
-    /// The Herb Spots. They have no Z: a spot stands on the terrain.
+    /// The Herb Spots.
     pub(crate) points: Vec<Point>,
 }
 
-/// A Herb Spot (`{ x = .., y = .. }`).
+/// A Herb Spot (`{ x = .., y = .., z = .. }`). Its Z is the terrain's, so a patch grown where the
+/// host has no ground loaded still stands on the grass (#477).
 #[derive(Deserialize, Clone, Copy)]
 pub(crate) struct Point {
     pub(crate) x: f32,
     pub(crate) y: f32,
+    pub(crate) z: f32,
 }
 
 #[derive(Deserialize, Clone, Copy, PartialEq, Eq, Debug)]

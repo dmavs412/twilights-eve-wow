@@ -60,6 +60,7 @@ class XyPoints(unittest.TestCase):
             ("rumour 4 spawn 94903 point 1", 0, -8992.0, -325.0, 97011),
             ("rumour 4 spawn 94903 point 2", 0, -9010.5, -300.0, 97011),
         ])
+        self.assertTrue(all(p.z is None for p in points))
 
     def test_set_xy_rewrites_a_point_in_place(self):
         lines, points = ground_check.xy_points(self.path)
@@ -67,6 +68,43 @@ class XyPoints(unittest.TestCase):
             ground_check.set_xy(lines, p.idx, p.span, p.x + 1, p.y - 1)
         self.assertEqual(lines[points[2].idx],
                          "points = [{ x = -8991.0, y = -326.0 }, { x = -9009.5, y = -301.0 }]")
+
+
+HERBS = """\
+[[perk]]
+key = "gloves"
+
+[[zone]]
+key = "elwynn"
+zone = 12
+live = 30
+points = [{ x = -9001.5, y = 120.0, z = 56.25 }, { x = -9000.0, y = 130.0, z = 57.00 }]
+"""
+
+
+class HerbSpots(unittest.TestCase):
+    def setUp(self):
+        fd, self.path = tempfile.mkstemp(suffix=".toml")
+        with os.fdopen(fd, "wb") as f:
+            f.write(HERBS.encode("utf-8"))
+
+    def tearDown(self):
+        os.remove(self.path)
+
+    def test_a_herb_spot_reads_its_z_under_its_zone_key(self):
+        _, points = ground_check.xy_points(self.path)
+        got = [(p.label, p.map, p.x, p.y, p.z) for p in points]
+        self.assertEqual(got, [
+            ("herb zone elwynn point 1", 0, -9001.5, 120.0, 56.25),
+            ("herb zone elwynn point 2", 0, -9000.0, 130.0, 57.0),
+        ])
+
+    def test_set_xy_rewrites_a_herb_spots_z(self):
+        lines, points = ground_check.xy_points(self.path)
+        for p in sorted(points, key=lambda p: -p.span[0][0]):
+            ground_check.set_xy(lines, p.idx, p.span, p.x, p.y, p.z + 1)
+        self.assertEqual(lines[points[0].idx],
+                         "points = [{ x = -9001.5, y = 120.0, z = 57.25 }, { x = -9000.0, y = 130.0, z = 58.00 }]")
 
 
 class Water(unittest.TestCase):

@@ -368,12 +368,13 @@ impl crate::Realm {
             .collect();
         while !free.is_empty() {
             let spot = free.swap_remove(self.rng.below(free.len() as u32) as usize);
+            let at = z.points[spot];
             let spec = ObjectSpec {
                 entry: patch.entry,
                 display: patch.display,
                 kind: ObjectKind::HerbPatch { zone, spot },
                 map: EASTERN_KINGDOMS,
-                position: [z.points[spot].x, z.points[spot].y, 0.0],
+                position: [at.x, at.y, at.z],
                 orientation: 0.0,
             };
             if let Some(object) = self.spawn_object(host, spec, Audience::of(&[guid])) {

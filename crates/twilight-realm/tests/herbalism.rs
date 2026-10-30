@@ -9,7 +9,7 @@ use benilla_protocol::{EntityKind, SessionEvent, START_ELWYNN};
 use common::party::*;
 use common::*;
 use quest_common::{accept, completed, hand_in};
-use twilight_realm::{Audience, HerbAction, Realm, RealmCommand};
+use twilight_realm::{Audience, HerbAction, Host, Realm, RealmCommand};
 
 const PATCH_ENTRY: u32 = 981_001;
 const BROTHER_ANSEL: u32 = 190_072;
@@ -27,11 +27,11 @@ zone = 990101
 live = 3
 thorns = 0
 points = [
-  { x = -8930.0, y = -132.0 },
-  { x = -8970.0, y = -132.0 },
-  { x = -8950.0, y = -110.0 },
-  { x = -8950.0, y = -155.0 },
-  { x = -8935.0, y = -150.0 },
+  { x = -8930.0, y = -132.0, z = 83.1 },
+  { x = -8970.0, y = -132.0, z = 84.2 },
+  { x = -8950.0, y = -110.0, z = 82.7 },
+  { x = -8950.0, y = -155.0, z = 83.9 },
+  { x = -8935.0, y = -150.0, z = 82.4 },
 ]
 
 [[plant]]
@@ -53,23 +53,28 @@ weight = 0
 use = "alchemy"
 "#;
 
-const POINTS: [[f32; 2]; 5] = [
-    [-8930.0, -132.0],
-    [-8970.0, -132.0],
-    [-8950.0, -110.0],
-    [-8950.0, -155.0],
-    [-8935.0, -150.0],
+const POINTS: [[f32; 3]; 5] = [
+    [-8930.0, -132.0, 83.1],
+    [-8970.0, -132.0, 84.2],
+    [-8950.0, -110.0, 82.7],
+    [-8950.0, -155.0, 83.9],
+    [-8935.0, -150.0, 82.4],
 ];
 
 /// A party of `knows.len()` warriors at the Northshire start, each knowing Herbalism or not.
 fn party(knows: &[bool]) -> Party {
+    party_on(knows, Box::new(FlatGround))
+}
+
+/// [`party`] on `host`'s ground.
+fn party_on(knows: &[bool], host: Box<dyn Host>) -> Party {
     let realm = Realm::with_seed(7).with_herbs(TEST_HERBS);
     let knows = knows.to_vec();
     Party::edited(
         realm,
         &vec![1; knows.len()],
         START_ELWYNN,
-        Box::new(FlatGround),
+        host,
         move |i, blob| {
             if knows[i] {
                 blob.replacen(
@@ -214,6 +219,16 @@ fn entering_the_world_stands_the_live_patches_at_distinct_points() {
     spots.sort_unstable();
     spots.dedup();
     assert_eq!(spots.len(), 3, "three distinct points");
+}
+
+#[test]
+fn a_patch_grown_where_no_ground_is_loaded_stands_at_its_herb_spots_z() {
+    let p = party_on(&[true], Box::new(NoGround));
+    let made = patches(p.seen(0));
+    assert_eq!(made.len(), 3, "{made:?}");
+    for (_, at) in made {
+        assert_eq!(at[2], POINTS[spot_of(at)][2], "{at:?}");
+    }
 }
 
 #[test]
@@ -665,11 +680,11 @@ zone = 990102
 live = 3
 thorns = 25
 points = [
-  { x = -8960.0, y = -120.0 },
-  { x = -8940.0, y = -120.0 },
-  { x = -8960.0, y = -145.0 },
-  { x = -8945.0, y = -142.0 },
-  { x = -8955.0, y = -132.0 },
+  { x = -8960.0, y = -120.0, z = 83.0 },
+  { x = -8940.0, y = -120.0, z = 83.0 },
+  { x = -8960.0, y = -145.0, z = 83.0 },
+  { x = -8945.0, y = -142.0, z = 83.0 },
+  { x = -8955.0, y = -132.0, z = 83.0 },
 ]
 
 [[plant]]

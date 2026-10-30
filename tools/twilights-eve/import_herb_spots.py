@@ -3,7 +3,8 @@
 herb spawn points of the vmangos world DB (spec #435, ADR 0024).
 
 Offline, one-off, re-runnable: the same inputs give the same file. Modelled on
-import_barrens_spawns.py.
+import_barrens_spawns.py. A re-run brings back the spots ground_check.py --fix moved or #437
+deleted, so run ground_check.py after it.
 
 Inputs:
   --db    vmangos world database as SQLite (mangos.sqlite)
@@ -12,8 +13,9 @@ Inputs:
 A spawn is a `gameobject` row on map 0 whose template has type 3 (chest) and a `data0` lock that
 Lock.dbc gives a Herbalism slot (Type 2, Index 2). Its zone is the ADT chunk's area, then
 AreaTable's parent zone, as import_barrens_spawns.py decides it. A spawn within 5 yards of one
-already kept in the same zone is dropped. Only the `points = [...]` line of each `[[zone]]` row is
-rewritten.
+already kept in the same zone is dropped. A spot's Z is the ADT terrain's at its rounded x and y,
+the height ground_check.py checks it against, not vmangos's `position_z` (#477); a spawn with no
+terrain under it is dropped. Only the `points = [...]` line of each `[[zone]]` row is rewritten.
 
 Standard library only. Run with -I.
 """
@@ -57,10 +59,23 @@ def dedupe(points, spacing=SPACING_YD):
     return kept
 
 
+def with_z(points, ground_z):
+    """Each (x, y) rounded to one decimal place, as (x, y, z) with `ground_z(x, y)` there; a point
+    `ground_z` gives None is dropped."""
+    out = []
+    for x, y in points:
+        rx, ry = round(x, 1) + 0.0, round(y, 1) + 0.0
+        z = ground_z(rx, ry)
+        if z is not None:
+            out.append((rx, ry, z))
+    return out
+
+
 def points_line(points):
-    """`points = [{ x = .., y = .. }, ...]`, rounded to one decimal place, sorted by x then y."""
-    rounded = sorted({(round(x, 1) + 0.0, round(y, 1) + 0.0) for x, y in points})
-    body = ", ".join("{ x = %.1f, y = %.1f }" % p for p in rounded)
+    """`points = [{ x = .., y = .., z = .. }, ...]`, x and y rounded to one decimal place and z to
+    two (as ground_check.py writes it), sorted by x then y."""
+    rounded = sorted({(round(x, 1) + 0.0, round(y, 1) + 0.0, round(z, 2) + 0.0) for x, y, z in points})
+    body = ", ".join("{ x = %.1f, y = %.1f, z = %.2f }" % p for p in rounded)
     return "points = [%s]" % body if rounded else "points = []"
 
 
@@ -158,8 +173,10 @@ def main():
     kept = {}
     for zone, pts in found.items():
         # Sort first so the spacing rule keeps the same points on every run.
-        kept[zone] = dedupe(sorted((round(x, 3), round(y, 3)) for x, y in pts))
-        print("zone %d: %d spawns, %d kept" % (zone, len(pts), len(kept[zone])))
+        spaced = dedupe(sorted((round(x, 3), round(y, 3)) for x, y in pts))
+        kept[zone] = with_z(spaced, terrain.ground_z)
+        print("zone %d: %d spawns, %d kept, %d without terrain"
+              % (zone, len(pts), len(kept[zone]), len(spaced) - len(kept[zone])))
 
     with open(a.file, "wb") as f:
         f.write(rewrite_points(text, kept).encode("utf-8"))
