@@ -964,17 +964,14 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
             raise BuildError(f"{where}: pickup_heal_pct needs a positive whole pct, has {pct!r}")
     if kind == "consume_aura_stacks" and not isinstance(params.get("per_stack"), dict):
         raise BuildError(f"{where}: consume_aura_stacks lacks a per_stack formula (per_stack.base, per_stack.per_level)")
-    # Vanguard's rows (#504): a strike's share of the shield's Block Value and its heal, and a
-    # stack consume's heal and its power back per stack. Cutthroat's rows (#505): a hit's percent
-    # more on a bleeding target, a killing hit's heal and power, a builder's points more on a
-    # bleeding target, and a proc's combo points.
-    # Initiate's rows (#506): an absorb's mana back and burst, a burn's power back, a hit's bonus
-    # against a worn aura, a snare's and a consume's reach.
-    # Ranger's rows (#507): a strike's crit bonus and the cooldown its crit cuts, a tick's base
-    # mana back, a strike's repeat chance.
-    # Acolyte's rows (#508): a tick's spread and its weakening by stacks, a hit's bonus by stacks and
-    # its splash, a grow's reach, a drain tick's grow and overheal shield, a heal's overheal burst,
-    # and an area's grow.
+    # The whole-number params, by effect kind: a strike's share of the shield's Block Value, its
+    # heal, and its crit bonus and the cooldown its crit cuts; a hit's percent more on a bleeding
+    # target, a killing hit's heal and power, its bonus against a worn aura or by its stacks, and
+    # its splash; a stack consume's heal and its power back per stack; a builder's points more on a
+    # bleeding target and a proc's combo points; an absorb's mana back and burst; a tick's power
+    # and base mana back and its spread; a snare's, a consume's and a grow's reach; a drain tick's
+    # overheal shield; a heal's overheal burst; and an area's grow. Then the chances, out of 100,
+    # and the params that come in pairs.
     on_hit = ("bleeding_pct", "kill_heal_pct", "kill_energize")
     wholes = {"weapon_strike": ("block_value_pct", "heal_pct", *on_hit, "crit_damage_pct", "crit_cooldown_ms"),
               "school_damage": (*on_hit, "vs_aura_pct", "vs_aura_max_pct", "splash_pct", "splash_yd"),
@@ -1531,14 +1528,14 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             if parsed["requires_target_aura"] not in {*auras, "slowed"}:
                 raise BuildError(f"{here}: requires_target_aura {parsed['requires_target_aura']!r} is not an aura "
                                  "row of this Calling or slowed")
-        # Initiate's rows (#506): the aura an absorb puts on the attacker it soaks, a burn's tick gives
-        # the caster, and a hit is stronger against.
+        # The aura an absorb puts on the attacker it soaks, a burn's tick gives the caster, and a hit
+        # is stronger against: an aura row of this Calling.
         for param in {"absorb": ("attacker_aura",), "periodic_damage": ("tick_aura",),
                       "school_damage": ("vs_aura",)}.get(kind, ()):
             if param in parsed and parsed[param] not in auras:
                 raise BuildError(f"{here}: {param} {parsed[param]!r} is not an aura row of this Calling")
-        # Acolyte's rows (#508): the damage over time a drain's tick and an area's clock grow, checked
-        # as grow_aura's aura is.
+        # The damage over time a drain's tick and an area's clock grow, checked as grow_aura's aura
+        # is.
         for param in {"drain": ("tick_grow_aura",), "ground_area": ("grow_aura",)}.get(kind, ()):
             if param not in parsed:
                 continue

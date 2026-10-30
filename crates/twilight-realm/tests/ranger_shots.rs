@@ -427,9 +427,8 @@ fn killshot_is_instant_under_30_pct_health_and_a_3_second_cast_at_half() {
     assert_eq!(killshot_bar_at(35..=60), Some(3000), "at half health");
 }
 
-/// Point Blank, the old talent at its full rank: a shot 6 yd from the scorpid is too close
-/// without it and goes with it, and its Puncturing Shaft there deals 20% more than the same roll
-/// from 10 yd.
+/// Point Blank: a shot 6 yd from the scorpid is too close without it and goes with it, and its
+/// Puncturing Shaft there deals 20% more than the same roll from 10 yd.
 #[test]
 fn point_blank_shoots_inside_8_yards_with_a_fifth_more_on_the_shaft() {
     const SPELL_FAILED_TOO_CLOSE: u8 = 0x76;

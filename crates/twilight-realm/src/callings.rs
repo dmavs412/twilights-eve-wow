@@ -710,7 +710,8 @@ impl RowChoice {
     }
 }
 
-/// A Talent row's choice (ADR 0028): one rank of the old talent vocabulary, and what it does.
+/// A Talent row's choice (ADR 0028): one rank of the talent vocabulary ([`TalentEffect`]), and
+/// what it does.
 #[derive(Debug)]
 pub struct TalentDef {
     pub key: String,

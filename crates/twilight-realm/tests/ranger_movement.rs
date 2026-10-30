@@ -340,9 +340,8 @@ fn walk(realm: &mut Realm, view: &mut View, from: [f32; 3], secs: f32) -> [f32; 
     at
 }
 
-/// Guerilla Tactics, the old talent at its full rank: each 2 s of moving puts a stack up, three at
-/// most, and the next Snapshot deals 50% more a stack and spends them. The same seed with the
-/// row empty is the yardstick.
+/// Guerilla Tactics: each 2 s of moving puts a stack up, three at most, and the next Snapshot
+/// deals 50% more a stack and spends them. The same seed with the row empty is the yardstick.
 #[test]
 fn guerilla_tactics_stacks_on_the_move_and_the_next_snapshot_spends_them() {
     let tactics = ranger_choice("talents", "guerilla_tactics");

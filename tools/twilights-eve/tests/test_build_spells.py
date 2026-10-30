@@ -1581,7 +1581,7 @@ class TalentRows(BuildSpells):
     def test_a_stack_consumes_refund_per_stack_is_a_whole_number_of_at_least_1(self):
         self.assert_whole_param(*self.consume(), "refund_per_stack")
 
-    # Cutthroat's rows (#505).
+    # A hit, a builder and a bleed, for the bleeding, kill and combo point params.
     HIT = {**STRIKE, "effect1_kind": "school_damage", "effect1_params": "amount.base=5;amount.per_level=1"}
     COMBO = {**STRIKE, "effect1_kind": "add_combo_points", "effect1_params": "amount=1"}
     BLEED = {**STRIKE, "effect1_kind": "periodic_damage",
@@ -1639,7 +1639,7 @@ class TalentRows(BuildSpells):
                 self.assert_fails(talent_row({**rush, "effect1_params": f"amount={bad}"}),
                                   "pickup_energize needs a whole amount of at least 1, has")
 
-    # Initiate's rows (#506): a modelled aura row of the Calling to name, and one effect each.
+    # A modelled aura row of the Calling to name, and one effect each.
     BUFF = {**AURA, "modelled": "yes"}
     WARD = {**STRIKE, "target": "self", "effect1_kind": "absorb",
             "effect1_params": "pct=10;pct_of=max_mana;duration_ms=20000"}
@@ -1746,7 +1746,7 @@ class TalentRows(BuildSpells):
     def test_a_consume_auras_spread_yd_is_a_whole_number_of_at_least_1(self):
         self.assert_whole_param([CALLING, self.BUFF], self.CONSUME, "spread_yd")
 
-    # Ranger's rows (#507): a skill that names another of the Calling, a leap, an aura naming a skill.
+    # A skill that names another of the Calling, a leap, an aura naming a skill.
     LEAP = {**STRIKE, "key": "leap", "spell_id": "1000079", "target": "self", "effect1_kind": "blink",
             "effect1_params": "distance_yd=15;backward=yes", "effect4_kind": "", "effect4_params": ""}
 
@@ -1815,7 +1815,7 @@ class TalentRows(BuildSpells):
         self.assert_fails([CALLING, STRIKE, {**aura, "effect1_params": "skill=ghost"}],
                           "cast_while_moving skill 'ghost' is not a skill of vanguard")
 
-    # Acolyte's rows (#508): an aura row with a periodic_damage to grow, a drain, a heal and an area.
+    # An aura row with a periodic_damage to grow, a drain, a heal and an area.
     DOT = {**AURA, "key": "dot", "modelled": "yes", "effect1_kind": "periodic_damage",
            "effect1_params": "tick_ms=3000;tick.base=6;tick.per_level=0.4"}
     DRAIN = {**STRIKE, "effect1_kind": "drain", "effect1_params": "amount.base=15;amount.per_level=0.8;heal_pct=100"}
@@ -2137,7 +2137,7 @@ class TalentRows(BuildSpells):
         # Field Dressing and Explosive Shot have no row; every choice is modelled.
         self.assertFalse({"field_dressing", "explosive_shot"} & {r["skill"] for r in ranger["rows"]})
         self.assertTrue(all(c["modelled"] for r in ranger["rows"] for c in r["choices"]))
-        # Explosive Payload is an active Talent; the old tree's aura rows no row names are gone.
+        # Explosive Payload is an active Talent, and no aura row is left that no choice names.
         self.assertEqual(ranger["rows"][0]["choices"][0]["target"], "self")
         gone = {f"aura_guerilla_tactics_{n}" for n in range(1, 5)} | {f"aura_rhythmic_draw_{n}" for n in range(1, 5)}
         gone |= {"aura_flurry_1", "aura_entrenched_1", "aura_entrenched_2"} | {f"aura_sundered_{n}" for n in range(1, 5)}
@@ -2183,7 +2183,7 @@ class TalentRows(BuildSpells):
         # Hush and Grasping Shadows have no row; every choice is modelled.
         self.assertFalse({"hush", "grasping_shadows"} & {r["skill"] for r in acolyte["rows"]})
         self.assertTrue(all(c["modelled"] for r in acolyte["rows"] for c in r["choices"]))
-        # Necrotic Detonation is an active Talent; the old tree's aura rows no row names are gone.
+        # Necrotic Detonation is an active Talent, and no aura row is left that no choice names.
         self.assertEqual(acolyte["rows"][2]["choices"][0]["target"], "enemy")
         gone = {"aura_noxious_vapors_1", "aura_noxious_vapors_2", "aura_crimson_surge_1", "aura_crimson_surge_2",
                 "aura_festering_wounds_1", "aura_festering_wounds_2"} | {f"aura_masochism_{n}" for n in range(1, 5)}

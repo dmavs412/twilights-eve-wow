@@ -87,8 +87,8 @@ fn bloodscents_ticks_give_two_pct_of_base_mana() {
     );
 }
 
-/// Rhythmic Draw, the old talent at its full rank: each cast that lands takes 0.5 s off the next
-/// Puncturing Shaft's bar, stacking, and the Shaft spends them. Plain Snapshot takes nothing off.
+/// Rhythmic Draw: each cast that lands takes 0.5 s off the next Puncturing Shaft's bar,
+/// stacking, and the Shaft spends them. Plain Snapshot takes nothing off.
 #[test]
 fn rhythmic_draw_shortens_the_next_shaft_by_half_a_second_a_cast() {
     let draw = ranger_choice("snapshot", "rhythmic_draw");
@@ -115,8 +115,7 @@ fn rhythmic_draw_shortens_the_next_shaft_by_half_a_second_a_cast() {
     }
 }
 
-/// Flurry, the old talent at its full rank: after Rapid Fire's Flurry, two Snapshots cost no mana
-/// and crit; the third costs mana.
+/// Flurry: after Rapid Fire's Flurry, two Snapshots cost no mana and crit; the third costs mana.
 #[test]
 fn flurry_makes_the_next_two_snapshots_free_certain_crits() {
     let flurry = ranger_choice("rapid_fire", "flurry");

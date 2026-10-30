@@ -197,8 +197,8 @@ fn blink_beside(s: &mut common::vanguard::Scene) {
     s.realm.handle(RealmCommand::TeleportAck { counter });
 }
 
-/// Under Shattered Blink, a Blink roots the mob 6 yd from where the Initiate stood with the old
-/// talent's top rank (4 s); without it, nothing.
+/// Under Shattered Blink, a Blink roots the mob 6 yd from where the Initiate stood for 4 s;
+/// without it, nothing.
 #[test]
 fn shattered_blink_roots_a_mob_within_8_yards_of_where_the_initiate_stood() {
     let shattered = choice("initiate", "passives", "shattered_blink");

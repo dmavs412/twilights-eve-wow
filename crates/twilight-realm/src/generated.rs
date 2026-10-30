@@ -311,9 +311,9 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
             }
         }
     }
-    // A ground area's auras (`enemy_aura=key`, `ally_aura=key`), and the aura rows a shield puts on
-    // its attacker, a burn's tick gives its caster and a hit is stronger against (#506), and the
-    // damage over time a drain's tick and an area's clock grow (#508), by their rows' spell ids.
+    // A ground area's auras (`enemy_aura=key`, `ally_aura=key`), the aura rows a shield puts on its
+    // attacker, a burn's tick gives its caster and a hit is stronger against, and the damage over
+    // time a drain's tick and an area's clock grow, by their rows' spell ids.
     for side in [
         "enemy_aura",
         "ally_aura",

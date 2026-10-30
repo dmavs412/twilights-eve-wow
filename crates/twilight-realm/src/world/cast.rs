@@ -485,10 +485,10 @@ pub(crate) struct Aura {
 /// `aura` goes on the caster, or on the ticking unit when `aura_on_target`, and the caster gains
 /// `energize_pct_of_max` percent of their maximum power and `energize_pct_of_base` percent of
 /// their base mana; while it is on a unit, that unit's blows at the caster are `weaken_pct`
-/// percent less. Acolyte's (#508): `aura_chance_per_stack` times the tick's stacks in place of
-/// `aura_chance`; `spread_chance` percent of the time a copy goes on another enemy within
-/// `spread_yd`; while it is on a unit, that unit's hits at anyone are `weaken_per_stack_pct` a
-/// stack less, at most `weaken_max_pct`.
+/// percent less. A set `aura_chance_per_stack` times the tick's stacks replaces `aura_chance`;
+/// `spread_chance` percent of the time a copy goes on another enemy within `spread_yd`; while it
+/// is on a unit, that unit's hits at anyone are `weaken_per_stack_pct` a stack less, at most
+/// `weaken_max_pct`.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 struct TickRiders {
     aura: Option<&'static callings::AuraDef>,
@@ -2310,7 +2310,7 @@ impl InWorld {
     }
 
     /// A proc's free repeat of the skill `key` cast (the version of it the player casts now) at
-    /// the cast's target (Twin Arrows' old proc).
+    /// the cast's target (a proc's `repeat_cast`).
     pub(super) fn repeat_cast(
         &mut self,
         key: Option<&str>,
