@@ -118,6 +118,11 @@ pub(crate) const PROBE_VARS: &[ProbeVar] = &[
         wall_clock: false,
     },
     ProbeVar {
+        name: "WOW_PROBE_SPELLS_FIRST",
+        purpose: "<spell id>,<spell id>,… — WOW_PROBE_SPELLS casts these first, in this order, before its melee swing starts combat (Stealth, stealth openers, Seals); the rest follow in spellbook order",
+        wall_clock: false,
+    },
+    ProbeVar {
         name: "WOW_PROBE_HOVER",
         purpose: "\"<frame>[;<frame>…]\" — sweep the real pointer across the named frames' centres, pressing nothing",
         // Starts at `_AT`, one move per `_STEP` seconds, alternating on `_DUTY`, in wall seconds.

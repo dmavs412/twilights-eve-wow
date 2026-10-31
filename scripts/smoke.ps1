@@ -85,12 +85,35 @@ function Invoke-Game([hashtable]$vars, [string]$name) {
     return $done
 }
 
+# The Calling's spell ids the probe casts first, before its swing starts combat (#523): spells
+# that need the player out of combat (Stealth), stealth openers on a target out of combat (Sap),
+# the other stealth openers (Garrote), then Seals and the Judgements that need one. Read from the
+# sheet's fields, never from spell names or ids.
+function Get-OpeningOrder($calling) {
+    $all = @($calling.skills) + @($calling.rows | ForEach-Object { $_.choices })
+    $hasEffect = { param($s, $kind) @($s.effects | ForEach-Object { $_.kind }) -contains $kind }
+    $groups = @(
+        { param($s) $s.requires_out_of_combat },
+        { param($s) $s.requires_stealth -and $s.requires_target_out_of_combat },
+        { param($s) $s.requires_stealth },
+        { param($s) & $hasEffect $s 'seal' },
+        { param($s) & $hasEffect $s 'judgement' }
+    )
+    $ids = @()
+    foreach ($g in $groups) {
+        foreach ($s in $all) {
+            if ($s -and (& $g $s) -and $ids -notcontains $s.spell_id) { $ids += $s.spell_id }
+        }
+    }
+    return ($ids -join ',')
+}
+
 # ---- the batches: one launch per Calling of the sheet --------------------------------------------
 $spells = Get-Content (Join-Path $Root 'data\twilights-eve\server_spells.json') -Raw | ConvertFrom-Json
 $batches = @()
 foreach ($c in $spells) {
     if ($Callings -and $Callings -notcontains $c.key) { continue }
-    $batches += , @{ calling = $c.key }
+    $batches += , @{ calling = $c.key; first = (Get-OpeningOrder $c) }
 }
 Write-Log ("{0} batch(es) over {1} Calling(s), {2} min budget, {3}" -f $batches.Count,
     @($batches | ForEach-Object { $_.calling } | Select-Object -Unique).Count, $BudgetMin, $exe)
@@ -123,13 +146,14 @@ foreach ($b in $batches) {
     [IO.File]::WriteAllText($save.FullName, $text, (New-Object Text.UTF8Encoding $false))
 
     $name = "{0:D2}-{1}" -f $n, $b.calling
-    Write-Log "batch $name"
+    Write-Log ("batch {0}, first {1}" -f $name, $(if ($b.first) { $b.first } else { "none" }))
     $before = if (Test-Path $report) { @(Get-Content $report).Count } else { 0 }
     $ran = Invoke-Game @{
         WOW_CHAR = $CharName
         WOW_PROBE_TEST_GROUNDS = "1"
         WOW_PROBE_SPELLS = $report
         WOW_PROBE_SPELLS_CALLING = $b.calling
+        WOW_PROBE_SPELLS_FIRST = $b.first
         WOW_LIVE_SHOT = (Join-Path $out "$name.png")
         WOW_LIVE_SHOT_AT = "30"
     } $name

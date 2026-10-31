@@ -12,6 +12,10 @@
 //! Some errors are the situation's, not the spell's, and earn a retry: no resource yet (wait),
 //! out of range or too close (move, through the dev goto), a friendly-only spell at the dummy
 //! (cast on self), and a "requires" error such as combo points (once more, at the end).
+//!
+//! `WOW_PROBE_SPELLS_FIRST=<spell id>,...` names spells to cast first, in that order, before the
+//! probe's melee swing starts combat: Stealth, the stealth openers, the Seals a Judgement needs
+//! (#523). `scripts/smoke.ps1` builds the list from `server_spells.json`.
 
 use std::io::Write;
 
@@ -58,9 +62,15 @@ impl Plugin for ProbeSpellsPlugin {
             return;
         }
         let calling = std::env::var("WOW_PROBE_SPELLS_CALLING").unwrap_or_default();
+        let first_value = std::env::var("WOW_PROBE_SPELLS_FIRST").unwrap_or_default();
+        let first = first_ids(&first_value);
+        if first.is_empty() && !first_value.trim().is_empty() {
+            warn!("probe-spells: WOW_PROBE_SPELLS_FIRST={first_value:?} is not a list of spell ids — ignored");
+        }
         app.insert_resource(ProbeSpells {
             path: path.into(),
             calling,
+            first,
             ..default()
         })
         .add_systems(Update, drive_probe_spells);
@@ -74,6 +84,32 @@ struct Entry {
     spell_id: u32,
     name: String,
     rank: String,
+}
+
+/// `WOW_PROBE_SPELLS_FIRST`'s spell ids, in order. A value that is not a comma list of ids gives
+/// none.
+fn first_ids(value: &str) -> Vec<u32> {
+    if value.trim().is_empty() {
+        return Vec::new();
+    }
+    value
+        .split(',')
+        .map(|id| id.trim().parse::<u32>())
+        .collect::<Result<_, _>>()
+        .unwrap_or_default()
+}
+
+/// The cast queue: the spells `first` lists, in its order, then the rest of `book` in the book's
+/// order. A listed spell the book lacks is skipped.
+fn cast_order(mut book: Vec<Entry>, first: &[u32]) -> std::collections::VecDeque<Entry> {
+    let mut queue = std::collections::VecDeque::with_capacity(book.len());
+    for id in first {
+        if let Some(i) = book.iter().position(|e| e.spell_id == *id) {
+            queue.push_back(book.remove(i));
+        }
+    }
+    queue.extend(book);
+    queue
 }
 
 /// What became of one spell, as its report line says.
@@ -264,6 +300,8 @@ enum Phase {
 struct ProbeSpells {
     path: std::path::PathBuf,
     calling: String,
+    /// The spells cast first, before the swing starts combat (`WOW_PROBE_SPELLS_FIRST`).
+    first: Vec<u32>,
     entered_at: Option<f32>,
     queue: std::collections::VecDeque<Entry>,
     /// Spells already put back once for a "requires" error.
@@ -338,6 +376,7 @@ fn drive_probe_spells(
             script.set_event_tap(true);
             let book = script.spellbook();
             let calling = probe.calling.clone();
+            let mut castable = Vec::new();
             for (i, slot) in book.slots.iter().enumerate() {
                 let entry = Entry {
                     slot: i + 1,
@@ -352,9 +391,10 @@ fn drive_probe_spells(
                     };
                     probe.write(&report_line(&calling, &entry, true, &ok));
                 } else {
-                    probe.queue.push_back(entry);
+                    castable.push(entry);
                 }
             }
+            probe.queue = cast_order(castable, &probe.first);
             info!(
                 "probe-spells: {} spells to cast, {} passive",
                 probe.queue.len(),
@@ -379,8 +419,11 @@ fn drive_probe_spells(
                 return;
             };
             run_lua(&script, &format!("TargetByName({})", lua_str(DUMMY_NAME)));
-            // Melee swings build rage for the Warrior Callings; a no-op once swinging.
-            run_lua(&script, "AttackTarget()");
+            // Melee swings build rage for the Warrior Callings; a no-op once swinging. The
+            // opening spells go without: the swing puts the player in combat and breaks Stealth.
+            if !probe.first.contains(&entry.spell_id) {
+                run_lua(&script, "AttackTarget()");
+            }
             script.take_tapped_events();
             run_lua(&script, &format!("CastSpell({}, \"spell\")", entry.slot));
             probe.phase = Phase::Casting {
@@ -584,6 +627,44 @@ mod tests {
             Some(Retry::Later)
         );
         assert_eq!(retry_for("SPELLCAST_FAILED"), None);
+    }
+
+    #[test]
+    fn the_opening_order_parses_to_ids_and_a_bad_value_to_none() {
+        assert_eq!(
+            first_ids("1000195,1000404,1000413"),
+            [1000195, 1000404, 1000413]
+        );
+        assert_eq!(first_ids(" 7 , 3 "), [7, 3]);
+        assert!(first_ids("").is_empty());
+        assert!(first_ids("  ").is_empty());
+        assert!(first_ids("stealth").is_empty());
+        assert!(first_ids("1000195,sap").is_empty());
+        assert!(first_ids("1000195,,1000413").is_empty());
+        assert!(first_ids("-5").is_empty());
+    }
+
+    #[test]
+    fn the_opening_spells_lead_the_queue_and_the_rest_keep_the_book_order() {
+        let entry = |slot: usize, spell_id: u32| Entry {
+            slot,
+            spell_id,
+            name: format!("Spell {spell_id}"),
+            rank: String::new(),
+        };
+        let book: Vec<Entry> = [10, 20, 30, 40, 50]
+            .iter()
+            .enumerate()
+            .map(|(i, &id)| entry(i + 1, id))
+            .collect();
+        let ids = |q: &std::collections::VecDeque<Entry>| -> Vec<u32> {
+            q.iter().map(|e| e.spell_id).collect()
+        };
+        // A listed id the book lacks is skipped; one listed twice is cast once.
+        let queue = cast_order(book.clone(), &[40, 20, 99, 40]);
+        assert_eq!(ids(&queue), [40, 20, 10, 30, 50]);
+        assert_eq!(queue[0].slot, 4, "an entry keeps its spellbook slot");
+        assert_eq!(ids(&cast_order(book, &[])), [10, 20, 30, 40, 50]);
     }
 
     #[test]
