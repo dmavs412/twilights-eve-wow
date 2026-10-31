@@ -7,3 +7,8 @@ pull_threat_health_fraction = 0.25
 # Everyone within this many yards of a mob when it dies, alive or dead, shares its credit,
 # XP and loot (#148).
 credit_range_yd = 74.0
+
+# The share of its made health and of its made swing damage a Phased Dungeon creature gains for
+# each player past the first in its Head Count (ADR 0029).
+head_count_health_per_player = 0.5
+head_count_damage_per_player = 0.1

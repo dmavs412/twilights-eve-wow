@@ -612,6 +612,22 @@ fn shard_seed(place: shard::Place, rng: &mut rng::Rng) -> u64 {
     }
 }
 
+/// The line a Phased Dungeon's Phase is told when its Head Count becomes `n` (ADR 0029): "The
+/// Gaze Hall is now tuned for 2 players."; none outside one.
+fn tuned_line(place: shard::Place, n: u32) -> Option<String> {
+    let phased::Phase::Dungeon(id) = place.phase else {
+        return None;
+    };
+    let name = &phased::dungeon(id)?.name;
+    let mut chars = name.chars();
+    let first = chars.next()?.to_uppercase();
+    let players = if n == 1 { "player" } else { "players" };
+    Some(format!(
+        "{first}{} is now tuned for {n} {players}.",
+        chars.as_str()
+    ))
+}
+
 /// The realm: its characters, the sessions and who of theirs is in the world, and the events not
 /// yet drained.
 #[derive(Default)]
@@ -1174,7 +1190,11 @@ impl Realm {
             let present: Vec<u64> = players.iter().map(|p| p.guid).collect();
             shard.drop_hunts(&present);
             shard.drop_withering(&present);
-            let made = shard.update(dt, &positions, host);
+            let alive: Vec<u64> = players.iter().filter(|p| p.alive).map(|p| p.guid).collect();
+            let (head_count, scaled) = shard.scale_to_head_count(&alive);
+            let tuned = head_count.and_then(|n| tuned_line(*map, n));
+            let mut made = shard.update(dt, &positions, host);
+            made.extend(scaled);
             let mut owners = shard.owners(players);
             let shard = &self.shards[map];
             let sessions = std::iter::once((self.active, &mut self.world, &mut self.events)).chain(
@@ -1187,7 +1207,11 @@ impl Realm {
                     continue;
                 };
                 let Some(w) = w else { continue };
-                // What streamed out or came back, and the Hub's wanderers' walks.
+                if let Some(text) = &tuned {
+                    events.push(quests::system_line(text.clone()));
+                }
+                // What streamed out or came back, the Hub's wanderers' walks, and the creatures
+                // scaled to the Head Count.
                 for e in &made {
                     match e {
                         SessionEvent::ObjectDestroyed(g) => {

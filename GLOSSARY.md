@@ -123,6 +123,10 @@ _Avoid_: instance, layer
 **Run**:
 One go at a Phased Dungeon, shared by everyone inside. It starts when the first character enters an empty dungeon, keeps a clock that the dungeon's timed events read, and ends when the last character leaves, resetting the dungeon fully.
 
+**Head Count**:
+The living players standing in a Phased Dungeon's Phase, each counting one at any level; a creature with an Audience counts only its Audience among them. A creature's health grows 50% and its damage 10% for each player past the first: an idle creature follows the count, and a creature in a fight keeps the scale it was pulled at. ADR 0029.
+_Avoid_: group size, party size
+
 **Portal**:
 The doorway that moves a character between the open world and a Phased Dungeon's Phase, with no loading screen.
 _Avoid_: area trigger (the client's mechanism for a real instance's entrance)

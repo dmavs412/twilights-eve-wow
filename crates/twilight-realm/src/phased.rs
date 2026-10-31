@@ -1042,6 +1042,9 @@ pub(crate) struct Run {
     pub(crate) key_holder: Option<u32>,
     /// The guids of the locked doors a character has unlocked in the Run.
     pub(crate) unlocked: Vec<u32>,
+    /// The Head Count last counted (ADR 0029); 0 before the first count, when none has been
+    /// announced.
+    pub(crate) head_count: u32,
 }
 
 impl Run {
@@ -1061,6 +1064,7 @@ impl Run {
                 .and_then(|d| d.key.as_ref())
                 .map(|k| k.holders[((seed >> 32) * k.holders.len() as u64 >> 32) as usize].guid),
             unlocked: Vec::new(),
+            head_count: 0,
         }
     }
 

@@ -285,6 +285,39 @@ impl Shard {
         run.hear(meter, gain, drain);
     }
 
+    /// Scales a Phased Dungeon's creatures to the Head Count of the living players `alive` in
+    /// its Phase (ADR 0029): an idle creature follows the count, as does one not yet scaled (a
+    /// wave or an Audience's creature made straight into a fight); one in a fight keeps the scale
+    /// it was pulled at. The new count when it changed since the last, which the Phase is told,
+    /// and the values the clients that see the creatures are sent. Nothing with no Run or no one
+    /// alive.
+    pub(crate) fn scale_to_head_count(
+        &mut self,
+        alive: &[u64],
+    ) -> (Option<u32>, Vec<SessionEvent>) {
+        let Some(run) = &mut self.run else {
+            return (None, Vec::new());
+        };
+        if alive.is_empty() {
+            return (None, Vec::new());
+        }
+        let n = alive.len() as u32;
+        let changed = (run.head_count != 0 && run.head_count != n).then_some(n);
+        run.head_count = n;
+        let events = self
+            .mobs
+            .iter_mut()
+            .filter(|m| m.state == State::Idle || (m.unscaled.is_none() && m.state != State::Dead))
+            .filter_map(|m| {
+                let own = m.audience.as_ref().map_or(n, |a| {
+                    alive.iter().filter(|&&g| a.admits(g)).count().max(1) as u32
+                });
+                m.scale_to(own)
+            })
+            .collect();
+        (changed, events)
+    }
+
     /// Seconds into its Run, for a Phased Dungeon's.
     pub(crate) fn run_elapsed(&self) -> Option<f32> {
         self.run.as_ref().map(|r| r.elapsed)
@@ -595,6 +628,77 @@ mod tests {
         assert_eq!(shard.noise(), 3, "the Runt's 2 and the meter's 1");
         shard.hear_noise(&meter(), 0, 0);
         assert_eq!(shard.noise(), 3, "a death is heard once");
+    }
+
+    #[test]
+    fn an_idle_creature_follows_the_head_count_and_a_fighting_one_keeps_its_own() {
+        let mut shard = run();
+        assert!(shard.mobs.len() >= 3);
+        let made: Vec<u32> = shard.mobs.iter().map(|m| m.stats.max_health).collect();
+        let (line, sent) = shard.scale_to_head_count(&[1]);
+        assert_eq!(line, None, "the first count of a Run is not announced");
+        assert_eq!(sent.len(), shard.mobs.len(), "each creature's values, once");
+        assert!(shard.mobs.iter().all(|m| m.scaled_for == 1));
+        shard.mobs[1].state = State::Engaged;
+        shard.mobs[2].audience = Some(Audience::of(&[2]));
+
+        let (line, _) = shard.scale_to_head_count(&[1, 2]);
+        assert_eq!(line, Some(2));
+        let want = (made[0] as f32 * 1.5).round() as u32;
+        assert_eq!(shard.mobs[0].stats.max_health, want);
+        assert_eq!(shard.mobs[0].scaled_for, 2);
+        assert_eq!(shard.mobs[1].stats.max_health, made[1], "pulled at one");
+        assert_eq!(
+            shard.mobs[2].scaled_for, 1,
+            "its Audience is one of the two"
+        );
+        assert_eq!(shard.mobs[2].stats.max_health, made[2]);
+
+        let (line, sent) = shard.scale_to_head_count(&[2, 1]);
+        assert_eq!(line, None, "the same count");
+        assert!(sent.is_empty());
+    }
+
+    #[test]
+    fn a_creature_made_into_a_fight_is_scaled_once_and_the_dead_never() {
+        let mut shard = run();
+        shard.scale_to_head_count(&[1]);
+        // A wave's creature, made mid-Run straight into its fight.
+        shard.mobs[1].unscaled = None;
+        shard.mobs[1].state = State::Engaged;
+        shard.mobs[0].state = State::Dead;
+        shard.mobs[0].health = 0;
+        shard.scale_to_head_count(&[1, 2, 3]);
+        assert_eq!(shard.mobs[1].scaled_for, 3, "it takes the count it came at");
+        assert_eq!(shard.mobs[0].scaled_for, 1, "the dead");
+        let wave = shard.mobs[1].guid;
+        let (_, sent) = shard.scale_to_head_count(&[1]);
+        assert!(
+            !sent
+                .iter()
+                .any(|e| matches!(e, SessionEvent::ObjectValues { guid, .. } if *guid == wave)),
+            "and keeps it through its fight"
+        );
+        assert_eq!(shard.mobs[1].scaled_for, 3);
+    }
+
+    #[test]
+    fn the_open_world_and_an_empty_phase_are_never_scaled() {
+        let mut open = Shard::new(
+            Place {
+                map: 0,
+                phase: Phase::OpenWorld,
+            },
+            7,
+        );
+        open.mobs = run().mobs;
+        let (line, sent) = open.scale_to_head_count(&[1, 2]);
+        assert!(line.is_none() && sent.is_empty());
+        assert!(open.mobs.iter().all(|m| m.unscaled.is_none()));
+        let mut shard = run();
+        let (line, sent) = shard.scale_to_head_count(&[]);
+        assert!(line.is_none() && sent.is_empty());
+        assert!(shard.mobs.iter().all(|m| m.unscaled.is_none()));
     }
 
     #[test]

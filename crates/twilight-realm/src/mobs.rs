@@ -1150,6 +1150,11 @@ pub(crate) struct Mob {
     pub(crate) guid: u64,
     pub(crate) template: &'static Template,
     pub(crate) stats: MobStats,
+    /// Its stats as made, kept once a Head Count first scales it (ADR 0029); `None` for a
+    /// creature never scaled, which is every one outside a Phased Dungeon.
+    pub(crate) unscaled: Option<MobStats>,
+    /// The Head Count its stats are for: 1 when made.
+    pub(crate) scaled_for: u32,
     pub(crate) health: u32,
     pub(crate) position: [f32; 3],
     pub(crate) orientation: f32,
@@ -1364,6 +1369,8 @@ impl Mob {
             guid,
             template,
             stats,
+            unscaled: None,
+            scaled_for: 1,
             health: stats.max_health,
             position: [x, y, z],
             orientation: spawn.orientation,
@@ -1452,6 +1459,8 @@ impl Mob {
             guid,
             template,
             stats,
+            unscaled: None,
+            scaled_for: 1,
             health: stats.max_health,
             position,
             orientation,
@@ -1519,6 +1528,51 @@ impl Mob {
     pub(crate) fn takes(&self, damage: u32) -> u32 {
         self.stance
             .map_or(damage, |s| changed_by(damage, s.damage_taken_pct))
+    }
+
+    /// What its made health is multiplied by at the Head Count it is scaled for (ADR 0029).
+    pub(crate) fn health_mul(&self) -> f32 {
+        crate::group::get().health_mul(self.scaled_for)
+    }
+
+    /// What its made damage is multiplied by at the Head Count it is scaled for (ADR 0029).
+    pub(crate) fn damage_mul(&self) -> f32 {
+        crate::group::get().damage_mul(self.scaled_for)
+    }
+
+    /// Scales its made max health and swing damage to a Head Count of `n` (ADR 0029). Its health
+    /// keeps its share, rounded: a whole creature stays whole, a living one keeps at least 1 and
+    /// a dead one stays at 0. The values the clients that see it are sent; `None` when it is
+    /// already scaled for `n`.
+    pub(crate) fn scale_to(&mut self, n: u32) -> Option<SessionEvent> {
+        if self.unscaled.is_some() && self.scaled_for == n {
+            return None;
+        }
+        let made = *self.unscaled.get_or_insert(self.stats);
+        self.scaled_for = n;
+        let was = self.stats.max_health;
+        let max = (made.max_health as f32 * self.health_mul()).round() as u32;
+        self.stats.max_health = max;
+        self.stats.min_damage = made.min_damage * self.damage_mul();
+        self.stats.max_damage = made.max_damage * self.damage_mul();
+        self.health = if self.state == State::Dead {
+            0
+        } else if self.health >= was {
+            max
+        } else {
+            let share =
+                (u64::from(self.health) * u64::from(max) + u64::from(was) / 2) / u64::from(was);
+            (share as u32).clamp(1, max.max(1))
+        };
+        Some(values(
+            self.guid,
+            &[
+                (UNIT_FIELD_MAXHEALTH, self.stats.max_health),
+                (UNIT_FIELD_HEALTH, self.health),
+                (UNIT_FIELD_MINDAMAGE, float(self.stats.min_damage)),
+                (UNIT_FIELD_MAXDAMAGE, float(self.stats.max_damage)),
+            ],
+        ))
     }
 
     /// Runs its stance's clock on by `dt`. The stance's spell when it ended: its time ran out,
@@ -2204,6 +2258,73 @@ mod tests {
             assert!(ranked.max_health.abs_diff(want) <= 1, "rank {rank}");
             assert!((ranked.max_damage - normal.max_damage * damage).abs() < 1e-3);
         }
+    }
+
+    /// A creature made with 1000 health and a 40 to 60 swing, at `health`.
+    fn thousand_health(health: u32) -> Mob {
+        let t: &'static Template = Box::leak(Box::new(warrior(0)));
+        let stats = MobStats {
+            level: 10,
+            max_health: 1000,
+            armor: 400,
+            min_damage: 40.0,
+            max_damage: 60.0,
+        };
+        let mut mob = Mob::hunter(1, t, stats, [0.0; 3], 0.0, 0);
+        mob.health = health;
+        mob
+    }
+
+    #[test]
+    fn a_head_count_of_two_scales_health_by_its_share_and_damage_by_a_tenth() {
+        let mut hurt = thousand_health(600);
+        let sent = hurt.scale_to(2).expect("a values update");
+        assert_eq!((hurt.health, hurt.stats.max_health), (900, 1500));
+        assert!((hurt.stats.min_damage - 44.0).abs() < 1e-3);
+        assert!((hurt.stats.max_damage - 66.0).abs() < 1e-3);
+        assert_eq!((hurt.stats.level, hurt.stats.armor), (10, 400));
+        assert!((hurt.health_mul() - 1.5).abs() < 1e-6 && (hurt.damage_mul() - 1.1).abs() < 1e-6);
+        let SessionEvent::ObjectValues { fields, .. } = sent else {
+            panic!("{sent:?}");
+        };
+        assert_eq!(fields.unit_max_health(), Some(1500));
+        assert_eq!(fields.unit_health(), Some(900));
+        assert!(hurt.scale_to(2).is_none(), "already scaled for two");
+
+        let mut three = thousand_health(1000);
+        three.scale_to(3);
+        assert_eq!((three.health, three.stats.max_health), (2000, 2000));
+        assert!((three.stats.min_damage - 48.0).abs() < 1e-3);
+        assert!((three.stats.max_damage - 72.0).abs() < 1e-3);
+    }
+
+    #[test]
+    fn a_whole_creature_stays_whole_and_one_brings_back_the_made_stats() {
+        let mut full = thousand_health(1000);
+        full.scale_to(2);
+        assert_eq!(full.health, full.stats.max_health);
+        full.scale_to(1);
+        assert_eq!(full.stats, full.unscaled.unwrap());
+        assert_eq!((full.health, full.stats.max_health), (1000, 1000));
+        assert!((full.stats.min_damage - 40.0).abs() < 1e-6);
+        assert_eq!(full.scaled_for, 1);
+        // Scaled for one at the start, it still sends its values once.
+        let mut fresh = thousand_health(1000);
+        assert!(fresh.scale_to(1).is_some() && fresh.scale_to(1).is_none());
+    }
+
+    #[test]
+    fn a_living_creature_keeps_at_least_one_health_and_a_dead_one_none() {
+        let mut low = thousand_health(1);
+        low.scale_to(5);
+        assert_eq!((low.health, low.stats.max_health), (3, 3000));
+        low.health = 1;
+        low.scale_to(1);
+        assert_eq!(low.health, 1, "a third of one rounds to none");
+        let mut dead = thousand_health(0);
+        dead.state = State::Dead;
+        dead.scale_to(2);
+        assert_eq!((dead.health, dead.stats.max_health), (0, 1500));
     }
 
     #[test]
