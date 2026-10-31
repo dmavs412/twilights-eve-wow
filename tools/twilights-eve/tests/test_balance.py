@@ -23,12 +23,13 @@ def swing(mob: dict) -> float:
     return (mob["dmin"] + mob["dmax"]) / 2
 
 
-def totals(calling: str, n: int, rows: dict, fights: int, rng: random.Random, level: int = 30) -> tuple:
-    """(damage dealt, health lost, fight time) summed over `fights` fights of `calling` in greens
-    and the build `rows` against `n` normals on level. `rng` is one Random every fight draws from,
-    or a function giving fight i its own."""
-    cls, mob = multi.fighter(calling, n), model.mob_stats(level)
-    ch = model.character(calling, level, "green", rows)
+def totals(calling: str, n: int, rows: dict, fights: int, rng: random.Random, level: int = 30,
+           gear: str = "green", rank: int = 0) -> tuple:
+    """(damage dealt, health lost, fight time) summed over `fights` fights of `calling` in `gear`
+    and the build `rows` against `n` mobs of `rank` (0 normal, 1 elite) on level. `rng` is one
+    Random every fight draws from, or a function giving fight i its own."""
+    cls, mob = multi.fighter(calling, n), model.mob_stats(level, rank=rank)
+    ch = model.character(calling, level, gear, rows)
     dealt = lost = spent = 0.0
     for i in range(fights):
         sim = cls(calling, level, ch["stats"], ch["rows"], rng(i) if callable(rng) else rng, {}, mob=mob)
@@ -37,6 +38,14 @@ def totals(calling: str, n: int, rows: dict, fights: int, rng: random.Random, le
         lost += 1 - r["health_left"]
         spent += r["time"]
     return dealt, lost, spent
+
+
+# A pull of 2 elites in blues, B-2E's: it lasts about 55 s at 30, where 2 normals last about 30 s.
+LONG_PULL = dict(gear="blue", rank=1)
+# Choices that change nothing in 30 fights against 2 normals, so
+# test_every_tier1_choice_changes_the_fight_or_is_ignored fights them in LONG_PULL: Elusiveness
+# brings Evasion back after 60 s, and Blood Frenzy's stacks past 5 need a long run of droplets.
+LONG_FIGHT = {("cutthroat", "elusiveness"), ("cutthroat", "blood_frenzy")}
 
 
 class BalanceModel(unittest.TestCase):
@@ -117,7 +126,9 @@ class BalanceModel(unittest.TestCase):
                     if (calling, c["key"]) in model.IGNORED:
                         continue
                     with self.subTest(calling=calling, choice=c["key"]):
-                        self.assertNotEqual(totals(calling, 2, {row["key"]: c["key"]}, 30, random.Random(30)), plain)
+                        pull = LONG_PULL if (calling, c["key"]) in LONG_FIGHT else {}
+                        base = totals(calling, 2, {}, 30, random.Random(30), **pull) if pull else plain
+                        self.assertNotEqual(totals(calling, 2, {row["key"]: c["key"]}, 30, random.Random(30), **pull), base)
         choices = {(calling, c["key"]) for calling in model.CALLINGS for row in model.talent_rows(calling)
                    for c in row["choices"]}
         for key, why in model.IGNORED.items():
@@ -154,6 +165,51 @@ class BalanceModel(unittest.TestCase):
     def test_vanguard_has_no_unmodelled_choices(self):
         for (calling, key), why in model.IGNORED.items():
             if calling == "vanguard":
+                with self.subTest(choice=key):
+                    self.assertNotEqual(why, "not modelled yet")
+
+    # What each Cutthroat choice the sim models buys, from its description. Brazen Garrote's
+    # Garrote out of Stealth beats a Sinister Strike only when its whole bleed lands, and the
+    # Cutthroat's fights at 30 end first: it changes the fight and buys nothing ("even").
+    CUTTHROAT_GAINS = {
+        "serrated_strikes": "damage", "flurry_of_blades": "damage", "practiced_strike": "damage",
+        "phantom_guile": "damage", "elusiveness": "survival", "second_wind": "survival",
+        "open_wounds": "damage", "executioners_toll": "survival", "kidney_shot": "survival",
+        "bloodletting": "damage", "open_veins": "damage", "sanguine_rupture": "survival",
+        "blood_frenzy": "damage", "thirst": "survival", "blood_rush": "damage",
+        "brazen_garrote": "even", "choking_garrote": "survival", "initiative": "damage",
+    }
+    # The cases whose small gain shows only over more fights: Initiative's is +1.3% at 300 and
+    # under the luck at 50. Elusiveness changes no fight against 2 normals.
+    CUTTHROAT_FIGHTS = {"initiative": 300}
+    CUTTHROAT_PULLS = {"elusiveness": LONG_PULL}
+
+    def test_cutthroat_choices_move_the_fight(self):
+        rows = {c["key"]: row["key"] for row in model.talent_rows("cutthroat") for c in row["choices"]}
+        self.assertEqual(set(self.CUTTHROAT_GAINS),
+                         {k for k in rows if ("cutthroat", k) not in model.IGNORED})
+        # As the Vanguard's: fight i of every build starts from seed i, and the plain Cutthroat
+        # loses nearly every fight here, so survival is the health lost a second.
+        plains = {}
+        for key, gain in self.CUTTHROAT_GAINS.items():
+            with self.subTest(choice=key, gain=gain):
+                fights, pull = self.CUTTHROAT_FIGHTS.get(key, 50), self.CUTTHROAT_PULLS.get(key, {})
+                at = (fights, tuple(sorted(pull.items())))
+                if at not in plains:
+                    plains[at] = totals("cutthroat", 2, {}, fights, random.Random, **pull)
+                plain = plains[at]
+                got = totals("cutthroat", 2, {rows[key]: key}, fights, random.Random, **pull)
+                dealt, lost, spent = got
+                if gain == "damage":
+                    self.assertGreater(dealt / spent, plain[0] / plain[2])
+                elif gain == "survival":
+                    self.assertLess(lost / spent, plain[1] / plain[2])
+                else:
+                    self.assertNotEqual(got, plain)
+
+    def test_cutthroat_has_no_unmodelled_choices(self):
+        for (calling, key), why in model.IGNORED.items():
+            if calling == "cutthroat":
                 with self.subTest(choice=key):
                     self.assertNotEqual(why, "not modelled yet")
 

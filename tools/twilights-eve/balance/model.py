@@ -441,22 +441,6 @@ def passive_effects(calling, rows, kind):
 # Tier 1 choices that change nothing in the sim's fights, with the reason the report prints
 # (test_every_tier1_choice_changes_the_fight_or_is_ignored).
 IGNORED = {
-    ("cutthroat", "serrated_strikes"): "not modelled yet",
-    ("cutthroat", "flurry_of_blades"): "not modelled yet",
-    ("cutthroat", "phantom_guile"): "not modelled yet",
-    ("cutthroat", "elusiveness"): "not modelled yet",
-    ("cutthroat", "second_wind"): "not modelled yet",
-    ("cutthroat", "open_wounds"): "not modelled yet",
-    ("cutthroat", "executioners_toll"): "not modelled yet",
-    ("cutthroat", "kidney_shot"): "not modelled yet",
-    ("cutthroat", "open_veins"): "not modelled yet",
-    ("cutthroat", "sanguine_rupture"): "not modelled yet",
-    ("cutthroat", "blood_frenzy"): "not modelled yet",
-    ("cutthroat", "thirst"): "not modelled yet",
-    ("cutthroat", "blood_rush"): "not modelled yet",
-    ("cutthroat", "brazen_garrote"): "not modelled yet",
-    ("cutthroat", "choking_garrote"): "not modelled yet",
-    ("cutthroat", "initiative"): "not modelled yet",
     ("ranger", "explosive_payload"): "not modelled yet",
     ("ranger", "guerilla_tactics"): "not modelled yet",
     ("ranger", "point_blank"): "not modelled yet",
@@ -675,6 +659,19 @@ class Sim:
     def block_value(self):
         return self.s.block_value
 
+    def stun(self, p, combo=0):
+        """The stun effect `p` on the target: its next swing waits for the stun to end, after its
+        aura's duration, or `duration_ms` and `per_combo` for each of the `combo` points spent."""
+        if p.get("apply_aura"):
+            ms = aura(self.calling, p["apply_aura"])["duration_ms"]
+        else:
+            ms = p["duration_ms"] + linear(p.get("per_combo"), self.L) * combo
+        self.mob_swing_t = max(self.mob_swing_t, self.t + ms / 1000)
+
+    def splash(self, d, src):
+        """`d` damage, past armour already, to the nearest other living mob: none in a fight with
+        one (multi.Multi has the others)."""
+
     def take(self, dmg):
         ab = min(getattr(self, "absorb", 0), dmg)
         if ab:
@@ -758,8 +755,7 @@ class Vanguard(Sim):
                     raw = self.rng.uniform(s.mh_min, s.mh_max) * p.get("weapon_pct", 100) / 100 + linear(p["bonus"], self.L)
                     self.hit_mob(raw, "charge_strike", p.get("school", "physical") == "physical", o == "crit")
             for p in fxs(ch, "stun"):
-                stun = aura(self.calling, p["apply_aura"])["duration_ms"] / 1000
-                self.mob_swing_t = max(self.mob_swing_t, self.t + stun)
+                self.stun(p)
 
     def player_armor(self):
         pct = self.armor_pct if self.t < self.seal_armor_until else 0
@@ -894,45 +890,96 @@ class Vanguard(Sim):
 # ---------------------------------------------------------------- Cutthroat
 class Cutthroat(Sim):
     def dmg_pct(self):
-        return 3 * self.bloodlust if self.t < self.bl_until else 0
+        return self.bl_dmg * self.bloodlust if self.t < self.bl_until else 0
 
     def haste(self):
-        return 3 * self.bloodlust if self.t < self.bl_until else 0
+        return self.bl_haste * self.bloodlust if self.t < self.bl_until else 0
 
     def setup_fight(self):
-        s = self.s
+        s, c = self.s, self.calling
         self.combo = 0
         self.swing_t = 0.0
         self.oh_t = s.oh_speed / 2 if s.oh else 1e9
         self.mob_swing_t = 0.5
         self.gcd = 0.0
+        # The Bloodlust a bleed's droplet grants: its gains a stack, its stacks and its length, the
+        # stacks a passive adds, and a passive's heal and energy on each pickup.
+        self.drop_chance = SPELLS[c]["bleed_drop_chance"]
+        self.bl_aura = aura(c, fx(aura(c, SPELLS[c]["bleed_drop"]), "pickup")["grants"])
+        self.bl_dmg = sum(p["pct"] for p in fxs(self.bl_aura, "mod_damage_done_pct"))
+        self.bl_haste = sum(p["pct"] for p in fxs(self.bl_aura, "mod_melee_haste_pct"))
+        self.bl_max = self.bl_aura["max_stacks"] + sum(p["amount"] for p in passive_effects(c, self.rows, "aura_max_stacks")
+                                                        if p["aura"] == self.bl_aura["key"])
+        self.pickup_heal = sum(p["pct"] for p in passive_effects(c, self.rows, "pickup_heal_pct"))
+        self.pickup_energy = sum(p["amount"] for p in passive_effects(c, self.rows, "pickup_energize"))
         self.bloodlust = 0
         self.bl_until = -1
-        self.rupture = None  # (until, next, tick, leech)
+        self.rupture = None  # [until, next tick, tick, every, leech pct, droplet chance]
         self.garrote = None
+        # The aura the build's Evasion grants: its dodge and its procs on a dodge (Phantom Guile).
+        ev = self.skill("evasion")
+        self.ev_aura = self.granted("evasion") if fxs(ev, "grant_aura") else aura(c, fx(ev, "dodge_pct")["apply_aura"])
+        self.ev_dodge = sum(p["pct"] for p in fxs(self.ev_aura, "dodge_pct"))
+        self.ev_procs = [p for p in fxs(self.ev_aura, "proc") if p["on"] == "dodge"]
         self.evasion_until = -1
-        # Garrote from stealth.
+        self.mending = None  # [ticks left, next tick, heal, every]
+        # Garrote from stealth: a crit if it lands.
+        self.garrote_cast(100)
+
+    def garrote_cast(self, crit_pct):
+        """Garrote, when the energy is there: its bleed, its combo points and the stun its choice
+        adds."""
         g = self.skill("garrote")
-        if self.power >= self.cost(g):
-            self.power -= self.cost(g)
-            self.gcd = self.t + 1.0
-            o = self.yellow(100)  # opener: a crit if it lands
-            if o not in ("dodge", "parry", "miss"):
-                a = aura("cutthroat", fx(g, "periodic_damage")["apply_aura"])
-                p = a["effects"][0]["params"]
-                self.garrote = [self.t + a["duration_ms"] / 1000, self.t + p["tick_ms"] / 1000, linear(p["tick"], self.L), p["tick_ms"] / 1000]
-                self.combo = 1
+        if self.power < self.cost(g):
+            return
+        self.power -= self.cost(g)
+        self.gcd = self.t + 1.0
+        o = self.yellow(crit_pct)
+        if o in ("hit", "crit"):
+            a = aura(self.calling, fx(g, "periodic_damage")["apply_aura"])
+            p = fx(a, "periodic_damage")
+            every = p["tick_ms"] / 1000
+            self.garrote = [self.t + a["duration_ms"] / 1000, self.t + every, linear(p["tick"], self.L), every,
+                            p.get("leech_pct", 0), p.get("drop_chance", self.drop_chance)]
+            self.add_combo(self.combo_points(g))
+            for st in fxs(g, "stun"):
+                self.stun(st)
 
     def dodge_more(self):
-        return 50 if self.t < self.evasion_until else 0
+        return self.ev_dodge if self.t < self.evasion_until else 0
 
     def add_combo(self, n=1):
         self.combo = min(self.combo + n, 5)
 
-    def droplet(self):
-        if self.rng.random() < 0.5 and self.rng.random() < self.opts.get("pickup", DROPLET_PICKUP):
-            self.bloodlust = min(self.bloodlust + 1, 5)
-            self.bl_until = self.t + 10
+    def bleeding(self):
+        return any(b and self.t < b[0] for b in (self.rupture, self.garrote))
+
+    def combo_points(self, sk):
+        """The combo points `sk` awards: `bleeding_bonus` more on a bleeding target (Serrated
+        Strikes)."""
+        p = fx(sk, "add_combo_points")
+        return p["amount"] + (p.get("bleeding_bonus", 0) if self.bleeding() else 0)
+
+    def gain_energy(self, n):
+        self.power = min(self.power + n, self.s.max_energy)
+
+    def droplet(self, chance):
+        """A bleed's tick spills a droplet `chance` percent of the time, and the character picks up
+        some of them: a Bloodlust stack and the passive's heal and energy."""
+        if self.rng.random() * 100 < chance and self.rng.random() < self.opts.get("pickup", DROPLET_PICKUP):
+            self.bloodlust = min(self.bloodlust + 1, self.bl_max)
+            self.bl_until = self.t + self.bl_aura["duration_ms"] / 1000
+            self.heal(self.s.max_hp * self.pickup_heal // 100, "pickup")
+            self.gain_energy(self.pickup_energy)
+
+    def dodged(self):
+        """The character dodged a swing: the procs of Evasion's aura while it is up."""
+        if self.t < self.evasion_until:
+            for p in self.ev_procs:
+                if p.get("chance", 100) < 100 and self.rng.random() * 100 >= p["chance"]:
+                    continue
+                self.gain_energy(p.get("energize", 0))
+                self.add_combo(p.get("add_combo_points", 0))
 
     def step(self):
         s, L = self.s, self.L
@@ -943,18 +990,27 @@ class Cutthroat(Sim):
             if b and self.t < b[0] and self.t >= b[1]:
                 b[1] += b[3]
                 d = self.hit_mob(b[2], "rupture" if b is self.rupture else "garrote", physical=False, dmg_pct=self.dmg_pct())
-                if b is self.rupture:
-                    self.heal(d * 40 // 100, "rupture_leech")
-                self.droplet()
-        # Evasion when hurt.
+                self.heal(d * b[4] // 100, "leech")
+                self.droplet(b[5])
+        # Evasion when hurt, and the heal its choice adds over its ticks (Second Wind).
         if self.ready("evasion") and self.hp < s.max_hp * 0.6:
-            self.cd("evasion", self.skill("evasion")["realm_cooldown_ms"])
-            self.evasion_until = self.t + 15
+            ev = self.skill("evasion")
+            self.cd("evasion", ev["realm_cooldown_ms"])
+            self.evasion_until = self.t + self.ev_aura["duration_ms"] / 1000
+            for p in fxs(ev, "periodic_heal"):
+                ticks = p["duration_ms"] // p["tick_ms"]
+                self.mending = [ticks, self.t + p["tick_ms"] / 1000, s.max_hp * p["pct"] // 100 // ticks, p["tick_ms"] / 1000]
+        if self.mending and self.mending[0] > 0 and self.t >= self.mending[1]:
+            self.mending[0] -= 1
+            self.mending[1] += self.mending[3]
+            self.heal(self.mending[2], "evasion_heal")
         # GCD skills.
         if self.t >= self.gcd:
             ss, ev, ru = self.skill("sinister_strike"), self.skill("eviscerate"), self.skill("rupture")
+            g = self.skill("garrote")
             mob_frac = self.mob_hp / self.m["hp"]
             rupture_up = self.rupture and self.t < self.rupture[0]
+            garrote_up = self.garrote and self.t < self.garrote[0]
             if self.combo >= 5 or (self.combo >= 3 and mob_frac < 0.25):
                 if not rupture_up and mob_frac > 0.45 and self.power >= self.cost(ru):
                     self.power -= self.cost(ru)
@@ -964,7 +1020,9 @@ class Cutthroat(Sim):
                         p = fx(ru, "periodic_damage")
                         dur = (p["duration_ms"] + linear(p["duration_per_combo"], L) * self.combo) / 1000
                         tick = linear(p["tick"], L) + linear(p["per_combo"], L) * self.combo
-                        self.rupture = [self.t + dur, self.t + 2.0, tick, 2.0]
+                        every = p["tick_ms"] / 1000
+                        self.rupture = [self.t + dur, self.t + every, tick, every, p.get("leech_pct", 0),
+                                        p.get("drop_chance", self.drop_chance)]
                     self.combo = 0
                 elif self.power >= self.cost(ev):
                     self.power -= self.cost(ev)
@@ -973,8 +1031,19 @@ class Cutthroat(Sim):
                     if o in ("hit", "crit"):
                         p = fx(ev, "school_damage")
                         raw = linear(p["amount"], L) + linear(p["per_combo"], L) * self.combo
-                        self.hit_mob(raw, "eviscerate", True, o == "crit", dmg_pct=self.dmg_pct())
+                        more = p.get("bleeding_pct", 0) if self.bleeding() else 0
+                        self.hit_mob(raw, "eviscerate", True, o == "crit", dmg_pct=self.dmg_pct() + more)
+                        for st in fxs(ev, "stun"):
+                            self.stun(st, self.combo)
+                        if self.mob_hp <= 0:
+                            # A killing blow (Executioner's Toll).
+                            self.heal(s.max_hp * p.get("kill_heal_pct", 0) // 100, "kill")
+                            self.gain_energy(p.get("kill_energize", 0))
                     self.combo = 0
+            elif (not garrote_up and not g.get("requires_stealth") and mob_frac > 0.45 and self.hp >= s.max_hp * 0.6
+                  and self.power >= self.cost(g)):
+                # Garrote again once its bleed is gone, when it needs no Stealth (Brazen Garrote).
+                self.garrote_cast(s.crit)
             elif self.power >= self.cost(ss):
                 self.power -= self.cost(ss)
                 self.gcd = self.t + 1.0
@@ -982,8 +1051,10 @@ class Cutthroat(Sim):
                 if o in ("hit", "crit"):
                     p = fx(ss, "weapon_strike")
                     raw = self.rng.uniform(s.mh_min, s.mh_max) * p["weapon_pct"] / 100 + linear(p["bonus"], L)
-                    self.hit_mob(raw, "sinister_strike", True, o == "crit", dmg_pct=self.dmg_pct())
-                    self.add_combo(1)
+                    d = self.hit_mob(raw, "sinister_strike", True, o == "crit", dmg_pct=self.dmg_pct())
+                    # A second mob in reach takes a share of the strike (Flurry of Blades).
+                    self.splash(d * p.get("cleave_pct", 0) // 100, "sinister_strike_cleave")
+                    self.add_combo(self.combo_points(ss))
         # Whites.
         h = self.haste()
         if self.t >= self.swing_t:
@@ -996,6 +1067,8 @@ class Cutthroat(Sim):
         if self.t >= self.mob_swing_t:
             self.mob_swing_t = self.t + self.m["swing"]
             d, o = self.mob_swing()
+            if o == "dodge":
+                self.dodged()
             if d > 0:
                 self.take(d)
 

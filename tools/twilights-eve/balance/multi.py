@@ -42,8 +42,16 @@ class Multi:
         self.tgt = keep
         return d0
 
+    def splash(self, d, src):
+        others = [i for i in self.alive() if i != self.tgt]
+        if d > 0 and others:
+            keep, self.tgt = self.tgt, others[0]
+            model.Sim.hit_mob(self, d, src, physical=False)
+            self.tgt = keep
+
     def extra_defended(self, i, o):
-        """Mob `i`, not the target, swung at the character and it came out a block or a parry (`o`)."""
+        """Mob `i`, not the target, swung at the character and it came out a block, a parry or a
+        dodge (`o`)."""
         pass
 
     def retarget(self):
@@ -56,7 +64,7 @@ class Multi:
         self.extra_swing_t = self.t + self.m["swing"]
         for i in [i for i in self.alive() if i != self.tgt]:
             d, o = self.mob_swing()
-            if o in ("block", "parry"):
+            if o in ("block", "parry", "dodge"):
                 self.extra_defended(i, o)
             if d > 0:
                 d = self.take(d)
@@ -114,6 +122,10 @@ class VanguardN(Multi, model.Vanguard):
 
 class CutthroatN(Multi, model.Cutthroat):
     PER_TARGET = dict(rupture=None, garrote=None)
+
+    def extra_defended(self, i, o):
+        if o == "dodge":
+            self.dodged()
 
 
 class InitiateN(Multi, model.Initiate):
