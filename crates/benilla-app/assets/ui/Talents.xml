@@ -10,14 +10,14 @@
         TALENT_ROWS_UPDATE repaints; the update that answers OpenTalentRows opens the window, and
         so does one sent at an innkeeper, which is the innkeeper's "rethink" line.
 
-        A 448 x 640 frame at the stock TalentFrame's place (the left panel slot), the Journal's
+        A 600 x 640 frame at the stock TalentFrame's place (the left panel slot), the Journal's
         frame art. Cell states: locked (row not open) is desaturated and grey and takes no click;
         open and empty is normal, lights on hover and sets the row; set has a gold border and lit
         text; open with another cell set is dimmed and takes no click, unless at an innkeeper,
         when it is normal and changes the row.
     -->
     <Script><![CDATA[
-        BENILLA_TALENTS_ROW_HEIGHT = 80
+        BENILLA_TALENTS_ROW_HEIGHT = 64
         BENILLA_TALENTS_CHOICES = 3
         BENILLA_TALENTS_DIM = 0.45
         BENILLA_TALENTS_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
@@ -192,9 +192,9 @@
         end
     ]]></Script>
 
-    <!-- One choice: a 32 px icon above a two-line name; a gold icon border while set. -->
+    <!-- One choice: a 36 px icon with a two-line name to its right; a gold border round it while set. -->
     <Button name="BenillaTalentsCellTemplate" virtual="true">
-        <Size><AbsDimension x="116" y="58"/></Size>
+        <Size><AbsDimension x="142" y="44"/></Size>
         <Layers>
             <Layer level="BACKGROUND">
                 <Texture name="$parentBg">
@@ -210,33 +210,30 @@
             </Layer>
             <Layer level="ARTWORK">
                 <Texture name="$parentIcon">
-                    <Size><AbsDimension x="32" y="32"/></Size>
-                    <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-3"/></Offset></Anchor></Anchors>
+                    <Size><AbsDimension x="36" y="36"/></Size>
+                    <Anchors><Anchor point="LEFT"><Offset><AbsDimension x="4" y="0"/></Offset></Anchor></Anchors>
                 </Texture>
-                <FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="CENTER">
-                    <Size><AbsDimension x="108" y="22"/></Size>
-                    <Anchors><Anchor point="BOTTOM"><Offset><AbsDimension x="0" y="1"/></Offset></Anchor></Anchors>
+                <FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="LEFT">
+                    <Size><AbsDimension x="94" y="36"/></Size>
+                    <Anchors><Anchor point="LEFT"><Offset><AbsDimension x="44" y="0"/></Offset></Anchor></Anchors>
                 </FontString>
             </Layer>
             <Layer level="OVERLAY">
+                <!-- 2 px of gold along each edge of the whole cell. -->
                 <Texture name="$parentSetTop" hidden="true">
-                    <Size><AbsDimension x="36" y="2"/></Size>
-                    <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-1"/></Offset></Anchor></Anchors>
+                    <Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"/><Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT"><Offset><AbsDimension x="0" y="-2"/></Offset></Anchor></Anchors>
                     <Color r="1" g="0.82" b="0" a="1"/>
                 </Texture>
                 <Texture name="$parentSetBottom" hidden="true">
-                    <Size><AbsDimension x="36" y="2"/></Size>
-                    <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-35"/></Offset></Anchor></Anchors>
+                    <Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="0" y="2"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"/></Anchors>
                     <Color r="1" g="0.82" b="0" a="1"/>
                 </Texture>
                 <Texture name="$parentSetLeft" hidden="true">
-                    <Size><AbsDimension x="2" y="36"/></Size>
-                    <Anchors><Anchor point="TOP"><Offset><AbsDimension x="-17" y="-1"/></Offset></Anchor></Anchors>
+                    <Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="0" y="-2"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="2" y="2"/></Offset></Anchor></Anchors>
                     <Color r="1" g="0.82" b="0" a="1"/>
                 </Texture>
                 <Texture name="$parentSetRight" hidden="true">
-                    <Size><AbsDimension x="2" y="36"/></Size>
-                    <Anchors><Anchor point="TOP"><Offset><AbsDimension x="17" y="-1"/></Offset></Anchor></Anchors>
+                    <Anchors><Anchor point="TOPLEFT" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-2" y="-2"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="0" y="2"/></Offset></Anchor></Anchors>
                     <Color r="1" g="0.82" b="0" a="1"/>
                 </Texture>
             </Layer>
@@ -248,36 +245,43 @@
         </Scripts>
     </Button>
 
-    <!-- One Talent Row: its level at the left, a Skill Choice row's skill above its three cells. -->
+    <!-- One Talent Row: its level in a box at the left, a Skill Choice row's skill above its three cells. -->
     <Frame name="BenillaTalentsRowTemplate" virtual="true">
-        <Size><AbsDimension x="416" y="80"/></Size>
+        <Size><AbsDimension x="480" y="64"/></Size>
         <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentLevelBg">
+                    <Size><AbsDimension x="36" y="44"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="0" y="-16"/></Offset></Anchor></Anchors>
+                    <Color r="0" g="0" b="0" a="0.35"/>
+                </Texture>
+            </Layer>
             <Layer level="ARTWORK">
                 <FontString name="$parentLevel" inherits="GameFontNormal" justifyH="CENTER">
-                    <Size><AbsDimension x="32" y="58"/></Size>
-                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="0" y="-18"/></Offset></Anchor></Anchors>
+                    <Size><AbsDimension x="36" y="44"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="0" y="-16"/></Offset></Anchor></Anchors>
                 </FontString>
                 <FontString name="$parentSkill" inherits="GameFontDisableSmall" justifyH="LEFT">
-                    <Size><AbsDimension x="372" y="14"/></Size>
-                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="40" y="0"/></Offset></Anchor></Anchors>
+                    <Size><AbsDimension x="436" y="14"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="44" y="0"/></Offset></Anchor></Anchors>
                 </FontString>
             </Layer>
         </Layers>
         <Frames>
             <Button name="$parentCell1" inherits="BenillaTalentsCellTemplate">
-                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="40" y="-18"/></Offset></Anchor></Anchors>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="44" y="-16"/></Offset></Anchor></Anchors>
             </Button>
             <Button name="$parentCell2" inherits="BenillaTalentsCellTemplate">
-                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="168" y="-18"/></Offset></Anchor></Anchors>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="190" y="-16"/></Offset></Anchor></Anchors>
             </Button>
             <Button name="$parentCell3" inherits="BenillaTalentsCellTemplate">
-                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="296" y="-18"/></Offset></Anchor></Anchors>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="336" y="-16"/></Offset></Anchor></Anchors>
             </Button>
         </Frames>
     </Frame>
 
     <Frame name="BenillaTalents" parent="UIParent" toplevel="true" enableMouse="true" hidden="true">
-        <Size><AbsDimension x="448" y="640"/></Size>
+        <Size><AbsDimension x="600" y="640"/></Size>
         <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="0" y="-80"/></Offset></Anchor></Anchors>
         <Layers>
             <Layer level="BACKGROUND">
@@ -311,11 +315,11 @@
             <Button name="BenillaTalentsClose"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-12" y="-12"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\close_normal"/><PushedTexture file="Interface\Benilla\journal\close_pushed"/><HighlightTexture file="Interface\Benilla\journal\close_hover" alphaMode="ADD"/><Scripts><OnClick>BenillaTalents:Hide()</OnClick></Scripts></Button>
             <!-- The strips: ten rows' worth would not fit under the title, so they scroll. -->
             <ScrollFrame name="BenillaTalentsScroll">
-                <Size><AbsDimension x="416" y="480"/></Size>
-                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="16" y="-100"/></Offset></Anchor></Anchors>
+                <Size><AbsDimension x="480" y="480"/></Size>
+                <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-100"/></Offset></Anchor></Anchors>
                 <ScrollChild>
                     <Frame name="BenillaTalentsScrollChild">
-                        <Size><AbsDimension x="416" y="1"/></Size>
+                        <Size><AbsDimension x="480" y="1"/></Size>
                     </Frame>
                 </ScrollChild>
                 <Scripts><OnMouseWheel>BenillaTalents_Wheel(this, arg1)</OnMouseWheel></Scripts>

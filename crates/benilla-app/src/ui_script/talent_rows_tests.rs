@@ -133,6 +133,50 @@ fn four_rows_render_their_levels() {
     );
 }
 
+/// `frame`'s left and right edges.
+fn span(s: &UiScript, frame: &str) -> (f64, f64) {
+    s.eval::<(f64, f64)>(&format!("return {frame}:GetLeft(), {frame}:GetRight()"))
+        .unwrap()
+}
+
+#[test]
+fn the_rows_sit_centred_inside_the_painted_sheet() {
+    let s = open(warrior(false));
+    let (sheet_left, sheet_right) = span(&s, "BenillaTalentsMiddle");
+    let inside = |frame: &str, left: f64, right: f64| {
+        let (l, r) = span(&s, frame);
+        assert!(
+            l >= left && r <= right,
+            "{frame} runs {l} to {r}, outside {left} to {right}"
+        );
+    };
+    for i in 1..=4 {
+        inside(
+            &format!("BenillaTalentsRow{i}Level"),
+            sheet_left,
+            sheet_right,
+        );
+        for j in 1..=3 {
+            let cell = format!("BenillaTalentsRow{i}Cell{j}");
+            inside(&cell, sheet_left, sheet_right);
+            let (cell_left, cell_right) = span(&s, &cell);
+            inside(&format!("{cell}Icon"), cell_left, cell_right);
+            inside(&format!("{cell}Name"), cell_left, cell_right);
+        }
+    }
+    // Fire Blast's second choice is set: its gold edges frame the whole cell.
+    let set = span(&s, "BenillaTalentsRow2Cell2");
+    for side in ["Top", "Bottom"] {
+        assert_eq!(span(&s, &format!("BenillaTalentsRow2Cell2Set{side}")), set);
+    }
+    let centre = |frame: &str| {
+        let (l, r) = span(&s, frame);
+        (l + r) / 2.0
+    };
+    let off = centre("BenillaTalentsScroll") - centre("BenillaTalents");
+    assert!(off.abs() <= 0.5, "the rows sit {off} px off centre");
+}
+
 #[test]
 fn a_locked_cell_sends_nothing() {
     let mut s = open(warrior(false));
@@ -212,7 +256,7 @@ fn the_eleventh_row_is_inside_the_scroll_child() {
     assert_eq!(
         s.eval::<f64>("return BenillaTalentsScrollChild:GetHeight()")
             .unwrap(),
-        11.0 * 80.0
+        11.0 * 64.0
     );
 }
 
