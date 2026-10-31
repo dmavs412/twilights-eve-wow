@@ -139,6 +139,8 @@ pub(super) struct Skills {
     consumed: Option<(Aura, u32)>,
     /// A Blink cast and not yet landed: the next tick, which has the ground, moves the caster.
     blink: Option<PendingBlink>,
+    /// A Charge cast and not yet run: the next tick, which has the ground, lays its path.
+    charge: Option<PendingCharge>,
     /// Seconds left of the player's leap through the air: their client flies it and reports where
     /// it lands.
     airborne: f32,
@@ -325,6 +327,15 @@ struct PendingBlink {
     orientation: f32,
     faces: f32,
     distance_yd: f32,
+}
+
+/// Where a Charge starts and stops, on the straight line to its target, and how fast it runs.
+#[derive(Debug, Clone, Copy)]
+struct PendingCharge {
+    from: [f32; 3],
+    dest: [f32; 3],
+    target: u64,
+    speed_yd_s: f32,
 }
 
 /// A `cast_skill` waiting for its cast's Blink to land: the plain skill's spell id, whose version
@@ -4264,22 +4275,17 @@ impl InWorld {
                 let d = distance(from, to);
                 let t = ((d - CHARGE_STOP_YD) / d).max(0.0);
                 let dest = std::array::from_fn(|i| from[i] + (to[i] - from[i]) * t);
-                let duration = distance(from, dest) / speed_yd_s;
+                // The rest of the cast stands at the destination; the next tick, which has the
+                // ground, lays the run over it and sends it.
                 c.position = dest;
                 c.orientation = (to[1] - from[1])
                     .atan2(to[0] - from[0])
                     .rem_euclid(std::f32::consts::TAU);
-                events.push(SessionEvent::MonsterMove {
-                    guid: self.guid,
-                    transport: None,
-                    start: from,
-                    spline_id: 1,
-                    path: vec![from, dest],
-                    facing: MonsterMoveFacing::Target(target),
-                    stop: false,
-                    duration_ms: clock::ms(duration),
-                    flying: false,
-                    run_mode: true,
+                self.skills.charge = Some(PendingCharge {
+                    from,
+                    dest,
+                    target,
+                    speed_yd_s,
                 });
             }
             Effect::Energize {
@@ -6903,6 +6909,74 @@ impl InWorld {
             gone += step;
         }
         self.teleport(c, at, b.faces, events);
+    }
+
+    /// Runs a Charge cast since the last tick over the ground: a point every yard along the
+    /// straight line, each at the ground beneath it (or the line's height where there is none),
+    /// ending at the destination on the ground. A patch the cast left at the destination
+    /// (Bulwark Charge's Consecration) comes down to the ground with the caster.
+    pub(super) fn land_charge(
+        &mut self,
+        host: &dyn crate::Host,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let Some(ch) = self.skills.charge.take() else {
+            return;
+        };
+        let (from, dest) = (ch.from, ch.dest);
+        let (dx, dy) = (dest[0] - from[0], dest[1] - from[1]);
+        let span = dx.hypot(dy);
+        let ground = |x: f32, y: f32, line: f32, last: f32| {
+            host.ground_height(self.map, x, y, line.max(last) + BLINK_MAX_CLIMB_YD)
+                .unwrap_or(line)
+        };
+        let mut path = vec![from];
+        let mut gone = BLINK_STEP_YD;
+        while gone < span {
+            let t = gone / span;
+            let (x, y) = (from[0] + dx * t, from[1] + dy * t);
+            let line = from[2] + (dest[2] - from[2]) * t;
+            let last = path[path.len() - 1][2];
+            path.push([x, y, ground(x, y, line, last)]);
+            gone += BLINK_STEP_YD;
+        }
+        let last = path[path.len() - 1][2];
+        let end = [dest[0], dest[1], ground(dest[0], dest[1], dest[2], last)];
+        path.push(end);
+        c.position[2] = end[2];
+        if end[2] != dest[2] {
+            let me = self.guid;
+            let mut grounds = std::mem::take(&mut self.skills.grounds);
+            for g in grounds
+                .iter_mut()
+                .filter(|g| g.caster == me && g.centre == dest)
+            {
+                g.centre[2] = end[2];
+                events.push(SessionEvent::ObjectDestroyed(g.object));
+                g.object = self.skills.next_patch(me);
+                events.push(patch_create(
+                    g.object,
+                    g.caster,
+                    g.spell_id,
+                    g.centre,
+                    g.radius_yd,
+                ));
+            }
+            self.skills.grounds = grounds;
+        }
+        events.push(SessionEvent::MonsterMove {
+            guid: self.guid,
+            transport: None,
+            start: from,
+            spline_id: 1,
+            duration_ms: clock::ms(crate::mobs::length(&path) / ch.speed_yd_s),
+            path,
+            facing: MonsterMoveFacing::Target(ch.target),
+            stop: false,
+            flying: false,
+            run_mode: true,
+        });
     }
 
     /// Launches the player along `way` as the client's jump takes off, fast enough that the arc

@@ -148,8 +148,10 @@ fn charge_runs_the_warrior_to_the_mob_for_rage_and_a_stun() {
 
     stand_at(&mut realm, &mob, 15.0);
     realm.handle(cast(*CHARGE, Some(mob.guid)));
-    let events = view.drain(&mut realm);
+    let mut events = view.drain(&mut realm);
     assert_eq!(refusal(&events, *CHARGE), None);
+    // The run goes out on the next tick, which has the ground.
+    events.extend(view.run(&mut realm, 0.1));
     let path = events
         .iter()
         .find_map(|e| match e {
@@ -164,13 +166,77 @@ fn charge_runs_the_warrior_to_the_mob_for_rage_and_a_stun() {
     assert_eq!(view.rage(me), 18);
     assert!(view.aura(mob.guid, 7922).is_some(), "stunned");
 
-    // Stunned for a second: the mob does not swing until it is over.
-    let first = first_swing_at(&mut realm, &mut view, mob.guid, 3.0).expect("it swings at last");
+    // Stunned for a second: the mob does not swing until it is over. Counted from the cast, a
+    // tick before.
+    let first =
+        0.1 + first_swing_at(&mut realm, &mut view, mob.guid, 2.9).expect("it swings at last");
     assert!(first >= 1.0, "swung {first} s in");
 
     // In combat now, and on cooldown anyway.
     realm.handle(cast(*CHARGE, Some(mob.guid)));
     assert_eq!(refusal(&view.drain(&mut realm), *CHARGE), Some(NOT_READY));
+}
+
+/// A dome whose top is `top`, falling 20 yd over the 15 yd out from it, with nothing in the way
+/// and no area anywhere.
+struct Hill {
+    top: [f32; 3],
+}
+
+impl Host for Hill {
+    fn ground_height(&self, _map: u32, x: f32, y: f32, _z_hint: f32) -> Option<f32> {
+        let r = (x - self.top[0]).hypot(y - self.top[1]);
+        Some(self.top[2] - 20.0 * (r / 15.0).powi(2))
+    }
+    fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
+        true
+    }
+    fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
+        None
+    }
+}
+
+/// Up a hill that bulges above the straight line, the charge runs over the ground (#520).
+#[test]
+fn charge_up_a_hill_runs_over_the_ground() {
+    let (mut realm, me, mob, mut view) = warrior_at(1);
+    let hill = Hill { top: mob.position };
+    let (dx, dy) = (
+        CROSSROADS_XY[0] - mob.position[0],
+        CROSSROADS_XY[1] - mob.position[1],
+    );
+    let len = dx.hypot(dy);
+    let at = [
+        mob.position[0] + dx / len * 15.0,
+        mob.position[1] + dy / len * 15.0,
+        mob.position[2] - 20.0,
+    ];
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: at,
+        orientation: (mob.position[1] - at[1]).atan2(mob.position[0] - at[0]),
+    });
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
+    let mut events = view.drain(&mut realm);
+    assert_eq!(refusal(&events, *CHARGE), None);
+    realm.tick(0.1, &hill);
+    events.extend(view.drain(&mut realm));
+    let path = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::MonsterMove { guid, path, .. } if *guid == me => Some(path.clone()),
+            _ => None,
+        })
+        .expect("the charge's run");
+    for p in &path {
+        let ground = hill.ground_height(0, p[0], p[1], p[2]).unwrap();
+        assert!(
+            (p[2] - ground).abs() < 0.1,
+            "{p:?} is off the ground at {ground}"
+        );
+    }
+    let end = *path.last().unwrap();
+    assert!(dist(end, mob.position) < 2.5, "ends at the mob");
 }
 
 #[test]

@@ -1945,7 +1945,7 @@ fn unit_class_id(class: UnitClass) -> u32 {
 }
 
 /// The length of a path through `points`.
-fn length(points: &[[f32; 3]]) -> f32 {
+pub(crate) fn length(points: &[[f32; 3]]) -> f32 {
     points.windows(2).map(|l| distance(l[0], l[1])).sum()
 }
 

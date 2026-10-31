@@ -199,6 +199,64 @@ fn the_patch_is_a_consecration_object_at_the_destination_until_it_ends() {
     assert!(destroyed(&view.run(&mut realm, 1.0), guid), "gone at 8 s");
 }
 
+/// A dome whose top is `top`, falling 9 yd over the 12 yd out from it, with nothing in the way
+/// and no area anywhere.
+struct Dome {
+    top: [f32; 3],
+}
+
+impl Host for Dome {
+    fn ground_height(&self, _map: u32, x: f32, y: f32, _z_hint: f32) -> Option<f32> {
+        let r = (x - self.top[0]).hypot(y - self.top[1]);
+        Some(self.top[2] - 9.0 * (r / 12.0).powi(2))
+    }
+    fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
+        true
+    }
+    fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
+        None
+    }
+}
+
+/// Charging up a dome, the patch first lands on the straight line's height, under the ground;
+/// the tick that runs the charge takes it down and puts it up again on the ground (#520).
+#[test]
+fn up_a_hill_the_patch_lies_on_the_ground_where_the_charge_ends() {
+    let (mut realm, mut view, _, near, _) = scene(STURDY);
+    let dome = Dome { top: near.position };
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: [
+            near.position[0] - 12.0,
+            near.position[1],
+            near.position[2] - 9.0,
+        ],
+        orientation: 0.0,
+    });
+    realm.handle(cast(charge_id(), Some(near.guid)));
+    let mut events = view.drain(&mut realm);
+    assert_eq!(
+        refusal(&events, charge_id()),
+        None,
+        "Bulwark Charge goes off"
+    );
+    realm.tick(0.1, &dome);
+    events.extend(view.drain(&mut realm));
+    let objects = patch_objects(&events);
+    let [(on_line, ..), (_, spell_id, centre, radius)] = objects[..] else {
+        panic!("the patch on the line, then on the ground, has {objects:?}");
+    };
+    assert!(destroyed(&events, on_line), "the patch on the line is gone");
+    assert_eq!((spell_id, radius), (consecration_id(), 8.0));
+    let ground = dome
+        .ground_height(0, centre[0], centre[1], centre[2])
+        .unwrap();
+    assert!(
+        (centre[2] - ground).abs() < 0.1,
+        "{centre:?} is off the ground at {ground}"
+    );
+}
+
 /// Charges `near` and stops swinging: where the patch is centred.
 fn charged(realm: &mut Realm, view: &mut View, near: &Mob) -> [f32; 3] {
     realm.handle(cast(charge_id(), Some(near.guid)));

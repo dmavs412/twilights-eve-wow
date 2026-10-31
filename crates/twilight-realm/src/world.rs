@@ -793,6 +793,7 @@ impl InWorld {
                 Help::Aura { aura, .. } => self.wear(aura, events),
             }
         }
+        self.land_charge(host, c, events);
         self.land_blink(host, c, events);
         // A cast's own skill goes off once its Blink or leap has landed (Parting Shot).
         self.land_follow_ups(dt, host, c, rng, events, &mut ticked);
