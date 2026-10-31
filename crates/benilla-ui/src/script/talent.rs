@@ -5,12 +5,15 @@
 //! fires `TALENT_ROWS_UPDATE`. The client decides nothing: the realm refuses a locked row or a
 //! set row away from an innkeeper.
 //!
-//! `GameTooltip:SetTalent(i, j)` keeps its 1.12 name and shows choice `j` of row `i` as its spell,
-//! through the spell builder the spell book's hover uses. Indices are 1-based in Lua.
+//! `GameTooltip:SetTalent(i, j)` keeps its 1.12 name. A Skill Choice shows three lines: its name,
+//! "Upgrades <skill>" in grey and its Change Line (spec #517). A Talent shows choice `j` of row `i`
+//! as its spell, through the spell builder the spell book's hover uses. Indices are 1-based in Lua.
 
 use mlua::{Lua, MultiValue, Table, Value};
 
-use super::tooltip_spell::{set_spell_by_id, SpellRenderOpts};
+use super::object::frame_handle_of;
+use super::tooltip::{append_line, clear_content, fire_cleared, show_or_hide_empty};
+use super::tooltip_spell::{set_spell_by_id, SpellRenderOpts, GRAY, WHITE};
 use super::Model;
 
 /// One choice of a row, as the realm's `TalentChoiceView`, with the icon the host resolved.
@@ -18,6 +21,8 @@ use super::Model;
 pub struct TalentChoiceView {
     pub spell_id: u32,
     pub name: String,
+    /// A Skill Choice's Change Line, filled at the player's level; "" for a Talent.
+    pub change: String,
     /// The spell's icon from its own Spell.dbc row in the client's catalog; `None` without one.
     pub icon: Option<String>,
 }
@@ -180,27 +185,49 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
     Ok(())
 }
 
-/// Register `GameTooltip:SetTalent(i, j)`: choice `j` of row `i` as its spell, the choice's name
-/// standing in until the spell's view arrives.
+/// Register `GameTooltip:SetTalent(i, j)`: a Skill Choice shows its name, "Upgrades <skill>" and
+/// its Change Line; a Talent shows choice `j` of row `i` as its spell, the choice's name standing
+/// in until the spell's view arrives.
 pub(super) fn install_tooltip_method(lua: &Lua, m: &Table) -> mlua::Result<()> {
     m.set(
         "SetTalent",
         lua.create_function(|lua, (this, i, j): (Table, i64, i64)| {
             let choice = {
                 let model = lua.app_data_ref::<Model>().expect("model app_data");
-                choice_at(&model, i, j).map(|(_, c)| (c.spell_id, c.name.clone()))
+                choice_at(&model, i, j).map(|(r, c)| {
+                    (
+                        c.spell_id,
+                        c.name.clone(),
+                        r.skill.clone(),
+                        c.change.clone(),
+                    )
+                })
             };
-            let Some((spell_id, name)) = choice else {
+            let Some((spell_id, name, skill, change)) = choice else {
                 return Ok(());
             };
-            set_spell_by_id(
-                lua,
-                &this,
-                spell_id,
-                Some(name),
-                SpellRenderOpts::default(),
-                None,
-            )
+            if skill.is_empty() || change.is_empty() {
+                return set_spell_by_id(
+                    lua,
+                    &this,
+                    spell_id,
+                    Some(name),
+                    SpellRenderOpts::default(),
+                    None,
+                );
+            }
+            // Cleared the way `set_spell_by_id` clears; no cost, range, cast time or cooldown.
+            let h = frame_handle_of(lua, &this)?;
+            {
+                let mut model = lua.app_data_mut::<Model>().expect("model app_data");
+                clear_content(&mut model, h);
+            }
+            fire_cleared(lua, h);
+            append_line(lua, &this, (name, WHITE), None, false)?;
+            append_line(lua, &this, (format!("Upgrades {skill}"), GRAY), None, false)?;
+            append_line(lua, &this, (change, WHITE), None, true)?;
+            show_or_hide_empty(lua, h);
+            Ok(())
         })?,
     )?;
     Ok(())

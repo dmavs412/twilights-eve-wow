@@ -32,6 +32,7 @@ fn click(s: &UiScript, frame: &str) {
 }
 
 /// Row `key` at `level`, its three choices `spell + 1` to `spell + 3`, set to `set` (0 for none).
+/// A Skill Choice row's choices carry a Change Line; a Talent row's (`skill` "") carry "".
 fn row(key: &str, level: u8, open: bool, skill: &str, spell: u32, set: u32) -> TalentRowView {
     TalentRowView {
         key: key.into(),
@@ -43,10 +44,36 @@ fn row(key: &str, level: u8, open: bool, skill: &str, spell: u32, set: u32) -> T
             .map(|n| TalentChoiceView {
                 spell_id: spell + n,
                 name: format!("{key} {n}"),
+                change: change_line(key, skill, n),
                 icon: None,
             })
             .collect(),
     }
+}
+
+fn change_line(key: &str, skill: &str, n: u32) -> String {
+    if skill.is_empty() {
+        String::new()
+    } else {
+        format!("{skill} changes the {key} {n} way, at length enough to wrap on the tooltip.")
+    }
+}
+
+/// Hover choice `j` of row `i` the way the cell's OnEnter does, and read the tooltip's left lines.
+/// The stock GameTooltip and UIParent are game data, so the test makes a bare tooltip that the
+/// cell owns.
+fn hover(s: &UiScript, i: usize, j: usize) -> Vec<String> {
+    s.run(&format!(
+        "if not GameTooltip then CreateFrame('GameTooltip', 'GameTooltip') end \
+         GameTooltip:SetOwner(BenillaTalentsRow{i}Cell{j}, 'ANCHOR_NONE') \
+         GameTooltip:SetTalent({i}, {j})"
+    ))
+    .unwrap();
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+    let n = s.eval::<i64>("return GameTooltip:NumLines()").unwrap();
+    (1..=n)
+        .map(|k| plain(s, &format!("GameTooltipTextLeft{k}")))
+        .collect()
 }
 
 /// Basic Warrior at level 5: Charge open and empty, Fire Blast open and set to its second choice,
@@ -204,6 +231,35 @@ fn a_calling_with_no_rows_says_so_and_hides_the_footer() {
     assert_eq!(plain(&s, "BenillaTalentsEmpty"), "No talents yet.");
     assert!(!shown(&s, "BenillaTalentsFooter"));
     assert!(!shown(&s, "BenillaTalentsRow1"));
+}
+
+#[test]
+fn hovering_a_skill_choice_shows_its_name_skill_and_change_line() {
+    let s = open(warrior(false));
+    assert_eq!(
+        hover(&s, 1, 2),
+        [
+            "charge 2".to_string(),
+            "Upgrades Charge".to_string(),
+            change_line("charge", "Charge", 2),
+        ],
+        "no cost, range, cast time or cooldown lines"
+    );
+}
+
+#[test]
+fn hovering_a_talent_shows_its_spell_tooltip() {
+    let mut view = warrior(false);
+    view.rows.push(row("tough", 10, true, "", 500, 0));
+    let s = open(view);
+    // A Skill Choice's lines first, so the Talent's hover must clear them.
+    hover(&s, 1, 1);
+    let lines = hover(&s, 5, 1);
+    assert_eq!(lines.first().map(String::as_str), Some("tough 1"));
+    assert!(
+        !lines.iter().any(|l| l.starts_with("Upgrades")),
+        "a Talent names no skill: {lines:?}"
+    );
 }
 
 #[test]

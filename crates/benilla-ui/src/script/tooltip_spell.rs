@@ -20,9 +20,9 @@ use super::tooltip::{append_line, clear_content, fire_cleared, tip_mut};
 use super::{CraftTooltip, Model, TrainerTooltip};
 use crate::widget::FrameHandle;
 
-const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
+pub(super) const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
 /// The rank column's gray, `0xff808080`.
-const GRAY: [f32; 4] = [128.0 / 255.0, 128.0 / 255.0, 128.0 / 255.0, 1.0];
+pub(super) const GRAY: [f32; 4] = [128.0 / 255.0, 128.0 / 255.0, 128.0 / 255.0, 1.0];
 /// The description gold, `0xffffd200`.
 const GOLD: [f32; 4] = [1.0, 210.0 / 255.0, 0.0, 1.0];
 

@@ -60,6 +60,7 @@ fn view_of(event: &SessionEvent) -> Option<TalentRowsView> {
                     .map(|c| TalentChoiceView {
                         spell_id: c.spell_id,
                         name: c.name.clone(),
+                        change: c.change.clone(),
                         icon: None,
                     })
                     .collect(),
@@ -173,17 +174,17 @@ mod tests {
                     benilla_protocol::TalentChoiceView {
                         spell_id: RUSH,
                         name: "Bull Rush".into(),
-                        change: String::new(),
+                        change: "Charge stuns for 2 sec.".into(),
                     },
                     benilla_protocol::TalentChoiceView {
                         spell_id: RALLY,
                         name: "Rallying Charge".into(),
-                        change: String::new(),
+                        change: "Charge grants 15 rage.".into(),
                     },
                     benilla_protocol::TalentChoiceView {
                         spell_id: RECKLESS,
                         name: "Reckless Charge".into(),
-                        change: String::new(),
+                        change: "Charge can be used in combat.".into(),
                     },
                 ],
             }],
@@ -193,9 +194,10 @@ mod tests {
     #[test]
     fn a_talent_rows_event_becomes_the_view_field_for_field() {
         let view = view_of(&rows_event()).unwrap();
-        let choice = |spell_id, name: &str| TalentChoiceView {
+        let choice = |spell_id, name: &str, change: &str| TalentChoiceView {
             spell_id,
             name: name.into(),
+            change: change.into(),
             icon: None,
         };
         assert_eq!(
@@ -210,12 +212,16 @@ mod tests {
                     skill: "Charge".into(),
                     set: RALLY,
                     choices: vec![
-                        choice(RUSH, "Bull Rush"),
-                        choice(RALLY, "Rallying Charge"),
-                        choice(RECKLESS, "Reckless Charge"),
+                        choice(RUSH, "Bull Rush", "Charge stuns for 2 sec."),
+                        choice(RALLY, "Rallying Charge", "Charge grants 15 rage."),
+                        choice(RECKLESS, "Reckless Charge", "Charge can be used in combat."),
                     ],
                 }],
             }
+        );
+        assert_eq!(
+            view.rows[0].choices[1].change, "Charge grants 15 rage.",
+            "the Change Line is carried"
         );
         assert!(view_of(&SessionEvent::LoggedOut).is_none());
     }
