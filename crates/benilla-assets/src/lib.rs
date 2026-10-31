@@ -501,9 +501,14 @@ mod tests {
         let data = benilla_formats::wow_data_or_skip!();
         let reader = benilla_formats::Chain::open(&data).expect("open chain");
         let mut url = None;
+        // A tile the Closed Zones (ADR 0015) cover loads with every chunk cut, so the search
+        // skips one whose centre chunk is closed (map 0, Azeroth).
         'find: for tx in 28..36u32 {
             for ty in 46..52u32 {
-                if reader.contains(&format!("World\\Maps\\Azeroth\\Azeroth_{tx}_{ty}.adt")) {
+                let open =
+                    !benilla_formats::closed_zones::chunk_closed(0, tx * 16 + 8, ty * 16 + 8);
+                if open && reader.contains(&format!("World\\Maps\\Azeroth\\Azeroth_{tx}_{ty}.adt"))
+                {
                     url = Some(format!("mpq://World/Maps/Azeroth/Azeroth_{tx}_{ty}.adt"));
                     break 'find;
                 }
