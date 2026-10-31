@@ -32,6 +32,9 @@ with `wmo_floor.py`, never from the box.
 - Name every place the change touches by file, function and line ("`effect_row` in
   `crates/benilla-formats/src/spells/twilight.rs`, line 172"). The Build session goes straight to
   code from these. A ticket without them sends the session exploring.
+- A bug ticket also names the game data in play where the bug happens, as the reproduction
+  found it: the nearby DBC rows, realm content rows and spawns. #420's cause was two stock
+  `AreaPOI.dbc` flags under the dungeon portals, while its ticket named only the drawing code.
 - Acceptance lists only what the Build lane's checks show: a test, `ground_check.py`, the
   pipeline unittests. The Build lane makes no game run (CLAUDE.md), so a screenshot, a probe
   run, or "casting X shows Y" belongs to the spec's `unplayed` label or a Lane 2 follow-up, not

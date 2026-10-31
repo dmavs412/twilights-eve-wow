@@ -9,7 +9,8 @@ Task: $ARGUMENTS
 - Run the game only from a `play/<short-commit>/` copy, never from `target`. Write no code and
   run no `cargo`.
 - Reproduce what Davis reports, then write one issue per bug naming the spec it breaks, with
-  the steps and what was seen. With no task given, take the oldest open `bug` that has no
+  the steps, what was seen, and the game data in play there (nearby DBC rows, realm content
+  rows, spawns), read with the repo's Python tools. With no task given, take the oldest open `bug` that has no
   `ready-for-agent` label: that is Lane 2's queue (`docs/agents/triage-labels.md`). Remove `unplayed` from a spec only on Davis's play note.
 - A triage that makes an issue `ready-for-agent` follows `docs/agents/issue-tracker.md`,
   "Writing a ready-for-agent ticket" and "Placing units": the game run you made stays as the

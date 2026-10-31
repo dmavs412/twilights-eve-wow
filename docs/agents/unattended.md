@@ -56,6 +56,9 @@ failed.
   The comments may narrow the body; the latest comment wins.
 - A ticket labelled `ready-for-agent` passed grilling. Do not reopen its design, and do not
   narrow it. Do the whole ticket.
+- A failing test the ticket asks for that passes before any change is missing a game input.
+  Compare its inputs with what the app feeds (DBC rows, realm content, spawns) before searching
+  the code, and write the gap in the closing comment (#434).
 - "Grill before architecture" does not apply here. If the ticket turns out to need an ADR, a
   new crate, a master CSV column, or a change across the client/realm seam, it was mislabelled:
   block it (below) instead of guessing.
