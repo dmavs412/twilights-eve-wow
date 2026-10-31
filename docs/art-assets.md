@@ -219,3 +219,12 @@ still to be specified.
 
 The Talents panel (`assets/ui/Talents.xml`) uses the Journal's frame art (`journal\window_bg`,
 `title_plaque`, `divider`, the close button), so it needs no file of its own yet.
+
+## Forest's Edge Noise Bar (spec #533)
+
+| Asset | Where | Notes |
+|---|---|---|
+| Hogger's head | `crates/benilla-app/assets/ui/noise/hogger_head.tga`, loaded as `Interface\Benilla\noise\hogger_head` | 64 x 64 RGBA TGA at the right end of the Noise Bar, where full Noise wakes Hogger. #537 writes a flat placeholder. |
+
+The In Cover and Sleeping auras borrow stock icons (`Ability_Stealth`, `Spell_Nature_Sleep`)
+and need no art.

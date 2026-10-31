@@ -127,6 +127,17 @@ One go at a Phased Dungeon, shared by everyone inside. It starts when the first 
 The doorway that moves a character between the open world and a Phased Dungeon's Phase, with no loading screen.
 _Avoid_: area trigger (the client's mechanism for a real instance's entrance)
 
+**Noise**:
+A Run's meter in Forest's Edge, 0 to 40, shared by everyone inside. Fights, deaths and the Run's clock raise it, and Cover lowers it. The louder it is, the farther a Sleeper hears a character, and at full Hogger wakes and hunts. It shows as the Noise Bar at the top of the screen.
+_Avoid_: aggro, threat
+
+**Sleeper**:
+A dungeon creature that starts asleep, lying down, and ignores characters until one comes near, its Camp is hurt, or a waker passes. Once woken it is an ordinary creature for the rest of the Run.
+
+**Cover**:
+A walk-through object in a Phased Dungeon, such as a haystack in Forest's Edge. A character standing inside one, out of combat, wears In Cover: Noise falls, and awake creatures do not notice them.
+_Avoid_: hiding spot (the old clicked version), stealth
+
 **Tier Cap**:
 The highest level a character can reach in a Tier, which is also the level at which they may advance: 10 for Tier 0, 30 for Tier 1, 50 for Tier 2, 60 for Tier 3, the last Tier, where 60 is the end of the game.
 _Avoid_: max level
