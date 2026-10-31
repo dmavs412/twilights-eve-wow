@@ -387,7 +387,7 @@ fn build_catalog_from_world(world: &World) -> Option<(Vec<WorldMapContinentView>
 /// `[0x845070]` and `[0x845074]`. An instance map is `Zone`: both gates treat it as zone level
 /// (`0x4a79de`; `0x4a8856`/`0x4a885f` fall through to `0x4a8868`).
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum MapLevel {
+pub(crate) enum MapLevel {
     /// Both continents on one sheet (the reference's `continent == -1`).
     World,
     /// One continent, no zone selected (`continent >= 0, zone == -1`).
@@ -400,7 +400,10 @@ impl MapLevel {
     /// From the engine's selection, the 1-based `(continent, zone)` with 0 for whole plus the
     /// direct area, which is read first because it shares the world sheet's `(0, 0)`. A
     /// continent with a map canvas is `Zone`: the canvas is zone maps, gated as zone maps.
-    fn of(data: &WorldMapUiData, (continent, zone, direct): (u32, u32, Option<u32>)) -> Self {
+    pub(crate) fn of(
+        data: &WorldMapUiData,
+        (continent, zone, direct): (u32, u32, Option<u32>),
+    ) -> Self {
         match (continent, zone, direct) {
             (_, _, Some(_)) => Self::Zone,
             (0, _, None) => Self::World,
@@ -562,6 +565,60 @@ fn landmark_texture_index(poi: &benilla_formats::AreaPoi, level: MapLevel) -> u3
         true => poi.icon,
         false => ZONE_SUBSTITUTE,
     }
+}
+
+/// The landmark list (`GetNumMapLandmarks`, `0x4a67a0`) at `level`, through `project`, the
+/// displayed map's [`project_on_displayed`]. On the canvas, a landmark off its rect is dropped too:
+/// `zone_uv` answers the `(0, 0)` sentinel for any position outside [0, 1], and the degenerate
+/// test skips it.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn build_landmarks(
+    pois: Option<&benilla_formats::AreaPoiCatalog>,
+    level: MapLevel,
+    areas: &benilla_formats::AreaTableCatalog,
+    explored: &[u32],
+    world_states: &crate::world_state::WorldStates,
+    marks: &[benilla_protocol::MapMark],
+    marker: Option<&benilla_formats::AreaPoi>,
+    project: impl Fn(u32, f32, f32) -> Option<(f32, f32)>,
+) -> Vec<WorldMapLandmarkView> {
+    let mut landmarks = Vec::new();
+    // The DBC rows first, in file order, the Lua landmark index (`0x4a6819`'s walk of
+    // `[0xc0e054]`).
+    for (_, poi) in pois.into_iter().flat_map(|p| p.rows()) {
+        if !landmark_gates_pass(poi, level, areas, explored, world_states) {
+            continue;
+        }
+        let Some(uv) = project(poi.continent_id, poi.pos[0], poi.pos[1]) else {
+            continue;
+        };
+        if is_degenerate(uv) {
+            continue;
+        }
+        landmarks.push(WorldMapLandmarkView {
+            name: poi.name.clone(),
+            description: poi.description.clone(),
+            texture_index: landmark_texture_index(poi, level),
+            uv,
+        });
+    }
+    // Twilight's marks, after the DBC rows so their indices stay where the reference puts them.
+    landmarks.extend(mark_landmarks(marks, level, &project));
+    // Then the guard-directions marker, last (`0x4a69c7`): no gate and no icon substitution, only
+    // the degenerate-projection test.
+    if let Some(poi) = marker {
+        if let Some(uv) = project(poi.continent_id, poi.pos[0], poi.pos[1]) {
+            if !is_degenerate(uv) {
+                landmarks.push(WorldMapLandmarkView {
+                    name: poi.name.clone(),
+                    description: poi.description.clone(),
+                    texture_index: poi.icon,
+                    uv,
+                });
+            }
+        }
+    }
+    landmarks
 }
 
 /// Which map the player's position selects (`0x4a6650`), in the Lua-visible encoding; at most one
@@ -769,47 +826,16 @@ fn feed_world_map(
         .as_ref()
         .is_some_and(|k| k.matches(selection, map.0, states_gen, &explored, marker, marks));
     if !unchanged {
-        // On the canvas, a landmark off its rect is dropped too: `zone_uv` answers the `(0, 0)`
-        // sentinel for any position outside [0, 1], and the degenerate test below skips it.
-        let level = MapLevel::of(&data, selection);
-        let mut landmarks = Vec::new();
-        // The DBC rows first, in file order, the Lua landmark index (`0x4a6819`'s walk of
-        // `[0xc0e054]`).
-        if let Some(pois) = pois.as_ref() {
-            for (_, poi) in pois.0.rows() {
-                if !landmark_gates_pass(poi, level, &areas.0, &explored, &world_states) {
-                    continue;
-                }
-                let Some(uv) = project(poi.continent_id, poi.pos[0], poi.pos[1]) else {
-                    continue;
-                };
-                if is_degenerate(uv) {
-                    continue;
-                }
-                landmarks.push(WorldMapLandmarkView {
-                    name: poi.name.clone(),
-                    description: poi.description.clone(),
-                    texture_index: landmark_texture_index(poi, level),
-                    uv,
-                });
-            }
-        }
-        // Twilight's marks, after the DBC rows so their indices stay where the reference puts them.
-        landmarks.extend(mark_landmarks(marks, level, &project));
-        // Then the guard-directions marker, last (`0x4a69c7`): no gate and no icon substitution,
-        // only the degenerate-projection test.
-        if let Some(poi) = poi_marker.on_map(map.0) {
-            if let Some(uv) = project(poi.continent_id, poi.pos[0], poi.pos[1]) {
-                if !is_degenerate(uv) {
-                    landmarks.push(WorldMapLandmarkView {
-                        name: poi.name.clone(),
-                        description: poi.description.clone(),
-                        texture_index: poi.icon,
-                        uv,
-                    });
-                }
-            }
-        }
+        let landmarks = build_landmarks(
+            pois.as_ref().map(|p| &p.0),
+            MapLevel::of(&data, selection),
+            &areas.0,
+            &explored,
+            &world_states,
+            marks,
+            poi_marker.on_map(map.0),
+            &project,
+        );
         memo.get(&script).landmarks = Some(LandmarkKey {
             selection,
             map: map.0,

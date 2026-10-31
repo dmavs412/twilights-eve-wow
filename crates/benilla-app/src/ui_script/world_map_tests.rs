@@ -1124,6 +1124,70 @@ fn canvas_harness() -> UiScript {
     s
 }
 
+/// The real Eastern Kingdoms canvas open in the 1024x768 harness with the player at Eastvale, and
+/// the landmark list the game builds there through [`crate::ui_world_map::build_landmarks`]: the
+/// real `AreaPOI.dbc` rows a fully explored character sees, then `marks`, with no world states and
+/// no guard marker. Returns the list as pushed.
+fn real_canvas_harness(
+    data: &std::path::Path,
+    marks: &[benilla_protocol::MapMark],
+) -> (UiScript, Vec<WorldMapLandmarkView>) {
+    use crate::ui_world_map::{build_catalog, build_landmarks, project_on_displayed, MapLevel};
+    let mut chain = benilla_formats::open_chain(data).expect("chain");
+    let areas = benilla_formats::load_area_table_catalog(&mut chain).expect("AreaTable");
+    let maps =
+        benilla_assets::MapCatalogRes(benilla_formats::load_map_catalog(&mut chain).expect("Map"));
+    let pois = benilla_formats::load_area_poi_catalog(&mut chain).expect("AreaPOI");
+    let (views, ui_data) =
+        build_catalog(&mut chain, &areas, &maps, true).expect("the real catalog");
+    let (ek, elwynn) = views
+        .iter()
+        .enumerate()
+        .find_map(|(ci, c)| {
+            c.zones
+                .iter()
+                .position(|z| z.name == "Elwynn Forest")
+                .map(|zi| (ci as u32 + 1, zi as u32 + 1))
+        })
+        .expect("Elwynn Forest is in the catalog");
+    // Eastvale (-9450, -1300) on the canvas, the whole continent's map.
+    let player = project_on_displayed(&ui_data, (ek, 0, None), 0, -9450.0, -1300.0);
+
+    let mut s = harness();
+    arrow_facts(&mut s);
+    s.set_world_map_catalog(views);
+    let slots = usize::from(benilla_protocol::messages::PLAYER_EXPLORED_ZONES_SLOTS);
+    let explored = vec![u32::MAX; slots];
+    s.set_world_map_explored(explored.clone());
+    s.set_world_map_feed(
+        Some((ek, elwynn)),
+        player,
+        0.0,
+        None,
+        Vec::new(),
+        Vec::new(),
+    );
+    s.run(&format!("SetMapZoom({ek})")).unwrap();
+    s.run("ToggleWorldMap()").unwrap();
+    s.resolve();
+
+    let selection = s.world_map_selection();
+    let landmarks = build_landmarks(
+        Some(&pois),
+        MapLevel::of(&ui_data, selection),
+        &areas,
+        &explored,
+        &crate::world_state::WorldStates::default(),
+        marks,
+        None,
+        |map, x, y| project_on_displayed(&ui_data, selection, map, x, y),
+    );
+    s.set_world_map_landmarks(landmarks.clone());
+    s.run("WorldMapFrame_Update()").unwrap();
+    settle(&mut s);
+    (s, landmarks)
+}
+
 /// One map update and a layout pass, so every icon sits where this zoom puts it.
 fn settle(s: &mut UiScript) {
     update(s);
@@ -1331,38 +1395,64 @@ fn the_hover_names_the_zone_at_every_zoom() {
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 
-/// The mouse over a dungeon mark and a quest mark on the canvas shows the mark's tooltip, at the
-/// zoom the map opens at and at the deepest zoom (#420). Each mark sits by an `AreaPOI.dbc`
-/// landmark, as in Elwynn: the Abbey's portal is 38 yd from the stock "Northshire Abbey" flag and
-/// a Goldshire quest giver stands by the "Goldshire" flag. The stock row comes first, so its POI
-/// is the earlier link and takes the hover at an equal level (`order::hit_test`).
+/// The mouse over a dungeon mark and a quest mark on the real canvas shows the mark's tooltip, at
+/// the zoom the map opens at and at the deepest zoom (#420). The game's own builder stacks the
+/// list from the real `AreaPOI.dbc`, so each mark sits by a stock landmark as in Elwynn: the
+/// Abbey's portal is 38 yd from the "Northshire Abbey" flag and Marshal Dughan stands by the
+/// "Goldshire" flag. The stock rows come first, so their POIs are the earlier links and take the
+/// hover at an equal level (`order::hit_test`).
 #[test]
 fn hovering_a_mark_on_the_canvas_shows_its_tooltip_at_every_zoom() {
-    let _data = benilla_formats::wow_data_or_skip!();
+    use benilla_protocol::{MapIcon, MapMark};
+    let data = benilla_formats::wow_data_or_skip!();
+    let mark = |position, icon, name: &str, subtitle: &str| MapMark {
+        map: 0,
+        position,
+        guid: 0,
+        icon,
+        name: name.into(),
+        subtitle: subtitle.into(),
+        quests: Vec::new(),
+    };
     let marks = [
-        (
-            landmark("Northshire Abbey", 6, (0.3278, 0.2674)),
-            70,
-            (0.3213, 0.2714),
+        // The Phased Dungeon at its `[portal]` (northshire_abbey.toml).
+        mark(
+            [-8910.4, -144.2],
+            MapIcon::Dungeon,
             "Northshire Abbey",
             "Phased Dungeon, levels 6-15",
         ),
-        (
-            landmark("Goldshire", 6, (0.2826, 0.4307)),
-            64,
-            (0.2805, 0.4290),
+        // Marshal Dughan's spawn row 80334 (elwynn.toml).
+        mark(
+            [-9465.52, 74.007],
+            MapIcon::QuestAvailable,
             "Marshal Dughan",
             "Report to the Marshal",
         ),
     ];
-    for (stock, icon, uv, name, line) in marks {
-        let mut s = canvas_harness();
-        let mut mark = landmark(name, icon, uv);
-        mark.description = line.into();
-        s.set_world_map_landmarks(vec![stock, mark]);
-        s.run("WorldMapFrame_Update()").unwrap();
-        settle(&mut s);
-        let (u, v) = (f64::from(uv.0), f64::from(uv.1));
+    for mark in &marks {
+        let (mut s, landmarks) = real_canvas_harness(&data, &marks);
+        // A stock row draws from the `POIIcons` grid, a mark past it (cell 64 up).
+        let index = |name: &str, own: bool| {
+            landmarks
+                .iter()
+                .position(|l| l.name == name && (l.texture_index >= 64) == own)
+                .unwrap_or_else(|| panic!("{name} (mark {own}) is not in the built list"))
+        };
+        let stock = [index("Northshire Abbey", false), index("Goldshire", false)];
+        let own = [
+            index("Northshire Abbey", true),
+            index("Marshal Dughan", true),
+        ];
+        assert!(
+            stock.iter().max() < own.iter().min(),
+            "the AreaPOI.dbc rows {stock:?} stack under the marks {own:?}"
+        );
+
+        let at_index = index(&mark.name, true);
+        let poi = format!("WorldMapFramePOI{}", at_index + 1);
+        let (u, v) = landmarks[at_index].uv;
+        let (u, v) = (f64::from(u), f64::from(v));
         for deepest in [false, true] {
             if deepest {
                 let at = map_point(&s, u, v);
@@ -1375,13 +1465,15 @@ fn hovering_a_mark_on_the_canvas_shows_its_tooltip_at_every_zoom() {
             settle(&mut s);
             assert_eq!(
                 s.hit_test_name(at.0, at.1).as_deref(),
-                Some("WorldMapFramePOI2"),
-                "icon {icon}, zoom {}",
+                Some(poi.as_str()),
+                "{}, zoom {}",
+                mark.name,
                 zoom_of(&s)
             );
             assert!(
                 s.eval::<bool>("return WorldMapTooltip:IsShown()").unwrap(),
-                "icon {icon}, zoom {}",
+                "{}, zoom {}",
+                mark.name,
                 zoom_of(&s)
             );
             let texts = s
@@ -1389,7 +1481,15 @@ fn hovering_a_mark_on_the_canvas_shows_its_tooltip_at_every_zoom() {
                     "return WorldMapTooltipTextLeft1:GetText(), WorldMapTooltipTextLeft2:GetText()",
                 )
                 .unwrap();
-            assert_eq!(texts, (name.into(), line.into()), "icon {icon}");
+            assert_eq!(
+                texts,
+                (
+                    mark.name.clone(),
+                    crate::ui_world_map::mark_description(mark)
+                ),
+                "{}",
+                mark.name
+            );
         }
         assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
     }
