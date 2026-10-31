@@ -40,12 +40,29 @@ def totals(calling: str, n: int, rows: dict, fights: int, rng: random.Random, le
     return dealt, lost, spent
 
 
+def fought(calling: str, rows: dict, fights: int, rng: random.Random, n: int = 2, **pull) -> tuple:
+    """totals() against `n` mobs, 2 unless the pull says, in the pull's gear and rank."""
+    return totals(calling, n, rows, fights, rng, **pull)
+
+
 # A pull of 2 elites in blues, B-2E's: it lasts about 55 s at 30, where 2 normals last about 30 s.
 LONG_PULL = dict(gear="blue", rank=1)
-# Choices that change nothing in 30 fights against 2 normals, so
-# test_every_tier1_choice_changes_the_fight_or_is_ignored fights them in LONG_PULL: Elusiveness
-# brings Evasion back after 60 s, and Blood Frenzy's stacks past 5 need a long run of droplets.
-LONG_FIGHT = {("cutthroat", "elusiveness"), ("cutthroat", "blood_frenzy")}
+# One normal, the pick's own fight: the plain Initiate lasts about 18 s there. Against 2 normals at
+# 30 it dies in about 8 s, before its first Ley Spark.
+ONE_NORMAL = dict(n=1)
+# Choices that change nothing in 30 fights against 2 normals, and the pull
+# test_every_tier1_choice_changes_the_fight_or_is_ignored fights them in instead: Elusiveness
+# brings Evasion back after 60 s, Blood Frenzy's stacks past 5 need a long run of droplets, and
+# the six Initiate choices act through Ley Spark (its crit, a buff, the mana it crits with).
+LONG_FIGHT = {
+    ("cutthroat", "elusiveness"): LONG_PULL, ("cutthroat", "blood_frenzy"): LONG_PULL,
+    ("initiate", "ley_line_tap"): ONE_NORMAL, ("initiate", "arcane_substrate"): ONE_NORMAL,
+    ("initiate", "warding_spark"): ONE_NORMAL, ("initiate", "siphoning_ward"): ONE_NORMAL,
+    ("initiate", "kindling_ember"): ONE_NORMAL, ("initiate", "arcane_momentum"): ONE_NORMAL,
+}
+# The every-choice test's cases that need more than 30 fights: mana lifts Ley Spark's crit by a
+# hair while the bar stays nearly full, and over 30 fights no roll lands in that hair.
+MORE_FIGHTS = {("initiate", "siphoning_ward"): 150, ("initiate", "kindling_ember"): 150}
 
 
 class BalanceModel(unittest.TestCase):
@@ -126,9 +143,10 @@ class BalanceModel(unittest.TestCase):
                     if (calling, c["key"]) in model.IGNORED:
                         continue
                     with self.subTest(calling=calling, choice=c["key"]):
-                        pull = LONG_PULL if (calling, c["key"]) in LONG_FIGHT else {}
-                        base = totals(calling, 2, {}, 30, random.Random(30), **pull) if pull else plain
-                        self.assertNotEqual(totals(calling, 2, {row["key"]: c["key"]}, 30, random.Random(30), **pull), base)
+                        pull = LONG_FIGHT.get((calling, c["key"]), {})
+                        fights = MORE_FIGHTS.get((calling, c["key"]), 30)
+                        base = fought(calling, {}, fights, random.Random(30), **pull) if pull or fights != 30 else plain
+                        self.assertNotEqual(fought(calling, {row["key"]: c["key"]}, fights, random.Random(30), **pull), base)
         choices = {(calling, c["key"]) for calling in model.CALLINGS for row in model.talent_rows(calling)
                    for c in row["choices"]}
         for key, why in model.IGNORED.items():
@@ -210,6 +228,47 @@ class BalanceModel(unittest.TestCase):
     def test_cutthroat_has_no_unmodelled_choices(self):
         for (calling, key), why in model.IGNORED.items():
             if calling == "cutthroat":
+                with self.subTest(choice=key):
+                    self.assertNotEqual(why, "not modelled yet")
+
+    # What each Initiate choice the sim models buys, from its description. The plain Initiate dies
+    # in every pull at 30 with about 95% of its mana, so Ley-Line Tap's refund buys nothing and its
+    # roll moves the luck ("even"). Siphoning Ward and Kindling Ember buy only Ley Spark's crit,
+    # which grows with the mana bar.
+    INITIATE_GAINS = {
+        "ley_line_tap": "even", "arcane_substrate": "damage", "warding_spark": "survival",
+        "siphoning_ward": "damage", "volatile_ward": "damage",
+        "thermal_feedback": "damage", "smoldering_ember": "survival", "kindling_ember": "damage",
+        "combustion_engine": "damage", "arcane_momentum": "damage", "catalytic_resonance": "damage",
+        "thermal_shock": "damage", "deep_freeze": "survival", "catalytic_chain": "damage",
+    }
+
+    def test_initiate_choices_move_the_fight(self):
+        rows = {c["key"]: row["key"] for row in model.talent_rows("initiate") for c in row["choices"]}
+        self.assertEqual(set(self.INITIATE_GAINS),
+                         {k for k in rows if ("initiate", k) not in model.IGNORED})
+        # As the Vanguard's: fight i of every build starts from seed i, and survival is the health
+        # lost a second. A choice that changes nothing against 2 normals fights 1 (LONG_FIGHT).
+        plains = {}
+        for key, gain in self.INITIATE_GAINS.items():
+            with self.subTest(choice=key, gain=gain):
+                pull = LONG_FIGHT.get(("initiate", key), {})
+                at = tuple(sorted(pull.items()))
+                if at not in plains:
+                    plains[at] = fought("initiate", {}, 50, random.Random, **pull)
+                plain = plains[at]
+                got = fought("initiate", {rows[key]: key}, 50, random.Random, **pull)
+                dealt, lost, spent = got
+                if gain == "damage":
+                    self.assertGreater(dealt / spent, plain[0] / plain[2])
+                elif gain == "survival":
+                    self.assertLess(lost / spent, plain[1] / plain[2])
+                else:
+                    self.assertNotEqual(got, plain)
+
+    def test_initiate_has_no_unmodelled_choices(self):
+        for (calling, key), why in model.IGNORED.items():
+            if calling == "initiate":
                 with self.subTest(choice=key):
                     self.assertNotEqual(why, "not modelled yet")
 

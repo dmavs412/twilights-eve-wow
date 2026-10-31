@@ -459,24 +459,10 @@ IGNORED = {
     ("ranger", "flurry"): "not modelled yet",
     ("ranger", "rapid_assault"): "not modelled yet",
     ("ranger", "running_fire"): "not modelled yet",
-    ("initiate", "ley_line_tap"): "not modelled yet",
-    ("initiate", "arcane_substrate"): "not modelled yet",
-    ("initiate", "warding_spark"): "not modelled yet",
-    ("initiate", "siphoning_ward"): "not modelled yet",
-    ("initiate", "frost_ward"): "not modelled yet",
-    ("initiate", "volatile_ward"): "not modelled yet",
-    ("initiate", "thermal_feedback"): "not modelled yet",
-    ("initiate", "smoldering_ember"): "not modelled yet",
-    ("initiate", "kindling_ember"): "not modelled yet",
-    ("initiate", "combustion_engine"): "not modelled yet",
-    ("initiate", "splintering_cold"): "not modelled yet",
-    ("initiate", "frostbite"): "not modelled yet",
-    ("initiate", "shattered_blink"): "not modelled yet",
-    ("initiate", "arcane_momentum"): "not modelled yet",
-    ("initiate", "catalytic_resonance"): "not modelled yet",
-    ("initiate", "thermal_shock"): "not modelled yet",
-    ("initiate", "deep_freeze"): "not modelled yet",
-    ("initiate", "catalytic_chain"): "not modelled yet",
+    ("initiate", "frost_ward"): "movement slow",
+    ("initiate", "splintering_cold"): "movement slow",
+    ("initiate", "frostbite"): "root",
+    ("initiate", "shattered_blink"): "root",
     ("vanguard", "sweeping_zeal"): "no pull holds more than 3 mobs",
     ("acolyte", "epidemic"): "not modelled yet",
     ("acolyte", "virulence"): "not modelled yet",
@@ -621,9 +607,13 @@ class Sim:
         return 0
 
     # ---- mob swing
-    def mob_swing(self, from_front=True):
+    def mob_swing(self, from_front=True, i=None):
+        """A swing of mob `i` of a pull (the target when None) at the character."""
         s = self.s
         raw = self.rng.uniform(self.m["dmin"], self.m["dmax"])
+        weaken = self.weaken_pct(i)
+        if weaken:
+            raw = raw * (100 - weaken) / 100
         arm = armored(raw, self.player_armor(), self.m["level"])
         r = self.rng.random() * 100
         miss = 5 + self.mob_miss_more()
@@ -646,6 +636,10 @@ class Sim:
 
     def player_armor(self):
         return self.s.armor
+
+    def weaken_pct(self, i=None):
+        """The percent less mob `i` (the target when None) hits for (Smoldering Ember)."""
+        return 0
 
     def mob_miss_more(self):
         return 0
@@ -1076,102 +1070,233 @@ class Cutthroat(Sim):
 # ---------------------------------------------------------------- Initiate
 class Initiate(Sim):
     def setup_fight(self):
+        c = self.calling
         self.dist = 30.0
         self.mob_swing_t = 0.0
         self.gcd = 0.0
-        self.cast = None   # (done_at, key)
+        self.cast = None   # (done_at, key, the next_cast changes it took)
         self.ember = None  # [until, next, tick, stacks]
         self.cold_until = -1
         self.slow_until = -1
-        self.absorb = 0
-        self.absorb_until = -1
+        self.shields = {}  # skill key -> [left, until, amount, absorb params], first up first
+        self.buffs = {}    # aura key -> (until, aura row) on the Initiate
+        self.ember_fx = fx(self.skill("searing_ember"), "periodic_damage")
+        self.ember_aura = aura(c, self.ember_fx["apply_aura"])
+        self.ember_every = fx(self.ember_aura, "periodic_damage")["tick_ms"]
+        self.cold_aura = aura(c, fx(self.skill("biting_cold"), "mod_run_speed")["apply_aura"])
+        self.procs = passive_effects(c, self.rows, "proc")
 
     def cast_time(self, key):
-        return {"ley_spark": 1500, "biting_cold": 2000}.get(key, 0)
+        return self.skill(key).get("cast_time_ms", 0)
+
+    def gain_mana(self, n):
+        self.power = min(self.power + n, self.s.max_mana)
+
+    def burning(self, e):
+        return e is not None and self.t < e[0]
+
+    def on_target(self, key):
+        """Whether the target wears aura `key` of the Initiate's: its Ember or its Cold."""
+        if key == self.ember_aura["key"]:
+            return self.burning(self.ember)
+        return key == self.cold_aura["key"] and self.t < self.cold_until
+
+    def grant(self, key):
+        a = aura(self.calling, key)
+        self.buffs[key] = (self.t + a["duration_ms"] / 1000, a)
+
+    def buffed(self, kind):
+        """The params of every `kind` effect on the Initiate's buffs still up."""
+        return [p for until, a in self.buffs.values() if self.t < until for p in fxs(a, kind)]
+
+    def spell_pct(self):
+        return sum(p["pct"] for p in self.buffed("mod_spell_damage_pct"))
+
+    def amount_pct(self, key):
+        return sum(p["pct"] for p in self.buffed("skill_amount_pct") if p["skill"] == key)
+
+    def next_casts(self, key):
+        return [p for p in self.buffed("next_cast") if p["skill"] == key]
+
+    def price(self, key, mods=None):
+        """Skill `key`'s cost after the next_cast changes `mods` (the buffs' now when None)."""
+        mods = self.next_casts(key) if mods is None else mods
+        return self.cost(self.skill(key)) * (100 + sum(p.get("cost_pct", 0) for p in mods)) // 100
+
+    def fire(self, on, key):
+        """The passives' procs on `on` ("cast", "consume") of skill `key`: an aura on the
+        Initiate. A proc that roots the mobs around it is in IGNORED."""
+        for p in self.procs:
+            if p["on"] == on and p["skill"] == key and p.get("apply_aura"):
+                self.grant(p["apply_aura"])
+
+    def shield(self, key, amount, ms, p):
+        """A shield of `amount` from skill `key` for `ms`, in place of the one `key` put up before;
+        `p` holds its riders (energize_pct, burst_radius_yd)."""
+        self.shields.pop(key, None)
+        self.shields[key] = [amount, self.t + ms / 1000, amount, p]
+
+    def take(self, dmg):
+        """`dmg` past the shields up: each pays its riders on what it soaks, and a ward that
+        breaks with burst_radius_yd bursts for its amount at every mob in the pull, all standing
+        within its yards when a blow breaks it."""
+        for key, w in list(self.shields.items()):
+            soaked = min(w[0], dmg)
+            if not soaked:
+                continue
+            w[0] -= soaked
+            dmg -= soaked
+            self.gain_mana(soaked * w[3].get("energize_pct", 0) // 100)
+            if not w[0]:
+                del self.shields[key]
+                if w[3].get("burst_radius_yd"):
+                    o = self.spell_roll(self.s.crit)
+                    if o != "miss":
+                        self.hit_mob(w[2], "ward_burst", False, o == "crit", dmg_pct=self.spell_pct())
+        return Sim.take(self, dmg)
+
+    def weaken_pct(self, i=None):
+        return self.burn_weaken(self.ember)
+
+    def burn_weaken(self, e):
+        """The percent less a mob burning with Ember `e` hits the Initiate for."""
+        return self.ember_fx.get("weaken_pct", 0) if self.burning(e) else 0
+
+    def new_ember(self, stacks, longer_ms=0):
+        """A Searing Ember of `stacks` from now, `longer_ms` past its aura's duration."""
+        L, sp = self.L, self.s.spell_power
+        dur = self.ember_aura["duration_ms"]
+        tick = linear(fx(self.ember_aura, "periodic_damage")["tick"], L) + sp_periodic(sp, dur, dur // self.ember_every) // 2
+        return [self.t + (dur + longer_ms) / 1000, self.t + self.ember_every / 1000, tick, stacks]
+
+    def tick_ember(self, e):
+        """Ember `e` on the target ticks: its damage, then its riders, mana back and a chance of
+        the next-cast aura."""
+        e[1] += self.ember_every / 1000
+        self.hit_mob(e[2] * e[3], "ember_dot", False)
+        p = self.ember_fx
+        self.gain_mana(self.s.max_mana * p.get("tick_energize_pct_of_max", 0) // 100)
+        if p.get("tick_aura") and self.rng.random() * 100 < p.get("tick_aura_chance", 100):
+            self.grant(p["tick_aura"])
+
+    def spread(self, ember=False, cold=False):
+        """Copies of the Ember or the Cold a consume took, to the next mob of a pull: none in a
+        fight with one (multi.InitiateN has the others)."""
 
     def start(self, key):
-        self.cast = (self.t + self.cast_time(key) / 1000, key)
+        # The buffs that change the cast go with it.
+        mods = self.next_casts(key)
+        for k in [k for k, (until, a) in self.buffs.items() if any(p["skill"] == key for p in fxs(a, "next_cast"))]:
+            del self.buffs[k]
+        ms = 0 if any(p.get("instant") for p in mods) else self.cast_time(key) + sum(p.get("cast_time_ms", 0) for p in mods)
+        self.cast = (self.t + max(ms, 0) / 1000, key, mods)
         self.gcd = self.t + 1.5
 
-    def finish(self, key):
+    def finish(self, key, mods):
         s, L = self.s, self.L
         sp = s.spell_power
         crit = s.crit
         sk = self.skill(key)
         if key == "ley_spark":
-            self.spend_mana(self.cost(sk))
+            was_full = self.power >= s.max_mana
+            cost = self.price(key, mods)
+            self.spend_mana(cost)
             p = fx(sk, "school_damage")
             crit += p["crit_pct_at_full_mana"] * self.power / s.max_mana
             o = self.spell_roll(crit)
             if o != "miss":
-                raw = linear(p["amount"], L) + sp_direct(sp, 1500)
-                self.hit_mob(raw, "ley_spark", False, o == "crit")
+                raw = linear(p["amount"], L) * (100 + self.amount_pct(key)) // 100 + sp_direct(sp, self.cast_time(key))
+                d = self.hit_mob(raw, "ley_spark", False, o == "crit", dmg_pct=self.spell_pct())
+                # A ward off a crit, when larger than the one it put up (Warding Spark).
+                for a in fxs(sk, "absorb"):
+                    amount = d * a["pct"] // 100
+                    if (o == "crit" or not a.get("if_crit")) and self.shields.get(key, [0])[0] < amount:
+                        self.shield(key, amount, a["duration_ms"], a)
+                for g in fxs(sk, "grant_aura"):
+                    self.grant(g["aura"])
+                # The cost back, or at a bar full before the cast a shield of it (Ley-Line Tap).
+                for r in fxs(sk, "refund_cost"):
+                    if self.rng.random() * 100 < r["chance"]:
+                        if r.get("full_absorb_pct") and was_full:
+                            self.shield(key, cost * r["full_absorb_pct"] // 100, r["absorb_duration_ms"], {})
+                        else:
+                            self.gain_mana(cost * r["pct"] // 100)
         elif key == "searing_ember":
-            self.spend_mana(self.cost(sk))
+            self.spend_mana(self.price(key, mods))
             o = self.spell_roll(crit)
             if o != "miss":
                 raw = linear(fx(sk, "school_damage")["amount"], L) + sp_direct(sp, 0)
-                self.hit_mob(raw, "ember_hit", False, o == "crit")
-                a = aura("initiate", fx(sk, "periodic_damage")["apply_aura"])
-                p = a["effects"][0]["params"]
-                dur = a["duration_ms"]
-                ticks = dur // p["tick_ms"]
-                tick = linear(p["tick"], L) + sp_periodic(sp, dur, ticks) // 2
-                stacks = min((self.ember[3] if self.ember and self.t < self.ember[0] else 0) + 1, 3)
-                self.ember = [self.t + dur / 1000, self.t + 3.0, tick, stacks]
+                self.hit_mob(raw, "ember_hit", False, o == "crit", dmg_pct=self.spell_pct())
+                stacks = min((self.ember[3] if self.burning(self.ember) else 0) + 1, self.ember_aura["max_stacks"])
+                self.ember = self.new_ember(stacks, sum(p.get("duration_ms", 0) for p in mods))
         elif key == "biting_cold":
-            self.spend_mana(self.cost(sk))
+            self.spend_mana(self.price(key, mods))
             o = self.spell_roll(crit)
             if o != "miss":
-                raw = linear(fx(sk, "school_damage")["amount"], L) + sp_direct(sp, 2000)
-                self.hit_mob(raw, "biting_cold", False, o == "crit")
-                self.cold_until = self.t + 6
-                self.slow_until = self.t + 6
+                p = fx(sk, "school_damage")
+                raw = linear(p["amount"], L) + sp_direct(sp, self.cast_time(key))
+                if p.get("vs_aura") and self.on_target(p["vs_aura"]):
+                    raw = raw * (100 + p["vs_aura_pct"]) // 100
+                self.hit_mob(raw, "biting_cold", False, o == "crit", dmg_pct=self.spell_pct())
+                self.cold_until = self.slow_until = self.t + self.cold_aura["duration_ms"] / 1000
         elif key == "catalyst":
             self.cd("catalyst", sk["realm_cooldown_ms"])
+            took = {p["aura"]: p for p in fxs(sk, "consume_aura")}
+            cold, ember = took[self.cold_aura["key"]], took[self.ember_aura["key"]]
+            consumed = False
             if self.t < self.cold_until:
                 self.cold_until = -1
-                p = fx(sk, "consume_aura")
-                raw = linear(p["amount"], L) * 2
+                raw = linear(cold["amount"], L) * cold["amount_pct"] // 100
                 o = "crit" if self.rng.random() * 100 < crit else "hit"
-                self.hit_mob(raw, "catalyst", False, o == "crit")
-            if self.ember and self.t < self.ember[0]:
+                self.hit_mob(raw, "catalyst", False, o == "crit", dmg_pct=self.spell_pct())
+                # A stun that needs the Cold the shatter took (Deep Freeze).
+                for st in fxs(sk, "stun"):
+                    self.stun(st)
+                if cold.get("spread_yd"):
+                    self.spread(cold=True)
+                consumed = True
+            if self.burning(self.ember):
                 self.ember = None
-                self.power = min(self.power + s.max_mana * 10 // 100, s.max_mana)
+                self.gain_mana(s.max_mana * ember["energize_pct_of_max"] // 100)
+                if ember.get("spread_yd"):
+                    self.spread(ember=True)
+                consumed = True
+            if consumed:
+                self.fire("consume", key)
 
     def step(self):
         s = self.s
         # Ember ticks.
-        if self.ember and self.t < self.ember[0] and self.t >= self.ember[1]:
-            self.ember[1] += 3.0
-            self.hit_mob(self.ember[2] * self.ember[3], "ember_dot", False)
-        if self.absorb and self.t > self.absorb_until:
-            self.absorb = 0
+        if self.burning(self.ember) and self.t >= self.ember[1]:
+            self.tick_ember(self.ember)
+        for key in [k for k, w in self.shields.items() if self.t > w[1]]:
+            del self.shields[key]
         # Casting.
         if self.cast and self.t >= self.cast[0]:
-            key = self.cast[1]
+            _, key, mods = self.cast
             self.cast = None
-            self.finish(key)
+            self.finish(key, mods)
         in_melee = self.dist <= 5
         if not self.cast and self.t >= self.gcd:
-            ward, ember, cold = self.skill("ley_ward"), self.skill("searing_ember"), self.skill("biting_cold")
+            ward, blink = self.skill("ley_ward"), self.skill("blink")
             if self.ready("ward") and self.power >= self.cost(ward):
                 self.spend_mana(self.cost(ward))
                 self.cd("ward", ward["realm_cooldown_ms"])
-                self.absorb = s.max_mana * self.opts.get("ward_pct", 10) // 100
-                self.absorb_until = self.t + 20
-            elif in_melee and self.ready("blink") and self.power >= self.pct_base(10) and self.t < self.slow_until:
-                self.spend_mana(self.pct_base(10))
-                self.cd("blink", 15000)
-                self.dist = 20.0
+                p = fx(ward, "absorb")
+                self.shield("ley_ward", s.max_mana * p["pct"] // 100, p["duration_ms"], p)
+            elif in_melee and self.ready("blink") and self.power >= self.cost(blink) and self.t < self.slow_until:
+                self.spend_mana(self.cost(blink))
+                self.cd("blink", blink["realm_cooldown_ms"])
+                self.dist = float(fx(blink, "blink")["distance_yd"])
                 self.gcd = self.t + 1.5
-            elif self.ready("catalyst") and self.t < self.cold_until and (self.ember and self.t < self.ember[0]) and not self.opts.get("smart"):
+                self.fire("cast", "blink")
+            elif self.ready("catalyst") and self.t < self.cold_until and self.burning(self.ember) and not self.opts.get("smart"):
                 self.start("catalyst")
-            elif not (self.ember and self.t < self.ember[0]) and self.power >= self.cost(ember):
+            elif not self.burning(self.ember) and self.power >= self.price("searing_ember"):
                 self.start("searing_ember")
-            elif self.t >= self.cold_until and self.power >= self.cost(cold) and ((not self.opts.get("smart") and (self.ready("catalyst") or self.cds["catalyst"] - self.t < 3)) or (in_melee and self.ready("blink"))):
+            elif self.t >= self.cold_until and self.power >= self.price("biting_cold") and ((not self.opts.get("smart") and (self.ready("catalyst") or self.cds["catalyst"] - self.t < 3)) or (in_melee and self.ready("blink"))):
                 self.start("biting_cold")
-            elif self.power >= self.cost(self.skill("ley_spark")):
+            elif self.power >= self.price("ley_spark"):
                 self.start("ley_spark")
         # Mob movement.
         if self.dist > 5:

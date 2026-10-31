@@ -63,7 +63,7 @@ class Multi:
             return
         self.extra_swing_t = self.t + self.m["swing"]
         for i in [i for i in self.alive() if i != self.tgt]:
-            d, o = self.mob_swing()
+            d, o = self.mob_swing(i=i)
             if o in ("block", "parry", "dodge"):
                 self.extra_defended(i, o)
             if d > 0:
@@ -129,7 +129,39 @@ class CutthroatN(Multi, model.Cutthroat):
 
 
 class InitiateN(Multi, model.Initiate):
+    AOE = {"ward_burst": 0}
     PER_TARGET = dict(ember=None, cold_until=-1, slow_until=-1)
+
+    def setup_fight(self):
+        super().setup_fight()
+        self.copies = {}   # mob -> [Ember, Cold's end] a consume copied there (Catalytic Chain)
+
+    def spread(self, ember=False, cold=False):
+        # A fresh copy, one stack and the aura's full duration, on the next living mob.
+        others = [i for i in self.alive() if i != self.tgt]
+        if others:
+            copy = self.copies.setdefault(others[0], [None, -1])
+            if ember:
+                copy[0] = self.new_ember(1)
+            if cold:
+                copy[1] = self.t + self.cold_aura["duration_ms"] / 1000
+
+    def retarget(self):
+        super().retarget()
+        self.ember, self.cold_until = self.copies.pop(self.tgt, [None, -1])
+        self.slow_until = self.cold_until
+
+    def weaken_pct(self, i=None):
+        if i is None or i == self.tgt:
+            return super().weaken_pct()
+        return self.burn_weaken(self.copies.get(i, [None])[0])
+
+    def after_step(self):
+        for i, (ember, _) in self.copies.items():
+            if self.mobs[i] > 0 and self.burning(ember) and self.t >= ember[1]:
+                keep, self.tgt = self.tgt, i
+                self.tick_ember(ember)
+                self.tgt = keep
 
 
 class RangerN(Multi, model.Ranger):
