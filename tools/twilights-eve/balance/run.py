@@ -92,8 +92,8 @@ def report(rows, args, levels):
             text = ", ".join(f"{k}: {v}" for k, v in b.items()) or "none"
             out.append(f"| {calling} | {level} | {text} |")
         before[calling] = b
-    out += ["", "## Ignored choices", "", "Talent Row choices the model can't read yet, in sheet order: each changes "
-            "nothing in the fight.", "", "| Calling | Row | Choice | Reason |", "|---|---|---|---|"]
+    out += ["", "## Ignored choices", "", "Talent Row choices that change nothing in the model's fights, in sheet "
+            "order, and why.", "", "| Calling | Row | Choice | Reason |", "|---|---|---|---|"]
     ignored = [(c, row["key"], ch["key"]) for c in model.CALLINGS for row in model.talent_rows(c)
                for ch in row["choices"] if (c, ch["key"]) in model.IGNORED]
     for calling, row, key in ignored:

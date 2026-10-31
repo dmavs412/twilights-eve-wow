@@ -241,8 +241,8 @@ class Stats:
 
 
 def build_stats(calling, level, entries, off_entry, rows):
-    """`calling`'s stats at `level` in the gear `entries`, in the build `rows` (no choice changes a
-    stat yet)."""
+    """`calling`'s stats at `level` in the gear `entries`, in the build `rows`: a passive's
+    max_health_pct raises the maximum health."""
     c = SPELLS[calling]
     prof = c["stat_profile"]
     cls = CLASS_ID[prof]
@@ -279,6 +279,7 @@ def build_stats(calling, level, entries, off_entry, rows):
     s.str, s.agi, s.sta, s.int, s.spi = (base[i] + gear[n] for i, n in enumerate(names))
     s.base_health = per["base_health"]
     s.max_hp = s.base_health + min(s.sta, 20) + max(s.sta - 20, 0) * 10
+    s.max_hp = s.max_hp * (100 + sum(p["pct"] for p in passive_effects(calling, rows, "max_health_pct"))) // 100
     bm = per["base_mana"]
     s.base_mana = bm
     s.max_mana = 0 if bm == 0 else bm + min(s.int, 20) + max(s.int - 20, 0) * 15
@@ -421,12 +422,24 @@ def fx(sk, kind):
     return next(e["params"] for e in sk["effects"] if e["kind"] == kind)
 
 
+def fxs(sk, kind):
+    """The params of every `kind` effect `sk` (a spell or an aura row) carries."""
+    return [e["params"] for e in sk["effects"] if e["kind"] == kind]
+
+
 def aura(calling, key):
     return next(a for a in SPELLS[calling]["auras"] if a["key"] == key)
 
 
-# Tier 1 choices the sim can't read yet, with the reason the report prints: each changes nothing
-# in the fight (test_every_tier1_choice_changes_the_fight_or_is_ignored).
+def passive_effects(calling, rows, kind):
+    """The params of every `kind` effect on the passives the build `rows` sets: the choices of
+    `calling`'s talent rows, which replace no skill."""
+    return [p for r in talent_rows(calling) if r["kind"] == "talent" and r["key"] in rows
+            for p in fxs(choice(calling, r["key"], rows[r["key"]]), kind)]
+
+
+# Tier 1 choices that change nothing in the sim's fights, with the reason the report prints
+# (test_every_tier1_choice_changes_the_fight_or_is_ignored).
 IGNORED = {
     ("cutthroat", "serrated_strikes"): "not modelled yet",
     ("cutthroat", "flurry_of_blades"): "not modelled yet",
@@ -480,24 +493,7 @@ IGNORED = {
     ("initiate", "thermal_shock"): "not modelled yet",
     ("initiate", "deep_freeze"): "not modelled yet",
     ("initiate", "catalytic_chain"): "not modelled yet",
-    ("vanguard", "iron_juggernaut"): "not modelled yet",
-    ("vanguard", "vengeful_conviction"): "not modelled yet",
-    ("vanguard", "penitents_smash"): "not modelled yet",
-    ("vanguard", "searing_penance"): "not modelled yet",
-    ("vanguard", "shield_specialization"): "not modelled yet",
-    ("vanguard", "steadfast_penitent"): "not modelled yet",
-    ("vanguard", "sweeping_zeal"): "not modelled yet",
-    ("vanguard", "zealous_restoration"): "not modelled yet",
-    ("vanguard", "tithe_of_zeal"): "not modelled yet",
-    ("vanguard", "hammer_of_vanguard"): "not modelled yet",
-    ("vanguard", "bulwark_slam"): "not modelled yet",
-    ("vanguard", "fervent_charge"): "not modelled yet",
-    ("vanguard", "avenging_light"): "not modelled yet",
-    ("vanguard", "bulwark_of_faith"): "not modelled yet",
-    ("vanguard", "ceaseless_zeal"): "not modelled yet",
-    ("vanguard", "wrathful_iron"): "not modelled yet",
-    ("vanguard", "seal_of_mending"): "not modelled yet",
-    ("vanguard", "seal_of_fervor"): "not modelled yet",
+    ("vanguard", "sweeping_zeal"): "no pull holds more than 3 mobs",
     ("acolyte", "epidemic"): "not modelled yet",
     ("acolyte", "virulence"): "not modelled yet",
     ("acolyte", "withering_blight"): "not modelled yet",
@@ -565,6 +561,11 @@ class Sim:
         if key not in self.spells:
             self.spells[key] = skill(self.calling, key, self.rows)
         return self.spells[key]
+
+    def granted(self, key):
+        """The aura row the spell for skill `key` grants: its choice's own aura when the build sets
+        the row."""
+        return aura(self.calling, fx(self.skill(key), "grant_aura")["aura"])
 
     def cost(self, sk):
         """`sk`'s realm_cost in power: a share of base mana for a `pct_base` cost."""
@@ -727,41 +728,93 @@ class Vanguard(Sim):
         self.conviction = 0
         self.conv_until = 0
         self.seal_until = -1
+        self.armor_pct = 0
         self.seal_armor_until = -1
         self.sop_until = -1
         self.ground_until = -1
         self.ground_next = 0
         self.smash_queued = False
         self.power = min(self.power, 100)
-        # Bulwark Charge opener: 15 rage and the ground effect under the mob.
+        # The auras the build's Seal of Iron and Shield of the Penitent grant, Conviction, and the
+        # passive's procs.
+        self.seal_aura = self.granted("seal_of_iron")
+        self.sop_aura = self.granted("shield_of_penitent")
+        self.sop_block = sum(p["pct"] for p in fxs(self.sop_aura, "block_pct"))
+        self.conv_aura = aura(self.calling, fx(self.skill("righteous_smash"), "add_aura_stacks")["aura"])
+        self.passive_procs = passive_effects(self.calling, self.rows, "proc")
+        # Bulwark Charge opener: its rage, the ground effect under the mob, and the strike or the
+        # stun its choice adds on arrival.
         if self.ready("charge"):
             ch = self.skill("bulwark_charge")
             self.cd("charge", ch["realm_cooldown_ms"])
-            self.power = min(self.power + 15, 100)
+            self.gain_rage(linear(fx(ch, "energize")["amount"], self.L))
             g = fx(ch, "ground_effect")
             self.ground_dmg = linear(g["amount"], self.L)
             self.ground_until = self.t + g["duration_ms"] / 1000
             self.ground_next = self.t + 1.0
+            for p in fxs(ch, "weapon_strike"):
+                o = self.spell_roll(s.crit) if ch["defense_type"] == "magic" else self.yellow(s.crit)
+                if o in ("hit", "crit"):
+                    raw = self.rng.uniform(s.mh_min, s.mh_max) * p.get("weapon_pct", 100) / 100 + linear(p["bonus"], self.L)
+                    self.hit_mob(raw, "charge_strike", p.get("school", "physical") == "physical", o == "crit")
+            for p in fxs(ch, "stun"):
+                stun = aura(self.calling, p["apply_aura"])["duration_ms"] / 1000
+                self.mob_swing_t = max(self.mob_swing_t, self.t + stun)
 
     def player_armor(self):
-        pct = 20 if self.t < self.seal_armor_until else 0
+        pct = self.armor_pct if self.t < self.seal_armor_until else 0
         return 2 * self.s.agi + self.s.armor_items * (100 + pct) // 100
 
     def block_pct(self):
-        return self.s.block_pct + (50 if self.t < self.sop_until else 0)
+        return self.s.block_pct + (self.sop_block if self.t < self.sop_until else 0)
+
+    def gain_rage(self, n):
+        self.power = min(self.power + n, 100)
 
     def rage_dealt(self, d):
-        self.power = min(self.power + d / rage_conv(self.L) * 7.5 * 2.0, 100)
+        self.gain_rage(d / rage_conv(self.L) * 7.5 * 2.0)
 
     def rage_taken(self, d):
-        self.power = min(self.power + d / rage_conv(self.L) * 2.5 * 2.0, 100)
+        self.gain_rage(d / rage_conv(self.L) * 2.5 * 2.0)
 
-    def melee_hit_procs(self):
-        if self.t < self.seal_until:
-            if self.rng.random() < 0.25:
-                self.heal(self.s.max_hp * 4 // 100, "seal")
-            if self.rng.random() < 0.25:
-                self.seal_armor_until = self.t + 10
+    def add_conviction(self, n):
+        self.conviction = min(self.conviction + n, self.conv_aura["max_stacks"])
+        self.conv_until = self.t + self.conv_aura["duration_ms"] / 1000
+
+    def fire(self, on):
+        """The procs on `on` (melee_hit, block, parry): the Seal's and the Shield's while their aura
+        is up, then the passive's."""
+        for a, until in ((self.seal_aura, self.seal_until), (self.sop_aura, self.sop_until)):
+            if self.t < until:
+                for p in fxs(a, "proc"):
+                    if p["on"] == on:
+                        self.proc(p, a["key"])
+        for p in self.passive_procs:
+            if p["on"] == on:
+                self.proc(p, "passive")
+
+    def proc(self, p, src):
+        """The proc `p` from `src`, when its chance comes up: a share of the maximum health, rage,
+        a Conviction stack or an armour spike, Holy damage to the attacker, and a share of the
+        average weapon swing to the target."""
+        if p.get("chance", 100) < 100 and self.rng.random() * 100 >= p["chance"]:
+            return
+        s = self.s
+        if p.get("heal_pct"):
+            self.heal(s.max_hp * p["heal_pct"] // 100, src)
+        if p.get("energize"):
+            self.gain_rage(p["energize"])
+        if p.get("apply_aura") == self.conv_aura["key"]:
+            self.add_conviction(1)
+        elif p.get("apply_aura"):
+            a = aura(self.calling, p["apply_aura"])
+            self.armor_pct = sum(e["pct"] for e in fxs(a, "armor_items_pct"))
+            self.seal_armor_until = self.t + a["duration_ms"] / 1000
+        physical = p.get("school", "physical") == "physical"
+        if p.get("damage_attacker"):
+            self.hit_mob(linear(p["damage_attacker"], self.L), src, physical=physical)
+        if p.get("weapon_pct"):
+            self.hit_mob((s.mh_min + s.mh_max) / 2 * p["weapon_pct"] / 100, src, physical=physical)
 
     def step(self):
         s, L = self.s, self.L
@@ -776,12 +829,12 @@ class Vanguard(Sim):
             seal, sop, cl = self.skill("seal_of_iron"), self.skill("shield_of_penitent"), self.skill("zealous_cleave")
             if self.t >= self.seal_until and self.power >= self.cost(seal):
                 self.power -= self.cost(seal)
-                self.seal_until = self.t + 30
+                self.seal_until = self.t + self.seal_aura["duration_ms"] / 1000
                 self.gcd = self.t + 1.5
             elif self.ready("sop") and self.power >= self.cost(sop) and s.shield is not None:
                 self.power -= self.cost(sop)
                 self.cd("sop", sop["realm_cooldown_ms"])
-                self.sop_until = self.t + 10
+                self.sop_until = self.t + self.sop_aura["duration_ms"] / 1000
             elif self.power >= self.cost(cl) and (self.conviction >= 5 or (self.conviction >= 3 and self.power >= 60)):
                 self.power -= self.cost(cl)
                 self.gcd = self.t + 1.5
@@ -789,11 +842,16 @@ class Vanguard(Sim):
                 if o in ("hit", "crit"):
                     raw = self.rng.uniform(s.mh_min, s.mh_max) * self.opts.get("cleave_pct", 100) / 100 + linear(fx(cl, "weapon_strike")["bonus"], L)
                     self.hit_mob(raw, "cleave", True, o == "crit")
-                    self.melee_hit_procs()
+                    self.fire("melee_hit")
                     stacks = self.conviction
                     self.conviction = 0
-                    holy = int((5 + L) * self.opts.get("conv_mult", 1.0)) * stacks
+                    c = fx(cl, "consume_aura_stacks")
+                    holy = int(linear(c["per_stack"], L) * self.opts.get("conv_mult", 1.0)) * stacks
+                    before = self.dmg["conviction"]
                     self.hit_mob(holy, "conviction", physical=False)
+                    # The heal is a share of what every target took; the rage comes a stack.
+                    self.heal((self.dmg["conviction"] - before) * c.get("heal_pct", 0) // 100, "conviction")
+                    self.gain_rage(c.get("refund_per_stack", 0) * stacks)
         # Queue Righteous Smash.
         rs = self.skill("righteous_smash")
         smash_cost = self.opts.get("smash_cost", self.cost(rs))
@@ -807,25 +865,27 @@ class Vanguard(Sim):
                 self.power -= smash_cost
                 o = self.yellow(s.crit)
                 if o in ("hit", "crit"):
-                    raw = self.rng.uniform(s.mh_min, s.mh_max) + linear(fx(rs, "weapon_strike")["bonus"], L) * self.opts.get("smash_mult", 1.0)
-                    self.hit_mob(raw, "smash", True, o == "crit")
-                    self.melee_hit_procs()
-                    self.conviction = min(self.conviction + 1, 5)
-                    self.conv_until = self.t + 15
+                    ws = fx(rs, "weapon_strike")
+                    raw = (self.rng.uniform(s.mh_min, s.mh_max) + linear(ws["bonus"], L) * self.opts.get("smash_mult", 1.0)
+                           + self.block_value() * ws.get("block_value_pct", 0) // 100)
+                    d = self.hit_mob(raw, "smash", True, o == "crit")
+                    self.heal(d * ws.get("heal_pct", 0) // 100, "smash")
+                    self.fire("melee_hit")
+                    self.add_conviction(fx(rs, "add_aura_stacks")["stacks"])
             else:
                 self.smash_queued = False
                 d, o = self.white()
                 if o in ("hit", "crit"):
                     self.rage_dealt(d)
-                    self.melee_hit_procs()
+                    self.fire("melee_hit")
                 elif o in ("dodge", "parry"):
                     self.rage_dealt(int(self.rng.uniform(s.mh_min, s.mh_max) * 0.75 * (1 - armor_dr(self.m_armor, L))))
         # Mob swing.
         if self.t >= self.mob_swing_t:
             self.mob_swing_t = self.t + self.m["swing"]
             d, o = self.mob_swing()
-            if o == "block" and self.t < self.sop_until:
-                self.hit_mob(12 + 1.2 * L, "penitent_thorns", physical=False)
+            if o in ("block", "parry"):
+                self.fire(o)
             if d > 0:
                 d = self.take(d)
                 self.rage_taken(d)

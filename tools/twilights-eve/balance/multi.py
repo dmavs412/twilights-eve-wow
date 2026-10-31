@@ -42,7 +42,8 @@ class Multi:
         self.tgt = keep
         return d0
 
-    def extra_block(self, i):
+    def extra_defended(self, i, o):
+        """Mob `i`, not the target, swung at the character and it came out a block or a parry (`o`)."""
         pass
 
     def retarget(self):
@@ -55,8 +56,8 @@ class Multi:
         self.extra_swing_t = self.t + self.m["swing"]
         for i in [i for i in self.alive() if i != self.tgt]:
             d, o = self.mob_swing()
-            if o == "block":
-                self.extra_block(i)
+            if o in ("block", "parry"):
+                self.extra_defended(i, o)
             if d > 0:
                 d = self.take(d)
                 if hasattr(self, "rage_taken"):
@@ -104,10 +105,10 @@ class VanguardN(Multi, model.Vanguard):
     AOE = {"cleave": 3, "conviction": 3, "consecration": 0}
     ROLLS = {"cleave"}
 
-    def extra_block(self, i):
+    def extra_defended(self, i, o):
+        # The procs' damage goes to the mob that swung.
         keep, self.tgt = self.tgt, i
-        if self.t < self.sop_until:
-            self.hit_mob(12 + 1.2 * self.L, "penitent_thorns", physical=False)
+        self.fire(o)
         self.tgt = keep
 
 

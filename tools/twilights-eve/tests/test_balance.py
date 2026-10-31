@@ -25,12 +25,13 @@ def swing(mob: dict) -> float:
 
 def totals(calling: str, n: int, rows: dict, fights: int, rng: random.Random, level: int = 30) -> tuple:
     """(damage dealt, health lost, fight time) summed over `fights` fights of `calling` in greens
-    and the build `rows` against `n` normals on level."""
+    and the build `rows` against `n` normals on level. `rng` is one Random every fight draws from,
+    or a function giving fight i its own."""
     cls, mob = multi.fighter(calling, n), model.mob_stats(level)
     ch = model.character(calling, level, "green", rows)
     dealt = lost = spent = 0.0
-    for _ in range(fights):
-        sim = cls(calling, level, ch["stats"], ch["rows"], rng, {}, mob=mob)
+    for i in range(fights):
+        sim = cls(calling, level, ch["stats"], ch["rows"], rng(i) if callable(rng) else rng, {}, mob=mob)
         r = sim.fight()
         dealt += sum(sim.dmg.values())
         lost += 1 - r["health_left"]
@@ -123,6 +124,38 @@ class BalanceModel(unittest.TestCase):
             with self.subTest(ignored=key):
                 self.assertIn(key, choices)
                 self.assertTrue(why)
+
+    # What each Vanguard choice the sim models buys, from its description.
+    VANGUARD_GAINS = {
+        "iron_juggernaut": "damage", "vengeful_conviction": "damage", "penitents_smash": "survival",
+        "searing_penance": "damage", "shield_specialization": "damage", "steadfast_penitent": "survival",
+        "zealous_restoration": "survival", "tithe_of_zeal": "damage",
+        "hammer_of_vanguard": "damage", "bulwark_slam": "survival", "fervent_charge": "damage",
+        "avenging_light": "damage", "bulwark_of_faith": "survival", "ceaseless_zeal": "damage",
+        "wrathful_iron": "damage", "seal_of_mending": "survival", "seal_of_fervor": "damage",
+    }
+
+    def test_vanguard_choices_move_the_fight(self):
+        rows = {c["key"]: row["key"] for row in model.talent_rows("vanguard") for c in row["choices"]}
+        self.assertEqual(set(self.VANGUARD_GAINS),
+                         {k for k in rows if ("vanguard", k) not in model.IGNORED})
+        # Fight i of every build starts from seed i, so a small gain (Tithe of Zeal's +0.6%) shows
+        # over the luck. The plain Vanguard loses every fight here, so survival is the health lost
+        # a second: it falls when the character dies later.
+        plain = totals("vanguard", 2, {}, 50, random.Random)
+        for key, gain in self.VANGUARD_GAINS.items():
+            with self.subTest(choice=key, gain=gain):
+                dealt, lost, spent = totals("vanguard", 2, {rows[key]: key}, 50, random.Random)
+                if gain == "damage":
+                    self.assertGreater(dealt / spent, plain[0] / plain[2])
+                else:
+                    self.assertLess(lost / spent, plain[1] / plain[2])
+
+    def test_vanguard_has_no_unmodelled_choices(self):
+        for (calling, key), why in model.IGNORED.items():
+            if calling == "vanguard":
+                with self.subTest(choice=key):
+                    self.assertNotEqual(why, "not modelled yet")
 
     def test_kits_fill_every_slot(self):
         for calling in model.CALLINGS:
