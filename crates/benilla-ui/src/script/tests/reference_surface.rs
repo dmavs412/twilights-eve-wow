@@ -34,6 +34,99 @@ const BEYOND_1_12: &[&str] = &[
     "GetTalentChoice",
     "SetTalentRowChoice",
     "OpenTalentRows",
+    // Twilight's Eve: the Reeling Bar (ADR 0018) has no 1.12 verb; `FishingReel.xml` reads the
+    // bar the host runs and the Angler badge from these.
+    "GetReelState",
+    "GetAnglerInfo",
+    // Twilight's Eve: the Fishing Journal (spec #323), its gear slots and Fish Pages (ADR 0022)
+    // and its Satchel (ADR 0023) have no 1.12 verb; `FishingJournal.xml` reads the zones, legends,
+    // gear, Satchel and pages from these, and the setters queue its clicks for the host.
+    "GetFishingJournal",
+    "GetFishingJournalZone",
+    "GetFishingLegends",
+    "GetFishingGear",
+    "GetFishingSatchel",
+    "GetFishingSatchelItem",
+    "GetFishPage",
+    "GetFishPagePlace",
+    "GetFishPageHabitat",
+    "SetFishingBait",
+    "SetFishingGear",
+    "ClearFishingGear",
+    "DepositFishingItem",
+    "WithdrawFishingItem",
+    // Twilight's Eve: 1.12 has no verb that reads the cursor's item or the bag slot it came from
+    // (`CursorHasItem` answers only whether it carries one, and `GetCursorInfo` is 2.0's, absent
+    // below); `FishingJournal.xml` deposits a bag item dropped on it into the Satchel with these.
+    "BenillaGetCursorItem",
+    "BenillaGetCursorItemPos",
+    // Twilight's Eve: the Forager's Grid (ADR 0024, spec #435, #480) has no 1.12 verb;
+    // `HerbPatch.xml` reads the open grid, its tiles, the known plants, the notes, the Bloom, the
+    // basket and the log from these, and the `Herb*` calls queue its clicks for the host.
+    "GetHerbGrid",
+    "GetHerbTile",
+    "GetHerbKnown",
+    "GetHerbKnownItem",
+    "GetNumHerbNotes",
+    "GetHerbNote",
+    "GetHerbLog",
+    "GetNumHerbBloom",
+    "GetHerbBloom",
+    "GetNumHerbBasket",
+    "GetHerbBasket",
+    "HerbPull",
+    "HerbSweep",
+    "HerbProbe",
+    "HerbSnip",
+    "HerbSight",
+    "HerbTwine",
+    "HerbArmCharm",
+    "HerbLeave",
+    "HerbTourSeen",
+    // Twilight's Eve: the Journal's Herbalism tab (#443) has no 1.12 verb; `FishingJournal.xml`
+    // reads the Herbalist level, gear, Satchel, zones, plants and perks from these (and
+    // `HerbPatch.xml` the level and reveal levels), and the setters queue its clicks for the host.
+    "GetHerbalistInfo",
+    "GetHerbGear",
+    "GetHerbSatchel",
+    "GetHerbSatchelItem",
+    "GetHerbJournalZones",
+    "GetHerbJournalZone",
+    "GetHerbJournalPlant",
+    "GetHerbRevealAt",
+    "GetHerbPerkSlots",
+    "GetHerbPerkSlot",
+    "GetNumHerbPerks",
+    "GetHerbPerk",
+    "SetHerbTool",
+    "SetHerbConsumable",
+    "PickHerbPerk",
+    "WithdrawHerbItem",
+    // Twilight's Eve: the Kitchen window (ADR 0025, spec #447) has no 1.12 verb; `Kitchen.xml`
+    // reads the recipes, pantry, orders, cuttable fish, lessons, prediction and last cook from
+    // these, and the `Kitchen*` calls queue its choices for the host.
+    "GetKitchen",
+    "GetKitchenRecipe",
+    "GetKitchenRecipeSlot",
+    "GetKitchenIngredient",
+    "GetKitchenOrder",
+    "GetKitchenCuttable",
+    "GetKitchenLesson",
+    "GetKitchenPrediction",
+    "GetKitchenPredictionWhy",
+    "GetKitchenCooked",
+    "GetKitchenCookedLearned",
+    "GetKitchenCookedRevealed",
+    "KitchenPredict",
+    "KitchenCook",
+    "KitchenDeliver",
+    "KitchenCut",
+    "KitchenClose",
+    // Twilight's Eve: the Cooking Journal (ADR 0025, #496) has no 1.12 verb; the Journal's
+    // Cooking bookmark in `FishingJournal.xml` reads the Dish Pages from these.
+    "GetCookingJournal",
+    "GetDishPage",
+    "GetDishPageIngredient",
 ];
 
 /// `reference/1.12-globals.tsv`'s names.
