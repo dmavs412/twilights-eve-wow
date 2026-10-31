@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """The balance model's command line: runs the rules of docs/balance/rules.md and writes a Markdown
-report, one table per rule with a `holds` column, then the failures, then the kits and builds.
+report, one table per rule with a `holds` column, then the failures, the kits, the picked builds
+and the Talent Row choices the model ignores.
 
     python3.15 tools/twilights-eve/balance/run.py --scenario <T0|pulls|dps|elites|blues|named|plus5|all>
         --levels 1-30 --fights 300 --callings all --data-root <dir> --jobs 4 --out <file.md>
@@ -70,17 +71,35 @@ def report(rows, args, levels):
                    f"{pct(r['health_left'])}, DPS {num(r['dps'])} (must show {scenarios.RULES[r['rule']][3]})")
     if not failed:
         out.append("- none")
-    out += ["", "## Kits and builds", "", "A blue kit wears a green in the slots `Green in` names: no Rare row there yet.", "",
-            "| Calling | Level | Gear | Kit | Green in | Talents |", "|---|---|---|---|---|---|"]
+    out += ["", "## Kits", "", "A blue kit wears a green in the slots `Green in` names: no Rare row there yet.", "",
+            "| Calling | Level | Gear | Kit | Green in |", "|---|---|---|---|---|"]
     seen = set()
     for r in sorted(rows, key=lambda r: (r["calling"], r["level"], r["gear"])):
         key = (r["calling"], r["level"], r["gear"])
         if key in seen:
             continue
         seen.add(key)
-        talents = ", ".join(f"{k} {v}" for k, v in r["talents"].items()) or "none"
         green_in = ", ".join(r["fell_back"]) or "-"
-        out.append(f"| {r['calling']} | {r['level']} | {r['gear']} | {r['kit']} | {green_in} | {talents} |")
+        out.append(f"| {r['calling']} | {r['level']} | {r['gear']} | {r['kit']} | {green_in} |")
+    out += ["", "## Builds", "", "Each level where a Calling's picked build differs from its build at the level before: "
+            "every open Talent Row and its choice.", "", "| Calling | Level | Build |", "|---|---|---|"]
+    builds = {(r["calling"], r["level"]): r["rows"] for r in rows}
+    order = {c: i for i, c in enumerate(model.CALLINGS)}
+    before = {}
+    for calling, level in sorted(builds, key=lambda k: (order.get(k[0], -1), k[1])):
+        b = builds[(calling, level)]
+        if before.get(calling) != b:
+            text = ", ".join(f"{k}: {v}" for k, v in b.items()) or "none"
+            out.append(f"| {calling} | {level} | {text} |")
+        before[calling] = b
+    out += ["", "## Ignored choices", "", "Talent Row choices the model can't read yet, in sheet order: each changes "
+            "nothing in the fight.", "", "| Calling | Row | Choice | Reason |", "|---|---|---|---|"]
+    ignored = [(c, row["key"], ch["key"]) for c in model.CALLINGS for row in model.talent_rows(c)
+               for ch in row["choices"] if (c, ch["key"]) in model.IGNORED]
+    for calling, row, key in ignored:
+        out.append(f"| {calling} | {row} | {key} | {model.IGNORED[(calling, key)]} |")
+    if not ignored:
+        out.append("| - | - | none | - |")
     return "\n".join(out) + "\n"
 
 
@@ -101,13 +120,14 @@ def main(argv=None):
         p.error(f"unknown Calling(s): {', '.join(unknown)}")
     model.use(args.data_root)
     rules = [f for name, fs in scenarios.SCENARIOS.items() if args.scenario in (name, "all") for f in fs]
+    # The builds are picked here, once a Calling and level, before their cells go out.
     pool = None
     if args.jobs > 1:
         pool = concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs, initializer=model.use,
                                                       initargs=(args.data_root,))
-        run = lambda cells: list(pool.map(scenarios.run_cell, cells))  # noqa: E731
+        run = lambda cells: list(pool.map(scenarios.run_cell, scenarios.with_builds(cells, pool.map)))  # noqa: E731
     else:
-        run = lambda cells: [scenarios.run_cell(c) for c in cells]  # noqa: E731
+        run = lambda cells: [scenarios.run_cell(c) for c in scenarios.with_builds(cells)]  # noqa: E731
     try:
         rows = [r for rule in rules for r in rule(levels, args.fights, callings, run)]
     finally:

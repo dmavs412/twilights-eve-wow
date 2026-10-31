@@ -1,7 +1,8 @@
 """One function per rule in docs/balance/rules.md. Each takes (levels, fights, callings, run),
 where `run` maps run_cell over a list of cells, and returns rows of dict(rule, calling, level,
 gear, against, fights, win, health_left, dps, kill_s, deaths, notes) plus `holds` (True, False,
-or None for a row the rule only compares against) and the kit and talents the cell used."""
+or None for a row the rule only compares against) and the kit and build (`rows`) the cell used.
+pick_build picks each Calling's build a level, once a run."""
 from __future__ import annotations
 
 import json
@@ -70,6 +71,7 @@ def describe(against):
 
 _BOSSES = {}
 _CHARACTERS = {}
+_BUILDS = {}   # (calling, level, fights) -> the picked build
 
 
 def _bosses():
@@ -78,19 +80,84 @@ def _bosses():
     return _BOSSES
 
 
-def _character(calling, level, gear):
-    key = (calling, level, gear)
+def _character(calling, level, gear, rows):
+    key = (calling, level, gear, tuple(sorted(rows.items())))
     if key not in _CHARACTERS:
-        _CHARACTERS[key] = model.character(calling, level, gear)
+        _CHARACTERS[key] = model.character(calling, level, gear, rows)
     return _CHARACTERS[key]
 
 
+def _fights(cls, calling, level, ch, mob, n, rng):
+    """`n` fresh fights of the character `ch` against `mob` on `rng`: each one's result, with the
+    damage it dealt as `dealt`."""
+    out = []
+    for _ in range(n):
+        sim = cls(calling, level, ch["stats"], ch["rows"], rng, {}, mob=mob)
+        r = sim.fight()
+        r["dealt"] = sum(sim.dmg.values())
+        out.append(r)
+    return out
+
+
+# ---------------------------------------------------------------- builds
+TIE_PCT = 1.0       # choices within this share of the best DPS tie
+PICK_FIGHTS = 150   # the most fights a pick gives a choice: at 300 the picks more than doubled a full run
+
+
+def choose(results):
+    """The choice a row is set to, from [(choice key, dps, health left)] in sheet order: the highest
+    DPS. Every choice within TIE_PCT of the best ties, and a tie goes to the most health left, then
+    to the first in the sheet."""
+    best = max(dps for _, dps, _ in results)
+    tied = [r for r in results if r[1] >= best * (100 - TIE_PCT) / 100]
+    return max(tied, key=lambda r: r[2])[0]
+
+
+def pick_build(calling, level, fights):
+    """`calling`'s build at Power Level `level` (docs/balance/rules.md, "The character"): its open
+    rows in level order, each set to choose's pick of its three choices in the DPS rule's fight (1
+    normal on level, greens), `fights` fights a choice with the earlier rows set and the later rows
+    empty. A row's three choices fight on one seed, from the Calling, the level and the row."""
+    rows = {}
+    cls, mob = multi.fighter(calling, 1), model.mob_stats(level)
+    for row in model.open_rows(calling, level):
+        seed = zlib.crc32(json.dumps([calling, level, row["key"]]).encode())
+        results = []
+        for c in row["choices"]:
+            ch = _character(calling, level, "green", {**rows, row["key"]: c["key"]})
+            rs = _fights(cls, calling, level, ch, mob, fights, random.Random(seed))
+            spent = sum(r["time"] for r in rs)
+            dps = sum(r["dealt"] for r in rs) / spent if spent else 0.0
+            results.append((c["key"], dps, statistics.mean(r["health_left"] for r in rs)))
+        rows[row["key"]] = choose(results)
+    return rows
+
+
+def picked(key):
+    """pick_build for one (calling, level, fights): what with_builds sends a pool."""
+    return pick_build(*key)
+
+
+def _build_key(c):
+    """The pick a cell fights in: its Calling, its level, and its fights up to PICK_FIGHTS."""
+    return c["calling"], c["level"], min(c["fights"], PICK_FIGHTS)
+
+
+def with_builds(cells, run_map=map):
+    """`cells`, each carrying its Calling and level's picked build as `rows`. The builds no cell
+    has needed yet are picked here, through `run_map` (a pool's map runs them in parallel)."""
+    want = sorted({_build_key(c) for c in cells} - set(_BUILDS))
+    _BUILDS.update(zip(want, run_map(picked, want)))
+    return [{**c, "rows": _BUILDS[_build_key(c)]} for c in cells]
+
+
 def run_cell(c):
-    """`fights` fresh fights of one character against one pull. The seed comes from the cell, so a
-    rerun repeats it."""
+    """`fights` fresh fights of one character, in its level's picked build (the cell's `rows`, else
+    picked here), against one pull. The seed comes from the cell, so a rerun repeats it."""
     calling, level, gear, against, fights = c["calling"], c["level"], c["gear"], c["against"], c["fights"]
-    rng = random.Random(zlib.crc32(json.dumps(c, sort_keys=True).encode()))
-    ch = _character(calling, level, gear)
+    rows = c["rows"] if "rows" in c else with_builds([c])[0]["rows"]
+    rng = random.Random(zlib.crc32(json.dumps({k: v for k, v in c.items() if k != "rows"}, sort_keys=True).encode()))
+    ch = _character(calling, level, gear, rows)
     notes = []
     kind, lv = against["kind"], against["level"]
     if kind == "named":
@@ -109,10 +176,8 @@ def run_cell(c):
     if ch["fell_back"]:
         notes.append("green in " + ", ".join(ch["fell_back"]))
     won, left, kills, deaths, dealt, spent = 0, [], [], 0, 0.0, 0.0
-    for _ in range(fights):
-        sim = cls(calling, level, ch["stats"], ch["talents"], rng, {}, mob=mob)
-        r = sim.fight()
-        dealt += sum(sim.dmg.values())
+    for r in _fights(cls, calling, level, ch, mob, fights, rng):
+        dealt += r["dealt"]
         spent += r["time"]
         deaths += r["died"]
         if r["won"]:
@@ -123,7 +188,7 @@ def run_cell(c):
                 win=won / fights, health_left=statistics.mean(left) if left else math.nan,
                 dps=dealt / spent if spent else 0.0, kill_s=statistics.median(kills) if kills else math.nan,
                 deaths=deaths / fights, notes="; ".join(notes), mob_hp=mob["hp"],
-                kit=model.describe_kit(ch["entries"], ch["off"]), fell_back=ch["fell_back"], talents=ch["talents"])
+                kit=model.describe_kit(ch["entries"], ch["off"]), fell_back=ch["fell_back"], rows=ch["rows"])
 
 
 def _rows(rule, cells, run, holds):

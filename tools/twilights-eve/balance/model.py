@@ -43,9 +43,6 @@ class DataRoot:
         self.tables = {k: self.json(f"{k}_level_stats.json") for k in CLASS_ID}
         self.gear = {int(r["entry"]): r for r in self.csv("gear.csv")}
         self.callings_csv = {r["calling"]: r for r in self.csv("callings.csv")}
-        # Tree talents only: a Skill Choice or a Talent row (ADR 0028) has no seat.
-        self.talent_row = {(r["calling"], r["key"]): (r["tab"], int(r["tab_row"]))
-                           for r in self.csv("master.csv") if r["kind"] == "talent" and r["tab_row"]}
         self.outfits = self.toml("starting_outfits.toml")
         mobs = self.toml("mobs.toml")
         self.difficulty = mobs["difficulty"]
@@ -73,10 +70,10 @@ DATA = None
 
 def use(root=REPO):
     """Reads every file from `root`; the model's tables below are its."""
-    global DATA, SPELLS, TABLES, GEAR, OUTFITS, CALLINGS_CSV, TALENT_ROW
+    global DATA, SPELLS, TABLES, GEAR, OUTFITS, CALLINGS_CSV
     DATA = DataRoot(root)
     SPELLS, TABLES, GEAR = DATA.spells, DATA.tables, DATA.gear
-    OUTFITS, CALLINGS_CSV, TALENT_ROW = DATA.outfits, DATA.callings_csv, DATA.talent_row
+    OUTFITS, CALLINGS_CSV = DATA.outfits, DATA.callings_csv
     return DATA
 
 
@@ -243,7 +240,9 @@ class Stats:
     pass
 
 
-def build_stats(calling, level, entries, off_entry, talents):
+def build_stats(calling, level, entries, off_entry, rows):
+    """`calling`'s stats at `level` in the gear `entries`, in the build `rows` (no choice changes a
+    stat yet)."""
     c = SPELLS[calling]
     prof = c["stat_profile"]
     cls = CLASS_ID[prof]
@@ -276,23 +275,10 @@ def build_stats(calling, level, entries, off_entry, talents):
                 s.mh = w
         if r["slot"] == "Ranged" and r["type"] in ("Bow", "Gun", "Crossbow"):
             s.ranged = (fnum(r["dmg_min"]), fnum(r["dmg_max"]), fnum(r["speed"]))
-    # Talents on stats.
-    stat_pct = dict(str=0, agi=0, sta=0, int=0, spi=0)
-    for key, rank in talents.items():
-        if key == "divine_strength":
-            stat_pct["str"] += 2 * rank
-        if key == "vitality":
-            stat_pct["sta"] += 2 * rank
     names = ["str", "agi", "sta", "int", "spi"]
-    tot = {}
-    for i, n in enumerate(names):
-        v = base[i] + gear[n]
-        tot[n] = int(v * (100 + stat_pct[n]) / 100)
-    s.str, s.agi, s.sta, s.int, s.spi = (tot[n] for n in names)
+    s.str, s.agi, s.sta, s.int, s.spi = (base[i] + gear[n] for i, n in enumerate(names))
     s.base_health = per["base_health"]
     s.max_hp = s.base_health + min(s.sta, 20) + max(s.sta - 20, 0) * 10
-    if "vitality" in talents:
-        s.max_hp = s.max_hp * (100 + 2 * talents["vitality"]) // 100
     bm = per["base_mana"]
     s.base_mana = bm
     s.max_mana = 0 if bm == 0 else bm + min(s.int, 20) + max(s.int - 20, 0) * 15
@@ -317,23 +303,17 @@ def build_stats(calling, level, entries, off_entry, talents):
     s.crit = s.agi / per["agi_per_crit_pct"]
     s.dodge = s.agi / per["agi_per_dodge_pct"]
     s.parry = 0.0
-    s.crit += talents.get("reflexive_strike", 0)
-    s.dodge += talents.get("reflexive_strike", 0)
-    s.parry += talents.get("reactive_strike", 0)
     s.spell_power = gear["spell_power"]
     s.armor_items = gear["armor"]
-    s.armor_items_pct = 2 * talents.get("tempered_steel", 0)
     s.armor = 2 * s.agi + gear["armor"]
     s.defense = 5 * level
     s.block_pct = 0.0
     s.block_value = 0
     s.shield = gear["block"]
     if gear["block"] is not None:
-        s.block_pct = 5.0 + talents.get("shield_specialization", 0)
+        s.block_pct = 5.0
         s.block_value = max(int(gear["block"] + s.str / 20.0 - 1), 0)
-        s.block_value = s.block_value * (100 + 5 * talents.get("iron_retribution", 0)) // 100
-    s.armor_pen = 50 * talents.get("serrated_strikes", 0)
-    s.max_energy = 100 + 5 * talents.get("predators_step", 0)
+    s.max_energy = 100
     s.energy_tick = int(CALLINGS_CSV[calling]["energy_per_tick"] or 20) if c["power"] == "energy" else 0
     s.power = c["power"]
     mh = s.mh or (1.0, 2.0, 2.0)
@@ -418,7 +398,22 @@ def mob_stats(level, unit_class="warrior", rank=0, area=None, health_mul=1.0, da
 
 
 # ---------------------------------------------------------------- skills
-def skill(calling, key):
+def talent_rows(calling):
+    """`calling`'s Talent Rows (ADR 0028) from server_spells.json, in level order."""
+    return SPELLS[calling].get("rows", [])
+
+
+def choice(calling, row, key):
+    """The built spell of choice `key` in `calling`'s Talent Row `row`."""
+    r = next(r for r in talent_rows(calling) if r["key"] == row)
+    return next(c for c in r["choices"] if c["key"] == key)
+
+
+def skill(calling, key, rows=None):
+    """`calling`'s skill `key`; when the build `rows` ({row key: choice key}) sets the skill's
+    row, the set choice's own built spell."""
+    if rows and key in rows:
+        return choice(calling, key, rows[key])
     return next(s for s in SPELLS[calling]["skills"] if s["key"] == key)
 
 
@@ -430,10 +425,105 @@ def aura(calling, key):
     return next(a for a in SPELLS[calling]["auras"] if a["key"] == key)
 
 
+# Tier 1 choices the sim can't read yet, with the reason the report prints: each changes nothing
+# in the fight (test_every_tier1_choice_changes_the_fight_or_is_ignored).
+IGNORED = {
+    ("cutthroat", "serrated_strikes"): "not modelled yet",
+    ("cutthroat", "flurry_of_blades"): "not modelled yet",
+    ("cutthroat", "phantom_guile"): "not modelled yet",
+    ("cutthroat", "elusiveness"): "not modelled yet",
+    ("cutthroat", "second_wind"): "not modelled yet",
+    ("cutthroat", "open_wounds"): "not modelled yet",
+    ("cutthroat", "executioners_toll"): "not modelled yet",
+    ("cutthroat", "kidney_shot"): "not modelled yet",
+    ("cutthroat", "open_veins"): "not modelled yet",
+    ("cutthroat", "sanguine_rupture"): "not modelled yet",
+    ("cutthroat", "blood_frenzy"): "not modelled yet",
+    ("cutthroat", "thirst"): "not modelled yet",
+    ("cutthroat", "blood_rush"): "not modelled yet",
+    ("cutthroat", "brazen_garrote"): "not modelled yet",
+    ("cutthroat", "choking_garrote"): "not modelled yet",
+    ("cutthroat", "initiative"): "not modelled yet",
+    ("ranger", "explosive_payload"): "not modelled yet",
+    ("ranger", "guerilla_tactics"): "not modelled yet",
+    ("ranger", "point_blank"): "not modelled yet",
+    ("ranger", "twin_arrows"): "not modelled yet",
+    ("ranger", "rhythmic_draw"): "not modelled yet",
+    ("ranger", "adrenaline_rush"): "not modelled yet",
+    ("ranger", "parting_gift"): "not modelled yet",
+    ("ranger", "parting_shot"): "not modelled yet",
+    ("ranger", "unbound_leap"): "not modelled yet",
+    ("ranger", "jagged_barbs"): "not modelled yet",
+    ("ranger", "pinning_barb"): "not modelled yet",
+    ("ranger", "bloodscent"): "not modelled yet",
+    ("ranger", "piercing_force"): "not modelled yet",
+    ("ranger", "staggering_shaft"): "not modelled yet",
+    ("ranger", "killshot"): "not modelled yet",
+    ("ranger", "flurry"): "not modelled yet",
+    ("ranger", "rapid_assault"): "not modelled yet",
+    ("ranger", "running_fire"): "not modelled yet",
+    ("initiate", "ley_line_tap"): "not modelled yet",
+    ("initiate", "arcane_substrate"): "not modelled yet",
+    ("initiate", "warding_spark"): "not modelled yet",
+    ("initiate", "siphoning_ward"): "not modelled yet",
+    ("initiate", "frost_ward"): "not modelled yet",
+    ("initiate", "volatile_ward"): "not modelled yet",
+    ("initiate", "thermal_feedback"): "not modelled yet",
+    ("initiate", "smoldering_ember"): "not modelled yet",
+    ("initiate", "kindling_ember"): "not modelled yet",
+    ("initiate", "combustion_engine"): "not modelled yet",
+    ("initiate", "splintering_cold"): "not modelled yet",
+    ("initiate", "frostbite"): "not modelled yet",
+    ("initiate", "shattered_blink"): "not modelled yet",
+    ("initiate", "arcane_momentum"): "not modelled yet",
+    ("initiate", "catalytic_resonance"): "not modelled yet",
+    ("initiate", "thermal_shock"): "not modelled yet",
+    ("initiate", "deep_freeze"): "not modelled yet",
+    ("initiate", "catalytic_chain"): "not modelled yet",
+    ("vanguard", "iron_juggernaut"): "not modelled yet",
+    ("vanguard", "vengeful_conviction"): "not modelled yet",
+    ("vanguard", "penitents_smash"): "not modelled yet",
+    ("vanguard", "searing_penance"): "not modelled yet",
+    ("vanguard", "shield_specialization"): "not modelled yet",
+    ("vanguard", "steadfast_penitent"): "not modelled yet",
+    ("vanguard", "sweeping_zeal"): "not modelled yet",
+    ("vanguard", "zealous_restoration"): "not modelled yet",
+    ("vanguard", "tithe_of_zeal"): "not modelled yet",
+    ("vanguard", "hammer_of_vanguard"): "not modelled yet",
+    ("vanguard", "bulwark_slam"): "not modelled yet",
+    ("vanguard", "fervent_charge"): "not modelled yet",
+    ("vanguard", "avenging_light"): "not modelled yet",
+    ("vanguard", "bulwark_of_faith"): "not modelled yet",
+    ("vanguard", "ceaseless_zeal"): "not modelled yet",
+    ("vanguard", "wrathful_iron"): "not modelled yet",
+    ("vanguard", "seal_of_mending"): "not modelled yet",
+    ("vanguard", "seal_of_fervor"): "not modelled yet",
+    ("acolyte", "epidemic"): "not modelled yet",
+    ("acolyte", "virulence"): "not modelled yet",
+    ("acolyte", "withering_blight"): "not modelled yet",
+    ("acolyte", "exsanguinate"): "not modelled yet",
+    ("acolyte", "splintering_lance"): "not modelled yet",
+    ("acolyte", "sanguine_barrier"): "not modelled yet",
+    ("acolyte", "necrotic_detonation"): "not modelled yet",
+    ("acolyte", "masochism"): "not modelled yet",
+    ("acolyte", "will_to_survive"): "not modelled yet",
+    ("acolyte", "feeding_siphon"): "not modelled yet",
+    ("acolyte", "gorging_siphon"): "not modelled yet",
+    ("acolyte", "unbroken_siphon"): "not modelled yet",
+    ("acolyte", "coagulation"): "not modelled yet",
+    ("acolyte", "dark_surplus"): "not modelled yet",
+    ("acolyte", "sanguine_flow"): "not modelled yet",
+    ("acolyte", "noxious_vapors"): "not modelled yet",
+    ("acolyte", "breeding_ground"): "not modelled yet",
+    ("acolyte", "shroud_of_rot"): "not modelled yet",
+}
+
+
 # ---------------------------------------------------------------- sim core
 class Sim:
-    def __init__(self, calling, level, s, talents, rng, opts, mob=None):
-        self.calling, self.L, self.s, self.T, self.rng, self.opts = calling, level, s, talents, rng, opts
+    def __init__(self, calling, level, s, rows, rng, opts, mob=None):
+        self.calling, self.L, self.s, self.rows, self.rng, self.opts = calling, level, s, rows, rng, opts
+        self.spells = {}   # skill key -> the spell skill() found
         self.m = mob or mob_stats(level)
         self.hp = s.max_hp
         self.power = 0 if s.power == "rage" else self.power_max()
@@ -470,6 +560,17 @@ class Sim:
     def pct_base(self, pct):
         return self.s.base_mana * pct // 100
 
+    def skill(self, key):
+        """The spell this fighter casts for skill `key`: its build's choice when the row is set."""
+        if key not in self.spells:
+            self.spells[key] = skill(self.calling, key, self.rows)
+        return self.spells[key]
+
+    def cost(self, sk):
+        """`sk`'s realm_cost in power: a share of base mana for a `pct_base` cost."""
+        c = sk.get("realm_cost") or 0
+        return self.pct_base(c) if sk.get("cost_kind") == "pct_base" else c
+
     def heal(self, amount, src):
         amount = int(amount)
         before = self.hp
@@ -504,7 +605,7 @@ class Sim:
     def hit_mob(self, raw, src, physical=True, crit=False, crit_bonus_pct=0, armor_ignore=0, dmg_pct=0):
         raw = int(raw * (100 + dmg_pct) / 100)
         if physical:
-            d = armored(raw, max(self.m_armor - self.s.armor_pen - armor_ignore, 0), self.L)
+            d = armored(raw, max(self.m_armor - armor_ignore, 0), self.L)
         else:
             d = raw
         if crit:
@@ -634,17 +735,16 @@ class Vanguard(Sim):
         self.power = min(self.power, 100)
         # Bulwark Charge opener: 15 rage and the ground effect under the mob.
         if self.ready("charge"):
-            self.cd("charge", 15000)
+            ch = self.skill("bulwark_charge")
+            self.cd("charge", ch["realm_cooldown_ms"])
             self.power = min(self.power + 15, 100)
-            ch = skill("vanguard", "bulwark_charge")
             g = fx(ch, "ground_effect")
-            hg = self.T.get("hallowed_ground", 0)
-            self.ground_dmg = linear(g["amount"], self.L) * (100 + 15 * hg) // 100
-            self.ground_until = self.t + (g["duration_ms"] + 2000 * hg) / 1000
+            self.ground_dmg = linear(g["amount"], self.L)
+            self.ground_until = self.t + g["duration_ms"] / 1000
             self.ground_next = self.t + 1.0
 
     def player_armor(self):
-        pct = self.s.armor_items_pct + (20 if self.t < self.seal_armor_until else 0)
+        pct = 20 if self.t < self.seal_armor_until else 0
         return 2 * self.s.agi + self.s.armor_items * (100 + pct) // 100
 
     def block_pct(self):
@@ -662,14 +762,9 @@ class Vanguard(Sim):
                 self.heal(self.s.max_hp * 4 // 100, "seal")
             if self.rng.random() < 0.25:
                 self.seal_armor_until = self.t + 10
-            wi = self.T.get("wrathful_iron", 0)
-            if wi and self.rng.random() * 100 < 10 * wi:
-                raw = self.rng.uniform(self.s.mh_min, self.s.mh_max) * 0.25
-                self.hit_mob(raw, "wrathful_iron", physical=False)
 
     def step(self):
-        s, T = self.s, self.T
-        L = self.L
+        s, L = self.s, self.L
         if self.conviction and self.t > self.conv_until:
             self.conviction = 0
         # Ground effect ticks.
@@ -678,55 +773,41 @@ class Vanguard(Sim):
             self.hit_mob(self.ground_dmg, "consecration", physical=False)
         # Instants.
         if self.t >= self.gcd:
-            if self.t >= self.seal_until and self.power >= 10 - 2 * T.get("spiritual_focus", 0):
-                self.power -= 10 - 2 * T.get("spiritual_focus", 0)
+            seal, sop, cl = self.skill("seal_of_iron"), self.skill("shield_of_penitent"), self.skill("zealous_cleave")
+            if self.t >= self.seal_until and self.power >= self.cost(seal):
+                self.power -= self.cost(seal)
                 self.seal_until = self.t + 30
                 self.gcd = self.t + 1.5
-            elif self.ready("sop") and self.power >= max(10 - 5 * T.get("improved_shield_of_penitent", 0) - 2 * T.get("spiritual_focus", 0), 0) and s.shield is not None:
-                self.power -= max(10 - 5 * T.get("improved_shield_of_penitent", 0) - 2 * T.get("spiritual_focus", 0), 0)
-                self.cd("sop", 15000)
+            elif self.ready("sop") and self.power >= self.cost(sop) and s.shield is not None:
+                self.power -= self.cost(sop)
+                self.cd("sop", sop["realm_cooldown_ms"])
                 self.sop_until = self.t + 10
-            elif T.get("hammer_of_vanguard") and self.ready("hammer") and self.power >= 30 and self.t < self.ground_until:
-                self.power -= 30
-                self.cd("hammer", 6000)
+            elif self.power >= self.cost(cl) and (self.conviction >= 5 or (self.conviction >= 3 and self.power >= 60)):
+                self.power -= self.cost(cl)
+                self.gcd = self.t + 1.5
                 o = self.yellow(s.crit)
                 if o in ("hit", "crit"):
-                    raw = self.rng.uniform(s.mh_min, s.mh_max) * 1.5 + 10 + L
-                    self.hit_mob(raw, "hammer", physical=False, crit=True)
-                    self.melee_hit_procs()
-            elif self.power >= 20 and (self.conviction >= 5 or (self.conviction >= 3 and self.power >= 60)):
-                self.power -= 20
-                self.gcd = self.t + 1.5
-                o = self.yellow(s.crit + T.get("righteous_fury", 0))
-                if o in ("hit", "crit"):
-                    cl = skill("vanguard", "zealous_cleave")
                     raw = self.rng.uniform(s.mh_min, s.mh_max) * self.opts.get("cleave_pct", 100) / 100 + linear(fx(cl, "weapon_strike")["bonus"], L)
-                    if T.get("iron_juggernaut"):
-                        raw += self.block_value() * 50 * T["iron_juggernaut"] // 100
                     self.hit_mob(raw, "cleave", True, o == "crit")
                     self.melee_hit_procs()
                     stacks = self.conviction
                     self.conviction = 0
                     holy = int((5 + L) * self.opts.get("conv_mult", 1.0)) * stacks
-                    d = self.hit_mob(holy, "conviction", physical=False)
-                    zr = T.get("zealous_restoration", 0)
-                    if zr:
-                        self.heal(d * 25 * zr // 100, "zealous_restoration")
+                    self.hit_mob(holy, "conviction", physical=False)
         # Queue Righteous Smash.
-        if not self.smash_queued and self.power >= self.opts.get("smash_cost", 15):
+        rs = self.skill("righteous_smash")
+        smash_cost = self.opts.get("smash_cost", self.cost(rs))
+        if not self.smash_queued and self.power >= smash_cost:
             self.smash_queued = True
         # Swing.
         if self.t >= self.swing_t:
             self.swing_t = self.t + s.mh_speed
-            if self.smash_queued and self.power >= self.opts.get("smash_cost", 15):
+            if self.smash_queued and self.power >= smash_cost:
                 self.smash_queued = False
-                self.power -= self.opts.get("smash_cost", 15)
-                o = self.yellow(s.crit + T.get("righteous_fury", 0))
+                self.power -= smash_cost
+                o = self.yellow(s.crit)
                 if o in ("hit", "crit"):
-                    rs = skill("vanguard", "righteous_smash")
                     raw = self.rng.uniform(s.mh_min, s.mh_max) + linear(fx(rs, "weapon_strike")["bonus"], L) * self.opts.get("smash_mult", 1.0)
-                    if T.get("iron_juggernaut"):
-                        raw += self.block_value() * 50 * T["iron_juggernaut"] // 100
                     self.hit_mob(raw, "smash", True, o == "crit")
                     self.melee_hit_procs()
                     self.conviction = min(self.conviction + 1, 5)
@@ -743,15 +824,8 @@ class Vanguard(Sim):
         if self.t >= self.mob_swing_t:
             self.mob_swing_t = self.t + self.m["swing"]
             d, o = self.mob_swing()
-            if o == "block":
-                if self.t < self.sop_until:
-                    self.hit_mob(12 + 1.2 * L, "penitent_thorns", physical=False)
-                ir = T.get("iron_retribution", 0)
-                if ir:
-                    self.hit_mob(self.block_value() * ir, "iron_retribution", physical=False)
-                ss = T.get("shield_specialization", 0)
-                if ss and self.rng.random() * 100 < 20 * ss:
-                    self.power = min(self.power + 2, 100)
+            if o == "block" and self.t < self.sop_until:
+                self.hit_mob(12 + 1.2 * L, "penitent_thorns", physical=False)
             if d > 0:
                 d = self.take(d)
                 self.rage_taken(d)
@@ -777,15 +851,14 @@ class Cutthroat(Sim):
         self.rupture = None  # (until, next, tick, leech)
         self.garrote = None
         self.evasion_until = -1
-        self.bleeds = []     # scent of blood: (until, next, tick)
         # Garrote from stealth.
-        g = skill("cutthroat", "garrote")
-        if self.power >= 40:
-            self.power -= 40
+        g = self.skill("garrote")
+        if self.power >= self.cost(g):
+            self.power -= self.cost(g)
             self.gcd = self.t + 1.0
             o = self.yellow(100)  # opener: a crit if it lands
             if o not in ("dodge", "parry", "miss"):
-                a = aura("cutthroat", "aura_garrote")
+                a = aura("cutthroat", fx(g, "periodic_damage")["apply_aura"])
                 p = a["effects"][0]["params"]
                 self.garrote = [self.t + a["duration_ms"] / 1000, self.t + p["tick_ms"] / 1000, linear(p["tick"], self.L), p["tick_ms"] / 1000]
                 self.combo = 1
@@ -798,30 +871,11 @@ class Cutthroat(Sim):
 
     def droplet(self):
         if self.rng.random() < 0.5 and self.rng.random() < self.opts.get("pickup", DROPLET_PICKUP):
-            self.bloodlust = min(self.bloodlust + 1, 5 + self.T.get("blood_frenzy", 0))
+            self.bloodlust = min(self.bloodlust + 1, 5)
             self.bl_until = self.t + 10
-            th = self.T.get("thirst", 0)
-            if th:
-                self.heal(self.s.max_hp * 2 * th // 100, "thirst")
-
-    def on_crit(self, d):
-        sb = self.T.get("scent_of_blood", 0)
-        if sb:
-            self.bleeds.append([self.t + 8, self.t + 2, d * 10 * sb // 100 // 4])
-
-    def finisher_procs(self):
-        ru = self.T.get("ruthlessness", 0)
-        if ru and self.rng.random() * 100 < 33 * ru:
-            self.add_combo(1)
-
-    def on_kill(self):
-        et = self.T.get("executioners_toll", 0)
-        if et:
-            self.heal(self.s.max_hp * (5 + 5 * et) // 100, "toll")
-            self.power = min(self.power + 20 + 20 * et, self.s.max_energy)
 
     def step(self):
-        s, T, L = self.s, self.T, self.L
+        s, L = self.s, self.L
         if self.t > self.bl_until:
             self.bloodlust = 0
         # Bleeds.
@@ -832,82 +886,56 @@ class Cutthroat(Sim):
                 if b is self.rupture:
                     self.heal(d * 40 // 100, "rupture_leech")
                 self.droplet()
-        for b in self.bleeds:
-            if self.t < b[0] and self.t >= b[1]:
-                b[1] += 2
-                self.hit_mob(b[2], "scent_of_blood", physical=False)
-                self.droplet()
-        self.bleeds = [b for b in self.bleeds if self.t < b[0]]
         # Evasion when hurt.
         if self.ready("evasion") and self.hp < s.max_hp * 0.6:
-            self.cd("evasion", 120000)
+            self.cd("evasion", self.skill("evasion")["realm_cooldown_ms"])
             self.evasion_until = self.t + 15
         # GCD skills.
         if self.t >= self.gcd:
-            ss_cost = 35 - 2 * T.get("flurry_of_blades", 0)
+            ss, ev, ru = self.skill("sinister_strike"), self.skill("eviscerate"), self.skill("rupture")
             mob_frac = self.mob_hp / self.m["hp"]
             rupture_up = self.rupture and self.t < self.rupture[0]
             if self.combo >= 5 or (self.combo >= 3 and mob_frac < 0.25):
-                if not rupture_up and mob_frac > 0.45 and self.power >= 25:
-                    self.power -= 25
+                if not rupture_up and mob_frac > 0.45 and self.power >= self.cost(ru):
+                    self.power -= self.cost(ru)
                     self.gcd = self.t + 1.0
                     o = self.yellow(s.crit)
                     if o in ("hit", "crit"):
-                        p = fx(skill("cutthroat", "rupture"), "periodic_damage")
-                        bl = T.get("bloodletting", 0)
-                        dur = (p["duration_ms"] + linear(p["duration_per_combo"], L) * self.combo + 2000 * bl) / 1000
-                        tick = (linear(p["tick"], L) + linear(p["per_combo"], L) * self.combo) * (100 + 10 * bl) // 100
+                        p = fx(ru, "periodic_damage")
+                        dur = (p["duration_ms"] + linear(p["duration_per_combo"], L) * self.combo) / 1000
+                        tick = linear(p["tick"], L) + linear(p["per_combo"], L) * self.combo
                         self.rupture = [self.t + dur, self.t + 2.0, tick, 2.0]
                     self.combo = 0
-                    self.finisher_procs()
-                elif self.power >= 35:
-                    self.power -= 35
+                elif self.power >= self.cost(ev):
+                    self.power -= self.cost(ev)
                     self.gcd = self.t + 1.0
                     o = self.yellow(s.crit)
                     if o in ("hit", "crit"):
-                        p = fx(skill("cutthroat", "eviscerate"), "school_damage")
+                        p = fx(ev, "school_damage")
                         raw = linear(p["amount"], L) + linear(p["per_combo"], L) * self.combo
-                        d = self.hit_mob(raw, "eviscerate", True, o == "crit", dmg_pct=self.dmg_pct())
-                        if o == "crit":
-                            self.on_crit(d)
+                        self.hit_mob(raw, "eviscerate", True, o == "crit", dmg_pct=self.dmg_pct())
                     self.combo = 0
-                    self.finisher_procs()
-            elif self.power >= ss_cost:
-                self.power -= ss_cost
+            elif self.power >= self.cost(ss):
+                self.power -= self.cost(ss)
                 self.gcd = self.t + 1.0
                 o = self.yellow(s.crit)
                 if o in ("hit", "crit"):
-                    p = fx(skill("cutthroat", "sinister_strike"), "weapon_strike")
+                    p = fx(ss, "weapon_strike")
                     raw = self.rng.uniform(s.mh_min, s.mh_max) * p["weapon_pct"] / 100 + linear(p["bonus"], L)
-                    d = self.hit_mob(raw, "sinister_strike", True, o == "crit", dmg_pct=self.dmg_pct())
-                    if o == "crit":
-                        self.on_crit(d)
+                    self.hit_mob(raw, "sinister_strike", True, o == "crit", dmg_pct=self.dmg_pct())
                     self.add_combo(1)
-                    srr = T.get("serrated_strikes", 0)
-                    bleeding = (self.rupture and self.t < self.rupture[0]) or (self.garrote and self.t < self.garrote[0])
-                    if srr and bleeding and self.rng.random() * 100 < 20 * srr:
-                        self.add_combo(1)
         # Whites.
         h = self.haste()
         if self.t >= self.swing_t:
             self.swing_t = self.t + s.mh_speed * 100 / (100 + h)
-            d, o = self.white("mh")
-            if o == "crit":
-                self.on_crit(d)
+            self.white("mh")
         if s.oh and self.t >= self.oh_t:
             self.oh_t = self.t + s.oh_speed * 100 / (100 + h)
-            d, o = self.white("oh")
-            if o == "crit":
-                self.on_crit(d)
+            self.white("oh")
         # Mob.
         if self.t >= self.mob_swing_t:
             self.mob_swing_t = self.t + self.m["swing"]
             d, o = self.mob_swing()
-            if o == "dodge":
-                pg = T.get("phantom_guile", 0)
-                if pg and self.rng.random() * 100 < 33 * pg:
-                    self.add_combo(1)
-                    self.power = min(self.power + 10, s.max_energy)
             if d > 0:
                 self.take(d)
 
@@ -924,118 +952,66 @@ class Initiate(Sim):
         self.slow_until = -1
         self.absorb = 0
         self.absorb_until = -1
-        self.resonance_until = -1
-        self.resonance_pct = 0
-        self.momentum_until = -1
-        self.substrate = 0
-        self.attune = 0
-        self.free_cold = False
-        self.instant_cold = False
-        self.ember_more_ms = 0
-
-    def spell_dmg_pct(self):
-        return self.resonance_pct if self.t < self.resonance_until else 0
 
     def cast_time(self, key):
-        base = {"ley_spark": 1500, "biting_cold": 2000}.get(key, 0)
-        if key == "biting_cold":
-            if self.instant_cold:
-                return 0
-            base = max(base - 100 * self.substrate, 0)
-        return base
+        return {"ley_spark": 1500, "biting_cold": 2000}.get(key, 0)
 
     def start(self, key):
         self.cast = (self.t + self.cast_time(key) / 1000, key)
         self.gcd = self.t + 1.5
 
     def finish(self, key):
-        s, T, L = self.s, self.T, self.L
+        s, L = self.s, self.L
         sp = s.spell_power
         crit = s.crit
+        sk = self.skill(key)
         if key == "ley_spark":
-            cost = self.pct_base(5)
-            self.spend_mana(cost)
-            lt = T.get("ley_line_tap", 0)
-            if lt and self.rng.random() * 100 < 10 * lt:
-                self.power = min(self.power + cost, s.max_mana)
-            p = fx(skill("initiate", "ley_spark"), "school_damage")
+            self.spend_mana(self.cost(sk))
+            p = fx(sk, "school_damage")
             crit += p["crit_pct_at_full_mana"] * self.power / s.max_mana
             o = self.spell_roll(crit)
             if o != "miss":
-                raw = linear(p["amount"], L)
-                mom = 15 * T.get("arcane_momentum", 0) if self.t < self.momentum_until else 0
-                raw = raw * (100 + mom) // 100 + sp_direct(sp, 1500)
-                self.hit_mob(raw, "ley_spark", False, o == "crit", dmg_pct=self.spell_dmg_pct())
-            self.substrate = T.get("arcane_substrate", 0)
-            if T.get("ley_line_attunement"):
-                self.attune += 1
-                if self.attune >= 3:
-                    self.attune = 0
-                    self.free_cold = True
+                raw = linear(p["amount"], L) + sp_direct(sp, 1500)
+                self.hit_mob(raw, "ley_spark", False, o == "crit")
         elif key == "searing_ember":
-            ve = T.get("volatile_embers", 0)
-            self.spend_mana(self.pct_base(4) * (100 - 10 * ve) // 100)
-            sk = skill("initiate", "searing_ember")
+            self.spend_mana(self.cost(sk))
             o = self.spell_roll(crit)
             if o != "miss":
                 raw = linear(fx(sk, "school_damage")["amount"], L) + sp_direct(sp, 0)
-                self.hit_mob(raw, "ember_hit", False, o == "crit", dmg_pct=self.spell_dmg_pct())
-                a = aura("initiate", "aura_searing_ember")
+                self.hit_mob(raw, "ember_hit", False, o == "crit")
+                a = aura("initiate", fx(sk, "periodic_damage")["apply_aura"])
                 p = a["effects"][0]["params"]
-                dur = a["duration_ms"] + 1000 * self.substrate
+                dur = a["duration_ms"]
                 ticks = dur // p["tick_ms"]
-                tick = linear(p["tick"], L) * (100 + 10 * ve) // 100 + sp_periodic(sp, dur, ticks) // 2
+                tick = linear(p["tick"], L) + sp_periodic(sp, dur, ticks) // 2
                 stacks = min((self.ember[3] if self.ember and self.t < self.ember[0] else 0) + 1, 3)
                 self.ember = [self.t + dur / 1000, self.t + 3.0, tick, stacks]
-                self.substrate = 0
         elif key == "biting_cold":
-            if self.free_cold or self.instant_cold:
-                self.free_cold = False
-                self.instant_cold = False
-            else:
-                cost = self.pct_base(8)
-                fc = T.get("frigid_conservation", 0)
-                if fc and self.t < self.slow_until:
-                    cost = cost * (100 - 25 * fc) // 100
-                self.spend_mana(cost)
-            sk = skill("initiate", "biting_cold")
+            self.spend_mana(self.cost(sk))
             o = self.spell_roll(crit)
             if o != "miss":
                 raw = linear(fx(sk, "school_damage")["amount"], L) + sp_direct(sp, 2000)
-                ce = T.get("combustion_engine", 0)
-                if ce and self.ember and self.t < self.ember[0]:
-                    raw = raw * (100 + 15 * ce) // 100
-                self.hit_mob(raw, "biting_cold", False, o == "crit", dmg_pct=self.spell_dmg_pct())
+                self.hit_mob(raw, "biting_cold", False, o == "crit")
                 self.cold_until = self.t + 6
                 self.slow_until = self.t + 6
-            self.substrate = 0
         elif key == "catalyst":
-            self.cd("catalyst", 12000)
-            ts = T.get("thermal_shock", 0)
+            self.cd("catalyst", sk["realm_cooldown_ms"])
             if self.t < self.cold_until:
                 self.cold_until = -1
-                p = fx(skill("initiate", "catalyst"), "consume_aura")
-                raw = linear(p["amount"], L) * 2 * (100 + 10 * ts) // 100
-                crit_c = crit + (100 if self.t < getattr(self, "convergence_until", -1) else 0)
-                o = "crit" if self.rng.random() * 100 < crit_c else "hit"
-                self.hit_mob(raw, "catalyst", False, o == "crit", dmg_pct=self.spell_dmg_pct())
+                p = fx(sk, "consume_aura")
+                raw = linear(p["amount"], L) * 2
+                o = "crit" if self.rng.random() * 100 < crit else "hit"
+                self.hit_mob(raw, "catalyst", False, o == "crit")
             if self.ember and self.t < self.ember[0]:
                 self.ember = None
-                self.power = min(self.power + s.max_mana * 10 * (100 + 10 * ts) // 10000, s.max_mana)
-            cr = T.get("catalytic_resonance", 0)
-            if cr:
-                self.resonance_until = self.t + 8
-                self.resonance_pct = 2 * cr
+                self.power = min(self.power + s.max_mana * 10 // 100, s.max_mana)
 
     def step(self):
-        s, T, L = self.s, self.T, self.L
+        s = self.s
         # Ember ticks.
         if self.ember and self.t < self.ember[0] and self.t >= self.ember[1]:
             self.ember[1] += 3.0
-            self.hit_mob(self.ember[2] * self.ember[3], "ember_dot", False, dmg_pct=self.spell_dmg_pct())
-            tf = T.get("thermal_feedback", 0)
-            if tf and self.rng.random() * 100 < 4 * tf:
-                self.instant_cold = True
+            self.hit_mob(self.ember[2] * self.ember[3], "ember_dot", False)
         if self.absorb and self.t > self.absorb_until:
             self.absorb = 0
         # Casting.
@@ -1045,9 +1021,10 @@ class Initiate(Sim):
             self.finish(key)
         in_melee = self.dist <= 5
         if not self.cast and self.t >= self.gcd:
-            if self.ready("ward") and self.power >= self.pct_base(10):
-                self.spend_mana(self.pct_base(10))
-                self.cd("ward", 30000)
+            ward, ember, cold = self.skill("ley_ward"), self.skill("searing_ember"), self.skill("biting_cold")
+            if self.ready("ward") and self.power >= self.cost(ward):
+                self.spend_mana(self.cost(ward))
+                self.cd("ward", ward["realm_cooldown_ms"])
                 self.absorb = s.max_mana * self.opts.get("ward_pct", 10) // 100
                 self.absorb_until = self.t + 20
             elif in_melee and self.ready("blink") and self.power >= self.pct_base(10) and self.t < self.slow_until:
@@ -1055,24 +1032,13 @@ class Initiate(Sim):
                 self.cd("blink", 15000)
                 self.dist = 20.0
                 self.gcd = self.t + 1.5
-                if T.get("arcane_momentum"):
-                    self.momentum_until = self.t + 5
             elif self.ready("catalyst") and self.t < self.cold_until and (self.ember and self.t < self.ember[0]) and not self.opts.get("smart"):
                 self.start("catalyst")
-            elif T.get("elemental_convergence") and self.ready("convergence") and not (self.ember and self.t < self.ember[0]):
-                self.cd("convergence", 30000)
-                self.gcd = self.t + 1.5
-                self.convergence_until = self.t + 6
-                self.cold_until = self.t + 6
-                self.slow_until = self.t + 6
-                a = aura("initiate", "aura_searing_ember")
-                p = a["effects"][0]["params"]
-                self.ember = [self.t + 12, self.t + 3.0, linear(p["tick"], L), 1]
-            elif not (self.ember and self.t < self.ember[0]) and self.power >= self.pct_base(4):
+            elif not (self.ember and self.t < self.ember[0]) and self.power >= self.cost(ember):
                 self.start("searing_ember")
-            elif self.t >= self.cold_until and (self.power >= self.pct_base(8) or self.free_cold or self.instant_cold) and ((not self.opts.get("smart") and (self.ready("catalyst") or self.cds["catalyst"] - self.t < 3)) or (in_melee and self.ready("blink"))):
+            elif self.t >= self.cold_until and self.power >= self.cost(cold) and ((not self.opts.get("smart") and (self.ready("catalyst") or self.cds["catalyst"] - self.t < 3)) or (in_melee and self.ready("blink"))):
                 self.start("biting_cold")
-            elif self.power >= self.pct_base(5):
+            elif self.power >= self.cost(self.skill("ley_spark")):
                 self.start("ley_spark")
         # Mob movement.
         if self.dist > 5:
@@ -1103,44 +1069,17 @@ class Ranger(Sim):
         self.slow_until = -1
         self.rapid_until = -1
         self.dressing = None  # [until, next, tick]
-        self.gt_stacks = 0
-        self.gt_until = -1
-        self.rd_stacks = 0
-        self.flurry = 0
-        self.sundered = 0
-        self.sundered_until = -1
-
-    def ranged_crit(self):
-        c = self.s.crit
-        sa = self.T.get("steadfast_aim", 0)
-        if sa and not self.moving and self.t - self.still_since >= 2:
-            c += 3 * sa
-        return c
 
     def ranged_haste(self):
-        h = 40 if self.t < self.rapid_until else 0
-        sa = self.T.get("steadfast_aim", 0)
-        if sa and not self.moving and self.t - self.still_since >= 2:
-            h += 5 * sa
-        return h
+        return 40 if self.t < self.rapid_until else 0
 
-    def dmg_vs(self):
-        sd = self.T.get("shattered_defenses", 0)
-        return 5 * sd if sd and self.sundered and self.t < self.sundered_until else 0
-
-    def mob_armor_now(self):
-        return max(self.m["armor"] - (50 * self.T.get("jagged_barbs", 0) * self.sundered if self.t < self.sundered_until else 0), 0)
-
-    def shoot(self, src, weapon_pct=100, bonus=0, armor_ignore=0, crit_bonus=0, extra_pct=0):
+    def shoot(self, src, weapon_pct=100, bonus=0, armor_ignore=0):
         s = self.s
-        o = self.ranged_roll(self.ranged_crit() + (100 if src == "snapshot" and self.flurry else 0))
-        if src == "snapshot" and self.flurry:
-            self.flurry -= 1
+        o = self.ranged_roll(s.crit)
         if o in ("miss", "dodge"):
             return 0, o
-        raw = (self.rng.uniform(s.r_min, s.r_max) * weapon_pct / 100 + bonus) * (100 + extra_pct) / 100
-        self.m_armor = self.mob_armor_now()
-        d = self.hit_mob(raw, src, True, o == "crit", crit_bonus, armor_ignore, dmg_pct=self.dmg_vs())
+        raw = self.rng.uniform(s.r_min, s.r_max) * weapon_pct / 100 + bonus
+        d = self.hit_mob(raw, src, True, o == "crit", armor_ignore=armor_ignore)
         return d, o
 
     def start(self, key, ms):
@@ -1148,49 +1087,32 @@ class Ranger(Sim):
         self.gcd = self.t + 1.5
 
     def snapshot(self):
-        s, T, L = self.s, self.T, self.L
-        if not self.flurry:
-            self.spend_mana(self.pct_base(5))
+        sk = self.skill("snapshot")
+        self.spend_mana(self.cost(sk))
         self.gcd = self.t + 1.5
-        p = fx(skill("ranger", "snapshot"), "weapon_strike")
-        extra = 10 * T.get("guerilla_tactics", 0) * self.gt_stacks if self.t < self.gt_until else 0
-        self.gt_stacks = 0
-        bonus = linear(self.opts.get("snap_bonus", p["bonus"]), L)
-        d, o = self.shoot("snapshot", self.opts.get("snap_pct", 100), bonus, extra_pct=extra)
-        if o == "crit" and T.get("adrenaline_rush"):
-            self.cds["vault"] = self.cds.get("vault", self.t) - 2 * T["adrenaline_rush"]
-        if T.get("rhythmic_draw"):
-            self.rd_stacks = min(self.rd_stacks + 1, 15)
-        ta = T.get("twin_arrows", 0)
-        if ta and self.rng.random() * 100 < 10 * ta:
-            self.shoot("snapshot_twin", self.opts.get("snap_pct", 100), bonus, extra_pct=extra)
+        p = fx(sk, "weapon_strike")
+        bonus = linear(self.opts.get("snap_bonus", p["bonus"]), self.L)
+        self.shoot("snapshot", self.opts.get("snap_pct", 100), bonus)
 
     def step(self):
-        s, T, L = self.s, self.T, self.L
+        s, L = self.s, self.L
         # Dots and hots.
         if self.barbed and self.t < self.barbed[0] and self.t >= self.barbed[1]:
             self.barbed[1] += 2.0
-            self.hit_mob(self.barbed[2], "barbed", False, dmg_pct=self.dmg_vs())
-            jb = T.get("jagged_barbs", 0)
-            if jb and self.rng.random() * 100 < 4 * jb:
-                self.sundered = min(self.sundered + 1, 3)
-                self.sundered_until = self.t + 10
+            self.hit_mob(self.barbed[2], "barbed", False)
         if self.dressing and self.t < self.dressing[0] and self.t >= self.dressing[1]:
             self.dressing[1] += 2.0
             self.heal(self.dressing[2], "field_dressing")
         slowed = self.t < self.slow_until
         in_melee = self.dist <= 5
-        can_shoot = self.dist > 8 or T.get("point_blank")
+        can_shoot = self.dist > 8
         # Finish casts.
         if self.cast and self.t >= self.cast[0]:
             key = self.cast[1]
             self.cast = None
             if key == "puncturing_shaft":
-                p = fx(skill("ranger", "puncturing_shaft"), "weapon_strike")
-                pf = T.get("piercing_force", 0)
-                pb = T.get("point_blank", 0)
-                extra = 10 * pb if pb and self.dist <= 8 else 0
-                self.shoot("puncturing_shaft", 100, linear(p["bonus"], L), linear(p["armor_ignore"], L) + 50 * pf, 5 * pf, extra)
+                p = fx(self.skill("puncturing_shaft"), "weapon_strike")
+                self.shoot("puncturing_shaft", 100, linear(p["bonus"], L), linear(p["armor_ignore"], L))
         # Decide movement: kite when in melee range and the mob is slowed.
         # Kite while the mob is slowed: start when it is within 8 yd and Vault is down, stop at 15 yd.
         want_move = self.moving
@@ -1209,41 +1131,35 @@ class Ranger(Sim):
                 self.still_since = self.t
             if self.cast:
                 self.cast = None  # a move breaks the cast
-        if self.moving:
-            gt = T.get("guerilla_tactics", 0)
-            if gt and int((self.t - self.moving_since) / 2) > int((self.t - DT - self.moving_since) / 2):
-                self.gt_stacks = min(self.gt_stacks + 1, 3)
-                self.gt_until = self.t + 15
         # Instants and casts.
         if not self.cast and self.t >= self.gcd:
+            vault, rapid = self.skill("vault"), self.skill("rapid_fire")
+            barbed, shaft = self.skill("barbed_arrow"), self.skill("puncturing_shaft")
             if self.hp < s.max_hp * 0.5 and self.ready("dressing") and self.power >= self.pct_base(10):
                 self.spend_mana(self.pct_base(10))
                 self.cd("dressing", 45000)
                 self.dressing = [self.t + 10, self.t + 2, s.max_hp * 20 // 100 // 5]
                 self.gcd = self.t + 1.5
             elif in_melee and self.ready("vault"):
-                self.cd("vault", 15000)
+                self.cd("vault", vault["realm_cooldown_ms"])
                 self.dist = 15.0
                 self.gcd = self.t + 1.0
             elif self.ready("rapid") and can_shoot and not self.moving:
-                self.cd("rapid", 60000)
+                self.cd("rapid", rapid["realm_cooldown_ms"])
                 self.rapid_until = self.t + 10
-                self.flurry = T.get("flurry", 0)
-            elif can_shoot and not (self.barbed and self.t < self.barbed[0] - 2.5) and self.power >= self.pct_base(5):
-                self.spend_mana(self.pct_base(5))
+            elif can_shoot and not (self.barbed and self.t < self.barbed[0] - 2.5) and self.power >= self.cost(barbed):
+                self.spend_mana(self.cost(barbed))
                 self.gcd = self.t + 1.5
                 o = self.ranged_roll(0)
                 if o not in ("miss", "dodge"):
-                    a = aura("ranger", "aura_barbed_arrow")
+                    a = aura("ranger", fx(barbed, "periodic_damage")["apply_aura"])
                     p = a["effects"][0]["params"]
                     self.barbed = [self.t + 8, self.t + 2, linear(p["tick"], L)]
                     self.slow_until = self.t + 8
-            elif can_shoot and not self.moving and self.power >= self.pct_base(8) and (self.dist - 8) / (MOB_RUN * (0.7 if slowed else 1.0)) >= (3.0 - 0.1 * self.rd_stacks) * 0.9:
-                self.spend_mana(self.pct_base(8))
-                ms = 3000 - 100 * self.rd_stacks
-                self.rd_stacks = 0
-                self.start("puncturing_shaft", ms)
-            elif can_shoot and (self.power >= self.pct_base(5) or self.flurry):
+            elif can_shoot and not self.moving and self.power >= self.cost(shaft) and (self.dist - 8) / (MOB_RUN * (0.7 if slowed else 1.0)) >= 3.0 * 0.9:
+                self.spend_mana(self.cost(shaft))
+                self.start("puncturing_shaft", 3000)
+            elif can_shoot and self.power >= self.cost(self.skill("snapshot")):
                 self.snapshot()
         # Auto shot.
         if can_shoot and not self.moving and not self.cast and self.t >= self.shot_t:
@@ -1283,17 +1199,17 @@ class Acolyte(Sim):
         self.miasma = None    # [until, next, tick]
         self.mending_dot = None  # [until, next, tick] on self
         self.lance_hots = []  # [until, next, tick]
-        self.maso = []        # [until, next, tick]
-        self.virulence = False
-        self.surge_until = -1
         self.absorb = 0
 
     def spell_crit(self):
         return self.s.crit
 
+    def blight_aura(self):
+        return aura("acolyte", fx(self.skill("creeping_blight"), "periodic_damage")["apply_aura"])
+
     def blight_tick(self):
         s, L = self.s, self.L
-        a = aura("acolyte", "aura_creeping_blight")
+        a = self.blight_aura()
         p = a["effects"][0]["params"]
         dur = int(self.opts.get("blight_dur", a["duration_ms"] / 1000) * 1000)
         tick_ms = int(self.opts.get("blight_tick_s", p["tick_ms"] / 1000) * 1000)
@@ -1308,57 +1224,42 @@ class Acolyte(Sim):
         cost = self.s.max_hp * pct // 100
         self.hp -= cost
         self.costs += cost
-        ms = self.T.get("masochism", 0)
-        if ms:
-            self.maso.append([self.t + 5, self.t + 1, cost * 6 * ms // 100])
 
     def start(self, key, ms):
-        if self.t < self.surge_until:
-            ms = ms * 100 // (100 + 10 * self.T.get("crimson_surge", 0))
         self.cast = (self.t + ms / 1000, key)
         self.gcd = self.t + 1.5
 
     def step(self):
-        s, T, L = self.s, self.T, self.L
+        s, L = self.s, self.L
         # Ticks.
         if self.blight and self.t < self.blight[0] and self.t >= self.blight[1]:
             self.blight[1] += self.opts.get("blight_tick_s", 3.0)
             d = self.hit_mob(self.blight[2] * self.blight[3], "blight", False)
             self.heal(d * self.opts.get("leech", 50) // 100, "blight_leech")
             self.blight[3] = min(self.blight[3] + 1, self.opts.get("blight_cap", 255))
-            vi = T.get("virulence", 0)
-            if vi and self.rng.random() * 100 < 0.5 * vi * self.blight[3]:
-                self.virulence = True
-            self.symbiotic(d)
         if self.miasma and self.t < self.miasma[0] and self.t >= self.miasma[1] and self.dist <= 8:
             self.miasma[1] += 1.0
-            d = self.hit_mob(self.miasma[2], "miasma", False)
-            self.symbiotic(d)
-            mf = T.get("morbid_fascination", 0)
-            if mf:
-                self.power = min(self.power + self.pct_base(mf), s.max_mana)
+            self.hit_mob(self.miasma[2], "miasma", False)
         elif self.miasma and self.t >= self.miasma[1]:
             self.miasma[1] += 1.0
         if self.mending_dot and self.t < self.mending_dot[0] and self.t >= self.mending_dot[1]:
             self.mending_dot[1] += 2.0
             self.hp -= min(self.mending_dot[2], max(self.hp - 1, 0))
             self.costs += self.mending_dot[2]
-        for h in self.lance_hots + self.maso:
+        for h in self.lance_hots:
             if self.t < h[0] and self.t >= h[1]:
-                h[1] += 2.0 if h in self.lance_hots else 1.0
+                h[1] += 2.0
                 self.heal(h[2], "hot")
         self.lance_hots = [h for h in self.lance_hots if self.t < h[0]]
-        self.maso = [h for h in self.maso if self.t < h[0]]
         # Channel ticks.
         if self.channel:
             if self.t >= self.channel[1]:
                 self.channel[1] += 1.0
-                p = fx(skill("acolyte", "siphon_life"), "drain")
+                p = fx(self.skill("siphon_life"), "drain")
                 o = self.spell_roll(self.spell_crit())
                 if o != "miss":
                     d = self.hit_mob(linear(p["amount"], L), "siphon", False, o == "crit")
                     self.heal(d, "siphon")
-                    self.symbiotic(d)
             if self.t >= self.channel[0]:
                 self.channel = None
         # Finish casts.
@@ -1366,8 +1267,9 @@ class Acolyte(Sim):
             key = self.cast[1]
             self.cast = None
             if key == "blood_lance":
-                self.health_cost(3)
-                p = fx(skill("acolyte", "blood_lance"), "school_damage")
+                lance = self.skill("blood_lance")
+                self.health_cost(lance["realm_cost"])
+                p = fx(lance, "school_damage")
                 o = self.spell_roll(self.spell_crit())
                 if o != "miss":
                     amount = self.opts.get("lance_amount", p["amount"])
@@ -1375,51 +1277,36 @@ class Acolyte(Sim):
                     d = self.hit_mob(raw, "blood_lance", False, o == "crit")
                     self.lance_hots.append([self.t + 6, self.t + 2, d * 20 // 100 // 3])
                     self.grow_blight()
-                    self.symbiotic(d)
-                if T.get("crimson_surge"):
-                    self.surge_until = self.t + 6
         in_melee = self.dist <= 5
         if not self.cast and not self.channel and self.t >= self.gcd:
             hp_frac = self.hp / s.max_hp
+            mending, siphon = self.skill("dark_mending"), self.skill("siphon_life")
+            blight, miasma = self.skill("creeping_blight"), self.skill("miasma")
             if hp_frac < 0.55 and self.ready("mending"):
-                self.cd("mending", 8000)
-                self.health_cost(15)
+                self.cd("mending", mending["realm_cooldown_ms"])
+                self.health_cost(mending["realm_cost"])
                 self.gcd = self.t + 1.5
-                p = fx(skill("acolyte", "dark_mending"), "heal")
+                p = fx(mending, "heal")
                 heal = linear(p["amount"], L) + sp_direct(s.spell_power, 0)
-                if T.get("will_to_survive") and hp_frac < 0.5:
-                    heal = heal * (100 + 10 * T["will_to_survive"]) // 100
                 self.heal(heal, "dark_mending")
                 self.mending_dot = [self.t + 6, self.t + 2, heal * 15 // 100]
-                co = T.get("coagulation", 0)
-                if co:
-                    self.absorb += heal * 10 * co // 100
-            elif hp_frac < 0.45 and self.power >= self.pct_base(8):
-                self.spend_mana(self.pct_base(8))
+            elif hp_frac < 0.45 and self.power >= self.cost(siphon):
+                self.spend_mana(self.cost(siphon))
                 self.channel = [self.t + 5.0, self.t + 1.0]
                 self.gcd = self.t + 1.5
-            elif not (self.blight and self.t < self.blight[0]) and self.power >= self.pct_base(5):
-                self.spend_mana(self.pct_base(5))
+            elif not (self.blight and self.t < self.blight[0]) and self.power >= self.cost(blight):
+                self.spend_mana(self.cost(blight))
                 self.gcd = self.t + 1.5
                 if self.spell_roll(0) != "miss":
-                    self.blight = [self.t + self.opts.get("blight_dur", aura("acolyte", "aura_creeping_blight")["duration_ms"] / 1000), self.t + self.opts.get("blight_tick_s", 3.0), self.blight_tick(), 1]
-            elif self.ready("miasma") and in_melee and self.power >= self.pct_base(15):
-                self.spend_mana(self.pct_base(15))
-                self.cd("miasma", 15000)
+                    self.blight = [self.t + self.opts.get("blight_dur", self.blight_aura()["duration_ms"] / 1000), self.t + self.opts.get("blight_tick_s", 3.0), self.blight_tick(), 1]
+            elif self.ready("miasma") and in_melee and self.power >= self.cost(miasma):
+                self.spend_mana(self.cost(miasma))
+                self.cd("miasma", miasma["realm_cooldown_ms"])
                 self.gcd = self.t + 1.5
-                a = aura("acolyte", "aura_miasma")
+                a = aura("acolyte", fx(miasma, "ground_area")["enemy_aura"])
                 self.miasma = [self.t + 10, self.t + 1, linear(a["effects"][0]["params"]["tick"], L)]
-            elif T.get("necrotic_detonation") and self.ready("detonate") and self.blight and self.t < self.blight[0] and self.blight[3] >= 4 and self.mob_hp < self.m["hp"] * 0.5:
-                self.cd("detonate", 20000)
-                self.gcd = self.t + 1.5
-                raw = (12 + L) * self.blight[3]
-                d = self.hit_mob(raw, "detonation", False)
-                self.heal(d * 150 // 100, "detonation")
-                self.blight = None
             elif self.hp > s.max_hp * 0.25:
-                ms = 1500 - (500 if self.virulence else 0)
-                self.virulence = False
-                self.start("blood_lance", ms)
+                self.start("blood_lance", 1500)
         # Mob.
         if self.dist > 5:
             self.dist = max(self.dist - MOB_RUN * DT, 0)
@@ -1429,11 +1316,6 @@ class Acolyte(Sim):
             d, o = self.mob_swing()
             if d > 0:
                 self.take(d)
-
-    def symbiotic(self, d):
-        sr = self.T.get("symbiotic_rot", 0)
-        if sr:
-            self.heal(d * 5 * sr // 100, "symbiotic")
 
     def fight(self):
         self.costs = 0
@@ -1516,24 +1398,7 @@ class BasicWarrior(Sim):
 SIMS = dict(basic_warrior=BasicWarrior, vanguard=Vanguard, cutthroat=Cutthroat, initiate=Initiate, ranger=Ranger,
             acolyte=Acolyte)
 
-# ---------------------------------------------------------------- talent builds
-# Ordered (talent, ranks) wish lists; filled in order while the row rule allows.
-BUILDS = {
-    "vanguard": [("divine_strength", 5), ("wrathful_iron", 5), ("righteous_fury", 5), ("zealous_restoration", 3),
-                 ("hallowed_ground", 3), ("hammer_of_vanguard", 1), ("shield_specialization", 5), ("iron_retribution", 5)],
-    "cutthroat": [("reflexive_strike", 5), ("blood_frenzy", 5), ("phantom_guile", 3), ("thirst", 2), ("flurry_of_blades", 3),
-                  ("bloodletting", 5), ("executioners_toll", 3), ("scent_of_blood", 3), ("ruthlessness", 3), ("serrated_strikes", 5)],
-    "initiate": [("ley_line_tap", 5), ("volatile_embers", 5), ("ley_line_attunement", 3), ("frigid_conservation", 2),
-                 ("catalytic_resonance", 5), ("arcane_momentum", 3), ("thermal_feedback", 5), ("combustion_engine", 3)],
-    "ranger": [("piercing_force", 5), ("jagged_barbs", 5), ("steadfast_aim", 2), ("shattered_defenses", 3), ("point_blank", 2),
-               ("guerilla_tactics", 5), ("rhythmic_draw", 5), ("twin_arrows", 3), ("adrenaline_rush", 3)],
-    "acolyte": [("virulence", 5), ("morbid_fascination", 3), ("symbiotic_rot", 3), ("necrotic_detonation", 1),
-                ("vitality", 5), ("masochism", 5), ("crimson_surge", 2), ("will_to_survive", 3)],
-}
-
-
-
-# ---------------------------------------------------------------- levels and talents
+# ---------------------------------------------------------------- levels and Talent Rows
 def tier_cap(tier):
     return max((c.get("tier_cap") or 0) for c in SPELLS.values() if c.get("tier") == tier)
 
@@ -1550,50 +1415,28 @@ def power_level(tier, level):
 
 def calling_level(calling, level):
     """The level a character of Power Level `level` has in its Calling: Advancement starts a
-    Tier 1 Calling at 1 (talents.rs counts points from it), and its Power Level runs 10 to 30. Past
-    the band's top the Calling stays at its cap."""
+    Tier 1 Calling at 1, and its Power Level runs 10 to 30. Past the band's top the Calling stays
+    at its cap."""
     tier = SPELLS[calling].get("tier") or 0
     if tier == 0:
         return level
     return next((cl for cl in range(1, tier_cap(tier) + 1) if power_level(tier, cl) >= level), tier_cap(tier))
 
 
-def points_at(level):
-    """rules/talents.rs points_at: one Talent Point a level from level 2."""
-    return max(level - 1, 0)
+def open_rows(calling, level):
+    """The Talent Rows a Tier 1 `calling` at Power Level `level` has open: each whose `level` is at
+    most its real level in the Calling. A Tier 0 character's rows stay empty (docs/balance/rules.md)."""
+    if not SPELLS[calling].get("tier"):
+        return []
+    real = calling_level(calling, level)
+    return [r for r in talent_rows(calling) if r["level"] <= real]
 
 
-def build(calling, level):
-    pts = points_at(calling_level(calling, level))
-    spent = defaultdict(int)
-    out = {}
-    wish = BUILDS.get(calling, [])
-    progress = True
-    while pts > 0 and progress:
-        progress = False
-        for key, want in wish:
-            have = out.get(key, 0)
-            # The sheet has no tree (ADR 0028), so a build's tree talents are skipped.
-            if have >= want or (calling, key) not in TALENT_ROW:
-                continue
-            tab, row = TALENT_ROW[(calling, key)]
-            if spent[tab] < 5 * (row - 1):
-                continue
-            out[key] = have + 1
-            spent[tab] += 1
-            pts -= 1
-            progress = True
-            if pts == 0:
-                break
-    return out
-
-
-def character(calling, level, tier):
-    """`calling` at Power Level `level` in a `tier` kit, in its damage build."""
+def character(calling, level, tier, rows={}):
+    """`calling` at Power Level `level` in a `tier` kit, in the build `rows` ({row key: choice key})."""
     entries, off, fell_back = kit(calling, level, tier)
-    talents = build(calling, level)
-    stats = build_stats(calling, level, entries, off, talents)
-    return dict(stats=stats, talents=talents, entries=entries, off=off, fell_back=fell_back)
+    stats = build_stats(calling, level, entries, off, rows)
+    return dict(stats=stats, rows=dict(rows), entries=entries, off=off, fell_back=fell_back)
 
 
 def describe_kit(entries, off):

@@ -15,11 +15,27 @@ from collections import Counter
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "balance"))
 import boss  # noqa: E402
 import model  # noqa: E402
+import multi  # noqa: E402
 import scenarios  # noqa: E402
 
 
 def swing(mob: dict) -> float:
     return (mob["dmin"] + mob["dmax"]) / 2
+
+
+def totals(calling: str, n: int, rows: dict, fights: int, rng: random.Random, level: int = 30) -> tuple:
+    """(damage dealt, health lost, fight time) summed over `fights` fights of `calling` in greens
+    and the build `rows` against `n` normals on level."""
+    cls, mob = multi.fighter(calling, n), model.mob_stats(level)
+    ch = model.character(calling, level, "green", rows)
+    dealt = lost = spent = 0.0
+    for _ in range(fights):
+        sim = cls(calling, level, ch["stats"], ch["rows"], rng, {}, mob=mob)
+        r = sim.fight()
+        dealt += sum(sim.dmg.values())
+        lost += 1 - r["health_left"]
+        spent += r["time"]
+    return dealt, lost, spent
 
 
 class BalanceModel(unittest.TestCase):
@@ -58,9 +74,55 @@ class BalanceModel(unittest.TestCase):
         for calling in model.CALLINGS:
             with self.subTest(calling=calling):
                 self.assertEqual(model.calling_level(calling, 35), model.calling_level(calling, 30))
+                self.assertEqual(model.open_rows(calling, 35), model.open_rows(calling, 30))
                 at_30, at_35 = model.character(calling, 30, "green"), model.character(calling, 35, "green")
-                self.assertEqual(at_35["talents"], at_30["talents"])
+                self.assertEqual(at_35["rows"], at_30["rows"])
                 self.assertGreater(at_35["stats"].max_hp, at_30["stats"].max_hp)
+
+    def test_rows_open_at_the_calling_level(self):
+        for calling in model.CALLINGS:
+            for level in (10, 20, 30):
+                with self.subTest(calling=calling, level=level):
+                    rows = scenarios.pick_build(calling, level, 2)
+                    real = model.calling_level(calling, level)
+                    want = [r["key"] for r in model.talent_rows(calling) if r["level"] <= real]
+                    self.assertEqual(list(rows), want)
+                    for r in model.talent_rows(calling):
+                        if r["key"] in rows:
+                            self.assertIn(rows[r["key"]], [c["key"] for c in r["choices"]])
+        # The Tier 0 rules measure the bare kit.
+        for level in (2, 5, 9):
+            self.assertEqual(scenarios.pick_build("basic_warrior", level, 2), {})
+
+    def test_a_set_choice_fights_with_its_own_spell(self):
+        # Practiced Strike costs 25 energy, Sinister Strike 35.
+        practiced = totals("cutthroat", 1, {"sinister_strike": "practiced_strike"}, 50, random.Random(1))
+        plain = totals("cutthroat", 1, {}, 50, random.Random(1))
+        self.assertGreater(practiced[0] / practiced[2], plain[0] / plain[2])
+
+    def test_choose_breaks_ties_by_health_then_sheet_order(self):
+        # A 2% lead wins outright, whatever the health left.
+        self.assertEqual(scenarios.choose([("a", 100.0, 0.9), ("b", 102.0, 0.1), ("c", 90.0, 1.0)]), "b")
+        # Within 1% the most health left wins.
+        self.assertEqual(scenarios.choose([("a", 100.5, 0.3), ("b", 100.0, 0.6), ("c", 80.0, 0.9)]), "b")
+        # Equal DPS and health: the first in the sheet.
+        self.assertEqual(scenarios.choose([("a", 100.0, 0.5), ("b", 100.0, 0.5), ("c", 99.5, 0.4)]), "a")
+
+    def test_every_tier1_choice_changes_the_fight_or_is_ignored(self):
+        for calling in model.CALLINGS:
+            plain = totals(calling, 2, {}, 30, random.Random(30))
+            for row in model.talent_rows(calling):
+                for c in row["choices"]:
+                    if (calling, c["key"]) in model.IGNORED:
+                        continue
+                    with self.subTest(calling=calling, choice=c["key"]):
+                        self.assertNotEqual(totals(calling, 2, {row["key"]: c["key"]}, 30, random.Random(30)), plain)
+        choices = {(calling, c["key"]) for calling in model.CALLINGS for row in model.talent_rows(calling)
+                   for c in row["choices"]}
+        for key, why in model.IGNORED.items():
+            with self.subTest(ignored=key):
+                self.assertIn(key, choices)
+                self.assertTrue(why)
 
     def test_kits_fill_every_slot(self):
         for calling in model.CALLINGS:
@@ -81,7 +143,7 @@ class BalanceModel(unittest.TestCase):
             with self.subTest(boss=b["name"]):
                 cls, mob = boss.fight_class("vanguard", b)
                 ch = model.character("vanguard", 30, "blue")
-                result = cls("vanguard", 30, ch["stats"], ch["talents"], random.Random(1), {}, mob=mob).fight()
+                result = cls("vanguard", 30, ch["stats"], ch["rows"], random.Random(1), {}, mob=mob).fight()
                 self.assertIn(result["won"], (True, False))
                 self.assertIsInstance(b["unmodelled"], list)
         # The Shadow of Morganth's Terrify is a fear: listed, not raised.

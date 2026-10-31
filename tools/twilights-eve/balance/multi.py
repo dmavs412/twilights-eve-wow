@@ -108,17 +108,11 @@ class VanguardN(Multi, model.Vanguard):
         keep, self.tgt = self.tgt, i
         if self.t < self.sop_until:
             self.hit_mob(12 + 1.2 * self.L, "penitent_thorns", physical=False)
-        ir = self.T.get("iron_retribution", 0)
-        if ir:
-            self.hit_mob(self.block_value() * ir, "iron_retribution", physical=False)
         self.tgt = keep
-        ss = self.T.get("shield_specialization", 0)
-        if ss and self.rng.random() * 100 < 20 * ss:
-            self.power = min(self.power + 2, 100)
 
 
 class CutthroatN(Multi, model.Cutthroat):
-    PER_TARGET = dict(rupture=None, garrote=None, bleeds=[])
+    PER_TARGET = dict(rupture=None, garrote=None)
 
 
 class InitiateN(Multi, model.Initiate):
@@ -126,12 +120,12 @@ class InitiateN(Multi, model.Initiate):
 
 
 class RangerN(Multi, model.Ranger):
-    PER_TARGET = dict(barbed=None, slow_until=-1, sundered=0, sundered_until=-1)
+    PER_TARGET = dict(barbed=None, slow_until=-1)
 
 
 class AcolyteN(Multi, model.Acolyte):
     AOE = {"miasma": 0}
-    PER_TARGET = dict(blight=None, virulence=False)
+    PER_TARGET = dict(blight=None)
 
 
 CLASSES = dict(basic_warrior=BasicWarriorN, vanguard=VanguardN, cutthroat=CutthroatN, initiate=InitiateN,
