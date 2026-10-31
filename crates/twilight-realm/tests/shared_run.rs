@@ -314,3 +314,109 @@ fn the_phase_is_told_when_its_head_count_changes() {
         "the one outside is not in the Phase"
     );
 }
+
+/// The nave's level 8 Corrupted Brother.
+const NAVE_BROTHER: u64 = HIGHGUID_UNIT << 48 | 96003 << 24 | 780009;
+
+/// The Champion (`common::CHAMPION_CALLINGS`) at Tier 0, "test_plain_champion": its Tier XP Rate
+/// of 1 leaves a kill's XP as the group split truncated it.
+fn plain_champion() -> String {
+    CHAMPION_CALLINGS
+        .replacen(
+            "key = \"test_champion\"",
+            "key = \"test_plain_champion\"",
+            1,
+        )
+        .replacen("tier = 3", "tier = 0", 1)
+}
+
+/// `n` level 40 plain Champions in the yard.
+fn champions(n: usize) -> Party {
+    let realm = realm().with_callings(&plain_champion());
+    let mut party = Party::edited(
+        realm,
+        &vec![40; n],
+        START_ELWYNN,
+        Box::new(AbbeyFloor),
+        |_, blob| {
+            blob.replace(
+                "calling = \"basic_warrior\"",
+                "calling = \"test_plain_champion\"",
+            )
+        },
+    );
+    for i in 0..n {
+        go(&mut party, i, OUTSIDE);
+    }
+    party.run(1.0);
+    party
+}
+
+/// Where player `i`'s client was told the nave's brother stands.
+fn brother_at(party: &Party, i: usize) -> [f32; 3] {
+    unit_creates(party.seen(i))
+        .into_iter()
+        .find(|&(g, _, _)| g == NAVE_BROTHER)
+        .map(|(_, _, at)| at)
+        .expect("the nave's brother")
+}
+
+/// Puts player `i` a step east of `at`, facing it.
+fn beside(party: &mut Party, i: usize, at: [f32; 3]) {
+    party.cmd(
+        i,
+        RealmCommand::DevTeleport {
+            x: at[0] + 1.0,
+            y: at[1],
+            facing: Some(std::f32::consts::PI),
+        },
+    );
+}
+
+/// Player `i` fights the nave's brother until it dies.
+fn kill_the_brother(party: &mut Party, i: usize) {
+    party.cmd(i, RealmCommand::AttackSwing { guid: NAVE_BROTHER });
+    let dead = party.run_until(60.0, |got| died(&got[i], NAVE_BROTHER));
+    assert!(dead, "the brother dies");
+    party.run(0.1);
+}
+
+/// The XP player `i` was shown for killing `victim`, before rested XP.
+fn kill_xp(party: &Party, i: usize, victim: u64) -> Option<u32> {
+    party.seen(i).iter().find_map(|e| match e {
+        SessionEvent::XpGain(x) if x.kill && x.victim == victim => Some(x.base),
+        _ => None,
+    })
+}
+
+#[test]
+fn two_inside_each_earn_three_quarters_of_a_solo_kill() {
+    let mut alone = champions(1);
+    go(&mut alone, 0, INSIDE);
+    alone.run(0.5);
+    let at = brother_at(&alone, 0);
+    beside(&mut alone, 0, at);
+    alone.run(0.1);
+    kill_the_brother(&mut alone, 0);
+    let solo = kill_xp(&alone, 0, NAVE_BROTHER).expect("the solo kill pays");
+
+    // The brother is idle when the second comes in, so it is scaled for two.
+    let mut pair = champions(2);
+    go(&mut pair, 0, INSIDE);
+    go(&mut pair, 1, INSIDE);
+    pair.run(0.5);
+    let at = brother_at(&pair, 0);
+    beside(&mut pair, 0, at);
+    beside(&mut pair, 1, at);
+    pair.run(0.1);
+    kill_the_brother(&mut pair, 0);
+    // 1.5 times the kill, halved; the split truncates.
+    let share = f64::from(solo) * 1.5 / 2.0;
+    for i in 0..2 {
+        let got = kill_xp(&pair, i, NAVE_BROTHER).expect("the shared kill pays");
+        assert!(
+            (f64::from(got) - share).abs() <= 1.0,
+            "player {i} earned {got}, a solo kill {solo}"
+        );
+    }
+}

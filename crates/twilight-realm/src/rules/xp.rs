@@ -69,14 +69,14 @@ pub fn kill_xp(mob: u8, elite: Elite) -> u32 {
     round_half_even(num, den) as u32
 }
 
-/// The XP each of `count` credited players earns for a kill: the kill's XP times the group rate,
-/// shared equally. Alone, exactly [`kill_xp`].
-pub fn party_kill_xp(count: usize, mob: u8, elite: Elite) -> u32 {
+/// The XP each of `count` credited players earns for a kill: the kill's XP times the creature's
+/// `health_mul` (ADR 0029) and the group rate, shared equally. Alone at 1.0, exactly [`kill_xp`].
+pub fn party_kill_xp(count: usize, mob: u8, elite: Elite, health_mul: f64) -> u32 {
     let xp = kill_xp(mob, elite);
     if count < 2 {
-        return xp;
+        return (f64::from(xp) * health_mul).round() as u32;
     }
-    (f64::from(xp) * group_rate(count) / count as f64) as u32
+    (f64::from(xp) * health_mul * group_rate(count) / count as f64) as u32
 }
 
 /// The group's XP bonus (`MaNGOS::XP::xp_in_group_rate`, not a raid).
@@ -118,18 +118,29 @@ mod tests {
 
     #[test]
     fn alone_a_kill_pays_its_own_xp() {
-        assert_eq!(party_kill_xp(1, 10, Elite::No), kill_xp(10, Elite::No));
+        assert_eq!(party_kill_xp(1, 10, Elite::No, 1.0), kill_xp(10, Elite::No));
     }
 
     #[test]
     fn a_group_splits_the_kill_equally() {
         let solo = kill_xp(10, Elite::No);
         // Two players: no bonus, half each.
-        assert_eq!(party_kill_xp(2, 10, Elite::No), solo / 2);
+        assert_eq!(party_kill_xp(2, 10, Elite::No, 1.0), solo / 2);
         // Five: 1.4 times, a fifth each.
         assert_eq!(
-            party_kill_xp(5, 10, Elite::No),
+            party_kill_xp(5, 10, Elite::No, 1.0),
             (f64::from(solo) * 1.4) as u32 / 5
         );
+    }
+
+    #[test]
+    fn the_kill_grows_with_the_creatures_health_before_the_split() {
+        // `kill_xp(15, Elite::No)` is 120.
+        assert_eq!(party_kill_xp(1, 15, Elite::No, 1.0), 120);
+        assert_eq!(party_kill_xp(2, 15, Elite::No, 1.5), 90);
+        // 120 × 3.0 × 1.4 / 5 = 100.8, truncated.
+        assert_eq!(party_kill_xp(5, 15, Elite::No, 3.0), 100);
+        // A dungeon elite's 300, × 1.5, halved.
+        assert_eq!(party_kill_xp(2, 15, Elite::Dungeon, 1.5), 225);
     }
 }

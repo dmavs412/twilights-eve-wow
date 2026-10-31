@@ -101,6 +101,9 @@ pub(crate) struct Kill {
     /// The corpse's money, rolled once for everyone; 0 for a kill made alone, whose loot rolls
     /// its own.
     pub(crate) money: u32,
+    /// The dying creature's health multiplier at its Head Count (ADR 0029): its XP and money
+    /// grow by it before the split; 1.0 outside a Phased Dungeon.
+    pub(crate) health_mul: f32,
     pub(crate) position: [f32; 3],
     /// A Bounty Hunter's tag: its kill pays Blood Coin and raises its owner's Bounty Rank.
     pub(crate) bounty: Option<crate::mobs::Bounty>,
@@ -1637,9 +1640,10 @@ impl InWorld {
         events.push(values(mob.guid, &pairs));
 
         let victim = mob.guid;
+        let health_mul = mob.health_mul();
         let money = if self.lent {
             let (lo, hi) = crate::rules::loot::money(mob.level());
-            rng.urand(lo, hi)
+            (rng.urand(lo, hi) as f32 * health_mul).round() as u32
         } else {
             0
         };
@@ -1656,6 +1660,7 @@ impl InWorld {
             key,
             rolls,
             money,
+            health_mul,
             position: mob.position,
             bounty: mob.bounty,
         };
@@ -1760,7 +1765,12 @@ impl InWorld {
         self.notorious(c, gain);
         let lootable = self.looting.drop(k.mob, loot);
         events.push(values(k.mob, &[looting::lootable_pair(lootable)]));
-        let base = xp::party_kill_xp(credit.levels.len(), k.level, k.elite);
+        let base = xp::party_kill_xp(
+            credit.levels.len(),
+            k.level,
+            k.elite,
+            f64::from(k.health_mul),
+        );
         let gained = self.scaled_xp(c, base);
         if gained > 0 {
             // Rested XP doubles the kill, multiplied XP and all, while the pool lasts.
