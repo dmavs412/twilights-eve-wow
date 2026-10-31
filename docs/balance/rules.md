@@ -8,11 +8,20 @@ the model's readings, not play; play notes override them.
 ## The character
 
 - Levels 1 to 9 are Tier 0: the Basic Warrior in its starting outfit and the best white (Common)
-  rows it can wear at its level. No talents (there are none).
+  rows it can wear at its level. Its four Talent Rows stay empty, so the Tier 0 rules measure
+  the bare kit (#510).
 - Levels 10 to 30 are the five Tier 1 Callings: Cutthroat, Ranger, Initiate, Vanguard, Acolyte.
   Each fights with every Talent Row its level has opened set to the choice that adds the most
-  damage (ADR 0028, amended 2026-10-29). Rows open by the real level, not the Power Level. The old trees and their points are gone; nothing makes
-  up their passive power.
+  damage (ADR 0028, amended 2026-10-29). Rows open by the real level, not the Power Level. The
+  old trees and their points are gone; nothing makes up their passive power.
+- The model picks each Calling's build once per level (#510). It takes the open rows in level
+  order and fights each row's three choices against 1 normal on level in greens, on one seed,
+  with the earlier rows already set. The highest DPS wins. Choices within 1% of the best DPS
+  tie, and a tie goes to the most health left, then to the first choice in the sheet. Every
+  cell at that level fights with that one build.
+- A choice counts as no change when the sim can't express it: a root, a movement slow, run
+  speed, a taunt, a range change, more targets than a pull holds, or a proc that needs movement.
+  The report lists those choices under "Ignored choices" with the reason.
 - "Greens" means the best Uncommon row the Calling can wear in every slot at its level, from
   `data/twilights-eve/gear.csv`. "Blues" means the best Rare row where one exists at that level,
   else the green.

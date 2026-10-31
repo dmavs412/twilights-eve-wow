@@ -93,3 +93,12 @@ its full tooltip on the panel too.
   when it sends `TalentRows`; the choice's view carries the finished text. 1.12's `$` tokens
   cannot name a cost, a cooldown or a realm-only effect, so the client's Spell.dbc text cannot
   carry these lines. The client DBC patch does not change.
+
+## Amended 2026-10-31: the balance model's builds
+
+Grilled on #510. The balance model sets only the Tier 1 Callings' rows. The Basic Warrior's
+four rows stay empty in the model, so the Tier 0 rules measure the bare kit. For each Tier 1
+Calling and level, the model picks one build row by row and fights every cell at that level
+with it. A set choice fights with its own built spell, and the model reads its numbers from
+`server_spells.json`. The pick rule and the list of mechanics the model leaves out are in
+`docs/balance/rules.md`, "The character". Tickets #524 to #530.
