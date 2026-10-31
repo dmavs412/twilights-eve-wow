@@ -40,6 +40,9 @@ const SPELL_FAILED_TARGET_DUELING: u8 = 0x68;
 #[serde(deny_unknown_fields)]
 pub(crate) struct Content {
     pub(crate) challenge_spell: u32,
+    /// `challenge_spell`'s Spell.dbc name; only `tests/content_spell_ids.rs` reads it.
+    #[allow(dead_code)]
+    pub(crate) challenge_spell_name: String,
     pub(crate) countdown_secs: u32,
     pub(crate) request_range_yd: f32,
     pub(crate) hostile_faction: u32,

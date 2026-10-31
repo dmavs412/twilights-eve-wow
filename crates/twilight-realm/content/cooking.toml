@@ -8,6 +8,8 @@
 #                    25695 "Food", whose description is empty, so the tooltip shows only the row's
 #   buff_spell       the aura the client shows while Well Fed: stock 19705 "Well Fed" (its text is
 #                    stock until the Well Fed effect list adds real spells)
+#   use_spell_name, buff_spell_name   the Spell.dbc names of those two ids, which
+#                    tests/content_spell_ids.rs checks
 #   minutes, legendary_minutes
 # [tier]: bands (1, 10, 20, 30); a tier recipe's meal quality is tier + 1 (white to purple).
 # [[effect]]: the 11 Well Fed effects. family combat (a stat), ooc (off in combat) or gather;
@@ -144,7 +146,9 @@ item = [
 
 [eat]
 use_spell = 25695
+use_spell_name = "Food"
 buff_spell = 19705
+buff_spell_name = "Well Fed"
 minutes = 30
 legendary_minutes = 60
 

@@ -4,6 +4,7 @@
 # The client's duel spell: a challenge is its `CMSG_CAST_SPELL` at a player (`SPELL_EFFECT_DUEL`,
 # Spell.dbc 7266 "Duel").
 challenge_spell = 7266
+challenge_spell_name = "Duel"
 
 # The countdown between the accept and the fight (`SMSG_DUEL_COUNTDOWN`), in seconds.
 countdown_secs = 3

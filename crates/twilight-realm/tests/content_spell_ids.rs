@@ -19,13 +19,21 @@ const ID_KEYS: &[(&str, &str, Ids)] = &[
     ("proc_spell_id", "proc_spell_name", Ids::One),
     ("judgement_spell_id", "judgement_spell_name", Ids::One),
     ("use_spell", "use_spell_name", Ids::One),
+    ("buff_spell", "buff_spell_name", Ids::One),
+    ("challenge_spell", "challenge_spell_name", Ids::One),
+    ("client_spell", "client_spell_name", Ids::One),
     // Every rank's aura is the one spell's name.
     ("aura_spell_ids", "aura_spell_name", Ids::SameName),
     ("equip_spells", "equip_spell_names", Ids::Parallel),
 ];
 
-/// Keys with "spell" in them that hold no spell id.
-const NOT_IDS: &[&str] = &["client_spellmods"];
+/// Keys with "spell" in them that hold no spell id: `spells` lists Creature Spell keys, and
+/// `spell_power` is a stat.
+const NOT_IDS: &[&str] = &["client_spellmods", "spells", "spell_power"];
+
+/// Files whose rows are spells of their own (ADR 0011): a row's `spell_id` goes by its `name`,
+/// which the build script writes into the client row.
+const OWN_SPELLS: &[&str] = &["creature_spells.toml"];
 
 #[derive(Clone, Copy)]
 enum Ids {
@@ -55,8 +63,9 @@ fn every_content_spell_id_is_the_spell_its_name_says() {
 
     let named = content_spell_ids();
     let ids: BTreeSet<u32> = named.iter().map(|n| n.id).collect();
-    // Callings' skills and procs, the Hearthstone, food and drink, equip spells.
-    assert!(ids.len() > 170, "only {} ids found", ids.len());
+    // Creature Spells, the Hearthstone, food and drink, equip spells; the Callings' skills come
+    // from master.csv, which writes both sides, so they are not here.
+    assert!(ids.len() > 80, "only {} ids found", ids.len());
 
     let wrong: Vec<String> = named.iter().filter_map(|n| mismatch(n, &spells)).collect();
     assert!(
@@ -141,6 +150,10 @@ fn pairs(t: &toml::Table, at: &str, out: &mut Vec<Named>) {
         }
         let Some(&(_, name_key, layout)) = ID_KEYS.iter().find(|(id, _, _)| id == key) else {
             panic!("{at}: `{key}` is new; teach this test whether it holds spell ids");
+        };
+        let name_key = match key.as_str() {
+            "spell_id" if OWN_SPELLS.iter().any(|f| at.starts_with(f)) => "name",
+            _ => name_key,
         };
         let name = t
             .get(name_key)
