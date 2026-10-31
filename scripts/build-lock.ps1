@@ -1,6 +1,6 @@
 # Claude Code hook: one cargo command at a time across sessions (#191, spec #190).
 # PreToolUse runs -Mode acquire, PostToolUse/PostToolUseFailure run -Mode release.
-# Reads the hook JSON on stdin; acts only on Bash/PowerShell commands that mention cargo.
+# Reads the hook JSON on stdin; acts only on Bash/PowerShell commands that run cargo.
 #
 # A command that goes to the background (`run_in_background`, or moved there at the tool's
 # 10-minute cap) returns while cargo still compiles. Its release keeps the lock, marked
@@ -12,7 +12,10 @@ $StaleHours = 2
 
 $hook = [Console]::In.ReadToEnd() | ConvertFrom-Json
 $command = "$($hook.tool_input.command)"
-if ($command -notmatch '\bcargo\b') { exit 0 }
+# Cargo as the command run: at a line's start or after `;`, `&`, `|`, `(` or `{`, behind any
+# `NAME=value`, `timeout ...` or `cmd /c` prefix. A grep, a path or a message naming cargo passes.
+$runsCargo = '(?m)(^|[;&|({])\s*((\w+=\S*|g?timeout(\s+\S+){1,4}|cmd(\.exe)?\s+/c\s+["'']?|(ba)?sh\s+-c\s+["'']?)\s*)*cargo(\.exe)?\b'
+if ($command -notmatch $runsCargo) { exit 0 }
 
 $root = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { "$PSScriptRoot\.." }
 $targetDir = Join-Path $root 'target'
