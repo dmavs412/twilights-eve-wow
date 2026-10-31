@@ -53,3 +53,7 @@ half a point; weapon damage and armour are free), and the tool refuses a row ove
 means unchecked, as on the vanilla-seeded rows. The budget per Loot Source and slot is spec #272's
 table. Northshire's loot is hand-authored under it; the vanilla-seeded rows of pool level 12 and
 under no longer drop.
+
+**Amended 2026-10-31 (#464): `display_id` is the model, `icon` the icon.** A new `icon` column
+names a row's bag icon apart from its `display_id`, and the build makes a synthetic display for
+the pair. ADR 0030.
