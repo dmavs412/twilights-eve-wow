@@ -3,7 +3,10 @@
     "defaultMode": "dontAsk",
     "allow": [
       "Read", "Edit", "Write", "Grep", "Glob",
-      "Bash(cargo:*)",
+      "Bash(cargo check:*)", "Bash(cargo test:*)", "Bash(cargo fmt:*)", "Bash(cargo clippy:*)",
+      "Bash(cargo tree:*)", "Bash(cargo metadata:*)",
+      "Bash(cargo run -q -p twilight-realm --example import_*)",
+      "Bash(cargo run -p twilight-realm --example import_*)",
       "Bash(git:*)",
       "Bash(gh issue:*)",
       "Bash(python3.15:*)",
@@ -15,8 +18,7 @@
     ],
     "deny": [
       "WebSearch", "WebFetch", "PowerShell",
-      "Bash(cargo build:*)", "Bash(cargo run:*)", "Bash(cargo clean:*)", "Bash(cargo install:*)",
-      "Bash(*run.ps1*)",
+      "Bash(cargo build:*)", "Bash(cargo clean:*)", "Bash(cargo install:*)",
       "Bash(git push:*)", "Bash(git reset:*)", "Bash(git rebase:*)", "Bash(git checkout:*)",
       "Bash(git switch:*)", "Bash(git stash:*)", "Bash(git branch:*)", "Bash(git worktree:*)",
       "Bash(git clean:*)", "Bash(git merge:*)",
@@ -25,6 +27,7 @@
     ]
   },
   "env": {
-    "TWILIGHT_UNATTENDED": "1"
+    "TWILIGHT_UNATTENDED": "1",
+    "WOW_DATA": "C:\\Users\\davis\\wow-data\\Data"
   }
 }

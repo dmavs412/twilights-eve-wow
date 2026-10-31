@@ -1,7 +1,10 @@
 # Unattended runs
 
 `scripts/overnight.ps1` works through open issues labelled `ready-for-agent` with no one at the
-keyboard: every one labelled `bug` first, at any age, oldest first, then features oldest first. Each ticket gets a fresh `claude -p` session on Opus with
+keyboard: every one labelled `bug` first, at any age, oldest first, then features oldest first.
+Before each ticket the script reads its "Blocked by" sentences, any "Blocked by" heading and
+GitHub's dependency links; while one names an open issue, including one that blocked earlier the
+same night, the ticket is skipped and keeps its label for the next night. Each ticket gets a fresh `claude -p` session on Opus with
 `scripts/overnight-settings.json` layered over the shared settings. These rules apply to that
 session on top of `CLAUDE.md`. Nobody will answer a question; a session that asks one has
 failed.
@@ -22,18 +25,30 @@ failed.
   and data patch to `play/<short-commit>/` (gitignored), keeping the newest 3 and never deleting
   one whose exe is running. It runs when Davis asks, and once at the end of a night that landed
   a commit. Davis plays only from `play/`.
+- **Dirty tree**: a tree with uncommitted work at the start is stashed (untracked files too) as
+  `overnight <stamp>` and applied again once the night ends. If it no longer applies over the
+  night's commits, the stash stays and the morning log's first line says so.
+- **Push**: once the tickets are done, the script pushes `main`. Every commit on it passed its
+  gate, because a failed gate is rolled back.
+- **Logs**: `.claude/overnight/` and `.claude/smoke/` folders older than 14 days are deleted at
+  the start of a run.
 - **Morning log**: overnight posts one comment per night on the pinned "Overnight log" issue:
   tickets done, assumptions taken, the `play/` copy published, and failures. Its format:
-  `## Night of <yyyy-MM-dd_HHmm>`, then `### Tickets` (the summary table: issue, title,
-  result, commits, cost), `### Assumptions` (every `Assumed:` line in the night's commits),
+  `## Night of <yyyy-MM-dd_HHmm>` (followed by the kept-stash line when there is one), then
+  `### Tickets` (the summary table: issue, title, result, commits, cost; a skipped ticket names
+  its open blockers), `### Assumptions` (every `Assumed:` line in the night's commits),
+  `### Specs closed, unplayed` (each spec whose last ticket closed tonight),
   `### Play copy` (`play/<short-commit>` or none), `### Smoke` (`scripts/smoke.ps1` against
   that copy: `- clean, <n> spells`, one `- <calling> <spell> (<id>): <error>` per failed cast with
   its bug issue, a `- timed out at Calling <X>` line, or `- not run` with no copy) and
-  `### Failures` (blocked or rolled-back tickets, a failed publish), each `- none` when empty.
+  `### Failures` (blocked or rolled-back tickets, a failed publish or push, a kept stash), each
+  `- none` when empty.
   The smoke is report only: it never resets or blocks a commit. The script holds the build lock all
   night and names itself in `CLAUDE_BUILD_LOCK_HOLDER`, so the sessions it starts pass the hook.
 - **`unplayed`**: a spec closes when its tickets land and gets `unplayed`; Davis's play note
-  removes it. No feature waits on play. Bugs reference the spec they break.
+  removes it. When the script closes a ticket, it closes the ticket's spec (its GitHub parent, or
+  the `(#N)` that ends its title) once no ticket of it is open, adds `unplayed`, and removes the
+  workflow labels. No feature waits on play. Bugs reference the spec they break.
 
 ## The ticket is the spec
 
@@ -58,7 +73,9 @@ failed.
 - After every edit: `cargo check -q -p <crate> 2>&1 | tail -40`. When the realm, `data/` or
   `tools/` changed: `cargo test -q -p twilight-realm 2>&1 | grep -E "FAILED|panicked|test result"`,
   which passes when every `test result:` line says `ok` and no line says `FAILED`. Don't add
-  `${PIPESTATUS[0]}`: the night permission check denies it.
+  `${PIPESTATUS[0]}`: the night permission check denies it. `WOW_DATA` is already set for the
+  night, so the data tests run; never put `WOW_DATA=...` in front of a command, because the
+  prefix defeats the permission match.
   Before each commit, `rustfmt --edition 2021` the `.rs` files you touched; the pre-commit hook
   refuses unformatted ones.
 - When a commit touches `crates/twilight-realm/content/`, also run
@@ -86,11 +103,13 @@ failed.
 
 - Done: `gh issue close -R dmavs412/twilights-eve-wow <n> --comment "..."` with what landed,
   the commit shas, and the assumptions, then
-  `gh issue edit -R dmavs412/twilights-eve-wow <n> --remove-label ready-for-agent`.
+  `gh issue edit -R dmavs412/twilights-eve-wow <n> --remove-label ready-for-agent`. The script
+  closes the spec when yours was its last ticket; leave the spec alone.
 - Cannot finish, whether the gate will not pass, the ticket is mislabelled, or it needs a build
   or a game run: commit nothing partial, run
   `gh issue edit -R dmavs412/twilights-eve-wow <n> --add-label blocked`, comment with the
   error or the question, and stop. The script discards uncommitted changes.
 - Builds, game runs, `run.ps1`, pushes, branches, worktrees, agents and the web are denied for
-  this session. A denial is a stop sign, not a puzzle: do not look for another way to do the
-  denied thing.
+  this session. The one `cargo run` allowed is a spawn importer:
+  `cargo run -q -p twilight-realm --example import_<name>`. A denial is a stop sign, not a
+  puzzle: do not look for another way to do the denied thing.

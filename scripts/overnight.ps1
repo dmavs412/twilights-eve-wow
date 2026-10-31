@@ -2,10 +2,13 @@
 .SYNOPSIS
 Work through GitHub issues labelled ready-for-agent with no one at the keyboard.
 
-One fresh `claude -p` session per ticket, Opus, dollar-capped. After each session the script
-re-runs the gate (cargo check on every crate the commits touched, realm tests when the realm or
-data changed) and resets main to the pre-ticket commit if it fails. Rules the session follows:
-docs/agents/unattended.md. Logs: .claude/overnight/<timestamp>/.
+One fresh `claude -p` session per ticket, Opus, dollar-capped. A ticket whose "Blocked by" names
+an open issue is skipped. After each session the script re-runs the gate (cargo check on every
+crate the commits touched, realm tests when the realm or data changed) and resets main to the
+pre-ticket commit if it fails. A spec whose last ticket closes is closed with `unplayed`. A dirty
+tree is stashed for the night and put back at the end; main is pushed once the tickets are done.
+Rules the session follows: docs/agents/unattended.md. Logs: .claude/overnight/<timestamp>/, kept
+14 days.
 
 .EXAMPLE
 .\scripts\overnight.ps1                   # every open ready-for-agent issue, oldest first
@@ -103,6 +106,49 @@ function Invoke-Gate([string]$Before, [string]$After) {
     return @{ ok = $true; what = ($ran -join "; "); out = "" }
 }
 
+$WorkflowLabels = @("ready-for-agent", "blocked", "needs-triage", "needs-info", $Label)
+
+# A closed issue keeps no workflow label (docs/agents/triage-labels.md).
+function Remove-WorkflowLabels([int]$n) {
+    $have = @(((gh issue view -R $Repo $n --json labels) -join "`n" | ConvertFrom-Json).labels | ForEach-Object { $_.name })
+    $drop = @($have | Where-Object { $WorkflowLabels -contains $_ } | Sort-Object -Unique)
+    if ($drop.Count) { gh issue edit -R $Repo $n --remove-label ($drop -join ",") | Out-Null }
+}
+
+# The issues a ticket waits for: each "Blocked by" sentence, the list under a "Blocked by"
+# heading, and GitHub's own dependency links.
+function Get-Blockers([int]$n) {
+    $body = (gh issue view -R $Repo $n --json body --jq .body) -join "`n"
+    $text = @([regex]::Matches($body, '(?i)blocked by:?([^.\n]*)') | ForEach-Object { $_.Groups[1].Value })
+    $heading = [regex]::Match($body, '(?ims)^#+\s*blocked by\s*$(.*?)(?=^#|\z)')
+    if ($heading.Success) { $text += $heading.Groups[1].Value }
+    $nums = @($text | ForEach-Object { [regex]::Matches($_, '#(\d+)') | ForEach-Object { [int]$_.Groups[1].Value } })
+    $nums += @(gh api "repos/$Repo/issues/$n/dependencies/blocked_by" --jq '.[].number' 2>$null | ForEach-Object { [int]$_ })
+    return @($nums | Where-Object { $_ -ne $n } | Sort-Object -Unique)
+}
+
+# A spec closes with `unplayed` once its last ticket closes (CLAUDE.md). The spec is the ticket's
+# GitHub parent, or else the "(#N)" that ends its title. Returns the spec's number, or 0.
+function Close-SpecIfDone([int]$n, [string]$title) {
+    # No spaces or double quotes in the query: PowerShell 5.1 mangles both on the way to gh.
+    $q = 'query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){issue(number:$n){parent{number}}}}'
+    $res = (gh api graphql -f query=$q -F o=dmavs412 -F r=twilights-eve-wow -F n=$n) -join "`n" | ConvertFrom-Json
+    $spec = 0
+    if ($res.data.repository.issue.parent) { $spec = [int]$res.data.repository.issue.parent.number }
+    elseif ($title -match '\(#(\d+)\)\s*$') { $spec = [int]$Matches[1] }
+    if (-not $spec) { return 0 }
+    $s = (gh issue view -R $Repo $spec --json state,title) -join "`n" | ConvertFrom-Json
+    if ($s.state -ne "OPEN" -or $s.title -eq "Overnight log") { return 0 }
+    $subs = @((gh api "repos/$Repo/issues/$spec/sub_issues" --jq '.[].state' 2>$null) | Where-Object { $_ -eq "open" })
+    $open = @(((gh issue list -R $Repo --state open --limit 200 --json number,title) -join "`n" | ConvertFrom-Json) |
+        Where-Object { $_.number -ne $spec -and $_.title -match "\(#$spec\)" })
+    if ($subs.Count -or $open.Count) { return 0 }
+    Remove-WorkflowLabels $spec
+    gh issue edit -R $Repo $spec --add-label unplayed | Out-Null
+    gh issue close -R $Repo $spec --comment "Every ticket has landed, the last one #$n. Closed with ``unplayed`` by the overnight run; your play note removes the label." | Out-Null
+    return $spec
+}
+
 function Set-Blocked([int]$n, [string]$why) {
     $tmp = Join-Path $script:LogDir "$n.blocked.md"
     $why | Set-Content -Path $tmp -Encoding utf8
@@ -115,7 +161,7 @@ function Set-Blocked([int]$n, [string]$why) {
 $claude = Find-Claude
 $branch = (git rev-parse --abbrev-ref HEAD).Trim()
 if ($branch -ne "main") { throw "on branch '$branch', not main" }
-if (@(git status --porcelain).Count -gt 0) { throw "working tree is not clean; commit or stash first" }
+$dirtyAtStart = @(git status --porcelain).Count -gt 0
 gh auth status 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "gh is not authenticated" }
 if (-not (Test-Trusted)) {
@@ -171,8 +217,33 @@ New-Item -ItemType Directory -Force (Split-Path $lock) | Out-Null
 function Set-Lock { @{ session = $env:CLAUDE_BUILD_LOCK_HOLDER; started = (Get-Date).ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress | Set-Content $lock -Encoding utf8 }
 Set-Lock
 
+# Someone's uncommitted work is set aside for the night and put back at the end, so it never
+# sits in a stash nobody pops.
+$stashName = $null
+if ($dirtyAtStart) {
+    $stashName = "overnight $stamp"
+    git stash push -u -q -m $stashName | Out-Null
+    if (@(git status --porcelain).Count -gt 0) { throw "could not stash the working tree" }
+    Write-Log "stashed the dirty tree as '$stashName'"
+}
+
+# Run folders are named by date; those older than 14 days go.
+$cutoff = (Get-Date).Date.AddDays(-14)
+foreach ($dir in @(".claude\overnight", ".claude\smoke")) {
+    Get-ChildItem (Join-Path $Root $dir) -Directory -ErrorAction SilentlyContinue | Where-Object {
+        $d = [datetime]::MinValue
+        $_.Name.Length -ge 10 -and $_.FullName -ne $script:LogDir -and
+            [datetime]::TryParseExact($_.Name.Substring(0, 10), 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture, 'None', [ref]$d) -and
+            $d -lt $cutoff
+    } | ForEach-Object {
+        Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Log "pruned $dir\$($_.Name)"
+    }
+}
+
 $startSha = (git rev-parse HEAD).Trim()
 $failures = @()
+$specsClosed = @()
 $settings = Join-Path $Root "scripts\overnight-settings.json"
 $rules = Join-Path $Root "docs\agents\unattended.md"
 
@@ -181,6 +252,15 @@ foreach ($t in $queue) {
     $n = $t.number
     $title = ($t.title -replace '"', "'")
     if ($stopTime -and (Get-Date) -ge $stopTime) { Write-Log "stop time $StopAt reached before #$n"; break }
+
+    # A blocker that blocked earlier tonight is open again, so its followers wait for the next night.
+    $waiting = @(Get-Blockers $n | Where-Object { (gh issue view -R $Repo $_ --json state --jq .state) -eq "OPEN" })
+    if ($waiting.Count) {
+        $names = ($waiting | ForEach-Object { "#$_" }) -join ", "
+        Write-Log "#${n}: skipped, blocked by $names"
+        Add-Content $summary ("| #{0} | {1} | skipped: blocked by {2} | | |" -f $n, $title, $names) -Encoding utf8
+        continue
+    }
 
     Write-Log "==== #$n $title"
     Set-Lock
@@ -257,7 +337,9 @@ foreach ($t in $queue) {
     if ($state -eq "OPEN") {
         gh issue close -R $Repo $n --comment "Closed by the overnight run. Commits $shas passed: $($gate.what)." | Out-Null
     }
-    gh issue edit -R $Repo $n --remove-label $Label | Out-Null
+    Remove-WorkflowLabels $n
+    $spec = Close-SpecIfDone $n $t.title
+    if ($spec) { $specsClosed += $spec; Write-Log "#${n} was the last ticket of spec #${spec}: closed, unplayed" }
     Write-Log "#${n}: done ($shas); gate passed: $($gate.what)"
     Add-Content $summary ("| #{0} | {1} | done | {2} | {3} |" -f $n, $title, $shas, $cost) -Encoding utf8
 }
@@ -265,6 +347,12 @@ foreach ($t in $queue) {
 # ---- morning report --------------------------------------------------------------------------
 Write-Log "==== finished"
 Remove-Item $lock -Force -ErrorAction SilentlyContinue
+
+# Main goes up once a night. Every commit on it passed its gate: a failed gate was rolled back.
+if ((git rev-parse HEAD).Trim() -ne $startSha) {
+    git push -q origin main 2>$null
+    if ($LASTEXITCODE -eq 0) { Write-Log "pushed main" } else { $failures += "git push origin main failed" }
+}
 
 $published = "none (no commit landed)"
 if ((git rev-parse HEAD).Trim() -ne $startSha) {
@@ -306,14 +394,39 @@ if ($published -like "play/*") {
     if (-not $smoke.Count) { $smoke = @("- clean, $($casts.Count) spells") }
 }
 
+# The tree stashed at the start goes back. If it no longer applies over tonight's commits, the
+# stash stays and the log's first line says so.
+$stashKept = $null
+if ($stashName) {
+    $entry = @(git stash list --format="%gd %s" | Where-Object { $_ -like "* $stashName" }) | Select-Object -First 1
+    $ref = ($entry -split ' ')[0]
+    git stash apply -q $ref 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        git stash drop -q $ref | Out-Null
+        Write-Log "put back the tree stashed at the start"
+    } else {
+        git reset --hard -q | Out-Null
+        git clean -fdq | Out-Null
+        $stashKept = $ref
+        $failures += "the stash '$stashName' did not apply; it is kept"
+        Write-Log "stash '$stashName' did not apply over tonight's commits; kept as $ref"
+    }
+}
+
 # One comment per night on the pinned "Overnight log" issue; format in docs/agents/unattended.md.
 $assumed = @(git log --format=%B "$startSha..HEAD" | Where-Object { $_ -match '^Assumed:' })
 # Built with `+=`, which flattens: a nested array inside `@(a, b, c)` stays one element, and
 # `-join` then prints it as `System.Object[]`.
-$lines = @("## Night of $stamp", "", "### Tickets")
+$lines = @("## Night of $stamp")
+if ($stashKept) {
+    $lines += "**Your uncommitted work is still stashed** as ``$stashName``: it did not apply over tonight's commits. Run ``git stash apply`` on it by hand."
+}
+$lines += @("", "### Tickets")
 $lines += @(Get-Content $summary)
 $lines += @("", "### Assumptions")
 $lines += $(if ($assumed.Count) { @($assumed | ForEach-Object { "- $_" }) } else { @("- none") })
+$lines += @("", "### Specs closed, unplayed")
+$lines += $(if ($specsClosed.Count) { @($specsClosed | ForEach-Object { "- #$_" }) } else { @("- none") })
 $lines += @("", "### Play copy", "- $published", "", "### Smoke")
 $lines += $smoke
 $lines += @("", "### Failures")
