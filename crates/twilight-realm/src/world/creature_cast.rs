@@ -86,6 +86,10 @@ impl InWorld {
             mob.spell_cooldowns
                 .push((spell.key.as_str(), clock::secs(cooldown)));
             let (guid, level) = (mob.guid, mob.level());
+            // Flat damage grows by its Head Count's damage multiplier, a shield by its health
+            // multiplier (ADR 0029).
+            let (damage_mul, health_mul) = (mob.damage_mul(), mob.health_mul());
+            let scaled = |amount: u32, mul: f32| (amount as f32 * mul).round() as u32;
             let victim = mob.cast_at.take();
             let target = if self_cast {
                 guid
@@ -169,7 +173,7 @@ impl InWorld {
                     spell_id: spell.spell_id,
                     at: mob.position,
                     radius,
-                    damage,
+                    damage: scaled(damage, damage_mul),
                     school: spell.school,
                     through_cover: false,
                     root_ms: 0,
@@ -181,7 +185,7 @@ impl InWorld {
                     spell_id: spell.spell_id,
                     at: mob.position,
                     radius,
-                    damage,
+                    damage: scaled(damage, damage_mul),
                     school: spell.school,
                     through_cover: true,
                     root_ms: 0,
@@ -214,7 +218,7 @@ impl InWorld {
                 let at = victim
                     .and_then(|v| mates.iter().find(|(g, _)| *g == v))
                     .map_or(me, |(_, at)| *at);
-                let damage = tick.at(level, 0);
+                let damage = scaled(tick.at(level, 0), damage_mul);
                 self.put_patch(
                     guid,
                     spell.spell_id,
@@ -230,6 +234,7 @@ impl InWorld {
                 duration_ms,
             } = spell.effect
             {
+                let amount = scaled(amount, health_mul);
                 self.mob_shield(guid, level, spell.spell_id, amount, duration_ms, events);
             } else if let CreatureEffect::Stance {
                 damage_dealt_pct,
@@ -251,10 +256,11 @@ impl InWorld {
                     level,
                     from: mob.position,
                     spell,
+                    damage_mul,
                 });
             } else {
                 let from = mob.position;
-                self.creature_spell_lands(guid, level, from, spell, events);
+                self.creature_spell_lands(guid, level, from, spell, damage_mul, events);
             }
             return true;
         }

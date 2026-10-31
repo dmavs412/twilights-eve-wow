@@ -106,9 +106,26 @@ impl Fight {
 
 /// One character per place, the first pulling the familiar, which `spell` it casts. `act` is
 /// called before every 0.1 s step with the party and the seconds into the fight.
-fn fight(
+fn fight(spell: &str, places: &[[f32; 3]], secs: f32, act: impl FnMut(&mut Party, f32)) -> Fight {
+    placed(spell, places, false, secs, act)
+}
+
+/// As [`fight`], with the others standing in their places before the first pulls the familiar:
+/// it is pulled at a Head Count of `places.len()` (ADR 0029).
+fn all_inside(
     spell: &str,
     places: &[[f32; 3]],
+    secs: f32,
+    act: impl FnMut(&mut Party, f32),
+) -> Fight {
+    placed(spell, places, true, secs, act)
+}
+
+/// [`fight`], the others placed before the pull when `before`, else after.
+fn placed(
+    spell: &str,
+    places: &[[f32; 3]],
+    before: bool,
     secs: f32,
     mut act: impl FnMut(&mut Party, f32),
 ) -> Fight {
@@ -121,7 +138,6 @@ fn fight(
     );
     let mut log = Vec::new();
     let mut at = 0.0;
-    party.go(0, places[0], 0.0);
     let step = |party: &mut Party, log: &mut Vec<Seen>, at: &mut f32| {
         for (player, events) in party.run(0.1).into_iter().enumerate() {
             log.extend(events.into_iter().map(|event| Seen {
@@ -132,11 +148,23 @@ fn fight(
         }
         *at += 0.1;
     };
+    let others = |party: &mut Party| {
+        for (i, &place) in places.iter().enumerate().skip(1) {
+            party.go(i, place, 0.0);
+        }
+    };
+    if before {
+        others(&mut party);
+        for _ in 0..2 {
+            step(&mut party, &mut log, &mut at);
+        }
+    }
+    party.go(0, places[0], 0.0);
     for _ in 0..2 {
         step(&mut party, &mut log, &mut at);
     }
-    for (i, &place) in places.iter().enumerate().skip(1) {
-        party.go(i, place, 0.0);
+    if !before {
+        others(&mut party);
     }
     let start = at;
     while at - start < secs {
@@ -315,6 +343,73 @@ fn an_absorb_shield_goes_up_on_the_caster_for_its_duration() {
         (down - up - 10.0).abs() < 0.3,
         "10 s of shield: {up} to {down}"
     );
+}
+
+#[test]
+fn a_ground_patch_ticks_harder_with_two_inside() {
+    let patch = creature_spell("test_ground_patch");
+    let f = all_inside("test_ground_patch", &[EXPOSED, NEAR], 12.0, |_, _| {});
+    let standing = f.hits(0, patch);
+    assert!(standing.len() >= 5, "{standing:?}");
+    // 5 a tick for one, x1.1 for a Head Count of 2 (ADR 0029): 5.5, rounded.
+    assert!(standing.iter().all(|&(_, d)| d == 6), "{standing:?}");
+}
+
+#[test]
+fn an_absorb_shield_is_larger_with_two_inside() {
+    let shield = creature_spell("test_absorb");
+    let mut swinging = false;
+    let f = all_inside("test_absorb", &[EXPOSED, NEAR], 12.0, |p, _| {
+        if !swinging {
+            swinging = true;
+            let (guid, at) = p.unit(0, FAMILIAR, EXPOSED);
+            p.go_facing(0, EXPOSED, at);
+            p.cmd(0, RealmCommand::AttackSwing { guid });
+        }
+    });
+    let familiar = caster_of(&f, shield);
+    let me = f.party.guids[0];
+    // What the character's swings dealt while the shield was up, less the health the familiar
+    // lost to them: what the shield soaked before it broke. A swing the shield soaks whole sends
+    // no health update, so what it dealt waits for the next one.
+    let (mut up, mut down, mut broke) = (None, None, false);
+    let (mut health, mut dealt, mut soaked) = (None, 0, 0);
+    for s in f.of(0) {
+        match &s.event {
+            SessionEvent::SpellGo { spell_id, .. } if *spell_id == shield => up = Some(s.at),
+            SessionEvent::AttackerState(a) if a.attacker == me && a.victim == familiar => {
+                dealt += a.damage;
+            }
+            SessionEvent::ObjectCreate { guid, fields, .. }
+            | SessionEvent::ObjectValues { guid, fields }
+                if *guid == familiar =>
+            {
+                let slot = fields
+                    .raw_fields()
+                    .find(|&(field, _)| (UNIT_FIELD_AURA..UNIT_FIELD_AURA + 56).contains(&field));
+                if let (Some(_), None, Some((_, 0))) = (up, down, slot) {
+                    down = Some(s.at);
+                }
+                let Some((_, now)) = fields
+                    .raw_fields()
+                    .find(|&(field, _)| field == UNIT_FIELD_HEALTH)
+                else {
+                    continue;
+                };
+                if let (Some(_), false, Some(was)) = (up, broke, health) {
+                    soaked += dealt - (was - now);
+                    broke = down.is_some();
+                }
+                dealt = 0;
+                health = Some(now);
+            }
+            _ => {}
+        }
+    }
+    let (up, down) = (up.expect("the shield goes up"), down.expect("and down"));
+    assert!(down - up < 9.5, "the swings break it: {up} to {down}");
+    // 50 for one, x1.5 for a Head Count of 2 (ADR 0029).
+    assert_eq!(soaked, 75);
 }
 
 /// `UNIT_FIELD_RESISTANCES`, whose first is armour.

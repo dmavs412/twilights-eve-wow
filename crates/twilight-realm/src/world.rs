@@ -188,6 +188,8 @@ pub(crate) struct Foreign {
     pub(crate) level: u8,
     pub(crate) from: [f32; 3],
     pub(crate) spell: &'static crate::creature_spells::CreatureSpell,
+    /// What the caster's flat damage is multiplied by at its Head Count (ADR 0029).
+    pub(crate) damage_mul: f32,
 }
 
 #[derive(Default)]
@@ -1403,7 +1405,14 @@ impl InWorld {
     /// A Creature Spell from another session's creature lands on the player.
     pub(crate) fn spell_from_afar(&mut self, cast: &Foreign, events: &mut Vec<SessionEvent>) {
         if self.player.alive() {
-            self.creature_spell_lands(cast.caster, cast.level, cast.from, cast.spell, events);
+            self.creature_spell_lands(
+                cast.caster,
+                cast.level,
+                cast.from,
+                cast.spell,
+                cast.damage_mul,
+                events,
+            );
         }
     }
 

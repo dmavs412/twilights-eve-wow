@@ -6681,13 +6681,15 @@ impl InWorld {
     }
 
     /// A creature's `spell` went off at the player: its effect lands, under the client's spell id
-    /// so the debuff shows that spell's icon.
+    /// so the debuff shows that spell's icon. A curse ticks for its own damage times `damage_mul`,
+    /// the caster's damage multiplier at its Head Count (ADR 0029).
     pub(super) fn creature_spell_lands(
         &mut self,
         caster: u64,
         level: u8,
         from: [f32; 3],
         spell: &crate::creature_spells::CreatureSpell,
+        damage_mul: f32,
         events: &mut Vec<SessionEvent>,
     ) {
         // A heal lands on its caster in `mob_cast`, which holds the mob.
@@ -6767,7 +6769,7 @@ impl InWorld {
             period: clock::secs(tick_ms),
             next_tick: clock::secs(tick_ms),
             kind: AuraKind::PeriodicDamage {
-                per_tick: tick.at(level, 0),
+                per_tick: (tick.at(level, 0) as f32 * damage_mul).round() as u32,
                 carry: 0,
                 school: spell.school,
                 caster,

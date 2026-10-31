@@ -6,7 +6,7 @@
 
 mod common;
 
-use benilla_protocol::messages::CHAT_MSG_RAID_WARNING;
+use benilla_protocol::messages::{PeriodicAuraLog, PeriodicTick, CHAT_MSG_RAID_WARNING};
 use benilla_protocol::{SessionEvent, START_ELWYNN};
 use common::party::*;
 use common::*;
@@ -21,7 +21,12 @@ const COVERED: [f32; 3] = [-9638.0, 20.0, 47.2];
 const FAR: [f32; 3] = [-9650.0, 38.0, 47.2];
 /// Out in Elwynn, clear of the box.
 const OUTSIDE: [f32; 3] = [-9720.0, 20.0, 47.2];
+/// 8 yd south of the familiar, in the open: inside the gaze's radius, past the 5 yd at which the
+/// familiar notices a level 20 character.
+const NEAR: [f32; 3] = [-9650.0, 12.0, 47.2];
 const DAMAGE: u32 = 20;
+/// What a familiar scaled for a Head Count of 2 does with 10 a tick: 1.1x (ADR 0029).
+const CURSE_TICK_FOR_TWO: u32 = 11;
 
 static GAZE: std::sync::LazyLock<u32> = std::sync::LazyLock::new(|| creature_spell("test_gaze"));
 
@@ -58,6 +63,27 @@ impl Fight {
                 SessionEvent::SpellDamageLog(l) if l.target == me && l.spell_id == *GAZE => {
                     Some((s.at, l.damage))
                 }
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// The ticks of the curse `id` on player `i`, as their own session saw them.
+    fn ticks(&self, i: usize, id: u32) -> Vec<u32> {
+        let me = self.guids[i];
+        self.log
+            .iter()
+            .filter(|s| s.player == i)
+            .filter_map(|s| match &s.event {
+                SessionEvent::PeriodicAuraLog(PeriodicAuraLog {
+                    target,
+                    spell_id,
+                    ticks,
+                    ..
+                }) if *target == me && *spell_id == id => match ticks[..] {
+                    [PeriodicTick::Damage { amount, .. }] => Some(amount),
+                    _ => None,
+                },
                 _ => None,
             })
             .collect()
@@ -107,6 +133,58 @@ fn fight(secs: f32) -> Fight {
     p.go(3, OUTSIDE, 0.0);
     step(&mut p, secs, &mut fight);
     fight
+}
+
+/// Two characters, the second at `NEAR` before the first, exposed, pulls the familiar, which
+/// casts `spells`: it is pulled at a Head Count of 2. `secs` of fighting.
+fn two_inside(spells: &[&str], secs: f32) -> Fight {
+    let realm = realm().with_creature_spells(FAMILIAR, spells);
+    let mut p = Party::starting(realm, &[20; 2], START_ELWYNN, Box::new(NoGround));
+    let mut fight = Fight {
+        log: Vec::new(),
+        guids: p.guids.clone(),
+    };
+    p.go(1, NEAR, 0.0);
+    p.run(1.0);
+    p.go(0, EXPOSED, 0.0);
+    let mut at = 0.0;
+    while at < secs - 1e-3 {
+        for (player, events) in p.run(0.1).into_iter().enumerate() {
+            fight
+                .log
+                .extend(events.into_iter().map(|event| Seen { at, player, event }));
+        }
+        at += 0.1;
+    }
+    fight
+}
+
+#[test]
+fn a_gaze_hits_harder_with_two_inside() {
+    let f = two_inside(&["test_gaze"], 10.0);
+    // 20 x 1.1 for a Head Count of 2 (ADR 0029), to each character in its radius.
+    for i in 0..2 {
+        let hits = f.hits(i);
+        assert_eq!(hits.len(), 1, "player {i}: {hits:?}");
+        assert_eq!(hits[0].1, 22, "player {i}");
+    }
+}
+
+#[test]
+fn a_curse_ticks_harder_with_two_inside() {
+    // On the character the familiar fights, in its own session.
+    let corruption = creature_spell("corruption_creature");
+    let f = two_inside(&["corruption_creature"], 12.0);
+    let ticks = f.ticks(0, corruption);
+    assert!(ticks.len() >= 2, "{ticks:?}");
+    assert!(ticks.iter().all(|&t| t == CURSE_TICK_FOR_TWO), "{ticks:?}");
+
+    // On the other session's character, as the realm lands it there.
+    let random = creature_spell("test_curse_random");
+    let f = two_inside(&["test_curse_random"], 30.0);
+    let ticks = f.ticks(1, random);
+    assert!(!ticks.is_empty(), "a curse lands on the other character");
+    assert!(ticks.iter().all(|&t| t == CURSE_TICK_FOR_TWO), "{ticks:?}");
 }
 
 #[test]
