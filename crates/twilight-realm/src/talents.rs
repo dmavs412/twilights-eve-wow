@@ -39,7 +39,7 @@ fn set_choices(c: &Char) -> impl Iterator<Item = &'static RowChoice> + '_ {
 fn set_talents(c: &Char) -> impl Iterator<Item = &'static TalentDef> + '_ {
     set_choices(c).filter_map(|choice| match choice {
         RowChoice::Talent(t) => Some(t),
-        RowChoice::Skill(_) => None,
+        RowChoice::Skill(..) => None,
     })
 }
 
@@ -65,7 +65,7 @@ pub(crate) fn known_spells(c: &Char) -> impl Iterator<Item = u32> + '_ {
 /// The skill keys a set Skill Choice has taken out of the spell book.
 pub(crate) fn replaced(c: &Char) -> impl Iterator<Item = &'static str> + '_ {
     set_choices(c).filter_map(|choice| match choice {
-        RowChoice::Skill(s) => s.replaces.as_deref(),
+        RowChoice::Skill(s, _) => s.replaces.as_deref(),
         RowChoice::Talent(_) => None,
     })
 }
@@ -290,11 +290,46 @@ pub(crate) fn rows_event(c: &Char, at_innkeeper: bool) -> SessionEvent {
                     .map(|ch| TalentChoiceView {
                         spell_id: ch.spell_id(),
                         name: ch.name().to_owned(),
+                        // At the level a cast reads its amounts at. The attack power is the
+                        // world's, out of reach here; no shipped Change Line amount reads it.
+                        change: fill_change(ch.change(), c.power_level(), 0),
                     })
                     .collect(),
             })
             .collect(),
     }
+}
+
+/// A Change Line with each `{amount:<base>:<per_level>:<per_ap>:<min>}` token the build left in
+/// it replaced by that amount at `level` and `attack_power` (#518).
+pub(crate) fn fill_change(line: &str, level: u8, attack_power: i32) -> String {
+    const TOKEN: &str = "{amount:";
+    let unreadable =
+        || -> ! { panic!("server_spells.json: Change Line {line:?} has a bad amount token") };
+    let mut out = String::with_capacity(line.len());
+    let mut rest = line;
+    while let Some(at) = rest.find(TOKEN) {
+        out.push_str(&rest[..at]);
+        let token = &rest[at + TOKEN.len()..];
+        let end = token.find('}').unwrap_or_else(|| unreadable());
+        let parts: Vec<f64> = token[..end]
+            .split(':')
+            .map(|p| p.parse().unwrap_or_else(|_| unreadable()))
+            .collect();
+        let [base, per_level, per_ap, min] = parts[..] else {
+            unreadable()
+        };
+        let amount = crate::rules::skills::Linear {
+            base,
+            per_level,
+            per_ap,
+            min: min as u32,
+        };
+        out.push_str(&amount.at(level, attack_power).to_string());
+        rest = &token[end + 1..];
+    }
+    out.push_str(rest);
+    out
 }
 
 /// Whether `c` wields `weapon` in the main hand.

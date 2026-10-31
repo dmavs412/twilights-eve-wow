@@ -1849,10 +1849,9 @@ impl InWorld {
                     });
                 }
             }
-            // A Talent Row this level opens.
-            if crate::talents::rows(c).iter().any(|r| r.level == c.level) {
-                events.push(crate::talents::rows_event(c, false));
-            }
+            // Every level-up: a Talent Row may open, and a Change Line's level-scaled amounts
+            // follow the level.
+            events.push(crate::talents::rows_event(c, false));
             match xp::xp_to_next(c.level) {
                 // The Tier Cap: what is left over is not banked.
                 Some(_) if at_tier_cap(c) => {

@@ -438,7 +438,9 @@ fn row(calling: &str, g: &GenRow, auras: &[GenAura]) -> TalentRow {
             RowKind::SkillChoice => {
                 let s: GenSkill =
                     serde_json::from_value(v.clone()).unwrap_or_else(|e| unreadable(e));
-                skill(&s, auras).map(RowChoice::Skill)
+                // Its Change Line (#518), its fixed numbers written by the build.
+                let change = v.get("change").and_then(Value::as_str).unwrap_or_default();
+                skill(&s, auras).map(|s| RowChoice::Skill(s, change.to_owned()))
             }
             RowKind::Talent => {
                 let rank: GenRank =

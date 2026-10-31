@@ -679,16 +679,26 @@ pub enum RowKind {
 /// One choice of a Talent Row.
 #[derive(Debug)]
 pub enum RowChoice {
-    Skill(Skill),
+    /// A Skill Choice and its Change Line, its level-scaled amounts still `{amount:..}` tokens
+    /// ([`crate::talents::fill_change`]).
+    Skill(Skill, String),
     /// A one-rank talent: its effects, or its skill when it is an active one.
     Talent(TalentDef),
 }
 
 impl RowChoice {
+    /// A Skill Choice's Change Line as the build wrote it; "" for a Talent.
+    pub fn change(&self) -> &str {
+        match self {
+            RowChoice::Skill(_, change) => change,
+            RowChoice::Talent(_) => "",
+        }
+    }
+
     /// The spell setting it teaches.
     pub fn spell_id(&self) -> u32 {
         match self {
-            RowChoice::Skill(s) => s.spell_id,
+            RowChoice::Skill(s, _) => s.spell_id,
             RowChoice::Talent(t) => t.rank_spells[0],
         }
     }
@@ -696,7 +706,7 @@ impl RowChoice {
     /// Its name, as the sheet has it.
     pub fn name(&self) -> &str {
         match self {
-            RowChoice::Skill(s) => &s.name,
+            RowChoice::Skill(s, _) => &s.name,
             RowChoice::Talent(t) => &t.name,
         }
     }
@@ -704,7 +714,7 @@ impl RowChoice {
     /// The skill it casts: a Skill Choice, or an active Talent's.
     pub fn skill(&self) -> Option<&Skill> {
         match self {
-            RowChoice::Skill(s) => Some(s),
+            RowChoice::Skill(s, _) => Some(s),
             RowChoice::Talent(t) => t.skill.as_ref(),
         }
     }

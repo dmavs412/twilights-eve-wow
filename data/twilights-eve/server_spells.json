@@ -636,6 +636,7 @@
        }
       ],
       "description": "Charge an enemy, generate $/10;s2 rage, and stun it for 3 sec.  Cannot be used in combat.",
+      "change": "Stuns for 3 sec instead of 1 sec.",
       "variant_of": "charge"
      },
      {
@@ -698,6 +699,7 @@
        }
       ],
       "description": "Charge an enemy, generate 20 rage, and stun it for $7922d.  Cannot be used in combat.",
+      "change": "Generates {amount:20:0:0:0} rage instead of {amount:8.5:0.14:0:0}.",
       "variant_of": "charge"
      },
      {
@@ -756,6 +758,7 @@
        }
       ],
       "description": "Charge an enemy, generate $/10;s2 rage, and stun it for $7922d.",
+      "change": "Can be used in combat.",
       "variant_of": "charge"
      }
     ]
@@ -810,7 +813,8 @@
         "realm_only": false
        }
       ],
-      "description": "Blasts the enemy with fire damage, then burns it for 60% more over 6 sec. Ignores armour; it cannot be dodged, parried or blocked.",
+      "description": "Blasts the enemy with fire damage, then burns it for a little Fire damage each second for 6 sec. Ignores armour; it cannot be dodged, parried or blocked.",
+      "change": "The target also burns for {amount:2:0.25:0:0} damage every 1 sec for 6 sec.",
       "variant_of": "fire_blast"
      },
      {
@@ -851,6 +855,7 @@
        }
       ],
       "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked.",
+      "change": "Its cooldown is 4 sec instead of 8 sec.",
       "variant_of": "fire_blast"
      },
      {
@@ -892,6 +897,7 @@
        }
       ],
       "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked. Double damage to a stunned or incapacitated target.",
+      "change": "Deals 100% more damage to a stunned or incapacitated target.",
       "variant_of": "fire_blast"
      }
     ]
@@ -946,6 +952,7 @@
        }
       ],
       "description": "Strikes the enemy hard for Physical damage and incapacitates it for 4 sec. Any later damage ends it.",
+      "change": "Strikes for {amount:30:4.5:0:0} Physical damage instead of {amount:10:1.5:0:0}.",
       "variant_of": "gouge"
      },
      {
@@ -1000,6 +1007,7 @@
        }
       ],
       "description": "Strikes the enemy for a little Physical damage and incapacitates it for 6 sec. Any later damage ends it. Your next hit is a critical strike.",
+      "change": "Incapacitates for 6 sec instead of 4 sec, and your next hit within 10 sec is a critical strike.",
       "variant_of": "gouge"
      },
      {
@@ -1046,6 +1054,7 @@
        }
       ],
       "description": "Strikes the enemy for a little Physical damage and incapacitates it for 4 sec. Any later damage ends it.",
+      "change": "Costs 5 rage instead of 15, and its cooldown is 6 sec instead of 10 sec.",
       "variant_of": "gouge"
      }
     ]
@@ -1101,6 +1110,7 @@
        }
       ],
       "description": "A strong attack that increases melee damage by $s1 and causes a high amount of threat. A second enemy in reach takes half the hit.",
+      "change": "A second enemy in reach takes 50% of the hit.",
       "variant_of": "heroic_strike"
      },
      {
@@ -1149,6 +1159,7 @@
        }
       ],
       "description": "A strong attack that increases melee damage by $s1 and causes a high amount of threat. Deals 50% more to an enemy below 30% health.",
+      "change": "Deals 50% more damage to an enemy below 30% health.",
       "variant_of": "heroic_strike"
      },
      {
@@ -1203,6 +1214,7 @@
        }
       ],
       "description": "A strong attack that increases melee damage by $s1 and causes a high amount of threat. Each strike within 5 sec of the last adds 25% to the bonus, up to three times.",
+      "change": "Each strike within 5 sec of the last adds 25% to the bonus, up to 3 times.",
       "variant_of": "heroic_strike"
      }
     ]
@@ -2490,6 +2502,7 @@
        }
       ],
       "description": "Your next melee swing strikes the target for weapon damage plus a bonus, plus Physical damage equal to 150% of your shield's Block Value. Every hit grants a stack of Conviction.",
+      "change": "Also deals Physical damage equal to 150% of your shield's Block Value.",
       "variant_of": "righteous_smash"
      },
      {
@@ -2546,6 +2559,7 @@
        }
       ],
       "description": "Your next melee swing strikes the target for weapon damage plus a bonus. Every hit grants 2 stacks of Conviction.",
+      "change": "Each hit grants 2 stacks of Conviction instead of 1.",
       "variant_of": "righteous_smash"
      },
      {
@@ -2603,6 +2617,7 @@
        }
       ],
       "description": "Your next melee swing strikes the target for weapon damage plus a bonus, and heals you for 25% of the damage it deals. Every hit grants a stack of Conviction.",
+      "change": "Heals you for 25% of the damage it deals.",
       "variant_of": "righteous_smash"
      }
     ]
@@ -2650,6 +2665,7 @@
        }
       ],
       "description": "For 10 sec your chance to Block is increased by 50%. Every block deals 24 Holy damage to the attacker.",
+      "change": "Each block deals {amount:24:2.4:0:0} Holy damage to the attacker instead of {amount:12:1.2:0:0}.",
       "variant_of": "shield_of_penitent"
      },
      {
@@ -2689,6 +2705,7 @@
        }
       ],
       "description": "For 10 sec your chance to Block is increased by 50%. Every block deals 12 Holy damage to the attacker and gives you 3 Rage.",
+      "change": "Each block also gives you 3 Rage.",
       "variant_of": "shield_of_penitent"
      },
      {
@@ -2728,6 +2745,7 @@
        }
       ],
       "description": "For 15 sec your chance to Block is increased by 50%. Every block deals 12 Holy damage to the attacker.",
+      "change": "Lasts 15 sec instead of 10 sec.",
       "variant_of": "shield_of_penitent"
      }
     ]
@@ -2797,6 +2815,7 @@
        }
       ],
       "description": "A sweeping attack that hits up to 5 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage.",
+      "change": "Hits up to 5 enemies instead of 3.",
       "variant_of": "zealous_cleave"
      },
      {
@@ -2859,6 +2878,7 @@
        }
       ],
       "description": "A sweeping attack that hits up to 3 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage, and heals you for 75% of that Holy damage.",
+      "change": "Heals you for 75% of the Holy damage its Conviction stacks deal.",
       "variant_of": "zealous_cleave"
      },
      {
@@ -2921,6 +2941,7 @@
        }
       ],
       "description": "A sweeping attack that hits up to 3 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage, and gives you 2 Rage for each stack consumed.",
+      "change": "Gives you 2 Rage for each Conviction stack it consumes.",
       "variant_of": "zealous_cleave"
      }
     ]
@@ -3010,6 +3031,7 @@
        }
       ],
       "description": "Charge an enemy, generating 15 Rage, and strike it on arrival for 150% weapon damage plus 10 as Holy damage, leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+      "change": "Strikes the target on arrival for 150% weapon damage plus {amount:10:1:0:0} as Holy damage.",
       "variant_of": "bulwark_charge"
      },
      {
@@ -3084,6 +3106,7 @@
        }
       ],
       "description": "Charge an enemy, generating 15 Rage and stunning it for 2 sec, and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+      "change": "Stuns the target for 2 sec on arrival.",
       "variant_of": "bulwark_charge"
      },
      {
@@ -3151,6 +3174,7 @@
        }
       ],
       "description": "Charge an enemy, generating 30 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+      "change": "Generates {amount:30:0:0:0} Rage instead of {amount:15:0:0:0}.",
       "variant_of": "bulwark_charge"
      }
     ]
@@ -3312,6 +3336,7 @@
        }
       ],
       "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike, and a 50% chance to sear the target for 50% of your weapon damage as Holy damage.",
+      "change": "Your melee hits also have a 50% chance to sear the target for 50% of your weapon damage as Holy damage.",
       "variant_of": "seal_of_iron"
      },
      {
@@ -3348,6 +3373,7 @@
        }
       ],
       "description": "For 30 sec your melee attacks have a 50% chance to heal you slightly and a 50% chance to grant you a temporary armor spike.",
+      "change": "The heal and the armor spike each fire on 50% of hits instead of 25%.",
       "variant_of": "seal_of_iron"
      },
      {
@@ -3384,6 +3410,7 @@
        }
       ],
       "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike, and a 25% chance to give you 5 Rage.",
+      "change": "Your melee hits also have a 25% chance to give you 5 Rage.",
       "variant_of": "seal_of_iron"
      }
     ]
@@ -4414,6 +4441,7 @@
        }
       ],
       "description": "Your primary 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point, or 2 against a bleeding target.",
+      "change": "Awards 1 more combo point against a bleeding target.",
       "variant_of": "sinister_strike"
      },
      {
@@ -4466,6 +4494,7 @@
        }
       ],
       "description": "Your primary 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point. A second enemy in reach takes 50% of the strike.",
+      "change": "A second enemy in reach takes 50% of the strike.",
       "variant_of": "sinister_strike"
      },
      {
@@ -4517,6 +4546,7 @@
        }
       ],
       "description": "Your primary 25-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point.",
+      "change": "Costs 25 Energy instead of 35.",
       "variant_of": "sinister_strike"
      }
     ]
@@ -4560,6 +4590,7 @@
        }
       ],
       "description": "Increases your Dodge chance by 50% for 15 sec. Each attack you dodge while it lasts gives you 10 Energy and 1 combo point on your target.",
+      "change": "Each attack you dodge while it lasts gives you 10 Energy and 1 combo point on your target.",
       "variant_of": "evasion"
      },
      {
@@ -4595,6 +4626,7 @@
        }
       ],
       "description": "Increases your Dodge chance by 50% for 15 sec. Cooldown 1 min instead of 2 min.",
+      "change": "Its cooldown is 60 sec instead of 120 sec.",
       "variant_of": "evasion"
      },
      {
@@ -4640,6 +4672,7 @@
        }
       ],
       "description": "Increases your Dodge chance by 50% for 15 sec, and heals you for 30% of your maximum health over 15 sec.",
+      "change": "Also heals you for 30% of your maximum health over 15 sec.",
       "variant_of": "evasion"
      }
     ]
@@ -4695,6 +4728,7 @@
        }
       ],
       "description": "Finishing move: Physical damage that grows with each combo point, 50% more against a bleeding target.",
+      "change": "Deals 50% more damage to a bleeding target.",
       "variant_of": "eviscerate"
      },
      {
@@ -4743,6 +4777,7 @@
        }
       ],
       "description": "Finishing move: Physical damage that grows with each combo point. A killing blow on an enemy that yields experience heals you for 20% of your maximum health and gives you 80 Energy.",
+      "change": "A killing blow on an enemy that yields experience heals you for 20% of your maximum health and gives you 80 Energy.",
       "variant_of": "eviscerate"
      },
      {
@@ -4801,6 +4836,7 @@
        }
       ],
       "description": "Finishing move: Physical damage that grows with each combo point, and stuns the target for 1 sec per combo point.",
+      "change": "Also stuns the target for a second per combo point spent.",
       "variant_of": "eviscerate"
      }
     ]
@@ -4861,6 +4897,7 @@
        }
       ],
       "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. It deals 50% more damage than Rupture. You heal for 40% of the damage it deals. Each tick may spill a blood droplet nearby.",
+      "change": "Its bleed deals {amount:9:0.9:0:0} damage a tick instead of {amount:6:0.6:0:0}, and half again as much per combo point.",
       "variant_of": "rupture"
      },
      {
@@ -4914,6 +4951,7 @@
        }
       ],
       "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals. Every tick spills a blood droplet nearby.",
+      "change": "Every tick spills a blood droplet, instead of only some of them.",
       "variant_of": "rupture"
      },
      {
@@ -4966,6 +5004,7 @@
        }
       ],
       "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 80% of the damage it deals. Each tick may spill a blood droplet nearby.",
+      "change": "Heals you for 80% of the damage it deals instead of 40%.",
       "variant_of": "rupture"
      }
     ]
@@ -5123,6 +5162,7 @@
        }
       ],
       "description": "Garrote the enemy, causing it to bleed every 3 sec for 18 sec. Awards 1 combo point. Each tick may spill a blood droplet nearby. Needs no Stealth.",
+      "change": "Needs no Stealth.",
       "variant_of": "garrote"
      },
      {
@@ -5182,6 +5222,7 @@
        }
       ],
       "description": "From Stealth: garrote the enemy, causing it to bleed every 3 sec for 18 sec. Stuns the target for 3 sec. Awards 1 combo point. Each tick may spill a blood droplet nearby.",
+      "change": "Also stuns the target for 3 sec.",
       "variant_of": "garrote"
      },
      {
@@ -5233,6 +5274,7 @@
        }
       ],
       "description": "From Stealth: garrote the enemy, causing it to bleed every 3 sec for 18 sec. Awards 3 combo points. Each tick may spill a blood droplet nearby.",
+      "change": "Awards 3 combo points instead of 1.",
       "variant_of": "garrote"
      }
     ]
@@ -6002,6 +6044,7 @@
        }
       ],
       "description": "Your primary casted filler. Deals Arcane damage. Its critical strike chance naturally scales higher based on how full your current mana pool is. Each cast has a 50% chance to refund its mana cost. At full mana, it shields you for twice its cost for 10 sec instead.",
+      "change": "Each cast has a 50% chance to refund its mana cost; at full mana it shields you for 200% of the cost for 10 sec instead.",
       "variant_of": "ley_spark"
      },
      {
@@ -6061,6 +6104,7 @@
        }
       ],
       "description": "Your primary casted filler. Deals Arcane damage. Its critical strike chance naturally scales higher based on how full your current mana pool is. Each cast also makes your next Biting Cold cast 0.5 sec faster and your next Searing Ember burn 5 sec longer.",
+      "change": "Each cast makes your next Biting Cold cast 0.5 sec faster and your next Searing Ember burn 5 sec longer.",
       "variant_of": "ley_spark"
      },
      {
@@ -6116,6 +6160,7 @@
        }
       ],
       "description": "Your primary casted filler. Deals Arcane damage. Its critical strike chance naturally scales higher based on how full your current mana pool is. A critical hit also wards you for 50% of its damage for 8 sec.",
+      "change": "A critical hit also wards you for 50% of its damage for 8 sec.",
       "variant_of": "ley_spark"
      }
     ]
@@ -6162,6 +6207,7 @@
        }
       ],
       "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec. Half of the damage it absorbs comes back to you as mana.",
+      "change": "The ward returns 50% of the damage it absorbs to you as mana.",
       "variant_of": "ley_ward"
      },
      {
@@ -6200,6 +6246,7 @@
        }
       ],
       "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec. An enemy whose damage it absorbs is slowed by 50% for 4 sec.",
+      "change": "An enemy whose damage the ward absorbs is slowed by 50% for 4 sec.",
       "variant_of": "ley_ward"
      },
      {
@@ -6239,6 +6286,7 @@
        }
       ],
       "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec. When the ward breaks, it bursts for the damage it absorbed as Arcane damage to enemies within 8 yards.",
+      "change": "When the ward breaks, it bursts for the damage it absorbed as Arcane damage to enemies within 8 yards.",
       "variant_of": "ley_ward"
      }
     ]
@@ -6295,6 +6343,7 @@
        }
       ],
       "description": "Instant cast. Deals low initial Fire damage and leaves a stacking burn DoT on the target. Each tick of the burn has a 10% chance to make your next Biting Cold instant and free.",
+      "change": "Each tick of the burn has a 10% chance to make your next Biting Cold instant and free.",
       "variant_of": "searing_ember"
      },
      {
@@ -6342,6 +6391,7 @@
        }
       ],
       "description": "Instant cast. Deals low initial Fire damage and leaves a stacking burn DoT on the target. A burning enemy deals 15% less damage to you.",
+      "change": "A burning enemy deals 15% less damage to you.",
       "variant_of": "searing_ember"
      },
      {
@@ -6389,6 +6439,7 @@
        }
       ],
       "description": "Instant cast. Deals low initial Fire damage and leaves a stacking burn DoT on the target. Each tick of the burn returns 3% of your maximum mana.",
+      "change": "Each tick of the burn returns 3% of your maximum mana.",
       "variant_of": "searing_ember"
      }
     ]
@@ -6450,6 +6501,7 @@
        }
       ],
       "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 6 seconds. Deals 45% more damage to a target burning from your Searing Ember.",
+      "change": "Deals 45% more damage to a target burning from your Searing Ember.",
       "variant_of": "biting_cold"
      },
      {
@@ -6502,6 +6554,7 @@
        }
       ],
       "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 6 seconds. The slow also lands on every enemy within 8 yards of the target.",
+      "change": "The slow also lands on every enemy within 8 yards of the target.",
       "variant_of": "biting_cold"
      },
      {
@@ -6562,6 +6615,7 @@
        }
       ],
       "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 6 seconds. A target that was already slowed is also rooted for 2 sec.",
+      "change": "A target that was already slowed is also rooted for 2 sec.",
       "variant_of": "biting_cold"
      }
     ]
@@ -6730,6 +6784,7 @@
        }
       ],
       "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds 13% of your maximum Mana. If it consumes a Cold, it deals a massive burst of shatter damage. The shatter deals 30% more than Catalyst's.",
+      "change": "The shatter deals 260% of Biting Cold's hit instead of 200%, and an Ember refunds 13% of your maximum mana instead of 10%.",
       "variant_of": "catalyst"
      },
      {
@@ -6790,6 +6845,7 @@
        }
       ],
       "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds 10% of your maximum Mana. If it consumes a Cold, it deals a massive burst of shatter damage. Consuming a Biting Cold also stuns the target for 3 sec.",
+      "change": "Consuming a Biting Cold also stuns the target for 3 sec.",
       "variant_of": "catalyst"
      },
      {
@@ -6843,6 +6899,7 @@
        }
       ],
       "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds 10% of your maximum Mana. If it consumes a Cold, it deals a massive burst of shatter damage. Each Ember or Cold it consumes is copied onto another enemy within 10 yards.",
+      "change": "Each Ember or Cold it consumes is copied onto another enemy within 10 yards.",
       "variant_of": "catalyst"
      }
     ]
@@ -7906,6 +7963,7 @@
        }
       ],
       "description": "Instant cast. Low mana cost. Your primary mobile filler. Fires a quick physical arrow at the target. Has a 30% chance to fire a second, free Snapshot at the same target instantly.",
+      "change": "Has a 30% chance to fire a second, free Snapshot at the same target.",
       "variant_of": "snapshot"
      },
      {
@@ -7958,6 +8016,7 @@
        }
       ],
       "description": "Instant cast. Low mana cost. Your primary mobile filler. Fires a quick physical arrow at the target. Each Snapshot cuts the cast time of your next Puncturing Shaft by 0.5 sec, stacking up to 15 times.",
+      "change": "Each Snapshot cuts the cast time of your next Puncturing Shaft by 0.5 sec, stacking up to 15 times.",
       "variant_of": "snapshot"
      },
      {
@@ -8005,6 +8064,7 @@
        }
       ],
       "description": "Instant cast. Low mana cost. Your primary mobile filler. Fires a quick physical arrow at the target. Its critical strikes take 6 sec off the cooldown of Vault.",
+      "change": "Its critical strikes take 6 sec off the cooldown of Vault.",
       "variant_of": "snapshot"
      }
     ]
@@ -8061,6 +8121,7 @@
        }
       ],
       "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance. Leaves a trap where you stood that roots the first enemy to step on it for 4 sec. The trap lasts 20 sec.",
+      "change": "Leaves a trap where you stood for 20 sec that roots the first enemy to step on it for 4 sec.",
       "variant_of": "vault"
      },
      {
@@ -8105,6 +8166,7 @@
        }
       ],
       "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance. On landing, fires a free Snapshot at your target.",
+      "change": "On landing, fires a free Snapshot at your target.",
       "variant_of": "vault"
      },
      {
@@ -8151,6 +8213,7 @@
        }
       ],
       "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance. The leap also removes movement slowing effects, and increases your run speed by 40% for 3 sec.",
+      "change": "The leap also removes movement slowing effects, and raises your run speed by 40% for 3 sec.",
       "variant_of": "vault"
      }
     ]
@@ -8208,6 +8271,7 @@
        }
       ],
       "description": "Sinks a jagged arrow into the target, dealing physical damage over time and slowing their movement speed by 30% for 8 seconds. Each time it deals damage, it has a 20% chance to sunder the target's armor by 250 for 10 sec, stacking up to 3 times.",
+      "change": "Each time it deals damage, it has a 20% chance to sunder the target's armor by 250 for 10 sec, stacking up to 3 times.",
       "variant_of": "barbed_arrow"
      },
      {
@@ -8262,6 +8326,7 @@
        }
       ],
       "description": "Sinks a jagged arrow into the target, dealing physical damage over time and slowing their movement speed by 30% for 8 seconds. Also roots the target for 2 sec.",
+      "change": "Also roots the target for 2 sec.",
       "variant_of": "barbed_arrow"
      },
      {
@@ -8309,6 +8374,7 @@
        }
       ],
       "description": "Sinks a jagged arrow into the target, dealing physical damage over time and slowing their movement speed by 30% for 8 seconds. Each time it deals damage, you regain 2% of your base mana.",
+      "change": "Each time it deals damage, you regain 2% of your base mana.",
       "variant_of": "barbed_arrow"
      }
     ]
@@ -8371,6 +8437,7 @@
        }
       ],
       "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. It ignores 250 more armor, and its critical strikes deal 250% damage instead of 200%.",
+      "change": "Ignores {amount:350:10:0:0} armor instead of {amount:100:10:0:0}, and its critical strikes deal 25% more damage.",
       "variant_of": "puncturing_shaft"
      },
      {
@@ -8432,6 +8499,7 @@
        }
       ],
       "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. Also stuns the target for 2 sec.",
+      "change": "Also stuns the target for 2 sec.",
       "variant_of": "puncturing_shaft"
      },
      {
@@ -8487,6 +8555,7 @@
        }
       ],
       "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. Instant cast against a target below 30% health.",
+      "change": "Instant cast against a target below 30% health.",
       "variant_of": "puncturing_shaft"
      }
     ]
@@ -8537,6 +8606,7 @@
        }
       ],
       "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit. Your next 2 Snapshots after it cost no mana and are critical strikes.",
+      "change": "Your next 2 Snapshots after it cost no mana and are critical strikes.",
       "variant_of": "rapid_fire"
      },
      {
@@ -8579,6 +8649,7 @@
        }
       ],
       "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit. While it lasts, each Snapshot fires an extra free arrow for 50% weapon damage.",
+      "change": "While it lasts, each Snapshot fires an extra free arrow for 50% weapon damage.",
       "variant_of": "rapid_fire"
      },
      {
@@ -8614,6 +8685,7 @@
        }
       ],
       "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit. While it lasts, Auto Shot keeps firing while you move.",
+      "change": "While it lasts, Auto Shot keeps firing while you move.",
       "variant_of": "rapid_fire"
      }
     ]
@@ -9336,6 +9408,7 @@
        }
       ],
       "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. Each tick has a 30% chance to copy the Blight, with its stacks and time left, onto another enemy within 10 yards that does not have it.",
+      "change": "Each tick has a 30% chance to copy the Blight, with its stacks and time left, onto another enemy within 10 yards that does not have it.",
       "variant_of": "creeping_blight"
      },
      {
@@ -9373,6 +9446,7 @@
        }
       ],
       "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. Each tick has a 2.5% chance per stack to make your next Blood Lance cast 0.5 sec faster.",
+      "change": "Each tick has a 2.5% chance per stack to make your next Blood Lance cast 0.5 sec faster.",
       "variant_of": "creeping_blight"
      },
      {
@@ -9410,6 +9484,7 @@
        }
       ],
       "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. The target deals 2% less damage per stack, up to 20%.",
+      "change": "The target deals 2% less damage per stack, up to 20%.",
       "variant_of": "creeping_blight"
      }
     ]
@@ -9487,6 +9562,7 @@
        }
       ],
       "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. If the target has your Creeping Blight, it gains a stack. Deals 5% more damage for each stack of your Creeping Blight on the target, up to 50%.",
+      "change": "Deals 5% more damage for each stack of your Creeping Blight on the target, up to 50%.",
       "variant_of": "blood_lance"
      },
      {
@@ -9555,6 +9631,7 @@
        }
       ],
       "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. If the target has your Creeping Blight, it gains a stack. Enemies within 8 yards of the target take 30% of the hit, and each of them with your Creeping Blight gains a stack.",
+      "change": "Enemies within 8 yards of the target take 30% of the hit, and each of them with your Creeping Blight gains a stack.",
       "variant_of": "blood_lance"
      },
      {
@@ -9629,6 +9706,7 @@
        }
       ],
       "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. If the target has your Creeping Blight, it gains a stack. The ally who gets the Heal-over-Time also gets a shield absorbing 20% of the damage dealt for 6 sec.",
+      "change": "The ally who gets the Heal-over-Time also gets a shield absorbing 20% of the damage dealt for 6 sec.",
       "variant_of": "blood_lance"
      }
     ]
@@ -9801,6 +9879,7 @@
        }
       ],
       "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool. Each tick has a 30% chance to add a stack to your Creeping Blight on the target.",
+      "change": "Each tick has a 30% chance to add a stack to your Creeping Blight on the target.",
       "variant_of": "siphon_life"
      },
      {
@@ -9849,6 +9928,7 @@
        }
       ],
       "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool. Healing past your maximum health becomes a shield, up to 20% of your maximum health, for 10 sec.",
+      "change": "Healing past your maximum health becomes a shield, up to 20% of your maximum health, for 10 sec.",
       "variant_of": "siphon_life"
      },
      {
@@ -9894,6 +9974,7 @@
        }
       ],
       "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool. Can be channeled while moving.",
+      "change": "Can be channeled while moving.",
       "variant_of": "siphon_life"
      }
     ]
@@ -9958,6 +10039,7 @@
        }
       ],
       "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown. Also leaves a shield on the ally absorbing Physical damage equal to 30% of the heal for 10 sec.",
+      "change": "Also leaves a shield on the ally absorbing Physical damage equal to 30% of the heal for 10 sec.",
       "variant_of": "dark_mending"
      },
      {
@@ -10006,6 +10088,7 @@
        }
       ],
       "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown. Healing past the ally's maximum health bursts as Shadow damage on enemies within 8 yards of the ally.",
+      "change": "Healing past the ally's maximum health bursts as Shadow damage on enemies within 8 yards of the ally.",
       "variant_of": "dark_mending"
      },
      {
@@ -10059,6 +10142,7 @@
        }
       ],
       "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown. Your next Blood Lance within 6 sec is instant.",
+      "change": "Your next Blood Lance within 6 sec is instant.",
       "variant_of": "dark_mending"
      }
     ]
@@ -10109,6 +10193,7 @@
        }
       ],
       "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 15% increased healing from all sources. Enemies inside have 10% less chance to hit with melee and ranged attacks.",
+      "change": "Enemies inside have 10% less chance to hit with melee and ranged attacks.",
       "variant_of": "miasma"
      },
      {
@@ -10153,6 +10238,7 @@
        }
       ],
       "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 15% increased healing from all sources. Every 2 sec, each enemy inside with your Creeping Blight gains a stack.",
+      "change": "Every 2 sec, each enemy inside with your Creeping Blight gains a stack.",
       "variant_of": "miasma"
      },
      {
@@ -10195,6 +10281,7 @@
        }
       ],
       "description": "Surrounds you with a cloud of dark mist for 10 seconds that moves with you. Enemies inside take Shadow damage; allies inside receive 15% increased healing from all sources.",
+      "change": "The cloud surrounds you and moves with you, instead of sitting at the target location.",
       "variant_of": "miasma"
      }
     ]

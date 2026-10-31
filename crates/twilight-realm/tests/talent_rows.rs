@@ -27,6 +27,8 @@ static BACKDRAFT: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| choice("basic_warrior", "fire_blast", "backdraft"));
 static BLINDSIDE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| choice("basic_warrior", "gouge", "blindside"));
+static QUICK_GOUGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| choice("basic_warrior", "gouge", "quick_gouge"));
 static CLEAVE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| choice("basic_warrior", "heroic_strike", "cleave"));
 static FINISHER: std::sync::LazyLock<u32> =
@@ -320,6 +322,78 @@ fn advancement_clears_the_rows_and_sends_the_vanguards() {
     assert!(rows.iter().all(|r| r.set == 0), "{rows:?}");
     let blob = realm.export_character(me).unwrap();
     assert!(!blob.contains("\"charge\""), "{blob}");
+}
+
+// ── The Change Lines (#518) ─────────────────────────────────────────────────────────────────────
+
+/// The Change Line `rows` carries on `choice`.
+fn change_of(rows: &[TalentRowView], choice: u32) -> &str {
+    rows.iter()
+        .flat_map(|r| &r.choices)
+        .find(|c| c.spell_id == choice)
+        .map(|c| c.change.as_str())
+        .expect("the choice is in the rows")
+}
+
+#[test]
+fn a_skill_choice_carries_its_change_line_filled_at_the_level() {
+    let (_, _, _, entry) = warrior(4, SEED);
+    let (_, _, rows) = rows_in(&entry).expect("the rows");
+    assert_eq!(
+        change_of(rows, *BULL_RUSH),
+        "Stuns for 3 sec instead of 1 sec."
+    );
+    // Charge's 8.5 + 0.14 per level is 9.06 at level 4.
+    assert_eq!(
+        change_of(rows, *RALLYING_CHARGE),
+        "Generates 20 rage instead of 9."
+    );
+    assert_eq!(
+        change_of(rows, *QUICK_GOUGE),
+        "Costs 5 rage instead of 15, and its cooldown is 6 sec instead of 10 sec."
+    );
+}
+
+#[test]
+fn the_change_line_follows_the_level() {
+    // 9.62 at level 8.
+    let (_, _, _, entry) = warrior(8, SEED);
+    let (_, _, rows) = rows_in(&entry).expect("the rows");
+    assert_eq!(
+        change_of(rows, *RALLYING_CHARGE),
+        "Generates 20 rage instead of 10."
+    );
+}
+
+#[test]
+fn every_level_up_resends_the_rows() {
+    // A level-4 warrior 1 XP short of the 2100 to level 5, where no row opens. Discovering Camp
+    // Taurajo pays an eighth of the 2100: one level, not two.
+    let (guid, blob) = save_with_quests(4, &[], 0, &[]);
+    let short = blob.replace("xp = 0\n", "xp = 2099\n");
+    assert_ne!(short, blob);
+    let (mut realm, _, mut view, entry) = entered(guid, &short, SEED);
+    let (_, _, rows) = rows_in(&entry).expect("the rows");
+    assert!(rows.iter().all(|r| r.level != 5), "{rows:?}");
+    let at_taurajo = [-2350.0, -1900.0, 0.0];
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: at_taurajo,
+        orientation: 0.0,
+    });
+    realm.tick(
+        0.0,
+        &Areas(vec![([at_taurajo[0], at_taurajo[1]], 150.0, 378)]),
+    );
+    let events = view.drain(&mut realm);
+    let up = events
+        .iter()
+        .position(|e| matches!(e, SessionEvent::LevelUp(l) if l.level == 5))
+        .expect("a level-up to 5");
+    assert!(
+        rows_in(&events[up..]).is_some(),
+        "no TalentRows after the level-up"
+    );
 }
 
 // ── The effect params ───────────────────────────────────────────────────────────────────────────

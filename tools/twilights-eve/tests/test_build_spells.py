@@ -1430,7 +1430,7 @@ def choice(key: str, spell_id: int, skill: str = "strike", **extra: str) -> dict
     """A Skill Choice of `skill` (ADR 0028): a talent row with variant_of and its own spell."""
     return {"kind": "talent", "calling": "vanguard", "key": key, "name": key.title(), "rank": "1",
             "variant_of": skill, "spell_id": str(spell_id), "visual": "78", "icon": "Interface\\Icons\\Ability_X",
-            "modelled": "yes", "description": f"{key}.", **extra}
+            "modelled": "yes", "description": f"{key}.", "change": "Hits harder.", **extra}
 
 
 def row_talent(key: str, row_key: str = "fury", level: str = "4", **extra: str) -> dict:
@@ -1502,6 +1502,51 @@ class TalentRows(BuildSpells):
     def test_two_choices_fail(self):
         rows = [CALLING, {**STRIKE, "row_level": "3"}, choice("a", 1000501), choice("b", 1000502)]
         self.assert_fails(rows, "has row_level 3 and 2 Skill Choices, want 3")
+
+    def change_rows(self, change: str) -> list[dict]:
+        """A row of three whose first choice's Change Line is `change`; the first costs 5 with a
+        6000 ms cooldown and hits for 8.5 + 0.14 per level, beside an aura of 10000 ms."""
+        a = choice("a", 1000501, client_cost="5", realm_cost="5", client_cooldown_ms="6000",
+                   realm_cooldown_ms="6000", effect1_kind="school_damage",
+                   effect1_params="amount.base=8.5;amount.per_level=0.14", change=change)
+        return [{**CALLING, "row_levels": "3"}, {**STRIKE, "row_level": "3"}, AURA, a, choice("b", 1000502),
+                choice("c", 1000503)]
+
+    def test_a_change_line_fills_fixed_values_and_keeps_amounts(self):
+        line = ("Costs {cost} rage instead of {plain.cost}, its cooldown is {cooldown}, the buff lasts "
+                "{buff.duration}, the stun {plain.effect2.duration_ms}, and it hits for {effect1.amount}.")
+        done, data = self.run_build(self.change_rows(line))
+        self.assertEqual(done.returncode, 0, done.stderr)
+        a, b, _ = data[0]["rows"][0]["choices"]
+        self.assertEqual(a["change"], "Costs 5 rage instead of 15, its cooldown is 6 sec, the buff lasts 10 sec, "
+                                      "the stun 1 sec, and it hits for {amount:8.5:0.14:0:0}.")
+        # A line with no tokens is its own text; the client patch never carries it.
+        self.assertEqual(b["change"], "Hits harder.")
+        self.assertNotIn("change", data[0]["skills"][0])
+        patch = {o["spell_id"]: o["fields"] for o in self.patch["spells"]}
+        self.assertNotIn("change", patch[1000501])
+
+    def test_a_skill_choice_without_a_change_line_fails(self):
+        self.assert_fails(self.change_rows(""), "(vanguard/a): a Skill Choice needs a change, its Change Line")
+
+    def test_a_change_line_off_a_skill_choice_fails(self):
+        rows = [{**STRIKE, "change": "Hits."}]
+        self.assert_fails(rows, "(vanguard/strike) change: set on a skill row; only a Skill Choice carries")
+
+    def test_a_digit_outside_a_token_fails(self):
+        self.assert_fails(self.change_rows("Costs 5 rage instead of {plain.cost}."),
+                          "(vanguard/a) change: 'Costs 5 rage instead of' has a digit outside a token")
+
+    def test_a_token_naming_no_field_fails(self):
+        for line, message in (("Costs {mana}.", "{mana}: names no field"),
+                              ("Hits {effect9.amount}.", "{effect9.amount}: the skill row has no effect9"),
+                              ("Hits {effect1.school}.", "{effect1.school}: effect1 school is"),
+                              ("Lasts {buff.cost}.", "{buff.cost}: names no field; an aura row has duration"),
+                              ("Hits {nobody.cost}.", "'nobody' is not the choice, plain, or a skill or aura"),
+                              ("Hits {plain.cost.", "has an unclosed or nested brace"),
+                              ("Hits {plain.{cost}}.", "has an unclosed or nested brace")):
+            with self.subTest(line=line):
+                self.assert_fails(self.change_rows(line), message)
 
     def test_a_choice_whose_skill_has_no_row_level_fails(self):
         self.assert_fails([CALLING, STRIKE, *self.three()], "names a skill with no row_level")

@@ -55,12 +55,19 @@ ROW_KINDS = ("skill", "talent", "calling", "aura")
 # Talent Rows (ADR 0028): a `talent` row with `variant_of` is a Skill Choice of that skill, one
 # with `row_key` a Talent of that row; `row_level` opens a skill's row or a Talent row.
 ROW_COLUMNS = ("variant_of", "row_key", "row_level")
+# A Skill Choice's Change Line (#517): one sentence of what it changes, every number a token.
+CHANGE_COLUMN = "change"
+# The fields a Change Line token names on a skill or choice row, and on an aura row, by their
+# built columns (#518).
+CHANGE_SKILL_FIELDS = {"cost": "realm_cost", "cooldown": "realm_cooldown_ms", "range": "realm_range_max",
+                       "targets": "max_targets"}
+CHANGE_AURA_FIELDS = {"duration": "duration_ms", "stacks": "max_stacks", "charges": "charges"}
 # The Talent Tree's columns, retired by ADR 0028: they stay in the header and empty on every row.
 TREE_COLUMNS = ("talent_id", "source_tab_id", "tab", "tab_row", "tab_column", "prereq_key", "prereq_rank",
                 "max_rank", "tab_id", "background", "tab_order", "exceptional")
 # The cells a Skill Choice never inherits from its skill: they are the choice's own, empty or not.
 CHOICE_OWN_COLUMNS = ("kind", "key", "name", "rank", "spell_id", "icon", "visual", "status", "description",
-                      "assumptions", "notes", "modelled", "variant_of")
+                      "assumptions", "notes", "modelled", "variant_of", CHANGE_COLUMN)
 # A choice cell of this blanks the inherited cell.
 BLANK = "-"
 STATS =("strength", "agility", "stamina", "intellect", "spirit")
@@ -1394,10 +1401,12 @@ def build_rows(calling: dict, skill_rows: list[tuple[int, dict]], choices: dict[
         mine = choices.get(row["key"], [])
         if len(mine) != 3:
             raise BuildError(f"{where}: {row['key']} has row_level {level} and {len(mine)} Skill Choices, want 3")
-        skill_id = next((s.get("spell_id") for s in calling["skills"] if s["key"] == row["key"]), None)
+        plain = next((s for s in calling["skills"] if s["key"] == row["key"]), {})
+        skill_id = plain.get("spell_id")
         for _, built, choice_where in mine:
             if built.get("spell_id") == skill_id:
                 raise BuildError(f"{choice_where}: spell_id {skill_id} is its skill's; a Skill Choice is its own spell")
+            built[CHANGE_COLUMN] = change_line(built, plain, calling, choice_where)
         out.append((level, line, {"key": row["key"], "level": level, "kind": "skill_choice", "skill": row["key"],
                                   "choices": [built for _, built, _ in mine]}))
     for key, mine in choices.items():
@@ -1424,6 +1433,83 @@ def build_rows(calling: dict, skill_rows: list[tuple[int, dict]], choices: dict[
     if opened != wanted:
         raise BuildError(f"{calling['key']}: rows open at {opened} and do not fill row_levels {wanted}")
     return [entry for _, _, entry in sorted(out, key=lambda e: (e[0], e[1]))]
+
+
+def change_line(choice: dict, plain: dict, calling: dict, where: str) -> str:
+    """A Skill Choice's Change Line with every token filled: a fixed number as it reads, a
+    level-scaled amount as `{amount:<base>:<per_level>:<per_ap>:<min>}` for the realm to fill at
+    the player's level (#518). Refuses a blank line, a digit or a brace outside a token, and a
+    token that names no row or no field."""
+    text = choice.get(CHANGE_COLUMN, "")
+    if not text:
+        raise BuildError(f"{where}: a Skill Choice needs a change, its Change Line")
+    out = []
+    # The odd pieces are the tokens, the even ones the words between.
+    for n, piece in enumerate(re.split(r"(\{[^{}]*\})", text)):
+        if n % 2:
+            out.append(change_token(piece[1:-1], choice, plain, calling, where))
+            continue
+        if "{" in piece or "}" in piece:
+            raise BuildError(f"{where} change: {text!r} has an unclosed or nested brace")
+        if re.search(r"\d", piece):
+            raise BuildError(f"{where} change: {piece.strip()!r} has a digit outside a token; write every "
+                             "number as a token")
+        out.append(piece)
+    return "".join(out)
+
+
+def change_token(token: str, choice: dict, plain: dict, calling: dict, where: str) -> str:
+    """One Change Line token's text: `{field}` of the choice, `{plain.field}` of its skill, or
+    `{<key>.field}` of a skill or aura of the Calling."""
+    here = f"{where} change {{{token}}}"
+    parts = token.split(".")
+    if len(parts) == 1 or (len(parts) == 2 and re.fullmatch(r"effect\d+", parts[0])):
+        row, kind, field = choice, "skill", parts
+    elif parts[0] == "plain":
+        row, kind, field = plain, "skill", parts[1:]
+    else:
+        # An aura's own field reads the aura row first; anything else the skill row.
+        rows = [(s, "skill") for s in calling["skills"] if s["key"] == parts[0]]
+        rows += [(a, "aura") for a in calling["auras"] if a["key"] == parts[0]]
+        if parts[1:2] and parts[1] in CHANGE_AURA_FIELDS:
+            rows.sort(key=lambda r: r[1] != "aura")
+        if not rows:
+            raise BuildError(f"{here}: {parts[0]!r} is not the choice, plain, or a skill or aura of {calling['key']}")
+        (row, kind), field = rows[0], parts[1:]
+    columns = CHANGE_AURA_FIELDS if kind == "aura" else CHANGE_SKILL_FIELDS
+    if len(field) == 1 and field[0] in columns:
+        value = row.get(columns[field[0]])
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise BuildError(f"{here}: the {kind} row has no {columns[field[0]]}")
+        return change_number(value, field[0] in ("cooldown", "duration"))
+    slot = re.fullmatch(r"effect(\d+)", field[0]) if len(field) == 2 else None
+    if not slot:
+        raise BuildError(f"{here}: names no field; {'an aura' if kind == 'aura' else 'a skill'} row has "
+                         f"{', '.join(columns)} and effectN.<param>")
+    effects = row.get("effects", [])
+    n = int(slot.group(1))
+    if not 1 <= n <= len(effects):
+        raise BuildError(f"{here}: the {kind} row has no {field[0]}, only {len(effects)} effects")
+    value = effects[n - 1]["params"].get(field[1])
+    if isinstance(value, dict) and "base" in value:
+        parts = (value["base"], value.get("per_level", 0), value.get("per_ap", 0), value.get("min", 0))
+        return "{amount:" + ":".join(change_number(p, False, signed=True) for p in parts) + "}"
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise BuildError(f"{here}: {field[0]} {field[1]} is {value!r}, not a number")
+    return change_number(value, field[1].endswith("_ms"))
+
+
+def change_number(value: int | float, ms: bool, signed: bool = False) -> str:
+    """A fixed number as a Change Line prints it: a millisecond value in seconds with " sec",
+    no trailing ".0", and its size alone (the words say which way it goes, "slowed by 50%")
+    unless `signed`."""
+    if not signed:
+        value = abs(value)
+    if ms:
+        value = value / 1000
+    if float(value).is_integer():
+        value = int(value)
+    return f"{value} sec" if ms else str(value)
 
 
 def choice_skills(calling: dict) -> list[dict]:
@@ -1587,6 +1673,9 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
     out["modelled"] = modelled == "yes"
     out["effects"] = effects if out["modelled"] else []
     out["description"] = row["description"]
+    if row.get("variant_of"):
+        # Filled by `build_rows` once the Calling's rows are built.
+        out[CHANGE_COLUMN] = row.get(CHANGE_COLUMN, "")
     return out
 
 
@@ -1952,7 +2041,7 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
                              "moved the sheet once")
     # A sheet older than the Talent Rows columns (a test fixture) reads them as empty cells.
     for row in rows:
-        for column in ROW_COLUMNS:
+        for column in (*ROW_COLUMNS, CHANGE_COLUMN):
             row.setdefault(column, "")
     check_unique_ids(rows)
     masks = skill_masks(rows)
@@ -2028,6 +2117,8 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
             if choice_of or kind not in ("skill", "talent"):
                 raise BuildError(f"{where} row_level: set on a {row_kind} row; only skill rows and Talent rows carry it")
             whole(row["row_level"], f"{where} row_level")
+        if row[CHANGE_COLUMN] and not choice_of:
+            raise BuildError(f"{where} change: set on a {row_kind} row; only a Skill Choice carries a Change Line")
         if kind != "aura":
             for column in AURA_ONLY_COLUMNS:
                 # A from-scratch row shows its own dispel type and mechanic on the client.

@@ -247,6 +247,8 @@ pub struct TalentRowView {
 pub struct TalentChoiceView {
     pub spell_id: u32,
     pub name: String,
+    /// A Skill Choice's Change Line, filled at the player's level; "" for a Talent.
+    pub change: String,
 }
 
 /// Twilight's Eve, not 1.12: one of a kitchen's orders today (ADR 0025).

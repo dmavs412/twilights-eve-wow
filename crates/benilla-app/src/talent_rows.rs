@@ -173,14 +173,17 @@ mod tests {
                     benilla_protocol::TalentChoiceView {
                         spell_id: RUSH,
                         name: "Bull Rush".into(),
+                        change: String::new(),
                     },
                     benilla_protocol::TalentChoiceView {
                         spell_id: RALLY,
                         name: "Rallying Charge".into(),
+                        change: String::new(),
                     },
                     benilla_protocol::TalentChoiceView {
                         spell_id: RECKLESS,
                         name: "Reckless Charge".into(),
+                        change: String::new(),
                     },
                 ],
             }],
