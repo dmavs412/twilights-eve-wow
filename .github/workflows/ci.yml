@@ -68,5 +68,8 @@ jobs:
       - name: Toolchain
         run: rustup toolchain install && rustc -V
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      # The runner has no game data, so every data-gated test (`wow_data_or_skip!`) skips here.
+      # Those tests run with the data only on Davis's machine, where WOW_DATA and
+      # BENILLA_REQUIRE_DATA=1 are set (#433).
       - name: benilla-ui and benilla-app tests
         run: cargo test -p benilla-ui -p benilla-app

@@ -850,7 +850,7 @@ mod tests {
             .apply_dbc_patch(
                 r#"{"spells": [{"spell_id": 2136, "fields": {
                 "description": "Blasts the enemy for $s1 fire damage.",
-                "effects": [{"kind": "school_damage", "params": {"amount": {"base": 20}}}]}}]}"#,
+                "dbc_effects": [{"effect": 2, "base": 20}]}}]}"#,
             )
             .unwrap();
         let spell = catalog.get(2136).unwrap();

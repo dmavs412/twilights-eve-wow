@@ -119,8 +119,9 @@ macro_rules! wow_data_or_skip {
     };
 }
 
-/// A data-gated test's skip, printed; a panic under `BENILLA_REQUIRE_DATA=1`, which the gate sets
-/// where the data is, since libtest hides a passing test's stderr and a lost install reads green.
+/// A data-gated test's skip, printed; a panic under `BENILLA_REQUIRE_DATA=1`, which Davis's
+/// Windows user environment sets beside `WOW_DATA`, since libtest hides a passing test's stderr
+/// and a lost install reads green.
 #[doc(hidden)]
 pub fn skipped(what: &str, looked_in: &[PathBuf]) {
     skipped_under(

@@ -13,8 +13,18 @@ fn patched() -> Option<(SpellCatalog, serde_json::Value)> {
         .apply_dbc_patch(CLIENT_DBC_PATCH)
         .expect("patch parses");
     let patch: serde_json::Value = serde_json::from_str(CLIENT_DBC_PATCH).unwrap();
-    assert_eq!(rows, patch["spells"].as_array().unwrap().len());
-    assert_eq!(catalog.len(), stock + rows, "every row is a new one");
+    let entries = patch["spells"].as_array().unwrap();
+    assert_eq!(rows, entries.len());
+    // A stock id is a gate edit on a stock row (Fishing's pole, ADR 0022), not a Calling spell.
+    let new = entries
+        .iter()
+        .filter(|e| e["spell_id"].as_u64() >= Some(1_000_000))
+        .count();
+    assert_eq!(
+        catalog.len(),
+        stock + new,
+        "every from-scratch row is a new one"
+    );
     Some((catalog, patch))
 }
 
