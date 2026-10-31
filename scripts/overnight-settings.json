@@ -28,6 +28,7 @@
   },
   "env": {
     "TWILIGHT_UNATTENDED": "1",
-    "WOW_DATA": "C:\\Users\\davis\\wow-data\\Data"
+    "WOW_DATA": "C:\\Users\\davis\\wow-data\\Data",
+    "BENILLA_REQUIRE_DATA": "1"
   }
 }

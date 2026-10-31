@@ -84,7 +84,10 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
 ## This machine
 
 - Game data: `C:\Users\davis\wow-data\Data`, for `WOW_DATA` and `--data`; `run.ps1` defaults to
-  it. The repo's `wow-data` is a git symlink that Windows checks out as a text file.
+  it. The repo's `wow-data` is a git symlink that Windows checks out as a text file. `WOW_DATA`
+  and `BENILLA_REQUIRE_DATA=1` are in the user environment (and the night's settings), so every
+  data-gated test runs here, and one that cannot find the install fails instead of passing by
+  skipping (#433). CI has no game data and skips them.
 - Python is `~/.local/bin/python3.15`; `python3` on PATH is the Microsoft Store stub. No Node.
 - Build in this checkout's `target` only; a worktree's own `target` is 18 GB and fills C:.
   `CARGO_BUILD_JOBS=4` is in the user environment. Davis plays from a `play/` copy
