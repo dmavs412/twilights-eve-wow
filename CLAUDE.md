@@ -49,14 +49,17 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   Davis plays from `play/<short-commit>/`, made by `scripts/publish-play.ps1`, never from
   `target`. Rules: `docs/agents/unattended.md`.
 - **`unplayed`.** A spec closes when its tickets land and gets the `unplayed` label; Davis's
-  play note removes it. Bugs name the spec they break.
+  play note removes it. `overnight.ps1` does this when it closes a spec's last ticket; a session
+  that closes one by hand does it too. A closed issue keeps no workflow label
+  (`docs/agents/triage-labels.md`). Bugs name the spec they break.
 - **Grill before architecture.** Run `/grill-me` first for: a new crate or a new `twilight-realm`
   dependency; a new ECS component family or system ordering in the realm; a column added or
   changed in the master CSV, or a schema change in a generated file; anything crossing the
   client/realm seam or changing how the DBC patch applies; any decision that would need an ADR.
   A bug fix, a new data row, or a component that follows an existing pattern goes straight to
   code. A ticket labelled `ready-for-agent` has already passed grilling.
-- **Land as small commits on `main`**, each saying what changed and which check ran. A branch
+- **Land as small commits on `main`**, each saying what changed and which check ran, and push
+  `main` once the check has passed. `overnight.ps1` pushes at the end of a night. A branch
   and a pull request only when Davis asks. CI (`.github/workflows/ci.yml`) repeats the check and
   the realm tests and runs the client's tests on GitHub's runners; it is a backstop you never
   wait on.
