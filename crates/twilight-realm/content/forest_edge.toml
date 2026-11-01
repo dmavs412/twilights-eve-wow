@@ -36,7 +36,7 @@ gap_yd = 8.0
 # its own.
 [meter]
 name = "Noise"
-max = 20
+max = 40
 client_spell = 12323
 client_spell_name = "Piercing Howl"
 clock_stack_every_s = 30.0
@@ -46,7 +46,7 @@ hide_drain_every_s = 2.0
 # A sleeper (#172) wakes when a character is within base + per_stack x stacks yards (plus its own
 # wake_radius_mod).
 wake_base_yd = 3.0
-wake_per_stack_yd = 1.5
+wake_per_stack_yd = 0.5
 # The Creature Spell (`creature_spells.toml` sleeping) every asleep creature wears until it wakes.
 sleep_aura = 1900041
 
@@ -1503,7 +1503,7 @@ asleep = true
 camp = 9
 
 # Hogger (#174), asleep in his tent at the back of the hollow (-10050, 655): a deep sleeper, so he
-# stays down at 19 stacks (3 + 1.5 x 19 - 15 = 16.5 yd) and hunts at the maximum. At 30% health he
+# stays down at 39 stacks (3 + 0.5 x 39 - 15 = 7.5 yd) and hunts at 40. At 30% health he
 # calls two Brutes to the tent mouth.
 [[creature]]
 guid = 790327

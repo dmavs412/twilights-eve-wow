@@ -1498,6 +1498,16 @@ mod tests {
     }
 
     #[test]
+    fn forest_edges_noise_runs_to_40_at_half_a_yard_a_stack() {
+        let meter = dungeon(2).unwrap().meter.as_ref().unwrap();
+        assert_eq!(meter.max, 40);
+        assert_eq!(meter.wake_radius(0, 0.0), 3.0);
+        assert_eq!(meter.wake_radius(40, 0.0), 23.0);
+        // Hogger (-15) stays asleep a step from his tent at 39 stacks.
+        assert_eq!(meter.wake_radius(39, -15.0), 7.5);
+    }
+
+    #[test]
     fn the_abbey_holds_its_creatures_and_its_doorway_but_not_its_lawn() {
         let abbey = &content()[0];
         for c in &abbey.creature {
