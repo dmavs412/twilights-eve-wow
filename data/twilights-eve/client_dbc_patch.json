@@ -8076,6 +8076,32 @@
    }
   },
   {
+   "spell_id": 1900041,
+   "creature": "sleeping",
+   "fields": {
+    "name": "Sleeping",
+    "icon": "Interface\\Icons\\Spell_Nature_Sleep",
+    "school": 0,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 4
+     }
+    ],
+    "aura_description": "Asleep. Wakes if you come near, and hears you from farther as the camp's Noise grows.",
+    "visual": 1445,
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 21
+   }
+  },
+  {
    "spell_id": 7620,
    "fields": {
     "equipped_item_class": -1,

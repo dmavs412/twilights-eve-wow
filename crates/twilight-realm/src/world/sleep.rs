@@ -16,20 +16,42 @@ impl InWorld {
     /// that a waker has passed. Before the mobs notice anyone, so a sleeper woken this tick is
     /// an ordinary mob from now on.
     pub(super) fn wake_sleepers(&mut self, me: [f32; 3], events: &mut Vec<SessionEvent>) {
-        if !self.mobs.iter().any(|m| m.asleep) {
+        if self.mobs.iter().any(|m| m.asleep) {
+            let mut watchers: Vec<[f32; 3]> = self.others.iter().map(|o| o.1).collect();
+            if self.player.alive() {
+                watchers.push(me);
+            }
+            let meter = self.meter();
+            let mut characters: Vec<(u64, [f32; 3])> =
+                self.others.iter().map(|o| (o.0, o.1)).collect();
+            if self.player.alive() {
+                characters.push((self.guid, me));
+            }
+            hunt(&mut self.mobs, &characters, meter, self.noise_shown, events);
+            wake(&mut self.mobs, &watchers, meter, self.noise_shown, events);
+        }
+        self.show_sleep(events);
+    }
+
+    /// In a Run whose meter names a `sleep_aura`, each asleep creature the client has wears it,
+    /// put up once the creature is shown, and each one that woke, here or in another
+    /// character's session, has it taken off.
+    fn show_sleep(&mut self, events: &mut Vec<SessionEvent>) {
+        let Some(aura) = self.meter().and_then(|meter| meter.sleep_aura) else {
             return;
+        };
+        let sleepers: Vec<(u64, bool)> = self
+            .mobs
+            .iter()
+            .map(|m| (m.guid, m.asleep && self.seen.contains(&m.guid)))
+            .collect();
+        for (guid, asleep) in sleepers {
+            match (asleep, self.skills.marked(guid, aura)) {
+                (true, false) => self.show_marker_on(guid, aura, false, 0, events),
+                (false, true) => self.skills.hide_marker_on(guid, aura, events),
+                _ => {}
+            }
         }
-        let mut watchers: Vec<[f32; 3]> = self.others.iter().map(|o| o.1).collect();
-        if self.player.alive() {
-            watchers.push(me);
-        }
-        let meter = self.meter();
-        let mut characters: Vec<(u64, [f32; 3])> = self.others.iter().map(|o| (o.0, o.1)).collect();
-        if self.player.alive() {
-            characters.push((self.guid, me));
-        }
-        hunt(&mut self.mobs, &characters, meter, self.noise_shown, events);
-        wake(&mut self.mobs, &watchers, meter, self.noise_shown, events);
     }
 }
 
@@ -137,6 +159,7 @@ mod tests {
             hide_drain_every_s: 2.0,
             wake_base_yd: 3.0,
             wake_per_stack_yd: 1.5,
+            sleep_aura: None,
         }
     }
 
@@ -375,6 +398,6 @@ mod tests {
         };
         assert_eq!(state(&mobs[0]), None);
         mobs[0].asleep = true;
-        assert_eq!(state(&mobs[0]), Some((UNIT_NPC_EMOTESTATE, 3)));
+        assert_eq!(state(&mobs[0]), Some((UNIT_NPC_EMOTESTATE, 12)));
     }
 }

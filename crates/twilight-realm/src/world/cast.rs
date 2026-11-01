@@ -1990,6 +1990,13 @@ impl Skills {
         .sum()
     }
 
+    /// Whether `unit` wears an [`AuraKind::Marker`] of `spell_id`.
+    pub(super) fn marked(&self, unit: u64, spell_id: u32) -> bool {
+        self.auras.iter().any(|a| {
+            a.unit == unit && a.spell_id == spell_id && matches!(a.kind, AuraKind::Marker { .. })
+        })
+    }
+
     /// Takes `unit`'s [`AuraKind::Marker`] of `spell_id` off.
     pub(super) fn hide_marker_on(
         &mut self,
@@ -6571,7 +6578,6 @@ impl InWorld {
         self.faded(&gone, events);
     }
 
-    /// `unit` died: its auras go with it.
     /// Puts a [`AuraKind::Marker`] of `spell_id` on the player with `stacks`, held until taken
     /// off; one already up is replaced.
     pub(super) fn show_marker(
@@ -6581,8 +6587,20 @@ impl InWorld {
         stacks: u32,
         events: &mut Vec<SessionEvent>,
     ) {
+        self.show_marker_on(self.guid, spell_id, helpful, stacks, events);
+    }
+
+    /// [`Self::show_marker`] on `unit`, the player or a creature.
+    pub(super) fn show_marker_on(
+        &mut self,
+        unit: u64,
+        spell_id: u32,
+        helpful: bool,
+        stacks: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
         let aura = Aura {
-            unit: self.guid,
+            unit,
             spell_id,
             slot: 0,
             level: 0,
@@ -6601,6 +6619,7 @@ impl InWorld {
         self.skills.hide_marker_on(me, spell_id, events);
     }
 
+    /// `unit` died: its auras go with it.
     pub(super) fn auras_die_with(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
         let gone = self.skills.remove_where(|a| a.unit == unit, events);
         self.faded(&gone, events);

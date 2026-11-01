@@ -19,6 +19,11 @@ const INSIDE: [f32; 3] = [-9925.0, 560.0, 38.0];
 const OUTSIDE: [f32; 3] = [-10200.0, 600.0, 38.0];
 /// The meter's debuff (`[meter] client_spell`).
 const NOISE_SPELL: u32 = 12323;
+/// The Camp 1 Riverpaw Mystic, asleep (guid 790302), and the aura a sleeper wears
+/// (`[meter] sleep_aura`).
+const MYSTIC: u32 = 96007;
+const MYSTIC_AT: [f32; 3] = [-9955.0, 608.0, 37.23];
+const SLEEPING: u32 = 1900041;
 
 fn party(n: usize) -> Party {
     Party::starting(realm(), &vec![5; n], START_ELWYNN, Box::new(NoGround))
@@ -114,6 +119,23 @@ fn two_hiders_drain_twice_as_fast() {
     p.run(2.5);
     assert_eq!(noise(&p, 0), 1, "one stack each in the first 2 s");
     assert_eq!(noise(&p, 1), 1);
+}
+
+#[test]
+fn a_sleeper_wears_sleeping_until_a_character_steps_up_and_wakes_it() {
+    let mut p = party(1);
+    p.go(0, [MYSTIC_AT[0] + 10.0, MYSTIC_AT[1], MYSTIC_AT[2]], 0.0);
+    p.run(0.5);
+    let (mystic, _) = p.unit(0, MYSTIC, MYSTIC_AT);
+    let sleeping = |p: &Party| {
+        let mut view = View::default();
+        view.see(p.seen(0));
+        view.aura(mystic, SLEEPING).is_some()
+    };
+    assert!(sleeping(&p), "asleep with a character 10 yd east");
+    p.go(0, [MYSTIC_AT[0] + 1.0, MYSTIC_AT[1], MYSTIC_AT[2]], 0.0);
+    p.run(0.5);
+    assert!(!sleeping(&p), "woken from 1 yd");
 }
 
 #[test]

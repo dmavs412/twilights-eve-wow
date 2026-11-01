@@ -260,6 +260,28 @@ effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, dura
             {"effect": 6, "aura": 87, "base": -10, "per_level": 0, "misc_value": 127},
         ])
 
+    def test_a_creature_marker_is_a_dummy_aura_on_the_caster_with_no_end(self):
+        self.creature_spells = """
+[[spell]]
+key = "sleeping"
+spell_id = 1900001
+name = "Sleeping"
+icon = 'Interface\\Icons\\Spell_Nature_Sleep'
+visual = 9159
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 0
+effect = { kind = "marker" }
+"""
+        done, _ = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        fields = next(e for e in self.patch["spells"] if e["spell_id"] == 1900001)["fields"]
+        self.assertEqual(fields["implicit_targets"], [1, 0])
+        self.assertEqual(fields["duration_ms"], -1)
+        self.assertEqual(fields["dbc_effects"], [{"effect": 6, "aura": 4, "base": 0, "per_level": 0}])
+
     def test_a_creature_spell_on_a_sheet_id_fails(self):
         self.creature_spells = self.creature(spell_id=1000078)
         self.assert_fails([STRIKE], "curse: spell_id 1000078 is already claimed by line 2 (vanguard/strike)")

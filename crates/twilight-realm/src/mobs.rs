@@ -891,6 +891,7 @@ pub(crate) fn content() -> &'static Mobs {
             for roll in &t.rolls {
                 roll.check(&t.name);
             }
+            crate::creature_spells::check_castable(&t.spells, &t.name);
         }
         for s in dungeon.spawn {
             let Some(t) = template.iter().find(|t| t.entry == s.entry) else {

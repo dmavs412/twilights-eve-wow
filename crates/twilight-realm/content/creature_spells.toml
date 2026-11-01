@@ -54,7 +54,10 @@
 #                  range_max = 0: every swing and hit the caster lands changes by
 #                  damage_dealt_pct percent, and every damage it takes, any school, after armour
 #                  and absorbs, by damage_taken_pct percent; duration_ms 0 holds until it leaves
-#                  combat or dies; a stance already up blocks the cast)
+#                  combat or dies; a stance already up blocks the cast), or
+#                  marker (an aura the realm puts up and takes off itself, such as a Run's
+#                  Sleeping; no creature casts it, a template that names one is refused when the
+#                  content loads, and its cast columns are 0)
 
 # Corruption rank 1's look. Placeholders: 6 ticks of 10, 60 shadow damage over 18 s.
 [[spell]]
@@ -723,3 +726,20 @@ range_max = 0.0
 chance = 100
 below_health_pct = 50
 effect = { kind = "heal", pct_max_health = 15 }
+
+# Forest's Edge's Sleeping (#534), the debuff every asleep creature wears until it wakes
+# (`[meter] sleep_aura` in forest_edge.toml). Stock Sleep's look (visual 9159). A marker: the realm
+# puts it up and takes it off, so the cast columns are 0. 1900040 is test_curse_random's.
+[[spell]]
+key = "sleeping"
+spell_id = 1900041
+name = "Sleeping"
+icon = 'Interface\Icons\Spell_Nature_Sleep'
+visual = 9159
+aura_description = "Asleep. Wakes if you come near, and hears you from farther as the camp's Noise grows."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 0
+effect = { kind = "marker" }

@@ -47,6 +47,8 @@ hide_drain_every_s = 2.0
 # wake_radius_mod).
 wake_base_yd = 3.0
 wake_per_stack_yd = 1.5
+# The Creature Spell (`creature_spells.toml` sleeping) every asleep creature wears until it wakes.
+sleep_aura = 1900041
 
 
 # Hiding spots (#170): inside the Phase only, spaced along the routes from the Portal past

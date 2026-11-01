@@ -72,6 +72,8 @@ pub(crate) enum CreatureEffect {
         damage_taken_pct: i32,
         duration_ms: u32,
     },
+    /// An aura the realm puts up and takes off itself (a Run's Sleeping); no creature casts it.
+    Marker,
 }
 
 impl CreatureEffect {
@@ -223,6 +225,15 @@ mod tests {
 /// The Creature Spell `key`.
 pub(crate) fn get(key: &str) -> Option<&'static CreatureSpell> {
     all().iter().find(|s| s.key == key)
+}
+
+/// Refuses the template `name` when its `keys` name a marker, which no creature casts.
+pub(crate) fn check_castable(keys: &[String], name: &str) {
+    for k in keys {
+        if get(k).is_some_and(|s| matches!(s.effect, CreatureEffect::Marker)) {
+            panic!("{name} casts {k}, a marker the realm puts up itself");
+        }
+    }
 }
 
 /// The spells of `keys`; an unknown key fails loudly, as content should.

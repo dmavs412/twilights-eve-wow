@@ -686,6 +686,9 @@ pub(crate) struct Meter {
     pub(crate) wake_base_yd: f32,
     #[serde(default)]
     pub(crate) wake_per_stack_yd: f32,
+    /// The Creature Spell id of the aura every asleep creature of the Run wears until it wakes.
+    #[serde(default)]
+    pub(crate) sleep_aura: Option<u32>,
 }
 
 impl Meter {
