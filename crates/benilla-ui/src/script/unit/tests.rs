@@ -1059,7 +1059,7 @@ fn an_unrecognised_unit_token_raises_and_a_recognised_empty_one_does_not() {
     let mut s = UiScript::new().unwrap();
     s.set_unit("player", Some(player()));
 
-    for bogus in ["bogus", "focus", "boss1", "arena1"] {
+    for bogus in ["bogus", "focus", "arena1"] {
         let err = s
             .run(&format!(r#"UnitName("{bogus}")"#))
             .expect_err(&format!("{bogus} must raise"))
@@ -1080,6 +1080,8 @@ fn an_unrecognised_unit_token_raises_and_a_recognised_empty_one_does_not() {
         "mouseover",
         "partypet2",
         "raidpet3",
+        // Twilight's Eve's Boss Bar row (ADR 0013), with no fight on it.
+        "boss1",
     ] {
         assert!(
             s.eval::<Option<String>>(&format!(r#"return UnitName("{absent}")"#))
