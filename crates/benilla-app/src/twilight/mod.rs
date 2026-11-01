@@ -99,6 +99,7 @@ impl Plugin for TwilightPlugin {
         app.init_resource::<crate::char_select::ClassLabels>()
             .init_resource::<CallingKeys>()
             .init_resource::<BossFightList>()
+            .init_resource::<PhaseMeter>()
             .init_resource::<MapMarkList>()
             .init_resource::<HerbTracking>()
             .init_resource::<SelfCalling>();
@@ -133,6 +134,12 @@ impl Plugin for TwilightPlugin {
                 track_self_calling.after(pump),
                 crate::ui_twilight::unlock_talent_frame,
             ),
+        )
+        .add_systems(
+            Update,
+            crate::ui_twilight::feed_phase_meter
+                .run_if(crate::ui_script::ingame_ui_up)
+                .in_set(crate::ui_script::UiFeed),
         );
         // Closing the window logs the character out, which saves it.
         crate::shutdown::on_app_exit(app, save_on_exit.into_configs());
@@ -267,6 +274,7 @@ fn pump(
     mut labels: ResMut<crate::char_select::ClassLabels>,
     mut keys: ResMut<CallingKeys>,
     mut boss: ResMut<BossFightList>,
+    mut meter: ResMut<PhaseMeter>,
     mut marks: ResMut<MapMarkList>,
     mut herb_tracking: ResMut<HerbTracking>,
     mut goto: ResMut<goto::GotoGround>,
@@ -387,6 +395,11 @@ fn pump(
             boss.set_if_neq(BossFightList(guids));
             continue;
         }
+        // The Noise Bar's meter, whole on every change; `None` takes it down (spec #533).
+        if let SessionEvent::PhaseMeter { meter: m } = event {
+            meter.set_if_neq(PhaseMeter(m));
+            continue;
+        }
         // The world map's quest, service and dungeon marks, whole on every change (spec #383).
         if let SessionEvent::MapMarks { marks: m } = event {
             marks.set_if_neq(MapMarkList(m));
@@ -458,6 +471,7 @@ fn pump(
         let logged_out = matches!(event, SessionEvent::LoggedOut);
         if logged_out {
             boss.set_if_neq(BossFightList::default());
+            meter.set_if_neq(PhaseMeter::default());
             marks.set_if_neq(MapMarkList::default());
             herb_tracking.set_if_neq(HerbTracking::default());
             if let Some(inbox) = reel.0.as_deref_mut() {
@@ -501,6 +515,11 @@ impl CallingKeys {
 /// Only the first three show as `boss1` to `boss3`; the rest wait.
 #[derive(Resource, Default, Clone, PartialEq)]
 pub(crate) struct BossFightList(pub(crate) Vec<u64>);
+
+/// The Noise Bar's meter as the realm last sent it (`SessionEvent::PhaseMeter`, spec #533), with
+/// the cause line of the update that raised it; `None` while no bar is up.
+#[derive(Resource, Default, Clone, PartialEq)]
+pub(crate) struct PhaseMeter(pub(crate) Option<benilla_protocol::PhaseMeterState>);
 
 /// The world map's marks as the realm last sent them (`SessionEvent::MapMarks`).
 #[derive(Resource, Default, Clone, PartialEq)]

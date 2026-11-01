@@ -38,6 +38,9 @@ const BEYOND_1_12: &[&str] = &[
     // bar the host runs and the Angler badge from these.
     "GetReelState",
     "GetAnglerInfo",
+    // Twilight's Eve: the Noise Bar (spec #533) has no 1.12 verb, and a meter is no unit for a
+    // token to name; `NoiseBar.xml` reads the Phased Dungeon's meter from it.
+    "GetPhaseMeter",
     // Twilight's Eve: the Fishing Journal (spec #323), its gear slots and Fish Pages (ADR 0022)
     // and its Satchel (ADR 0023) have no 1.12 verb; `FishingJournal.xml` reads the zones, legends,
     // gear, Satchel and pages from these, and the setters queue its clicks for the host.

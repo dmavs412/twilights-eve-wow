@@ -713,6 +713,8 @@ mod herbalism_journal_tests;
 #[cfg(test)]
 mod kitchen_tests;
 #[cfg(test)]
+mod noise_bar_tests;
+#[cfg(test)]
 mod unit_frame_tests;
 
 #[cfg(test)]

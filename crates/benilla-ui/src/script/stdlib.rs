@@ -96,6 +96,7 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
     // Before the Lua layer, whose `debugprofile*` pair keeps its own `GetTime`.
     super::clock::install(lua)?;
     super::fishing::install(lua)?;
+    super::phase_meter::install(lua)?;
     super::herbalism::install(lua)?;
     super::cooking::install(lua)?;
     super::calling_choice::install(lua)?;

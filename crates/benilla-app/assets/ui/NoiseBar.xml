@@ -1,0 +1,197 @@
+<Ui>
+    <!--
+        The Noise Bar (spec #533): the meter of the Phased Dungeon the character stands in, top
+        centre, from `GetPhaseMeter()`. The meter's name sits above a bar that runs from yellow when
+        empty to red when full, with the meter's end icon at its right end and no number. The app
+        fires `BENILLA_PHASE_METER(rose)` on every change; on a rise (`rose` set) a glow pulses over
+        the bar and the cause line shows under it for 4 s. While the bar is up, the Boss Bar sits 4
+        px under it.
+    -->
+    <Script><![CDATA[
+        -- The bar's colour at 0 and at the meter's max, linear between.
+        BENILLA_NOISE_EMPTY = { 1, 0.82, 0 }
+        BENILLA_NOISE_FULL = { 1, 0.1, 0.1 }
+        -- The glow's pulses on a rise, and the seconds they take together.
+        BENILLA_NOISE_PULSES = 2
+        BENILLA_NOISE_GLOW_TIME = 0.6
+        -- Seconds the cause line shows, and how many of the last of them it fades over.
+        BENILLA_NOISE_LINE_TIME = 4
+        BENILLA_NOISE_LINE_FADE = 1
+
+        -- The Boss Bar 4 px under the Noise Bar while it is up, 40 px under the screen top without it.
+        function BenillaNoiseBar_PlaceBossBar()
+            if not BenillaBossBar then
+                return
+            end
+            BenillaBossBar:ClearAllPoints()
+            if BenillaNoiseBar:IsShown() then
+                BenillaBossBar:SetPoint("TOP", "BenillaNoiseBar", "BOTTOM", 0, -4)
+            else
+                BenillaBossBar:SetPoint("TOP", "UIParent", "TOP", 0, -40)
+            end
+        end
+
+        -- The colour at `fill` of the way from empty to full.
+        local function BenillaNoiseBar_Colour(fill)
+            local e, f = BENILLA_NOISE_EMPTY, BENILLA_NOISE_FULL
+            return e[1] + (f[1] - e[1]) * fill, e[2] + (f[2] - e[2]) * fill,
+                e[3] + (f[3] - e[3]) * fill
+        end
+
+        -- The bar from `GetPhaseMeter()`, hidden with the glow and the line when no meter is up.
+        function BenillaNoiseBar_Paint()
+            local name, stacks, max, endIcon = GetPhaseMeter()
+            if name then
+                BenillaNoiseBarName:SetText(name)
+                BenillaNoiseBarIcon:SetTexture(endIcon)
+                BenillaNoiseBarMeter:SetMinMaxValues(0, max)
+                BenillaNoiseBarMeter:SetValue(stacks)
+                local fill = 0
+                if max > 0 then
+                    fill = math.min(stacks / max, 1)
+                end
+                BenillaNoiseBarMeter:SetStatusBarColor(BenillaNoiseBar_Colour(fill))
+                BenillaNoiseBar:Show()
+            else
+                BenillaNoiseBar.glowStart = nil
+                BenillaNoiseBar.lineStart = nil
+                BenillaNoiseBarGlow:Hide()
+                BenillaNoiseBarCause:Hide()
+                BenillaNoiseBar:Hide()
+            end
+            BenillaNoiseBar_PlaceBossBar()
+        end
+
+        function BenillaNoiseBar_OnEvent()
+            BenillaNoiseBar_Paint()
+            if arg1 and BenillaNoiseBar:IsShown() then
+                local now = GetTime()
+                BenillaNoiseBar.glowStart = now
+                BenillaNoiseBar.lineStart = now
+                BenillaNoiseBarGlow:SetAlpha(0)
+                BenillaNoiseBarGlow:Show()
+                BenillaNoiseBarCause:SetText(arg1)
+                BenillaNoiseBarCause:SetAlpha(1)
+                BenillaNoiseBarCause:Show()
+            end
+        end
+
+        -- The glow's pulses, each rising from 0 to full and back, and the line's fade.
+        function BenillaNoiseBar_OnUpdate()
+            local now = GetTime()
+            if BenillaNoiseBar.glowStart then
+                local t = now - BenillaNoiseBar.glowStart
+                if t < BENILLA_NOISE_GLOW_TIME then
+                    local p = t / BENILLA_NOISE_GLOW_TIME * BENILLA_NOISE_PULSES
+                    p = p - math.floor(p)
+                    BenillaNoiseBarGlow:SetAlpha(1 - math.abs(2 * p - 1))
+                else
+                    BenillaNoiseBar.glowStart = nil
+                    BenillaNoiseBarGlow:Hide()
+                end
+            end
+            if BenillaNoiseBar.lineStart then
+                local t = now - BenillaNoiseBar.lineStart
+                local fadeFrom = BENILLA_NOISE_LINE_TIME - BENILLA_NOISE_LINE_FADE
+                if t >= BENILLA_NOISE_LINE_TIME then
+                    BenillaNoiseBar.lineStart = nil
+                    BenillaNoiseBarCause:Hide()
+                elseif t > fadeFrom then
+                    BenillaNoiseBarCause:SetAlpha(1 - (t - fadeFrom) / BENILLA_NOISE_LINE_FADE)
+                end
+            end
+        end
+    ]]></Script>
+
+    <Frame name="BenillaNoiseBar" parent="UIParent" frameStrata="LOW" hidden="true">
+        <Size>
+            <AbsDimension x="260" y="40"/>
+        </Size>
+        <Anchors>
+            <Anchor point="TOP" relativeTo="UIParent" relativePoint="TOP">
+                <Offset>
+                    <AbsDimension x="0" y="-40"/>
+                </Offset>
+            </Anchor>
+        </Anchors>
+        <Layers>
+            <Layer level="ARTWORK">
+                <FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="LEFT">
+                    <Size>
+                        <AbsDimension x="260" y="12"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT"/>
+                    </Anchors>
+                </FontString>
+                <!-- Short of the bar's end, where the end icon hangs below the bar. -->
+                <FontString name="$parentCause" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="240" y="12"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="0" y="-28"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <StatusBar name="$parentMeter">
+                <Size>
+                    <AbsDimension x="260" y="14"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="-13"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parentBack">
+                            <Anchors>
+                                <Anchor point="TOPLEFT"/>
+                                <Anchor point="BOTTOMRIGHT"/>
+                            </Anchors>
+                            <Color r="0" g="0" b="0" a="0.6"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <Texture name="BenillaNoiseBarGlow" file="Interface\TargetingFrame\UI-StatusBar" alphaMode="ADD" hidden="true">
+                            <Anchors>
+                                <Anchor point="TOPLEFT"/>
+                                <Anchor point="BOTTOMRIGHT"/>
+                            </Anchors>
+                        </Texture>
+                        <Texture name="BenillaNoiseBarIcon">
+                            <Size>
+                                <AbsDimension x="24" y="24"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="CENTER" relativePoint="RIGHT"/>
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
+                <BarColor r="1" g="0.82" b="0"/>
+            </StatusBar>
+        </Frames>
+        <Scripts>
+            <OnLoad>
+                this:RegisterEvent("BENILLA_PHASE_METER")
+            </OnLoad>
+            <OnEvent>
+                BenillaNoiseBar_OnEvent()
+            </OnEvent>
+            <OnUpdate>
+                BenillaNoiseBar_OnUpdate()
+            </OnUpdate>
+        </Scripts>
+    </Frame>
+</Ui>

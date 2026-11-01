@@ -277,6 +277,8 @@ pub(crate) struct Model {
     pub(crate) game_time: (u32, u32),
     /// The open Reeling Bar `GetReelState()` reads, pushed by the host each frame.
     pub(crate) reel: Option<super::ReelView>,
+    /// The Noise Bar's meter `GetPhaseMeter()` reads, pushed by the host on every change.
+    pub(crate) phase_meter: Option<super::PhaseMeterView>,
     /// `GetAnglerInfo()`'s Angler Level, pushed by the host.
     pub(crate) angler: super::fishing::AnglerInfo,
     /// The Fishing Journal the three journal getters read, pushed by the host.
@@ -1163,6 +1165,7 @@ impl Model {
             now: 0.0,
             game_time: (0, 0),
             reel: None,
+            phase_meter: None,
             angler: Default::default(),
             journal: Default::default(),
             bait_requests: Vec::new(),

@@ -1946,6 +1946,9 @@ fn the_layer_does_not_grow() {
         "GearSlots.xml",
         // The Boss Bar (ADR 0013): the realm's `BossFight` list as `boss1` to `boss3` rows.
         "BossBar.xml",
+        // The Noise Bar (spec #533): a Phased Dungeon's meter, which no stock file has, with the
+        // Boss Bar moved under it.
+        "NoiseBar.xml",
         // The world map's Twilight marks (spec #383): gossip icons and a tooltip on the POIs.
         "WorldMapMarks.xml",
         // The map canvas (#410): zone plates on one canvas, wheel zoom and drag pan.
@@ -1986,7 +1989,8 @@ fn the_layer_does_not_grow() {
     // `paperdoll.tga` is the art `GearSlots.xml` names (`Interface\Benilla\paperdoll`), and
     // `fishing/` the Reeling Bar's (`Interface\Benilla\fishing\*`) and `journal/` the Journal's
     // (`Interface\Benilla\journal\*`) and `herbalism/` the Forager's Grid's
-    // (`Interface\Benilla\herbalism\*`). `map/` holds the painted world map's canvas tiles (#424).
+    // (`Interface\Benilla\herbalism\*`). `map/` holds the painted world map's canvas tiles (#424),
+    // and `noise/` the Noise Bar's end icons (`Interface\Benilla\noise\*`).
     let mut shipped: Vec<String> = LAYER
         .iter()
         .chain(&[
@@ -1996,6 +2000,7 @@ fn the_layer_does_not_grow() {
             "herbalism",
             "journal",
             "map",
+            "noise",
         ])
         .map(|s| s.to_string())
         .collect();

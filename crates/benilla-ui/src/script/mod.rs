@@ -104,6 +104,7 @@ pub use object::frame_kind_from_tag;
 mod party;
 mod pet;
 mod petition;
+mod phase_meter;
 pub mod plain;
 mod pointer;
 mod pvp;
@@ -220,6 +221,7 @@ pub use petition::{
     validate_guild_name, PetitionRecordView, PetitionRequest, PetitionState, PETITION_TYPE_CHARTER,
     PETITION_TYPE_PETITION,
 };
+pub use phase_meter::PhaseMeterView;
 pub use tabard::{
     emblem_mask_path, TabardHost, TabardIntent, EMBLEM_MASK_TOKEN, TABARD_COUNTS,
     TABARD_CREATION_COST,
