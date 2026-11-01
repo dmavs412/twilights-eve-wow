@@ -86,9 +86,13 @@ its icon. Cooking has one item row per recipe, so every recipe has its own icon.
 
 ### Alchemy item icons, painted
 
-Davis painted all 47 alchemy icons. They are 128 x 128 PNGs in `data/twilights-eve/art/`,
-waiting for the alchemy item rows. `<p>` is one of `arcane`, `calming`, `fortifying`,
-`restorative`, `toxic`, `volatile`.
+Davis painted 47 alchemy icons for the 2026-10-25 design. They are 128 x 128 PNGs in
+`data/twilights-eve/art/`. `<p>` is one of `arcane`, `calming`, `fortifying`, `restorative`,
+`toxic`, `volatile`. The Alchemy prototype (ADR 0025, amended 2026-11-01) uses 36 of them:
+every row below whose `<p>` is not `toxic`, and Murky Sludge. Its `[[product]]` rows in
+`docs/specs/alchemy/alchemy.toml` name each one. The 11 others (`potion_toxic`, `oil_toxic`,
+`tincture_toxic`, `essence_toxic`, the six flasks with `toxic` in their name, and `fish_oil`)
+stay in the folder, unused.
 
 | Group | Files | Painting |
 |---|---|---|
@@ -102,6 +106,23 @@ waiting for the alchemy item rows. `<p>` is one of `arcane`, `calming`, `fortify
 
 Each Property has one colour: Arcane purple, Calming cyan, Fortifying amber, Restorative red,
 Toxic green, Volatile orange.
+
+### Hybrid potion icons, placeholders (spec #522)
+
+Ten 128 x 128 PNGs in `data/twilights-eve/art/`, `hybrid_<p1>_<p2>.png` with the two Properties
+in alphabetical order, as the flasks are: `hybrid_fortifying_restorative` (Trollblood Draught),
+`hybrid_restorative_volatile` (Bloodfire Bomb), `hybrid_arcane_restorative` (Rejuvenating
+Draught), `hybrid_calming_restorative` (Deepsleep Potion), `hybrid_fortifying_volatile` (Ember
+Shield), `hybrid_arcane_fortifying` (Mana Shield), `hybrid_calming_fortifying` (Steady Stance),
+`hybrid_arcane_volatile` (Spellfire Bomb), `hybrid_calming_volatile` (Smoke Bomb),
+`hybrid_arcane_calming` (Invisibility Draught). The placeholder is the round potion bottle
+split down the middle in the two Properties' colours; the content ticket paints them.
+
+### Alchemy Journal bookmark, placeholder
+
+`crates/benilla-app/assets/ui/journal/prof_alchemy.tga`, 128 x 128 RGBA TGA: the Journal's
+Alchemy bookmark, beside `prof_cooking`. The placeholder is a round flask on brown, painted by
+the Journal ticket.
 
 ### Cooking item icons, painted
 
@@ -210,8 +231,12 @@ Cooking bookmark, beside `prof_fishing` and `prof_herbalism`. The placeholder is
 ### Crafting window
 
 The Kitchen window reuses the Journal's frame art (`journal\window_bg`, `slot`, `title_plaque`,
-`bottom_tab`, `divider`), so it needs no file of its own yet. The alchemy table's window is
-still to be specified.
+`bottom_tab`, `divider`), so it needs no file of its own yet. The Alchemy window (spec #522)
+reuses the same frame art. Its six property vials are drawn from two placeholder files in
+`crates/benilla-app/assets/ui/alchemy/`: `vial_glass.tga` (64 x 256 RGBA, the empty glass
+with its neck and cork, transparent inside) and `vial_liquid.tga` (64 x 256 RGBA, a white
+liquid column the window tints with the Property's colour and crops to the fill). The window
+ticket paints both.
 
 ## Talent Rows (spec #498)
 

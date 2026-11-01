@@ -1,0 +1,765 @@
+# Alchemy (spec #522, ADR 0025 amended 2026-11-01), as Davis's Alchemy prototype plays it
+# (docs/specs/alchemy/alchemy-prototype.html). Staged by the Pipeline lane; the content ticket moves
+# it to crates/twilight-realm/content/alchemy.toml and src/alchemy.rs loads it. Generated from the
+# prototype's `realm` script and the realm's item entries on 2026-11-01, so every name below is the
+# realm's. The prototype is the reference for every rule; the function each section mirrors is named.
+#
+# [props]: `order` the five product properties, in the prototype's PROPS order, which every list and
+#   every entry block below follows; `toxic`, `purifying` the two values that make nothing (Toxic is the
+#   chance a craft fails and the points it pays when it holds; each Purifying point cancels one Toxic
+#   point in the same craft); `pairs` the ten hybrid pairs in PAIRS order.
+# [budget]: a herb's values add up to base + floor(level / per_levels) + rarity[its rarity]. Its level
+#   is the lowest `level` of its herbs.toml [[plant]] rows and its rarity the rarest of them
+#   (Mageroyal: uncommon in Elwynn, common in Redridge, so uncommon). A load check fails a row that
+#   misses its budget (prototype `_audit`, first check).
+# [[herb]]: item (a herbs.toml item), values (property or Toxic or Purifying to points). These
+#   19 are alchemy's herbs; Bird's Nest, Hill Truffle and Black Truffle are cooking herbs too.
+# [notes]: Herb Notes. A herb used in `names_at` crafts shows which values it holds; in `values_at`,
+#   their numbers (prototype `noteState`). Every craft counts every herb in it, a wash herb too.
+# [log]: the Brew Log keeps a character's last `keep` makes.
+# [grades]: names, the item `bands` (item_level), `quality` (white, green, blue, purple), `sell_price`
+#   in copper by grade, `steps` (the Strength Steps), `standard` the grade whose item name has no
+#   prefix ("Healing Potion", not "Standard Healing Potion").
+# [ladder]: each family's threshold per grade, the same for every property (prototype LADDER). A make
+#   gives the highest grade it meets, at that grade's step: points / threshold rounded down to a step,
+#   x1 to x2 (`gradeFor`, `stepOf`). A hybrid's points are the lower of its two properties'.
+# [toxic]: the one rule every craft rolls (prototype section 4). net = Toxic in - Purifying in, never
+#   below 0; fail chance = net / (net + main points), 0 when net is 0; a fail is Murky Sludge. When it
+#   holds, each net point pays `payoff` points into the product (a hybrid and a flask split them evenly
+#   between their two properties). A Tincture or Essence carries floor(net x `keep`) Toxic and rolls
+#   again wherever it goes. A make whose body is not herbs takes up to `wash` herbs as a wash: only their
+#   Toxic and Purifying count. `carried_max` is the most Toxic a Tincture (5 herbs) or Essence (15
+#   herbs) can carry: floor(keep x 3 x herbs), 3 being the most Toxic any herb holds; a load check
+#   recomputes it from [[herb]].
+# [use]: what the products do when used (prototype section 8). Durations are real seconds. A potion
+#   or hybrid shares one cooldown; one oil per hand, procs on a melee hit at `oil_proc_chance` (Quieting
+#   Oil every hit); one flask at a time, kept through death. `potion_spell`, `oil_spell`, `flask_spell`
+#   are the stock Spell.dbc spells the item rows name so the client lets them be used; each has an
+#   empty description, so the tooltip shows only the row's (as cooking's [eat] use_spell 25695 does);
+#   `*_spell_name` are their Spell.dbc names for tests/content_spell_ids.rs. `potion_category` is the
+#   stock potion cooldown group. `flask_aura_spell` is the stock aura the client shows while a flask is on
+#   (its text is stock until flasks get spells of their own).
+# [[make]]: the five makes (prototype MAKES): key, name, station, verb, rule (the window's text), the
+#   body it takes (`herbs` = [min, max]; or `tinctures` / `essences` of one property for oils and
+#   Essences), `fish` (any two [[fish]] items of fish.toml, never a legend), `wash` (most wash herbs),
+#   and `opens_after`, the make whose first product opens it per character (the Mortar is open from
+#   the start). An Essence takes either 15 herbs, or 3 Tinctures of one property and up to 2 wash herbs.
+# [[table]]: the three alchemy tables: key, name, alchemist (the new hub NPC whose gossip opens it),
+#   tiers (the grades whose Rumours the alchemist sells), line (said on a character's first visit).
+# [rumour]: price in copper by grade. A Rumour gives one grade's exact threshold.
+# [sludge]: Murky Sludge, the item every failed or empty craft makes.
+# [[product]]: one per product kind: family (potion, oil, hybrid, tincture, essence, flask), key (a
+#   property, a pair, or a flask's two Essences in PROPS order), name (the base name; a grade prefixes
+#   it, except for a flask), icon (a PNG in data/twilights-eve/art/), icon_base, display_id (one per
+#   kind: every row of a kind shares it, ADR 0025), entry (the first item entry of its block), block
+#   (rows in the block), nums (each number at the four grades; a step multiplies it, rounded half up)
+#   and text (the tooltip line: {n} a number, {n.0} {n.1} a pair's ends, {n*5} times 5 after the step).
+#   A potion, hybrid or oil lists `effects`, run in order when it is drunk or its oil procs; each
+#   names a `kind` and takes its numbers from `nums` by name (prototype `drink`, `swing`):
+#     heal { amount }: heals the user (a range rolls between its ends).
+#     restore_power { mana, power }: mana to a mana user; `power` rage or energy to any other.
+#     shield { amount, secs, burst, burst_radius_yd, mana_per_hit, threat_pct }: absorbs damage
+#       before health; replaces a smaller shield, never a larger one. `burst`: fire damage to
+#       every enemy within the radius when it breaks; `mana_per_hit`: mana for each hit it
+#       absorbs; `threat_pct`: the threat the user causes while it holds, in percent.
+#     thrown_damage { amount, school, range_yd, radius_yd }: at the user's hostile target in range;
+#       with `radius_yd`, every enemy that close to the target too. Refused with no target.
+#     damage { amount, school }: an oil's proc, at the enemy hit.
+#     drop_threat { amount, on }: the user's threat on the current target falls by `amount`;
+#       `on = "each_hit"`: on every enemy the effect before it hit.
+#     heal_over_time { tick | total, every_secs, secs }: `tick` each `every_secs`, or `total`
+#       split evenly over the ticks.
+#     heal_pct_of_damage { pct }: heals the user that share of the damage the effect before dealt.
+#     sleep { secs }: the user cannot act for `secs`; damage wakes them and ends what heals them.
+#     burn_mana { amount }: the target loses that much mana.
+#     invisible { secs }: every creature drops the user from its threat list and cannot see them
+#       for `secs`; an attack or a cast ends it.
+#   An oil procs on a melee hit at [use] oil_proc_chance, or on every hit with `every_hit`. An
+#   Essence names the flask `stat` it gives: armour, attack_power, spell_power, health_per_5
+#   (health regenerated each 5 s, in combat too) or power_per_5 (mana, rage or energy each 5 s).
+#
+# Item rows are generated at load, one per entry in each block (ADR 0025: a step is its own row).
+#   potion, oil, hybrid: index = grade x 5 + step                         (20 rows)
+#   tincture:            index = (grade x 5 + step) x 8 + carried Toxic   (160 rows, Toxic 0 to 7)
+#   essence:             index = (grade x 5 + step) x 23 + carried Toxic  (460 rows, Toxic 0 to 22)
+#   flask of one Essence twice: the two Essences' states s1 <= s2 (s = grade x 5 + step),
+#                        index = s1 x 20 - s1 x (s1 - 1) / 2 + (s2 - s1)  (210 rows)
+#   flask of two:        s1 the first property's Essence, s2 the second's, index = s1 x 20 + s2  (400 rows)
+# 8551 rows in all with Murky Sludge, entries 963000 to 971649. A flask takes its quality and band
+#   from the higher of its two grades.
+
+[props]
+order = ["Restorative", "Fortifying", "Volatile", "Arcane", "Calming"]
+toxic = "Toxic"
+purifying = "Purifying"
+pairs = ["Restorative+Fortifying", "Restorative+Volatile", "Restorative+Arcane", "Restorative+Calming", "Fortifying+Volatile", "Fortifying+Arcane", "Fortifying+Calming", "Volatile+Arcane", "Volatile+Calming", "Arcane+Calming"]
+
+[budget]
+base = 2
+per_levels = 5
+rarity = { common = 0, uncommon = 1, rare = 2, legendary = 4 }
+
+[[herb]]
+item = 2447 # Peacebloom
+values = { Restorative = 2 }
+[[herb]]
+item = 765 # Silverleaf
+values = { Arcane = 1, Calming = 1 }
+[[herb]]
+item = 961025 # Amber Sap
+values = { Volatile = 2, Toxic = 1 }
+[[herb]]
+item = 961026 # Bird's Nest
+values = { Restorative = 2, Calming = 1, Arcane = 1 }
+[[herb]]
+item = 2449 # Earthroot
+values = { Fortifying = 1, Purifying = 1 }
+[[herb]]
+item = 785 # Mageroyal
+values = { Arcane = 4, Restorative = 1 }
+[[herb]]
+item = 2452 # Swiftthistle
+values = { Calming = 3, Volatile = 3 }
+[[herb]]
+item = 2450 # Briarthorn
+values = { Fortifying = 2, Toxic = 3 }
+[[herb]]
+item = 961009 # Moonpetal
+values = { Arcane = 3, Calming = 3, Restorative = 2 }
+[[herb]]
+item = 3820 # Stranglekelp
+values = { Restorative = 3, Purifying = 3 }
+[[herb]]
+item = 961021 # Gravecap
+values = { Volatile = 4, Toxic = 2 }
+[[herb]]
+item = 961015 # Hill Truffle
+values = { Fortifying = 5, Restorative = 2 }
+[[herb]]
+item = 2453 # Bruiseweed
+values = { Restorative = 5, Fortifying = 2 }
+[[herb]]
+item = 961016 # Emberbloom
+values = { Volatile = 7, Fortifying = 3 }
+[[herb]]
+item = 961022 # Black Truffle
+values = { Calming = 5, Arcane = 3 }
+[[herb]]
+item = 3355 # Wild Steelbloom
+values = { Fortifying = 5, Volatile = 2 }
+[[herb]]
+item = 3369 # Grave Moss
+values = { Arcane = 4, Toxic = 3 }
+[[herb]]
+item = 3356 # Kingsblood
+values = { Restorative = 6, Volatile = 3 }
+[[herb]]
+item = 961023 # Widow's Lily
+values = { Calming = 8, Toxic = 3 }
+
+[notes]
+names_at = 1
+values_at = 5
+
+[log]
+keep = 80
+
+[grades]
+names = ["Minor", "Lesser", "Standard", "Greater"]
+bands = [1, 10, 20, 30]
+quality = [1, 2, 3, 4]
+sell_price = [10, 50, 150, 400]
+steps = [1.0, 1.25, 1.5, 1.75, 2.0]
+standard = "Standard"
+
+[ladder]
+potion = [4, 12, 20, 28]
+hybrid = [3, 9, 15, 21]
+tincture = [5, 15, 25, 35]
+oil = [10, 30, 50, 70]
+essence = [15, 45, 75, 105]
+
+[toxic]
+payoff = 1.0
+keep = 0.5
+wash = 2
+carried_max = { tincture = 7, essence = 22 }
+
+[use]
+potion_cooldown_secs = 120
+potion_shield_secs = 120
+oil_shield_secs = 60
+oil_secs = 1800
+flask_secs = 7200
+oil_proc_chance = 0.2
+potion_spell = 2598
+potion_spell_name = "Rejuvenation (OLD)"
+potion_category = 4
+oil_spell = 22
+oil_spell_name = "Super Food (TEST)"
+flask_spell = 22
+flask_spell_name = "Super Food (TEST)"
+flask_aura_spell = 17626
+flask_aura_spell_name = "Flask of the Titans"
+
+[[make]]
+key = "potion"
+name = "Potion"
+station = "Mortar"
+verb = "Brew"
+rule = "2 to 4 herbs"
+herbs = [2, 4]
+opens_after = ""
+[[make]]
+key = "tincture"
+name = "Tincture"
+station = "Still"
+verb = "Distill"
+rule = "5 herbs"
+herbs = [5, 5]
+opens_after = "potion"
+[[make]]
+key = "essence"
+name = "Essence"
+station = "Still"
+verb = "Condense"
+rule = "15 herbs, or 3 Tinctures of one property + up to 2 herbs as a wash"
+herbs = [15, 15]
+tinctures = 3
+wash = 2
+opens_after = "tincture"
+[[make]]
+key = "oil"
+name = "Weapon Oil"
+station = "Oil Tin"
+verb = "Mix"
+rule = "2 Tinctures of one property + 2 fish + up to 2 herbs as a wash"
+tinctures = 2
+fish = 2
+wash = 2
+opens_after = "tincture"
+[[make]]
+key = "flask"
+name = "Flask"
+station = "Flask Rack"
+verb = "Join"
+rule = "2 Essences + up to 2 herbs as a wash"
+essences = 2
+wash = 2
+opens_after = "essence"
+
+[[table]]
+key = "northshire"
+name = "Northshire Abbey"
+alchemist = 190075 # Sister Marla, new in the realm ticket
+tiers = ["Minor"]
+line = "Two to four herbs in the Mortar. Whatever they hold most of comes out as a potion. Mind the Toxic: it can take the whole brew, but a brew that holds comes out stronger for it."
+[[table]]
+key = "goldshire"
+name = "Goldshire"
+alchemist = 190076 # Alwen Carrow, new in the realm ticket
+tiers = ["Minor", "Lesser"]
+line = "Dirty herbs are a gamble, and the Still only boils off half of it. Earthroot cleans a brew; so does kelp. Throw a couple in as a wash at any station."
+[[table]]
+key = "stormwind"
+name = "Stormwind's Alchemy Needs"
+alchemist = 190077 # Quartermaster Ilsa Venn, new in the realm ticket
+tiers = ["Minor", "Lesser", "Standard", "Greater"]
+line = "The strong flasks all come from dirty Essences. Everyone who sells them has lost a few batches. Buy a rumour or get grinding."
+
+[rumour]
+price = { Minor = 2000, Lesser = 6000, Standard = 15000, Greater = 40000 }
+
+[sludge]
+entry = 963000
+name = "Murky Sludge"
+sell_price = 5
+icon = "murky_sludge"
+icon_base = 18077
+display_id = 995245
+
+[[product]]
+family = "potion"
+key = "Restorative"
+name = "Healing Potion"
+icon = "potion_restorative"
+icon_base = 15710
+display_id = 995200
+entry = 963100
+block = 20
+nums = { heal = [[70, 90], [175, 225], [440, 565], [1090, 1410]] }
+text = "Heals {heal.0} to {heal.1} at once."
+effects = [{ kind = "heal", amount = "heal" }]
+[[product]]
+family = "potion"
+key = "Fortifying"
+name = "Ironhide Potion"
+icon = "potion_fortifying"
+icon_base = 15710
+display_id = 995201
+entry = 963120
+block = 20
+nums = { shield = [60, 150, 375, 940] }
+text = "Shields you for {shield} damage, for 2 min."
+effects = [{ kind = "shield", amount = "shield", secs = 120 }]
+[[product]]
+family = "potion"
+key = "Volatile"
+name = "Blasting Potion"
+icon = "potion_volatile"
+icon_base = 15710
+display_id = 995202
+entry = 963140
+block = 20
+nums = { fire = [[30, 45], [75, 115], [190, 280], [470, 705]] }
+text = "Thrown. Deals {fire.0} to {fire.1} fire damage."
+effects = [{ kind = "thrown_damage", amount = "fire", school = "fire", range_yd = 30 }]
+[[product]]
+family = "potion"
+key = "Arcane"
+name = "Mana Potion"
+icon = "potion_arcane"
+icon_base = 15710
+display_id = 995203
+entry = 963160
+block = 20
+nums = { mana = [[140, 180], [350, 450], [875, 1130], [2190, 2810]], power = [6, 15, 38, 94] }
+text = "Restores {mana.0} to {mana.1} mana, or {power} rage or energy, at once."
+effects = [{ kind = "restore_power", mana = "mana", power = "power" }]
+[[product]]
+family = "potion"
+key = "Calming"
+name = "Fade Potion"
+icon = "potion_calming"
+icon_base = 15710
+display_id = 995204
+entry = 963180
+block = 20
+nums = { threat = [150, 375, 940, 2340] }
+text = "Drops your threat on the current target by {threat}."
+effects = [{ kind = "drop_threat", amount = "threat" }]
+[[product]]
+family = "oil"
+key = "Restorative"
+name = "Leeching Oil"
+icon = "oil_restorative"
+icon_base = 33194
+display_id = 995205
+entry = 963200
+block = 20
+nums = { heal = [15, 38, 94, 235] }
+text = "Chance on hit: heals you for {heal}."
+every_hit = false
+effects = [{ kind = "heal", amount = "heal" }]
+[[product]]
+family = "oil"
+key = "Fortifying"
+name = "Ironhide Oil"
+icon = "oil_fortifying"
+icon_base = 33194
+display_id = 995206
+entry = 963220
+block = 20
+nums = { shield = [25, 63, 155, 390] }
+text = "Chance on hit: shields you for {shield} damage, for 1 min."
+every_hit = false
+effects = [{ kind = "shield", amount = "shield", secs = 60 }]
+[[product]]
+family = "oil"
+key = "Volatile"
+name = "Burning Oil"
+icon = "oil_volatile"
+icon_base = 33194
+display_id = 995207
+entry = 963240
+block = 20
+nums = { fire = [[10, 14], [25, 35], [63, 88], [155, 220]] }
+text = "Chance on hit: {fire.0} to {fire.1} fire damage."
+every_hit = false
+effects = [{ kind = "damage", amount = "fire", school = "fire" }]
+[[product]]
+family = "oil"
+key = "Arcane"
+name = "Mana Oil"
+icon = "oil_arcane"
+icon_base = 33194
+display_id = 995208
+entry = 963260
+block = 20
+nums = { mana = [20, 50, 125, 315], power = [2, 5, 13, 31] }
+text = "Chance on hit: restores {mana} mana, or {power} rage or energy."
+every_hit = false
+effects = [{ kind = "restore_power", mana = "mana", power = "power" }]
+[[product]]
+family = "oil"
+key = "Calming"
+name = "Quieting Oil"
+icon = "oil_calming"
+icon_base = 33194
+display_id = 995209
+entry = 963280
+block = 20
+nums = { threat = [10, 25, 63, 155] }
+text = "Every hit lowers your threat by {threat}."
+every_hit = true
+effects = [{ kind = "drop_threat", amount = "threat" }]
+[[product]]
+family = "hybrid"
+key = "Restorative+Fortifying"
+name = "Trollblood Draught"
+icon = "hybrid_fortifying_restorative"
+icon_base = 15742
+display_id = 995210
+entry = 963300
+block = 20
+nums = { tick = [12, 30, 75, 190] }
+text = "Heals {tick} every 2 s for 10 s ({tick*5} in all)."
+effects = [{ kind = "heal_over_time", tick = "tick", every_secs = 2, secs = 10 }]
+[[product]]
+family = "hybrid"
+key = "Restorative+Volatile"
+name = "Bloodfire Bomb"
+icon = "hybrid_restorative_volatile"
+icon_base = 15742
+display_id = 995211
+entry = 963320
+block = 20
+nums = { fire = [[25, 35], [63, 88], [155, 220], [390, 545]] }
+text = "Thrown. Deals {fire.0} to {fire.1} fire damage and heals you for half the damage dealt."
+effects = [{ kind = "thrown_damage", amount = "fire", school = "fire", range_yd = 30 }, { kind = "heal_pct_of_damage", pct = 50 }]
+[[product]]
+family = "hybrid"
+key = "Restorative+Arcane"
+name = "Rejuvenating Draught"
+icon = "hybrid_arcane_restorative"
+icon_base = 15742
+display_id = 995212
+entry = 963340
+block = 20
+nums = { both = [60, 150, 375, 940] }
+text = "Restores {both} health and {both} mana at once."
+effects = [{ kind = "heal", amount = "both" }, { kind = "restore_power", mana = "both" }]
+[[product]]
+family = "hybrid"
+key = "Restorative+Calming"
+name = "Deepsleep Potion"
+icon = "hybrid_calming_restorative"
+icon_base = 15742
+display_id = 995213
+entry = 963360
+block = 20
+nums = { heal = [150, 375, 940, 2340] }
+text = "You sleep for 12 s and heal {heal} over it. You cannot act while asleep."
+effects = [{ kind = "sleep", secs = 12 }, { kind = "heal_over_time", total = "heal", every_secs = 2, secs = 12 }]
+[[product]]
+family = "hybrid"
+key = "Fortifying+Volatile"
+name = "Ember Shield"
+icon = "hybrid_fortifying_volatile"
+icon_base = 15742
+display_id = 995214
+entry = 963380
+block = 20
+nums = { shield = [40, 100, 250, 625], burst = [20, 50, 125, 315] }
+text = "Shields you for {shield} damage, for 2 min. When it breaks it bursts for {burst} fire to enemies around you."
+effects = [{ kind = "shield", amount = "shield", secs = 120, burst = "burst", burst_radius_yd = 8 }]
+[[product]]
+family = "hybrid"
+key = "Fortifying+Arcane"
+name = "Mana Shield"
+icon = "hybrid_arcane_fortifying"
+icon_base = 15742
+display_id = 995215
+entry = 963400
+block = 20
+nums = { shield = [40, 100, 250, 625], mana = [15, 38, 94, 235] }
+text = "Shields you for {shield} damage, for 2 min. Each hit it absorbs restores {mana} mana."
+effects = [{ kind = "shield", amount = "shield", secs = 120, mana_per_hit = "mana" }]
+[[product]]
+family = "hybrid"
+key = "Fortifying+Calming"
+name = "Steady Stance"
+icon = "hybrid_calming_fortifying"
+icon_base = 15742
+display_id = 995216
+entry = 963420
+block = 20
+nums = { shield = [40, 100, 250, 625] }
+text = "Shields you for {shield} damage, for 2 min, and halves the threat you cause while it holds."
+effects = [{ kind = "shield", amount = "shield", secs = 120, threat_pct = 50 }]
+[[product]]
+family = "hybrid"
+key = "Volatile+Arcane"
+name = "Spellfire Bomb"
+icon = "hybrid_arcane_volatile"
+icon_base = 15742
+display_id = 995217
+entry = 963440
+block = 20
+nums = { fire = [[25, 35], [63, 88], [155, 220], [390, 545]], mana = [60, 150, 375, 940] }
+text = "Thrown. Deals {fire.0} to {fire.1} fire damage and burns {mana} mana from the target."
+effects = [{ kind = "thrown_damage", amount = "fire", school = "fire", range_yd = 30 }, { kind = "burn_mana", amount = "mana" }]
+[[product]]
+family = "hybrid"
+key = "Volatile+Calming"
+name = "Smoke Bomb"
+icon = "hybrid_calming_volatile"
+icon_base = 15742
+display_id = 995218
+entry = 963460
+block = 20
+nums = { fire = [[20, 30], [50, 75], [125, 190], [315, 470]], threat = [100, 250, 625, 1560] }
+text = "Thrown. Deals {fire.0} to {fire.1} fire damage to everything near the target, and drops your threat on each by {threat}."
+effects = [{ kind = "thrown_damage", amount = "fire", school = "fire", range_yd = 30, radius_yd = 8 }, { kind = "drop_threat", amount = "threat", on = "each_hit" }]
+[[product]]
+family = "hybrid"
+key = "Arcane+Calming"
+name = "Invisibility Draught"
+icon = "hybrid_arcane_calming"
+icon_base = 15742
+display_id = 995219
+entry = 963480
+block = 20
+nums = { mana = [60, 150, 375, 940] }
+text = "You turn invisible for 15 s: your threat clears, and you regain {mana} mana while unseen."
+effects = [{ kind = "invisible", secs = 15 }, { kind = "restore_power", mana = "mana" }]
+[[product]]
+family = "tincture"
+key = "Restorative"
+name = "Restorative Tincture"
+icon = "tincture_restorative"
+icon_base = 15738
+display_id = 995220
+entry = 963500
+block = 160
+[[product]]
+family = "tincture"
+key = "Fortifying"
+name = "Fortifying Tincture"
+icon = "tincture_fortifying"
+icon_base = 15738
+display_id = 995221
+entry = 963660
+block = 160
+[[product]]
+family = "tincture"
+key = "Volatile"
+name = "Volatile Tincture"
+icon = "tincture_volatile"
+icon_base = 15738
+display_id = 995222
+entry = 963820
+block = 160
+[[product]]
+family = "tincture"
+key = "Arcane"
+name = "Arcane Tincture"
+icon = "tincture_arcane"
+icon_base = 15738
+display_id = 995223
+entry = 963980
+block = 160
+[[product]]
+family = "tincture"
+key = "Calming"
+name = "Calming Tincture"
+icon = "tincture_calming"
+icon_base = 15738
+display_id = 995224
+entry = 964140
+block = 160
+[[product]]
+family = "essence"
+key = "Restorative"
+name = "Restorative Essence"
+icon = "essence_restorative"
+icon_base = 23754
+display_id = 995225
+entry = 964300
+block = 460
+nums = { health_per_5 = [2, 5, 13, 31] }
+text = "In a flask: +{health_per_5} Health per 5 s."
+stat = "health_per_5"
+[[product]]
+family = "essence"
+key = "Fortifying"
+name = "Fortifying Essence"
+icon = "essence_fortifying"
+icon_base = 23754
+display_id = 995226
+entry = 964760
+block = 460
+nums = { armour = [40, 100, 250, 625] }
+text = "In a flask: +{armour} Armour."
+stat = "armour"
+[[product]]
+family = "essence"
+key = "Volatile"
+name = "Volatile Essence"
+icon = "essence_volatile"
+icon_base = 23754
+display_id = 995227
+entry = 965220
+block = 460
+nums = { attack_power = [10, 25, 63, 155] }
+text = "In a flask: +{attack_power} Attack power."
+stat = "attack_power"
+[[product]]
+family = "essence"
+key = "Arcane"
+name = "Arcane Essence"
+icon = "essence_arcane"
+icon_base = 23754
+display_id = 995228
+entry = 965680
+block = 460
+nums = { spell_power = [6, 15, 38, 94] }
+text = "In a flask: +{spell_power} Spell power."
+stat = "spell_power"
+[[product]]
+family = "essence"
+key = "Calming"
+name = "Calming Essence"
+icon = "essence_calming"
+icon_base = 23754
+display_id = 995229
+entry = 966140
+block = 460
+nums = { power_per_5 = [2, 5, 13, 31] }
+text = "In a flask: +{power_per_5} Mana and power per 5 s."
+stat = "power_per_5"
+[[product]]
+family = "flask"
+key = "Restorative+Restorative"
+name = "Flask of Twofold Vigour"
+icon = "flask_restorative_restorative"
+icon_base = 24213
+display_id = 995230
+entry = 966600
+block = 210
+[[product]]
+family = "flask"
+key = "Restorative+Fortifying"
+name = "Flask of Vigour and Stone"
+icon = "flask_fortifying_restorative"
+icon_base = 24213
+display_id = 995231
+entry = 966810
+block = 400
+[[product]]
+family = "flask"
+key = "Restorative+Volatile"
+name = "Flask of Vigour and Ember"
+icon = "flask_restorative_volatile"
+icon_base = 24213
+display_id = 995232
+entry = 967210
+block = 400
+[[product]]
+family = "flask"
+key = "Restorative+Arcane"
+name = "Flask of Vigour and Starlight"
+icon = "flask_arcane_restorative"
+icon_base = 24213
+display_id = 995233
+entry = 967610
+block = 400
+[[product]]
+family = "flask"
+key = "Restorative+Calming"
+name = "Flask of Vigour and Stillwater"
+icon = "flask_calming_restorative"
+icon_base = 24213
+display_id = 995234
+entry = 968010
+block = 400
+[[product]]
+family = "flask"
+key = "Fortifying+Fortifying"
+name = "Flask of Twofold Stone"
+icon = "flask_fortifying_fortifying"
+icon_base = 24213
+display_id = 995235
+entry = 968410
+block = 210
+[[product]]
+family = "flask"
+key = "Fortifying+Volatile"
+name = "Flask of Stone and Ember"
+icon = "flask_fortifying_volatile"
+icon_base = 24213
+display_id = 995236
+entry = 968620
+block = 400
+[[product]]
+family = "flask"
+key = "Fortifying+Arcane"
+name = "Flask of Stone and Starlight"
+icon = "flask_arcane_fortifying"
+icon_base = 24213
+display_id = 995237
+entry = 969020
+block = 400
+[[product]]
+family = "flask"
+key = "Fortifying+Calming"
+name = "Flask of Stone and Stillwater"
+icon = "flask_calming_fortifying"
+icon_base = 24213
+display_id = 995238
+entry = 969420
+block = 400
+[[product]]
+family = "flask"
+key = "Volatile+Volatile"
+name = "Flask of Twofold Ember"
+icon = "flask_volatile_volatile"
+icon_base = 24213
+display_id = 995239
+entry = 969820
+block = 210
+[[product]]
+family = "flask"
+key = "Volatile+Arcane"
+name = "Flask of Ember and Starlight"
+icon = "flask_arcane_volatile"
+icon_base = 24213
+display_id = 995240
+entry = 970030
+block = 400
+[[product]]
+family = "flask"
+key = "Volatile+Calming"
+name = "Flask of Ember and Stillwater"
+icon = "flask_calming_volatile"
+icon_base = 24213
+display_id = 995241
+entry = 970430
+block = 400
+[[product]]
+family = "flask"
+key = "Arcane+Arcane"
+name = "Flask of Twofold Starlight"
+icon = "flask_arcane_arcane"
+icon_base = 24213
+display_id = 995242
+entry = 970830
+block = 210
+[[product]]
+family = "flask"
+key = "Arcane+Calming"
+name = "Flask of Starlight and Stillwater"
+icon = "flask_arcane_calming"
+icon_base = 24213
+display_id = 995243
+entry = 971040
+block = 400
+[[product]]
+family = "flask"
+key = "Calming+Calming"
+name = "Flask of Twofold Stillwater"
+icon = "flask_calming_calming"
+icon_base = 24213
+display_id = 995244
+entry = 971440
+block = 210

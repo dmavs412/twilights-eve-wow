@@ -1,0 +1,1648 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Twilight's Eve Alchemy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* Layout: a 1.12 game screen, the frame shared with the Kitchen prototype. Discoveries, the two bag panels and Character on the left; one bench and the journal on the right.
+   Dark stone panels with a bronze edge; parchment only for paper (the journal). One committed dark look, so no light theme. */
+:root {
+  color-scheme: dark;
+  --ground: #0c0a08;
+  --stone: #1c1813;
+  --stone-hi: #2a241c;
+  --edge: #6e5a39;
+  --edge-dark: #2e2518;
+  --text: #ebe1c8;
+  --muted: #a3967b;
+  --gold: #ffd100;
+  --parch: #e6d3a5;
+  --parch-dark: #cdb27b;
+  --ink: #2c1e0e;
+  --ink-muted: #6b5434;
+  --q-poor: #9d9d9d;
+  --q-common: #ffffff;
+  --q-uncommon: #1eff00;
+  --q-rare: #2f8cff;
+  --q-epic: #a335ee;
+  --q-legendary: #ff8000;
+  --good: #3fdc3f;
+  --bad: #ff4b3e;
+  --tip-bg: rgba(6, 8, 22, .96);
+  --font-display: "Marcellus SC", "Palatino Linotype", Georgia, serif;
+  --font-body: "Alegreya Sans", "Trebuchet MS", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  background-image: radial-gradient(ellipse at 50% -10%, #2a2216 0%, transparent 60%);
+  color: var(--text); font: 15px/1.4 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 40px;
+}
+button, select, input { font: inherit; color: inherit; }
+.q-poor { color: var(--q-poor); } .q-common { color: var(--q-common); } .q-uncommon { color: var(--q-uncommon); }
+.q-rare { color: var(--q-rare); } .q-epic { color: var(--q-epic); } .q-legendary { color: var(--q-legendary); }
+.gold-t { color: var(--gold); } .muted { color: var(--muted); }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.frame {
+  background: linear-gradient(180deg, var(--stone-hi), var(--stone) 40%);
+  border: 2px solid var(--edge); border-radius: 4px;
+  box-shadow: inset 0 0 0 1px #000, inset 0 0 0 3px var(--edge-dark), 0 3px 10px #000;
+  min-width: 0;
+}
+.fh {
+  margin: 0; padding: 8px 12px 6px; font: 17px/1.2 var(--font-display); color: var(--gold);
+  text-shadow: 0 1px 0 #000; border-bottom: 1px solid var(--edge-dark);
+  display: flex; align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap;
+}
+.fh small { font: 13px var(--font-body); color: var(--muted); text-shadow: none; }
+.fb { padding: 10px 12px 12px; }
+
+.btn {
+  background: linear-gradient(180deg, #8c1a10, #5a0d07); border: 1px solid #c49a4a; border-radius: 3px;
+  color: var(--gold); padding: 5px 12px; cursor: pointer; font: 14px var(--font-display);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 1px 2px #000; text-shadow: 0 1px 0 #000;
+}
+.btn:hover:not(:disabled) { filter: brightness(1.2); }
+.btn:disabled { background: linear-gradient(180deg, #3b3530, #2a2622); color: #7d7468; border-color: #5c5245; cursor: not-allowed; }
+.btn.small { padding: 3px 9px; font-size: 13px; }
+.btn.inl { padding: 2px 8px; font-size: 12.5px; }
+.btn.ghost { background: rgba(0,0,0,.35); border-color: var(--edge); color: var(--text); }
+select, input[type=number] { background: #0d0b08; border: 1px solid var(--edge); border-radius: 3px; padding: 4px 6px; min-width: 0; max-width: 100%; }
+
+/* top bar */
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 12px; padding: 8px 14px; }
+.brand { font: 24px/1 var(--font-display); color: var(--gold); text-shadow: 0 2px 0 #000; margin: 0; }
+.brand span { display: block; font: 12px var(--font-body); color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; text-shadow: none; }
+.spacer { flex: 1; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border: 1px solid var(--edge-dark); border-radius: 3px; background: rgba(0,0,0,.35); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chip.combat { border-color: var(--bad); color: var(--bad); }
+.clockbtns { display: inline-flex; gap: 4px; }
+.money .g { color: #ffd700; } .money .s { color: #c7c7cf; } .money .c { color: #c8733b; }
+
+.layout { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.col { display: grid; gap: 12px; min-width: 0; }
+
+/* discoveries */
+.disc { display: grid; gap: 4px; }
+.drow { display: flex; justify-content: space-between; gap: 10px; font-size: 14.5px; }
+.drow b { font-weight: 500; color: var(--text); text-align: right; }
+.next { margin: 8px 0 0; padding: 7px 9px; background: rgba(0,0,0,.35); border: 1px solid var(--edge-dark); border-radius: 3px; font-size: 14px; }
+.next .lbl { display: block; font-size: 11.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--gold); margin-bottom: 2px; }
+
+/* character */
+.stats { display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
+.stat { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: baseline; padding: 2px 4px; border-radius: 2px; }
+.stat .v { color: var(--text); min-width: 2.5ch; text-align: right; }
+.stat .b { color: var(--good); min-width: 3.5ch; text-align: right; font-weight: 700; }
+.stat.up .v { color: var(--good); }
+.stat .lbl { color: var(--gold); }
+.hp { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; padding: 2px 4px 4px; border-bottom: 1px solid var(--edge-dark); margin-bottom: 4px; }
+.effects { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--edge-dark); display: grid; gap: 3px; font-size: 14px; }
+.eff { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.eff .on { color: var(--good); font-weight: 500; } .eff .off { color: #7f776b; }
+.eff .tag { color: var(--bad); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.timer { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 400; }
+.buffline { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; margin-bottom: 8px; padding: 6px 8px; background: rgba(0,0,0,.35); border: 1px solid var(--edge-dark); border-radius: 3px; }
+.nobuff { color: var(--muted); font-style: italic; font-size: 14px; margin: 0 0 8px; }
+.cookrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.clog { margin-top: 8px; font-size: 13px; color: var(--muted); display: grid; gap: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .flash { animation: flash 1.6s ease-out; }
+  @keyframes flash { 0%, 30% { background: rgba(63, 220, 63, .28); } 100% { background: transparent; } }
+}
+
+/* icons: a square with a glyph, tinted by hue, bordered in the quality colour (products: the property colour) */
+.ico {
+  --h: 30; width: 30px; height: 30px; flex: none; position: relative; border-radius: 3px; border: 2px solid #8a8a8a;
+  background: radial-gradient(circle at 35% 30%, hsl(var(--h) 55% 46%), hsl(var(--h) 50% 18%) 75%);
+  box-shadow: inset 0 0 6px #000; display: grid; place-items: center; font: 11px var(--font-display); color: rgba(255,255,255,.92); text-shadow: 0 1px 2px #000;
+}
+.ico.b-poor { border-color: var(--q-poor); } .ico.b-uncommon { border-color: var(--q-uncommon); } .ico.b-rare { border-color: var(--q-rare); } .ico.b-epic { border-color: var(--q-epic); } .ico.b-legendary { border-color: var(--q-legendary); }
+
+/* tabs */
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tab { background: linear-gradient(180deg, #2b241b, #16130f); border: 2px solid var(--edge); border-bottom: none; border-radius: 6px 6px 0 0; padding: 6px 16px 4px; font: 15px var(--font-display); color: var(--muted); cursor: pointer; }
+.tab[aria-selected="true"] { color: var(--gold); background: linear-gradient(180deg, #3a3022, var(--stone-hi)); }
+
+/* bags and satchel */
+.pantry { display: grid; gap: 10px; }
+.pg { display: grid; gap: 4px; }
+.pg-l { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.cards { display: flex; flex-wrap: wrap; gap: 6px; }
+.card {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7px; align-items: center; text-align: left;
+  background: linear-gradient(180deg, #231d15, #15110c); border: 1px solid var(--edge-dark); border-radius: 3px; padding: 4px 9px 4px 4px; cursor: pointer; max-width: 100%;
+}
+.card:hover:not(:disabled):not(.static) { border-color: var(--gold); }
+.card.static { cursor: default; }
+.card .ct { display: grid; min-width: 0; }
+.card .cn { font-weight: 500; line-height: 1.15; font-size: 14px; }
+.card .cm { font-size: 12px; color: var(--muted); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.cardrow { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; max-width: 100%; }
+.mat { display: inline-flex; gap: 3px; align-items: stretch; max-width: 100%; }
+.mat.off { opacity: .35; }
+.mat.used .card { border-color: var(--gold); }
+.mat .card:disabled { opacity: .6; cursor: not-allowed; }
+.mat.off .card:disabled { opacity: 1; }
+.card .chips { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px; }
+.mk { display: inline-block; padding: 0 4px; border-radius: 2px; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; line-height: 1.5; color: var(--pc); border: 1px solid var(--pc); opacity: .8; }
+.mk.tgt { opacity: 1; background: rgba(255,255,255,.06); }
+.mk.tox { color: var(--pc); } .mk.pur { color: #c9d6de; border-color: #c9d6de; }
+.mk.dim { color: var(--muted); border-color: var(--edge-dark); font-weight: 400; font-style: italic; }
+.dimnote { text-transform: none; letter-spacing: 0; font-style: italic; }
+
+/* bench: a picker of what to make, then one workspace whose heart is the property bars */
+.picker { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px 16px; padding: 12px 12px 4px; }
+.pgrp { display: grid; gap: 4px; }
+.picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.pick { display: grid; gap: 1px; text-align: left; padding: 5px 10px; min-width: 96px; background: linear-gradient(180deg, #231d15, #15110c); border: 2px solid var(--edge-dark); border-radius: 4px; cursor: pointer; }
+.pick .pn { font: 15px var(--font-display); color: var(--text); }
+.pick .ps { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.pick.on { border-color: var(--gold); background: rgba(255, 209, 0, .08); } .pick.on .pn { color: var(--gold); }
+.pick.closed { opacity: .45; cursor: not-allowed; background: repeating-linear-gradient(45deg, #110e0a 0 6px, #171310 6px 12px); }
+.work { margin: 8px 12px 12px; border: 2px solid var(--edge); border-radius: 4px; background: rgba(0,0,0,.3); padding: 10px 12px 12px; display: grid; gap: 8px; }
+.work.closed { opacity: .7; }
+.work .wh { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.work .sn { font: 19px var(--font-display); color: var(--gold); text-shadow: 0 1px 0 #000; }
+.work .sr { font-size: 13px; color: var(--muted); }
+.work .opens { margin: 0; color: var(--muted); font-style: italic; }
+.trow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.trow .tsel { flex: 1 1 200px; max-width: 420px; font-size: 13px; padding: 3px 5px; }
+.sslots { display: flex; flex-wrap: wrap; gap: 4px; }
+.slot { min-height: 36px; border: 2px dashed #5b4b33; border-radius: 4px; background: #0d0b08; padding: 2px 7px; text-align: left; display: flex; align-items: center; gap: 7px; font-size: 14px; }
+.slot .empty { color: #6d6150; font-style: italic; font-size: 13px; }
+.slot.filled { border-style: solid; border-color: var(--edge); background: linear-gradient(180deg, #2b2419, #17130e); color: var(--text); }
+.slot .sv { font-weight: 500; line-height: 1.15; min-width: 0; }
+.sbtns { margin-left: 6px; display: inline-flex; gap: 3px; }
+.aimb { font: 12px var(--font-body); min-width: 24px; text-align: center; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--edge-dark); background: #0d0b08; color: var(--muted); cursor: pointer; }
+.aimb:hover { color: var(--text); border-color: var(--edge); }
+/* vials: the bulk of the bench */
+.vials { display: grid; gap: 6px; padding: 8px 10px 10px; border: 1px solid var(--edge-dark); border-radius: 4px; background: radial-gradient(ellipse at 50% 100%, rgba(255, 209, 0, .05), transparent 60%), rgba(0,0,0,.3); }
+.vials.result { border-color: var(--good); background: radial-gradient(ellipse at 50% 100%, rgba(63, 220, 63, .08), transparent 60%), rgba(0,0,0,.3); }
+.vials.failed { border-color: var(--bad); background: radial-gradient(ellipse at 50% 100%, rgba(255, 75, 62, .1), transparent 60%), rgba(0,0,0,.3); }
+.vfoot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12px; padding-top: 4px; }
+.vfoot .ph { font-size: 11.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.vials.result .vfoot .ph { color: var(--good); } .vials.failed .vfoot .ph { color: var(--bad); }
+.vials .bh2 { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.vials .ph { font-size: 11.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.vials.result .ph { color: var(--good); }
+.vrow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; align-items: end; padding-top: 4px; }
+.vcol { display: grid; justify-items: center; gap: 2px; min-width: 0; --pc: var(--muted); }
+.vial { position: relative; width: min(100%, 92px); aspect-ratio: 1 / 3.3; }
+.vial .neck { position: absolute; top: 0; left: 24%; right: 24%; height: 7%; border: 2px solid rgba(214, 226, 236, .5); border-bottom: none; border-radius: 5px 5px 0 0; background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.14) 35%, rgba(0,0,0,.2) 75%); }
+.vial .neck::before { content: ''; position: absolute; left: -14%; right: -14%; top: -4px; height: 5px; border-radius: 3px; background: linear-gradient(180deg, #8d7a55, #4a3d28); box-shadow: 0 1px 2px #000; }
+.vial .glass { position: absolute; left: 0; right: 0; top: 7%; bottom: 0; overflow: hidden; border: 2px solid rgba(214, 226, 236, .5); border-top-color: rgba(214, 226, 236, .25); border-radius: 10px 10px 46% 46% / 8px 8px 22% 22%; background: linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.13) 32%, rgba(0,0,0,.28) 78%, rgba(0,0,0,.4)); box-shadow: inset 0 -10px 18px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.4), 0 2px 6px #000; }
+.vial .liquid { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--pc) 78%, white) 0, var(--pc) 28%, color-mix(in srgb, var(--pc) 72%, black) 100%); box-shadow: inset 0 6px 10px rgba(255,255,255,.12); }
+.vial .liquid::before { content: ''; position: absolute; left: 0; right: 0; top: -2px; height: 5px; border-radius: 50%; background: color-mix(in srgb, var(--pc) 55%, white); opacity: .85; }
+.vial .liquid::after { content: ''; position: absolute; left: 18%; width: 10%; top: 10%; bottom: 8%; border-radius: 6px; background: rgba(255,255,255,.14); }
+.vial .bonus { position: absolute; left: 0; right: 0; background: repeating-linear-gradient(-45deg, var(--pc) 0 4px, transparent 4px 9px); opacity: .55; }
+.vial .purified { position: absolute; left: 0; right: 0; background: repeating-linear-gradient(-45deg, #c9d6de 0 3px, transparent 3px 8px); opacity: .45; }
+@media (prefers-reduced-motion: no-preference) { .vial .liquid, .vial .bonus, .vial .purified { transition: height .45s ease-out, bottom .45s ease-out; } }
+.vial .ring { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed rgba(214, 226, 236, .32); }
+.vial .ring i { position: absolute; right: 4px; top: -7px; font: 9.5px var(--font-body); font-style: normal; color: rgba(214, 226, 236, .55); text-shadow: 0 1px 1px #000; }
+.vial .ring.gold { border-top: 2px solid var(--gold); box-shadow: 0 0 4px rgba(255, 209, 0, .6); } .vial .ring.gold i { color: var(--gold); top: -9px; font-weight: 700; }
+.vial .q { position: absolute; left: 50%; transform: translate(-50%, 4px); width: 20px; height: 20px; display: grid; place-items: center; font: 700 12px/1 var(--font-body); color: var(--pc); background: #15110c; border: 1px solid var(--pc); border-radius: 50%; margin-bottom: 4px; }
+.vial .shine { position: absolute; top: 4%; bottom: 10%; left: 9%; width: 9%; border-radius: 8px; background: linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,.04)); pointer-events: none; }
+.vcol.main .vial .glass { border-color: color-mix(in srgb, var(--pc) 70%, white); box-shadow: inset 0 -10px 18px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.4), 0 0 14px color-mix(in srgb, var(--pc) 45%, transparent), 0 2px 6px #000; }
+.vcol.toxv .vial .glass { border-color: rgba(92, 214, 92, .45); }
+.vlab { font: 13px var(--font-display); color: var(--pc); text-shadow: 0 1px 0 #000; margin-top: 4px; text-align: center; }
+.vcol.main .vlab { color: var(--gold); }
+.vval { font-size: 20px; font-weight: 500; line-height: 1.1; font-variant-numeric: tabular-nums; text-align: center; }
+.vval .vbonus { font-size: 13px; color: var(--pc); margin-left: 3px; }
+.vnote { font-size: 12.5px; text-align: center; line-height: 1.2; min-height: 15px; max-width: 100%; }
+.vcol.main .vnote { font-weight: 500; }
+.vnote.bad, .vnote .bad { color: var(--bad); }
+.novials { padding: 24px 12px; text-align: center; color: var(--muted); font-style: italic; border: 1px dashed var(--edge-dark); border-radius: 4px; }
+.toxline { font-size: 13px; color: var(--muted); text-align: center; padding-top: 2px; }
+.toxline .bad { color: var(--bad); }
+.wctl { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.wctl .tsel { flex: 1 1 240px; max-width: 420px; font-size: 13px; padding: 4px 6px; }
+.tray { display: grid; gap: 8px; padding: 8px 10px 10px; border: 1px solid var(--edge-dark); border-radius: 4px; background: rgba(0,0,0,.2); }
+.tg { display: grid; gap: 4px; }
+.tc { display: inline-flex; gap: 3px; align-items: stretch; max-width: 100%; }
+.tc.used .card { border-color: var(--gold); }
+.tc .card:disabled { opacity: .45; cursor: not-allowed; }
+.tc .inb { display: inline-flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; padding: 0 2px; }
+.tc .inb b { color: var(--gold); font-size: 12px; white-space: nowrap; }
+.tc .fillb { align-self: center; }
+@media (max-width: 520px) { .vial { aspect-ratio: 1 / 2.6; } .vial .ring i { display: none; } .vlab { font-size: 11px; } .vval { font-size: 15px; } }
+.bars { display: grid; gap: 4px; padding: 8px 10px 9px; border: 1px solid var(--edge-dark); border-radius: 4px; background: rgba(0,0,0,.3); }
+.bars.result { border-color: var(--good); background: rgba(63, 220, 63, .05); }
+.bars .bh2 { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12px; margin-bottom: 2px; }
+.bars .ph { font-size: 11.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.bars.result .ph { color: var(--good); }
+.bar { display: grid; grid-template-columns: 76px minmax(0, 1fr) 54px; gap: 6px; align-items: center; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.bar .bl { color: var(--pc); opacity: .7; }
+.bar.main .bl, .bar.toxrow .bl { opacity: 1; } .bar.tgt .bl { font-weight: 700; }
+.bar .bt { position: relative; height: 12px; background: #0d0b08; border: 1px solid var(--edge-dark); border-radius: 2px; }
+.bar .bf { position: absolute; left: 0; top: 0; bottom: 0; background: var(--pc); border-radius: 1px; box-shadow: inset 0 0 3px rgba(0,0,0,.5); }
+.bar .bb { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, var(--pc) 0 3px, transparent 3px 6px); opacity: .7; }
+.bar .bp { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, #c9d6de 0 3px, transparent 3px 6px); opacity: .55; }
+@media (prefers-reduced-motion: no-preference) { .bar .bf, .bar .bb { transition: width .35s ease-out, left .35s ease-out; } }
+.bar .bq { position: absolute; top: -3px; height: 16px; width: 16px; display: grid; place-items: center; font: 700 10px/1 var(--font-body); color: var(--pc); background: repeating-linear-gradient(45deg, #2a241c 0 2px, #15110c 2px 4px); border: 1px solid var(--pc); border-radius: 2px; margin-left: 2px; }
+.bar .tick { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--gold); box-shadow: 0 0 3px #000; }
+.bar .bv { text-align: right; color: var(--text); white-space: nowrap; }
+.bar .bv .bonus { color: var(--pc); opacity: .85; margin-left: 3px; font-size: 11.5px; }
+.bar .bv.bad { color: var(--bad); font-weight: 700; }
+.bar.toxrow { margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--edge-dark); }
+@media (max-width: 520px) { .bar { grid-template-columns: 64px minmax(0, 1fr) 48px; } }
+.progress { border: 1px solid var(--edge-dark); border-left: 3px solid var(--edge); border-radius: 4px; background: rgba(0,0,0,.3); padding: 6px 10px; display: grid; gap: 3px; }
+.progress.met { border-left-color: var(--good); }
+.progress .ph { font-size: 11.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.progress .pv { font-size: 15px; font-weight: 500; }
+.prow { display: flex; flex-wrap: wrap; gap: 4px; }
+.predict { border: 1px solid var(--edge); border-radius: 4px; background: rgba(0,0,0,.4); padding: 7px 10px; display: grid; gap: 2px; }
+.predict .ph { font-size: 11.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.predict .pv { font-size: 16px; font-weight: 500; line-height: 1.25; }
+.predict .pv.unknown { color: var(--muted); font-style: italic; }
+.predict .ph + .pv + .ph { margin-top: 4px; }
+.alch { border-top: 1px solid var(--edge-dark); padding: 10px 14px; display: grid; gap: 8px; }
+.alch .say { font-style: italic; color: var(--muted); }
+.shop { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.shop select { max-width: 100%; }
+.log { padding: 8px 14px 12px; display: grid; gap: 2px; font-size: 14px; border-top: 1px solid var(--edge-dark); }
+.log .say { font-style: italic; color: var(--muted); }
+.log .error { color: var(--bad); }
+.log .learn { color: var(--gold); }
+.log .product { color: var(--good); }
+
+/* journal */
+.sub { display: flex; gap: 6px; padding: 10px 12px 0; flex-wrap: wrap; }
+.pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; padding: 12px; }
+.pages.wide { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.parch { background: linear-gradient(180deg, var(--parch), var(--parch-dark)); color: var(--ink); border-radius: 2px; box-shadow: inset 0 0 18px rgba(80, 50, 10, .45), 0 2px 6px #000; }
+.page { padding: 12px 14px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.page h3 { margin: 0; font: 17px var(--font-display); text-wrap: balance; }
+.page .kind { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-muted); }
+.page dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; font-size: 14px; }
+.page dt { color: var(--ink-muted); } .page dd { margin: 0; min-width: 0; }
+.page .ph2 { display: flex; gap: 8px; align-items: center; }
+.page .sw { width: 10px; height: 34px; border-radius: 2px; background: var(--pc); flex: none; }
+.namechip { display: inline-block; background: #15110b; padding: 1px 7px; border-radius: 2px; font-weight: 500; }
+.page.dim { opacity: .62; }
+.page.leg { box-shadow: inset 0 0 0 2px rgba(255, 128, 0, .6), inset 0 0 18px rgba(80, 50, 10, .45), 0 2px 6px #000; }
+.propt { display: inline-block; padding: 0 6px; border-radius: 2px; background: #15110b; color: var(--pc); font-weight: 500; font-size: 13px; margin: 1px 0; }
+.hbars { display: grid; gap: 3px; }
+.hbar { display: grid; grid-template-columns: 70px minmax(0, 1fr) 20px; gap: 6px; align-items: center; font-size: 12.5px; }
+.hbar .bl { color: var(--ink); font-weight: 500; } .hbar .bl::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--pc); margin-right: 5px; vertical-align: -1px; }
+.hbar .bt { position: relative; height: 10px; background: rgba(44, 30, 14, .18); border-radius: 2px; }
+.hbar .bf { position: absolute; left: 0; top: 0; bottom: 0; background: var(--pc); border-radius: 2px; box-shadow: inset 0 0 2px rgba(0,0,0,.35); }
+.hbar .bq { position: absolute; top: -2px; height: 14px; width: 14px; display: grid; place-items: center; font: 700 10px/1 var(--font-body); color: var(--ink); border: 1px solid var(--ink-muted); border-radius: 2px; }
+.hbar .bv { text-align: right; font-variant-numeric: tabular-nums; }
+.pnote { margin: 0; font-size: 13.5px; }
+.ladder { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; }
+.seg { display: grid; gap: 4px; padding: 6px 7px; border-radius: 2px; background: rgba(255,255,255,.2); border-top: 4px solid rgba(44, 30, 14, .18); }
+.seg.known { border-top-color: var(--pc); background: rgba(255,255,255,.34); } .seg.rum { border-top-color: #8a5a10; }
+.segh { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.segn { font-size: 12.5px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.seg.known .segn { color: var(--ink); font-weight: 700; }
+.segbar { position: relative; height: 10px; background: rgba(44, 30, 14, .18); border-radius: 2px; }
+.seg.known .segbar .segf { position: absolute; inset: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--pc) 45%, transparent), var(--pc)); border-radius: 2px; }
+.pip { position: absolute; top: -3px; width: 14px; height: 16px; margin-left: -7px; border-radius: 2px; background: #15110b; color: var(--parch); font: 700 9.5px/16px var(--font-body); text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.seg .eff1 { font-size: 12px; color: #1f4d16; line-height: 1.25; } .seg .muted2 { color: var(--ink-muted); font-style: italic; }
+.seg .btn { justify-self: start; }
+.grades { display: grid; gap: 6px; }
+.grade { padding: 6px 8px; border-radius: 2px; background: rgba(255, 255, 255, .22); border-left: 4px solid rgba(44, 30, 14, .25); }
+.grade.known { border-left-color: #2c6b1f; } .grade.rum { border-left-color: #8a5a10; }
+.grade .gn { display: flex; gap: 6px; align-items: center; margin-bottom: 3px; flex-wrap: wrap; }
+.grade .gn .spacer { flex: 1; }
+.grade .eff1 { color: #1f4d16; }
+.new-b { display: inline-block; font: 700 10.5px/1.5 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: #1a1305; background: var(--gold); border-radius: 2px; padding: 0 4px; }
+.jt { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+.jt th, .jt td { text-align: left; padding: 3px 8px 3px 0; border-bottom: 1px solid rgba(44, 30, 14, .25); vertical-align: top; }
+.jt th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-muted); }
+.jt tr.dim { opacity: .55; }
+.jt.dark th, .jt.dark td { border-bottom-color: var(--edge-dark); } .jt.dark th { color: var(--muted); }
+.scroll { overflow-x: auto; max-width: 100%; }
+
+/* hidden tables overlay */
+.banner-wrap { position: fixed; inset: 0; z-index: 40; display: grid; place-items: start center; overflow-y: auto; background: rgba(0,0,0,.6); padding: 16px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+.banner.hid { width: min(900px, 100%); cursor: default; }
+
+/* debug drawer */
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 100%); z-index: 30; overflow-y: auto;
+  padding-top: env(safe-area-inset-top, 0px); padding-right: env(safe-area-inset-right, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-radius: 0; border-right: none; }
+.drawer .fb { display: grid; gap: 14px; }
+.dbg { display: grid; gap: 5px; }
+.dbg .lab { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.dbg .r { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.dbg select { flex: 1 1 100%; width: 100%; }
+.dbg input[type=number] { width: 80px; }
+.toggle { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggle input { accent-color: #c0301c; width: 16px; height: 16px; }
+.auditbox { font-size: 13px; padding: 6px 8px; border: 1px solid var(--edge-dark); border-radius: 3px; background: rgba(0,0,0,.35); }
+.auditbox.ok b { color: var(--good); } .auditbox.bad b, .auditbox .bad { color: var(--bad); }
+.auditbox details { margin-top: 4px; } .auditbox summary { cursor: pointer; color: var(--gold); }
+
+#tip { position: fixed; z-index: 60; pointer-events: none; max-width: 300px; background: var(--tip-bg); border: 1px solid #aaa; border-radius: 4px; padding: 7px 10px; font-size: 14px; box-shadow: 0 2px 10px #000; line-height: 1.35; }
+#tip .tn { font-size: 15.5px; font-weight: 500; }
+#tip .muted { color: #9a9aa8; } #tip .gold { color: var(--gold); } #tip .use { color: var(--good); }
+</style>
+
+<div id="app"></div>
+<div id="tip" hidden></div>
+
+<script>
+// ============================================================
+// realm — every alchemy rule lives here. The UI only asks.
+//
+// Rules index (spec #447 as amended in this prototype):
+//   1. PROPS, TOXIC, PURIFY ... five product properties; Toxic is risk; Purifying cancels Toxic
+//   2. HERBS, FISH ............ the herb table (every value, Toxic and Purifying included, adds up to the budget)
+//   3. GRADES, LADDER ......... four grades on one ladder per product family, the same for every property
+//   4. Toxic rule ............. failChance(), payoff(), carried(): the roll every craft makes, and what travels up the ladder
+//   5. EFFECTS, HYBRIDS, FLASK_STAT .. effect numbers per grade; a step multiplies them. Ten hybrid potions, one per pair
+//   6. MAKES, resolve ......... the five things the bench makes and what each turns its inputs into
+//   7. make() ................. rolls, consumes items, teaches grades, opens makes, logs
+//   8. character / advance / drink / applyOil / useFlask / swing
+//   9. TABLES, rumours ........ the three tables and their Rumour vendors
+//  10. _audit() ............... checks budgets and reachability, safe and risky
+// ============================================================
+const realm = (() => {
+  'use strict';
+
+  // ---------- 1. properties ----------
+  // Five properties make products. Toxic makes nothing: it is the chance a craft fails, and the power it pays when it holds.
+  // Purifying makes nothing either: each point cancels one Toxic point in the same craft.
+  const PROPS = ['Restorative', 'Fortifying', 'Volatile', 'Arcane', 'Calming'];
+  const TOXIC = 'Toxic', PURIFY = 'Purifying';
+  const ALL_VALUES = [...PROPS, TOXIC, PURIFY];
+  const PROP_HUE = { Restorative: 0, Fortifying: 38, Volatile: 22, Arcane: 270, Calming: 186, Toxic: 110, Purifying: 200 };
+  const PROP_COLOUR = { Restorative: '#e85050', Fortifying: '#f0a830', Volatile: '#ff7a1a', Arcane: '#b56cff', Calming: '#3fd3e0', Toxic: '#5cd65c', Purifying: '#c9d6de' };
+
+  // ---------- 2. herbs and fish ----------
+  // Budget = 2 + floor(level / 5), +1 uncommon, +2 rare, +4 legendary. Every value, Toxic and Purifying included, adds up to it (audited).
+  const RARITY_BONUS = { common: 0, uncommon: 1, rare: 2, legendary: 4 };
+  const HERBS = [
+    // name, level, rarity, found in, values, icon hue, icon glyph
+    ['Peacebloom', 1, 'common', 'Elwynn', { Restorative: 2 }, 48, 'Pb'],
+    ['Silverleaf', 1, 'common', 'Elwynn', { Arcane: 1, Calming: 1 }, 200, 'Sl'],
+    ['Amber Sap', 1, 'uncommon', 'every zone', { Volatile: 2, Toxic: 1 }, 36, 'As'],
+    ["Bird's Nest", 1, 'rare', 'every zone', { Restorative: 2, Calming: 1, Arcane: 1 }, 28, 'Bn'],
+    ['Earthroot', 3, 'common', 'Elwynn, Redridge', { Fortifying: 1, Purifying: 1 }, 22, 'Er'],
+    ['Mageroyal', 10, 'uncommon', 'Elwynn, Redridge', { Arcane: 4, Restorative: 1 }, 280, 'Mr'],
+    ['Swiftthistle', 10, 'rare', 'Elwynn, Redridge', { Calming: 3, Volatile: 3 }, 95, 'St'],
+    ['Briarthorn', 14, 'uncommon', 'Elwynn, Redridge, Duskwood', { Fortifying: 2, Toxic: 3 }, 130, 'Bt'],
+    ['Moonpetal', 14, 'legendary', 'Elwynn, night only', { Arcane: 3, Calming: 3, Restorative: 2 }, 232, 'Mp'],
+    ['Stranglekelp', 17, 'uncommon', 'Redridge', { Restorative: 3, Purifying: 3 }, 160, 'Sk'],
+    ['Gravecap', 18, 'uncommon', 'Duskwood', { Volatile: 4, Toxic: 2 }, 78, 'Gc'],
+    ['Hill Truffle', 18, 'rare', 'Redridge', { Fortifying: 5, Restorative: 2 }, 32, 'Ht'],
+    ['Bruiseweed', 20, 'uncommon', 'Redridge, Duskwood', { Restorative: 5, Fortifying: 2 }, 300, 'Bw'],
+    ['Emberbloom', 20, 'legendary', 'Redridge', { Volatile: 7, Fortifying: 3 }, 14, 'Eb'],
+    ['Black Truffle', 22, 'rare', 'Duskwood', { Calming: 5, Arcane: 3 }, 262, 'Bk'],
+    ['Wild Steelbloom', 23, 'uncommon', 'Duskwood', { Fortifying: 5, Volatile: 2 }, 212, 'Ws'],
+    ['Grave Moss', 24, 'uncommon', 'Duskwood', { Arcane: 4, Toxic: 3 }, 118, 'Gm'],
+    ['Kingsblood', 25, 'rare', 'Duskwood', { Restorative: 6, Volatile: 3 }, 350, 'Kb'],
+    ["Widow's Lily", 25, 'legendary', 'Duskwood, night only', { Calming: 8, Toxic: 3 }, 296, 'Wl'],
+  ].map(([name, level, rarity, zones, values, hue, glyph]) => ({ name, level, rarity, zones, values, hue, glyph, budget: 2 + Math.floor(level / 5) + RARITY_BONUS[rarity] }));
+  const HERB = Object.fromEntries(HERBS.map(h => [h.name, h]));
+
+  // Fish go into weapon oils, two at a time; their kind never matters.
+  const FISH = [
+    ['Goldshire Perch', 'common', 205, 'Gp'], ['Northshire Brook Trout', 'common', 190, 'Bt'], ['Brilliant Smallfish', 'common', 60, 'Bs'],
+    ['Redridge Bluegill', 'common', 215, 'Rb'], ['Oily Blackmouth', 'uncommon', 240, 'Ob'], ['Ravenwood Chub', 'common', 160, 'Rc'],
+  ].map(([name, rarity, hue, glyph]) => ({ name, rarity, hue, glyph }));
+  const FISH_BY = Object.fromEntries(FISH.map(f => [f.name, f]));
+
+  // ---------- 3. grades and ladders ----------
+  // 'Standard' is the plain grade: its item name carries no prefix.
+  const GRADES = ['Minor', 'Lesser', 'Standard', 'Greater'];
+  const GRADE_BAND = { Minor: 1, Lesser: 10, Standard: 20, Greater: 30 };
+  const BAND_TOP = { Minor: 9, Lesser: 19, Standard: 29, Greater: 30 };
+  const STEPS = [1, 1.25, 1.5, 1.75, 2];
+  const stepOf = ratio => ratio >= 2 ? 2 : ratio >= 1.75 ? 1.75 : ratio >= 1.5 ? 1.5 : ratio >= 1.25 ? 1.25 : 1;
+  const GRADE_QUALITY = { Minor: 'common', Lesser: 'uncommon', Standard: 'rare', Greater: 'epic' };
+  const gradeName = (grade, base) => grade === 'Standard' ? base : `${grade} ${base}`;
+  const GI = g => GRADES.indexOf(g);
+  // Each grade's threshold is four of its band's best uncommon herb (five at the Still), so a band's ordinary herbs reach their
+  // own grade at about x1 and the next grade takes the band's rare, a legendary, or a Toxic roll. Bands are meant to hold.
+  //   potions 4 / 12 / 20 / 28 · tinctures 5 / 15 / 25 / 35 · oils 2x the tincture ladder · essences 3x the tincture ladder
+  // Greater has no clean herbs (nothing above level 25): it is the gamble grade, reached with Emberbloom or a Toxic roll.
+  // A make always gives the highest grade it meets, at that grade's step (points / threshold, rounded down to x1 .. x2).
+  // Hybrid potions: two properties that both clear the hybrid ladder make the pair's own potion instead of a single one, at the
+  // lower of the two grades. The ladder is lower per property than a single potion's, so a hybrid is a real choice, not an accident.
+  const LADDER = { potion: [4, 12, 20, 28], hybrid: [3, 9, 15, 21], tincture: [5, 15, 25, 35], oil: [10, 30, 50, 70], essence: [15, 45, 75, 105] };
+  const PAIRS = [];
+  for (let i = 0; i < PROPS.length; i++) for (let j = i + 1; j < PROPS.length; j++) PAIRS.push(`${PROPS[i]}+${PROPS[j]}`);
+  const pairProps = pair => pair.split('+');
+  const THRESHOLD = {};
+  for (const f of Object.keys(LADDER)) { THRESHOLD[f] = {}; for (const p of f === 'hybrid' ? PAIRS : PROPS) { THRESHOLD[f][p] = {}; GRADES.forEach((g, i) => { THRESHOLD[f][p][g] = LADDER[f][i]; }); } }
+  function gradeFor(family, prop, pts) {
+    for (let i = GRADES.length - 1; i >= 0; i--) {
+      const g = GRADES[i], N = THRESHOLD[family][prop][g];
+      if (pts >= N) return { grade: g, step: stepOf(pts / N), N };
+    }
+    return null;
+  }
+
+  // ---------- 4. the Toxic rule ----------
+  // One rule for every craft. Net Toxic = Toxic in minus Purifying in, never below 0. Every craft rolls once:
+  //   fail chance = net Toxic / (net Toxic + main points). A fail is Murky Sludge.
+  //   When it holds, every net Toxic point pays PAYOFF points into the product (a flask splits them between its two Essences).
+  // Toxic travels: a Tincture or Essence carries floor(net Toxic x STILL_KEEP) of the craft that made it, and rolls again wherever
+  // it goes next. Potions, oils and flasks are the end of the line. Any craft that takes no herbs for its body may add up to
+  // WASH herbs as a wash: only their Toxic and Purifying count, everything else is lost. That is how a purifier helps an oil or a flask.
+  const PAYOFF = 1, STILL_KEEP = 0.5, WASH = 2;
+  const failChance = (tox, main) => tox <= 0 ? 0 : main <= 0 ? 1 : tox / (tox + main);
+  const payoff = tox => tox * PAYOFF;
+  const carriedToxic = tox => Math.floor(tox * STILL_KEEP);
+  const pct = x => `${Math.round(x * 100)}%`;
+
+  // ---------- 5. effects (placeholders on vanilla's scale; a step multiplies every number) ----------
+  // Every effect is a Minor base, and each grade is GRADE_MULT times the one below (tidied: whole numbers, to 5 above 100, to 10
+  // above 1000). So Minor Healing 70 to 90 becomes Lesser 175 to 225, plain 440 to 565, Greater 1090 to 1410.
+  const GRADE_MULT = 2.5;
+  const POTION_CD = 2, SHIELD_POTION_MIN = 2, SHIELD_OIL_MIN = 1, OIL_MIN = 30, FLASK_MIN = 120, OIL_PROC = 0.2;
+  const tidy = n => n < 100 ? Math.round(n) : n < 1000 ? Math.round(n / 5) * 5 : Math.round(n / 10) * 10;
+  const ladder = base => GRADES.map((g, i) => Array.isArray(base) ? base.map(x => tidy(x * GRADE_MULT ** i)) : tidy(base * GRADE_MULT ** i));
+  const EFFECTS = {
+    potion: {
+      Restorative: { name: 'Healing Potion', glyph: 'Hp', nums: { heal: ladder([70, 90]) }, text: n => `Heals ${n.heal[0]} to ${n.heal[1]} at once.` },
+      Arcane: { name: 'Mana Potion', glyph: 'Mp', nums: { mana: ladder([140, 180]), power: ladder(6) }, text: n => `Restores ${n.mana[0]} to ${n.mana[1]} mana, or ${n.power} rage or energy, at once.` },
+      Fortifying: { name: 'Ironhide Potion', glyph: 'Ih', nums: { shield: ladder(60) }, text: n => `Shields you for ${n.shield} damage, for ${SHIELD_POTION_MIN} min.` },
+      Volatile: { name: 'Blasting Potion', glyph: 'Bl', nums: { fire: ladder([30, 45]) }, text: n => `Thrown. Deals ${n.fire[0]} to ${n.fire[1]} fire damage.` },
+      Calming: { name: 'Fade Potion', glyph: 'Fd', nums: { threat: ladder(150) }, text: n => `Drops your threat on the current target by ${n.threat}.` },
+    },
+    oil: {
+      Restorative: { name: 'Leeching Oil', glyph: 'Lo', nums: { heal: ladder(15) }, text: n => `Chance on hit: heals you for ${n.heal}.` },
+      Arcane: { name: 'Mana Oil', glyph: 'Mo', nums: { mana: ladder(20), power: ladder(2) }, text: n => `Chance on hit: restores ${n.mana} mana, or ${n.power} rage or energy.` },
+      Fortifying: { name: 'Ironhide Oil', glyph: 'Io', nums: { shield: ladder(25) }, text: n => `Chance on hit: shields you for ${n.shield} damage, for ${SHIELD_OIL_MIN} min.` },
+      Volatile: { name: 'Burning Oil', glyph: 'Bo', nums: { fire: ladder([10, 14]) }, text: n => `Chance on hit: ${n.fire[0]} to ${n.fire[1]} fire damage.` },
+      Calming: { name: 'Quieting Oil', glyph: 'Qo', nums: { threat: ladder(10) }, text: n => `Every hit lowers your threat by ${n.threat}.` },
+    },
+  };
+  // The ten hybrids, one per pair of properties. Each is its own potion with its own effect, on the same cooldown as every potion.
+  const HYBRIDS = {
+    'Restorative+Fortifying': { name: 'Trollblood Draught', glyph: 'Tb', nums: { tick: ladder(12) }, text: n => `Heals ${n.tick} every 2 s for 10 s (${n.tick * 5} in all).` },
+    'Restorative+Volatile': { name: 'Bloodfire Bomb', glyph: 'Bf', nums: { fire: ladder([25, 35]) }, text: n => `Thrown. Deals ${n.fire[0]} to ${n.fire[1]} fire damage and heals you for half the damage dealt.` },
+    'Restorative+Arcane': { name: 'Rejuvenating Draught', glyph: 'Rj', nums: { both: ladder(60) }, text: n => `Restores ${n.both} health and ${n.both} mana at once.` },
+    'Restorative+Calming': { name: 'Deepsleep Potion', glyph: 'Ds', nums: { heal: ladder(150) }, text: n => `You sleep for 12 s and heal ${n.heal} over it. You cannot act while asleep.` },
+    'Fortifying+Volatile': { name: 'Ember Shield', glyph: 'Em', nums: { shield: ladder(40), burst: ladder(20) }, text: n => `Shields you for ${n.shield} damage, for 2 min. When it breaks it bursts for ${n.burst} fire to enemies around you.` },
+    'Fortifying+Arcane': { name: 'Mana Shield', glyph: 'Ms', nums: { shield: ladder(40), mana: ladder(15) }, text: n => `Shields you for ${n.shield} damage, for 2 min. Each hit it absorbs restores ${n.mana} mana.` },
+    'Fortifying+Calming': { name: 'Steady Stance', glyph: 'Ss', nums: { shield: ladder(40) }, text: n => `Shields you for ${n.shield} damage, for 2 min, and halves the threat you cause while it holds.` },
+    'Volatile+Arcane': { name: 'Spellfire Bomb', glyph: 'Sf', nums: { fire: ladder([25, 35]), mana: ladder(60) }, text: n => `Thrown. Deals ${n.fire[0]} to ${n.fire[1]} fire damage and burns ${n.mana} mana from the target.` },
+    'Volatile+Calming': { name: 'Smoke Bomb', glyph: 'Sm', nums: { fire: ladder([20, 30]), threat: ladder(100) }, text: n => `Thrown. Deals ${n.fire[0]} to ${n.fire[1]} fire damage to everything near the target, and drops your threat on each by ${n.threat}.` },
+    'Arcane+Calming': { name: 'Invisibility Draught', glyph: 'Iv', nums: { mana: ladder(60) }, text: n => `You turn invisible for 15 s: your threat clears, and you regain ${n.mana} mana while unseen.` },
+  };
+  EFFECTS.hybrid = HYBRIDS;
+  // Each Essence in a flask gives one stat at the Essence's own grade and step. Two Essences, so 15 flask kinds.
+  const FLASK_STAT = {
+    Fortifying: { stat: 'armour', label: 'Armour', base: ladder(40) },
+    Volatile: { stat: 'ap', label: 'Attack power', base: ladder(10) },
+    Arcane: { stat: 'sp', label: 'Spell power', base: ladder(6) },
+    Restorative: { stat: 'hregen', label: 'Health per 5 s', base: ladder(2) },
+    Calming: { stat: 'mregen', label: 'Mana and power per 5 s', base: ladder(2) },
+  };
+  const scale = (v, step) => Array.isArray(v) ? v.map(x => Math.round(x * step)) : Math.round(v * step);
+  function effectOf(family, prop, grade, step) {
+    const e = EFFECTS[family][prop], nums = {};
+    for (const k of Object.keys(e.nums)) nums[k] = scale(e.nums[k][GI(grade)], step);
+    return { nums, text: e.text(nums) };
+  }
+  const flaskStat = (prop, grade, step) => ({ ...FLASK_STAT[prop], amount: scale(FLASK_STAT[prop].base[GI(grade)], step) });
+
+  // ---------- items ----------
+  // Keys: herb|Name · fish|Name · potion|Prop|Grade|Step · hybrid|PropA+PropB|Grade|Step · oil|Prop|Grade|Step · tincture|Prop|Grade|Step|Toxic · essence|Prop|Grade|Step|Toxic
+  //       flask|Prop|Grade|Step|Prop|Grade|Step (essences in PROPS order, after the flask's own payoff) · sludge
+  const key = (...parts) => parts.join('|');
+  function parseKey(k) {
+    const [kind, ...r] = k.split('|');
+    if (kind === 'herb' || kind === 'fish') return { kind, name: r[0] };
+    if (kind === 'flask') return { kind, essences: [{ prop: r[0], grade: r[1], step: +r[2] }, { prop: r[3], grade: r[4], step: +r[5] }] };
+    if (kind === 'tincture' || kind === 'essence') return { kind, prop: r[0], grade: r[1], step: +r[2], tox: +r[3] || 0 };
+    if (kind === 'potion' || kind === 'oil') return { kind, prop: r[0], grade: r[1], step: +r[2] };
+    if (kind === 'hybrid') return { kind, prop: r[0], props: pairProps(r[0]), grade: r[1], step: +r[2] };
+    return { kind };
+  }
+  const kindOf = k => k.split('|')[0];
+  // A Tincture or Essence is stored as its grade and step and passes threshold x step points up the ladder.
+  const ptsOf = (family, prop, grade, step) => THRESHOLD[family][prop][grade] * step;
+  const fmtPts = n => Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0$/, '');
+  const fmtStep = s => 'x' + (Number.isInteger(s) ? s : String(s).replace(/0+$/, ''));
+  const FLASK_WORD = { Restorative: 'Vigour', Fortifying: 'Stone', Volatile: 'Ember', Arcane: 'Starlight', Calming: 'Stillwater' };
+  const flaskName = (a, b) => a === b ? `Flask of Twofold ${FLASK_WORD[a]}` : `Flask of ${FLASK_WORD[a]} and ${FLASK_WORD[b]}`;
+  const LADDER_BASE = { tincture: 'Tincture', essence: 'Essence' };
+  const familyBase = (family, prop) => family === 'potion' || family === 'oil' || family === 'hybrid' ? EFFECTS[family][prop].name : `${prop} ${LADDER_BASE[family]}`;
+  function nameOf(k) {
+    const p = parseKey(k);
+    switch (p.kind) {
+      case 'herb': case 'fish': return p.name;
+      case 'potion': case 'hybrid': case 'oil': case 'tincture': case 'essence': return gradeName(p.grade, familyBase(p.kind, p.prop));
+      case 'flask': return flaskName(p.essences[0].prop, p.essences[1].prop);
+      case 'sludge': return 'Murky Sludge';
+    }
+    return k;
+  }
+  function qualityOf(k) {
+    const p = parseKey(k);
+    if (p.kind === 'herb') return HERB[p.name].rarity;
+    if (p.kind === 'fish') return FISH_BY[p.name].rarity;
+    if (p.kind === 'flask') return GRADE_QUALITY[GRADES[Math.max(GI(p.essences[0].grade), GI(p.essences[1].grade))]];
+    if (p.grade) return GRADE_QUALITY[p.grade];
+    if (p.kind === 'sludge') return 'poor';
+    return 'common';
+  }
+  // Every step and grade of one product shares its icon: the border is the property colour, not the grade's.
+  function iconOf(k) {
+    const p = parseKey(k);
+    if (p.kind === 'herb') return { glyph: HERB[p.name].glyph, hue: HERB[p.name].hue, border: null };
+    if (p.kind === 'fish') return { glyph: FISH_BY[p.name].glyph, hue: FISH_BY[p.name].hue, border: null };
+    if (p.kind === 'potion' || p.kind === 'oil') return { glyph: EFFECTS[p.kind][p.prop].glyph, hue: PROP_HUE[p.prop], border: PROP_COLOUR[p.prop] };
+    if (p.kind === 'hybrid') return { glyph: HYBRIDS[p.prop].glyph, hue: PROP_HUE[p.props[0]], border: PROP_COLOUR[p.props[1]] };
+    if (p.kind === 'tincture') return { glyph: 'Ti', hue: PROP_HUE[p.prop], border: PROP_COLOUR[p.prop] };
+    if (p.kind === 'essence') return { glyph: 'Es', hue: PROP_HUE[p.prop], border: PROP_COLOUR[p.prop] };
+    if (p.kind === 'flask') return { glyph: 'Fl', hue: PROP_HUE[p.essences[0].prop], border: PROP_COLOUR[p.essences[1].prop] };
+    return { glyph: 'Sl', hue: 90, border: '#9d9d9d' };
+  }
+
+  // ---------- 6. the five makes ----------
+  // One bench. The player picks what they are making; each make lists the station it happens at, what it takes, and what opens it.
+  //   Materials:   Tincture (Still, 5 herbs) · Essence (Still, 15 herbs, or 3 Tinctures of one property + wash)
+  //   Consumables: Potion (Mortar, 2 to 4 herbs) · Weapon Oil (Oil Tin, 2 Tinctures of one property + 2 fish + wash) · Flask (Flask Rack, 2 Essences + wash)
+  // Everything lives in the bags. Herbs, fish, Tinctures and Essences are materials; potions, oils and flasks are consumables.
+  const countKeys = keys => { const m = {}; keys.forEach(k => { m[k] = (m[k] || 0) + 1; }); return m; };
+  function kindCounts(keys) {
+    const n = { herb: 0, fish: 0, tincture: 0, essence: 0, other: 0 };
+    keys.forEach(k => { const kd = kindOf(k); if (kd in n) n[kd] += 1; else n.other += 1; });
+    return n;
+  }
+  const MAKES = [
+    { id: 'potion', group: 'consumables', name: 'Potion', station: 'Mortar', verb: 'Brew', rule: '2 to 4 herbs', accepts: { herb: 4 }, fill: 4, family: 'potion',
+      opensBy: 'Open from the start.', valid: n => n.herb >= 2 && n.herb <= 4 && !n.other ? null : 'Two to four herbs.' },
+    { id: 'tincture', group: 'materials', name: 'Tincture', station: 'Still', verb: 'Distill', rule: '5 herbs', accepts: { herb: 5 }, fill: 5, family: 'tincture',
+      opensBy: 'Brew any potion to open the Still.', valid: n => n.herb === 5 && !n.other ? null : 'Five herbs.' },
+    { id: 'essence', group: 'materials', name: 'Essence', station: 'Still', verb: 'Condense', rule: '15 herbs, or 3 Tinctures of one property + up to 2 herbs as a wash', accepts: { herb: 15, tincture: 3 }, fill: 15, family: 'essence',
+      opensBy: 'Distill a Tincture to condense Essences.', valid: n => (n.herb === 15 && !n.tincture && !n.other) || (n.tincture === 3 && n.herb <= WASH && !n.other) ? null : 'Fifteen herbs, or three Tinctures with up to two herbs as a wash.' },
+    { id: 'oil', group: 'consumables', name: 'Weapon Oil', station: 'Oil Tin', verb: 'Mix', rule: '2 Tinctures of one property + 2 fish + up to 2 herbs as a wash', accepts: { tincture: 2, fish: 2, herb: WASH }, fill: 2, family: 'oil',
+      opensBy: 'Distill a Tincture to open the Oil Tin.', valid: n => n.tincture === 2 && n.fish === 2 && n.herb <= WASH && !n.other ? null : 'Two Tinctures and two fish, with up to two herbs as a wash.' },
+    { id: 'flask', group: 'consumables', name: 'Flask', station: 'Flask Rack', verb: 'Join', rule: '2 Essences + up to 2 herbs as a wash', accepts: { essence: 2, herb: WASH }, fill: 2, family: 'flask',
+      opensBy: 'Make an Essence to open the Flask Rack.', valid: n => n.essence === 2 && n.herb <= WASH && !n.other ? null : 'Two Essences, with up to two herbs as a wash.' },
+  ];
+  const MAKE = Object.fromEntries(MAKES.map(m => [m.id, m]));
+  const MAKE_OF_FAMILY = { potion: 'potion', hybrid: 'potion', tincture: 'tincture', essence: 'essence', oil: 'oil' };
+  // Which make's vials a family is measured on: a flask's two Essences sit on the Essence ladder.
+  const RING_FAMILY = { potion: 'potion', tincture: 'tincture', essence: 'essence', oil: 'oil', flask: 'essence' };
+
+  // ---------- state ----------
+  const SAVE_KEY = 'twilights-eve-alchemy-v4';
+  const DAY = 1440;
+  const TABLES = {
+    northshire: { id: 'northshire', name: 'Northshire Abbey', alchemist: 'Sister Marla', tiers: ['Minor'],
+      line: '"Two to four herbs in the Mortar. Whatever they hold most of comes out as a potion. Mind the Toxic: it can take the whole brew, but a brew that holds comes out stronger for it."' },
+    goldshire: { id: 'goldshire', name: 'Goldshire', alchemist: 'Alwen Carrow', tiers: ['Minor', 'Lesser'],
+      line: '"Dirty herbs are a gamble, and the Still only boils off half of it. Earthroot cleans a brew; so does kelp. Throw a couple in as a wash at any station."' },
+    stormwind: { id: 'stormwind', name: "Stormwind's Alchemy Needs", alchemist: 'Quartermaster Ilsa Venn', tiers: GRADES,
+      line: '"The strong flasks all come from dirty Essences. Everyone who sells them has lost a few batches. Buy a rumour or get grinding."' },
+  };
+  // Rumours come from a vendor at each table. Each alchemist sells Rumours for the grades of their own tier, at a price per grade.
+  const RUMOUR_PRICE = { Minor: 2000, Lesser: 6000, Standard: 15000, Greater: 40000 };
+  const SLUDGE_PRICE = 5;
+
+  function freshState() {
+    const S = {
+      v: 4, level: 5, clock: 8 * 60, inCombat: false, gold: 30000, table: 'northshire', visited: {},
+      bags: {}, notes: {}, grades: {}, flasks: {},
+      makes: { potion: true, tincture: false, essence: false, oil: false, flask: false },
+      log: [], combatLog: [], lastLearned: '', hp: null, mp: null, threat: 0,
+      flask: null, oils: { main: null, off: null }, shield: null, potionCd: 0,
+    };
+    // A forager's starter bundle for a level 5 character, plus a few fish.
+    Object.assign(S.bags, {
+      'herb|Peacebloom': 12, 'herb|Silverleaf': 8, 'herb|Earthroot': 6, 'herb|Amber Sap': 6, "herb|Bird's Nest": 2, 'herb|Mageroyal': 3, 'herb|Swiftthistle': 3,
+      'fish|Goldshire Perch': 4, 'fish|Northshire Brook Trout': 2, 'fish|Brilliant Smallfish': 2,
+    });
+    return S;
+  }
+  let S = freshState();
+  function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* no storage: the page still works */ } }
+  function load() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d && d.v === 4) S = Object.assign(freshState(), d, { makes: Object.assign(freshState().makes, d.makes || {}), oils: Object.assign({ main: null, off: null }, d.oils || {}) });
+    } catch (e) { /* ignore a bad save */ }
+  }
+  load();
+
+  // ---------- helpers ----------
+  const rnd = n => Math.floor(Math.random() * n);
+  const between = (lo, hi) => lo + rnd(hi - lo + 1);
+  const count = k => S.bags[k] || 0;
+  const addItem = (k, n = 1) => { S.bags[k] = (S.bags[k] || 0) + n; };
+  const removeItem = (k, n = 1) => { S.bags[k] -= n; if (S.bags[k] <= 0) delete S.bags[k]; };
+  const fmtClock = c => { const m = ((c % DAY) + DAY) % DAY; return `Day ${Math.floor(c / DAY) + 1}, ${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
+  const isNight = () => { const h = Math.floor((S.clock % DAY) / 60); return h >= 20 || h < 6; };
+  const gradeKey = (family, prop, grade) => key(family, prop, grade);
+  const gradeRec = gk => S.grades[gk] || { learned: false, rumoured: false, steps: {} };
+  const gradeKnown = gk => gradeRec(gk).learned;
+  const thresholdKnown = gk => { const r = gradeRec(gk); return r.learned || r.rumoured; };
+  const listInputs = keys => Object.entries(countKeys(keys)).map(([k, n]) => n > 1 ? `${nameOf(k)} ×${n}` : nameOf(k)).join(', ');
+  const propsText = sums => ALL_VALUES.filter(p => sums[p]).map(p => `${p} ${fmtPts(sums[p])}`).join(', ') || 'nothing';
+  const pushLog = e => { S.log.push(e); S.log = S.log.slice(-80); };
+  const pushCombat = text => { S.combatLog.push({ t: fmtClock(S.clock), text }); S.combatLog = S.combatLog.slice(-40); };
+  const parseTarget = t => { if (!t) return null; const [family, prop, grade] = t.split('|'); return family && prop && grade ? { family, prop, grade, key: t } : null; };
+  const noteState = name => { const u = S.notes[name] || 0; return u >= 5 ? 'full' : u >= 1 ? 'props' : 'none'; };
+
+  // ---------- resolution: pure functions, no state change ----------
+  function sumProps(herbNames) {
+    const sums = {};
+    herbNames.forEach(n => { for (const [p, v] of Object.entries(HERB[n].values)) sums[p] = (sums[p] || 0) + v; });
+    return sums;
+  }
+  // The main property of a herb craft: the target's property when the herbs carry any of it, otherwise the one with the most points.
+  function mainProp(sums, targetProp) {
+    if (targetProp && sums[targetProp]) return targetProp;
+    const best = PROPS.filter(p => sums[p]).sort((a, b) => sums[b] - sums[a])[0];
+    return best || null;
+  }
+  // Every craft resolves the same way: a body (herbs, Tinctures or Essences) gives main points and Toxic in; a wash of herbs adds
+  // only Toxic and Purifying; then the one rule rolls. The result says what comes out if it holds.
+  function resolve(makeId, keys, targetProp) {
+    const n = kindCounts(keys), herbs = keys.filter(k => kindOf(k) === 'herb').map(k => parseKey(k).name);
+    const tincs = keys.filter(k => kindOf(k) === 'tincture').map(parseKey), ess = keys.filter(k => kindOf(k) === 'essence').map(parseKey);
+    const herbBody = makeId === 'potion' || makeId === 'tincture' || (makeId === 'essence' && !n.tincture);
+    const family = makeId, sums = {};
+    let prop = null, main = 0, toxIn = 0, purify = 0, parts = null;
+    if (herbBody) {
+      Object.assign(sums, sumProps(herbs));
+      prop = mainProp(sums, targetProp);
+      if (!prop) return { sums, family, sludge: true, note: 'Nothing in it but Toxic and Purifying.' };
+      main = sums[prop]; toxIn = sums[TOXIC] || 0; purify = sums[PURIFY] || 0;
+    } else {
+      const body = makeId === 'flask' ? ess : tincs, wash = sumProps(herbs);
+      if (makeId !== 'flask' && new Set(body.map(p => p.prop)).size !== 1) return { sums, family, sludge: true, note: `${makeId === 'oil' ? 'Tinctures' : 'Tinctures'} of different properties will not settle together.` };
+      const bodyFamily = makeId === 'flask' ? 'essence' : 'tincture';
+      body.forEach(p => { const pts = ptsOf(bodyFamily, p.prop, p.grade, p.step); sums[p.prop] = (sums[p.prop] || 0) + pts; main += pts; toxIn += p.tox; });
+      toxIn += wash[TOXIC] || 0; purify = wash[PURIFY] || 0;
+      if (toxIn) sums[TOXIC] = toxIn; if (purify) sums[PURIFY] = purify;
+      prop = makeId === 'flask' ? null : body[0].prop;
+      if (makeId === 'flask') parts = body.map(p => ({ prop: p.prop, pts: ptsOf('essence', p.prop, p.grade, p.step) }));
+    }
+    const tox = Math.max(0, toxIn - purify), fail = failChance(tox, main), bonus = payoff(tox);
+    if (makeId === 'potion') {
+      // Hybrid precedence: a targeted hybrid wins when it qualifies at all. Otherwise the best hybrid wins when its grade beats the
+      // single's, and on a tie too, unless the player targeted a single potion.
+      const hy = pickHybrid(sums, tox, targetProp), single = gradeFor('potion', prop, main + bonus);
+      const targetedSingle = targetProp && PROPS.includes(targetProp);
+      if (hy && (hy.pair === targetProp || !single || GI(hy.grade) > GI(single.grade) || (GI(hy.grade) === GI(single.grade) && !targetedSingle))) {
+        const hfail = failChance(hy.tox, hy.main);
+        return { sums, family: 'hybrid', prop: hy.pair, props: pairProps(hy.pair), main: hy.main, toxIn, purify, tox: hy.tox, fail: hfail, bonus: hy.bonus, wash: 0, held: hy.main + hy.bonus, grade: hy.grade, step: hy.step, pts: hy.main + hy.bonus, carried: 0, product: key('hybrid', hy.pair, hy.grade, hy.step) };
+      }
+    }
+    const base = { sums, family, prop, main, toxIn, purify, tox, fail, bonus, wash: !herbBody && herbs.length ? herbs.length : 0 };
+    if (makeId === 'flask') {
+      const after = parts.map(p => { const g = gradeFor('essence', p.prop, p.pts + bonus / 2); return { ...p, grade: g.grade, step: g.step }; })
+        .sort((a, b) => PROPS.indexOf(a.prop) - PROPS.indexOf(b.prop) || GI(a.grade) - GI(b.grade) || a.step - b.step);
+      return { ...base, parts: after, held: main + bonus, product: key('flask', after[0].prop, after[0].grade, after[0].step, after[1].prop, after[1].grade, after[1].step) };
+    }
+    const held = main + bonus, g = gradeFor(family, prop, held);
+    if (!g) return { ...base, sludge: true, note: `Too little ${prop} to hold together.` };
+    const carried = family === 'tincture' || family === 'essence' ? carriedToxic(tox) : 0;
+    const product = carried || family === 'tincture' || family === 'essence' ? key(family, prop, g.grade, g.step, carried) : key(family, prop, g.grade, g.step);
+    return { ...base, held, grade: g.grade, step: g.step, pts: held, carried, product };
+  }
+  // A hybrid forms when two properties both clear the hybrid ladder (with the payoff split between them). The best pair wins:
+  // highest grade, then step, then points; a hybrid target wins when it qualifies at all.
+  function pickHybrid(sums, tox, targetProp) {
+    const bonus = payoff(tox);
+    let best = null;
+    for (const pair of PAIRS) {
+      const [a, b] = pairProps(pair), pa = (sums[a] || 0) + bonus / 2, pb = (sums[b] || 0) + bonus / 2;
+      if (!sums[a] || !sums[b]) continue;
+      const g = gradeFor('hybrid', pair, Math.min(pa, pb));
+      if (!g) continue;
+      const c = { pair, grade: g.grade, step: g.step, main: sums[a] + sums[b], tox, bonus };
+      if (pair === targetProp) return c;
+      if (!best || GI(c.grade) > GI(best.grade) || (c.grade === best.grade && (c.step > best.step || (c.step === best.step && c.main > best.main)))) best = c;
+    }
+    return best;
+  }
+  const flaskKind = k => { const p = parseKey(k); return key('flask', p.essences[0].prop, p.essences[1].prop); };
+  function productKnown(k) {
+    const p = parseKey(k);
+    if (p.kind === 'flask') return !!S.flasks[flaskKind(k)];
+    return gradeKnown(gradeKey(p.kind, p.prop, p.grade));
+  }
+  function slotCheck(makeId, keys) {
+    const m = MAKE[makeId];
+    if (!S.makes[makeId]) return `${m.name}s are not open yet.`;
+    const err = m.valid(kindCounts(keys));
+    if (err) return err;
+    for (const [k, c] of Object.entries(countKeys(keys))) if (count(k) < c) return `You don't have enough ${nameOf(k)}.`;
+    return null;
+  }
+
+  // The vials: what the player can see as materials go in. A herb with a full note adds its values; a herb whose note only names
+  // its properties marks those vials with "?"; an unnoted herb adds nothing. Tinctures and Essences carry known points and known
+  // Toxic. Wash herbs count only for Toxic and Purifying. The Toxic vial shows net Toxic and the fail chance it makes against the
+  // known main points; the payoff sits on the main vial. After a make the true numbers are shown (trueSums).
+  function bars(makeId, keys, target, trueSums) {
+    const m = MAKE[makeId], n = kindCounts(keys), family = m.family, ringFamily = RING_FAMILY[family];
+    const herbBody = makeId === 'potion' || makeId === 'tincture' || (makeId === 'essence' && !n.tincture);
+    const known = {}, maybe = {}; let unnoted = 0;
+    keys.forEach(k => {
+      const p = parseKey(k);
+      if (p.kind === 'herb') {
+        const st = noteState(p.name), vals = HERB[p.name].values;
+        if (st === 'none') { unnoted += 1; return; }
+        for (const [q, v] of Object.entries(vals)) { if (!herbBody && q !== TOXIC && q !== PURIFY) continue; if (st === 'full') known[q] = (known[q] || 0) + v; else maybe[q] = true; }
+      } else if (p.kind === 'tincture' || p.kind === 'essence') { known[p.prop] = (known[p.prop] || 0) + ptsOf(p.kind, p.prop, p.grade, p.step); if (p.tox) known[TOXIC] = (known[TOXIC] || 0) + p.tox; }
+    });
+    const vals = trueSums || known, t = parseTarget(target), tgt = t && (t.family === family || (family === 'potion' && t.family === 'hybrid')) ? t : null;
+    const isFlask = makeId === 'flask', tox = Math.max(0, (vals[TOXIC] || 0) - (vals[PURIFY] || 0));
+    let hy = makeId === 'potion' ? pickHybrid(vals, tox, tgt ? tgt.prop : null) : null;
+    if (hy) {
+      const sp = mainProp(vals, tgt && tgt.family === 'potion' ? tgt.prop : null), single = sp ? gradeFor('potion', sp, (vals[sp] || 0) + payoff(tox)) : null;
+      const targetedSingle = tgt && tgt.family === 'potion';
+      if (!(hy.pair === (tgt && tgt.prop) || !single || GI(hy.grade) > GI(single.grade) || (GI(hy.grade) === GI(single.grade) && !targetedSingle))) hy = null;
+    }
+    const mainProps = isFlask ? PROPS.filter(p => vals[p]) : hy ? pairProps(hy.pair) : [mainProp(vals, tgt ? tgt.prop : null)].filter(Boolean);
+    const prop = hy ? hy.pair : isFlask ? null : mainProps[0] || null;
+    const main = mainProps.reduce((a, p) => a + (vals[p] || 0), 0);
+    const fail = failChance(tox, main), bonus = payoff(tox);
+    const bonusOf = p => bonus && mainProps.includes(p) ? bonus / mainProps.length : 0;
+    const tgtProps = tgt ? (tgt.family === 'hybrid' ? pairProps(tgt.prop) : [tgt.prop]) : [];
+    const tick = tgt && thresholdKnown(gradeKey(tgt.family, tgt.prop, tgt.grade)) ? THRESHOLD[tgt.family][tgt.prop][tgt.grade] : null;
+    const scaleMax = Math.max(LADDER[ringFamily][3], tick || 0, ...PROPS.map(p => (vals[p] || 0) + bonusOf(p)), vals[TOXIC] || 0);
+    return {
+      family, ringFamily, scale: scaleMax, unnoted, result: !!trueSums, prop, hybrid: !!hy, main: fmtPts(main), tox, fail, failText: pct(fail), bonus, held: fmtPts(main + bonus),
+      rows: PROPS.map(p => ({
+        prop: p, colour: PROP_COLOUR[p], value: vals[p] || 0, text: fmtPts(vals[p] || 0),
+        unknown: !trueSums && !!maybe[p] ? (vals[p] ? 'some' : 'all') : null,
+        isMain: mainProps.includes(p), isTarget: tgtProps.includes(p), bonus: bonusOf(p),
+        tick: tgtProps.includes(p) ? tick : null,
+      })),
+      toxic: { raw: vals[TOXIC] || 0, purify: vals[PURIFY] || 0, net: tox, unknown: !trueSums && (!!maybe[TOXIC] || !!maybe[PURIFY]), fail, failText: pct(fail), bonus },
+    };
+  }
+
+  // ---------- 7. make ----------
+  function learnGrade(family, prop, grade, step, msgs, events) {
+    const gk = gradeKey(family, prop, grade), rec = S.grades[gk] || (S.grades[gk] = { learned: false, rumoured: false, steps: {} });
+    const name = nameOf(key(family, prop, grade, 1));
+    if (!rec.learned) { rec.learned = true; S.lastLearned = name; msgs.push({ t: 'learn', text: `New grade learned: ${name}. Its page now shows its threshold.` }); events.learned.push(gk); }
+    rec.steps[step] = (rec.steps[step] || 0) + 1;
+  }
+  function openMake(id, msgs, events) { if (S.makes[id]) return; S.makes[id] = true; msgs.push({ t: 'learn', text: `${MAKE[id].name}s are open: ${MAKE[id].rule} at the ${MAKE[id].station}.` }); events.opened.push(id); }
+
+  function make(makeId, keys, target) {
+    const msgs = [], events = { learned: [], opened: [], product: null, sludge: false, failed: false };
+    const err = slotCheck(makeId, keys);
+    if (err) return { ok: false, msgs: [{ t: 'error', text: err }], events };
+    const t = parseTarget(target), m = MAKE[makeId], r = resolve(makeId, keys, t ? t.prop : null);
+    const herbNames = keys.filter(k => kindOf(k) === 'herb').map(k => parseKey(k).name), before = { ...S.notes };
+    keys.forEach(k => { removeItem(k); if (kindOf(k) === 'herb') S.notes[parseKey(k).name] = (S.notes[parseKey(k).name] || 0) + 1; });
+    [...new Set(herbNames)].forEach(n => {
+      const was = before[n] || 0, now = S.notes[n];
+      if (now >= 5 && was < 5) msgs.push({ t: 'learn', text: `Herb Note filled: ${n} now shows each value.` });
+      else if (now >= 1 && was < 1) msgs.push({ t: 'info', text: `Herb Note started: ${n} names what it holds.` });
+    });
+    const roll = r.fail ? Math.random() : 1, failed = !r.sludge && r.fail > 0 && roll < r.fail;
+    const entry = { t: fmtClock(S.clock), make: m.name, station: m.station, inputs: listInputs(keys), props: propsText(r.sums), tox: r.tox || 0, fail: r.fail ? pct(r.fail) : '', result: '', note: r.note || '' };
+    if (r.sludge) {
+      addItem('sludge'); events.sludge = true; entry.result = 'Murky Sludge';
+      msgs.push({ t: 'say', text: `Murky Sludge. ${r.note}` });
+    } else if (failed) {
+      addItem('sludge'); events.sludge = true; entry.result = 'Murky Sludge'; entry.note = `The Toxic took it (${pct(r.fail)} chance).`;
+      msgs.push({ t: 'say', text: `Murky Sludge. The Toxic took it: a ${pct(r.fail)} chance came up.` });
+    } else {
+      addItem(r.product); events.product = r.product; entry.result = nameOf(r.product) + (r.step ? ` ${fmtStep(r.step)}` : '') + (r.carried ? ` · Toxic ${r.carried}` : '');
+      const heldTxt = r.tox ? ` It held through ${pct(r.fail)} Toxic and gained ${r.bonus}${r.prop ? ' ' + r.prop : ''}.` : '';
+      if (r.tox) entry.note = `Held through ${pct(r.fail)} Toxic: +${r.bonus}${r.prop ? ' ' + r.prop : ', split between the Essences'}.`;
+      if (r.family === 'flask') {
+        const fk = flaskKind(r.product), first = !S.flasks[fk]; S.flasks[fk] = (S.flasks[fk] || 0) + 1;
+        msgs.push({ t: 'product', text: `${nameOf(r.product)}, into your bags.${heldTxt}` });
+        if (first) { S.lastLearned = nameOf(r.product); msgs.push({ t: 'learn', text: `New flask kind: ${nameOf(r.product)} (${Object.keys(S.flasks).length} of 15).` }); events.learned.push(fk); }
+      } else {
+        msgs.push({ t: 'product', text: `${nameOf(r.product)} ${fmtStep(r.step)}${r.carried ? ` carrying Toxic ${r.carried}` : ''}, into your bags.${heldTxt}` });
+        if (t && (t.family === r.family || (t.family === 'potion' && r.family === 'hybrid') || (t.family === 'hybrid' && r.family === 'potion')) && (t.prop !== r.prop || t.grade !== r.grade)) msgs.push({ t: 'info', text: `Not the target. ${r.family === 'hybrid' && t.family === 'potion' ? `Both ${r.props[0]} and ${r.props[1]} cleared the hybrid ladder, so it became a hybrid.` : t.family === 'hybrid' && r.family === 'potion' ? `Only ${r.prop} cleared the hybrid ladder.` : t.prop !== r.prop ? `The herbs carried no ${t.prop}, so ${r.prop} led.` : `It reached ${r.grade === 'Standard' ? 'the plain grade' : r.grade}, not ${t.grade === 'Standard' ? 'plain' : t.grade}.`}` });
+        learnGrade(r.family, r.prop, r.grade, r.step, msgs, events);
+        if (r.family === 'potion' || r.family === 'hybrid') openMake('tincture', msgs, events);
+        if (r.family === 'tincture') { openMake('essence', msgs, events); openMake('oil', msgs, events); }
+        if (r.family === 'essence') openMake('flask', msgs, events);
+      }
+    }
+    events.bars = bars(makeId, keys, target, r.sums);
+    events.resultName = entry.result;
+    events.failed = failed;
+    pushLog(entry); save();
+    return { ok: true, msgs, events };
+  }
+
+  // ---------- 8. character, clock and the dummy ----------
+  function activeFlaskStats() {
+    const out = { armour: 0, ap: 0, sp: 0, hregen: 0, mregen: 0, lines: [] };
+    if (!S.flask) return out;
+    parseKey(S.flask.key).essences.forEach(e => { const f = flaskStat(e.prop, e.grade, e.step); out[f.stat] += f.amount; out.lines.push(`+${f.amount} ${f.label} (${gradeName(e.grade, e.prop + ' Essence')} ${fmtStep(e.step)})`); });
+    return out;
+  }
+  // A shield absorbs damage before health does. Shields do not stack: a new one replaces the old only if it is larger.
+  const shieldLeft = () => S.shield && S.shield.until > S.clock && S.shield.left > 0 ? S.shield.left : 0;
+  function giveShield(amount, minutes, from, extra = {}) {
+    if (shieldLeft() >= amount) return `${from}: a ${amount} shield, but your ${shieldLeft()} shield is larger and stays.`;
+    S.shield = { left: amount, until: S.clock + minutes, from, ...extra };
+    const more = extra.burst ? ` It bursts for ${extra.burst} fire when it breaks.` : extra.manaPerHit ? ` Each hit it absorbs restores ${extra.manaPerHit} mana.` : extra.halfThreat ? ' Your threat is halved while it holds.' : '';
+    return `${from}: shields you for ${amount} damage, for ${minutes} min.${more}`;
+  }
+  // Placeholder stat formulas; only the alchemy bonuses matter here.
+  function character() {
+    const L = S.level, f = activeFlaskStats();
+    const stamina = 10 + L, maxHp = 40 + L * 8 + stamina * 10, maxMp = 60 + L * 15;
+    if (S.hp === null || S.hp > maxHp) S.hp = maxHp;
+    if (S.mp === null || S.mp > maxMp) S.mp = maxMp;
+    const left = until => Math.max(0, until - S.clock);
+    return {
+      level: L, inCombat: S.inCombat, hp: S.hp, maxHp, mp: S.mp, maxMp, threat: S.threat,
+      stats: [
+        { name: 'Armour', total: L * 12 + f.armour, bonus: f.armour },
+        { name: 'Attack power', total: L * 3 + f.ap, bonus: f.ap },
+        { name: 'Spell power', total: f.sp, bonus: f.sp },
+        { name: 'Stamina', total: stamina, bonus: 0 },
+        { name: 'Health regen', total: 1 + Math.floor(L / 5) + f.hregen, bonus: f.hregen, unit: '/5 s' },
+        { name: 'Mana regen', total: 2 + Math.floor(L / 4) + f.mregen, bonus: f.mregen, unit: '/5 s' },
+      ],
+      flask: S.flask ? { key: S.flask.key, name: nameOf(S.flask.key), quality: qualityOf(S.flask.key), left: left(S.flask.until), lines: f.lines } : null,
+      oils: ['main', 'off'].map(hand => S.oils[hand] ? { hand, key: S.oils[hand].key, name: nameOf(S.oils[hand].key), quality: qualityOf(S.oils[hand].key), left: left(S.oils[hand].until) } : { hand, key: null }),
+      shield: shieldLeft() ? { left: S.shield.left, minutes: left(S.shield.until), from: S.shield.from } : null,
+      potionCd: left(S.potionCd),
+    };
+  }
+  function expire(msgs) {
+    if (S.flask && S.flask.until <= S.clock) { msgs.push({ t: 'info', text: `${nameOf(S.flask.key)} has worn off.` }); S.flask = null; }
+    for (const hand of ['main', 'off']) if (S.oils[hand] && S.oils[hand].until <= S.clock) { msgs.push({ t: 'info', text: `${nameOf(S.oils[hand].key)} has worn off your ${hand} hand.` }); S.oils[hand] = null; }
+    if (S.shield && S.shield.until <= S.clock) { if (S.shield.left > 0) msgs.push({ t: 'info', text: `The shield from ${S.shield.from} fades with ${S.shield.left} unused.` }); S.shield = null; }
+  }
+  function advance(min) {
+    const msgs = [];
+    S.clock += min;
+    expire(msgs);
+    const c = character(), ticks = min * 12; // regen is per 5 s
+    const hr = S.inCombat ? activeFlaskStats().hregen : c.stats[4].total, mr = S.inCombat ? activeFlaskStats().mregen : c.stats[5].total;
+    S.hp = Math.min(c.maxHp, S.hp + hr * ticks); S.mp = Math.min(c.maxMp, S.mp + mr * ticks);
+    if (!S.inCombat && S.threat) S.threat = 0;
+    save(); return msgs;
+  }
+  function drink(k) {
+    const p = parseKey(k), msgs = [];
+    if ((p.kind !== 'potion' && p.kind !== 'hybrid') || !count(k)) return [{ t: 'error', text: 'Nothing to drink.' }];
+    if (S.potionCd > S.clock) return [{ t: 'error', text: `Potions are on cooldown for ${S.potionCd - S.clock} min.` }];
+    const c = character(), e = effectOf(p.kind, p.prop, p.grade, p.step), n = e.nums, name = nameOf(k);
+    removeItem(k); S.potionCd = S.clock + POTION_CD;
+    const heal = h => { const was = S.hp; S.hp = Math.min(c.maxHp, S.hp + h); return S.hp - was; };
+    const mana = m => { const was = S.mp; S.mp = Math.min(c.maxMp, S.mp + m); return S.mp - was; };
+    const throwAt = (lo, hi) => { const d = between(lo, hi); S.inCombat = true; S.threat += d; pushCombat(`${name} bursts on the dummy for ${d} fire.`); return d; };
+    switch (p.prop) {
+      case 'Restorative+Fortifying': msgs.push({ t: 'info', text: `${name}: heals ${heal(n.tick * 5)} over 10 s.` }); break;
+      case 'Restorative+Volatile': { const d = throwAt(n.fire[0], n.fire[1]); msgs.push({ t: 'info', text: `${name} thrown: ${d} fire, and it heals you for ${heal(Math.round(d / 2))}.` }); break; }
+      case 'Restorative+Arcane': msgs.push({ t: 'info', text: `${name}: restores ${heal(n.both)} health and ${mana(n.both)} mana.` }); break;
+      case 'Restorative+Calming': msgs.push({ t: 'info', text: `${name}: you sleep 12 s and heal ${heal(n.heal)}.` }); break;
+      case 'Fortifying+Volatile': msgs.push({ t: 'info', text: giveShield(n.shield, SHIELD_POTION_MIN, name, { burst: n.burst }) }); break;
+      case 'Fortifying+Arcane': msgs.push({ t: 'info', text: giveShield(n.shield, SHIELD_POTION_MIN, name, { manaPerHit: n.mana }) }); break;
+      case 'Fortifying+Calming': msgs.push({ t: 'info', text: giveShield(n.shield, SHIELD_POTION_MIN, name, { halfThreat: true }) }); break;
+      case 'Volatile+Arcane': { const d = throwAt(n.fire[0], n.fire[1]); msgs.push({ t: 'info', text: `${name} thrown: ${d} fire, and it burns ${n.mana} mana from the target (the dummy has none).` }); break; }
+      case 'Volatile+Calming': { const d = throwAt(n.fire[0], n.fire[1]); const t = Math.min(S.threat, n.threat); S.threat -= t; msgs.push({ t: 'info', text: `${name} thrown: ${d} fire around the target, and your threat drops by ${t}.` }); break; }
+      case 'Arcane+Calming': { const was = S.threat; S.threat = 0; msgs.push({ t: 'info', text: `${name}: invisible for 15 s. Threat cleared (was ${was}); you regain ${mana(n.mana)} mana.` }); break; }
+      case 'Restorative': { const h = between(n.heal[0], n.heal[1]); S.hp = Math.min(c.maxHp, S.hp + h); msgs.push({ t: 'info', text: `${nameOf(k)} heals you for ${h}.` }); break; }
+      case 'Arcane': { const m = between(n.mana[0], n.mana[1]); S.mp = Math.min(c.maxMp, S.mp + m); msgs.push({ t: 'info', text: `${nameOf(k)} restores ${m} mana.` }); break; }
+      case 'Fortifying': msgs.push({ t: 'info', text: giveShield(n.shield, SHIELD_POTION_MIN, nameOf(k)) }); break;
+      case 'Volatile': { const d = between(n.fire[0], n.fire[1]); S.inCombat = true; S.threat += d; pushCombat(`${nameOf(k)} bursts on the dummy for ${d} fire.`); msgs.push({ t: 'info', text: `${nameOf(k)} thrown: ${d} fire damage.` }); break; }
+      case 'Calming': { const t = Math.min(S.threat, n.threat); S.threat -= t; msgs.push({ t: 'info', text: `${nameOf(k)} drops your threat by ${t}.` }); break; }
+    }
+    save(); return msgs;
+  }
+  function applyOil(k, hand) {
+    if (kindOf(k) !== 'oil' || !count(k)) return [{ t: 'error', text: 'No such oil.' }];
+    removeItem(k); S.oils[hand] = { key: k, until: S.clock + OIL_MIN }; save();
+    return [{ t: 'info', text: `${nameOf(k)} on your ${hand} hand for ${OIL_MIN} min.` }];
+  }
+  function useFlask(k) {
+    if (kindOf(k) !== 'flask' || !count(k)) return [{ t: 'error', text: 'No such flask.' }];
+    const msgs = [];
+    if (S.flask) msgs.push({ t: 'info', text: `${nameOf(S.flask.key)} is replaced; only one flask is active.` });
+    removeItem(k); S.flask = { key: k, until: S.clock + FLASK_MIN }; save();
+    msgs.push({ t: 'info', text: `${nameOf(k)} for ${FLASK_MIN} min. It survives death.` });
+    return msgs;
+  }
+  // One swing: a main-hand hit and, since the dummy test assumes two weapons, an off-hand hit at half damage.
+  function swing() {
+    const msgs = [], c = character();
+    S.inCombat = true;
+    for (const [hand, mult] of [['main', 1], ['off', 0.5]]) {
+      let dmg = Math.round(((4 + S.level * 1.5) * (0.85 + Math.random() * 0.3) + c.stats[1].total / 14 * 2) * mult); const notes = [];
+      const o = S.oils[hand];
+      if (o) {
+        const p = parseKey(o.key), e = effectOf('oil', p.prop, p.grade, p.step).nums;
+        if (p.prop === 'Calming') { const t = Math.min(S.threat + dmg, e.threat); S.threat -= t; notes.push(`${nameOf(o.key)}: threat −${t}`); }
+        else if (Math.random() < OIL_PROC) {
+          if (p.prop === 'Volatile') { const f = between(e.fire[0], e.fire[1]); dmg += f; notes.push(`${nameOf(o.key)} procs: +${f} fire`); }
+          if (p.prop === 'Arcane') { S.mp = Math.min(c.maxMp, S.mp + e.mana); notes.push(`${nameOf(o.key)} procs: +${e.mana} mana`); }
+          if (p.prop === 'Restorative') { S.hp = Math.min(c.maxHp, S.hp + e.heal); notes.push(`${nameOf(o.key)} procs: heals ${e.heal}`); }
+          if (p.prop === 'Fortifying') { notes.push(`${nameOf(o.key)} procs: ${giveShield(e.shield, SHIELD_OIL_MIN, nameOf(o.key)).replace(/^[^:]+: /, '')}`); }
+        }
+      }
+      const gain = shieldLeft() && S.shield.halfThreat ? Math.round(dmg / 2) : dmg;
+      if (gain !== dmg) notes.push('threat halved by the shield');
+      S.threat = Math.max(0, S.threat + gain);
+      const line = `${hand === 'main' ? 'Main hand' : 'Off hand'} hits the dummy for ${dmg}${notes.length ? ` (${notes.join('; ')})` : ''}.`;
+      pushCombat(line); msgs.push({ t: 'info', text: line });
+    }
+    save(); return msgs;
+  }
+
+  // ---------- 9. tables and rumours ----------
+  function setTable(id) {
+    if (!TABLES[id]) return [];
+    S.table = id; const msgs = [];
+    if (!S.visited[id]) { S.visited[id] = true; msgs.push({ t: 'say', text: `${TABLES[id].alchemist}: ${TABLES[id].line}` }); }
+    save(); return msgs;
+  }
+  const FAMILIES = ['potion', 'hybrid', 'oil', 'tincture', 'essence'];
+  const propsOf = f => f === 'hybrid' ? PAIRS : PROPS;
+  const allGradeKeys = () => FAMILIES.flatMap(f => propsOf(f).flatMap(p => GRADES.map(g => gradeKey(f, p, g))));
+  function rumoursFor() {
+    const t = TABLES[S.table];
+    return allGradeKeys().filter(gk => { const [, , g] = gk.split('|'); const r = gradeRec(gk); return t.tiers.includes(g) && !r.learned && !r.rumoured; })
+      .map(gk => { const [f, p, g] = gk.split('|'); return { key: gk, name: nameOf(key(f, p, g, 1)), price: RUMOUR_PRICE[g], grade: g }; });
+  }
+  function rumour(gk, free) {
+    const [f, p, g] = gk.split('|'), rec = S.grades[gk] || (S.grades[gk] = { learned: false, rumoured: false, steps: {} });
+    if (rec.learned || rec.rumoured) return [{ t: 'error', text: 'You already know that one.' }];
+    if (!free) { if (S.gold < RUMOUR_PRICE[g]) return [{ t: 'error', text: "You can't afford that rumour." }]; S.gold -= RUMOUR_PRICE[g]; }
+    rec.rumoured = true; S.lastLearned = `a rumour of ${nameOf(key(f, p, g, 1))}`;
+    save();
+    return [{ t: 'learn', text: `Rumour: ${nameOf(key(f, p, g, 1))} needs ${p} ${THRESHOLD[f][p][g]}.` }];
+  }
+  function sellSludge() {
+    const n = count('sludge'); if (!n) return [{ t: 'error', text: 'No sludge to sell.' }];
+    removeItem('sludge', n); S.gold += n * SLUDGE_PRICE; save();
+    return [{ t: 'info', text: `Sold ${n} Murky Sludge for ${n * SLUDGE_PRICE}c.` }];
+  }
+
+  // ---------- journal views ----------
+  // What the notes say a herb carries: names after 1 use, values after 5.
+  const knownProps = name => { const st = noteState(name); return st === 'none' ? [] : Object.keys(HERB[name].values).map(p => ({ prop: p, value: st === 'full' ? HERB[name].values[p] : null, colour: PROP_COLOUR[p] })); };
+  function describe(k) {
+    const p = parseKey(k), lines = [], name = nameOf(k), quality = qualityOf(k);
+    if (p.kind === 'herb') {
+      const h = HERB[p.name], st = noteState(p.name);
+      lines.push({ text: `Herb · level ${h.level} · ${h.rarity}`, c: 'muted' }, { text: `Found in ${h.zones}`, c: 'muted' });
+      if (st === 'none') lines.push({ text: 'Unknown. Use it in any craft to find out what it holds.', c: 'muted' });
+      else lines.push({ text: Object.keys(h.values).map(q => st === 'full' ? `${q} ${h.values[q]}` : `${q} ?`).join(', '), c: 'gold' });
+      if (st !== 'none' && h.values[TOXIC]) lines.push({ text: 'Toxic can spoil a craft; when it holds, each point pays one point into the product.', c: 'muted' });
+      if (st !== 'none' && h.values[PURIFY]) lines.push({ text: 'Purifying cancels Toxic point for point.', c: 'use' });
+      lines.push({ text: `Uses noted: ${Math.min(5, S.notes[p.name] || 0)} of 5`, c: 'muted' });
+    } else if (p.kind === 'fish') {
+      lines.push({ text: 'Fish', c: 'muted' }, { text: 'Two go into every weapon oil.', c: 'use' });
+    } else if (p.kind === 'potion' || p.kind === 'hybrid') {
+      const e = effectOf(p.kind, p.prop, p.grade, p.step);
+      lines.push({ text: `${p.kind === 'hybrid' ? `${p.props[0]} and ${p.props[1]} hybrid` : p.prop + ' potion'} · ${fmtStep(p.step)}`, c: 'muted' }, { text: e.text, c: 'use' }, { text: `Use: drink. Shares a ${POTION_CD}-minute cooldown with every potion.`, c: 'muted' });
+    } else if (p.kind === 'oil') {
+      const e = effectOf('oil', p.prop, p.grade, p.step);
+      lines.push({ text: `${p.prop} weapon oil · ${fmtStep(p.step)}`, c: 'muted' }, { text: e.text, c: 'use' }, { text: `Use: coat one weapon for ${OIL_MIN} min.`, c: 'muted' });
+    } else if (p.kind === 'tincture') {
+      lines.push({ text: `${p.prop} Tincture · ${fmtStep(p.step)}`, c: 'muted' }, { text: `Carries ${fmtPts(ptsOf('tincture', p.prop, p.grade, p.step))} ${p.prop} points.`, c: 'gold' }, p.tox ? { text: `Carries Toxic ${p.tox}: it rolls again wherever it goes next.`, c: 'muted' } : { text: 'Clean. No Toxic.', c: 'use' }, { text: 'Three condense into an Essence. Two and two fish mix into a weapon oil.', c: 'muted' });
+    } else if (p.kind === 'essence') {
+      const f = flaskStat(p.prop, p.grade, p.step);
+      lines.push({ text: `${p.prop} Essence · ${fmtStep(p.step)}`, c: 'muted' }, { text: `Carries ${fmtPts(ptsOf('essence', p.prop, p.grade, p.step))} ${p.prop} points.`, c: 'gold' }, p.tox ? { text: `Carries Toxic ${p.tox}: the flask rolls on it.`, c: 'muted' } : { text: 'Clean. No Toxic.', c: 'use' }, { text: `In a flask: +${f.amount} ${f.label}.`, c: 'use' });
+    } else if (p.kind === 'flask') {
+      lines.push({ text: `Flask · ${FLASK_MIN} min · survives death · one active at a time`, c: 'muted' });
+      p.essences.forEach(e => { const f = flaskStat(e.prop, e.grade, e.step); lines.push({ text: `+${f.amount} ${f.label} (${gradeName(e.grade, e.prop + ' Essence')} ${fmtStep(e.step)})`, c: 'use' }); });
+    } else if (p.kind === 'sludge') {
+      lines.push({ text: 'Vendor junk.', c: 'muted' }, { text: `Sells for ${SLUDGE_PRICE}c.`, c: 'muted' });
+    }
+    return { name, quality, lines };
+  }
+  function bags() {
+    return Object.keys(S.bags).map(k => {
+      const p = parseKey(k);
+      return { key: k, kind: p.kind, name: nameOf(k), quality: qualityOf(k), count: S.bags[k], icon: iconOf(k), step: p.step || null, tox: p.tox || 0, prop: p.prop || null, level: p.kind === 'herb' ? HERB[p.name].level : 0, knownProps: p.kind === 'herb' ? knownProps(p.name) : [] };
+    }).sort((a, b) => a.kind.localeCompare(b.kind) || a.level - b.level || a.name.localeCompare(b.name) || (a.step || 0) - (b.step || 0));
+  }
+  // A recipe page: one ladder per property, each grade a segment of it.
+  function recipePage(family) {
+    return propsOf(family).map(prop => ({
+      prop, props: family === 'hybrid' ? pairProps(prop) : [prop], colour: PROP_COLOUR[family === 'hybrid' ? pairProps(prop)[0] : prop], colour2: family === 'hybrid' ? PROP_COLOUR[pairProps(prop)[1]] : null,
+      base: familyBase(family, prop), top: THRESHOLD[family][prop].Greater,
+      grades: GRADES.map(grade => {
+        const gk = gradeKey(family, prop, grade), r = gradeRec(gk), known = r.learned;
+        return {
+          key: gk, grade, label: grade === 'Standard' ? 'Plain' : grade, name: nameOf(key(family, prop, grade, 1)), quality: GRADE_QUALITY[grade], learned: known, rumoured: r.rumoured,
+          threshold: known || r.rumoured ? THRESHOLD[family][prop][grade] : null,
+          steps: STEPS.map(s => ({ step: s, count: r.steps[s] || 0 })).filter(s => s.count),
+          effect: known && (family === 'potion' || family === 'oil' || family === 'hybrid') ? effectOf(family, prop, grade, 1).text : null,
+          itemKey: key(family, prop, grade, 1), make: MAKE_OF_FAMILY[family],
+        };
+      }),
+    }));
+  }
+  function flaskPage() {
+    const out = [];
+    for (let i = 0; i < PROPS.length; i++) for (let j = i; j < PROPS.length; j++) {
+      const a = PROPS[i], b = PROPS[j], fk = key('flask', a, b);
+      out.push({ key: fk, name: flaskName(a, b), props: [a, b], made: S.flasks[fk] || 0, stats: [FLASK_STAT[a].label, FLASK_STAT[b].label] });
+    }
+    return out;
+  }
+  function herbNotes() {
+    return HERBS.map(h => {
+      const st = noteState(h.name), uses = S.notes[h.name] || 0;
+      return { key: key('herb', h.name), name: h.name, level: h.level, rarity: h.rarity, zones: h.zones, uses, state: st, budget: st === 'full' ? h.budget : null, props: knownProps(h.name), icon: iconOf(key('herb', h.name)) };
+    }).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+  }
+  function discoveries() {
+    const open = Object.values(S.makes).filter(Boolean).length;
+    const learned = allGradeKeys().filter(gradeKnown).length;
+    const noted = HERBS.filter(h => (S.notes[h.name] || 0) >= 5).length;
+    let next;
+    if (!S.makes.tincture) next = 'Brew any potion to open the Still.';
+    else if (!S.makes.essence) next = 'Distill five herbs into a Tincture to open Essences and the Oil Tin.';
+    else if (!S.makes.flask) next = 'Condense an Essence (15 herbs, or 3 Tinctures) to open the Flask Rack.';
+    else if (!Object.keys(S.flasks).length) next = 'Join two Essences into a flask.';
+    else if (noted < HERBS.length) next = `${HERBS.length - noted} herbs still have blanks in their notes. Five uses fill a note.`;
+    else next = 'Chase the Greater grades: dirty herbs that hold pay their Toxic back as points.';
+    return { makesOpen: open, makesTotal: MAKES.length, herbsNoted: noted, herbsTotal: HERBS.length, gradesLearned: learned, gradesTotal: allGradeKeys().length, flasksMade: Object.keys(S.flasks).length, flasksTotal: 15, lastLearned: S.lastLearned || 'Nothing yet.', next };
+  }
+  function hiddenTables() {
+    return {
+      herbs: HERBS.map(h => ({ name: h.name, level: h.level, rarity: h.rarity, budget: h.budget, values: ALL_VALUES.filter(p => h.values[p]).map(p => `${p} ${h.values[p]}`).join(', ') })),
+      ladders: Object.keys(LADDER).map(f => ({ family: f, cells: LADDER[f].slice() })),
+      gradeMult: GRADE_MULT,
+      toxic: [`Net Toxic = Toxic in − Purifying in, never below 0. Every craft rolls: fail chance = net Toxic ÷ (net Toxic + main points).`, `When it holds, each net Toxic point pays ${PAYOFF} points into the product (a flask splits them between its Essences).`, `A Tincture or Essence carries floor(net Toxic × ${STILL_KEEP}) and rolls again wherever it goes next. Potions, oils and flasks are the end of the line.`, `Essences from Tinctures, oils and flasks may add up to ${WASH} herbs as a wash: only their Toxic and Purifying count.`],
+      effects: ['potion', 'hybrid', 'oil'].map(f => ({ family: f, rows: propsOf(f).map(p => ({ prop: p.replace('+', ' + '), name: EFFECTS[f][p].name, cells: GRADES.map(g => effectOf(f, p, g, 1).text) })) })),
+      flasks: PROPS.map(p => ({ prop: p, label: FLASK_STAT[p].label, cells: GRADES.map(g => flaskStat(p, g, 1).amount) })),
+      rumourPrices: RUMOUR_PRICE,
+    };
+  }
+
+  // ---------- 10. audit ----------
+  // Checks: every herb's values add up to its budget; ladders rise; and every Minor, Lesser and plain grade can be made at x1 with
+  // herbs at or below its band. "Safe" means no roll anywhere on the way; otherwise the worst roll on the way is reported, and a
+  // grade passes when that is 50% or less. Greater is the gamble grade: the audit reports its routes but never fails on it. Oils and Essences build from the Tinctures a band can make (carrying their Toxic), with the band's best
+  // purifier available as a wash; 15-herb Essences are tried as three fives. Grades a band cannot push to x2 are notes, not failures.
+  function* multisets(arr, k, start = 0, acc = []) {
+    if (acc.length === k) { yield acc.slice(); return; }
+    for (let i = start; i < arr.length; i++) { acc.push(arr[i]); yield* multisets(arr, k, i, acc); acc.pop(); }
+  }
+  function _audit() {
+    const checks = [], notes = [], bestStep = {};
+    const add = (ok, text) => checks.push({ ok, text });
+    HERBS.forEach(h => { const sum = Object.values(h.values).reduce((a, b) => a + b, 0); add(sum === h.budget, `${h.name}: ${sum} of budget ${h.budget}`); });
+    const gname = (f, p, g) => nameOf(key(f, p, g, 1));
+    const names = set => listInputs(set.map(h => key('herb', h)));
+    for (const f of FAMILIES) { const t = GRADES.map(g => THRESHOLD[f][propsOf(f)[0]][g]); add(t.every((v, i) => i === 0 ? v > 0 : v > t[i - 1]), `${f} ladder rises: ${t.join(' < ')}`); }
+    // hybrids: where each pair first becomes possible (reported, never failed: the herb table was not built around pairs)
+    for (const pair of PAIRS) {
+      const [a, b] = pairProps(pair); let found = null;
+      for (const g of ['Minor', 'Lesser', 'Standard']) {
+        const pool = HERBS.filter(h => h.level <= BAND_TOP[g] && (h.values[a] || h.values[b] || h.values[PURIFY])).map(h => h.name);
+        for (let n = 2; n <= 4 && !found; n++) for (const set of multisets(pool, n)) { const r = resolve('potion', set.map(h => key('herb', h)), pair); if (!r.sludge && r.family === 'hybrid' && r.prop === pair && r.fail <= 0.5) { found = { g, set, grade: r.grade, step: r.step, fail: r.fail }; break; } }
+        if (found) break;
+      }
+      add(true, `${HYBRIDS[pair].name} (${a} + ${b}): ${found ? `first in band ${GRADE_BAND[found.g]} with ${names(found.set)} → ${found.grade === 'Standard' ? 'plain' : found.grade} ${fmtStep(found.step)}${found.fail ? ` at ${pct(found.fail)}` : ''}` : 'no route in the herb table'}`);
+      if (!found) notes.push(`${HYBRIDS[pair].name} has no route in the herb table.`);
+    }
+    const rollTxt = fail => fail > 0 ? `worst roll ${pct(fail)}` : 'safe';
+    const tincOut = {};
+    for (const p of PROPS) for (const g of GRADES) {
+      const pool = HERBS.filter(h => h.level <= BAND_TOP[g] && (h.values[p] || h.values[PURIFY])).map(h => h.name);
+      for (const [f, sizes] of [['potion', [2, 3, 4]], ['tincture', [5]]]) {
+        const N = THRESHOLD[f][p][g];
+        let safe = null, safeBest = 0, risky = null, riskyFail = 1, riskyBest = 0; const out = new Map();
+        for (const n of sizes) for (const set of multisets(pool, n)) {
+          const r = resolve(f, set.map(h => key('herb', h)), p);
+          if (r.sludge || r.prop !== p) continue;
+          if (f === 'tincture' && r.fail <= 0.5) { const id = `${ptsOf('tincture', p, r.grade, r.step)}|${r.carried}`; if (!out.has(id) || out.get(id) > r.fail) out.set(id, r.fail); }
+          if (r.grade !== g) continue;
+          if (r.fail === 0) { if (!safe) safe = set; safeBest = Math.max(safeBest, r.step); }
+          else if (r.fail < riskyFail || (r.fail === riskyFail && r.step > riskyBest)) { risky = set; riskyFail = r.fail; riskyBest = Math.max(riskyBest, r.step); }
+        }
+        if (f === 'tincture') tincOut[gradeKey('tincture', p, g)] = [...out].map(([id, fail]) => { const [pts, tox] = id.split('|').map(Number); return { pts, tox, fail }; });
+        const reached = !!safe || (!!risky && riskyFail <= 0.5), ok = reached || g === 'Greater', best = Math.max(safeBest, riskyBest);
+        bestStep[gradeKey(f, p, g)] = best;
+        add(ok, `${gname(f, p, g)} (needs ${p} ${N}): ${safe ? `safe with ${names(safe)} · best safe step ${fmtStep(safeBest)}` : risky ? `only with risk: ${names(risky)} at ${pct(riskyFail)}` : g === 'Greater' ? 'no route yet (the gamble grade: needs a dirty herb of this property, or a level 26 to 30 herb)' : 'NOT REACHABLE in band'}${risky && safe ? ` · with risk ${fmtStep(riskyBest)} at ${pct(riskyFail)}` : ''}`);
+        if (reached && best < 2) notes.push(`${gname(f, p, g)} tops out at ${fmtStep(best)} in its band.`);
+        if (reached && !safe) notes.push(`${gname(f, p, g)} needs a Toxic roll in its band (${pct(riskyFail)} at best).`);
+        if (!reached && g === 'Greater') notes.push(`${gname(f, p, g)} has no route in the herb table yet.`);
+      }
+    }
+    // the band's best wash: two of the strongest purifier at or below the band
+    const washFor = g => { const best = Math.max(0, ...HERBS.filter(h => h.level <= BAND_TOP[g] && h.values[PURIFY]).map(h => h.values[PURIFY])); return best * WASH; };
+    for (const p of PROPS) for (const g of GRADES) {
+      const tinc = tincOut[gradeKey('tincture', p, g)], wash = washFor(g);
+      for (const [f, n] of [['oil', 2], ['essence', 3]]) {
+        const N = THRESHOLD[f][p][g];
+        let found = null, foundFail = 1, best = 0, bestFail = 0;
+        const consider = (main, toxIn, worstIn, how) => {
+          const tox = Math.max(0, toxIn - wash), fail = failChance(tox, main), held = main + payoff(tox), gr = gradeFor(f, p, held), worst = Math.max(worstIn, fail);
+          if (!gr || gr.grade !== g || worst > 0.5) return;
+          if (!found || worst < foundFail) { found = how; foundFail = worst; }
+          if (gr.step > best || (gr.step === best && worst < bestFail)) { best = gr.step; bestFail = worst; }
+        };
+        for (const set of multisets(tinc, n)) consider(set.reduce((a, t) => a + t.pts, 0), set.reduce((a, t) => a + t.tox, 0), Math.max(...set.map(t => t.fail)), `Tinctures of ${set.map(t => `${fmtPts(t.pts)}${t.tox ? ` (Toxic ${t.tox})` : ''}`).join(' + ')}`);
+        if (f === 'essence') {
+          // 15 herbs straight: three fives' raw sums, one roll on the whole
+          const fives = new Map();
+          const pool = HERBS.filter(h => h.level <= BAND_TOP[g] && (h.values[p] || h.values[PURIFY])).map(h => h.name);
+          for (const set of multisets(pool, 5)) { const sm = sumProps(set); if (!sm[p]) continue; const id = `${sm[p]}|${sm[TOXIC] || 0}|${sm[PURIFY] || 0}`; fives.set(id, set); }
+          const raws = [...fives.keys()].map(id => id.split('|').map(Number));
+          for (const set of multisets(raws, 3)) { const main = set.reduce((a, r) => a + r[0], 0), tx = set.reduce((a, r) => a + r[1], 0), pu = set.reduce((a, r) => a + r[2], 0); const tox = Math.max(0, tx - pu), fail = failChance(tox, main), gr = gradeFor(f, p, main + payoff(tox)); if (!gr || gr.grade !== g || fail > 0.5) continue; const how = `15 herbs with ${p} ${main}${tox ? `, net Toxic ${tox}` : ''}`; if (!found || fail < foundFail) { found = how; foundFail = fail; } if (gr.step > best || (gr.step === best && fail < bestFail)) { best = gr.step; bestFail = fail; } }
+        }
+        bestStep[gradeKey(f, p, g)] = best;
+        add(!!found || g === 'Greater', `${gname(f, p, g)} (needs ${p} ${N}): ${found ? `${found} (${rollTxt(foundFail)}) · best step ${fmtStep(best)} (${rollTxt(bestFail)})` : g === 'Greater' ? 'no route yet (the gamble grade)' : 'NOT REACHABLE in band at 50% or less'}`);
+        if (found && best < 2) notes.push(`${gname(f, p, g)} tops out at ${fmtStep(best)} in its band.`);
+        if (found && foundFail > 0) notes.push(`${gname(f, p, g)} needs Toxic rolls in its band (up to ${pct(foundFail)}).`);
+        if (!found && g === 'Greater') notes.push(`${gname(f, p, g)} has no route in the herb table yet.`);
+      }
+    }
+    const failures = checks.filter(c => !c.ok);
+    return { ok: failures.length === 0, passed: checks.length - failures.length, total: checks.length, checks, failures, notes, bestStep };
+  }
+
+  // ---------- debug ----------
+  function give(k, n) { const p = parseKey(k); if (!(p.kind === 'herb' && HERB[p.name]) && !(p.kind === 'fish' && FISH_BY[p.name])) return [{ t: 'error', text: 'No such item.' }]; addItem(k, n); save(); return [{ t: 'info', text: `${n} ${nameOf(k)} added to your bags.` }]; }
+  function giveBundle() {
+    HERBS.filter(h => h.level <= S.level).forEach(h => { const n = h.rarity === 'legendary' ? 5 : h.rarity === 'rare' ? 10 : 15; addItem(key('herb', h.name), n); });
+    FISH.forEach(f => addItem(key('fish', f.name), 2));
+    save(); return [{ t: 'info', text: `A forager's bundle for level ${S.level}: every herb at or below your level, and some fish.` }];
+  }
+
+  return {
+    // data
+    PROPS, PAIRS, TOXIC, PURIFY, PROP_COLOUR, PROP_HUE, GRADES, STEPS, LADDER, THRESHOLD, PAYOFF, STILL_KEEP, WASH, HERBS, FISH, TABLES, RUMOUR_PRICE, MAKE_OF_FAMILY,
+    nameOf, qualityOf, iconOf, describe, parseKey, kindOf, fmtStep, fmtPts, gradeName,
+    // state views
+    status: () => ({ level: S.level, clock: fmtClock(S.clock), night: isNight(), inCombat: S.inCombat, gold: S.gold, table: S.table, tableName: TABLES[S.table].name, alchemist: TABLES[S.table].alchemist, line: TABLES[S.table].line }),
+    tables: () => Object.values(TABLES).map(t => ({ id: t.id, name: t.name, alchemist: t.alchemist, tiers: t.tiers })),
+    makes: () => MAKES.map(m => ({ id: m.id, group: m.group, name: m.name, station: m.station, verb: m.verb, rule: m.rule, accepts: m.accepts, fill: m.fill, family: m.family, opensBy: m.opensBy, open: !!S.makes[m.id] })),
+    bags, count,
+    discoveries, character, herbNotes, recipePage, flaskPage, hiddenTables, rumoursFor,
+    log: () => S.log.slice().reverse(),
+    combatLog: () => S.combatLog.slice().reverse(),
+    gradeKeys: () => allGradeKeys().map(gk => { const [f, p, g] = gk.split('|'); return { key: gk, name: nameOf(key(f, p, g, 1)), family: f, prop: p, grade: g, learned: gradeKnown(gk), rumoured: gradeRec(gk).rumoured }; }),
+    // bench
+    // How many of one item the make still has room for, so the UI can fill in one click.
+    room(makeId, k, slots, want) { const m = MAKE[makeId], kind = kindOf(k); if (!S.makes[makeId] || !m.accepts[kind]) return 0; const cap = Math.min(want || m.accepts[kind], m.accepts[kind]) - kindCounts(slots)[kind]; return Math.max(0, Math.min(cap, count(k) - slots.filter(s => s === k).length)); },
+    bars: (makeId, keys, target) => bars(makeId, keys, target, null),
+    preview(makeId, slots, target) {
+      const err = slotCheck(makeId, slots);
+      if (err) return { ready: false, note: err };
+      const t = parseTarget(target), r = resolve(makeId, slots, t ? t.prop : null);
+      const base = { ready: true, fail: r.fail || 0, failText: pct(r.fail || 0), tox: r.tox || 0, bonus: r.bonus || 0, prop: r.prop || null, carried: r.carried || 0 };
+      if (r.sludge) return { ...base, known: true, sludge: true, text: `Murky Sludge: ${r.note}` };
+      if (!productKnown(r.product)) return { ...base, known: false, text: 'Something new' };
+      return { ...base, known: true, key: r.product, name: nameOf(r.product), step: r.step ? fmtStep(r.step) : '', quality: qualityOf(r.product) };
+    },
+    make, drink, applyOil, useFlask, swing, advance, setTable, sellSludge,
+    buyRumour: gk => rumour(gk, false),
+    // debug
+    setLevel(n) { S.level = Math.max(1, Math.min(30, Math.floor(n) || 1)); S.hp = null; S.mp = null; save(); },
+    setGold(c) { S.gold = Math.max(0, Math.floor(c) || 0); save(); },
+    setCombat(on) { S.inCombat = !!on; if (!on) S.threat = 0; save(); return [{ t: 'info', text: on ? 'You are in combat.' : 'You leave combat.' }]; },
+    takeDamage(n) {
+      const c = character(); let absorbed = 0; const extra = [];
+      if (shieldLeft()) {
+        absorbed = Math.min(S.shield.left, n); S.shield.left -= absorbed;
+        if (S.shield.manaPerHit) { const was = S.mp; S.mp = Math.min(c.maxMp, S.mp + S.shield.manaPerHit); extra.push(`+${S.mp - was} mana from the shield`); }
+        if (!S.shield.left && S.shield.burst) { S.threat += S.shield.burst; pushCombat(`The shield bursts for ${S.shield.burst} fire around you.`); extra.push(`it bursts for ${S.shield.burst} fire`); }
+      }
+      S.hp = Math.max(0, S.hp - (n - absorbed)); S.inCombat = true; save();
+      return [{ t: 'info', text: `You take ${n} damage${absorbed ? `, ${absorbed} absorbed by the shield${S.shield.left ? ` (${S.shield.left} left)` : ' (it breaks)'}` : ''}${extra.length ? `; ${extra.join('; ')}` : ''} (${S.hp} of ${c.maxHp}).` }];
+    },
+    openAll() { MAKES.forEach(m => { S.makes[m.id] = true; }); save(); return [{ t: 'learn', text: 'Every make is open.' }]; },
+    fillNotes() { HERBS.forEach(h => { S.notes[h.name] = Math.max(5, S.notes[h.name] || 0); }); save(); return [{ t: 'learn', text: 'Every Herb Note is filled.' }]; },
+    teach(gk) { const [f, p, g] = gk.split('|'); const msgs = [], ev = { learned: [], opened: [] }; learnGrade(f, p, g, 1, msgs, ev); const rec = S.grades[gk]; rec.steps[1] -= 1; if (!rec.steps[1]) delete rec.steps[1]; save(); return msgs.length ? msgs : [{ t: 'info', text: 'Already learned.' }]; },
+    rumourFree: gk => rumour(gk, true),
+    give, giveBundle,
+    _audit,
+    reset() { S = freshState(); try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* fine */ } save(); },
+  };
+})();
+if (typeof module !== 'undefined') module.exports = realm;
+</script>
+<script>
+// ============================================================
+// UI: shows what realm says. It keeps only screen state
+// (which tab, what is being made, what sits in the workspace,
+// the target). The UI never computes a result; every number
+// comes from realm.
+// ============================================================
+const ui = {
+  tab: 'bench', jtab: 'herbs', making: 'potion',
+  slots: { potion: [], tincture: [], essence: [], oil: [], flask: [] },
+  target: { potion: null, tincture: null, essence: null, oil: null, flask: null },
+  last: {}, result: {}, log: [], debug: false, hidden: false, audit: null,
+  giveKey: 'herb|Peacebloom', giveN: 5, gradeKey: 'potion|Restorative|Minor', dmg: 50, rumourKey: null, flash: false,
+};
+const $app = document.getElementById('app'), $tip = document.getElementById('tip');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function money(c) {
+  const g = Math.floor(c / 10000), s = Math.floor(c / 100) % 100, cc = c % 100, out = [];
+  if (g) out.push(`<span class="g">${g}g</span>`);
+  if (s || g) out.push(`<span class="s">${s}s</span>`);
+  out.push(`<span class="c">${cc}c</span>`);
+  return `<span class="money">${out.join(' ')}</span>`;
+}
+const ico = k => { const i = realm.iconOf(k); return `<span class="ico b-${realm.qualityOf(k)}" style="--h:${i.hue}${i.border ? `;border-color:${i.border}` : ''}">${esc(i.glyph)}</span>`; };
+const pname = (k, extra = '') => `<span class="q-${realm.qualityOf(k)}">${esc(realm.nameOf(k))}${extra}</span>`;
+const push = msgs => { ui.log.push(...msgs); ui.log = ui.log.slice(-40); };
+const after = msgs => { push(msgs); render(); };
+const stepTxt = s => s ? ` ${realm.fmtStep(s)}` : '';
+const sun = night => night ? '☾' : '☀';
+const plain = g => g === 'Standard' ? 'plain' : g;
+const KIND_LABEL = { herb: 'Herbs', fish: 'Fish', tincture: 'Tinctures', essence: 'Essences' };
+const stacks = keys => { const m = new Map(); keys.forEach(k => m.set(k, (m.get(k) || 0) + 1)); return [...m].map(([key, count]) => ({ key, count })); };
+const makeOf = id => realm.makes().find(m => m.id === id);
+const TOX_COLOUR = realm.PROP_COLOUR[realm.TOXIC], PUR_COLOUR = realm.PROP_COLOUR[realm.PURIFY];
+
+function render() {
+  const st = realm.status();
+  $app.innerHTML = `
+  <header class="frame topbar">
+    <h1 class="brand">Twilight's Eve<span>Alchemy prototype</span></h1>
+    <label class="chip">Table
+      <select id="table" data-ch="table">${realm.tables().map(t => `<option value="${t.id}" ${t.id === st.table ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
+    </label>
+    <span class="spacer"></span>
+    <span class="chip" title="Game clock">${sun(st.night)} ${esc(st.clock)} · ${st.night ? 'Night' : 'Day'}</span>
+    <span class="clockbtns"><button class="btn ghost small" data-act="skip" data-v="1">+1 min</button><button class="btn ghost small" data-act="skip" data-v="10">+10 min</button></span>
+    ${st.inCombat ? '<span class="chip combat">In combat</span>' : ''}
+    <span class="chip">${money(st.gold)}</span>
+    <button class="btn ghost small" data-act="debug" aria-expanded="${ui.debug}">Debug</button>
+  </header>
+  <div class="layout">
+    <div class="col">${discoveriesPanel()}${consumablesPanel()}${characterPanel()}</div>
+    <div class="col">
+      <div class="tabs" role="tablist">
+        ${[['bench', 'Bench'], ['journal', 'Journal']].map(([id, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === id}" data-act="tab" data-v="${id}">${l}</button>`).join('')}
+      </div>
+      ${ui.tab === 'journal' ? journalTab() : benchTab(st)}
+    </div>
+  </div>
+  ${ui.debug ? debugDrawer(st) : ''}
+  ${ui.hidden ? hiddenTables() : ''}`;
+  ui.flash = false;
+}
+
+// ---------- left column ----------
+function discoveriesPanel() {
+  const d = realm.discoveries();
+  return `<section class="frame"><h2 class="fh">Discoveries</h2><div class="fb disc">
+    <div class="drow"><span>Makes open</span><b>${d.makesOpen} of ${d.makesTotal}</b></div>
+    <div class="drow"><span>Herbs fully noted</span><b>${d.herbsNoted} of ${d.herbsTotal}</b></div>
+    <div class="drow"><span>Grades learned</span><b>${d.gradesLearned} of ${d.gradesTotal}</b></div>
+    <div class="drow"><span>Flask kinds made</span><b>${d.flasksMade} of ${d.flasksTotal}</b></div>
+    <div class="drow"><span>Last learned</span><b class="gold-t">${esc(d.lastLearned)}</b></div>
+    <p class="next"><span class="lbl">Try next</span> ${esc(d.next)}</p>
+  </div></section>`;
+}
+
+// A herb card's known values as small chips, so what it would add to the bars can be read from the bags.
+function valueChips(it, tProp) {
+  if (!it.knownProps.length) return '<span class="mk dim">unknown</span>';
+  return it.knownProps.map(p => `<span class="mk${p.prop === realm.TOXIC ? ' tox' : p.prop === realm.PURIFY ? ' pur' : ''}${tProp && p.prop === tProp ? ' tgt' : ''}" style="--pc:${p.colour}">${p.prop === realm.PURIFY ? 'Pure' : p.prop === realm.TOXIC ? 'Tox' : p.prop.slice(0, 4)} ${p.value === null ? '?' : p.value}</span>`).join('');
+}
+// The tray: the materials the picked make can take, under the vials. Click adds one; a loaded card shows how many are in and a −.
+function trayHtml(m) {
+  const b = realm.bags(), id = m.id, slots = ui.slots[id];
+  const t = ui.target[id] ? ui.target[id].split('|') : null, tProp = t ? t[1] : null;
+  const herbBody = m.id === 'potion' || m.id === 'tincture' || m.id === 'essence';
+  const kinds = (herbBody ? ['herb', 'tincture', 'essence', 'fish'] : ['tincture', 'essence', 'fish', 'herb']).filter(k => m.accepts[k]);
+  const bodyKinds = herbBody ? ['herb', 'tincture'] : ['tincture', 'essence'];
+  const card = it => {
+    const inSlot = slots.filter(k => k === it.key).length, left = it.count - inSlot, room = realm.room(id, it.key, slots, m.fill);
+    const chips = it.kind === 'herb' ? valueChips(it, tProp) : it.kind === 'tincture' || it.kind === 'essence' ? `${tProp && it.prop === tProp ? `<span class="mk tgt" style="--pc:${realm.PROP_COLOUR[it.prop]}">${it.prop}</span>` : ''}${it.tox ? `<span class="mk tox" style="--pc:${TOX_COLOUR}">Tox ${it.tox}</span>` : '<span class="mk pur">clean</span>'}` : '';
+    return `<div class="tc${inSlot ? ' used' : ''}" data-tip="${esc(it.key)}">
+      <button class="card" data-act="add" data-v="${esc(it.key)}" ${room ? '' : 'disabled'}>${ico(it.key)}<span class="ct"><span class="cn q-${it.quality}">${esc(it.name)}${stepTxt(it.step)}</span><span class="cm">× ${left}</span>${chips ? `<span class="chips">${chips}</span>` : ''}</span></button>
+      ${inSlot ? `<span class="inb"><b>${inSlot} in</b><button class="aimb" data-act="less" data-v="${esc(id + '|' + it.key)}" title="Remove one">−</button></span>` : room > 1 ? `<button class="btn inl ghost fillb" data-act="fill" data-v="${esc(it.key)}" title="Add ${room}">+${room}</button>` : ''}
+    </div>`;
+  };
+  const group = kind => {
+    const items = b.filter(i => i.kind === kind);
+    if (!items.length) return '';
+    const wash = kind === 'herb' && !bodyKinds.includes('herb');
+    return `<div class="tg"><div class="pg-l">${KIND_LABEL[kind]}${wash ? ' <span class="dimnote">as a wash: only Toxic and Purifying count</span>' : kind === 'fish' ? ' <span class="dimnote">two, any kind</span>' : ''}</div><div class="cards">${items.map(card).join('')}</div></div>`;
+  };
+  const any = kinds.some(k => b.some(i => i.kind === k));
+  return `<div class="tray">${kinds.map(group).join('')}${any ? '' : `<p class="nobuff" style="margin:0">Nothing in your bags that a ${esc(m.name)} takes. Debug can give herbs and fish.</p>`}</div>`;
+}
+function consumablesPanel() {
+  const b = realm.bags();
+  const kinds = k => b.filter(i => i.kind === k);
+  const act = (a, v, label) => `<button class="btn small inl" data-act="${a}" data-v="${esc(v)}">${label}</button>`;
+  const card = it => `<div class="card static" data-tip="${esc(it.key)}">${ico(it.key)}<span class="ct"><span class="cn q-${it.quality}">${esc(it.name)}${stepTxt(it.step)}</span><span class="cm">× ${it.count}</span></span></div>`;
+  const group = (label, items, fn) => items.length ? `<div class="pg"><div class="pg-l">${label}</div><div class="cards">${items.map(fn).join('')}</div></div>` : '';
+  const any = ['potion', 'hybrid', 'oil', 'flask', 'sludge'].some(k => kinds(k).length);
+  return `<section class="frame"><h2 class="fh">Bags · consumables <small>potions, oils, flasks</small></h2><div class="fb pantry">
+    ${group('Potions', kinds('potion'), it => `<div class="cardrow">${card(it)}${act('drink', it.key, 'Drink')}</div>`)}
+    ${group('Hybrid potions', kinds('hybrid'), it => `<div class="cardrow">${card(it)}${act('drink', it.key, 'Drink')}</div>`)}
+    ${group('Weapon oils', kinds('oil'), it => `<div class="cardrow">${card(it)}${act('oil-main', it.key, 'Main hand')}${act('oil-off', it.key, 'Off hand')}</div>`)}
+    ${group('Flasks', kinds('flask'), it => `<div class="cardrow">${card(it)}${act('flask', it.key, 'Use')}</div>`)}
+    ${group('Junk', kinds('sludge'), it => `<div class="cardrow">${card(it)}<button class="btn small inl" data-act="sell">Sell</button></div>`)}
+    ${any ? '' : '<p class="nobuff" style="margin:0">Nothing made yet. Brew a potion.</p>'}
+  </div></section>`;
+}
+function characterPanel() {
+  const c = realm.character(), fl = ui.flash ? ' flash' : '';
+  const left = m => m ? `${m} min left` : '';
+  return `<section class="frame"><h2 class="fh">Character <small>level ${c.level}</small></h2><div class="fb">
+    ${c.flask ? `<div class="buffline"><span data-tip="${esc(c.flask.key)}">${pname(c.flask.key)}</span><span class="timer">${left(c.flask.left)} · survives death</span></div>`
+      : '<p class="nobuff">No flask active.</p>'}
+    <div class="hp"><span class="gold-t">Health</span><span>${c.hp} / ${c.maxHp}</span></div>
+    <div class="hp"><span class="gold-t">Mana</span><span>${c.mp} / ${c.maxMp}</span></div>
+    <div class="stats">${c.stats.map(s => `<div class="stat${s.bonus ? ' up' + fl : ''}"><span class="lbl">${esc(s.name)}</span><span class="v">${s.total}${s.unit ? `<span class="muted"> ${s.unit}</span>` : ''}</span><span class="b">${s.bonus ? '+' + s.bonus : ''}</span></div>`).join('')}</div>
+    <div class="effects">
+      ${c.oils.map(o => `<div class="eff"><span>${o.hand === 'main' ? 'Main hand' : 'Off hand'}</span>${o.key ? `<span class="on" data-tip="${esc(o.key)}">${pname(o.key)} <span class="timer">${left(o.left)}</span></span>` : '<span class="off">no oil</span>'}</div>`).join('')}
+      <div class="eff"><span>Shield</span>${c.shield ? `<span class="on">${c.shield.left} absorbs <span class="timer">${left(c.shield.minutes)}</span></span>` : '<span class="off">none</span>'}</div>
+      <div class="eff"><span>Potion cooldown</span>${c.potionCd ? `<span class="tag">${c.potionCd} min</span>` : '<span class="on">ready</span>'}</div>
+      <div class="eff"><span>Threat on dummy</span><span class="${c.threat ? 'tag' : 'off'}">${c.threat}</span></div>
+    </div>
+    <div class="cookrow" style="margin-top:10px"><button class="btn" data-act="swing">Swing at the dummy</button><span class="muted" style="font-size:13px">Main and off hand, with any oil procs</span></div>
+    <div class="clog">${realm.combatLog().slice(0, 4).map(l => `<div>${esc(l.text)}</div>`).join('') || '<div class="muted">No swings yet.</div>'}</div>
+  </div></section>`;
+}
+
+// ---------- vials ----------
+// The property vials: five product properties and Toxic, each a glass tube filled to its points. Rings on the glass mark the
+// family's four grade thresholds; a gold ring is the target's. A hatched layer above the liquid is the payoff if the Toxic holds.
+function vialsHtml(b, title, outcome) {
+  const pct = v => Math.max(0, Math.min(100, v / b.scale * 100));
+  const rings = realm.GRADES.map((g, i) => ({ v: realm.LADDER[b.ringFamily][i], g }));
+  const ringsHtml = isTick => rings.map(r => `<span class="ring${isTick === r.v ? ' gold' : ''}" style="bottom:${pct(r.v)}%"><i>${r.v}</i></span>`).join('');
+  const vial = (r, note) => `<div class="vcol${r.isMain ? ' main' : ''}${r.isTarget ? ' tgt' : ''}${r.tox ? ' toxv' : ''}" style="--pc:${r.colour}">
+    <div class="vial" title="${esc(r.title)}">
+      <span class="neck"></span>
+      <div class="glass">
+        ${ringsHtml(r.tick)}
+        ${r.tick !== null && r.tick !== undefined && !rings.some(x => x.v === r.tick) ? `<span class="ring gold" style="bottom:${pct(r.tick)}%"><i>${r.tick}</i></span>` : ''}
+        <span class="liquid" style="height:${pct(r.value)}%"></span>
+        ${r.bonus ? `<span class="bonus" style="bottom:${pct(r.value)}%;height:${pct(r.bonus)}%"></span>` : ''}
+        ${r.purified ? `<span class="purified" style="bottom:${pct(r.value)}%;height:${pct(r.purified)}%"></span>` : ''}
+        ${r.unknown ? `<span class="q" style="bottom:${pct(r.value + (r.bonus || 0) + (r.purified || 0))}%">?</span>` : ''}
+        <span class="shine"></span>
+      </div>
+    </div>
+    <div class="vlab">${r.prop}</div>
+    <div class="vval">${r.value ? r.text : r.unknown ? '?' : '<span class="muted">–</span>'}${r.bonus ? `<span class="vbonus">+${realm.fmtPts(r.bonus)}</span>` : ''}</div>
+    <div class="vnote">${note || ''}</div>
+  </div>`;
+  const tox = b.toxic, mains = b.rows.filter(r => r.isMain);
+  // The product line sits under the main vial (under the first of a flask's two). Everything else is read from the glass.
+  const prodNote = o => !o ? '' : o.failed ? '<span class="bad">Murky Sludge</span>' : !o.ready ? `<span class="muted">${esc(o.note)}</span>` : o.sludge ? `<span class="muted">${esc(o.text)}</span>` : o.known ? `<span class="q-${o.quality}">${esc(o.name)} ${o.step}</span>${o.carried ? `<span class="muted"> · carries Toxic ${o.carried}</span>` : ''}` : `<span class="muted"><i>${esc(o.text)}</i></span>`;
+  return `<div class="vials${b.result ? (outcome && outcome.failed ? ' failed' : ' result') : ''}">
+    <div class="vrow">
+      ${b.rows.map(r => vial({ ...r, title: `${r.prop} ${r.text}${r.bonus ? ` (+${realm.fmtPts(r.bonus)} if the Toxic holds)` : ''}` }, r === mains[0] ? prodNote(outcome) : r.isTarget && r.tick !== null && !r.isMain ? `<span class="muted">target ≥ ${r.tick}</span>` : mains.length === 0 && r === b.rows[0] && outcome && !outcome.ready ? `<span class="muted">${esc(outcome.note)}</span>` : '')).join('')}
+      ${vial({ prop: 'Toxic', colour: TOX_COLOUR, value: tox.net, text: String(tox.net), unknown: tox.unknown, purified: Math.min(tox.raw, tox.purify), tox: true, tick: null, bonus: 0, title: `Toxic ${tox.net}${tox.purify ? ` (${Math.min(tox.raw, tox.purify)} purified)` : ''}` },
+        outcome && outcome.failed ? '<span class="bad"><b>failed</b></span>' : tox.net ? `<span class="bad"><b>${tox.failText}</b> fail</span>` : tox.raw ? `<span style="color:${PUR_COLOUR}">purified</span>` : tox.unknown ? '<span class="muted">unknown</span>' : '<span class="muted">no roll</span>')}
+    </div>
+    ${title || (!b.result && b.unnoted) ? `<div class="vfoot">${title ? `<span class="ph">${esc(title)}</span>` : ''}${!b.result && b.unnoted ? `<span class="muted">${b.unnoted} unnoted herb${b.unnoted > 1 ? 's' : ''} not shown</span>` : ''}</div>` : ''}
+  </div>`;
+}
+
+// ---------- bench ----------
+function benchTab(st) {
+  const rum = realm.rumoursFor();
+  if (rum.length && !rum.some(r => r.key === ui.rumourKey)) ui.rumourKey = rum[0].key;
+  const makes = realm.makes();
+  const pick = m => `<button class="pick${m.id === ui.making ? ' on' : ''}${m.open ? '' : ' closed'}" data-act="making" data-v="${m.id}" ${m.open ? '' : 'disabled'} title="${esc(m.open ? `${m.rule} at the ${m.station}` : m.opensBy)}">
+    <span class="pn">${esc(m.name)}</span><span class="ps">${esc(m.open ? m.station : 'Dark')}</span></button>`;
+  return `<section class="frame">
+    <h2 class="fh">${esc(st.tableName)} <small>${esc(st.alchemist)}'s table</small></h2>
+    <div class="picker">
+      <div class="pgrp"><span class="pg-l">Making · materials</span><div class="picks">${makes.filter(m => m.group === 'materials').map(pick).join('')}</div></div>
+      <div class="pgrp"><span class="pg-l">Making · consumables</span><div class="picks">${makes.filter(m => m.group === 'consumables').map(pick).join('')}</div></div>
+    </div>
+    ${workspace(makeOf(ui.making))}
+    <div class="alch">
+      <div class="say">${esc(st.alchemist)}: ${esc(st.line)}</div>
+      <div class="shop">
+        <span class="pg-l">Rumours for sale</span>
+        ${rum.length ? `<select id="rumour" data-ch="rumour">${rum.map(r => `<option value="${esc(r.key)}" ${r.key === ui.rumourKey ? 'selected' : ''}>${esc(r.name)} — ${Math.floor(r.price / 10000) ? Math.floor(r.price / 10000) + 'g ' : ''}${Math.floor(r.price / 100) % 100}s</option>`).join('')}</select>
+        <button class="btn small" data-act="rumour">Buy rumour</button>` : '<span class="muted">Nothing left to tell at this table.</span>'}
+        <span class="muted" style="font-size:13px">A Rumour gives one grade's exact threshold. ${esc(st.alchemist)} knows the ${realm.tables().find(t => t.id === st.table).tiers.map(plain).join(', ')} grades.</span>
+      </div>
+    </div>
+    <div class="log">${ui.log.slice(-8).map(m => `<div class="${m.t}">${esc(m.text)}</div>`).join('') || '<div class="say">Pick what to make, then click materials in the tray.</div>'}</div>
+  </section>`;
+}
+function workspace(m) {
+  const slots = ui.slots[m.id], target = ui.target[m.id], res = ui.result[m.id];
+  if (!m.open) return `<div class="work closed"><p class="opens">${esc(m.name)}s are dark. ${esc(m.opensBy)}</p></div>`;
+  const p = realm.preview(m.id, slots, target);
+  const grades = realm.gradeKeys().filter(g => g.family === m.family), hybrids = m.id === 'potion' ? realm.gradeKeys().filter(g => g.family === 'hybrid') : [], last = ui.last[m.id];
+  const opt = g => `<option value="${esc(g.key)}" ${g.key === target ? 'selected' : ''}>Target: ${esc(g.name)}${g.learned ? '' : g.rumoured ? ' (rumour)' : ' (?)'}</option>`;
+  return `<div class="work">
+    <div class="wh"><span class="sn">${esc(m.station)}</span><span class="sr">${esc(m.name)} · ${esc(m.rule)}</span></div>
+    ${res ? vialsHtml(res.bars, `Result · ${res.name}`, { ready: true, failed: res.failed, known: true, name: res.name, step: '', quality: res.quality }) : vialsHtml(realm.bars(m.id, slots, target), '', p)}
+    <div class="wctl">
+      ${m.family !== 'flask' ? `<select class="tsel" id="target-${m.id}" data-ch="target" data-make="${m.id}" title="Target">
+        <option value="">Target: none (most points wins${m.id === 'potion' ? '; a hybrid forms when two properties clear its ladder' : ''})</option>
+        ${hybrids.length ? `<optgroup label="Single potions">${grades.map(opt).join('')}</optgroup><optgroup label="Hybrid potions">${hybrids.map(opt).join('')}</optgroup>` : grades.map(opt).join('')}</select>` : '<span></span>'}
+      <span class="cookrow"><button class="btn big" data-act="make" data-v="${m.id}" ${p.ready ? '' : 'disabled'}>${esc(m.verb)}</button>
+        ${last ? `<button class="btn ghost small" data-act="again" data-v="${m.id}" title="${esc(stacks(last).map(x => `${realm.nameOf(x.key)} ×${x.count}`).join(', '))}">Same again</button>` : ''}
+        ${slots.length ? `<button class="btn ghost small" data-act="clear" data-v="${m.id}">Clear</button>` : ''}</span>
+    </div>
+    ${trayHtml(m)}
+  </div>`;
+}
+
+// ---------- journal ----------
+function journalTab() {
+  const subs = [['herbs', 'Herb Notes'], ['potion', 'Potions'], ['hybrid', 'Hybrids'], ['oil', 'Weapon oils'], ['tincture', 'Tinctures'], ['essence', 'Essences'], ['flasks', 'Flasks'], ['log', 'Brew Log']];
+  return `<section class="frame">
+    <div class="sub">${subs.map(([id, l]) => `<button class="btn small ${ui.jtab === id ? '' : 'ghost'}" data-act="jtab" data-v="${id}">${l}</button>`).join('')}</div>
+    ${ui.jtab === 'herbs' ? herbPages() : ui.jtab === 'flasks' ? flaskPages() : ui.jtab === 'log' ? logPage() : recipePages(ui.jtab)}
+  </section>`;
+}
+// Herb Notes as bar profiles: a bar per value the note names, filled once the value is known. The scale is the herb's budget
+// once known (the bars then add up to a full width), 8 before that.
+function herbPages() {
+  return `<div class="pages">${realm.herbNotes().map(h => {
+    const scale = h.budget || 8;
+    return `<div class="parch page ${h.state === 'none' ? 'dim' : ''} ${h.rarity === 'legendary' ? 'leg' : ''}" data-tip="${esc(h.key)}">
+    <div class="ph2">${ico(h.key)}<div><h3><span class="namechip q-${h.rarity}">${esc(h.name)}</span></h3><div class="kind">level ${h.level} · ${h.rarity} · ${esc(h.zones)}</div></div></div>
+    ${h.state === 'none' ? '<p class="pnote"><i>Unknown. Use it in any craft to find out what it holds.</i></p>' : `<div class="hbars">${h.props.map(p => `<div class="hbar" style="--pc:${p.colour}"><span class="bl">${p.prop}</span><span class="bt">${p.value === null ? '<span class="bq" style="left:0">?</span>' : `<span class="bf" style="width:${Math.min(100, p.value / scale * 100)}%"></span>`}</span><span class="bv">${p.value === null ? '?' : p.value}</span></div>`).join('')}</div>`}
+    <div class="kind">${Math.min(5, h.uses)} of 5 uses noted${h.state === 'full' ? ` · budget ${h.budget}` : h.state === 'props' ? ' · values at 5' : ''}</div>
+  </div>`; }).join('')}</div>`;
+}
+// Recipe pages as ladders: one bar per property, each grade a segment with its threshold (or ?), pips for the steps made.
+function recipePages(family) {
+  const pages = realm.recipePage(family), stationName = { potion: 'Mortar', hybrid: 'Mortar', tincture: 'Still', essence: 'Still', oil: 'Oil Tin' }[family];
+  const sub = { potion: 'Mortar · 2 to 4 herbs · rolls against Toxic', hybrid: 'Mortar · both properties on the hybrid ladder · the pair\'s own potion', tincture: 'Still · 5 herbs · rolls, and carries half its Toxic', essence: 'Still · 15 herbs, or 3 Tinctures · rolls against Toxic', oil: 'Oil Tin · 2 Tinctures and 2 fish · rolls on the Tinctures\' Toxic' }[family];
+  return `<div class="pages wide">${pages.map(pg => `<div class="parch page">
+    <div class="ph2"><span class="sw" style="--pc:${pg.colour}${pg.colour2 ? `;background:linear-gradient(180deg,${pg.colour},${pg.colour2})` : ''}"></span><div><h3>${esc(pg.base)}</h3><div class="kind">${esc(pg.props.join(' + '))} · ${sub}</div></div></div>
+    <div class="ladder" style="--pc:${pg.colour}">${pg.grades.map(g => `<div class="seg ${g.learned ? 'known' : g.rumoured ? 'rum' : ''}">
+      <div class="segh"><span class="namechip q-${g.quality}" data-tip="${esc(g.itemKey)}">${esc(g.label)}</span><span class="segn">${g.threshold === null ? '?' : `≥ ${g.threshold}`}</span></div>
+      <div class="segbar"><span class="segf"></span>${g.steps.map(s => `<span class="pip" title="${realm.fmtStep(s.step)} made ${s.count}×" style="left:${(realm.STEPS.indexOf(s.step) + 0.5) / realm.STEPS.length * 100}%">${s.count > 1 ? s.count : ''}</span>`).join('')}</div>
+      ${g.effect ? `<div class="eff1">${esc(g.effect)}</div>` : g.learned ? `<div class="eff1">Made: ${g.steps.map(s => `${realm.fmtStep(s.step)} ×${s.count}`).join(', ')}</div>` : '<div class="eff1 muted2">Not yet made</div>'}
+      <button class="btn inl" data-act="target" data-v="${esc(g.key)}" title="Set as the ${stationName}'s target">Make this</button>
+    </div>`).join('')}</div>
+  </div>`).join('')}</div>`;
+}
+function flaskPages() {
+  return `<div class="pages"><div class="parch page" style="grid-column:1/-1">
+    <h3>Flasks <span class="kind">two Essences each · rolls on their Toxic · 2 hours · survives death · one active</span></h3>
+    <table class="jt"><thead><tr><th>Flask</th><th>Gives</th><th>Made</th></tr></thead><tbody>
+    ${realm.flaskPage().map(f => `<tr class="${f.made ? '' : 'dim'}"><td>${esc(f.name)}</td><td>${f.stats.join(' and ')}</td><td>${f.made || '—'}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
+}
+function logPage() {
+  const log = realm.log();
+  return `<div class="pages"><div class="parch page" style="grid-column:1/-1">
+    <h3>Brew Log <span class="kind">every make, with its materials, their summed values and the Toxic roll</span></h3>
+    ${log.length ? `<div class="scroll"><table class="jt"><thead><tr><th>When</th><th>Make</th><th>In</th><th>Summed values</th><th>Toxic</th><th>Out</th></tr></thead><tbody>
+    ${log.map(e => `<tr><td>${esc(e.t)}</td><td>${esc(e.make)}</td><td>${esc(e.inputs)}</td><td>${esc(e.props)}</td><td>${e.fail ? `${e.tox} · ${esc(e.fail)}` : '—'}</td><td>${esc(e.result)}${e.note ? ` <i>${esc(e.note)}</i>` : ''}</td></tr>`).join('')}
+    </tbody></table></div>` : '<p><i>Nothing brewed yet.</i></p>'}
+  </div></div>`;
+}
+
+// ---------- debug ----------
+function debugDrawer(st) {
+  const items = [...realm.HERBS.map(h => `herb|${h.name}`), ...realm.FISH.map(f => `fish|${f.name}`)];
+  const a = ui.audit;
+  return `<aside class="frame drawer"><h2 class="fh">Debug <button class="btn ghost small" data-act="debug">Close</button></h2><div class="fb">
+    <div class="dbg"><span class="lab">Level</span><div class="r"><input type="number" id="dlevel" min="1" max="30" value="${st.level}" data-ch="level"> <span class="muted">1 to 30</span></div></div>
+    <div class="dbg"><span class="lab">Gold (copper)</span><div class="r"><input type="number" id="dgold" min="0" value="${st.gold}" data-ch="gold"></div></div>
+    <div class="dbg"><span class="lab">Give herbs or fish</span>
+      <select id="dgive" data-ch="giveKey">${items.map(k => `<option value="${esc(k)}" ${k === ui.giveKey ? 'selected' : ''}>${esc(realm.nameOf(k))}</option>`).join('')}</select>
+      <div class="r"><input type="number" id="dgiven" min="1" value="${ui.giveN}" data-ch="giveN"><button class="btn small" data-act="give">Give</button><button class="btn ghost small" data-act="bundle">Forager's bundle for my level</button></div></div>
+    <div class="dbg"><span class="lab">Combat</span><div class="r"><label class="toggle"><input type="checkbox" id="dcombat" data-ch="combat" ${st.inCombat ? 'checked' : ''}> In combat</label></div>
+      <div class="r"><input type="number" id="ddmg" min="1" value="${ui.dmg}" data-ch="dmg"><button class="btn small" data-act="dmg">Take damage</button></div></div>
+    <div class="dbg"><span class="lab">Learning</span><div class="r"><button class="btn small" data-act="openall">Open every make</button><button class="btn small" data-act="fillnotes">Fill every Herb Note</button></div>
+      <select id="dgrade" data-ch="gradeKey">${realm.gradeKeys().map(g => `<option value="${esc(g.key)}" ${g.key === ui.gradeKey ? 'selected' : ''}>${esc(g.family)}: ${esc(g.name)}</option>`).join('')}</select>
+      <div class="r"><button class="btn small" data-act="teach">Teach grade</button><button class="btn small" data-act="rumourfree">Rumour grade</button></div></div>
+    <div class="dbg"><span class="lab">Tables</span><div class="r"><button class="btn small" data-act="hidden">${ui.hidden ? 'Hide' : 'Show'} hidden tables</button><button class="btn small" data-act="audit">Run realm._audit()</button></div>
+      ${a ? `<div class="auditbox ${a.ok ? 'ok' : 'bad'}"><b>${a.ok ? 'Audit passed' : 'Audit FAILED'}</b>: ${a.passed} of ${a.total} checks.
+        ${a.failures.map(f => `<div class="bad">✗ ${esc(f.text)}</div>`).join('')}
+        ${a.notes.length ? `<details><summary>${a.notes.length} notes (grades that need a roll or stop short of x2 in band)</summary>${a.notes.map(n => `<div>${esc(n)}</div>`).join('')}</details>` : ''}
+        <details><summary>All ${a.total} checks</summary>${a.checks.map(c => `<div class="${c.ok ? '' : 'bad'}">${c.ok ? '✓' : '✗'} ${esc(c.text)}</div>`).join('')}</details></div>` : ''}</div>
+    <div class="dbg"><span class="lab">Save</span><div class="r"><button class="btn small" data-act="reset">Reset everything</button></div></div>
+  </div></aside>`;
+}
+function hiddenTables() {
+  const h = realm.hiddenTables(), a = ui.audit;
+  const G = realm.GRADES.map(g => g === 'Standard' ? 'Plain' : g);
+  const tbl = (head, rows) => `<div class="scroll"><table class="jt dark"><thead><tr>${head.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return `<div class="banner-wrap" data-act="hidden"><div class="frame banner hid" data-act="noop">
+    <div class="fh">Hidden tables <button class="btn ghost small" data-act="hidden">Close</button></div>
+    <div class="fb" style="display:grid;gap:14px;text-align:left">
+      <div><div class="pg-l">Herbs</div>${tbl(['Herb', 'Level', 'Rarity', 'Budget', 'Values'], h.herbs.map(x => [esc(x.name), x.level, x.rarity, x.budget, esc(x.values)]))}</div>
+      <div><div class="pg-l">The Toxic rule</div>${h.toxic.map(l => `<div>${esc(l)}</div>`).join('')}</div>
+      <div><div class="pg-l">Thresholds, the same for every property</div>${tbl(['Family', ...G], h.ladders.map(l => [l.family, ...l.cells]))}</div>
+      ${h.effects.map(t => `<div><div class="pg-l">${t.family} effects at x1 · each grade is ×${h.gradeMult} the one below · a step multiplies every number</div>${tbl(['Product', ...G], t.rows.map(r => [esc(r.name), ...r.cells.map(esc)]))}</div>`).join('')}
+      <div><div class="pg-l">Flask stat per Essence at x1</div>${tbl(['Essence', 'Stat', ...G], h.flasks.map(r => [r.prop, esc(r.label), ...r.cells]))}</div>
+      <div><div class="pg-l">Rumour prices</div>${tbl(['Grade', 'Price'], Object.entries(h.rumourPrices).map(([g, p]) => [plain(g), money(p)]))}</div>
+      ${a ? `<div><div class="pg-l">Best step reachable in each grade's band (from the audit)</div>${tbl(['Grade', 'Best step'], Object.entries(a.bestStep).map(([k, s]) => { const [f, p, g] = k.split('|'); return [esc(realm.nameOf(`${f}|${p}|${g}|1`)), s ? realm.fmtStep(s) : '—']; }))}</div>` : '<div class="muted">Run the audit to see the best step each band reaches.</div>'}
+    </div></div></div>`;
+}
+
+// ---------- actions ----------
+function addToStation(k, n) {
+  const id = ui.making, m = makeOf(id), room = realm.room(id, k, ui.slots[id], m.fill);
+  ui.tab = 'bench'; delete ui.result[id];
+  const add = Math.min(room, n);
+  if (add > 0) { for (let i = 0; i < add; i++) ui.slots[id].push(k); return; }
+  const kind = realm.kindOf(k);
+  push([{ t: 'error', text: !m.accepts[kind] ? `A ${m.name} does not take ${KIND_LABEL[kind] ? KIND_LABEL[kind].toLowerCase() : 'that'}.` : realm.count(k) <= ui.slots[id].filter(x => x === k).length ? `No ${realm.nameOf(k)} left to add.` : `The ${m.station} is full.` }]);
+}
+function setTarget(gk) {
+  const [family] = gk.split('|'), id = realm.MAKE_OF_FAMILY[family];
+  if (!id) return;
+  ui.target[id] = gk; ui.making = id; ui.tab = 'bench';
+}
+function dropMissing() { for (const id of Object.keys(ui.slots)) { const used = {}; ui.slots[id] = ui.slots[id].filter(k => { used[k] = (used[k] || 0) + 1; return realm.count(k) >= used[k]; }); } }
+
+$app.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const a = el.dataset.act, v = el.dataset.v;
+  hideTip();
+  switch (a) {
+    case 'noop': e.stopPropagation(); return;
+    case 'tab': ui.tab = v; break;
+    case 'jtab': ui.jtab = v; break;
+    case 'debug': ui.debug = !ui.debug; break;
+    case 'hidden': ui.hidden = !ui.hidden; break;
+    case 'making': ui.making = v; break;
+    case 'add': addToStation(v, 1); break;
+    case 'fill': addToStation(v, 99); break;
+    case 'less': { const [id, k] = [v.split('|')[0], v.slice(v.indexOf('|') + 1)]; const i = ui.slots[id].lastIndexOf(k); if (i >= 0) ui.slots[id].splice(i, 1); delete ui.result[id]; break; }
+    case 'none': { const [id, k] = [v.split('|')[0], v.slice(v.indexOf('|') + 1)]; ui.slots[id] = ui.slots[id].filter(x => x !== k); delete ui.result[id]; break; }
+    case 'clear': ui.slots[v] = []; delete ui.result[v]; break;
+    case 'target': setTarget(v); break;
+    case 'make': {
+      const inputs = ui.slots[v].slice(), res = realm.make(v, inputs, ui.target[v]);
+      push(res.msgs);
+      if (res.ok) { ui.last[v] = inputs; ui.slots[v] = []; dropMissing(); ui.flash = true; ui.result[v] = { bars: res.events.bars, name: res.events.resultName, failed: res.events.failed, quality: res.events.product ? realm.qualityOf(res.events.product) : 'poor' }; }
+      break;
+    }
+    case 'again': {
+      const last = ui.last[v] || [], short = stacks(last).find(x => realm.count(x.key) < x.count);
+      if (short) push([{ t: 'error', text: `Not enough ${realm.nameOf(short.key)} for that again (${realm.count(short.key)} of ${short.count}).` }]);
+      else { ui.slots[v] = last.slice(); delete ui.result[v]; }
+      break;
+    }
+    case 'skip': push(realm.advance(+v)); break;
+    case 'swing': push(realm.swing()); break;
+    case 'drink': push(realm.drink(v)); ui.flash = true; break;
+    case 'oil-main': push(realm.applyOil(v, 'main')); break;
+    case 'oil-off': push(realm.applyOil(v, 'off')); break;
+    case 'flask': push(realm.useFlask(v)); ui.flash = true; break;
+    case 'sell': push(realm.sellSludge()); break;
+    case 'rumour': if (ui.rumourKey) push(realm.buyRumour(ui.rumourKey)); break;
+    case 'give': push(realm.give(ui.giveKey, ui.giveN)); break;
+    case 'bundle': push(realm.giveBundle()); break;
+    case 'dmg': push(realm.takeDamage(ui.dmg)); break;
+    case 'openall': push(realm.openAll()); break;
+    case 'fillnotes': push(realm.fillNotes()); break;
+    case 'teach': push(realm.teach(ui.gradeKey)); break;
+    case 'rumourfree': push(realm.rumourFree(ui.gradeKey)); break;
+    case 'audit': ui.audit = realm._audit(); break;
+    case 'reset': realm.reset(); Object.keys(ui.slots).forEach(id => { ui.slots[id] = []; ui.target[id] = null; }); ui.last = {}; ui.result = {}; ui.log = []; ui.audit = null; ui.making = 'potion'; ui.tab = 'bench'; push(realm.setTable(realm.status().table)); break;
+  }
+  render();
+});
+$app.addEventListener('change', e => {
+  const el = e.target;
+  switch (el.dataset.ch) {
+    case 'table': after(realm.setTable(el.value)); break;
+    case 'target': { const id = el.dataset.make; ui.target[id] = el.value || null; render(); break; }
+    case 'rumour': ui.rumourKey = el.value; break;
+    case 'giveKey': ui.giveKey = el.value; break;
+    case 'giveN': ui.giveN = Math.max(1, Math.floor(+el.value) || 1); break;
+    case 'gradeKey': ui.gradeKey = el.value; break;
+    case 'dmg': ui.dmg = Math.max(1, Math.floor(+el.value) || 1); break;
+    case 'level': realm.setLevel(+el.value); render(); break;
+    case 'gold': realm.setGold(+el.value); render(); break;
+    case 'combat': after(realm.setCombat(el.checked)); break;
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.hidden) { ui.hidden = false; render(); } });
+
+// ---------- tooltip ----------
+function showTip(el, x, y) {
+  const d = realm.describe(el.dataset.tip);
+  $tip.innerHTML = `<div class="tn q-${d.quality}">${esc(d.name)}</div>${d.lines.map(l => `<div class="${l.c || ''}">${esc(l.text)}</div>`).join('')}`;
+  $tip.hidden = false;
+  const r = $tip.getBoundingClientRect();
+  let left = x + 16, top = y + 16;
+  if (left + r.width > innerWidth - 8) left = Math.max(8, x - r.width - 12);
+  if (top + r.height > innerHeight - 8) top = Math.max(8, y - r.height - 12);
+  $tip.style.left = left + 'px'; $tip.style.top = top + 'px';
+}
+function hideTip() { $tip.hidden = true; }
+document.addEventListener('mousemove', e => { const el = e.target.closest?.('[data-tip]'); if (el && !ui.hidden) showTip(el, e.clientX, e.clientY); else hideTip(); });
+document.addEventListener('scroll', hideTip, true);
+
+push(realm.setTable(realm.status().table));
+render();
+</script>
+
+</body></html>

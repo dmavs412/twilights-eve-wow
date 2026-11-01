@@ -279,7 +279,7 @@ A fish's page in the Fishing Journal: the character's catch log for it (caught, 
 _Avoid_: bestiary, fish entry
 
 **Journal**:
-The window with one tab per profession: the Fishing Journal and the Herbalism Journal. Each tab has a Satchel page and that profession's own pages (ADR 0023).
+The window with one tab per profession: Fishing, Herbalism, Cooking and Alchemy. The Fishing, Herbalism and Alchemy tabs each have a Satchel page and that profession's own pages (ADR 0023, ADR 0025).
 _Avoid_: profession window, codex
 
 **Journal Item**:
@@ -351,16 +351,36 @@ One of three requests a kitchen posts per character at dawn (raw fish, a meal, r
 _Avoid_: daily quest, bounty (a Bounty is a kill quest)
 
 **Property**:
-One of six alchemy values a herb carries with a strength: Restorative, Fortifying, Volatile, Arcane, Calming, Toxic. A recipe is a threshold over a brew's summed properties (ADR 0025).
+One of five alchemy values a herb carries points in: Restorative, Fortifying, Volatile, Arcane, Calming. A make's main Property decides what it makes. A herb may also carry **Toxic** (the chance a craft fails into Murky Sludge, and points paid into the product when it holds) or **Purifying** (each point cancels one Toxic point in the same craft); neither makes anything (ADR 0025).
 _Avoid_: stat (a character's), trait
 
-**Tincture**:
-Five herbs carrying one Property, distilled into one item of that Property. Tinctures make weapon oils; three of one Property condense into an **Essence**, and two Essences make a flask.
-_Avoid_: extract, reagent
+**Grade**:
+One of an alchemy family's four rungs: Minor, Lesser, the plain grade (no prefix: "Healing Potion") and Greater, for bands 1, 10, 20 and 30, white to purple. Each family has one ladder of thresholds, the same for every Property, and a make gives the highest grade its points meet. A grade is learned the first time a make gives it.
+_Avoid_: tier (a cooking recipe's), rank, quality
 
 **Strength Step**:
-A brewed product's strength, its main Property over the recipe's threshold, rounded down to x1, x1.25, x1.5, x1.75 or x2. Each step is its own item row.
+An alchemy product's strength within its grade, its points over the grade's threshold, rounded down to x1, x1.25, x1.5, x1.75 or x2. Each step is its own item row, and every number in its tooltip is the grade's times the step.
 _Avoid_: quality (a meal's), grade
+
+**Tincture**:
+Five herbs distilled at the Still into one item of their main Property, at a Grade and Strength Step, carrying half the craft's net Toxic. Two of one Property and two fish mix into a weapon oil; three condense into an **Essence**, which also comes from fifteen herbs. Two Essences join into a flask.
+_Avoid_: extract, reagent
+
+**Wash**:
+Up to two herbs added to a make whose body is Tinctures or Essences (an Essence from Tinctures, an oil, a flask). Only their Toxic and Purifying count; a Purifying wash is how a dirty Tincture is cleaned.
+_Avoid_: filter, purifier slot
+
+**Hybrid Potion**:
+The potion a brew makes when two Properties both clear the hybrid ladder: one of ten, one per pair (Trollblood Draught for Restorative and Fortifying). It takes the lower of the two grades and shares the potion cooldown.
+_Avoid_: combo potion, mixed potion
+
+**Herb Note**:
+What the Alchemy Journal knows of a herb: after one craft, which values it holds; after five, their numbers. The alchemy window shows a noted herb's known values as it goes in, and an unnoted one adds nothing it can show.
+_Avoid_: herb page (the Herbalism Journal's Plant Page), discovery
+
+**Murky Sludge**:
+What a failed alchemy craft makes: one item, vendor junk, in the Alchemy Satchel. A make fails when its Toxic roll comes up or when it holds nothing of a Property.
+_Avoid_: failed potion, Hearty Mush (cooking's miss)
 
 **Kick**:
 A Calling's skill that stops the cast a mob has under way and puts a Lockout on it. Each Tier 1 Calling learns one at level 10. Effects listed after the interrupt in its row are its bonus, and they happen only when it stopped a cast. ADR 0020.
