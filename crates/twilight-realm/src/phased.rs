@@ -313,7 +313,6 @@ pub(crate) enum Sides {
 #[derive(Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(rename_all = "lowercase")]
 pub enum UseKind {
-    Hide,
     /// A ward stone: see [`Ward`].
     Ward,
 }
@@ -358,6 +357,10 @@ pub(crate) struct DungeonObject {
     /// A quest's `giver_object` names this GameObject's guid as its entry: a click offers it.
     #[serde(default)]
     pub(crate) gives_quests: bool,
+    /// It is Cover (#538): a character within this many yards of its position, out of any fight,
+    /// is in Cover, and the client walks through it.
+    #[serde(default)]
+    pub(crate) cover_yd: Option<f32>,
     #[serde(flatten)]
     pub(crate) appears: Appears,
 }
@@ -394,6 +397,24 @@ impl DungeonObject {
 }
 
 impl Dungeon {
+    /// The guids of its Cover GameObjects (`cover_yd`), which the client walks through.
+    pub(crate) fn walk_through(&self) -> Vec<u64> {
+        self.gameobject
+            .iter()
+            .filter(|o| o.cover_yd.is_some())
+            .map(DungeonObject::object_guid)
+            .collect()
+    }
+
+    /// Whether `at` is within reach of one of its Cover GameObjects. Not the `[[cover]]` pillars
+    /// that stop a gaze.
+    pub(crate) fn in_cover(&self, at: [f32; 3]) -> bool {
+        self.gameobject.iter().any(|o| {
+            o.cover_yd
+                .is_some_and(|yd| flat_distance(o.position, at) <= yd)
+        })
+    }
+
     /// The dungeon GameObject of this guid that has a use, if any.
     pub(crate) fn usable(&self, guid: u64) -> Option<(&DungeonObject, UseKind)> {
         self.gameobject
@@ -679,8 +700,11 @@ pub(crate) struct Meter {
     pub(crate) on_first_damage: u32,
     /// Stacks a creature's death adds, unless its template says its own.
     pub(crate) on_death: u32,
-    /// A hiding character takes a stack off every this many seconds.
+    /// A character in Cover takes a stack off every this many seconds.
     pub(crate) hide_drain_every_s: f32,
+    /// The Creature Spell id of the aura a character in Cover wears.
+    #[serde(default)]
+    pub(crate) cover_aura: Option<u32>,
     /// A sleeper wakes when a character comes within this many yards, plus
     /// `wake_per_stack_yd` for every stack, plus its own `wake_radius_mod`.
     #[serde(default)]
@@ -1410,10 +1434,10 @@ mod tests {
         let hides = edge
             .gameobject
             .iter()
-            .filter(|o| o.use_kind == Some(UseKind::Hide))
+            .filter(|o| o.cover_yd.is_some())
             .count();
         assert!(hides >= 5, "{hides} hiding spots");
-        for o in edge.gameobject.iter().filter(|o| o.use_kind.is_some()) {
+        for o in edge.gameobject.iter().filter(|o| o.cover_yd.is_some()) {
             assert_eq!(o.sides, Sides::Inside, "spot {} shows outside", o.guid);
             assert!(edge.holds(0, o.position), "spot {} is outside", o.guid);
         }
@@ -1425,19 +1449,21 @@ mod tests {
         let spot = edge
             .gameobject
             .iter()
-            .find(|o| o.use_kind.is_some())
+            .find(|o| o.cover_yd.is_some())
             .unwrap();
         let fence = edge
             .gameobject
             .iter()
-            .find(|o| o.use_kind.is_none())
+            .find(|o| o.cover_yd.is_none())
             .unwrap();
         assert!(!spot.seen_from(Phase::OpenWorld, 2));
         assert!(spot.seen_from(Phase::Dungeon(2), 2));
         assert!(fence.seen_from(Phase::OpenWorld, 2));
-        // Only a spot with a use is clickable.
-        assert!(edge.usable(spot.object_guid()).is_some());
-        assert!(edge.usable(fence.object_guid()).is_none());
+        // Cover is walked into, never clicked, and the client walks through it alone.
+        assert!(edge.gameobject.iter().all(|o| !o.clicked()));
+        assert!(edge.usable(spot.object_guid()).is_none());
+        assert!(edge.walk_through().contains(&spot.object_guid()));
+        assert!(!edge.walk_through().contains(&fence.object_guid()));
     }
 
     #[test]
@@ -1517,7 +1543,7 @@ mod tests {
         nodes.extend(
             edge.gameobject
                 .iter()
-                .filter(|o| o.use_kind == Some(UseKind::Hide))
+                .filter(|o| o.cover_yd.is_some())
                 .map(|o| o.position),
         );
         let clear = |a: [f32; 3], b: [f32; 3]| {

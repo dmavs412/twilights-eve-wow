@@ -1069,6 +1069,11 @@ impl Skills {
             .sum()
     }
 
+    /// Whether the player has a timed cast or a channel under way.
+    pub(super) fn casting(&self) -> bool {
+        self.casting.is_some() || self.channel.is_some()
+    }
+
     /// Whether the player is stealthed.
     pub(crate) fn stealthed(&self) -> bool {
         self.auras
@@ -2287,8 +2292,8 @@ impl InWorld {
             events.push(refused(spell_id, SPELL_FAILED_FLEEING));
             return ticked;
         }
-        // Casting ends a hide, and loses a fish.
-        self.hiding = None;
+        // Casting takes the player out of Cover, and loses a fish.
+        self.leave_cover(events);
         self.lose_fish(events);
         if spell_id == crate::fish::spell().id {
             self.cast_fishing(c, events);

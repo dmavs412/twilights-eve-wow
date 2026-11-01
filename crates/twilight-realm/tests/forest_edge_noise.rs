@@ -1,5 +1,5 @@
 //! Forest's Edge's Noise meter (#171): a Run-wide stack count shown on the Noise Bar of every
-//! character in the Phase (#536), raised by the Run's clock and drained by hiding spots.
+//! character in the Phase (#536), raised by the Run's clock and drained by Cover (#538).
 
 mod common;
 
@@ -10,9 +10,15 @@ use common::*;
 
 /// `HIGHGUID_GAMEOBJECT`, in a GameObject guid's top 16 bits.
 const HIGHGUID_GAMEOBJECT: u64 = 0xF110;
-/// The first hiding spot, and where it stands (`content/forest_edge.toml`).
-const SPOT: u64 = HIGHGUID_GAMEOBJECT << 48 | 790001;
+/// Where the first haystack stands (`content/forest_edge.toml`), Cover 2.5 yd round.
 const SPOT_AT: [f32; 3] = [-9928.0, 570.0, 38.0];
+/// The second haystack (790002), and the awake Outrunner (790325) that wanders 8 yd around its
+/// post 15.8 yd west of it.
+const SPOT_2_AT: [f32; 3] = [-9950.0, 585.0, 38.0];
+const OUTRUNNER: u32 = 96006;
+const OUTRUNNER_AT: [f32; 3] = [-9965.0, 590.0, 38.81];
+/// The aura a character in Cover wears (`[meter] cover_aura`).
+const IN_COVER: u32 = 1900042;
 /// Inside the hollow by the Portal, far from the Riverpaw camp (#173), and out on the road beyond
 /// its west edge.
 const INSIDE: [f32; 3] = [-9925.0, 560.0, 38.0];
@@ -63,9 +69,38 @@ fn no_howl(party: &Party) {
     }
 }
 
+/// Player `i` walks into the first haystack's Cover; nothing is clicked.
 fn hide(party: &mut Party, i: usize) {
     party.go(i, SPOT_AT, 0.0);
-    party.cmd(i, RealmCommand::UseGameObject { guid: SPOT });
+}
+
+/// Whether player `i`'s client shows them wearing In Cover now.
+fn in_cover(party: &Party, i: usize) -> bool {
+    let guid = party.guids[i];
+    let mut view = View::default();
+    view.see(party.seen(i));
+    view.objects.contains_key(&guid) && view.aura(guid, IN_COVER).is_some()
+}
+
+/// Whether `mob` started an attack on `victim` in `events`.
+fn attacked(events: &[SessionEvent], mob: u64, victim: u64) -> bool {
+    events.iter().any(|e| {
+        matches!(e, SessionEvent::AttackStart { attacker, victim: v }
+            if *attacker == mob && *v == victim)
+    })
+}
+
+/// The walk-through lists player `i` was sent, each with its place in what they saw.
+fn walk_throughs(party: &Party, i: usize) -> Vec<(usize, Vec<u64>)> {
+    party
+        .seen(i)
+        .iter()
+        .enumerate()
+        .filter_map(|(at, e)| match e {
+            SessionEvent::WalkThrough { guids } => Some((at, guids.clone())),
+            _ => None,
+        })
+        .collect()
 }
 
 #[test]
@@ -160,21 +195,23 @@ fn leaving_and_coming_back_leaves_the_meter_as_it_was() {
 }
 
 #[test]
-fn a_hide_drains_a_stack_every_2_seconds_and_stops_when_the_hider_moves() {
+fn walking_into_cover_wears_in_cover_and_drains_a_stack_every_2_seconds_until_they_step_out() {
     let mut p = party(1);
     p.go(0, INSIDE, 0.0);
     p.run(91.0);
     assert_eq!(noise(&p, 0), 3);
     hide(&mut p, 0);
     p.run(5.0);
+    assert!(in_cover(&p, 0), "no In Cover at the haystack");
     assert_eq!(noise(&p, 0), 1, "two stacks drained in 5 s");
-    // The hide ends the moment they step away.
-    p.go(0, [SPOT_AT[0] + 2.0, SPOT_AT[1], SPOT_AT[2]], 0.0);
+    // Cover ends the moment they step out of its radius.
+    p.go(0, [SPOT_AT[0] + 3.0, SPOT_AT[1], SPOT_AT[2]], 0.0);
     p.run(6.0);
+    assert!(!in_cover(&p, 0), "In Cover 3 yd out");
     assert_eq!(
         noise(&p, 0),
         1,
-        "a stack drained while they stood elsewhere"
+        "a stack drained while they stood outside Cover"
     );
     no_howl(&p);
 }
@@ -212,12 +249,87 @@ fn a_sleeper_wears_sleeping_until_a_character_steps_up_and_wakes_it() {
 }
 
 #[test]
-fn a_hiding_spot_out_of_reach_hides_no_one() {
+fn a_character_just_outside_the_radius_is_not_in_cover() {
     let mut p = party(1);
     p.go(0, INSIDE, 0.0);
     p.run(91.0);
-    p.cmd(0, RealmCommand::UseGameObject { guid: SPOT });
+    p.go(0, [SPOT_AT[0] + 2.6, SPOT_AT[1], SPOT_AT[2]], 0.0);
     p.run(6.0);
-    assert_eq!(noise(&p, 0), 3, "a hide from across the hollow");
+    assert!(!in_cover(&p, 0), "In Cover 2.6 yd from the haystack");
+    assert_eq!(noise(&p, 0), 3, "a drain from 2.6 yd");
     no_howl(&p);
+}
+
+#[test]
+fn an_awake_outrunner_does_not_notice_a_character_in_cover_but_does_one_outside_it() {
+    // At level 5 the level 27 Outrunner notices from 40 yd (18 + 22), all round its wander.
+    let mut p = party(1);
+    let me = p.guids[0];
+    p.go(0, SPOT_2_AT, 0.0);
+    p.run(10.0);
+    let (outrunner, _) = p.unit(0, OUTRUNNER, OUTRUNNER_AT);
+    assert!(in_cover(&p, 0), "no In Cover at the second haystack");
+    assert!(
+        !attacked(p.seen(0), outrunner, me),
+        "the Outrunner engaged a character in Cover"
+    );
+    // As far from its post on the other side, clear of every Cover.
+    let out = [
+        2.0 * OUTRUNNER_AT[0] - SPOT_2_AT[0],
+        2.0 * OUTRUNNER_AT[1] - SPOT_2_AT[1],
+        SPOT_2_AT[2],
+    ];
+    p.go(0, out, 0.0);
+    assert!(
+        p.run_until(5.0, |got| attacked(&got[0], outrunner, me)),
+        "the Outrunner never engaged a character outside Cover"
+    );
+}
+
+#[test]
+fn starting_an_attack_in_cover_takes_in_cover_off_that_tick() {
+    let mut p = party(1);
+    p.go(0, SPOT_2_AT, 0.0);
+    p.run(1.0);
+    assert!(in_cover(&p, 0));
+    let (outrunner, _) = p.unit(0, OUTRUNNER, OUTRUNNER_AT);
+    p.cmd(0, RealmCommand::AttackSwing { guid: outrunner });
+    p.run(0.0);
+    assert!(!in_cover(&p, 0), "In Cover after starting an attack");
+}
+
+#[test]
+fn entering_sends_the_cover_to_walk_through_before_its_creates_and_leaving_sends_none() {
+    let cover: Vec<u64> = (790001..=790006)
+        .map(|g| HIGHGUID_GAMEOBJECT << 48 | g)
+        .collect();
+    let mut p = party(1);
+    p.run(0.5);
+    assert!(walk_throughs(&p, 0).is_empty(), "a list outside the Phase");
+    p.go(0, INSIDE, 0.0);
+    p.run(0.5);
+    let lists = walk_throughs(&p, 0);
+    assert_eq!(lists.len(), 1, "one list on entering");
+    let (sent_at, mut guids) = lists[0].clone();
+    guids.sort_unstable();
+    assert_eq!(guids, cover);
+    let created: Vec<usize> = p
+        .seen(0)
+        .iter()
+        .enumerate()
+        .filter(
+            |(_, e)| matches!(e, SessionEvent::ObjectCreate { guid, .. } if cover.contains(guid)),
+        )
+        .map(|(at, _)| at)
+        .collect();
+    assert!(!created.is_empty(), "no Cover created");
+    assert!(
+        created.iter().all(|&at| at > sent_at),
+        "a Cover create before the list"
+    );
+    p.go(0, OUTSIDE, 0.0);
+    p.run(0.5);
+    let lists = walk_throughs(&p, 0);
+    assert_eq!(lists.len(), 2);
+    assert_eq!(lists[1].1, Vec::<u64>::new(), "leaving sends an empty list");
 }

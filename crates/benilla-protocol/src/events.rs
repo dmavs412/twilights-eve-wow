@@ -414,6 +414,9 @@ pub enum SessionEvent {
     /// character's view, oldest fight first. Complete on every change; empty clears the bar.
     /// Never wire-decoded.
     BossFight { guids: Vec<u64> },
+    /// Twilight's Eve, not 1.12: the GameObjects in this character's Phase that the client builds
+    /// no collider for, complete on every change; empty on leaving. Never wire-decoded.
+    WalkThrough { guids: Vec<u64> },
     /// Twilight's Eve, not 1.12: the meter of the Phased Dungeon this character stands in,
     /// complete on every change; `None` takes the bar down. Never wire-decoded.
     PhaseMeter { meter: Option<PhaseMeterState> },

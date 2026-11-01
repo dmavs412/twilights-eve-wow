@@ -8102,6 +8102,32 @@
    }
   },
   {
+   "spell_id": 1900042,
+   "creature": "in_cover",
+   "fields": {
+    "name": "In Cover",
+    "icon": "Interface\\Icons\\Ability_Stealth",
+    "school": 0,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 4
+     }
+    ],
+    "aura_description": "Hidden in cover. Awake enemies do not notice you, and Noise falls by 1 every 2 sec. Any fight ends it.",
+    "visual": 184,
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 21
+   }
+  },
+  {
    "spell_id": 7620,
    "fields": {
     "equipped_item_class": -1,

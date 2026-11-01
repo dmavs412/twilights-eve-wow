@@ -347,10 +347,13 @@ pub(crate) struct InWorld {
     pub(crate) noise_gain: u32,
     /// Damage landed on the player since the Forager's Grid last looked (#439).
     pub(crate) hurt: bool,
-    /// Stacks the player's hiding took off it since the shard last took them.
+    /// Stacks the player's Cover took off it since the shard last took them.
     noise_drain: u32,
-    /// The hiding spot the player is crouched at.
+    /// The player's Cover, while they are in it.
     hiding: Option<phase::Hide>,
+    /// Whether the client was last sent a walk-through list with guids in it
+    /// (`SessionEvent::WalkThrough`).
+    walk_through_sent: bool,
     /// Gazes that went off here this tick, for the realm to land on everyone in the Phase.
     gazes: Vec<Gaze>,
     /// Raid warnings of casts that began here this tick, for the realm to send to the Phase.
@@ -522,6 +525,7 @@ impl InWorld {
             hurt: false,
             noise_drain: 0,
             hiding: None,
+            walk_through_sent: false,
             gazes: Vec::new(),
             warnings: Vec::new(),
             foreign: Vec::new(),
@@ -811,7 +815,7 @@ impl InWorld {
         self.rest(dt, c, events);
         self.notoriety_tick(dt, host, c, rng, events);
         self.show_herb_tracking(c, events);
-        self.hide_tick(dt, c);
+        self.cover_tick(dt, c, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         let chests = &self.runtime_objects;
@@ -902,10 +906,13 @@ impl InWorld {
         }
     }
 
-    /// How close the player may come before an idle `mob` notices them: a stealthed player is
-    /// noticed only inside the short stealth range, and a Well Fed `night_aggro_half` shrinks it
-    /// at night.
+    /// How close the player may come before an idle `mob` notices them: not at all in Cover, a
+    /// stealthed player only inside the short stealth range, and a Well Fed `night_aggro_half`
+    /// shrinks it at night.
     fn notice_radius(&self, mob: &Mob, player_level: u8) -> f32 {
+        if self.in_cover() {
+            return 0.0;
+        }
         let r = aggro::radius(mob.template.detection_range, player_level, mob.level())
             * self.night_notice_mul();
         if self.skills.stealthed() {

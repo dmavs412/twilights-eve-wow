@@ -40,6 +40,8 @@ clock_stack_every_s = 30.0
 on_first_damage = 1
 on_death = 1
 hide_drain_every_s = 2.0
+# The Creature Spell (`creature_spells.toml` in_cover) a character in Cover wears.
+cover_aura = 1900042
 # A sleeper (#172) wakes when a character is within base + per_stack x stacks yards (plus its own
 # wake_radius_mod).
 wake_base_yd = 3.0
@@ -55,10 +57,13 @@ cast = "Thunder cracks over the camp"
 clock = "The camp stirs"
 
 
-# Hiding spots (#170): inside the Phase only, spaced along the routes from the Portal past
+# Cover (#170, #538): inside the Phase only, spaced along the routes from the Portal past
 # Hogger's camps. Displays: 6133 WestfallHayStack01 and 461 DuskwoodHayStack (large haystacks),
 # 6145 and 6146 HayBail01/02, 3678 WestfallWagon01. No hollow-log GameObject exists in the 1.12
-# display set. The Noise ticket gives them their effect.
+# display set. A row with cover_yd is Cover: nothing to click, and the client walks through it.
+# A character within cover_yd of its position, out of any fight, wears In Cover ([meter]
+# cover_aura): awake creatures do not notice them, and Noise falls a stack every
+# hide_drain_every_s.
 
 [[gameobject]]
 guid = 790001
@@ -66,7 +71,7 @@ display = 6133
 position = [-9928.0, 570.0, 38.0]
 orientation = 0.6
 sides = "inside"
-use = "hide"
+cover_yd = 2.5
 
 
 [[gameobject]]
@@ -75,7 +80,7 @@ display = 461
 position = [-9950.0, 585.0, 38.0]
 orientation = 2.1
 sides = "inside"
-use = "hide"
+cover_yd = 2.5
 
 
 [[gameobject]]
@@ -84,7 +89,7 @@ display = 6145
 position = [-9972.0, 575.0, 38.0]
 orientation = 4.0
 sides = "inside"
-use = "hide"
+cover_yd = 2.5
 
 
 [[gameobject]]
@@ -93,7 +98,7 @@ display = 3678
 position = [-9965.0, 625.0, 38.0]
 orientation = 1.2
 sides = "inside"
-use = "hide"
+cover_yd = 3.0
 
 
 [[gameobject]]
@@ -102,7 +107,7 @@ display = 6146
 position = [-9990.0, 600.0, 39.66]
 orientation = 3.3
 sides = "inside"
-use = "hide"
+cover_yd = 2.5
 
 
 [[gameobject]]
@@ -111,7 +116,7 @@ display = 6133
 position = [-10005.0, 640.0, 38.56]
 orientation = 5.5
 sides = "inside"
-use = "hide"
+cover_yd = 2.5
 
 
 # The palisade (#170): display 6151 ElwynnWoodFence01 (14 hull triangles, 4.3 yd) end to end

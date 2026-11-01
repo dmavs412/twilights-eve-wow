@@ -15,11 +15,6 @@ use crate::quests;
 use crate::space::flat_distance;
 use crate::Host;
 
-/// How near a hiding spot a character must stand to crouch at it.
-const HIDE_REACH_YD: f32 = 5.0;
-/// How far a hiding character may drift before the hide ends.
-const HIDE_DRIFT_YD: f32 = 1.0;
-
 /// The longest step between two movement reports that counts as walking; a longer one is a
 /// teleport, which the wall lets through.
 const WALK_STEP_YD: f32 = 40.0;
@@ -51,13 +46,10 @@ pub(crate) enum DoorClick {
     },
 }
 
-/// A character crouched at a hiding spot of a Phased Dungeon.
+/// A character in Cover in a Phased Dungeon (#538).
 pub(super) struct Hide {
-    dungeon: u32,
-    /// Where they crouched.
-    at: [f32; 3],
-    /// Their health a moment ago: a drop ends the hide.
-    health: u32,
+    /// The aura they wear for it (`[meter] cover_aura`), if the meter names one.
+    aura: Option<u32>,
     /// Seconds since the meter last lost a stack to them.
     timer: f32,
 }
@@ -128,10 +120,19 @@ impl InWorld {
         }
         // The new Phase's creatures are its Run's, in its shard: they come with the view.
         self.drop_view(events);
-        // The Phase's meter and the hiding spot stay behind.
-        self.hiding = None;
+        // The Phase's meter and its Cover stay behind.
+        self.leave_cover(events);
         self.hide_noise(events);
         self.phase = now;
+        // The client walks through the new Phase's Cover, told before its creates come.
+        let guids = match now {
+            Phase::Dungeon(id) => phased::dungeon(id).map_or(Vec::new(), |d| d.walk_through()),
+            Phase::OpenWorld => Vec::new(),
+        };
+        if self.walk_through_sent || !guids.is_empty() {
+            self.walk_through_sent = !guids.is_empty();
+            events.push(SessionEvent::WalkThrough { guids });
+        }
     }
 
     /// The player's report of a step from `from` to `to`: if it walks through the wall of a
@@ -500,54 +501,42 @@ impl InWorld {
         )
     }
 
-    /// The player clicks a hiding spot: they crouch there if it is within reach and they are
-    /// out of combat.
-    pub(crate) fn begin_hide(&mut self, used: GameObjectUse, c: &Char) {
-        if used.kind != UseKind::Hide
-            || !self.player.alive()
-            || self.player.in_combat
-            || self.phase != Phase::Dungeon(used.dungeon)
-        {
-            return;
-        }
-        let spot = phased::dungeon(used.dungeon).and_then(|d| d.usable(used.guid));
-        let Some((spot, _)) = spot else {
-            return;
+    /// Whether the player is in Cover (#538): alive in a Phased Dungeon, within `cover_yd` of one
+    /// of its Cover GameObjects, and not fighting, attacking or casting.
+    fn in_cover_now(&self, c: &Char) -> bool {
+        let Phase::Dungeon(id) = self.phase else {
+            return false;
         };
-        if flat_distance(spot.position, c.position) > HIDE_REACH_YD {
-            return;
-        }
-        self.hiding = Some(Hide {
-            dungeon: used.dungeon,
-            at: c.position,
-            health: self.player.health,
-            timer: 0.0,
-        });
+        self.player.alive()
+            && !self.player.in_combat
+            && self.player.attacking.is_none()
+            && !self.skills.casting()
+            && phased::dungeon(id).is_some_and(|d| d.in_cover(c.position))
     }
 
-    /// A hiding player takes a stack off the Run's meter every drain period; moving, attacking,
-    /// taking damage or a fight ends it.
-    pub(super) fn hide_tick(&mut self, dt: f32, c: &Char) {
-        let Some(hide) = &mut self.hiding else {
-            return;
-        };
-        let still = flat_distance(c.position, hide.at) <= HIDE_DRIFT_YD;
-        let hurt = self.player.health < hide.health;
-        if !self.player.alive()
-            || self.player.in_combat
-            || self.player.attacking.is_some()
-            || hurt
-            || !still
-        {
-            self.hiding = None;
+    /// Puts the player in Cover or takes them out of it, as where they stand and what they do
+    /// say. In Cover they wear the meter's `cover_aura` and take a stack off the Run's meter
+    /// every drain period, counted from when they came in; moving inside the radius keeps it.
+    pub(super) fn cover_tick(&mut self, dt: f32, c: &Char, events: &mut Vec<SessionEvent>) {
+        if !self.in_cover_now(c) {
+            self.leave_cover(events);
             return;
         }
-        hide.health = self.player.health;
-        let Some(every) = phased::dungeon(hide.dungeon)
-            .and_then(|d| d.meter.as_ref())
+        let meter = self.meter();
+        if self.hiding.is_none() {
+            let aura = meter.and_then(|m| m.cover_aura);
+            if let Some(aura) = aura {
+                self.show_marker(aura, true, 1, events);
+            }
+            self.hiding = Some(Hide { aura, timer: 0.0 });
+        }
+        let Some(every) = meter
             .map(|m| m.hide_drain_every_s)
             .filter(|every| *every > 0.0)
         else {
+            return;
+        };
+        let Some(hide) = &mut self.hiding else {
             return;
         };
         hide.timer += dt;
@@ -555,6 +544,21 @@ impl InWorld {
             hide.timer -= every;
             self.noise_drain += 1;
         }
+    }
+
+    /// The player is out of Cover, if they were in it: its aura comes off.
+    pub(super) fn leave_cover(&mut self, events: &mut Vec<SessionEvent>) {
+        if let Some(Hide {
+            aura: Some(aura), ..
+        }) = self.hiding.take()
+        {
+            self.hide_marker(aura, events);
+        }
+    }
+
+    /// Whether the player is in Cover, where idle creatures do not notice them.
+    pub(super) fn in_cover(&self) -> bool {
+        self.hiding.is_some()
     }
 
     /// Streams each Phased Dungeon's doorway portal in and out with the view, in every Phase,

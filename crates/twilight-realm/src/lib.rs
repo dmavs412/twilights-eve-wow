@@ -1725,7 +1725,6 @@ impl Realm {
                             // A stop's portal, taken or dark.
                         } else if let Some(used) = w.use_gameobject(guid) {
                             if let Some(c) = self.characters.get(w.guid) {
-                                w.begin_hide(used, c);
                                 if w.ward_click(used, c) {
                                     ward = Some(used);
                                 }

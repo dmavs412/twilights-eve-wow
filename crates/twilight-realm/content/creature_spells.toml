@@ -743,3 +743,20 @@ cooldown_ms = 0
 range_max = 0.0
 chance = 0
 effect = { kind = "marker" }
+
+# Forest's Edge's In Cover (#538), the buff a character wears while in Cover (`[meter] cover_aura`
+# in forest_edge.toml). Stealth's look (visual 1784): an aura plays only its state kit, no cast.
+# A marker, so the cast columns are 0. 1900041 is Sleeping's.
+[[spell]]
+key = "in_cover"
+spell_id = 1900042
+name = "In Cover"
+icon = 'Interface\Icons\Ability_Stealth'
+visual = 1784
+aura_description = "Hidden in cover. Awake enemies do not notice you, and Noise falls by 1 every 2 sec. Any fight ends it."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 0
+effect = { kind = "marker" }
