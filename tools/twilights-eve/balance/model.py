@@ -1663,8 +1663,14 @@ class Acolyte(Sim):
                 self.gcd = self.t + 1.5
                 p = fx(mending, "heal")
                 heal = linear(p["amount"], L) + sp_direct(s.spell_power, 0)
+                before = self.hp
                 self.heal(heal, "dark_mending")
-                self.mending_dot = [self.t + 6, self.t + 2, heal * 15 // 100]
+                # The toll: its pct of what the heal healed, spread over the aura's ticks.
+                a = aura(self.calling, fx(mending, "periodic_damage")["apply_aura"])
+                toll = fx(a, "periodic_damage")
+                ticks = a["duration_ms"] // toll["tick_ms"]
+                self.mending_dot = [self.t + a["duration_ms"] / 1000, self.t + toll["tick_ms"] / 1000,
+                                    (self.hp - before) * toll["pct"] // 100 // ticks]
             elif hp_frac < 0.45 and self.power >= self.cost(siphon):
                 self.spend_mana(self.cost(siphon))
                 self.channel = [self.t + 5.0, self.t + 1.0]
