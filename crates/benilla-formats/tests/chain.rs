@@ -99,6 +99,64 @@ fn trigger_creature_models_carry_no_render_geometry() {
     );
 }
 
+/// Batches, triangles and the widest batch's extent on each axis for GameObject `display`'s mesh.
+fn display_mesh(
+    chain: &mut Chain,
+    catalog: &benilla_formats::GameObjectCatalog,
+    display: u32,
+) -> (usize, usize, [f32; 3]) {
+    let path = catalog
+        .model_path(display)
+        .unwrap_or_else(|| panic!("display {display} has a model"))
+        .to_string();
+    let mesh = benilla_formats::load_m2_mesh(chain, &path)
+        .unwrap_or_else(|e| panic!("mesh {path}: {e:#}"));
+    let triangles = mesh.iter().map(|b| b.indices.len() / 3).sum();
+    let extent = mesh
+        .iter()
+        .filter(|b| !b.indices.is_empty())
+        .map(|b| {
+            let mut span = [0.0f32; 3];
+            for axis in 0..3 {
+                let (lo, hi) = b
+                    .positions
+                    .iter()
+                    .fold((f32::MAX, f32::MIN), |(lo, hi), p| {
+                        (lo.min(p[axis]), hi.max(p[axis]))
+                    });
+                span[axis] = hi - lo;
+            }
+            span
+        })
+        .max_by(|a, b| (a[0] * a[1] * a[2]).total_cmp(&(b[0] * b[1] * b[2])))
+        .unwrap_or_default();
+    (mesh.len(), triangles, extent)
+}
+
+/// The client puts the interact cursor on a GameObject only when its mouse ray hits a triangle, so
+/// a stop portal needs a model with a batch a ray can hit (#263). Display 5231 is the stock
+/// Portal to Inner Maraudon (entry 178404); 672, the doorway swirl, is printed for comparison.
+#[test]
+fn the_stop_portal_model_has_triangles_a_mouse_ray_can_hit() {
+    let data = benilla_formats::wow_data_or_skip!();
+    let mut chain = open_chain(&data).expect("open vanilla patch chain");
+    let catalog =
+        benilla_formats::load_gameobject_catalog(&mut chain).expect("load gameobject catalog");
+
+    let swirl = display_mesh(&mut chain, &catalog, 672);
+    eprintln!(
+        "display 672: {} batches, {} triangles, widest batch {:?} yd",
+        swirl.0, swirl.1, swirl.2
+    );
+    let (batches, triangles, extent) = display_mesh(&mut chain, &catalog, 5231);
+    eprintln!("display 5231: {batches} batches, {triangles} triangles, widest batch {extent:?} yd");
+    assert!(triangles > 0, "display 5231 has no triangles");
+    assert!(
+        extent.iter().filter(|&&s| s >= 1.0).count() >= 2,
+        "display 5231's widest batch spans {extent:?} yd, under 1 yd on two axes"
+    );
+}
+
 #[test]
 fn the_trigger_creature_still_carries_the_attachments_its_visible_self_rides() {
     let data = benilla_formats::wow_data_or_skip!();

@@ -29,6 +29,10 @@ const GAMEOBJECT_POS_X: u16 = 15;
 const GAMEOBJECT_TYPE_ID: u16 = 21;
 /// `GameObjectDisplayInfo` 672: `InstancePortal.mdx`, the swirl in every dungeon's doorway.
 const PORTAL_DISPLAY: u32 = 672;
+/// `GameObjectDisplayInfo` 5231, the stock Portal to Inner Maraudon (`gameobject_template` 178404):
+/// every stop portal's. The client puts the interact cursor only on a model whose triangles its
+/// mouse ray hits, and 672 builds none (#263).
+const STOP_PORTAL_DISPLAY: u32 = 5231;
 /// `GAMEOBJECT_TYPE_GENERIC`, flagged `GO_FLAG_NOT_SELECTABLE`, in `GO_STATE_READY`: scenery. The
 /// client never lets a player use a GENERIC, whatever its flags (`0x5f47f0`).
 pub(crate) const GENERIC: u32 = 5;
@@ -899,7 +903,7 @@ impl Dungeon {
         GameObject {
             guid,
             entry: guid as u32,
-            display_id: PORTAL_DISPLAY,
+            display_id: STOP_PORTAL_DISPLAY,
             type_id: GOOBER,
             flags: 0,
             faction: 0,

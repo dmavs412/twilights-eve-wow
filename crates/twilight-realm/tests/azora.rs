@@ -20,6 +20,8 @@ fn object(entry: u64) -> u64 {
 const INNER_WATER: u64 = HIGHGUID_GAMEOBJECT << 48 | 0x0F00_0000 | AZORA << 8;
 const INNER_FIRE: u64 = INNER_WATER | 2;
 const INNER_SHADOW: u64 = INNER_WATER | 4;
+/// The water stop's portal back to the tower: the low bit marks the return side.
+const RETURN_WATER: u64 = INNER_WATER | 1;
 
 const GRESH: u64 = unit_at(96034, 970015);
 const THANE: u64 = unit_at(96035, 970035);
@@ -325,6 +327,36 @@ fn shown_type(p: &Party, i: usize, guid: u64) -> Option<i32> {
         } if *g == guid => Some(fields.gameobject_type_id()),
         _ => None,
     })
+}
+
+/// The display the client was given for `guid`'s GameObject, if it was shown.
+fn shown_display(p: &Party, i: usize, guid: u64) -> Option<i32> {
+    p.seen(i).iter().find_map(|e| match e {
+        SessionEvent::ObjectCreate {
+            guid: g, fields, ..
+        } if *g == guid => fields.gameobject_displayid(),
+        _ => None,
+    })
+}
+
+/// `GameObjectDisplayInfo` 5231, the stock Portal to Inner Maraudon: a model with triangles the
+/// client's mouse ray hits. The doorway swirl (672) gave the cursor nothing to land on (#263).
+const STOP_PORTAL_DISPLAY: i32 = 5231;
+
+#[test]
+fn both_sides_of_the_water_stop_wear_a_portal_the_mouse_can_pick() {
+    let mut p = party(PLAYERS);
+    p.go(0, BY_INNER_WATER, 0.0);
+    p.run(0.5);
+    assert_eq!(shown_display(&p, 0, INNER_WATER), Some(STOP_PORTAL_DISPLAY));
+    click(&mut p, 0, INNER_WATER);
+    ack(&mut p, 0);
+    p.run(0.5);
+    assert_eq!(
+        shown_display(&p, 0, RETURN_WATER),
+        Some(STOP_PORTAL_DISPLAY),
+        "the return portal at the stop"
+    );
 }
 
 #[test]
