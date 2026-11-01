@@ -190,11 +190,11 @@ fn every_npcs_flags_fit_its_role() {
                     && n.stock.is_empty()
                     && !n.greeting.contains('\n')
             }
-            // Brother Ansel teaches the lesson, Hedda Thornwick resets the perks (#441); each sells
-            // the herbalist's goods and gives a tool quest.
+            // Brother Ansel and Hedda Thornwick teach the lesson, and Hedda also resets the perks
+            // (#441); each sells the herbalist's goods and gives a tool quest.
             "herbalist" => {
                 n.npc_flags == GOSSIP | QUEST_GIVER | VENDOR
-                    && (n.teaches_herbalism != n.resets_perks)
+                    && n.teaches_herbalism
                     && talks
                     && gives
                     && !n.stock.is_empty()
@@ -438,19 +438,26 @@ fn goldshire_townsfolk_speak_and_no_title_names_a_dead_trade() {
     }
 }
 
-/// Every stock Herbalism Trainer in the imported zones teaches Herbalism, as Brother Ansel does.
+/// Every herbalist and every stock Herbalism Trainer in the imported zones teaches Herbalism.
 #[test]
 fn every_herbalism_trainer_teaches_herbalism() {
     let npcs = hub();
     let trainers: Vec<&str> = npcs
         .iter()
-        .filter(|n| n.subname == "Herbalism Trainer")
+        .filter(|n| n.subname == "Herbalism Trainer" || n.subname == "Herbalist")
         .inspect(|n| assert!(n.teaches_herbalism, "{} teaches nothing", n.name))
         .map(|n| n.name.as_str())
         .collect();
     assert_eq!(
         trainers,
-        ["Herbalist Pomeroy", "Shylamiir", "Tannysa", "Alma Jainrose"]
+        [
+            "Brother Ansel",
+            "Hedda Thornwick",
+            "Herbalist Pomeroy",
+            "Shylamiir",
+            "Tannysa",
+            "Alma Jainrose"
+        ]
     );
 }
 

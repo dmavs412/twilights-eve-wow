@@ -1143,6 +1143,38 @@ fn hedda_forgets_the_perks_for_money_that_doubles_each_time() {
     assert!(blob.contains("nightowl"), "{blob}");
 }
 
+// Davis met Hedda first in play and could not learn Herbalism from her.
+#[test]
+fn hedda_teaches_herbalism_too() {
+    let mut p = party(&[false]);
+    let hedda = hub_guid(HEDDA);
+    let [x, y, _] = hub_home(hedda);
+    p.go(0, [x + 1.5, y, 0.0], std::f32::consts::PI);
+    p.cmd(0, RealmCommand::GossipHello { guid: hedda });
+    let teach = p
+        .seen(0)
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu { options, .. } => options
+                .iter()
+                .find(|o| o.message == "Teach me Herbalism.")
+                .map(|o| o.index),
+            _ => None,
+        })
+        .expect("Hedda offers the lesson");
+    let before = p.seen(0).len();
+    p.cmd(
+        0,
+        RealmCommand::GossipSelectOption {
+            guid: hedda,
+            option: teach,
+        },
+    );
+    assert!(p.seen(0)[before..].iter().any(
+        |e| matches!(e, SessionEvent::SpellLearned { spell_id } if *spell_id == HERB_GATHERING)
+    ));
+}
+
 #[test]
 fn brother_ansel_does_not_sell_the_perk_reset() {
     let (mut realm, _) = lone_herbalist("herb_perks = [\"nightowl\"]", &[]);
