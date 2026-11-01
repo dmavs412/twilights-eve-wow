@@ -99,6 +99,7 @@ impl Plugin for TwilightPlugin {
         app.init_resource::<crate::char_select::ClassLabels>()
             .init_resource::<CallingKeys>()
             .init_resource::<BossFightList>()
+            .init_resource::<WalkThroughList>()
             .init_resource::<PhaseMeter>()
             .init_resource::<MapMarkList>()
             .init_resource::<HerbTracking>()
@@ -274,6 +275,7 @@ fn pump(
     mut labels: ResMut<crate::char_select::ClassLabels>,
     mut keys: ResMut<CallingKeys>,
     mut boss: ResMut<BossFightList>,
+    mut walk_through: ResMut<WalkThroughList>,
     mut meter: ResMut<PhaseMeter>,
     mut marks: ResMut<MapMarkList>,
     mut herb_tracking: ResMut<HerbTracking>,
@@ -395,6 +397,11 @@ fn pump(
             boss.set_if_neq(BossFightList(guids));
             continue;
         }
+        // The Cover the client builds no collider for, whole on every change (spec #533).
+        if let SessionEvent::WalkThrough { guids } = event {
+            walk_through.set_if_neq(WalkThroughList(guids));
+            continue;
+        }
         // The Noise Bar's meter, whole on every change; `None` takes it down (spec #533).
         if let SessionEvent::PhaseMeter { meter: m } = event {
             meter.set_if_neq(PhaseMeter(m));
@@ -471,6 +478,7 @@ fn pump(
         let logged_out = matches!(event, SessionEvent::LoggedOut);
         if logged_out {
             boss.set_if_neq(BossFightList::default());
+            walk_through.set_if_neq(WalkThroughList::default());
             meter.set_if_neq(PhaseMeter::default());
             marks.set_if_neq(MapMarkList::default());
             herb_tracking.set_if_neq(HerbTracking::default());
@@ -515,6 +523,18 @@ impl CallingKeys {
 /// Only the first three show as `boss1` to `boss3`; the rest wait.
 #[derive(Resource, Default, Clone, PartialEq)]
 pub(crate) struct BossFightList(pub(crate) Vec<u64>);
+
+/// The GameObjects in this character's Phase that build no collider, its Cover, as the realm last
+/// sent them (`SessionEvent::WalkThrough`, spec #533); empty outside a Phased Dungeon.
+#[derive(Resource, Default, Clone, PartialEq)]
+pub(crate) struct WalkThroughList(pub(crate) Vec<u64>);
+
+impl WalkThroughList {
+    /// Whether the GameObject `guid` is walked through.
+    pub(crate) fn lists(&self, guid: u64) -> bool {
+        self.0.contains(&guid)
+    }
+}
 
 /// The Noise Bar's meter as the realm last sent it (`SessionEvent::PhaseMeter`, spec #533), with
 /// the cause line of the update that raised it; `None` while no bar is up.

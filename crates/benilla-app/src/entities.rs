@@ -639,7 +639,8 @@ impl Plugin for EntitiesPlugin {
                 build_glue_pet,
                 // The dressing room's preview, the same assembly and latch.
                 build_dressup_preview,
-                attach_entity_visuals,
+                // The realm's Cover, walked through, follows its list on standing objects too.
+                (attach_entity_visuals, attach::walk_through_cover).chain(),
                 // A WMO GameObject's doodad props, spawned as each M2 lands.
                 resolve_wmo_gameobject_props,
                 spawn_wmo_gameobject_props,

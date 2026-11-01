@@ -1,6 +1,7 @@
 //! Attaching a visual to each streamed entity once its shared display model has loaded: the
 //! dressed parts, the rig and sequence clock, the character look ([`char_skin`]), emitters,
-//! lights, ribbons, GameObject collision, or a debug cube for a display that names no model.
+//! lights, ribbons, GameObject collision ([`walk_through`] for the realm's Cover), or a debug cube
+//! for a display that names no model.
 
 use avian3d::prelude::RigidBody;
 use benilla_assets::ModelAnimations;
@@ -39,6 +40,8 @@ pub(super) use preview::{build_dressup_preview, build_glue_pet, build_glue_previ
 #[cfg(test)]
 mod arrival_tests;
 mod redress;
+mod walk_through;
+pub(super) use walk_through::walk_through_cover;
 
 /// One body's drawn parts as `WOW_DRESS_CENSUS` prints them: index, merge group, blend, material.
 #[derive(bevy::ecs::system::SystemParam)]
@@ -236,6 +239,7 @@ pub(super) fn attach_entity_visuals(
             Has<crate::transport::TransportAnchor>,
             Option<&super::Arrival>,
             Has<super::live_display::ShownRebuild>,
+            Option<&crate::net::Guid>,
         ),
         // A torn-down unit gets no model: the reference frees it at once (`0x464920`).
         (
@@ -273,9 +277,14 @@ pub(super) fn attach_entity_visuals(
         ResMut<Assets<Image>>,
     ),
     mut palettes: ResMut<benilla_world::rig_palette::RigPalettes>,
-    mut collider_epoch: ResMut<benilla_world::collision::ColliderEpoch>,
+    // The hull lane's stamp, and the Cover that takes no hull (spec #533).
+    colliders: (
+        ResMut<benilla_world::collision::ColliderEpoch>,
+        Option<Res<crate::twilight::WalkThroughList>>,
+    ),
     time: Res<Time>,
 ) {
+    let (mut collider_epoch, walk_through) = colliders;
     let (
         sections,
         mut skin_composites,
@@ -299,6 +308,7 @@ pub(super) fn attach_entity_visuals(
         anchored,
         arrival,
         shown_rebuild,
+        guid,
     ) in &pending
     {
         // The appear ramp's origin: the unit's arrival, however long its visual waited to build.
@@ -829,8 +839,11 @@ pub(super) fn attach_entity_visuals(
                 commands.entity(entity).insert(rb.pose);
             }
             // A GameObject with a hull collides; an anchored transport stays Kinematic, as its arm
-            // labelled it, since its body moves every frame.
-            if matches!(net.kind, EntityKind::GameObject) {
+            // labelled it, since its body moves every frame. The realm's Cover is walked through;
+            // `walk_through::walk_through_cover` follows the list's later changes.
+            let walked_through =
+                guid.is_some_and(|g| walk_through.as_deref().is_some_and(|list| list.lists(g.0)));
+            if matches!(net.kind, EntityKind::GameObject) && !walked_through {
                 if let Some(col) = dm.and_then(|d| d.collider.clone()) {
                     let body = if anchored {
                         RigidBody::Kinematic
