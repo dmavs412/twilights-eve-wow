@@ -112,6 +112,76 @@ class LineColumn(unittest.TestCase):
         b = {**ring_at(22, 26), "entry": "900002", "line": "x"}
         build_gear.build([a, b], [], {})
 
+    def test_a_line_on_two_icons_is_refused(self):
+        a = {**ring(900001, "Uncommon", 12), "line": "x", "icon": "INV_Jewelry_Ring_01"}
+        b = {**ring(900002, "Uncommon", 12), "line": "x", "icon": "INV_Jewelry_Ring_02"}
+        with self.assertRaises(build_gear.SheetError) as e:
+            build_gear.build([a, b], [], {})
+        self.assertIn("900002", str(e.exception))
+
+    def test_a_line_with_a_blank_icon_beside_a_filled_one_is_refused(self):
+        a = {**ring(900001, "Uncommon", 12), "line": "x", "icon": "INV_Jewelry_Ring_01"}
+        b = {**ring(900002, "Uncommon", 12), "line": "x"}
+        with self.assertRaises(build_gear.SheetError) as e:
+            build_gear.build([a, b], [], {})
+        self.assertIn("900002", str(e.exception))
+
+    def test_a_line_with_blank_icons_on_two_models_is_refused(self):
+        a = {**ring(900001, "Uncommon", 12), "line": "x"}
+        b = {**ring(900002, "Uncommon", 12), "line": "x", "display_id": "2"}
+        with self.assertRaises(build_gear.SheetError) as e:
+            build_gear.build([a, b], [], {})
+        self.assertIn("900002", str(e.exception))
+
+    def test_a_line_on_one_icon_with_two_models_passes(self):
+        a = {**ring(900001, "Uncommon", 12), "line": "x", "icon": "INV_Jewelry_Ring_01"}
+        b = {**ring(900002, "Uncommon", 12), "line": "x", "icon": "INV_Jewelry_Ring_01",
+             "display_id": "2"}
+        build_gear.build([a, b], [], {})
+
+
+def item_line(text: str, entry: int) -> str:
+    """The gear.toml line of one entry."""
+    return next(line for line in text.splitlines() if line.startswith(f"  {{ entry = {entry},"))
+
+
+class IconColumn(unittest.TestCase):
+    def test_a_stock_icon_gets_a_synthetic_display(self):
+        text = build_gear.build([{**ring(900001, "Uncommon", 12), "icon": "INV_Jewelry_Ring_01"}],
+                                [], {})
+        self.assertIn('display_id = 998000, icon_base = 1, '
+                      'icon = "Interface\\\\Icons\\\\INV_Jewelry_Ring_01"', item_line(text, 900001))
+
+    def test_a_painted_icon_is_written_as_its_stem(self):
+        text = build_gear.build([{**ring(900001, "Uncommon", 12), "icon": "ring_x.png"}], [], {})
+        self.assertIn('display_id = 998000, icon_base = 1, icon = "ring_x"', item_line(text, 900001))
+
+    def test_two_rows_on_one_model_and_icon_share_a_display(self):
+        a = {**ring(900001, "Uncommon", 12), "icon": "INV_Jewelry_Ring_01"}
+        b = {**ring(900002, "Uncommon", 12), "icon": "INV_Jewelry_Ring_01"}
+        text = build_gear.build([a, b], [], {})
+        self.assertIn("display_id = 998000,", item_line(text, 900001))
+        self.assertIn("display_id = 998000,", item_line(text, 900002))
+
+    def test_one_model_with_two_icons_gets_two_displays(self):
+        a = {**ring(900001, "Uncommon", 12), "icon": "INV_Jewelry_Ring_02"}
+        b = {**ring(900002, "Uncommon", 12), "icon": "INV_Jewelry_Ring_01"}
+        text = build_gear.build([a, b], [], {})
+        self.assertIn("display_id = 998001,", item_line(text, 900001))
+        self.assertIn("display_id = 998000,", item_line(text, 900002))
+
+    def test_a_blank_icon_keeps_the_display(self):
+        line = item_line(build_gear.build([ring(900001, "Uncommon", 12)], [], {}), 900001)
+        self.assertIn("display_id = 1,", line)
+        self.assertNotIn("icon_base", line)
+        self.assertNotIn("icon =", line)
+
+    def test_an_icon_with_a_folder_or_extension_is_refused(self):
+        for icon in ("Interface\\Icons\\X", "art/x.png", "x.blp"):
+            with self.assertRaises(build_gear.SheetError, msg=icon) as e:
+                build_gear.build([{**ring(900001, "Uncommon", 12), "icon": icon}], [], {})
+            self.assertIn("900001", str(e.exception))
+
 
 class SpellPowerTooltip(unittest.TestCase):
     def values(self, n):

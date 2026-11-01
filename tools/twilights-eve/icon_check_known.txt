@@ -16,7 +16,7 @@ inv_chest_cloth_18	3072,3260
 inv_chest_cloth_22	2110,6528
 inv_chest_cloth_36	2292,5110
 inv_chest_cloth_38	3019,5767
-inv_chest_fur	4861,17922
+inv_chest_fur	4861,17922,903007
 inv_chest_leather_04	1211,3283,3313
 inv_chest_leather_08	1489,3055,6396,14570
 inv_chest_leather_09	1802,2985,3000,14562

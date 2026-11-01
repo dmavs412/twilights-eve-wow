@@ -132,6 +132,8 @@ DEFAULT_CONTENT = os.path.join(REPO, "crates", "twilight-realm", "content")
 # The first synthetic ItemDisplayInfo id; an item with a painted icon takes its own from here up.
 ITEM_DISPLAY_MIN = 995000
 ART_ICON_DIR = "Interface\\Icons\\Twilight\\"
+# An item's `icon` that starts so is a stock icon path, not a painted stem.
+STOCK_ICON_PREFIX = "Interface\\"
 # Spell.dbc effect and aura numbers of the effect kinds a from-scratch row can show; any other
 # kind, a realm-only one, is a dummy effect (3) so `$sN` still reads its number.
 CLIENT_EFFECTS_OF = {
@@ -307,8 +309,8 @@ def icon_path(icon: str, art: list[str], art_dir: str, where: str) -> str:
 
 
 def item_rows(node, trail: str = ""):
-    """Every dict under `node` that names a painted icon for an item: it has `icon` and a
-    `display_id` or an `icon_base`. A Creature Spell's `icon` is a stock path and has neither."""
+    """Every dict under `node` that names an icon of its own for an item: it has `icon` and a
+    `display_id` or an `icon_base`. A Creature Spell's `icon` has neither."""
     if isinstance(node, dict):
         if "icon" in node and ("display_id" in node or "icon_base" in node):
             yield trail, node
@@ -320,7 +322,10 @@ def item_rows(node, trail: str = ""):
 
 
 def item_displays(content_dir: str, art: list[str], art_dir: str) -> list[dict]:
-    """The synthetic ItemDisplayInfo rows for the content items with a painted icon, by id."""
+    """The synthetic ItemDisplayInfo rows for the content items with an icon of their own, by id.
+
+    An `icon` that starts with `Interface\\` is a stock icon path, written as it is (ADR 0030);
+    any other is the stem of a painted PNG, checked and embedded."""
     found: dict[int, str] = {}
     rows: list[dict] = []
     for name in sorted(os.listdir(content_dir)):
@@ -342,8 +347,10 @@ def item_displays(content_dir: str, art: list[str], art_dir: str) -> list[dict]:
             if not isinstance(base, int) or base <= 0:
                 raise BuildError(f"{where} icon_base: {base!r} must be a stock display id above 0")
             found[display_id] = where
-            rows.append({"id": display_id, "base": base,
-                         "icon": icon_path(f"{item['icon']}.png", art, art_dir, where)})
+            icon = item["icon"]
+            if not icon.startswith(STOCK_ICON_PREFIX):
+                icon = icon_path(f"{icon}.png", art, art_dir, where)
+            rows.append({"id": display_id, "base": base, "icon": icon})
     return sorted(rows, key=lambda row: row["id"])
 
 

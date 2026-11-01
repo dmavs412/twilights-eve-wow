@@ -166,6 +166,15 @@ class BuildSpells(unittest.TestCase):
         with open(os.path.join(self.out_dir, "client_art.json"), encoding="utf-8") as f:
             self.assertEqual(base64.b64decode(json.load(f)["ember_lash"]), PNG)
 
+    def test_an_item_with_a_stock_icon_makes_an_item_display_without_art(self):
+        self.content = {"items.toml": self.item(995001, icon="Interface\\\\Icons\\\\INV_Chest_Chain_05")}
+        done, _ = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.patch["item_displays"], [
+            {"id": 995001, "base": 24701, "icon": "Interface\\Icons\\INV_Chest_Chain_05"}])
+        with open(os.path.join(self.out_dir, "client_art.json"), encoding="utf-8") as f:
+            self.assertNotIn("INV_Chest_Chain_05", json.load(f))
+
     def test_an_item_display_id_below_the_synthetic_range_fails(self):
         self.content = {"items.toml": self.item(24701)}
         self.assert_fails([STRIKE], "items.toml item[0] display_id: 24701 is not its own (995000 up)")

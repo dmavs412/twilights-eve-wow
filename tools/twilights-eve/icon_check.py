@@ -4,20 +4,25 @@
 No two items in the game show the same icon. Two display ids can point at one icon, so this
 compares icon names, not display ids. An item is a table under an `item` key in
 crates/twilight-realm/content/*.toml with both `entry` and `display_id`; its icon is field 5 of
-its ItemDisplayInfo.dbc row. Items are grouped by lowercased icon name, and an icon with two or
-more distinct entries is a clash. One entry listed in several files is not a clash. A table with
+its ItemDisplayInfo.dbc row. Items are grouped by lowercased icon name with a trailing `.tga` or
+`.blp` removed (one stock display names `INV_Chest_Fur.tga`), and an icon with two or more
+distinct entries is a clash. One entry listed in several files is not a clash. A table with
 a `line` (ADR 0026) counts as the item named by its line: every row of one Line is one item, so
 a Line on one icon is no clash and the clash listing names the line, not the entry. A synthetic
-display (995000 up) is not in the DBC; its icon is the stem of its `item_displays` row in
-data/twilights-eve/client_dbc_patch.json. A Wardrobe look template (gear.toml, 990000 up) is no
-item: no bag holds one and no one sees its icon, so it is skipped.
+display (995000 up) is not in the DBC; its icon is the last part of its `item_displays` row's
+path in data/twilights-eve/client_dbc_patch.json. A Wardrobe look template (gear.toml, 990000
+up) is no item: no bag holds one and no one sees its icon, so it is skipped.
+
+An `item_displays` row with a stock icon (any path not under `Interface\\Icons\\Twilight\\`) must
+name an icon some ItemDisplayInfo.dbc row has; one that does not would draw as a missing icon,
+and fails.
 
 icon_check_known.txt lists the clashes already in the content when the rule began, one per line,
 `icon<TAB>entry,entry,...`. A listed clash passes until fixed. A listed line whose clash is gone
 (or has changed its entries) is stale and fails until its line is deleted. `--write-known`
 rewrites the file from the current clashes.
 
-Exit 1 on a new clash or a stale known line, 0 otherwise.
+Exit 1 on a new clash, a stale known line or an unknown stock icon, 0 otherwise.
 
     python3.15 tools/twilights-eve/icon_check.py [--data <dir>] [--write-known]
 
@@ -42,6 +47,7 @@ KNOWN = os.path.join(HERE, "icon_check_known.txt")
 PATCH = os.path.normpath(os.path.join(HERE, "..", "..", "data", "twilights-eve", "client_dbc_patch.json"))
 ICON_FIELD = 5
 FIRST_LOOK = 990000  # build_gear.py's first look template
+PAINTED_DIR = "interface\\icons\\twilight\\"  # build_spells.py's ART_ICON_DIR, lowercased
 
 
 def read_icons(data_dir):
@@ -57,6 +63,12 @@ def read_icons(data_dir):
     return icons
 
 
+def icon_key(icon):
+    """An icon name as the clash check compares it: lowercased, a trailing `.tga` or `.blp` cut."""
+    icon = icon.lower()
+    return icon[:-4] if icon.endswith((".tga", ".blp")) else icon
+
+
 def patch_icons(patch):
     """Synthetic display id to icon name, from the `item_displays` of the client patch."""
     icons = {}
@@ -65,11 +77,25 @@ def patch_icons(patch):
     return icons
 
 
-def read_patch_icons(path=PATCH):
+def unknown_stock_icons(patch, icons):
+    """(display id, icon path) of each patch `item_displays` row whose stock icon no display of
+    `icons` (display id to icon name, the DBC's) names. A painted icon is never one."""
+    names = {icon_key(name) for name in icons.values()}
+    unknown = []
+    for row in patch.get("item_displays", []):
+        path = row["icon"].replace("/", "\\")
+        if path.lower().startswith(PAINTED_DIR):
+            continue
+        if icon_key(path.rsplit("\\", 1)[-1]) not in names:
+            unknown.append((row["id"], row["icon"]))
+    return unknown
+
+
+def read_patch(path=PATCH):
     if not os.path.exists(path):
         return {}
     with open(path, "rb") as f:
-        return patch_icons(json.load(f))
+        return json.load(f)
 
 
 def collect_items(content_dir):
@@ -109,7 +135,7 @@ def find_clashes(rows, icons):
             continue
         line = rest[0] if rest else None
         key = line or entry
-        by_icon[icon.lower()].setdefault(key, (key, line or name, fname))
+        by_icon[icon_key(icon)].setdefault(key, (key, line or name, fname))
     order = lambda key: (isinstance(key, str), key)  # noqa: E731
     return {icon: [ents[k] for k in sorted(ents, key=order)]
             for icon, ents in sorted(by_icon.items()) if len(ents) > 1}
@@ -152,8 +178,9 @@ def main():
                     help="rewrite icon_check_known.txt from the current clashes")
     args = ap.parse_args()
 
-    icons = read_icons(args.data)
-    icons.update(read_patch_icons())
+    dbc = read_icons(args.data)
+    patch = read_patch()
+    icons = {**dbc, **patch_icons(patch)}
     clashes = find_clashes(collect_items(CONTENT), icons)
     if args.write_known:
         with open(KNOWN, "wb") as f:
@@ -167,9 +194,13 @@ def main():
         print("clash " + show(icon, items))
     for line in stale:
         print("stale known line: " + line.replace("\t", " "))
-    print("%d clashes, new %d, known %d, stale known %d" % (len(clashes), len(new), known_count,
-                                                            len(stale)))
-    return 1 if new or stale else 0
+    unknown = unknown_stock_icons(patch, dbc)
+    for display_id, icon in unknown:
+        print("unknown stock icon: display %d names %s, which no ItemDisplayInfo.dbc row has"
+              % (display_id, icon))
+    print("%d clashes, new %d, known %d, stale known %d, unknown stock icons %d"
+          % (len(clashes), len(new), known_count, len(stale), len(unknown)))
+    return 1 if new or stale or unknown else 0
 
 
 if __name__ == "__main__":

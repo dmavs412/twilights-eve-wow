@@ -75,6 +75,23 @@ class PatchIcons(unittest.TestCase):
         clashes = icon_check.find_clashes(rows, icons)
         self.assertEqual(list(clashes), ["old_goldfin"])
 
+    def test_a_name_with_an_extension_clashes_with_the_name_without(self):
+        rows = [(1, "Tunic", 1, "a.toml"), (2, "Vest", 2, "a.toml")]
+        clashes = icon_check.find_clashes(rows, {1: "INV_Chest_Fur.tga", 2: "INV_Chest_Fur"})
+        self.assertEqual(list(clashes), ["inv_chest_fur"])
+
+    def test_a_stock_patch_icon_no_display_names_is_reported(self):
+        patch = {"item_displays": [
+            {"id": 998000, "base": 10, "icon": "Interface\\Icons\\INV_Misc_Bag_01"},
+            {"id": 998001, "base": 10, "icon": "Interface\\Icons\\INV_Chest_Fur"},
+            {"id": 998002, "base": 10, "icon": "Interface\\Icons\\INV_No_Such_Icon"},
+            {"id": 995001, "base": 10, "icon": "Interface\\Icons\\Twilight\\old_goldfin"},
+        ]}
+        icons = {**ICONS, 13: "INV_Chest_Fur.tga"}
+        self.assertEqual(icon_check.unknown_stock_icons(patch, icons),
+                         [(998002, "Interface\\Icons\\INV_No_Such_Icon")])
+        self.assertEqual(icon_check.unknown_stock_icons({}, icons), [])
+
 
 class Judge(unittest.TestCase):
     clashes = {"inv_misc_bag_01": [(1, "Bag", "a.toml"), (2, "Pouch", "b.toml")]}

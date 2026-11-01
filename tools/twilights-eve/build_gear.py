@@ -16,6 +16,14 @@ synthetic, statless item per body part and display, entries from 990000 up, whic
 writes into the visible-item fields and the item query answers. No pool, vendor or reward
 holds one.
 
+`display_id` is the row's model and `icon` its bag icon (ADR 0030): a stock icon name
+(`INV_Chest_Chain_05`, no folder or extension) or a painted PNG of data/twilights-eve/art
+(`chest_x.png`). A blank keeps the display's own icon. Each distinct pair of `display_id` and
+`icon` takes a synthetic display, from 998000 up in pair order, written as the row's
+`display_id` with `icon_base` (the model) and `icon` (a stock path or the PNG's stem), which
+build_spells.py turns into the client patch's `item_displays`. The rows of one Line show one
+icon: one `icon` cell, or blank cells on one `display_id`.
+
 Exits non-zero, writing nothing, on an unknown word, a duplicate entry, a wardrobe cell on a row
 that is no Chest, a slot outside the ten, a spell the content does not know, or a drop row whose
 entry is no Gear.
@@ -59,7 +67,7 @@ COLUMNS = (
     "str", "agi", "sta", "int", "spi", "armor", "block", "dmg_min", "dmg_max", "dmg_school",
     "speed", "res_holy", "res_fire", "res_nature", "res_frost", "res_shadow", "res_arcane",
     "attack_power", "crit", "defense", "spell_power", "budget", "line", "equip", "use", "on_hit",
-    "display_id", "sell_price",
+    "display_id", "icon", "sell_price",
     "bonding", "durability", "sheath", "material", "wardrobe_head", "wardrobe_shoulders",
     "wardrobe_back", "wardrobe_wrists", "wardrobe_hands", "wardrobe_waist", "wardrobe_legs",
     "wardrobe_feet",
@@ -73,6 +81,10 @@ WARDROBE = (
 )
 # Look templates take entries from here up; the sheet's own entries stay below.
 FIRST_LOOK = 990000
+# A row with an `icon` takes a synthetic display from here up, one per model and icon (ADR 0030).
+FIRST_ICON_DISPLAY = 998000
+# Where a stock icon name lives in the client; a painted one is the PNG's stem.
+STOCK_ICON_DIR = "Interface\\Icons\\"
 
 QUALITY = {"Poor": 0, "Common": 1, "Uncommon": 2, "Rare": 3, "Epic": 4}
 BONDING = {"": 0, "Pickup": 1, "Equip": 2, "Use": 3}
@@ -317,7 +329,7 @@ def fmt_float(v: float) -> str:
 
 def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
     seen = set()
-    items, wardrobes, lines = [], {}, {}
+    items, wardrobes, lines, line_icons = [], {}, {}, {}
     for row in rows:
         entry = integer(row["entry"], "entry", row["name"])
         where = f"{entry} {row['name']}"
@@ -336,6 +348,11 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
                                    for slot, kind in SPELL_POWER_SLOTS):
             raise SheetError(f"{where}: spell_power on a {row['slot']} of type {row['type']!r}; "
                              "only a Weapon, a held Offhand or a Wand carries it")
+        icon = row["icon"]
+        if "\\" in icon or "/" in icon or os.path.splitext(icon)[1] not in ("", ".png"):
+            raise SheetError(f"{where}: icon {icon!r} is neither a stock icon name nor a PNG file "
+                             "name; it takes no folder and no extension but .png")
+        display = integer(row["display_id"], "display_id", where)
         if row["line"]:
             if entry < FIRST_CHECKED:
                 raise SheetError(f"{where}: a line on an entry under {FIRST_CHECKED}")
@@ -344,6 +361,13 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
                 raise SheetError(f"{where}: line {row['line']!r} is a {shape[0]} of type "
                                  f"{shape[1]!r}, but its other rows are a "
                                  f"{lines[row['line']][0]} of type {lines[row['line']][1]!r}")
+            # What the row shows: its icon cell, or a blank cell's display.
+            shows = icon or display
+            first = line_icons.setdefault(row["line"], shows)
+            if first != shows:
+                what = lambda s: f"icon {s!r}" if isinstance(s, str) else f"display {s}'s icon"  # noqa: E731
+                raise SheetError(f"{where}: line {row['line']!r} shows {what(shows)}, but its "
+                                 f"other rows show {what(first)}")
         spent = sum(integer(row[col], col, where) for col, _ in STATS) + -(-spell_power // 2)
         if is_checked(entry):
             check_tier(row, entry, where, spent)
@@ -381,7 +405,7 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
         items.append({
             "entry": entry, "row": row, "class": cls, "subclass": sub, "inventory_type": inv,
             "damage": damage, "speed_ms": speed_ms, "use": uses, "where": where,
-            "spell_power": spell_power,
+            "spell_power": spell_power, "icon_pair": (display, icon) if icon else None,
         })
 
     pool_level = {}
@@ -397,6 +421,9 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
     looks = sorted({(i, display) for cells in wardrobes.values()
                     for i, (part, _) in enumerate(WARDROBE) if (display := cells[part])})
     look_entry = {key: FIRST_LOOK + n for n, key in enumerate(looks)}
+    # One synthetic display per model and icon, in that order.
+    pairs = sorted({item["icon_pair"] for item in items if item["icon_pair"]})
+    icon_display = {pair: FIRST_ICON_DISPLAY + n for n, pair in enumerate(pairs)}
 
     out = [
         "# Every piece of Gear, generated from data/twilights-eve/gear.csv (ADR 0007) by\n"
@@ -407,12 +434,14 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
         "# data/twilights-eve/gear_drops.csv. A Chest's `wardrobe` is the look template worn on\n"
         "# each hidden body part (head, shoulders, back, wrists, hands, waist, legs, feet), 0 for\n"
         "# bare; the look templates, from 990000 up, close the table. `spell_power` is the flat\n"
-        "# Spell Power the realm adds to spells; its tooltip spell is among `equip_spells`.\n\n"
+        "# Spell Power the realm adds to spells; its tooltip spell is among `equip_spells`.\n"
+        "# A row with its own icon wears a synthetic `display_id` (998000 up) whose `icon_base` is\n"
+        "# the model and `icon` the stock path or painted stem (ADR 0030).\n\n"
         "item = [\n"
     ]
     for item in items:
         out.append(row_line(item, spells, pool_level.get(item["entry"], 0),
-                            wardrobes.get(item["entry"]), look_entry))
+                            wardrobes.get(item["entry"]), look_entry, icon_display))
     for (i, display), entry in look_entry.items():
         part, inv = WARDROBE[i]
         out.append("  { " + ", ".join([
@@ -423,20 +452,31 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
     return "".join(out)
 
 
+def icon_value(icon: str) -> str:
+    """The gear.toml `icon` of an icon cell, as a TOML string: a stock name's client path or a
+    PNG's stem. Blank for a blank cell."""
+    if not icon:
+        return ""
+    return toml_string(icon[:-4] if icon.endswith(".png") else STOCK_ICON_DIR + icon)
+
+
 def row_line(item: dict, spells: dict[int, str], pool: int, wardrobe: dict | None,
-             look_entry: dict) -> str:
+             look_entry: dict, icon_display: dict) -> str:
     row, where = item["row"], item["where"]
     num = lambda column: integer(row[column], column, where)  # noqa: E731
     stack = AMMO_STACK if row["slot"] == "Ammo" or row["type"] == "Thrown" else 1
     parts = [f"entry = {item['entry']}", f"name = {toml_string(row['name'])}"]
-    ints = [
+    # A zero or blank field is left out.
+    fields = [
         ("quality", word(QUALITY, row["quality"], "quality", where)),
         ("item_level", num("item_level")),
         ("required_level", num("required_level")),
         ("class", item["class"]),
         ("subclass", item["subclass"]),
         ("inventory_type", item["inventory_type"]),
-        ("display_id", num("display_id")),
+        ("display_id", icon_display.get(item["icon_pair"], num("display_id"))),
+        ("icon_base", num("display_id") if item["icon_pair"] else 0),
+        ("icon", icon_value(row["icon"])),
         ("armor", num("armor")),
         ("block", num("block")),
         ("speed_ms", item["speed_ms"]),
@@ -448,7 +488,7 @@ def row_line(item: dict, spells: dict[int, str], pool: int, wardrobe: dict | Non
         ("material", word(MATERIAL, row["material"], "material", where)),
         ("pool_level", pool),
     ]
-    parts += [f"{k} = {v}" for k, v in ints if v]
+    parts += [f"{k} = {v}" for k, v in fields if v]
     if row["line"]:
         parts.append(f"line = {toml_string(row['line'])}")
     stats = [f"[{sid}, {num(col)}]" for col, sid in STATS if num(col)]

@@ -7,6 +7,8 @@
 # each hidden body part (head, shoulders, back, wrists, hands, waist, legs, feet), 0 for
 # bare; the look templates, from 990000 up, close the table. `spell_power` is the flat
 # Spell Power the realm adds to spells; its tooltip spell is among `equip_spells`.
+# A row with its own icon wears a synthetic `display_id` (998000 up) whose `icon_base` is
+# the model and `icon` the stock path or painted stem (ADR 0030).
 
 item = [
   { entry = 25, name = "Worn Shortsword", quality = 1, item_level = 2, required_level = 1, class = 2, subclass = 7, inventory_type = 21, display_id = 1542, speed_ms = 1900, durability = 20, sell_price = 7, stackable = 1, sheath = 3, material = 1, stats = [[7, 4]], damage = [[2.0, 5.0, 0]] },
