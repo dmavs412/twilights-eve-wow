@@ -138,7 +138,8 @@ pub(crate) struct Point {
     pub(crate) z: f32,
 }
 
-#[derive(Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
+/// Rising: [`Ord`] puts the rarest last.
+#[derive(Deserialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Rarity {
     Common,

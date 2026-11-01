@@ -960,6 +960,26 @@ fn the_painted_herb_items_carry_icons() {
     }
 }
 
+/// Every alchemy row (#541) is an item the realm answers queries with: the first and last entry
+/// of each product's block, and Murky Sludge, each wearing its kind's display.
+#[test]
+fn every_alchemy_block_resolves_to_item_rows() {
+    let alchemy = toml_table("alchemy.toml");
+    let mut realm = twilight_realm::Realm::new();
+    let sludge = &alchemy["sludge"];
+    let mut ends = vec![(item_of(sludge, "entry"), item_of(sludge, "display_id"))];
+    for p in alchemy["product"].as_array().unwrap() {
+        let (entry, block) = (item_of(p, "entry"), item_of(p, "block"));
+        let display = item_of(p, "display_id");
+        ends.extend([(entry, display), (entry + block - 1, display)]);
+    }
+    assert_eq!(ends.len(), 1 + 45 * 2);
+    for (entry, display) in ends {
+        let info = queried(&mut realm, entry).unwrap_or_else(|| panic!("{entry} has no template"));
+        assert_eq!(info.display_info_id, display, "{entry}");
+    }
+}
+
 /// Every pool fish has a `[[fish]]` row, and the four weight fish are in no pool.
 #[test]
 fn every_fishing_pool_fish_has_a_fish_row() {

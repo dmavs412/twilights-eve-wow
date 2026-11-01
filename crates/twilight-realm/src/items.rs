@@ -14,6 +14,7 @@ use serde::Deserialize;
 pub(crate) enum Profession {
     Fishing,
     Herbalism,
+    Alchemy,
 }
 
 /// One item template, as the realm's table spells it. A field the table leaves out is at its
@@ -70,6 +71,10 @@ pub(crate) struct Template {
     pub(crate) use_cooldown_ms: i32,
     /// The on-use category cooldown, -1 for the spell's own.
     pub(crate) use_category_cooldown_ms: i32,
+    /// The spell category the on-use spell shares, 0 for food's or drink's by what it restores. A
+    /// potion row sets alchemy's `[use] potion_category`.
+    #[serde(default)]
+    pub(crate) use_category: u32,
     /// Food and drink (`content/goods.toml`): what eating or drinking restores over
     /// `duration_ms`.
     pub(crate) restores_health: u32,
@@ -143,6 +148,7 @@ impl Default for Template {
             use_spell: 0,
             use_cooldown_ms: -1,
             use_category_cooldown_ms: -1,
+            use_category: 0,
             restores_health: 0,
             restores_mana: 0,
             duration_ms: 0,
@@ -330,6 +336,7 @@ pub(crate) fn template(entry: u32) -> Option<&'static Template> {
         .or_else(|| herbalism().get(&entry))
         .or_else(|| cooking().get(&entry))
         .or_else(|| crate::cooking::added_item(entry))
+        .or_else(|| crate::alchemy::item(entry))
         .or_else(|| crate::quests::item_template(entry))
         .or_else(|| gear().get(&entry))
 }
@@ -339,9 +346,12 @@ const ON_USE: u32 = 0;
 /// `ITEM_SPELLTRIGGER_ON_EQUIP`.
 const ON_EQUIP: u32 = 1;
 
-/// The spell category an on-use spell shares (`Spell.dbc`'s `Category`): food 11, drink 59.
+/// The spell category an on-use spell shares (`Spell.dbc`'s `Category`): the row's own, else food
+/// 11 or drink 59.
 fn use_category(t: &Template) -> u32 {
-    if t.restores_mana > 0 {
+    if t.use_category != 0 {
+        t.use_category
+    } else if t.restores_mana > 0 {
         59
     } else if t.restores_health > 0 {
         11

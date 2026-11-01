@@ -22,6 +22,7 @@ what the Build lane's tickets read:
 - `alchemy.toml`, generated from the prototype and the realm's item entries. Its header names
   every field and the entry formula. The content ticket moves it to
   `crates/twilight-realm/content/alchemy.toml`.
+  It lives there since #541, and `crates/twilight-realm/src/alchemy.rs` loads it.
 
 Item entries: Murky Sludge 963000, potions 963100 to 963199, oils 963200 to 963299, hybrids
 963300 to 963499, Tinctures 963500 to 964299, Essences 964300 to 966599, flasks 966600 to

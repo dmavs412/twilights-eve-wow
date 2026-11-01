@@ -109,12 +109,36 @@ fn everything_it_hands_out_has_a_herbalism_item_row() {
     }
 }
 
+/// The items both crafts take: in a cooking.toml recipe and an alchemy.toml `[[herb]]`.
+fn both_crafts() -> Vec<u32> {
+    let cooking: toml::Value = toml::from_str(include_str!("../content/cooking.toml")).unwrap();
+    let alchemy: toml::Value = toml::from_str(include_str!("../content/alchemy.toml")).unwrap();
+    let cooked: Vec<i64> = cooking["recipe"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|r| r["ingredients"].as_array().unwrap())
+        .filter_map(toml::Value::as_integer)
+        .collect();
+    alchemy["herb"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|h| h["item"].as_integer())
+        .filter(|item| cooked.contains(item))
+        .map(|item| item as u32)
+        .collect()
+}
+
 #[test]
 fn a_plants_row_says_what_it_is_for() {
     let herbs = herbs();
     let rows: HashMap<u32, &Item> = herbs.item.iter().map(|i| (i.entry, i)).collect();
+    let both = both_crafts();
+    assert_eq!(both.len(), 6, "{both:?}");
     for p in &herbs.plant {
         let want = match p.use_.as_deref() {
+            _ if both.contains(&p.item) => "Cooking ingredient and alchemy reagent.",
             Some("cooking") => "Cooking ingredient.",
             Some("alchemy") => "Alchemy reagent.",
             None => "A purse someone dropped in the brush.",

@@ -116,7 +116,9 @@ Draught), `hybrid_calming_restorative` (Deepsleep Potion), `hybrid_fortifying_vo
 Shield), `hybrid_arcane_fortifying` (Mana Shield), `hybrid_calming_fortifying` (Steady Stance),
 `hybrid_arcane_volatile` (Spellfire Bomb), `hybrid_calming_volatile` (Smoke Bomb),
 `hybrid_arcane_calming` (Invisibility Draught). The placeholder is the round potion bottle
-split down the middle in the two Properties' colours; the content ticket paints them.
+split down the middle in the two Properties' colours, painted by
+`tools/twilights-eve/placeholder_alchemy_art.py` (#541); Davis's icons replace them under the
+same names.
 
 ### Alchemy Journal bookmark, placeholder
 

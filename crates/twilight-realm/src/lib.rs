@@ -37,6 +37,7 @@
 //! - **Identity**: the `Calling` enum (`content.rs`) is the save's key; a renamed Calling keeps its
 //!   old key as a serde alias. A skill two Callings share has identical data in both.
 
+mod alchemy;
 mod ammo;
 mod areas;
 mod audience;

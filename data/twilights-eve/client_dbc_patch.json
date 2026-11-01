@@ -9012,6 +9012,236 @@
    "icon": "Interface\\Icons\\Twilight\\cut_hushed_bank_grayling"
   },
   {
+   "id": 995200,
+   "base": 15710,
+   "icon": "Interface\\Icons\\Twilight\\potion_restorative"
+  },
+  {
+   "id": 995201,
+   "base": 15710,
+   "icon": "Interface\\Icons\\Twilight\\potion_fortifying"
+  },
+  {
+   "id": 995202,
+   "base": 15710,
+   "icon": "Interface\\Icons\\Twilight\\potion_volatile"
+  },
+  {
+   "id": 995203,
+   "base": 15710,
+   "icon": "Interface\\Icons\\Twilight\\potion_arcane"
+  },
+  {
+   "id": 995204,
+   "base": 15710,
+   "icon": "Interface\\Icons\\Twilight\\potion_calming"
+  },
+  {
+   "id": 995205,
+   "base": 33194,
+   "icon": "Interface\\Icons\\Twilight\\oil_restorative"
+  },
+  {
+   "id": 995206,
+   "base": 33194,
+   "icon": "Interface\\Icons\\Twilight\\oil_fortifying"
+  },
+  {
+   "id": 995207,
+   "base": 33194,
+   "icon": "Interface\\Icons\\Twilight\\oil_volatile"
+  },
+  {
+   "id": 995208,
+   "base": 33194,
+   "icon": "Interface\\Icons\\Twilight\\oil_arcane"
+  },
+  {
+   "id": 995209,
+   "base": 33194,
+   "icon": "Interface\\Icons\\Twilight\\oil_calming"
+  },
+  {
+   "id": 995210,
+   "base": 15742,
+   "icon": "Interface\\Icons\\Twilight\\hybrid_fortifying_restorative"
+  },
+  {
+   "id": 995211,
+   "base": 15742,
+   "icon": "Interface\\Icons\\Twilight\\hybrid_restorative_volatile"
+  },
+  {
+   "id": 995212,
+   "base": 15742,
+   "icon": "Interface\\Icons\\Twilight\\hybrid_arcane_restorative"
+  },
+  {
+   "id": 995213,
+   "base": 15742,
+   "icon": "Interface\\Icons\\Twilight\\hybrid_calming_restorative"
+  },
+  {
+   "id": 995214,
+   "base": 15742,
+   "icon": "Interface\\Icons\\Twilight\\hybrid_fortifying_volatile"
+  },
+  {
+   "id": 995215,
+   "base": 15742,
+   "icon": "Interface\\Icons\\Twilight\\hybrid_arcane_fortifying"
+  },
+  {
+   "id": 995216,
+   "base": 15742,
+   "icon": "Interface\\Icons\\Twilight\\hybrid_calming_fortifying"
+  },
+  {
+   "id": 995217,
+   "base": 15742,
+   "icon": "Interface\\Icons\\Twilight\\hybrid_arcane_volatile"
+  },
+  {
+   "id": 995218,
+   "base": 15742,
+   "icon": "Interface\\Icons\\Twilight\\hybrid_calming_volatile"
+  },
+  {
+   "id": 995219,
+   "base": 15742,
+   "icon": "Interface\\Icons\\Twilight\\hybrid_arcane_calming"
+  },
+  {
+   "id": 995220,
+   "base": 15738,
+   "icon": "Interface\\Icons\\Twilight\\tincture_restorative"
+  },
+  {
+   "id": 995221,
+   "base": 15738,
+   "icon": "Interface\\Icons\\Twilight\\tincture_fortifying"
+  },
+  {
+   "id": 995222,
+   "base": 15738,
+   "icon": "Interface\\Icons\\Twilight\\tincture_volatile"
+  },
+  {
+   "id": 995223,
+   "base": 15738,
+   "icon": "Interface\\Icons\\Twilight\\tincture_arcane"
+  },
+  {
+   "id": 995224,
+   "base": 15738,
+   "icon": "Interface\\Icons\\Twilight\\tincture_calming"
+  },
+  {
+   "id": 995225,
+   "base": 23754,
+   "icon": "Interface\\Icons\\Twilight\\essence_restorative"
+  },
+  {
+   "id": 995226,
+   "base": 23754,
+   "icon": "Interface\\Icons\\Twilight\\essence_fortifying"
+  },
+  {
+   "id": 995227,
+   "base": 23754,
+   "icon": "Interface\\Icons\\Twilight\\essence_volatile"
+  },
+  {
+   "id": 995228,
+   "base": 23754,
+   "icon": "Interface\\Icons\\Twilight\\essence_arcane"
+  },
+  {
+   "id": 995229,
+   "base": 23754,
+   "icon": "Interface\\Icons\\Twilight\\essence_calming"
+  },
+  {
+   "id": 995230,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_restorative_restorative"
+  },
+  {
+   "id": 995231,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_fortifying_restorative"
+  },
+  {
+   "id": 995232,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_restorative_volatile"
+  },
+  {
+   "id": 995233,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_arcane_restorative"
+  },
+  {
+   "id": 995234,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_calming_restorative"
+  },
+  {
+   "id": 995235,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_fortifying_fortifying"
+  },
+  {
+   "id": 995236,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_fortifying_volatile"
+  },
+  {
+   "id": 995237,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_arcane_fortifying"
+  },
+  {
+   "id": 995238,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_calming_fortifying"
+  },
+  {
+   "id": 995239,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_volatile_volatile"
+  },
+  {
+   "id": 995240,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_arcane_volatile"
+  },
+  {
+   "id": 995241,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_calming_volatile"
+  },
+  {
+   "id": 995242,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_arcane_arcane"
+  },
+  {
+   "id": 995243,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_arcane_calming"
+  },
+  {
+   "id": 995244,
+   "base": 24213,
+   "icon": "Interface\\Icons\\Twilight\\flask_calming_calming"
+  },
+  {
+   "id": 995245,
+   "base": 18077,
+   "icon": "Interface\\Icons\\Twilight\\murky_sludge"
+  },
+  {
    "id": 998000,
    "base": 3057,
    "icon": "Interface\\Icons\\INV_Chest_Plate01"
