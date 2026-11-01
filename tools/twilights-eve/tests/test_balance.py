@@ -102,6 +102,19 @@ class BalanceModel(unittest.TestCase):
         self.assertAlmostEqual(swing(eight) / (damage * 0.8), 2.67, delta=0.01)
         self.assertEqual(eight["armor"], at_ten["armor"][7])
 
+    def test_health_pct_scales_base_health(self):
+        # callings.csv health_pct, as rules/stats.rs scale_base_pools applies it in the realm.
+        row = model.CALLINGS_CSV["cutthroat"]
+        was = row["health_pct"]
+        try:
+            row["health_pct"] = "100"
+            plain = model.character("cutthroat", 20, "green")["stats"].base_health
+            row["health_pct"] = "200"
+            doubled = model.character("cutthroat", 20, "green")["stats"].base_health
+        finally:
+            row["health_pct"] = was
+        self.assertEqual(doubled, 2 * plain)
+
     def test_every_calling_fights_once_at_every_level(self):
         cases = [(c, (10, 20, 30), "green") for c in model.CALLINGS]
         cases.append(("basic_warrior", (1, 5, 9), "white"))

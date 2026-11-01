@@ -241,9 +241,12 @@ class Stats:
 
 
 def build_stats(calling, level, entries, off_entry, rows):
-    """`calling`'s stats at `level` in the gear `entries`, in the build `rows`: a passive's
-    max_health_pct raises the maximum health."""
+    """`calling`'s stats at `level` in the gear `entries`, in the build `rows`: callings.csv's
+    health_pct and mana_pct keep that percent of the base health and mana, rounded down, as
+    rules/stats.rs `scale_base_pools` does, and a passive's max_health_pct raises the maximum
+    health."""
     c = SPELLS[calling]
+    pools = CALLINGS_CSV[calling]
     prof = c["stat_profile"]
     cls = CLASS_ID[prof]
     t = TABLES[prof]
@@ -277,12 +280,13 @@ def build_stats(calling, level, entries, off_entry, rows):
             s.ranged = (fnum(r["dmg_min"]), fnum(r["dmg_max"]), fnum(r["speed"]))
     names = ["str", "agi", "sta", "int", "spi"]
     s.str, s.agi, s.sta, s.int, s.spi = (base[i] + gear[n] for i, n in enumerate(names))
-    s.base_health = per["base_health"]
+    s.base_health = per["base_health"] * int(pools["health_pct"] or 100) // 100
     s.max_hp = s.base_health + min(s.sta, 20) + max(s.sta - 20, 0) * 10
     s.max_hp = s.max_hp * (100 + sum(p["pct"] for p in passive_effects(calling, rows, "max_health_pct"))) // 100
+    # A cost in percent of base mana reads the unscaled base, as cast.rs does.
     bm = per["base_mana"]
     s.base_mana = bm
-    s.max_mana = 0 if bm == 0 else bm + min(s.int, 20) + max(s.int - 20, 0) * 15
+    s.max_mana = 0 if bm == 0 else bm * int(pools["mana_pct"] or 100) // 100 + min(s.int, 20) + max(s.int - 20, 0) * 15
     if prof in ("mage", "priest"):
         s.mana_tick = s.spi / 4.0 + 12.5
     elif prof == "hunter":
