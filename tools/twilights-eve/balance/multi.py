@@ -165,7 +165,8 @@ class InitiateN(Multi, model.Initiate):
 
 
 class RangerN(Multi, model.Ranger):
-    PER_TARGET = dict(barbed=None, slow_until=-1)
+    AOE = {"explosive_shot": 0}
+    PER_TARGET = dict(barbed=None, slow_until=-1, sunder=None)
 
 
 class AcolyteN(Multi, model.Acolyte):

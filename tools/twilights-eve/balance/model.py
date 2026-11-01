@@ -431,34 +431,33 @@ def aura(calling, key):
     return next(a for a in SPELLS[calling]["auras"] if a["key"] == key)
 
 
+def key_of(calling, spell_id):
+    """The key of `calling`'s plain skill with spell id `spell_id`."""
+    return next(s["key"] for s in SPELLS[calling]["skills"] if s["spell_id"] == spell_id)
+
+
+def passives(calling, rows):
+    """The choices the build `rows` sets in `calling`'s talent rows, which replace no skill."""
+    return [choice(calling, r["key"], rows[r["key"]]) for r in talent_rows(calling)
+            if r["kind"] == "talent" and r["key"] in rows]
+
+
 def passive_effects(calling, rows, kind):
-    """The params of every `kind` effect on the passives the build `rows` sets: the choices of
-    `calling`'s talent rows, which replace no skill."""
-    return [p for r in talent_rows(calling) if r["kind"] == "talent" and r["key"] in rows
-            for p in fxs(choice(calling, r["key"], rows[r["key"]]), kind)]
+    """The params of every `kind` effect on the passives the build `rows` sets."""
+    return [p for sk in passives(calling, rows) for p in fxs(sk, kind)]
 
 
 # Tier 1 choices that change nothing in the sim's fights, with the reason the report prints
 # (test_every_tier1_choice_changes_the_fight_or_is_ignored).
 IGNORED = {
-    ("ranger", "explosive_payload"): "not modelled yet",
-    ("ranger", "guerilla_tactics"): "not modelled yet",
-    ("ranger", "point_blank"): "not modelled yet",
-    ("ranger", "twin_arrows"): "not modelled yet",
-    ("ranger", "rhythmic_draw"): "not modelled yet",
-    ("ranger", "adrenaline_rush"): "not modelled yet",
-    ("ranger", "parting_gift"): "not modelled yet",
-    ("ranger", "parting_shot"): "not modelled yet",
-    ("ranger", "unbound_leap"): "not modelled yet",
-    ("ranger", "jagged_barbs"): "not modelled yet",
-    ("ranger", "pinning_barb"): "not modelled yet",
-    ("ranger", "bloodscent"): "not modelled yet",
-    ("ranger", "piercing_force"): "not modelled yet",
-    ("ranger", "staggering_shaft"): "not modelled yet",
-    ("ranger", "killshot"): "not modelled yet",
-    ("ranger", "flurry"): "not modelled yet",
-    ("ranger", "rapid_assault"): "not modelled yet",
-    ("ranger", "running_fire"): "not modelled yet",
+    ("ranger", "guerilla_tactics"): "the sim never moves for 2 sec",
+    ("ranger", "running_fire"): "the sim never moves while it shoots",
+    ("ranger", "parting_gift"): "root",
+    ("ranger", "unbound_leap"): "run speed",
+    ("ranger", "pinning_barb"): "root",
+    ("ranger", "rhythmic_draw"): "the sim casts no Shaft after a Snapshot",
+    ("ranger", "adrenaline_rush"): "the sim casts no Snapshot after a Vault",
+    ("ranger", "bloodscent"): "the sim's Ranger never runs short of mana",
     ("initiate", "frost_ward"): "movement slow",
     ("initiate", "splintering_cold"): "movement slow",
     ("initiate", "frostbite"): "root",
@@ -542,6 +541,37 @@ class Sim:
         c = sk.get("realm_cost") or 0
         return self.pct_base(c) if sk.get("cost_kind") == "pct_base" else c
 
+    # ---- buffs: self.buffs is aura key -> [until, aura row, stacks, charges], set by setup_fight
+    def grant(self, key):
+        """Aura `key` on the character for its duration_ms, with its charges; a `stack` aura still
+        up gains a stack, up to its max_stacks."""
+        a = aura(self.calling, key)
+        held, stacks = self.buffs.get(key), 1
+        if held and self.t < held[0] and a.get("stack_rule") == "stack":
+            stacks = min(held[2] + 1, a["max_stacks"])
+        self.buffs[key] = [self.t + a["duration_ms"] / 1000, a, stacks, a.get("charges", 0)]
+
+    def buffed(self, kind):
+        """The params of every `kind` effect on the character's buffs still up, once a stack."""
+        return [p for b in self.buffs.values() if self.t < b[0] for p in fxs(b[1], kind) * b[2]]
+
+    def next_casts(self, key):
+        return [p for p in self.buffed("next_cast") if p["skill"] == key]
+
+    def use_next_casts(self, key):
+        """Skill `key` went off: each buff with a next_cast for it loses a charge, and goes at none
+        left; one with no charges lasts its duration."""
+        for k, b in list(self.buffs.items()):
+            if b[3] and any(p["skill"] == key for p in fxs(b[1], "next_cast")):
+                b[3] -= 1
+                if not b[3]:
+                    del self.buffs[k]
+
+    def price(self, key, mods=None):
+        """Skill `key`'s cost after the next_cast changes `mods` (the buffs' now when None)."""
+        mods = self.next_casts(key) if mods is None else mods
+        return self.cost(self.skill(key)) * (100 + max(sum(p.get("cost_pct", 0) for p in mods), -100)) // 100
+
     def heal(self, amount, src):
         amount = int(amount)
         before = self.hp
@@ -576,7 +606,7 @@ class Sim:
     def hit_mob(self, raw, src, physical=True, crit=False, crit_bonus_pct=0, armor_ignore=0, dmg_pct=0):
         raw = int(raw * (100 + dmg_pct) / 100)
         if physical:
-            d = armored(raw, max(self.m_armor - armor_ignore, 0), self.L)
+            d = armored(raw, max(self.m_armor - armor_ignore - self.armor_loss(), 0), self.L)
         else:
             d = raw
         if crit:
@@ -604,6 +634,10 @@ class Sim:
         return self.hit_mob(raw, "white_" + hand, True, crit), ("crit" if crit else "hit")
 
     def dmg_pct(self):
+        return 0
+
+    def armor_loss(self):
+        """The armour the target has lost to the character's auras (Jagged Barbs' sunder)."""
         return 0
 
     # ---- mob swing
@@ -1079,7 +1113,7 @@ class Initiate(Sim):
         self.cold_until = -1
         self.slow_until = -1
         self.shields = {}  # skill key -> [left, until, amount, absorb params], first up first
-        self.buffs = {}    # aura key -> (until, aura row) on the Initiate
+        self.buffs = {}    # aura key -> [until, aura row, stacks, charges] on the Initiate
         self.ember_fx = fx(self.skill("searing_ember"), "periodic_damage")
         self.ember_aura = aura(c, self.ember_fx["apply_aura"])
         self.ember_every = fx(self.ember_aura, "periodic_damage")["tick_ms"]
@@ -1101,27 +1135,11 @@ class Initiate(Sim):
             return self.burning(self.ember)
         return key == self.cold_aura["key"] and self.t < self.cold_until
 
-    def grant(self, key):
-        a = aura(self.calling, key)
-        self.buffs[key] = (self.t + a["duration_ms"] / 1000, a)
-
-    def buffed(self, kind):
-        """The params of every `kind` effect on the Initiate's buffs still up."""
-        return [p for until, a in self.buffs.values() if self.t < until for p in fxs(a, kind)]
-
     def spell_pct(self):
         return sum(p["pct"] for p in self.buffed("mod_spell_damage_pct"))
 
     def amount_pct(self, key):
         return sum(p["pct"] for p in self.buffed("skill_amount_pct") if p["skill"] == key)
-
-    def next_casts(self, key):
-        return [p for p in self.buffed("next_cast") if p["skill"] == key]
-
-    def price(self, key, mods=None):
-        """Skill `key`'s cost after the next_cast changes `mods` (the buffs' now when None)."""
-        mods = self.next_casts(key) if mods is None else mods
-        return self.cost(self.skill(key)) * (100 + sum(p.get("cost_pct", 0) for p in mods)) // 100
 
     def fire(self, on, key):
         """The passives' procs on `on` ("cast", "consume") of skill `key`: an aura on the
@@ -1186,8 +1204,7 @@ class Initiate(Sim):
     def start(self, key):
         # The buffs that change the cast go with it.
         mods = self.next_casts(key)
-        for k in [k for k, (until, a) in self.buffs.items() if any(p["skill"] == key for p in fxs(a, "next_cast"))]:
-            del self.buffs[k]
+        self.use_next_casts(key)
         ms = 0 if any(p.get("instant") for p in mods) else self.cast_time(key) + sum(p.get("cast_time_ms", 0) for p in mods)
         self.cast = (self.t + max(ms, 0) / 1000, key, mods)
         self.gcd = self.t + 1.5
@@ -1313,7 +1330,7 @@ class Initiate(Sim):
 # ---------------------------------------------------------------- Ranger
 class Ranger(Sim):
     def setup_fight(self):
-        s = self.s
+        c, rows = self.calling, self.rows
         self.dist = 30.0
         self.moving = False
         self.moving_since = None
@@ -1325,52 +1342,129 @@ class Ranger(Sim):
         self.swing_t = 0.0
         self.barbed = None  # [until, next, tick]
         self.slow_until = -1
-        self.rapid_until = -1
-        self.dressing = None  # [until, next, tick]
+        self.sunder = None  # [until, stacks, aura row] of the armour aura a barb left (Jagged Barbs)
+        self.dressing = None  # [until, next, tick, every]
+        self.buffs = {}  # aura key -> [until, aura row, stacks, charges] on the Ranger
+        self.barbed_fx = fx(self.skill("barbed_arrow"), "periodic_damage")
+        self.barbed_aura = aura(c, self.barbed_fx["apply_aura"])
+        self.barbed_every = fx(self.barbed_aura, "periodic_damage")["tick_ms"] / 1000
+        self.slow = (100 + fx(self.barbed_aura, "mod_run_speed")["pct"]) / 100
+        # No minimum range with Point Blank: the Ranger shoots in melee.
+        self.min_range = 0 if passive_effects(c, rows, "no_min_range") else self.skill("auto_shot")["realm_range_min"]
+        self.near = [p for p in passive_effects(c, rows, "skill_amount_pct") if p.get("max_distance_yd")]
+        # The talent row's choice the Ranger casts: a buff on a cooldown (Explosive Payload).
+        self.talent_cast = next((sk for sk in passives(c, rows) if sk.get("realm_cooldown_ms")), None)
 
     def ranged_haste(self):
-        return 40 if self.t < self.rapid_until else 0
+        return sum(p["pct"] for p in self.buffed("mod_ranged_haste_pct"))
 
-    def shoot(self, src, weapon_pct=100, bonus=0, armor_ignore=0):
+    def in_range(self):
+        return not self.min_range or self.dist > self.min_range
+
+    def armor_loss(self):
+        if self.sunder and self.t < self.sunder[0]:
+            return -sum(p["amount"] for p in fxs(self.sunder[2], "mod_armor")) * self.sunder[1]
+        return 0
+
+    def sunder_on(self, key):
+        """A stack of armour aura `key` on the target, up to its max_stacks, for its duration."""
+        a = aura(self.calling, key)
+        stacks = self.sunder[1] if self.sunder and self.t < self.sunder[0] else 0
+        self.sunder = [self.t + a["duration_ms"] / 1000, min(stacks + 1, a["max_stacks"]), a]
+
+    def shoot(self, src, weapon_pct=100, bonus=0, armor_ignore=0, crit_pct=0, crit_bonus=0, amount_pct=0,
+              physical=True):
+        """A ranged strike: `crit_pct` more crit chance, `crit_bonus` percent more on a crit and
+        `amount_pct` percent more on the whole strike, as the realm's weapon_strike reads them."""
         s = self.s
-        o = self.ranged_roll(s.crit)
+        o = self.ranged_roll(s.crit + crit_pct)
         if o in ("miss", "dodge"):
             return 0, o
         raw = self.rng.uniform(s.r_min, s.r_max) * weapon_pct / 100 + bonus
-        d = self.hit_mob(raw, src, True, o == "crit", armor_ignore=armor_ignore)
+        if amount_pct:
+            raw = raw * (100 + amount_pct) / 100
+        d = self.hit_mob(raw, src, physical, o == "crit", crit_bonus, armor_ignore)
         return d, o
+
+    def cast_ms(self, key):
+        """Skill `key`'s cast time now: none against a target under its strike's below_health_pct
+        when below_instant (Killshot), else its cast_time_ms with the next_cast buffs' changes, a
+        stack each, never below none (Rhythmic Draw)."""
+        sk, mods = self.skill(key), self.next_casts(key)
+        p = fx(sk, "weapon_strike")
+        if any(m.get("instant") for m in mods) or (
+                p.get("below_instant") and self.mob_hp * 100 < self.m["hp"] * p["below_health_pct"]):
+            return 0
+        return max(sk.get("cast_time_ms", 0) + sum(m.get("cast_time_ms", 0) for m in mods), 0)
 
     def start(self, key, ms):
         self.cast = (self.t + ms / 1000, key)
         self.gcd = self.t + 1.5
 
-    def snapshot(self):
+    def snapshot(self, free=False, repeat=False):
+        """The build's Snapshot: paid with a global cooldown, or `free` (a repeat, a cast on a
+        Vault's landing). Its buffs' changes, the extra arrows, a crit's cut to another skill's
+        cooldown and a free repeat go as its spell says."""
+        s, L = self.s, self.L
         sk = self.skill("snapshot")
-        self.spend_mana(self.cost(sk))
-        self.gcd = self.t + 1.5
+        if not free:
+            cost = self.price("snapshot")
+            if cost:
+                self.spend_mana(cost)
+            self.gcd = self.t + 1.5
         p = fx(sk, "weapon_strike")
-        bonus = linear(self.opts.get("snap_bonus", p["bonus"]), self.L)
-        self.shoot("snapshot", self.opts.get("snap_pct", 100), bonus)
+        bonus = linear(self.opts.get("snap_bonus", p["bonus"]), L)
+        crit = sum(q["pct"] for q in self.buffed("skill_crit_pct") if q["skill"] == "snapshot")
+        d, o = self.shoot("snapshot", self.opts.get("snap_pct", 100), bonus, crit_pct=crit)
+        landed = o not in ("miss", "dodge")
+        if landed:
+            # An extra arrow shares the Snapshot's outcome (Rapid Assault).
+            for q in self.buffed("extra_strike"):
+                if q["skill"] == "snapshot":
+                    self.hit_mob(self.rng.uniform(s.r_min, s.r_max) * q["weapon_pct"] / 100, "snapshot", True, o == "crit")
+            for g in fxs(sk, "grant_aura"):
+                self.grant(g["aura"])
+            if o == "crit" and p.get("crit_cooldown_spell_id"):
+                cooled = key_of(self.calling, p["crit_cooldown_spell_id"])
+                if cooled in self.cds:
+                    self.cds[cooled] -= p["crit_cooldown_ms"] / 1000
+        self.use_next_casts("snapshot")
+        # A repeat never repeats (Twin Arrows).
+        if landed and p.get("repeat_chance") and not repeat and self.rng.random() * 100 < p["repeat_chance"]:
+            self.snapshot(free=True, repeat=True)
 
     def step(self):
         s, L = self.s, self.L
-        # Dots and hots.
+        # Dots and hots: a barb's tick pays its riders, mana back and a chance of an armour aura
+        # on the target (Bloodscent, Jagged Barbs).
         if self.barbed and self.t < self.barbed[0] and self.t >= self.barbed[1]:
-            self.barbed[1] += 2.0
+            self.barbed[1] += self.barbed_every
             self.hit_mob(self.barbed[2], "barbed", False)
+            p = self.barbed_fx
+            if p.get("tick_energize_pct_of_base"):
+                self.power = min(self.power + self.pct_base(p["tick_energize_pct_of_base"]), s.max_mana)
+            if p.get("tick_aura") and self.rng.random() * 100 < p.get("tick_aura_chance", 100):
+                self.sunder_on(p["tick_aura"])
         if self.dressing and self.t < self.dressing[0] and self.t >= self.dressing[1]:
-            self.dressing[1] += 2.0
+            self.dressing[1] += self.dressing[3]
             self.heal(self.dressing[2], "field_dressing")
         slowed = self.t < self.slow_until
+        spd = MOB_RUN * (self.slow if slowed else 1.0)
         in_melee = self.dist <= 5
-        can_shoot = self.dist > 8
+        can_shoot = self.in_range()
         # Finish casts.
         if self.cast and self.t >= self.cast[0]:
             key = self.cast[1]
             self.cast = None
             if key == "puncturing_shaft":
-                p = fx(self.skill("puncturing_shaft"), "weapon_strike")
-                self.shoot("puncturing_shaft", 100, linear(p["bonus"], L), linear(p["armor_ignore"], L))
+                sk = self.skill(key)
+                p = fx(sk, "weapon_strike")
+                near = sum(q["pct"] for q in self.near if q["skill"] == key and self.dist <= q["max_distance_yd"])
+                d, o = self.shoot(key, p.get("weapon_pct", 100), linear(p["bonus"], L), linear(p.get("armor_ignore"), L),
+                                  crit_bonus=p.get("crit_damage_pct", 0), amount_pct=near)
+                if o not in ("miss", "dodge"):
+                    for st in fxs(sk, "stun"):
+                        self.stun(st)
         # Decide movement: kite when in melee range and the mob is slowed.
         # Kite while the mob is slowed: start when it is within 8 yd and Vault is down, stop at 15 yd.
         want_move = self.moving
@@ -1391,46 +1485,69 @@ class Ranger(Sim):
                 self.cast = None  # a move breaks the cast
         # Instants and casts.
         if not self.cast and self.t >= self.gcd:
-            vault, rapid = self.skill("vault"), self.skill("rapid_fire")
+            vault, rapid, dressing = self.skill("vault"), self.skill("rapid_fire"), self.skill("field_dressing")
             barbed, shaft = self.skill("barbed_arrow"), self.skill("puncturing_shaft")
-            if self.hp < s.max_hp * 0.5 and self.ready("dressing") and self.power >= self.pct_base(10):
-                self.spend_mana(self.pct_base(10))
-                self.cd("dressing", 45000)
-                self.dressing = [self.t + 10, self.t + 2, s.max_hp * 20 // 100 // 5]
+            shaft_ms = self.cast_ms("puncturing_shaft")
+            if self.hp < s.max_hp * 0.5 and self.ready("dressing") and self.power >= self.cost(dressing):
+                self.spend_mana(self.cost(dressing))
+                self.cd("dressing", dressing["realm_cooldown_ms"])
+                p = fx(dressing, "periodic_heal")
+                every = p["tick_ms"] / 1000
+                self.dressing = [self.t + p["duration_ms"] / 1000, self.t + every,
+                                 s.max_hp * p["pct"] // 100 // (p["duration_ms"] // p["tick_ms"]), every]
                 self.gcd = self.t + 1.5
             elif in_melee and self.ready("vault"):
                 self.cd("vault", vault["realm_cooldown_ms"])
-                self.dist = 15.0
+                self.dist = float(fx(vault, "blink")["distance_yd"])
                 self.gcd = self.t + 1.0
+                # A Snapshot on landing, free, the build's own (Parting Shot).
+                for p in fxs(vault, "cast_skill"):
+                    if key_of(self.calling, p["skill_spell_id"]) == "snapshot" and self.in_range():
+                        self.snapshot(free=True)
             elif self.ready("rapid") and can_shoot and not self.moving:
                 self.cd("rapid", rapid["realm_cooldown_ms"])
-                self.rapid_until = self.t + 10
+                for g in fxs(rapid, "grant_aura"):
+                    self.grant(g["aura"])
+            elif self.talent_cast and self.ready("talent_cast") and can_shoot and not self.moving:
+                self.cd("talent_cast", self.talent_cast["realm_cooldown_ms"])
+                for g in fxs(self.talent_cast, "grant_aura"):
+                    self.grant(g["aura"])
             elif can_shoot and not (self.barbed and self.t < self.barbed[0] - 2.5) and self.power >= self.cost(barbed):
                 self.spend_mana(self.cost(barbed))
                 self.gcd = self.t + 1.5
                 o = self.ranged_roll(0)
                 if o not in ("miss", "dodge"):
-                    a = aura("ranger", fx(barbed, "periodic_damage")["apply_aura"])
-                    p = a["effects"][0]["params"]
-                    self.barbed = [self.t + 8, self.t + 2, linear(p["tick"], L)]
-                    self.slow_until = self.t + 8
-            elif can_shoot and not self.moving and self.power >= self.cost(shaft) and (self.dist - 8) / (MOB_RUN * (0.7 if slowed else 1.0)) >= 3.0 * 0.9:
+                    a = self.barbed_aura
+                    self.barbed = [self.t + a["duration_ms"] / 1000, self.t + self.barbed_every,
+                                   linear(fx(a, "periodic_damage")["tick"], L)]
+                    self.slow_until = self.t + a["duration_ms"] / 1000
+            # A Shaft starts when it ends before the mob is inside the minimum range.
+            elif can_shoot and not self.moving and self.power >= self.cost(shaft) and (
+                    not self.min_range or (self.dist - self.min_range) / spd >= shaft_ms / 1000 * 0.9):
                 self.spend_mana(self.cost(shaft))
-                self.start("puncturing_shaft", 3000)
-            elif can_shoot and self.power >= self.cost(self.skill("snapshot")):
+                self.use_next_casts("puncturing_shaft")
+                self.start("puncturing_shaft", shaft_ms)
+            elif can_shoot and self.power >= self.price("snapshot"):
                 self.snapshot()
-        # Auto shot.
+        # Auto shot, or the skill a buff makes it (Explosive Payload), which takes the buff.
         if can_shoot and not self.moving and not self.cast and self.t >= self.shot_t:
             self.shot_t = self.t + s.r_speed * 100 / (100 + self.ranged_haste())
-            d, o = self.shoot("auto_shot")
-            if d and self.t < self.rapid_until:
-                self.power = min(self.power + self.pct_base(1), s.max_mana)
+            becomes = [p["becomes"] for p in self.next_casts("auto_shot") if p.get("becomes")]
+            if becomes:
+                self.use_next_casts("auto_shot")
+                p = fx(skill(self.calling, becomes[0]), "weapon_strike")
+                self.shoot(becomes[0], p.get("weapon_pct", 100), linear(p["bonus"], L),
+                           physical=p.get("school", "physical") == "physical")
+            else:
+                d, o = self.shoot("auto_shot")
+                for p in self.buffed("proc") if d else []:
+                    if p["on"] == "damage_done" and p.get("skill") == "auto_shot":
+                        self.power = min(self.power + self.pct_base(p.get("energize_pct_of_base", 0)), s.max_mana)
         # Melee when stuck.
         if in_melee and not self.moving and not can_shoot and self.t >= self.swing_t:
             self.swing_t = self.t + s.mh_speed
             self.white("mh")
         # Mob movement and swings.
-        spd = MOB_RUN * (0.7 if slowed else 1.0)
         if self.moving:
             self.dist += (PLAYER_RUN - spd) * DT
         if self.dist > 5:

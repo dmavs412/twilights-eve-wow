@@ -59,7 +59,17 @@ LONG_FIGHT = {
     ("initiate", "ley_line_tap"): ONE_NORMAL, ("initiate", "arcane_substrate"): ONE_NORMAL,
     ("initiate", "warding_spark"): ONE_NORMAL, ("initiate", "siphoning_ward"): ONE_NORMAL,
     ("initiate", "kindling_ember"): ONE_NORMAL, ("initiate", "arcane_momentum"): ONE_NORMAL,
+    ("ranger", "explosive_payload"): ONE_NORMAL, ("ranger", "twin_arrows"): ONE_NORMAL,
+    ("ranger", "jagged_barbs"): ONE_NORMAL, ("ranger", "flurry"): ONE_NORMAL,
+    ("ranger", "rapid_assault"): ONE_NORMAL,
 }
+# A pull starts in melee, and the Ranger shoots again only past its 8 yd minimum range: a Vault
+# puts it at 15 yd, inside 8 again before its global cooldown ends. Against 2 normals it never
+# shoots but its auto shot; against 1 it fires its opener while the mob runs in. It starts a Shaft
+# only when the cast ends before the mob reaches 8 yd, never after the opener, so the Shaft choices
+# fight on top of Point Blank, which lifts the minimum range.
+POINT_BLANK = {"talents": "point_blank"}
+ON_TOP = {("ranger", k): POINT_BLANK for k in ("piercing_force", "staggering_shaft", "killshot")}
 # The every-choice test's cases that need more than 30 fights: mana lifts Ley Spark's crit by a
 # hair while the bar stays nearly full, and over 30 fights no roll lands in that hair.
 MORE_FIGHTS = {("initiate", "siphoning_ward"): 150, ("initiate", "kindling_ember"): 150}
@@ -145,8 +155,10 @@ class BalanceModel(unittest.TestCase):
                     with self.subTest(calling=calling, choice=c["key"]):
                         pull = LONG_FIGHT.get((calling, c["key"]), {})
                         fights = MORE_FIGHTS.get((calling, c["key"]), 30)
-                        base = fought(calling, {}, fights, random.Random(30), **pull) if pull or fights != 30 else plain
-                        self.assertNotEqual(fought(calling, {row["key"]: c["key"]}, fights, random.Random(30), **pull), base)
+                        on = ON_TOP.get((calling, c["key"]), {})
+                        base = fought(calling, on, fights, random.Random(30), **pull) if pull or on or fights != 30 else plain
+                        got = fought(calling, {**on, row["key"]: c["key"]}, fights, random.Random(30), **pull)
+                        self.assertNotEqual(got, base)
         choices = {(calling, c["key"]) for calling in model.CALLINGS for row in model.talent_rows(calling)
                    for c in row["choices"]}
         for key, why in model.IGNORED.items():
@@ -269,6 +281,39 @@ class BalanceModel(unittest.TestCase):
     def test_initiate_has_no_unmodelled_choices(self):
         for (calling, key), why in model.IGNORED.items():
             if calling == "initiate":
+                with self.subTest(choice=key):
+                    self.assertNotEqual(why, "not modelled yet")
+
+    # What each Ranger choice the sim models buys, from its description.
+    RANGER_GAINS = {
+        "explosive_payload": "damage", "point_blank": "damage", "twin_arrows": "damage",
+        "parting_shot": "damage", "jagged_barbs": "damage", "piercing_force": "damage",
+        "staggering_shaft": "survival", "killshot": "damage", "flurry": "damage", "rapid_assault": "damage",
+    }
+
+    def test_ranger_choices_move_the_fight(self):
+        rows = {c["key"]: row["key"] for row in model.talent_rows("ranger") for c in row["choices"]}
+        self.assertEqual(set(self.RANGER_GAINS), {k for k in rows if ("ranger", k) not in model.IGNORED})
+        # As the Vanguard's: fight i of every build starts from seed i, and survival is the health
+        # lost a second. A choice that changes nothing against 2 normals fights 1 (LONG_FIGHT), and
+        # a Shaft choice fights on top of Point Blank (ON_TOP).
+        plains = {}
+        for key, gain in self.RANGER_GAINS.items():
+            with self.subTest(choice=key, gain=gain):
+                pull, on = LONG_FIGHT.get(("ranger", key), {}), ON_TOP.get(("ranger", key), {})
+                at = (tuple(sorted(pull.items())), tuple(sorted(on.items())))
+                if at not in plains:
+                    plains[at] = fought("ranger", on, 50, random.Random, **pull)
+                plain = plains[at]
+                dealt, lost, spent = fought("ranger", {**on, rows[key]: key}, 50, random.Random, **pull)
+                if gain == "damage":
+                    self.assertGreater(dealt / spent, plain[0] / plain[2])
+                else:
+                    self.assertLess(lost / spent, plain[1] / plain[2])
+
+    def test_ranger_has_no_unmodelled_choices(self):
+        for (calling, key), why in model.IGNORED.items():
+            if calling == "ranger":
                 with self.subTest(choice=key):
                     self.assertNotEqual(why, "not modelled yet")
 
