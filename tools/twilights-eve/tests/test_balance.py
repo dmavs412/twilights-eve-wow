@@ -23,12 +23,19 @@ def swing(mob: dict) -> float:
     return (mob["dmin"] + mob["dmax"]) / 2
 
 
+# The fights below were sized when mobs.toml's [difficulty] was 3.2 health and 3.0 damage, twice
+# today's from level 10 up. Their mobs keep that strength, so a slow choice still has time to show.
+SIZED_AT = 2.0
+
+
 def totals(calling: str, n: int, rows: dict, fights: int, rng: random.Random, level: int = 30,
            gear: str = "green", rank: int = 0) -> tuple:
     """(damage dealt, health lost, fight time) summed over `fights` fights of `calling` in `gear`
-    and the build `rows` against `n` mobs of `rank` (0 normal, 1 elite) on level. `rng` is one
-    Random every fight draws from, or a function giving fight i its own."""
-    cls, mob = multi.fighter(calling, n), model.mob_stats(level, rank=rank)
+    and the build `rows` against `n` mobs of `rank` (0 normal, 1 elite) on level, at SIZED_AT
+    times their health and damage. `rng` is one Random every fight draws from, or a function
+    giving fight i its own."""
+    mob = model.mob_stats(level, rank=rank, health_mul=SIZED_AT, damage_mul=SIZED_AT)
+    cls = multi.fighter(calling, n)
     ch = model.character(calling, level, gear, rows)
     dealt = lost = spent = 0.0
     for i in range(fights):
@@ -87,19 +94,18 @@ class BalanceModel(unittest.TestCase):
         health, damage = at_ten["health"][9], at_ten["melee_damage_avg"][9]
         # mobs.rs a_level_12_warrior_in_elwynn_forest_has_half_again_northshires_health.
         twelve = model.mob_stats(12)
-        self.assertEqual(twelve["hp"], 1140)
-        self.assertAlmostEqual(swing(twelve), 71.32, delta=0.05)
+        self.assertEqual(twelve["hp"], 570)
+        self.assertAlmostEqual(swing(twelve), 35.66, delta=0.05)
         # Level 20 in Elwynn, as mobs.rs difficulty_puts_health_and_damage_on_the_power_curve
-        # computes a creature: the level-10 row x P(20) = 2.0, x3.2 health and x3.0 damage, then
+        # computes a creature: the level-10 row x P(20) = 2.0, x1.6 health and x1.5 damage, then
         # Elwynn's 1.5 and 1.3.
         twenty = model.mob_stats(20)
-        self.assertLessEqual(abs(twenty["hp"] - round(health * 2.0 * 3.2 * 1.5)), 1)
-        self.assertAlmostEqual(swing(twenty), damage * 2.0 * 3.0 * 1.3, places=3)
-        # That test's own mob: level 8, no Zone Factor, damage faded in to x2.67.
+        self.assertLessEqual(abs(twenty["hp"] - round(health * 2.0 * 1.6 * 1.5)), 1)
+        self.assertAlmostEqual(swing(twenty), damage * 2.0 * 1.5 * 1.3, places=3)
+        # That test's own mob: level 8, no Zone Factor, damage on the flat fade at x1.5.
         eight = model.mob_stats(8)
-        self.assertLessEqual(abs(eight["hp"] - round(health * 0.8 * 3.2)), 1)
-        self.assertAlmostEqual(swing(eight) / (damage * 0.8), 1.5 + 1.5 * 7.0 / 9.0, places=3)
-        self.assertAlmostEqual(swing(eight) / (damage * 0.8), 2.67, delta=0.01)
+        self.assertLessEqual(abs(eight["hp"] - round(health * 0.8 * 1.6)), 1)
+        self.assertAlmostEqual(swing(eight) / (damage * 0.8), 1.5, places=3)
         self.assertEqual(eight["armor"], at_ten["armor"][7])
 
     def test_health_pct_scales_base_health(self):

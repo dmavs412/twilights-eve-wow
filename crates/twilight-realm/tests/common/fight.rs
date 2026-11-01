@@ -90,6 +90,18 @@ impl View {
         events
     }
 
+    /// [`View::run`], with `mob` set back to full health before each step: a script that needs a
+    /// camp mob to outlast its damage over time.
+    pub fn run_topped_up(&mut self, realm: &mut Realm, mob: u64, secs: f32) -> Vec<SessionEvent> {
+        let mut events = Vec::new();
+        for _ in 0..(secs / 0.1).round() as u32 {
+            realm.set_creature_health_pct(mob, 100);
+            realm.tick(0.1, &FlatGround);
+            events.extend(self.drain(realm));
+        }
+        events
+    }
+
     pub fn fields(&self, guid: u64) -> &ObjectFields {
         self.objects
             .get(&guid)

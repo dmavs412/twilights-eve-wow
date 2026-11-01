@@ -76,3 +76,16 @@ level-15 normals, and every Tier 1 Calling but the Ranger died to one level-20 E
 
 Northshire gets easier, about 8-14 s kills at level 10 in greens. That is accepted: Elwynn's
 Zone Factor still makes the step out of it hostile.
+
+## Amended 2026-11-01: Difficulty halved
+
+Davis could not solo Azora at 20. In the balance model, a level 20 in greens lost to one on-level
+elite in four Callings of five, and only the Cutthroat beat two elites in blues. The Difficulty
+is halved to health 1.6 and damage 1.5; the rank factors, the Tier Step and the Zone Factors
+stay. `damage_at_1` stays 1.5, so the Tier 0 fade is flat. The five hand-tuned rows (Geomancer
+Vurx and the Wailing Caverns' four) keep their tuned strength, with their multipliers divided
+again.
+
+The model at 20: one normal dies in 8 to 14 s and leaves 84 to 99% health; two elites in blues
+are won 95 to 100% by every Calling but the Initiate, which wins none at any Difficulty tried
+and needs a character-side fix. Open-world pulls of two or three normals become easy.

@@ -208,8 +208,9 @@ impl Players {
         );
     }
 
-    /// What player `i`'s loot window on `corpse` shows.
+    /// What player `i`'s loot window on `corpse` shows, once they step up to it.
     fn loot(&mut self, i: usize, corpse: u64) -> Vec<LootItem> {
+        self.face(i, corpse);
         self.cmd(i, RealmCommand::Loot { guid: corpse })
             .into_iter()
             .find_map(|e| match e {

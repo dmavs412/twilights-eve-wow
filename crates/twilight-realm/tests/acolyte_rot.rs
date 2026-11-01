@@ -214,7 +214,8 @@ fn blood_lance_adds_a_stack_and_keeps_the_timer() {
         })
         .collect();
     assert_eq!(dealt, [6], "three stacks of 2");
-    view.run(&mut realm, 7.85);
+    // A growing Blight kills the camp's level 3 mob before it runs out.
+    view.run_topped_up(&mut realm, mob.guid, 7.85);
     assert!(view.aura(mob.guid, BLIGHT).is_some(), "9.9 s in");
     view.run(&mut realm, 0.15);
     assert!(
@@ -241,7 +242,7 @@ fn settle_grows_a_worn_blight_and_puts_on_a_missing_one() {
     assert_eq!(view.aura(mob.guid, BLIGHT).map(|a| a.stacks), Some(3));
     go(&mut realm, &mut view, SETTLE, mob.guid);
     assert_eq!(view.aura(mob.guid, BLIGHT).map(|a| a.stacks), Some(4));
-    view.run(&mut realm, 7.8);
+    view.run_topped_up(&mut realm, mob.guid, 7.8);
     assert!(view.aura(mob.guid, BLIGHT).is_some(), "9.85 s in");
     view.run(&mut realm, 0.2);
     assert!(
@@ -438,11 +439,14 @@ fn withering_blight_at_5_stacks_cuts_the_mobs_swing_by_10_percent() {
         let (me, mob) = (s.me, s.mob.guid);
         let lance = acolyte("blood_lance");
         common::initiate::cast_through(&mut s.realm, &mut s.view, choice, mob);
+        // The mob is topped up throughout, so it outlives the lances and the blows.
         while blight_stacks(&s.view, mob) < 5 {
+            s.realm.set_creature_health_pct(mob, 100);
             common::initiate::cast_through(&mut s.realm, &mut s.view, lance, mob);
         }
         let mut blows = Vec::new();
         for _ in 0..120 {
+            s.realm.set_creature_health_pct(mob, 100);
             let (health, stacks) = (s.view.health(me), blight_stacks(&s.view, mob));
             let events = s.view.run(&mut s.realm, 0.1);
             let landed: Vec<(u64, u32)> = events

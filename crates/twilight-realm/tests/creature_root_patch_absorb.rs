@@ -610,7 +610,8 @@ fn a_stance_takes_a_tenth_off_every_blow_the_creature_takes() {
                 else {
                     continue;
                 };
-                if let (true, Some(was), Some(d)) = (up, health, swing.take()) {
+                // A killing blow takes only what is left, so it is not counted.
+                if let (true, Some(was), Some(d), true) = (up, health, swing.take(), now > 0) {
                     blows.push((d, was - now));
                 }
                 health = Some(now);

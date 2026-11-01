@@ -2094,12 +2094,12 @@ mod tests {
 
     #[test]
     fn difficulty_puts_health_and_damage_on_the_power_curve_except_for_dummies() {
-        // Defias Thug, a normal mob at 8: its level-10 vanilla stats x P(8) = 0.8, then x3.2
-        // health, and damage faded in from x1.5 at 1 to x3.0 at 10: x2.67 at 8. Armour stays
+        // Defias Thug, a normal mob at 8: its level-10 vanilla stats x P(8) = 0.8, then x1.6
+        // health and x1.5 damage (the fade from 1.5 at 1 to 1.5 at 10 is flat). Armour stays
         // its level's.
         let (hard, vanilla) = mob_and_vanilla(38, 8, ZoneFactor::NONE);
         let (_, at_ten) = mob_and_vanilla(38, 10, ZoneFactor::NONE);
-        let (health, damage) = (3.2 * 0.8, (1.5 + 1.5 * 7.0 / 9.0) * 0.8);
+        let (health, damage) = (1.6 * 0.8, 1.5 * 0.8);
         let want = (at_ten.max_health as f32 * health).round() as u32;
         assert!(
             hard.max_health.abs_diff(want) <= 1,
@@ -2183,9 +2183,13 @@ mod tests {
             let c = crate::combat::mob_strike(&plain, 150, &p, true, 0, &mut Rng::new(seed));
             let d = crate::combat::mob_strike(&stanced, 150, &p, true, 0, &mut Rng::new(seed));
             assert_eq!(a.outcome, b.outcome, "the same rolls");
+            assert_eq!(c.outcome, d.outcome, "the same rolls");
             if a.outcome == crate::rules::melee::Outcome::Hit {
                 hits += 1;
                 assert_eq!(b.damage, a.damage * 9 / 10, "a swing of {}", a.damage);
+            }
+            // A crit doubles the cut damage, so only a plain hit divides evenly.
+            if c.outcome == crate::rules::melee::Outcome::Hit {
                 assert_eq!(d.damage, c.damage * 9 / 10, "a hit of {}", c.damage);
             }
         }
@@ -2237,16 +2241,16 @@ mod tests {
         let t = warrior(0);
         let northshire = Mob::stats_for(&t, 12, zone(NORTHSHIRE_VALLEY));
         let elwynn = Mob::stats_for(&t, 12, zone(ELWYNN_FOREST));
-        // A level-10 warrior's 198 health, x P(12) = 1.2, x3.2.
+        // A level-10 warrior's 198 health, x P(12) = 1.2, x1.6.
         let at_ten = MobStats::new(UnitClass::Warrior, 10, 1.0, 1.0, 1.0);
-        let want = (at_ten.max_health as f32 * 1.2 * 3.2).round() as u32;
+        let want = (at_ten.max_health as f32 * 1.2 * 1.6).round() as u32;
         assert_eq!(northshire.max_health, want);
         let half_again = (northshire.max_health as f32 * 1.5).round() as u32;
         assert!(elwynn.max_health.abs_diff(half_again) <= 1);
-        // About 1,140 health and a 71 swing on average.
-        assert_eq!(elwynn.max_health, 1140);
+        // About 570 health and a 36 swing on average.
+        assert_eq!(elwynn.max_health, 570);
         let swing = (elwynn.min_damage + elwynn.max_damage) / 2.0;
-        assert!((swing - 71.32).abs() < 0.05, "{swing}");
+        assert!((swing - 35.66).abs() < 0.05, "{swing}");
     }
 
     #[test]

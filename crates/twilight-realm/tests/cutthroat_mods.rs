@@ -338,17 +338,20 @@ fn open_wounds_deals_half_again_eviscerates_roll_to_a_bleeding_target() {
 
 /// `finisher` (the plain Eviscerate, or a choice of `rows`) at the sturdy mob after Sinister
 /// Strikes put `points` on it, by a level 12 Cutthroat with fists on `seed`'s dice: how many
-/// seconds Kidney Shot's stun stayed on the mob, or `None` when a blow missed or the mob died.
+/// seconds Kidney Shot's stun stayed on the mob, or `None` when a blow missed or the mob died. The
+/// mob is set back to full health between blows, or five points' worth of them would kill it.
 fn stun_after(seed: u64, points: u8, rows: &[(&str, u32)], finisher: u32) -> Option<f32> {
     let mut s = cutthroat_scene(EVISCERATE_ROW, true, seed, rows, STURDY);
     let (me, mob) = (s.me, s.mob.guid);
     for _ in 0..points {
+        s.realm.set_creature_health_pct(mob, 100);
         let before = combo(&s.view, me).0;
         if !cast_in_turn(&mut s, &[(*SINISTER_STRIKE, 35)]) || combo(&s.view, me).0 != before + 1 {
             return None;
         }
     }
     wait_for_energy(&mut s.realm, &mut s.view, me, 35);
+    s.realm.set_creature_health_pct(mob, 100);
     let events = try_cast(&mut s.realm, &mut s.view, finisher, mob)?;
     let landed = damage_of(&events, finisher).iter().any(|d| d.0 == mob);
     if !landed || s.view.health(mob) == 0 {
@@ -356,7 +359,7 @@ fn stun_after(seed: u64, points: u8, rows: &[(&str, u32)], finisher: u32) -> Opt
     }
     let mut steps = 0;
     while s.view.aura(mob, *KIDNEY_STUN).is_some() && steps < 100 {
-        s.view.run(&mut s.realm, 0.1);
+        s.view.run_topped_up(&mut s.realm, mob, 0.1);
         steps += 1;
     }
     Some(steps as f32 / 10.0)

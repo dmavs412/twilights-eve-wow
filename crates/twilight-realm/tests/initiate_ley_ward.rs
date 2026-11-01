@@ -132,14 +132,16 @@ fn ley_ward_absorbs_a_tenth_of_max_mana_then_drops_and_waits_out_its_cooldown() 
 
 use common::cutthroat::{damage_of, energized};
 use common::initiate::*;
-use common::vanguard::{Scene, STURDY};
+use common::vanguard::{scene_of, Scene, STURDY};
 
 /// Seeds enough for a crit, a miss of the crit, and a burst that does not crit.
 const SEEDS: u64 = 24;
 
-/// The Initiate's scene with `rows` set, standing 6 yd from the mob, outside its notice.
+/// A level 12 Initiate's scene with `rows` set, standing 6 yd from the mob, outside its notice.
+/// At 12 a crit's ward is small enough for the mob's blows to break in its 8 s.
 fn close(seed: u64, rows: &[(&str, u32)]) -> Scene {
-    let mut s = initiate_scene(seed, rows, STURDY);
+    let (me, blob) = initiate_save(12);
+    let mut s = scene_of(me, &blob, seed, rows, STURDY);
     let mob = s.mob.clone();
     stand_at(&mut s.realm, &mob, 6.0);
     s.view.run(&mut s.realm, 0.5);

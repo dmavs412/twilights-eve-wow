@@ -324,6 +324,8 @@ fn adrenaline_rush_crits_take_six_seconds_off_vaults_cooldown() {
     let mut left = 15_000 - 1_000;
     let (mut crits, mut plain) = (0, 0);
     for shot in 0..8 {
+        // The crits would kill the sturdy mob before the plain hit comes.
+        s.realm.set_creature_health_pct(mob.guid, 100);
         let events = s.cast_at_mob(rush);
         let landed = shots(&events, rush);
         let crit = landed.iter().any(|&(_, _, crit)| crit);

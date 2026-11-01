@@ -100,7 +100,7 @@ fn destroyed(events: &[SessionEvent], object: u64) -> bool {
 }
 
 /// Sinister Strike for a combo point, then `rupture` (Rupture or a choice of its row), and the
-/// `secs` after it: the mob and every event since the Rupture.
+/// `secs` after it with the mob kept at full health: the mob and every event since the Rupture.
 fn rupture_a_mob(
     realm: &mut Realm,
     view: &mut View,
@@ -118,7 +118,7 @@ fn rupture_a_mob(
     view.run(realm, 1.6);
     realm.handle(cast(rupture, Some(mob.guid)));
     let mut events = view.drain(realm);
-    events.extend(view.run(realm, secs));
+    events.extend(view.run_topped_up(realm, mob.guid, secs));
     (mob, events)
 }
 

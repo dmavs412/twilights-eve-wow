@@ -119,8 +119,8 @@ fn flurry_of_blades_with_two_mobs_in_reach_damages_both() {
 }
 
 /// A camp mob struck by Sinister Strike, Rupture and Sinister Strike again, gaps between, by a
-/// Cutthroat with fists, so the mob outlives them. The combo points the last strike left, or
-/// `None` when a blow missed or a cast was refused.
+/// Cutthroat with fists, the mob kept at full health so it outlives them. The combo points the
+/// last strike left, or `None` when a blow missed or a cast was refused.
 fn last_strike_points(seed: u64) -> Option<u8> {
     let (mut realm, me, mut view) = cutthroat(seed, true);
     realm.handle(RealmCommand::Move {
@@ -132,6 +132,7 @@ fn last_strike_points(seed: u64) -> Option<u8> {
     stand_at(&mut realm, &mob, 2.0);
     let spells = [*SINISTER_STRIKE, *RUPTURE, *SINISTER_STRIKE];
     for (i, &spell_id) in spells.iter().enumerate() {
+        realm.set_creature_health_pct(mob.guid, 100);
         realm.handle(cast(spell_id, Some(mob.guid)));
         if refusal(&view.drain(&mut realm), spell_id).is_some() {
             return None;
@@ -144,7 +145,7 @@ fn last_strike_points(seed: u64) -> Option<u8> {
             }
             return (on == mob.guid && points > 0).then_some(points);
         }
-        view.run(&mut realm, 1.5);
+        view.run_topped_up(&mut realm, mob.guid, 1.5);
         let (points, _) = combo(&view, me);
         // A strike that landed left a point; a Rupture that landed spent it.
         if (spell_id == *SINISTER_STRIKE) != (points == 1) {

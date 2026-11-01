@@ -57,6 +57,7 @@ struct Dodged {
 /// The camp pulled onto a level 24 Cutthroat with fists and `rows` set, who casts `evasion`,
 /// spends its Energy with two Sinister Strikes at another mob and fists the first mob: each step
 /// with a dodge in up to 30 s (the logs under `aura`), until `want` dodges, and the fisted mob.
+/// The camp is kept at full health, so every mob of it swings throughout.
 fn dodging(rows: &[(&str, u32)], evasion: u32, aura: u32, want: u32) -> (Vec<Dodged>, u64) {
     let Pack {
         mut realm,
@@ -66,7 +67,13 @@ fn dodging(rows: &[(&str, u32)], evasion: u32, aura: u32, want: u32) -> (Vec<Dod
     } = pulled(SEED, ROWS_OPEN, true, rows);
     realm.handle(cast(evasion, None));
     assert_eq!(refusal(&view.drain(&mut realm), evasion), None, "Evasion");
+    let top_up = |realm: &mut Realm| {
+        for m in &mobs {
+            realm.set_creature_health_pct(m.guid, 100);
+        }
+    };
     for _ in 0..2 {
+        top_up(&mut realm);
         try_cast(&mut realm, &mut view, *SINISTER_STRIKE, mobs[1].guid);
         view.run(&mut realm, 1.1);
     }
@@ -75,6 +82,7 @@ fn dodging(rows: &[(&str, u32)], evasion: u32, aura: u32, want: u32) -> (Vec<Dod
     let mut steps = Vec::new();
     let mut seen = 0;
     for _ in 0..300 {
+        top_up(&mut realm);
         let before = match combo(&view, me) {
             (points, on) if on == mob => points,
             _ => 0,
@@ -191,7 +199,13 @@ fn finishing(rows: &[(&str, u32)], finisher: u32) -> (Vec<Finish>, u32) {
             };
             // A level 24 Eviscerate deals about 45 and 45 a point; a mob under that dies.
             let killable = points > 0 && view.health(mob.guid) <= 40 * (points + 1);
-            if energy(&view, me) >= 35 {
+            let ready = energy(&view, me) >= 35;
+            // Kept at full health except on the finisher's turn, or the Strikes and swings kill
+            // a camp mob before that turn comes.
+            if !(ready && killable) {
+                realm.set_creature_health_pct(mob.guid, 100);
+            }
+            if ready {
                 let spell_id = if killable { finisher } else { *SINISTER_STRIKE };
                 let missing = max - view.health(me);
                 let events = try_cast(&mut realm, &mut view, spell_id, mob.guid);

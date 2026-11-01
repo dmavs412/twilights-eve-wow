@@ -12,13 +12,14 @@
 # Global difficulty: factors on every creature's health and melee damage, on top of its own
 # multipliers. A creature's health and damage are its unit class's level-10 vanilla values times
 # the Power Curve's P(level) (content/power_curve.toml, ADR 0012), then these. Armour is the
-# vanilla table's at its level. `inert` training dummies keep vanilla stats. Fitted so a level 20
-# in level-20 greens kills a same-level Elwynn mob in about 22 s and loses about half its health.
+# vanilla table's at its level. `inert` training dummies keep vanilla stats. Halved from 3.2 and
+# 3.0 on 2026-11-01, when a level 20 could not solo Azora: in the balance model a level 20 in
+# level-20 greens kills a same-level Elwynn mob in 8 to 14 s and keeps 84 to 99% of its health.
 [difficulty]
-health = 3.2
-damage = 3.0
+health = 1.6
+damage = 1.5
 # Damage fades in: `damage_at_1` at level 1, climbing in a straight line to `damage` at
-# `fade_to`, so Tier 0's mobs hit about as they did before the Power Curve.
+# `fade_to`. Since the halving both are 1.5, so the factor is flat.
 damage_at_1 = 1.5
 fade_to = 10
 
@@ -690,8 +691,8 @@ faction_template = 26
 unit_class = "mage"
 level_min = 7
 level_max = 7
-health_multiplier = 0.2528
-damage_multiplier = 0.2826
+health_multiplier = 0.5056
+damage_multiplier = 0.4710
 armor_multiplier = 1.0
 tuned = { health = 1.6, damage = 1.1 }
 base_attack_time = 2000

@@ -125,6 +125,8 @@ fn flurry_makes_the_next_two_snapshots_free_certain_crits() {
     s.view.drain(&mut s.realm);
     let mut landed = 0;
     for n in 0..6 {
+        // Two crits would kill the sturdy mob before the third Snapshot.
+        s.realm.set_creature_health_pct(s.mob.guid, 100);
         let before = mana(&s.view, s.me);
         let events = s.cast_at_mob(snapshot);
         let hits = shots(&events, snapshot);

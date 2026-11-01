@@ -480,8 +480,9 @@ fn finisher_hits_half_again_as_hard_at_a_target_under_30_percent() {
             let events = view.run(&mut realm, 0.1);
             let after = view.health(mob.guid);
             for l in hits(&events, *FINISHER) {
-                // A crit or a killing blow says nothing about the bonus.
-                if l.hit_info & SPELL_HIT_TYPE_CRIT != 0 || after == 0 {
+                // A crit says nothing about the bonus. A killing blow logs all it dealt, and
+                // under 30% a camp mob dies to any finisher, so it counts.
+                if l.hit_info & SPELL_HIT_TYPE_CRIT != 0 {
                     continue;
                 }
                 if before * 100 < max * 30 {

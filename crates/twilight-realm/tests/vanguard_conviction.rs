@@ -279,16 +279,21 @@ fn healed(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
 }
 
 /// A level 4 Vanguard on `seed`'s dice with `rows` set, who charged the camp's first mob and then
-/// stood in its blows until 30 health down.
+/// stood in its blows until 30 health down. The mob is kept at full health meanwhile, or it dies
+/// first: a test Calling's Tier 0 Cap of 30 (this file's, and others') doubles the Vanguard's
+/// health when the tests share a process.
 fn hurt_at_the_camp(seed: u64, rows: &[(&str, u32)]) -> vanguard::Scene {
     let mut s = vanguard::scene(4, true, seed, rows, CAMP);
     s.cast_at_mob(*BULWARK_CHARGE);
     let full = s.view.health(s.me);
-    let me = s.me;
-    s.run_until(30.0, "30 health lost", |view, _| {
-        view.health(me) + 30 <= full
-    });
-    s
+    for _ in 0..600 {
+        s.realm.set_creature_health_pct(s.mob.guid, 100);
+        s.view.run(&mut s.realm, 0.1);
+        if s.view.health(s.me) + 30 <= full {
+            return s;
+        }
+    }
+    panic!("60 s passed with no 30 health lost");
 }
 
 /// Queues `smash` and swings at the scene's mob: the events up to the strike's.

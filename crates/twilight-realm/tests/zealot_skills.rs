@@ -85,7 +85,8 @@ fn seal_of_command_makes_landed_swings_proc_holy_damage() {
 
     stand_at(&mut realm, &mob, 2.0);
     realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
-    let events = view.run(&mut realm, 60.0);
+    // A minute of swings, which the camp mob outlives only when topped up.
+    let events = view.run_topped_up(&mut realm, mob.guid, 60.0);
     let procs: Vec<&SpellDamageLog> = events
         .iter()
         .filter_map(|e| match e {
