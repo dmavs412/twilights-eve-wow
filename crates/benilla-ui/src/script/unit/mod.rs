@@ -417,6 +417,11 @@ impl super::UiScript {
         model.combo_target = target;
     }
 
+    /// Push our class byte (`UNIT_FIELD_BYTES_0` byte 1), the one `GetComboPoints` tests.
+    pub fn set_player_class(&mut self, class: u8) {
+        self.model_mut().player_class = class;
+    }
+
     /// Take the queued [`SelectionRequest`]s out of the call stream, in call order.
     pub fn take_selection_requests(&mut self) -> Vec<SelectionRequest> {
         self.take_calls_where(|c| match c {

@@ -863,6 +863,10 @@ pub(crate) struct Model {
     /// (Overpower); `GetComboPoints` (`0x51a190`) applies the class and current-target gates.
     pub(crate) combo_points: u8,
     pub(crate) combo_target: u64,
+    /// Our class byte, `UNIT_FIELD_BYTES_0` byte 1, which `GetComboPoints`' class gate reads. A
+    /// Calling's item class (`player_req.class_id`) can differ: a Cutthroat sends rogue here and
+    /// checks items as a warrior.
+    pub(crate) player_class: u8,
 
     /// `PLAYER_BYTES_2` byte 3 (1 rested, 2 normal), defaulting to 2 as every 1.12 character has
     /// it: a 0 has no Exhaustion row, and `GetRestState()`'s nil would raise at the unguarded
@@ -1482,6 +1486,7 @@ impl Model {
             player_next_level_xp: 0,
             combo_points: 0,
             combo_target: 0,
+            player_class: 0,
             rest_state: 2,
             rest_pool: 0,
             resting: false,

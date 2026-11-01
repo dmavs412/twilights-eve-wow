@@ -41,9 +41,17 @@ fn load_combo_frame() -> UiScript {
     s
 }
 
-fn play_as(s: &mut UiScript, class_id: u32, target: u64) {
+/// Play with class byte `class` (`UNIT_FIELD_BYTES_0` byte 1), items checked as the same class,
+/// with `target` selected.
+fn play_as(s: &mut UiScript, class: u8, target: u64) {
+    play_with_items_as(s, class, u32::from(class), target);
+}
+
+/// Play with class byte `class` and items checked as `item_class`, as a Calling may (#207).
+fn play_with_items_as(s: &mut UiScript, class: u8, item_class: u32, target: u64) {
+    s.set_player_class(class);
     s.set_player_req_state(PlayerReqState {
-        class_id,
+        class_id: item_class,
         ..Default::default()
     });
     s.set_unit(
@@ -157,6 +165,27 @@ fn a_warriors_overpower_point_lights_no_dot() {
     play_as(&mut s, 11, MOB_A);
     s.fire_event("PLAYER_COMBO_POINTS", vec![]);
     assert!(shown(&mut s), "a druid sees the same banked point");
+}
+
+/// The gate reads the class byte, not the item class: a Cutthroat sends rogue and checks items
+/// as a warrior, and Davis saw no dots while the gate read the item class.
+#[test]
+fn a_cutthroat_with_warrior_items_sees_its_points() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = load_combo_frame();
+    play_with_items_as(&mut s, 4, 1, MOB_A);
+    s.set_combo_points(2, MOB_A);
+    s.fire_event("PLAYER_COMBO_POINTS", vec![]);
+    assert!(shown(&mut s), "a rogue class byte shows the dots");
+    let points: i64 = s.eval("return GetComboPoints()").unwrap();
+    assert_eq!(points, 2);
+
+    play_with_items_as(&mut s, 1, 4, MOB_A);
+    s.fire_event("PLAYER_COMBO_POINTS", vec![]);
+    assert!(
+        !shown(&mut s),
+        "a warrior class byte with rogue items shows none"
+    );
 }
 
 /// `0x51a190` answers 0 unless `PLAYER_FIELD_COMBO_TARGET` is the current target, so the dots

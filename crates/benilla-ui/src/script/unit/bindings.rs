@@ -896,14 +896,15 @@ pub(in crate::script) fn install(lua: &Lua) -> mlua::Result<()> {
     )?;
 
     // GetComboPoints() (`0x51a190`): `PLAYER_FIELD_BYTES` byte 1, behind two gates stock
-    // `ComboFrame.lua` does not repeat: the class is rogue or druid (`0x51a1cc`), so a warrior's
-    // dodge point never shows, and `PLAYER_FIELD_COMBO_TARGET` equals the current target
-    // (`0x51a205`), so the points read per target. Both are plain equality, GUID 0 included.
+    // `ComboFrame.lua` does not repeat: the class byte is rogue or druid (`0x51a1cc`), so a
+    // warrior's dodge point never shows, and `PLAYER_FIELD_COMBO_TARGET` equals the current target
+    // (`0x51a205`), so the points read per target. Both are plain equality, GUID 0 included. The
+    // class is the descriptor's byte, not the Calling's item class.
     g.set(
         "GetComboPoints",
         lua.create_function(|lua, ()| {
             let model = lua.app_data_ref::<Model>().expect("model app_data");
-            let class = model.player_req.class_id;
+            let class = u32::from(model.player_class);
             if class != CLASS_ROGUE && class != CLASS_DRUID {
                 return Ok(0_i64);
             }

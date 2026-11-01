@@ -113,6 +113,8 @@ struct UnitFeedMemo {
     last_level: Option<u32>,
     /// `(count, banked target)`, diffed as a pair because the server writes them as one.
     last_combo: Option<(u8, u64)>,
+    /// Our last class byte, for `GetComboPoints`' class gate; a Calling change can move it.
+    last_class: Option<u8>,
     /// Our last in-combat flag; first sight fires only when already in combat.
     in_combat: Option<bool>,
     /// Our last PvP-preference bit; the first descriptor is silent, as the reference diffs bits.
@@ -1616,6 +1618,7 @@ fn feed_units(
         memo.last_rest = None;
         memo.last_level = None;
         memo.last_combo = None;
+        memo.last_class = None;
         memo.in_combat = None;
         memo.pvp_desired = None;
         // Edge-only pushes: a stale memo would skip a new character whose values match it.
@@ -1721,6 +1724,13 @@ fn feed_units(
     // The combo count and its banked target, pushed as a pair since `GetComboPoints` reads both;
     // only the count fires `PLAYER_COMBO_POINTS` (`0x5ddff0`).
     if let Some((store, _)) = self_q.iter().next() {
+        // The class byte first, so the event below reads the gate it belongs with.
+        let class = store.0.unit_class().unwrap_or(0);
+        if memo.last_class != Some(class) {
+            gate.audit("feed_units", "the class byte");
+            memo.last_class = Some(class);
+            script.set_player_class(class);
+        }
         let banked = (
             store.0.player_combo_points().unwrap_or(0),
             store.0.player_combo_target(),

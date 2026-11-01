@@ -488,6 +488,7 @@ fn demo_unit_feed(script: Option<NonSendMut<UiScript>>, mut fired: Local<VmMemo<
     );
     // The combo dots need a rogue and banked points, seeded only for `ui-combopoints`.
     if std::env::var("WOW_CAPTURE").as_deref() == Ok("ui-combopoints") {
+        script.set_player_class(4); // rogue
         script.set_player_req_state(benilla_ui::script::PlayerReqState {
             level: 12,
             class_id: 4, // rogue
