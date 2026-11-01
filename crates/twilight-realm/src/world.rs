@@ -339,8 +339,10 @@ pub(crate) struct InWorld {
     quest_spent: Vec<(u64, f32)>,
     /// The guids of the run-time GameObjects (`crate::objects`) the client has.
     runtime_objects: std::collections::HashSet<u64>,
-    /// The stacks of the Phase's meter the player's aura shows; 0 for none.
+    /// The stacks of the Phase's meter the player's Noise Bar shows; 0 for none.
     noise_shown: u32,
+    /// Whether the client has the Noise Bar up (`SessionEvent::PhaseMeter`).
+    noise_bar: bool,
     /// Stacks the player's doings added to the Run's meter since the shard last took them.
     pub(crate) noise_gain: u32,
     /// Damage landed on the player since the Forager's Grid last looked (#439).
@@ -515,6 +517,7 @@ impl InWorld {
             quest_settling: Default::default(),
             quest_spent: Vec::new(),
             noise_shown: 0,
+            noise_bar: false,
             noise_gain: 0,
             hurt: false,
             noise_drain: 0,

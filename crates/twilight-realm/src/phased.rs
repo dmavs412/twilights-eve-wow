@@ -662,16 +662,17 @@ pub(crate) fn covered(cover: &[Cover], from: [f32; 3], to: [f32; 3]) -> bool {
     cover.iter().any(|c| c.blocks(from, to))
 }
 
-/// A Phased Dungeon's meter (spec #169): stacks on the Run, shown as a debuff on every character
-/// in the Phase, fed by combat and the Run's clock and drained by hiding.
+/// A Phased Dungeon's meter (spec #169): stacks on the Run, shown on the Noise Bar of every
+/// character in the Phase (#533), fed by combat and the Run's clock and drained by hiding.
 #[derive(Deserialize)]
 pub(crate) struct Meter {
-    #[allow(dead_code)]
     pub(crate) name: String,
     /// The most stacks it holds.
     pub(crate) max: u32,
-    /// The Spell.dbc row whose icon and name the debuff borrows.
-    pub(crate) client_spell: u32,
+    /// The icon at the bar's full end.
+    pub(crate) end_icon: String,
+    /// The line under the bar when each source raises the stacks.
+    pub(crate) lines: MeterLines,
     /// A stack comes with every this many seconds of the Run.
     pub(crate) clock_stack_every_s: f32,
     /// Stacks the first damage a player does to a creature in its life adds.
@@ -695,6 +696,48 @@ impl Meter {
     /// How near a character wakes a sleeper with this `wake_radius_mod` at `stacks`.
     pub(crate) fn wake_radius(&self, stacks: u32, wake_radius_mod: f32) -> f32 {
         (self.wake_base_yd + self.wake_per_stack_yd * stacks as f32 + wake_radius_mod).max(0.0)
+    }
+}
+
+/// A meter's cause lines (`[meter.lines]`), one for each source of its stacks.
+#[derive(Deserialize)]
+pub(crate) struct MeterLines {
+    pub(crate) first_damage: String,
+    pub(crate) death: String,
+    pub(crate) cast: String,
+    pub(crate) clock: String,
+}
+
+/// The stacks each source added to a Run's meter in one hearing, before the meter's max.
+#[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Heard {
+    /// From creatures a player hurt for the first time in their lives.
+    pub(crate) first_damage: u32,
+    /// From creatures' deaths.
+    pub(crate) death: u32,
+    /// From creatures' casts.
+    pub(crate) cast: u32,
+    /// From the Run's clock.
+    pub(crate) clock: u32,
+}
+
+impl Heard {
+    /// The line of the source that added the most stacks, a tie going to the first of first
+    /// damage, death, cast and clock; `None` when none added any.
+    pub(crate) fn line<'a>(&self, lines: &'a MeterLines) -> Option<&'a str> {
+        let sources = [
+            (self.first_damage, &lines.first_damage),
+            (self.death, &lines.death),
+            (self.cast, &lines.cast),
+            (self.clock, &lines.clock),
+        ];
+        let mut most: Option<(u32, &String)> = None;
+        for (stacks, line) in sources {
+            if stacks > most.map_or(0, |m| m.0) {
+                most = Some((stacks, line));
+            }
+        }
+        most.map(|m| m.1.as_str())
     }
 }
 
@@ -1093,17 +1136,20 @@ impl Run {
         }
     }
 
-    /// Adds `gain` stacks and the clock's due, then takes `drain` off, within `0..=max`.
-    pub(crate) fn hear(&mut self, meter: &Meter, gain: u32, drain: u32) {
-        let mut gain = gain;
+    /// Adds the stacks `heard` from the creatures and the clock's due, then takes `drain` off,
+    /// within `0..=max`. What each source added, the clock's among them.
+    pub(crate) fn hear(&mut self, meter: &Meter, heard: Heard, drain: u32) -> Heard {
+        let mut heard = heard;
         while meter.clock_stack_every_s > 0.0
             && (self.clock_stacks + 1) as f32 * meter.clock_stack_every_s <= self.elapsed
         {
             self.clock_stacks += 1;
-            gain += 1;
+            heard.clock += 1;
         }
+        let gain = heard.first_damage + heard.death + heard.cast + heard.clock;
         self.noise = (self.noise + gain).min(meter.max);
         self.noise = self.noise.saturating_sub(drain);
+        heard
     }
 }
 

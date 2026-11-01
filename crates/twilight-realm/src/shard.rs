@@ -12,7 +12,7 @@ use crate::audience::Audience;
 use crate::fields::values;
 use crate::looting::lootable_pair;
 use crate::mobs::{self, Mob, State};
-use crate::phased::{Meter, Phase, Run};
+use crate::phased::{Heard, Meter, Phase, Run};
 use crate::population::{Population, VIEW_YD};
 use crate::rules::threat;
 use crate::space::flat_distance;
@@ -266,23 +266,27 @@ impl Shard {
     }
 
     /// The Run's meter hears what happened this tick: the creatures first hurt or dead since it
-    /// last looked, `gain` more from casts and `drain` from hiding, and the clock.
-    pub(crate) fn hear_noise(&mut self, meter: &Meter, gain: u32, drain: u32) {
+    /// last looked, `cast` more from casts and `drain` from hiding, and the clock. What each
+    /// source added; nothing with no Run.
+    pub(crate) fn hear_noise(&mut self, meter: &Meter, cast: u32, drain: u32) -> Heard {
         let Some(run) = &mut self.run else {
-            return;
+            return Heard::default();
         };
-        let mut gain = gain;
+        let mut heard = Heard {
+            cast,
+            ..Heard::default()
+        };
         for m in &mut self.mobs {
             if !m.noised && m.health < m.stats.max_health {
                 m.noised = true;
-                gain += meter.on_first_damage;
+                heard.first_damage += meter.on_first_damage;
             }
             if !m.death_noised && m.state == State::Dead {
                 m.death_noised = true;
-                gain += m.template.noise_on_death.unwrap_or(meter.on_death);
+                heard.death += m.template.noise_on_death.unwrap_or(meter.on_death);
             }
         }
-        run.hear(meter, gain, drain);
+        run.hear(meter, heard, drain)
     }
 
     /// Scales a Phased Dungeon's creatures to the Head Count of the living players `alive` in
@@ -557,13 +561,20 @@ pub(crate) fn as_seen_by_others(e: &SessionEvent) -> Option<SessionEvent> {
 mod tests {
     use super::*;
     use crate::mobs::Template;
+    use crate::phased::MeterLines;
     use crate::rules::stats::UnitClass;
 
     fn meter() -> Meter {
         Meter {
             name: "Noise".into(),
             max: 20,
-            client_spell: 1,
+            end_icon: String::new(),
+            lines: MeterLines {
+                first_damage: "hurt".into(),
+                death: "died".into(),
+                cast: "cast".into(),
+                clock: "clock".into(),
+            },
             clock_stack_every_s: 30.0,
             on_first_damage: 1,
             on_death: 1,
@@ -700,6 +711,31 @@ mod tests {
         let (line, sent) = shard.scale_to_head_count(&[]);
         assert!(line.is_none() && sent.is_empty());
         assert!(shard.mobs.iter().all(|m| m.unscaled.is_none()));
+    }
+
+    #[test]
+    fn the_meter_reports_what_each_source_added_and_the_most_names_the_rise() {
+        let mut shard = run();
+        let m = meter();
+        shard.mobs[0].health -= 1;
+        let heard = shard.hear_noise(&m, 2, 0);
+        let want = Heard {
+            first_damage: 1,
+            cast: 2,
+            ..Heard::default()
+        };
+        assert_eq!(heard, want);
+        assert_eq!(heard.line(&m.lines), Some("cast"));
+        shard.run.as_mut().unwrap().elapsed = 30.0;
+        let heard = shard.hear_noise(&m, 0, 0);
+        assert_eq!(heard.line(&m.lines), Some("clock"));
+        let tie = Heard {
+            death: 1,
+            clock: 1,
+            ..Heard::default()
+        };
+        assert_eq!(tie.line(&m.lines), Some("died"), "a tie goes to the death");
+        assert_eq!(Heard::default().line(&m.lines), None);
     }
 
     #[test]

@@ -142,7 +142,7 @@ fn wake(
 mod tests {
     use super::*;
     use crate::mobs::{Spawn, Template, ZoneFactor};
-    use crate::phased::Phase;
+    use crate::phased::{MeterLines, Phase};
     use crate::rules::school::School;
     use crate::rules::stats::UnitClass;
     use crate::shard::{Place, Shard};
@@ -152,7 +152,13 @@ mod tests {
         Meter {
             name: "Noise".into(),
             max: 20,
-            client_spell: 1,
+            end_icon: String::new(),
+            lines: MeterLines {
+                first_damage: String::new(),
+                death: String::new(),
+                cast: String::new(),
+                clock: String::new(),
+            },
             clock_stack_every_s: 30.0,
             on_first_damage: 1,
             on_death: 1,

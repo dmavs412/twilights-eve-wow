@@ -1,9 +1,9 @@
-//! Forest's Edge's Noise meter (#171): a Run-wide stack count shown as a debuff on every character
-//! in the Phase, raised by the Run's clock and drained by hiding spots.
+//! Forest's Edge's Noise meter (#171): a Run-wide stack count shown on the Noise Bar of every
+//! character in the Phase (#536), raised by the Run's clock and drained by hiding spots.
 
 mod common;
 
-use benilla_protocol::START_ELWYNN;
+use benilla_protocol::{PhaseMeterState, SessionEvent, START_ELWYNN};
 use common::fight::View;
 use common::party::*;
 use common::*;
@@ -17,8 +17,8 @@ const SPOT_AT: [f32; 3] = [-9928.0, 570.0, 38.0];
 /// its west edge.
 const INSIDE: [f32; 3] = [-9925.0, 560.0, 38.0];
 const OUTSIDE: [f32; 3] = [-10200.0, 600.0, 38.0];
-/// The meter's debuff (`[meter] client_spell`).
-const NOISE_SPELL: u32 = 12323;
+/// Piercing Howl, the debuff that showed the meter before the Noise Bar.
+const PIERCING_HOWL: u32 = 12323;
 /// The Camp 1 Riverpaw Mystic, asleep (guid 790302), and the aura a sleeper wears
 /// (`[meter] sleep_aura`).
 const MYSTIC: u32 = 96007;
@@ -29,12 +29,38 @@ fn party(n: usize) -> Party {
     Party::starting(realm(), &vec![5; n], START_ELWYNN, Box::new(NoGround))
 }
 
-/// The stacks of the Noise debuff player `i` wears, as their client holds them.
+/// The meters player `i` was sent, in order (`SessionEvent::PhaseMeter`).
+fn meters(party: &Party, i: usize) -> Vec<Option<PhaseMeterState>> {
+    party
+        .seen(i)
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::PhaseMeter { meter } => Some(meter.clone()),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The meter player `i` was last sent; `None` with no bar up.
+fn last_meter(party: &Party, i: usize) -> Option<PhaseMeterState> {
+    meters(party, i).pop().flatten()
+}
+
+/// The stacks on the Noise Bar player `i` was last sent; 0 with no bar up.
 fn noise(party: &Party, i: usize) -> u32 {
-    let mut view = View::default();
-    view.see(party.seen(i));
-    view.aura(party.guids[i], NOISE_SPELL)
-        .map_or(0, |a| u32::from(a.stacks))
+    last_meter(party, i).map_or(0, |m| m.stacks)
+}
+
+/// No character's client ever showed them wearing the old Noise debuff.
+fn no_howl(party: &Party) {
+    for (i, &guid) in party.guids.iter().enumerate() {
+        let mut view = View::default();
+        let wore = party.seen(i).iter().any(|e| {
+            view.see(std::slice::from_ref(e));
+            view.objects.contains_key(&guid) && view.aura(guid, PIERCING_HOWL).is_some()
+        });
+        assert!(!wore, "player {i} wore Piercing Howl");
+    }
 }
 
 fn hide(party: &mut Party, i: usize) {
@@ -52,6 +78,49 @@ fn the_clock_adds_a_stack_at_30_seconds() {
     assert_eq!(noise(&p, 0), 1);
     p.run(30.0);
     assert_eq!(noise(&p, 0), 2);
+    no_howl(&p);
+}
+
+#[test]
+fn stepping_in_puts_the_bar_up_empty_and_leaving_takes_it_down() {
+    let mut p = party(1);
+    p.run(0.5);
+    assert!(meters(&p, 0).is_empty(), "no bar outside the Phase");
+    p.go(0, INSIDE, 0.0);
+    p.run(0.5);
+    assert_eq!(
+        meters(&p, 0),
+        vec![Some(PhaseMeterState {
+            name: "Noise".into(),
+            stacks: 0,
+            max: 40,
+            end_icon: r"Interface\Benilla\noise\hogger_head".into(),
+            rose: None,
+        })],
+        "the bar goes up empty, once"
+    );
+    p.go(0, OUTSIDE, 0.0);
+    p.run(0.5);
+    assert_eq!(meters(&p, 0).last(), Some(&None), "and comes down outside");
+    assert_eq!(meters(&p, 0).len(), 2);
+    no_howl(&p);
+}
+
+#[test]
+fn the_clocks_rise_names_its_cause_and_a_hides_drain_names_none() {
+    let mut p = party(1);
+    p.go(0, INSIDE, 0.0);
+    p.run(31.0);
+    let rose = last_meter(&p, 0).unwrap();
+    assert_eq!(
+        (rose.stacks, rose.rose.as_deref()),
+        (1, Some("The camp stirs"))
+    );
+    hide(&mut p, 0);
+    p.run(2.5);
+    let drained = last_meter(&p, 0).unwrap();
+    assert_eq!((drained.stacks, drained.rose), (0, None), "a hide's drain");
+    no_howl(&p);
 }
 
 #[test]
@@ -70,6 +139,7 @@ fn everyone_in_the_phase_sees_the_same_stacks_and_so_does_one_who_comes_in_later
         1,
         "a character entering sees the Run's stacks"
     );
+    no_howl(&p);
 }
 
 #[test]
@@ -80,12 +150,13 @@ fn leaving_and_coming_back_leaves_the_meter_as_it_was() {
     p.run(31.0);
     p.go(0, OUTSIDE, 0.0);
     p.run(1.0);
-    assert_eq!(noise(&p, 0), 0, "the debuff leaves with the character");
+    assert_eq!(noise(&p, 0), 0, "the bar leaves with the character");
     assert_eq!(noise(&p, 1), 1);
     p.go(0, INSIDE, 0.0);
     p.run(0.5);
     assert_eq!(noise(&p, 0), 1);
     assert_eq!(noise(&p, 1), 1);
+    no_howl(&p);
 }
 
 #[test]
@@ -105,6 +176,7 @@ fn a_hide_drains_a_stack_every_2_seconds_and_stops_when_the_hider_moves() {
         1,
         "a stack drained while they stood elsewhere"
     );
+    no_howl(&p);
 }
 
 #[test]
@@ -119,6 +191,7 @@ fn two_hiders_drain_twice_as_fast() {
     p.run(2.5);
     assert_eq!(noise(&p, 0), 1, "one stack each in the first 2 s");
     assert_eq!(noise(&p, 1), 1);
+    no_howl(&p);
 }
 
 #[test]
@@ -146,4 +219,5 @@ fn a_hiding_spot_out_of_reach_hides_no_one() {
     p.cmd(0, RealmCommand::UseGameObject { guid: SPOT });
     p.run(6.0);
     assert_eq!(noise(&p, 0), 3, "a hide from across the hollow");
+    no_howl(&p);
 }

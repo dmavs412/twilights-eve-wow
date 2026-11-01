@@ -92,7 +92,7 @@ impl InWorld {
         c.notoriety = 0.0;
         self.heat_shown = 0;
         // ...and so is the Phase's meter, which the dead are not in.
-        self.noise_shown = 0;
+        self.hide_noise(events);
         self.hiding = None;
         c.bounty_rank = 0;
         let broke = wear::on_death(c, events);

@@ -30,15 +30,12 @@ orientation = 0.0
 [wall]
 gap_yd = 8.0
 
-# The Noise meter (#171): a stacking debuff on the Run, shown on every character in the Phase.
-# The debuff borrows Piercing Howl (12323, spell_shadow_deathscream) for its alarm icon and name;
-# its stock tooltip text still talks of slowing, which a later ticket can replace with a row of
-# its own.
+# The Noise meter (#171): stacks on the Run, shown on the Noise Bar of every character in the
+# Phase (#533).
 [meter]
 name = "Noise"
 max = 40
-client_spell = 12323
-client_spell_name = "Piercing Howl"
+end_icon = 'Interface\Benilla\noise\hogger_head'
 clock_stack_every_s = 30.0
 on_first_damage = 1
 on_death = 1
@@ -49,6 +46,13 @@ wake_base_yd = 3.0
 wake_per_stack_yd = 0.5
 # The Creature Spell (`creature_spells.toml` sleeping) every asleep creature wears until it wakes.
 sleep_aura = 1900041
+
+# The line under the bar when each source raises the stacks; placeholder text.
+[meter.lines]
+first_damage = "A gnoll yelps"
+death = "A gnoll falls"
+cast = "Thunder cracks over the camp"
+clock = "The camp stirs"
 
 
 # Hiding spots (#170): inside the Phase only, spaced along the routes from the Portal past

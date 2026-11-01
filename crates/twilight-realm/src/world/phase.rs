@@ -2,7 +2,7 @@
 //! mobs for a fresh set of the dungeon's and starts its Run; stepping out, or dying, ends the
 //! Run and swaps them back.
 
-use benilla_protocol::SessionEvent;
+use benilla_protocol::{PhaseMeterState, SessionEvent};
 
 use super::InWorld;
 use crate::characters::Char;
@@ -130,12 +130,7 @@ impl InWorld {
         self.drop_view(events);
         // The Phase's meter and the hiding spot stay behind.
         self.hiding = None;
-        if self.noise_shown > 0 {
-            if let Some(meter) = self.meter() {
-                self.hide_marker(meter.client_spell, events);
-            }
-            self.noise_shown = 0;
-        }
+        self.hide_noise(events);
         self.phase = now;
     }
 
@@ -459,21 +454,42 @@ impl InWorld {
         }
     }
 
-    /// The player's aura shows `stacks` of the Phase's meter: put up, raised or lowered in
-    /// place, and taken off at 0.
-    pub(crate) fn show_noise(&mut self, stacks: u32, events: &mut Vec<SessionEvent>) {
-        let Some(meter) = self.meter() else {
+    /// The player's Noise Bar shows `stacks` of the Phase's meter: put up on a living
+    /// character, even empty, and sent again on every change. `line` names what raised the
+    /// stacks this tick; the bar carries it only when they rose.
+    pub(crate) fn show_noise(
+        &mut self,
+        stacks: u32,
+        line: Option<&str>,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let Some(meter) = self.meter().filter(|_| self.player.alive()) else {
             return;
         };
-        if stacks == self.noise_shown {
+        if self.noise_bar && stacks == self.noise_shown {
             return;
         }
-        if stacks == 0 {
-            self.hide_marker(meter.client_spell, events);
-        } else {
-            self.show_marker(meter.client_spell, false, stacks, events);
-        }
+        let rose = line.filter(|_| self.noise_bar && stacks > self.noise_shown);
+        events.push(SessionEvent::PhaseMeter {
+            meter: Some(PhaseMeterState {
+                name: meter.name.clone(),
+                stacks,
+                max: meter.max,
+                end_icon: meter.end_icon.clone(),
+                rose: rose.map(str::to_string),
+            }),
+        });
         self.noise_shown = stacks;
+        self.noise_bar = true;
+    }
+
+    /// The player's Noise Bar comes down, if it is up.
+    pub(super) fn hide_noise(&mut self, events: &mut Vec<SessionEvent>) {
+        if self.noise_bar {
+            events.push(SessionEvent::PhaseMeter { meter: None });
+        }
+        self.noise_shown = 0;
+        self.noise_bar = false;
     }
 
     /// What the player did to the Run's meter since it last asked: stacks added and drained.

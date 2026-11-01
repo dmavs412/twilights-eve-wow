@@ -12,8 +12,8 @@ pub use auth::AuthReject;
 pub use events::{
     decode, CallingOption, CharAction, DishPage, EntityKind, FishPage, HerbBasketRow, HerbKnown,
     HerbLog, HerbTile, KitchenIngredient, KitchenOrderRow, KitchenRecipe, LoginRefusal, LoginStage,
-    MapIcon, MapMark, MarkedQuest, MoveSpeeds, Poll, SatchelPick, SatchelRow, SessionEnd,
-    SessionEvent, SessionEventKind, TalentChoiceView, TalentRowView,
+    MapIcon, MapMark, MarkedQuest, MoveSpeeds, PhaseMeterState, Poll, SatchelPick, SatchelRow,
+    SessionEnd, SessionEvent, SessionEventKind, TalentChoiceView, TalentRowView,
 };
 pub use messages::field;
 pub use messages::{

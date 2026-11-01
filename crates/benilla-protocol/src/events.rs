@@ -336,6 +336,21 @@ pub struct MapMark {
     pub quests: Vec<MarkedQuest>,
 }
 
+/// Twilight's Eve, not 1.12: the meter of a Phased Dungeon as the Noise Bar draws it (spec #533).
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct PhaseMeterState {
+    /// The meter's name, "Noise" in Forest's Edge.
+    pub name: String,
+    pub stacks: u32,
+    /// The most stacks it holds.
+    pub max: u32,
+    /// The icon at the bar's full end.
+    pub end_icon: String,
+    /// The cause line when this update raised the stacks; `None` when they fell, held, or the
+    /// bar first went up.
+    pub rose: Option<String>,
+}
+
 /// What a [`MapMark`] draws.
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MapIcon {
@@ -399,6 +414,9 @@ pub enum SessionEvent {
     /// character's view, oldest fight first. Complete on every change; empty clears the bar.
     /// Never wire-decoded.
     BossFight { guids: Vec<u64> },
+    /// Twilight's Eve, not 1.12: the meter of the Phased Dungeon this character stands in,
+    /// complete on every change; `None` takes the bar down. Never wire-decoded.
+    PhaseMeter { meter: Option<PhaseMeterState> },
     /// Twilight's Eve, not 1.12: everything the world map marks for this character, complete on
     /// every change. Never wire-decoded.
     MapMarks { marks: Vec<MapMark> },

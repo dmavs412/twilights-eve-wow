@@ -1292,7 +1292,8 @@ impl Realm {
 
     /// Each Phased Dungeon's meter hears what its Run's characters and creatures did this tick
     /// (stacks from casts, stacks drained by hiding, the creatures first hurt or dead and the
-    /// clock), and every character in the Phase is shown the stacks it now holds.
+    /// clock), and every character in the Phase is shown the stacks it now holds, with the line
+    /// of the source that added the most.
     fn tick_noise(&mut self) {
         let mut heard: std::collections::BTreeMap<shard::Place, (u32, u32)> = Default::default();
         let worlds = std::iter::once(&mut self.world)
@@ -1316,7 +1317,7 @@ impl Realm {
             let Some(meter) = phased::dungeon(id).and_then(|d| d.meter.as_ref()) else {
                 continue;
             };
-            shard.hear_noise(meter, gain, drain);
+            let line = shard.hear_noise(meter, gain, drain).line(&meter.lines);
             let stacks = shard.noise();
             let sessions = std::iter::once((&mut self.world, &mut self.events)).chain(
                 self.parked
@@ -1325,7 +1326,7 @@ impl Realm {
             );
             for (w, events) in sessions {
                 if let Some(w) = w.as_mut().filter(|w| w.shard_place() == Some(place)) {
-                    w.show_noise(stacks, events);
+                    w.show_noise(stacks, line, events);
                 }
             }
         }
