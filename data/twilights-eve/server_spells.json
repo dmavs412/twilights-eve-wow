@@ -4376,7 +4376,8 @@
        "grants": "aura_bloodlust",
        "radius_yd": 1,
        "scatter_min_yd": 3,
-       "scatter_max_yd": 6
+       "scatter_max_yd": 6,
+       "object_display": 4211
       },
       "realm_only": false
      }

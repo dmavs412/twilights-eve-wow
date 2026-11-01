@@ -296,12 +296,16 @@ pub enum AuraEffect {
     ModRunSpeed { pct: i32 },
     /// A droplet on the ground (Blood Droplet): the row's duration is its life, `scatter_min_yd`
     /// to `scatter_max_yd` is how far from the bleeding mob it lands, and a player within
-    /// `radius_yd` of it takes the `grants` aura row. Never worn.
+    /// `radius_yd` of it takes the `grants` aura row. Never worn. A GameObject of the
+    /// `GameObjectDisplayInfo` `object_display` stands on it while it lasts, as on a Snare Trap;
+    /// 0 shows none.
     Pickup {
         grants: String,
         radius_yd: f32,
         scatter_min_yd: f32,
         scatter_max_yd: f32,
+        #[serde(default)]
+        object_display: u32,
     },
     /// The player's dodge chance rises by `pct` percent.
     DodgePct { pct: u32 },

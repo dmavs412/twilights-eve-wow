@@ -988,8 +988,9 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
     # its splash; a stack consume's heal and its power back per stack; a builder's points more on a
     # bleeding target and a proc's combo points; an absorb's mana back and burst; a tick's power
     # and base mana back and its spread; a snare's, a consume's and a grow's reach; a drain tick's
-    # overheal shield; a heal's overheal burst; and an area's grow and the display of the
-    # GameObject that shows it. Then the chances, out of 100, and the params that come in pairs.
+    # overheal shield; a heal's overheal burst; an area's grow and the display of the GameObject
+    # that shows it; and the display of a droplet's GameObject. Then the chances, out of 100, and
+    # the params that come in pairs.
     on_hit = ("bleeding_pct", "kill_heal_pct", "kill_energize")
     wholes = {"weapon_strike": ("block_value_pct", "heal_pct", *on_hit, "crit_damage_pct", "crit_cooldown_ms"),
               "school_damage": (*on_hit, "vs_aura_pct", "vs_aura_max_pct", "splash_pct", "splash_yd"),
@@ -1003,7 +1004,8 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
               "grow_aura": ("radius_yd",),
               "drain": ("overheal_absorb_max_pct", "overheal_absorb_ms"),
               "heal": ("overheal_burst_yd",),
-              "ground_area": ("grow_every_ms", "object_display")}
+              "ground_area": ("grow_every_ms", "object_display"),
+              "pickup": ("object_display",)}
     for param in wholes.get(kind, ()):
         value = params.get(param, 1)
         if not is_whole(value):

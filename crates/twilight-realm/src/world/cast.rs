@@ -262,19 +262,10 @@ impl Area {
                 self.radius_yd,
             ),
         )];
-        if let Some((guid, display_id)) = self.shown {
-            let create = gameobject_create(&GameObject {
-                guid,
-                entry: self.spell_id,
-                display_id,
-                type_id: GENERIC,
-                flags: NOT_SELECTABLE,
-                faction: 0,
-                position: self.centre,
-                orientation: 0.0,
-            });
-            shows.push((guid, create));
-        }
+        shows.extend(
+            self.shown
+                .map(|shown| shown_create(shown, self.spell_id, self.centre)),
+        );
         shows
     }
 
@@ -286,11 +277,31 @@ impl Area {
     }
 }
 
-/// The guid of the GameObject that stands with the area whose DynamicObject is `patch`: its low
-/// guid under `HIGHGUID_GAMEOBJECT`, with the low guid's top bit set to keep it clear of every
-/// other GameObject's.
+/// The guid of the GameObject that stands with the area or droplet whose DynamicObject is
+/// `patch`: its low guid under `HIGHGUID_GAMEOBJECT`, with the low guid's top bit set to keep it
+/// clear of every other GameObject's.
 fn shown_guid(patch: u64) -> u64 {
     HIGHGUID_GAMEOBJECT << 48 | 1 << 47 | (patch & 0x7FFF_FFFF_FFFF)
+}
+
+/// The create of the scenery GameObject `(guid, display)` that stands at `centre` beside a
+/// DynamicObject of `spell_id`, with its guid.
+fn shown_create(
+    (guid, display_id): (u64, u32),
+    spell_id: u32,
+    centre: [f32; 3],
+) -> (u64, SessionEvent) {
+    let create = gameobject_create(&GameObject {
+        guid,
+        entry: spell_id,
+        display_id,
+        type_id: GENERIC,
+        flags: NOT_SELECTABLE,
+        faction: 0,
+        position: centre,
+        orientation: 0.0,
+    });
+    (guid, create)
 }
 
 /// A ground area's clock: every `every` seconds, each enemy inside that wears the caster's damage
@@ -404,6 +415,35 @@ struct Drop {
     radius_yd: f32,
     left: f32,
     grants: &'static str,
+    /// The GameObject that stands on it: its guid and display (the pool of blood).
+    shown: Option<(u64, u32)>,
+}
+
+impl Drop {
+    /// What a client is sent to show it, each create with its guid: the DynamicObject, then the
+    /// GameObject if it has one.
+    fn shows(&self, caster: u64) -> Vec<(u64, SessionEvent)> {
+        let patch = patch_create(
+            self.object,
+            caster,
+            self.spell_id,
+            self.centre,
+            self.radius_yd,
+        );
+        std::iter::once((self.object, patch))
+            .chain(
+                self.shown
+                    .map(|shown| shown_create(shown, self.spell_id, self.centre)),
+            )
+            .collect()
+    }
+
+    /// The destroys that take it off a client.
+    fn hides(&self) -> impl Iterator<Item = SessionEvent> {
+        std::iter::once(self.object)
+            .chain(self.shown.map(|(guid, _)| guid))
+            .map(SessionEvent::ObjectDestroyed)
+    }
 }
 
 /// A patch on the ground (a `GroundEffect`): each tick it strikes every enemy inside it.
@@ -458,27 +498,21 @@ impl Skills {
     /// Every patch on the ground as its DynamicObject's guid, centre and create, and an area's
     /// GameObject beside it: what another client in view of it is sent.
     pub(super) fn patches(&self) -> Vec<(u64, [f32; 3], SessionEvent)> {
-        let grounds = self
-            .grounds
-            .iter()
-            .map(|g| (g.object, g.caster, g.spell_id, g.centre, g.radius_yd));
-        let drops = self
-            .drops
-            .iter()
-            .map(|d| (d.object, self.me, d.spell_id, d.centre, d.radius_yd));
+        let grounds = self.grounds.iter().map(|g| {
+            let create = patch_create(g.object, g.caster, g.spell_id, g.centre, g.radius_yd);
+            (g.object, g.centre, create)
+        });
+        let drops = self.drops.iter().flat_map(|d| {
+            d.shows(self.me)
+                .into_iter()
+                .map(|(guid, create)| (guid, d.centre, create))
+        });
         let areas = self.areas.iter().flat_map(|a| {
             a.shows()
                 .into_iter()
                 .map(|(guid, create)| (guid, a.centre, create))
         });
-        grounds
-            .chain(drops)
-            .map(|(guid, caster, spell_id, centre, radius_yd)| {
-                let create = patch_create(guid, caster, spell_id, centre, radius_yd);
-                (guid, centre, create)
-            })
-            .chain(areas)
-            .collect()
+        grounds.chain(drops).chain(areas).collect()
     }
 }
 
@@ -6391,6 +6425,7 @@ impl InWorld {
             radius_yd,
             scatter_min_yd,
             scatter_max_yd,
+            object_display,
         }) = def
             .effects
             .iter()
@@ -6414,21 +6449,17 @@ impl InWorld {
             at[2],
         ];
         let object = self.skills.next_patch(self.guid);
-        events.push(patch_create(
-            object,
-            self.guid,
-            def.spell_id,
-            centre,
-            *radius_yd,
-        ));
-        self.skills.drops.push(Drop {
+        let drop = Drop {
             object,
             spell_id: def.spell_id,
             centre,
             radius_yd: *radius_yd,
             left: clock::secs(def.duration_ms),
             grants: grants.as_str(),
-        });
+            shown: (*object_display > 0).then(|| (shown_guid(object), *object_display)),
+        };
+        events.extend(drop.shows(self.guid).into_iter().map(|(_, create)| create));
+        self.skills.drops.push(drop);
     }
 
     /// The blood droplets: the player who stands within one's radius (measured flat) takes its
@@ -6446,7 +6477,7 @@ impl InWorld {
                 grants.push((d.spell_id, d.grants));
             }
             if reached || d.left <= CLOCK_EPSILON {
-                events.push(SessionEvent::ObjectDestroyed(d.object));
+                events.extend(d.hides());
                 d.left = 0.0;
             }
         }

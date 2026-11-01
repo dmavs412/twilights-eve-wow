@@ -75,6 +75,30 @@ fn droplets(events: &[SessionEvent]) -> Vec<Droplet> {
         .collect()
 }
 
+/// `GameObjectDisplayInfo` of the Blood of Heroes pool, which stands on each droplet: the client
+/// draws nothing for the droplet's DynamicObject.
+const POOL_DISPLAY: u32 = 4211;
+
+/// The guid of the pool `events` create at the droplet centred `at`.
+fn pool(events: &[SessionEvent], at: [f32; 3]) -> Option<u64> {
+    events.iter().find_map(|e| match e {
+        SessionEvent::ObjectCreate {
+            guid,
+            kind: EntityKind::GameObject,
+            display_id: Some(POOL_DISPLAY),
+            position,
+            ..
+        } if flat(*position, at) < 0.01 => Some(*guid),
+        _ => None,
+    })
+}
+
+fn destroyed(events: &[SessionEvent], object: u64) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::ObjectDestroyed(g) if *g == object))
+}
+
 /// Sinister Strike for a combo point, then `rupture` (Rupture or a choice of its row), and the
 /// `secs` after it: the mob and every event since the Rupture.
 fn rupture_a_mob(
@@ -155,12 +179,13 @@ fn until_droplet(
 fn walking_over_a_droplet_grants_a_stack_of_bloodlust_and_takes_it_away() {
     for seed in 0..20 {
         let (mut realm, mut view, me) = cutthroat(seed, 10, &[]);
-        let Some((_, (object, at))) = until_droplet(&mut realm, &mut view, 9.0) else {
+        let Some((spilled, (object, at))) = until_droplet(&mut realm, &mut view, 9.0) else {
             continue;
         };
         if view.aura(me, *BLOODLUST).is_some() {
             continue;
         }
+        let pool = pool(&spilled, at).expect("a pool of blood stands on the droplet");
         realm.handle(RealmCommand::Move {
             motion: Default::default(),
             position: at,
@@ -168,11 +193,10 @@ fn walking_over_a_droplet_grants_a_stack_of_bloodlust_and_takes_it_away() {
         });
         let events = view.run(&mut realm, 0.2);
         assert!(
-            events
-                .iter()
-                .any(|e| matches!(e, SessionEvent::ObjectDestroyed(g) if *g == object)),
+            destroyed(&events, object),
             "seed {seed}: the droplet is destroyed"
         );
+        assert!(destroyed(&events, pool), "seed {seed}: and its pool");
         let lust = view
             .aura(me, *BLOODLUST)
             .expect("Bloodlust is on the player");
@@ -186,9 +210,10 @@ fn walking_over_a_droplet_grants_a_stack_of_bloodlust_and_takes_it_away() {
 fn a_droplet_nobody_touches_is_destroyed_eight_seconds_after_its_create() {
     for seed in 0..20 {
         let (mut realm, mut view, me) = cutthroat(seed, 10, &[]);
-        let Some((_, (object, _))) = until_droplet(&mut realm, &mut view, 9.0) else {
+        let Some((spilled, (object, at))) = until_droplet(&mut realm, &mut view, 9.0) else {
             continue;
         };
+        let pool = pool(&spilled, at).expect("a pool of blood stands on the droplet");
         let mut steps = 0;
         let mut lust = view.aura(me, *BLOODLUST).is_some();
         let mut gone = false;
@@ -196,9 +221,12 @@ fn a_droplet_nobody_touches_is_destroyed_eight_seconds_after_its_create() {
             realm.tick(0.1, &FlatGround);
             let events = view.drain(&mut realm);
             lust |= view.aura(me, *BLOODLUST).is_some();
-            gone = events
-                .iter()
-                .any(|e| matches!(e, SessionEvent::ObjectDestroyed(g) if *g == object));
+            gone = destroyed(&events, object);
+            assert_eq!(
+                destroyed(&events, pool),
+                gone,
+                "seed {seed}: the pool goes with it"
+            );
             steps += 1;
         }
         // A later droplet may have landed under the player; that seed proves nothing.

@@ -445,6 +445,9 @@ effect = { kind = "marker" }
                           "positive radius_yd")
         self.assert_fails([STRIKE, AURA, droplet("grants=ghost;radius_yd=1;scatter_min_yd=3;scatter_max_yd=6")],
                           "is not an aura row")
+        for shown in ("object_display=0", "object_display=pool"):
+            self.assert_fails([STRIKE, AURA, droplet(f"grants=buff;radius_yd=1;scatter_min_yd=3;scatter_max_yd=6;{shown}")],
+                              "object_display needs a whole number of at least 1")
 
     def test_the_class_and_armour_columns_are_gone(self):
         for column in ("class", "armour"):
