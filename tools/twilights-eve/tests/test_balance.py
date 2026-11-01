@@ -53,7 +53,11 @@ ONE_NORMAL = dict(n=1)
 # Choices that change nothing in 30 fights against 2 normals, and the pull
 # test_every_tier1_choice_changes_the_fight_or_is_ignored fights them in instead: Elusiveness
 # brings Evasion back after 60 s, Blood Frenzy's stacks past 5 need a long run of droplets, and
-# the six Initiate choices act through Ley Spark (its crit, a buff, the mana it crits with).
+# the six Initiate choices act through Ley Spark (its crit, a buff, the mana it crits with). The
+# plain Acolyte dies in about 6 s against 2 normals and lasts about 23 s against 1: Gorging Siphon
+# shields it while a lone mob runs in, which a pull never does, and Virulence's faster Blood Lance,
+# Sanguine Barrier's shield off a Lance and Necrotic Detonation's damage need the Lances and Blight
+# ticks of the longer fight.
 LONG_FIGHT = {
     ("cutthroat", "elusiveness"): LONG_PULL, ("cutthroat", "blood_frenzy"): LONG_PULL,
     ("initiate", "ley_line_tap"): ONE_NORMAL, ("initiate", "arcane_substrate"): ONE_NORMAL,
@@ -62,6 +66,8 @@ LONG_FIGHT = {
     ("ranger", "explosive_payload"): ONE_NORMAL, ("ranger", "twin_arrows"): ONE_NORMAL,
     ("ranger", "jagged_barbs"): ONE_NORMAL, ("ranger", "flurry"): ONE_NORMAL,
     ("ranger", "rapid_assault"): ONE_NORMAL,
+    ("acolyte", "gorging_siphon"): ONE_NORMAL, ("acolyte", "virulence"): ONE_NORMAL,
+    ("acolyte", "sanguine_barrier"): ONE_NORMAL, ("acolyte", "necrotic_detonation"): ONE_NORMAL,
 }
 # A pull starts in melee, and the Ranger shoots again only past its 8 yd minimum range: a Vault
 # puts it at 15 yd, inside 8 again before its global cooldown ends. Against 2 normals it never
@@ -314,6 +320,41 @@ class BalanceModel(unittest.TestCase):
     def test_ranger_has_no_unmodelled_choices(self):
         for (calling, key), why in model.IGNORED.items():
             if calling == "ranger":
+                with self.subTest(choice=key):
+                    self.assertNotEqual(why, "not modelled yet")
+
+    # What each Acolyte choice the sim models buys, from its description.
+    ACOLYTE_GAINS = {
+        "epidemic": "damage", "virulence": "damage", "withering_blight": "survival",
+        "exsanguinate": "damage", "splintering_lance": "damage", "sanguine_barrier": "survival",
+        "necrotic_detonation": "damage", "masochism": "survival", "will_to_survive": "survival",
+        "feeding_siphon": "damage", "gorging_siphon": "survival", "coagulation": "survival",
+        "dark_surplus": "damage", "sanguine_flow": "damage", "noxious_vapors": "survival",
+        "breeding_ground": "damage",
+    }
+
+    def test_acolyte_choices_move_the_fight(self):
+        rows = {c["key"]: row["key"] for row in model.talent_rows("acolyte") for c in row["choices"]}
+        self.assertEqual(set(self.ACOLYTE_GAINS), {k for k in rows if ("acolyte", k) not in model.IGNORED})
+        # As the Vanguard's: fight i of every build starts from seed i, and survival is the health
+        # lost a second. A choice that pays off only in a longer fight fights 1 normal (LONG_FIGHT).
+        plains = {}
+        for key, gain in self.ACOLYTE_GAINS.items():
+            with self.subTest(choice=key, gain=gain):
+                pull = LONG_FIGHT.get(("acolyte", key), {})
+                at = tuple(sorted(pull.items()))
+                if at not in plains:
+                    plains[at] = fought("acolyte", {}, 50, random.Random, **pull)
+                plain = plains[at]
+                dealt, lost, spent = fought("acolyte", {rows[key]: key}, 50, random.Random, **pull)
+                if gain == "damage":
+                    self.assertGreater(dealt / spent, plain[0] / plain[2])
+                else:
+                    self.assertLess(lost / spent, plain[1] / plain[2])
+
+    def test_acolyte_has_no_unmodelled_choices(self):
+        for (calling, key), why in model.IGNORED.items():
+            if calling == "acolyte":
                 with self.subTest(choice=key):
                     self.assertNotEqual(why, "not modelled yet")
 

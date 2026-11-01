@@ -463,24 +463,8 @@ IGNORED = {
     ("initiate", "frostbite"): "root",
     ("initiate", "shattered_blink"): "root",
     ("vanguard", "sweeping_zeal"): "no pull holds more than 3 mobs",
-    ("acolyte", "epidemic"): "not modelled yet",
-    ("acolyte", "virulence"): "not modelled yet",
-    ("acolyte", "withering_blight"): "not modelled yet",
-    ("acolyte", "exsanguinate"): "not modelled yet",
-    ("acolyte", "splintering_lance"): "not modelled yet",
-    ("acolyte", "sanguine_barrier"): "not modelled yet",
-    ("acolyte", "necrotic_detonation"): "not modelled yet",
-    ("acolyte", "masochism"): "not modelled yet",
-    ("acolyte", "will_to_survive"): "not modelled yet",
-    ("acolyte", "feeding_siphon"): "not modelled yet",
-    ("acolyte", "gorging_siphon"): "not modelled yet",
-    ("acolyte", "unbroken_siphon"): "not modelled yet",
-    ("acolyte", "coagulation"): "not modelled yet",
-    ("acolyte", "dark_surplus"): "not modelled yet",
-    ("acolyte", "sanguine_flow"): "not modelled yet",
-    ("acolyte", "noxious_vapors"): "not modelled yet",
-    ("acolyte", "breeding_ground"): "not modelled yet",
-    ("acolyte", "shroud_of_rot"): "not modelled yet",
+    ("acolyte", "unbroken_siphon"): "no mob interrupts",
+    ("acolyte", "shroud_of_rot"): "range change",
 }
 
 
@@ -500,6 +484,7 @@ class Sim:
         self.mana_pause_until = -1.0
         self.regen_next = 2.0
         self.fight_log = []
+        self.healing_taken = passive_effects(calling, rows, "healing_taken_pct")
 
     # ---- power
     def power_max(self):
@@ -573,10 +558,16 @@ class Sim:
         return self.cost(self.skill(key)) * (100 + max(sum(p.get("cost_pct", 0) for p in mods), -100)) // 100
 
     def heal(self, amount, src):
+        """`amount` healed up to the maximum health, more while below a passive's health line (Will
+        to Survive). Returns what it would heal with no maximum."""
         amount = int(amount)
+        for p in self.healing_taken:
+            if not p.get("below_health_pct") or self.hp * 100 < self.s.max_hp * p["below_health_pct"]:
+                amount = amount * (100 + p["pct"]) // 100
         before = self.hp
         self.hp = min(self.hp + amount, self.s.max_hp)
         self.healed += self.hp - before
+        return amount
 
     # ---- rolls
     def yellow(self, crit_pct, unavoidable=False):
@@ -696,9 +687,9 @@ class Sim:
             ms = p["duration_ms"] + linear(p.get("per_combo"), self.L) * combo
         self.mob_swing_t = max(self.mob_swing_t, self.t + ms / 1000)
 
-    def splash(self, d, src):
-        """`d` damage, past armour already, to the nearest other living mob: none in a fight with
-        one (multi.Multi has the others)."""
+    def splash(self, d, src, n=1):
+        """`d` damage, past armour already, to the `n` nearest other living mobs (0 every one):
+        none in a fight with one (multi.Multi has the others)."""
 
     def take(self, dmg):
         ab = min(getattr(self, "absorb", 0), dmg)
@@ -1565,129 +1556,314 @@ class Ranger(Sim):
 # ---------------------------------------------------------------- Acolyte
 class Acolyte(Sim):
     def setup_fight(self):
+        c = self.calling
         self.dist = 30.0
         self.mob_swing_t = 0.0
         self.gcd = 0.0
-        self.cast = None
+        self.cast = None      # (done_at, key)
         self.channel = None   # [until, next]
-        self.blight = None    # [until, next, tick, stacks]
-        self.miasma = None    # [until, next, tick]
+        self.blight = None    # [until, next, tick, stacks] on the target
+        self.miasma = None    # [until, next, tick, next growth]
         self.mending_dot = None  # [until, next, tick] on self
         self.lance_hots = []  # [until, next, tick]
-        self.absorb = 0
+        self.maso = None      # [until, next, tick, every] on self (Masochism)
+        self.shields = {}     # skill key -> [left, until], first up first
+        self.buffs = {}       # aura key -> [until, aura row, stacks, charges] on the Acolyte
+        self.blight_fx = fx(self.skill("creeping_blight"), "periodic_damage")
+        self.blight_aura = aura(c, self.blight_fx["apply_aura"])
+        self.blight_dot = fx(self.blight_aura, "periodic_damage")
+        self.lance_hot = fx(self.skill("blood_lance"), "periodic_heal")
+        self.toll_aura = aura(c, fx(self.skill("dark_mending"), "periodic_damage")["apply_aura"])
+        self.toll = fx(self.toll_aura, "periodic_damage")
+        self.cloud = fx(self.skill("miasma"), "ground_area")
+        self.cloud_aura = aura(c, self.cloud["enemy_aura"])
+        self.cloud_dot = fx(self.cloud_aura, "periodic_damage")
+        self.cloud_miss = -sum(p["pct"] for p in fxs(self.cloud_aura, "mod_hit_chance"))
+        self.procs = passive_effects(c, self.rows, "proc")
+        # The talent row's choice the Acolyte casts: a consume on a cooldown (Necrotic Detonation).
+        self.talent_cast = next((sk for sk in passives(c, self.rows) if sk.get("realm_cooldown_ms")), None)
 
     def spell_crit(self):
         return self.s.crit
 
-    def blight_aura(self):
-        return aura("acolyte", fx(self.skill("creeping_blight"), "periodic_damage")["apply_aura"])
+    def blighted(self, b):
+        return b is not None and self.t < b[0]
 
-    def blight_tick(self):
-        s, L = self.s, self.L
-        a = self.blight_aura()
-        p = a["effects"][0]["params"]
-        dur = int(self.opts.get("blight_dur", a["duration_ms"] / 1000) * 1000)
-        tick_ms = int(self.opts.get("blight_tick_s", p["tick_ms"] / 1000) * 1000)
-        ticks = dur // tick_ms
-        return linear(self.opts.get("blight_tick", p["tick"]), L) + sp_periodic(s.spell_power, dur, ticks)
+    def new_blight(self):
+        """A Creeping Blight of one stack from now, for its aura's duration."""
+        dur, every = self.blight_aura["duration_ms"], self.blight_dot["tick_ms"]
+        tick = linear(self.blight_dot["tick"], self.L) + sp_periodic(self.s.spell_power, dur, dur // every)
+        return [self.t + dur / 1000, self.t + every / 1000, tick, 1]
 
-    def grow_blight(self):
-        if self.opts.get("lance_grow", True) and self.blight and self.t < self.blight[0]:
-            self.blight[3] = min(self.blight[3] + 1, self.opts.get("blight_cap", 255))
+    def grow(self, b, n=1):
+        """Blight `b`, while it lasts, gains `n` stacks, up to its aura's max_stacks."""
+        if self.blighted(b):
+            b[3] = min(b[3] + n, self.blight_aura["max_stacks"])
 
-    def health_cost(self, pct):
-        cost = self.s.max_hp * pct // 100
+    def grow_others(self, n=1):
+        """The Blights on the other mobs of a pull gain `n` stacks: none in a fight with one
+        (multi.AcolyteN has the others)."""
+
+    def spread_blight(self, b):
+        """A copy of Blight `b` on the next mob of a pull that wears none: none in a fight with one
+        (multi.AcolyteN has the others)."""
+
+    def tick_blight(self, b):
+        """Blight `b` on the target ticks: its damage once a stack, the leech and a stack more, then
+        its riders: the next-cast aura on a chance a stack (Virulence) and a copy on the next mob
+        of a pull on a chance (Epidemic)."""
+        p, dot = self.blight_fx, self.blight_dot
+        b[1] += dot["tick_ms"] / 1000
+        stacks = b[3]
+        d = self.hit_mob(b[2] * stacks, "blight", False)
+        self.heal(d * dot["leech_pct"] // 100, "blight_leech")
+        b[3] = min(stacks + dot["stacks_per_tick"], self.blight_aura["max_stacks"])
+        if p.get("tick_aura") and self.rng.random() * 100 < min(p["tick_aura_chance_per_stack"] * stacks, 100):
+            self.grant(p["tick_aura"])
+        if p.get("tick_spread_chance") and self.rng.random() * 100 < p["tick_spread_chance"]:
+            self.spread_blight(b)
+
+    def weaken_pct(self, i=None):
+        return self.blight_weaken(self.blight)
+
+    def blight_weaken(self, b):
+        """The percent less a mob wearing Blight `b` hits for: a share a stack, up to a cap
+        (Withering Blight)."""
+        p = self.blight_fx
+        if not p.get("weaken_per_stack_pct") or not self.blighted(b):
+            return 0
+        return min(p["weaken_per_stack_pct"] * b[3], p["weaken_max_pct"])
+
+    def in_cloud(self):
+        """Whether the Miasma is up with the mob inside its radius."""
+        return self.miasma is not None and self.t < self.miasma[0] and self.dist <= self.cloud["radius_yd"]
+
+    def mob_miss_more(self):
+        # Enemies inside miss more (Noxious Vapors).
+        return self.cloud_miss if self.in_cloud() else 0
+
+    def shield(self, key, amount, ms):
+        """A shield of `amount` from skill `key` for `ms`, in place of the one `key` put up before."""
+        self.shields.pop(key, None)
+        if amount > 0:
+            self.shields[key] = [amount, self.t + ms / 1000]
+
+    def grow_shield(self, key, amount, cap, ms):
+        """Skill `key`'s shield grows by `amount`, up to `cap`, and lasts `ms` from now (Gorging
+        Siphon)."""
+        w = self.shields.get(key)
+        left = w[0] if w and self.t < w[1] else 0
+        self.shield(key, min(left + amount, cap), ms)
+
+    def take(self, dmg):
+        """`dmg` past the shields up, first up first."""
+        for key, w in list(self.shields.items()):
+            soaked = min(w[0], dmg) if self.t < w[1] else 0
+            w[0] -= soaked
+            dmg -= soaked
+            if not w[0] or self.t >= w[1]:
+                del self.shields[key]
+        return Sim.take(self, dmg)
+
+    def health_cost(self, sk):
+        """`sk`'s cost paid in health, its realm_cost percent of the maximum. A passive's proc on a
+        cast that costs health heals its pct of the cost over its aura's ticks (Masochism)."""
+        cost = self.s.max_hp * sk["realm_cost"] // 100
         self.hp -= cost
         self.costs += cost
+        for p in self.procs:
+            if p["on"] == "cast" and p.get("cost_kind") == "health" and cost:
+                a = aura(self.calling, p["apply_aura"])
+                h = fx(a, "periodic_heal")
+                ticks = a["duration_ms"] // h["tick_ms"]
+                self.maso = [self.t + a["duration_ms"] / 1000, self.t + h["tick_ms"] / 1000,
+                             cost * h["pct"] // 100 // ticks, h["tick_ms"] / 1000]
 
-    def start(self, key, ms):
-        self.cast = (self.t + ms / 1000, key)
+    def start(self, key):
+        # The buffs that change the cast go with it (Virulence, Sanguine Flow).
+        mods = self.next_casts(key)
+        self.use_next_casts(key)
+        ms = 0 if any(p.get("instant") for p in mods) else self.skill(key)["cast_time_ms"] + sum(p.get("cast_time_ms", 0) for p in mods)
+        self.cast = (self.t + max(ms, 0) / 1000, key)
         self.gcd = self.t + 1.5
+
+    def lance(self):
+        """Blood Lance lands: its health cost, then the hit, more a stack of the target's Blight
+        (Exsanguinate), a heal over time of its share of the hit, a shield of a share (Sanguine
+        Barrier), a share on the other mobs of a pull (Splintering Lance), and a stack on the
+        target's Blight and, with a radius, on theirs."""
+        s = self.s
+        sk = self.skill("blood_lance")
+        self.health_cost(sk)
+        p = fx(sk, "school_damage")
+        o = self.spell_roll(self.spell_crit())
+        if o == "miss":
+            return
+        raw = linear(p["amount"], self.L) + sp_direct(s.spell_power, sk["cast_time_ms"])
+        if p.get("vs_aura") == self.blight_aura["key"] and self.blighted(self.blight):
+            more = p["vs_aura_pct"] * (self.blight[3] if p.get("vs_aura_per_stack") else 1)
+            raw = raw * (100 + min(more, p.get("vs_aura_max_pct") or more)) // 100
+        d = self.hit_mob(raw, "blood_lance", False, o == "crit")
+        h = self.lance_hot
+        ticks = h["duration_ms"] // h["tick_ms"]
+        self.lance_hots.append([self.t + h["duration_ms"] / 1000, self.t + h["tick_ms"] / 1000, d * h["pct"] // 100 // ticks])
+        for a in fxs(sk, "absorb"):
+            self.shield("blood_lance", d * a["pct"] // 100, a["duration_ms"])
+        if p.get("splash_pct"):
+            self.splash(d * p["splash_pct"] // 100, "splintering_lance", n=0)
+        g = fx(sk, "grow_aura")
+        self.grow(self.blight, g["stacks"])
+        if g.get("radius_yd"):
+            self.grow_others(g["stacks"])
+
+    def mending_amount(self):
+        return linear(fx(self.skill("dark_mending"), "heal")["amount"], self.L) + sp_direct(self.s.spell_power, 0)
+
+    def surplus(self):
+        """(what Dark Mending would heal past the maximum health now, its cost paid; the cost)."""
+        cost = self.s.max_hp * self.skill("dark_mending")["realm_cost"] // 100
+        return self.hp - cost + self.mending_amount() - self.s.max_hp, cost
+
+    def mend(self):
+        """Dark Mending: its health cost, the heal, the toll of its pct of what the heal healed over
+        the aura's ticks, and the choice's riders: a shield of a share of the full heal
+        (Coagulation), a burst of what it heals past the maximum at the mobs within its yards
+        (Dark Surplus) and a next-cast aura (Sanguine Flow)."""
+        sk = self.skill("dark_mending")
+        self.cd("mending", sk["realm_cooldown_ms"])
+        self.health_cost(sk)
+        self.gcd = self.t + 1.5
+        p = fx(sk, "heal")
+        before = self.hp
+        full = self.heal(self.mending_amount(), "dark_mending")
+        healed = self.hp - before
+        ticks = self.toll_aura["duration_ms"] // self.toll["tick_ms"]
+        self.mending_dot = [self.t + self.toll_aura["duration_ms"] / 1000, self.t + self.toll["tick_ms"] / 1000,
+                            healed * self.toll["pct"] // 100 // ticks]
+        for a in fxs(sk, "absorb"):
+            self.shield("dark_mending", (full if a["pct_of"] == "full_heal" else healed) * a["pct"] // 100, a["duration_ms"])
+        if p.get("overheal_burst_yd") and full > healed and self.dist <= p["overheal_burst_yd"]:
+            o = self.spell_roll(self.spell_crit())
+            if o != "miss":
+                self.hit_mob(full - healed, "dark_surplus", False, o == "crit")
+        for g in fxs(sk, "grant_aura"):
+            self.grant(g["aura"])
+
+    def siphon(self):
+        sk = self.skill("siphon_life")
+        self.spend_mana(self.cost(sk))
+        self.channel = [self.t + sk["channel_ms"] / 1000, self.t + sk["channel_tick_ms"] / 1000]
+        self.gcd = self.t + 1.5
+
+    def drain(self):
+        """A Siphon Life tick: the drain and its heal, a shield of what it heals past the maximum
+        (Gorging Siphon), and on a chance a stack on the target's Blight (Feeding Siphon)."""
+        s = self.s
+        sk = self.skill("siphon_life")
+        self.channel[1] += sk["channel_tick_ms"] / 1000
+        p = fx(sk, "drain")
+        o = self.spell_roll(self.spell_crit())
+        if o == "miss":
+            return
+        d = self.hit_mob(linear(p["amount"], self.L), "siphon", False, o == "crit")
+        before = self.hp
+        asked = self.heal(d * p["heal_pct"] // 100, "siphon")
+        if p.get("overheal_absorb_max_pct") and asked > self.hp - before:
+            cap = s.max_hp * p["overheal_absorb_max_pct"] // 100
+            self.grow_shield("siphon_life", asked - (self.hp - before), cap, p["overheal_absorb_ms"])
+        if p.get("tick_grow_aura") and self.rng.random() * 100 < p["tick_grow_chance"]:
+            self.grow(self.blight)
+
+    def detonate(self):
+        """The talent row's cast takes the target's Blight: its amount once a stack the Blight held,
+        rolled for a crit but never a miss, and its share of the damage heals the Acolyte when it
+        stands within its radius of the target (Necrotic Detonation)."""
+        sk = self.talent_cast
+        p = fx(sk, "consume_aura")
+        self.cd("detonate", sk["realm_cooldown_ms"])
+        self.gcd = self.t + 1.5
+        stacks = self.blight[3] if p.get("per_stack") else 1
+        self.blight = None
+        o = "crit" if self.rng.random() * 100 < self.spell_crit() else "hit"
+        raw = linear(p["amount"], self.L) * p.get("amount_pct", 100) // 100 * stacks
+        d = self.hit_mob(raw, "detonation", False, o == "crit")
+        if self.dist <= p.get("radius_yd", 0):
+            self.heal(d * p["heal_allies_pct"] // 100, "detonation")
 
     def step(self):
         s, L = self.s, self.L
         # Ticks.
-        if self.blight and self.t < self.blight[0] and self.t >= self.blight[1]:
-            self.blight[1] += self.opts.get("blight_tick_s", 3.0)
-            d = self.hit_mob(self.blight[2] * self.blight[3], "blight", False)
-            self.heal(d * self.opts.get("leech", 50) // 100, "blight_leech")
-            self.blight[3] = min(self.blight[3] + 1, self.opts.get("blight_cap", 255))
-        if self.miasma and self.t < self.miasma[0] and self.t >= self.miasma[1] and self.dist <= 8:
-            self.miasma[1] += 1.0
+        if self.blighted(self.blight) and self.t >= self.blight[1]:
+            self.tick_blight(self.blight)
+        if self.in_cloud() and self.t >= self.miasma[1]:
+            self.miasma[1] += self.cloud_dot["tick_ms"] / 1000
             self.hit_mob(self.miasma[2], "miasma", False)
         elif self.miasma and self.t >= self.miasma[1]:
-            self.miasma[1] += 1.0
+            self.miasma[1] += self.cloud_dot["tick_ms"] / 1000
+        # Every grow_every_ms the Blights of the mobs inside gain a stack (Breeding Ground).
+        if self.cloud.get("grow_every_ms") and self.miasma and self.t < self.miasma[0] and self.t >= self.miasma[3]:
+            self.miasma[3] += self.cloud["grow_every_ms"] / 1000
+            if self.in_cloud():
+                self.grow(self.blight)
+                self.grow_others()
         if self.mending_dot and self.t < self.mending_dot[0] and self.t >= self.mending_dot[1]:
-            self.mending_dot[1] += 2.0
+            self.mending_dot[1] += self.toll["tick_ms"] / 1000
             self.hp -= min(self.mending_dot[2], max(self.hp - 1, 0))
             self.costs += self.mending_dot[2]
         for h in self.lance_hots:
             if self.t < h[0] and self.t >= h[1]:
-                h[1] += 2.0
+                h[1] += self.lance_hot["tick_ms"] / 1000
                 self.heal(h[2], "hot")
         self.lance_hots = [h for h in self.lance_hots if self.t < h[0]]
+        if self.maso and self.t < self.maso[0] and self.t >= self.maso[1]:
+            self.maso[1] += self.maso[3]
+            self.heal(self.maso[2], "masochism")
         # Channel ticks.
         if self.channel:
             if self.t >= self.channel[1]:
-                self.channel[1] += 1.0
-                p = fx(self.skill("siphon_life"), "drain")
-                o = self.spell_roll(self.spell_crit())
-                if o != "miss":
-                    d = self.hit_mob(linear(p["amount"], L), "siphon", False, o == "crit")
-                    self.heal(d, "siphon")
+                self.drain()
             if self.t >= self.channel[0]:
                 self.channel = None
         # Finish casts.
         if self.cast and self.t >= self.cast[0]:
-            key = self.cast[1]
             self.cast = None
-            if key == "blood_lance":
-                lance = self.skill("blood_lance")
-                self.health_cost(lance["realm_cost"])
-                p = fx(lance, "school_damage")
-                o = self.spell_roll(self.spell_crit())
-                if o != "miss":
-                    amount = self.opts.get("lance_amount", p["amount"])
-                    raw = linear(amount, L) + sp_direct(s.spell_power, 1500)
-                    d = self.hit_mob(raw, "blood_lance", False, o == "crit")
-                    self.lance_hots.append([self.t + 6, self.t + 2, d * 20 // 100 // 3])
-                    self.grow_blight()
+            self.lance()
         in_melee = self.dist <= 5
         if not self.cast and not self.channel and self.t >= self.gcd:
             hp_frac = self.hp / s.max_hp
-            mending, siphon = self.skill("dark_mending"), self.skill("siphon_life")
-            blight, miasma = self.skill("creeping_blight"), self.skill("miasma")
+            siphon, blight, miasma = self.skill("siphon_life"), self.skill("creeping_blight"), self.skill("miasma")
+            burst_yd = fx(self.skill("dark_mending"), "heal").get("overheal_burst_yd")
+            over, mend_cost = self.surplus()
+            det = self.talent_cast
             if hp_frac < 0.55 and self.ready("mending"):
-                self.cd("mending", mending["realm_cooldown_ms"])
-                self.health_cost(mending["realm_cost"])
-                self.gcd = self.t + 1.5
-                p = fx(mending, "heal")
-                heal = linear(p["amount"], L) + sp_direct(s.spell_power, 0)
-                before = self.hp
-                self.heal(heal, "dark_mending")
-                # The toll: its pct of what the heal healed, spread over the aura's ticks.
-                a = aura(self.calling, fx(mending, "periodic_damage")["apply_aura"])
-                toll = fx(a, "periodic_damage")
-                ticks = a["duration_ms"] // toll["tick_ms"]
-                self.mending_dot = [self.t + a["duration_ms"] / 1000, self.t + toll["tick_ms"] / 1000,
-                                    (self.hp - before) * toll["pct"] // 100 // ticks]
+                self.mend()
+            elif det and self.ready("detonate") and self.blighted(self.blight) and (
+                    self.blight[0] - self.blight[1] < DT
+                    or hp_frac < 0.55 and self.dist <= fx(det, "consume_aura")["radius_yd"]):
+                # Once the Blight has no tick left, or for the heal below Dark Mending's line.
+                self.detonate()
             elif hp_frac < 0.45 and self.power >= self.cost(siphon):
-                self.spend_mana(self.cost(siphon))
-                self.channel = [self.t + 5.0, self.t + 1.0]
-                self.gcd = self.t + 1.5
-            elif not (self.blight and self.t < self.blight[0]) and self.power >= self.cost(blight):
+                self.siphon()
+            elif (fx(siphon, "drain").get("overheal_absorb_max_pct") and self.hp >= s.max_hp and not in_melee
+                  and self.power >= self.cost(siphon)):
+                # At full health with the mob on its way, the whole drain grows a shield (Gorging Siphon).
+                self.siphon()
+            elif burst_yd and self.ready("mending") and self.dist <= burst_yd and over >= mend_cost:
+                # A burst that outdoes the health it costs (Dark Surplus).
+                self.mend()
+            elif not self.blighted(self.blight) and self.power >= self.cost(blight):
                 self.spend_mana(self.cost(blight))
                 self.gcd = self.t + 1.5
                 if self.spell_roll(0) != "miss":
-                    self.blight = [self.t + self.opts.get("blight_dur", self.blight_aura()["duration_ms"] / 1000), self.t + self.opts.get("blight_tick_s", 3.0), self.blight_tick(), 1]
+                    self.blight = self.new_blight()
             elif self.ready("miasma") and in_melee and self.power >= self.cost(miasma):
                 self.spend_mana(self.cost(miasma))
                 self.cd("miasma", miasma["realm_cooldown_ms"])
                 self.gcd = self.t + 1.5
-                a = aura("acolyte", fx(miasma, "ground_area")["enemy_aura"])
-                self.miasma = [self.t + 10, self.t + 1, linear(a["effects"][0]["params"]["tick"], L)]
+                self.miasma = [self.t + self.cloud["duration_ms"] / 1000, self.t + self.cloud_dot["tick_ms"] / 1000,
+                               linear(self.cloud_dot["tick"], L), self.t + self.cloud.get("grow_every_ms", 0) / 1000]
             elif self.hp > s.max_hp * 0.25:
-                self.start("blood_lance", 1500)
+                self.start("blood_lance")
         # Mob.
         if self.dist > 5:
             self.dist = max(self.dist - MOB_RUN * DT, 0)

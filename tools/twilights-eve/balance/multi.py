@@ -42,11 +42,13 @@ class Multi:
         self.tgt = keep
         return d0
 
-    def splash(self, d, src):
+    def splash(self, d, src, n=1):
         others = [i for i in self.alive() if i != self.tgt]
         if d > 0 and others:
-            keep, self.tgt = self.tgt, others[0]
-            model.Sim.hit_mob(self, d, src, physical=False)
+            keep = self.tgt
+            for i in others if n == 0 else others[:n]:
+                self.tgt = i
+                model.Sim.hit_mob(self, d, src, physical=False)
             self.tgt = keep
 
     def extra_defended(self, i, o):
@@ -170,8 +172,44 @@ class RangerN(Multi, model.Ranger):
 
 
 class AcolyteN(Multi, model.Acolyte):
-    AOE = {"miasma": 0}
-    PER_TARGET = dict(blight=None)
+    AOE = {"miasma": 0, "dark_surplus": 0}
+
+    @property
+    def blight(self):
+        return self.blights.get(self.tgt)
+
+    @blight.setter
+    def blight(self, b):
+        self.blights[self.tgt] = b
+
+    def setup_fight(self):
+        self.blights = {}  # mob -> its Blight: the target's, and the copies a tick spread (Epidemic)
+        super().setup_fight()
+
+    def spread_blight(self, b):
+        # A copy with its stacks and time left on the next living mob that wears none, ticking a
+        # tick from now.
+        bare = [i for i in self.alive() if i != self.tgt and not self.blighted(self.blights.get(i))]
+        if bare:
+            self.blights[bare[0]] = [b[0], self.t + self.blight_dot["tick_ms"] / 1000, b[2], b[3]]
+
+    def grow_others(self, n=1):
+        for i in self.alive():
+            if i != self.tgt:
+                self.grow(self.blights.get(i), n)
+
+    def weaken_pct(self, i=None):
+        return self.blight_weaken(self.blights.get(self.tgt if i is None else i))
+
+    def after_step(self):
+        # The Blights on the other mobs tick there.
+        keep = self.tgt
+        for i in self.alive():
+            b = self.blights.get(i)
+            if i != keep and self.blighted(b) and self.t >= b[1]:
+                self.tgt = i
+                self.tick_blight(b)
+        self.tgt = keep
 
 
 CLASSES = dict(basic_warrior=BasicWarriorN, vanguard=VanguardN, cutthroat=CutthroatN, initiate=InitiateN,
