@@ -8958,6 +8958,401 @@
    "id": 995175,
    "base": 18098,
    "icon": "Interface\\Icons\\Twilight\\cut_hushed_bank_grayling"
+  },
+  {
+   "id": 998000,
+   "base": 3057,
+   "icon": "Interface\\Icons\\INV_Chest_Plate01"
+  },
+  {
+   "id": 998001,
+   "base": 3057,
+   "icon": "Interface\\Icons\\INV_Chest_Plate10"
+  },
+  {
+   "id": 998002,
+   "base": 3057,
+   "icon": "Interface\\Icons\\INV_Chest_Plate13"
+  },
+  {
+   "id": 998003,
+   "base": 11382,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_10"
+  },
+  {
+   "id": 998004,
+   "base": 11382,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_07"
+  },
+  {
+   "id": 998005,
+   "base": 13011,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_14"
+  },
+  {
+   "id": 998006,
+   "base": 13011,
+   "icon": "Interface\\Icons\\INV_Chest_Plate03"
+  },
+  {
+   "id": 998007,
+   "base": 13011,
+   "icon": "Interface\\Icons\\INV_Chest_Plate05"
+  },
+  {
+   "id": 998008,
+   "base": 14377,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_04"
+  },
+  {
+   "id": 998009,
+   "base": 14377,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_39"
+  },
+  {
+   "id": 998010,
+   "base": 14377,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_01"
+  },
+  {
+   "id": 998011,
+   "base": 14731,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_45"
+  },
+  {
+   "id": 998012,
+   "base": 14731,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_03"
+  },
+  {
+   "id": 998013,
+   "base": 14731,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_06"
+  },
+  {
+   "id": 998014,
+   "base": 15201,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_24"
+  },
+  {
+   "id": 998015,
+   "base": 15201,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_31"
+  },
+  {
+   "id": 998016,
+   "base": 16531,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_31"
+  },
+  {
+   "id": 998017,
+   "base": 16531,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_37"
+  },
+  {
+   "id": 998018,
+   "base": 16551,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_01"
+  },
+  {
+   "id": 998019,
+   "base": 16551,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_31"
+  },
+  {
+   "id": 998020,
+   "base": 16567,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_39"
+  },
+  {
+   "id": 998021,
+   "base": 16567,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_01"
+  },
+  {
+   "id": 998022,
+   "base": 16567,
+   "icon": "Interface\\Icons\\INV_Shirt_01"
+  },
+  {
+   "id": 998023,
+   "base": 16895,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_15"
+  },
+  {
+   "id": 998024,
+   "base": 16895,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_45"
+  },
+  {
+   "id": 998025,
+   "base": 16895,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_03"
+  },
+  {
+   "id": 998026,
+   "base": 17098,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_45"
+  },
+  {
+   "id": 998027,
+   "base": 17098,
+   "icon": "Interface\\Icons\\INV_Chest_Fur"
+  },
+  {
+   "id": 998028,
+   "base": 17098,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_03"
+  },
+  {
+   "id": 998029,
+   "base": 17214,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_07"
+  },
+  {
+   "id": 998030,
+   "base": 17214,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_05"
+  },
+  {
+   "id": 998031,
+   "base": 19029,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_45"
+  },
+  {
+   "id": 998032,
+   "base": 19029,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_02"
+  },
+  {
+   "id": 998033,
+   "base": 19029,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_03"
+  },
+  {
+   "id": 998034,
+   "base": 19110,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_39"
+  },
+  {
+   "id": 998035,
+   "base": 19110,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_01"
+  },
+  {
+   "id": 998036,
+   "base": 19110,
+   "icon": "Interface\\Icons\\INV_Shirt_Green_01"
+  },
+  {
+   "id": 998037,
+   "base": 22677,
+   "icon": "Interface\\Icons\\INV_Chest_Plate07"
+  },
+  {
+   "id": 998038,
+   "base": 22677,
+   "icon": "Interface\\Icons\\INV_Chest_Plate09"
+  },
+  {
+   "id": 998039,
+   "base": 22688,
+   "icon": "Interface\\Icons\\INV_Chest_Plate04"
+  },
+  {
+   "id": 998040,
+   "base": 22688,
+   "icon": "Interface\\Icons\\INV_Chest_Plate10"
+  },
+  {
+   "id": 998041,
+   "base": 22688,
+   "icon": "Interface\\Icons\\INV_Chest_Plate13"
+  },
+  {
+   "id": 998042,
+   "base": 22689,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_04"
+  },
+  {
+   "id": 998043,
+   "base": 22689,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_14"
+  },
+  {
+   "id": 998044,
+   "base": 22689,
+   "icon": "Interface\\Icons\\INV_Chest_Plate03"
+  },
+  {
+   "id": 998045,
+   "base": 25755,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_05"
+  },
+  {
+   "id": 998046,
+   "base": 25755,
+   "icon": "Interface\\Icons\\INV_Chest_Plate10"
+  },
+  {
+   "id": 998047,
+   "base": 25755,
+   "icon": "Interface\\Icons\\INV_Chest_Plate13"
+  },
+  {
+   "id": 998048,
+   "base": 25763,
+   "icon": "Interface\\Icons\\INV_Chest_Plate02"
+  },
+  {
+   "id": 998049,
+   "base": 25763,
+   "icon": "Interface\\Icons\\INV_Chest_Plate09"
+  },
+  {
+   "id": 998050,
+   "base": 25769,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_07"
+  },
+  {
+   "id": 998051,
+   "base": 25769,
+   "icon": "Interface\\Icons\\INV_Chest_Plate10"
+  },
+  {
+   "id": 998052,
+   "base": 25769,
+   "icon": "Interface\\Icons\\INV_Chest_Plate13"
+  },
+  {
+   "id": 998053,
+   "base": 25780,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_14"
+  },
+  {
+   "id": 998054,
+   "base": 25780,
+   "icon": "Interface\\Icons\\INV_Chest_Plate03"
+  },
+  {
+   "id": 998055,
+   "base": 25877,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_39"
+  },
+  {
+   "id": 998056,
+   "base": 25877,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_40"
+  },
+  {
+   "id": 998057,
+   "base": 25877,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_01"
+  },
+  {
+   "id": 998058,
+   "base": 25889,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_39"
+  },
+  {
+   "id": 998059,
+   "base": 25889,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_01"
+  },
+  {
+   "id": 998060,
+   "base": 26933,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_14"
+  },
+  {
+   "id": 998061,
+   "base": 26933,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_16"
+  },
+  {
+   "id": 998062,
+   "base": 26933,
+   "icon": "Interface\\Icons\\INV_Chest_Plate03"
+  },
+  {
+   "id": 998063,
+   "base": 26961,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_11"
+  },
+  {
+   "id": 998064,
+   "base": 26972,
+   "icon": "Interface\\Icons\\INV_Chest_Plate06"
+  },
+  {
+   "id": 998065,
+   "base": 26972,
+   "icon": "Interface\\Icons\\INV_Chest_Plate09"
+  },
+  {
+   "id": 998066,
+   "base": 26984,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_08"
+  },
+  {
+   "id": 998067,
+   "base": 26984,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_14"
+  },
+  {
+   "id": 998068,
+   "base": 26984,
+   "icon": "Interface\\Icons\\INV_Chest_Plate03"
+  },
+  {
+   "id": 998069,
+   "base": 26990,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_11"
+  },
+  {
+   "id": 998070,
+   "base": 26990,
+   "icon": "Interface\\Icons\\INV_Chest_Plate15"
+  },
+  {
+   "id": 998071,
+   "base": 27010,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_05"
+  },
+  {
+   "id": 998072,
+   "base": 27010,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_11"
+  },
+  {
+   "id": 998073,
+   "base": 27081,
+   "icon": "Interface\\Icons\\INV_Chest_Plate10"
+  },
+  {
+   "id": 998074,
+   "base": 27081,
+   "icon": "Interface\\Icons\\INV_Chest_Plate13"
+  },
+  {
+   "id": 998075,
+   "base": 27669,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_13"
+  },
+  {
+   "id": 998076,
+   "base": 27669,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_07"
+  },
+  {
+   "id": 998077,
+   "base": 27683,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_45"
+  },
+  {
+   "id": 998078,
+   "base": 27683,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_03"
   }
  ]
 }
