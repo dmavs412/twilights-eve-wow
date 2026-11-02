@@ -49,6 +49,8 @@ pub(crate) use fishing::{angler_options, find_hint, hint_options, is_hint_option
 pub(crate) use herbalism::{herbalist_options, HerbPatches};
 pub(crate) mod kitchen;
 pub(crate) use kitchen::{kitchen_options, Kitchens};
+pub(crate) mod alchemy;
+pub(crate) use alchemy::{alchemy_options, Alchemies};
 pub(crate) use phase::creatures;
 mod procs;
 mod regen;
@@ -448,6 +450,7 @@ impl InWorld {
         events.push(fishing::journal(c));
         events.push(herbalism::journal(c));
         events.push(kitchen::journal(c));
+        events.push(alchemy::journal(c));
         events.extend(crate::talents::spell_mods(c));
         events.push(cast::action_buttons(c));
         // The proficiencies and the carried items' objects, ahead of the player that names them.

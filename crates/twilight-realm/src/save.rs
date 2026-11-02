@@ -223,6 +223,21 @@ struct Save {
     first_order_given: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     kitchen_orders: Vec<crate::characters::KitchenOrders>,
+    /// Alchemy (#542, within version 5): a save without it has noted, learned and opened nothing.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    alchemy_notes: Vec<(u32, u32)>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    alchemy_grades: Vec<crate::characters::GradeRecord>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    alchemy_makes: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    alchemy_flasks: Vec<(String, u32)>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    alchemy_tables: Vec<String>,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    alchemy_last: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    brew_log: Vec<crate::characters::BrewLog>,
     /// The entry the empty Lure slot waits to refill with (version 5). A plain key, so before the
     /// gear tables.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -487,6 +502,13 @@ pub(crate) fn export(c: &Char) -> String {
         dish_log: c.dish_log.clone(),
         first_order_given: c.first_order_given,
         kitchen_orders: c.kitchen_orders.clone(),
+        alchemy_notes: c.alchemy_notes.clone(),
+        alchemy_grades: c.alchemy_grades.clone(),
+        alchemy_makes: c.alchemy_makes.clone(),
+        alchemy_flasks: c.alchemy_flasks.clone(),
+        alchemy_tables: c.alchemy_tables.clone(),
+        alchemy_last: c.alchemy_last.clone(),
+        brew_log: c.brew_log.clone(),
         lure_waiting: c.lure_waiting,
         calling_chosen: c.calling_chosen,
         fishing_pole: saved_gear(&c.fishing_pole),
@@ -599,6 +621,13 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         cook_lessons: s.cook_lessons,
         kitchen_orders: s.kitchen_orders,
         first_order_given: s.first_order_given,
+        alchemy_notes: s.alchemy_notes,
+        alchemy_grades: s.alchemy_grades,
+        alchemy_makes: s.alchemy_makes,
+        alchemy_flasks: s.alchemy_flasks,
+        alchemy_tables: s.alchemy_tables,
+        alchemy_last: s.alchemy_last,
+        brew_log: s.brew_log,
         fishing_pole: None,
         fishing_lure: None,
         lure_waiting: s.lure_waiting,

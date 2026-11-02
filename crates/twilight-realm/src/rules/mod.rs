@@ -3,6 +3,7 @@
 //! systems built on top: aggro and leashing, skills, gear.
 
 pub mod aggro;
+pub(crate) mod alchemy;
 pub mod durability;
 pub mod forage;
 pub mod game_clock;

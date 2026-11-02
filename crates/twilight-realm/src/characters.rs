@@ -144,6 +144,52 @@ pub(crate) struct Char {
     pub(crate) kitchen_orders: Vec<KitchenOrders>,
     /// Whether the Goldshire kitchen has posted their first fish order.
     pub(crate) first_order_given: bool,
+    /// Alchemy (ADR 0025): each Herb Note's herb item and the crafts it was counted in, ascending
+    /// by item.
+    pub(crate) alchemy_notes: Vec<(u32, u32)>,
+    /// The grades they have learned, been told of by a Rumour, or made.
+    pub(crate) alchemy_grades: Vec<GradeRecord>,
+    /// The make keys opened; the Mortar's is never stored, as it is always open.
+    pub(crate) alchemy_makes: Vec<String>,
+    /// The flask product keys made, with counts.
+    pub(crate) alchemy_flasks: Vec<(String, u32)>,
+    /// The table keys visited.
+    pub(crate) alchemy_tables: Vec<String>,
+    /// The last thing learned, for the Journal's Discoveries.
+    pub(crate) alchemy_last: String,
+    /// The last `[log] keep` makes, oldest first.
+    pub(crate) brew_log: Vec<BrewLog>,
+}
+
+/// One alchemy grade's record (the prototype's `S.grades`): `steps` counts makes per Strength
+/// Step.
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct GradeRecord {
+    /// "potion", "hybrid", "oil", "tincture" or "essence".
+    pub(crate) family: String,
+    /// A property or a hybrid's pair.
+    pub(crate) key: String,
+    pub(crate) grade: u8,
+    pub(crate) learned: bool,
+    pub(crate) rumoured: bool,
+    pub(crate) steps: [u32; 5],
+}
+
+/// One make in the Brew Log. `when` is "Day 2, 08:00"; `result` the item made, Murky Sludge's
+/// entry for a sludge.
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct BrewLog {
+    pub(crate) when: String,
+    /// The make's key.
+    pub(crate) make: String,
+    /// (item, count), in the order first put in.
+    pub(crate) inputs: Vec<(u32, u32)>,
+    /// The true sums, in `[props]` order, then Toxic and Purifying.
+    pub(crate) sums: Vec<(String, f32)>,
+    pub(crate) net_toxic: u32,
+    pub(crate) fail_pct: u32,
+    pub(crate) result: u32,
+    pub(crate) note: String,
 }
 
 /// A kitchen's orders for one character: the dawn-based game day they were rolled on.
@@ -328,6 +374,13 @@ impl Characters {
             cook_lessons: [false; 6],
             kitchen_orders: Vec::new(),
             first_order_given: false,
+            alchemy_notes: Vec::new(),
+            alchemy_grades: Vec::new(),
+            alchemy_makes: Vec::new(),
+            alchemy_flasks: Vec::new(),
+            alchemy_tables: Vec::new(),
+            alchemy_last: String::new(),
+            brew_log: Vec::new(),
         });
         CHAR_CREATE_SUCCESS
     }

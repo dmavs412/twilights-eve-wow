@@ -38,6 +38,8 @@ struct Npc {
     resets_perks: bool,
     #[serde(default)]
     cook: bool,
+    #[serde(default)]
+    alchemist: bool,
     /// The `AreaTable` id an innkeeper binds to.
     area: Option<u32>,
     /// An innkeeper's rest area, in yards.
@@ -209,6 +211,10 @@ fn every_npcs_flags_fit_its_role() {
             }
             // Tomas and Brother Hollis: the kitchen in their menu (#491).
             "cook" => n.npc_flags == GOSSIP && n.cook && talks && !gives && n.stock.is_empty(),
+            // The three alchemists: their table in their menu (#542).
+            "alchemist" => {
+                n.npc_flags == GOSSIP && n.alchemist && talks && !gives && n.stock.is_empty()
+            }
             other => panic!("{}: no role {other:?}", n.name),
         };
         assert!(ok, "{} ({}): flags {:#x}", n.name, n.role, n.npc_flags);

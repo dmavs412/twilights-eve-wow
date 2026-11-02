@@ -530,6 +530,11 @@ pub(crate) fn points(family: Family, grade: Grade, step: Step) -> f32 {
     points_in(file(), family, grade, step)
 }
 
+/// `p`'s tooltip line at `grade` and `step`, its numbers filled in.
+pub(crate) fn text(p: &Product, grade: Grade, step: Step) -> String {
+    text_at(file(), p, grade, step)
+}
+
 /// `n` at `step`, rounded half up.
 pub(crate) fn scaled(n: u32, step: Step) -> u32 {
     scale(n, factor(file(), step))
@@ -1067,15 +1072,11 @@ fn check_world(file: &File) {
     }
     let npcs = crate::hub::npcs();
     for t in &file.table {
-        let is_npc = npcs.iter().any(|n| n.entry == t.alchemist);
-        // TODO(#542): #542 adds the alchemists to hub.toml; until then a missing one is skipped.
-        if !is_npc {
-            continue;
-        }
         assert!(
-            is_npc,
+            npcs.iter().any(|n| n.entry == t.alchemist && n.alchemist),
             "table {}'s alchemist {} is no hub NPC",
-            t.key, t.alchemist
+            t.key,
+            t.alchemist
         );
     }
 }

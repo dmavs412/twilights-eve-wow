@@ -10,10 +10,12 @@ pub mod wire;
 pub mod world;
 pub use auth::AuthReject;
 pub use events::{
-    decode, CallingOption, CharAction, DishPage, EntityKind, FishPage, HerbBasketRow, HerbKnown,
-    HerbLog, HerbTile, KitchenIngredient, KitchenOrderRow, KitchenRecipe, LoginRefusal, LoginStage,
-    MapIcon, MapMark, MarkedQuest, MoveSpeeds, PhaseMeterState, Poll, SatchelPick, SatchelRow,
-    SessionEnd, SessionEvent, SessionEventKind, TalentChoiceView, TalentRowView,
+    decode, AlchemyFlaskRow, AlchemyGrade, AlchemyGradePage, AlchemyMakeRow, AlchemyMaterial,
+    AlchemyNote, AlchemyRumour, AlchemyToxic, AlchemyValue, AlchemyVial, BrewLogRow, CallingOption,
+    CharAction, DishPage, EntityKind, FishPage, HerbBasketRow, HerbKnown, HerbLog, HerbTile,
+    KitchenIngredient, KitchenOrderRow, KitchenRecipe, LoginRefusal, LoginStage, MapIcon, MapMark,
+    MarkedQuest, MoveSpeeds, PhaseMeterState, Poll, SatchelPick, SatchelRow, SessionEnd,
+    SessionEvent, SessionEventKind, TalentChoiceView, TalentRowView,
 };
 pub use messages::field;
 pub use messages::{

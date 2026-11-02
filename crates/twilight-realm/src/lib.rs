@@ -206,6 +206,30 @@ pub enum KitchenAction {
     Close,
 }
 
+/// What the player does at an open alchemy table (ADR 0025). `items` are item entries; `target`
+/// is "potion|Restorative|Minor", or "" for none.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
+pub enum AlchemyAction {
+    /// What the make would come out as, answered with `AlchemyPreview`.
+    Preview {
+        make: String,
+        items: Vec<u32>,
+        target: String,
+    },
+    Make {
+        make: String,
+        items: Vec<u32>,
+        target: String,
+    },
+    BuyRumour {
+        family: String,
+        key: String,
+        grade: u8,
+    },
+    SellSludge,
+    Close,
+}
+
 /// Everything a client can ask of the realm. The glue maps the client's own commands onto these
 /// and drops the rest.
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -253,6 +277,8 @@ pub enum RealmCommand {
     Herb(HerbAction),
     /// An action at the open kitchen (ADR 0025).
     Kitchen(KitchenAction),
+    /// An action at the open alchemy table (ADR 0025).
+    Alchemy(AlchemyAction),
     /// Click off one of the player's own buffs.
     CancelAura {
         spell_id: u32,
@@ -680,6 +706,8 @@ pub struct Realm {
     herb_patches: world::HerbPatches,
     /// Each character's open kitchen: not saved.
     kitchens: world::Kitchens,
+    /// Each character's open alchemy table: not saved.
+    alchemies: world::Alchemies,
     /// The Rumours under way: not saved.
     rumours: rumours::Rumours,
 }
@@ -1592,6 +1620,7 @@ impl Realm {
             RealmCommand::FishingChoice { reel } => self.fishing_choice(reel),
             RealmCommand::Herb(action) => self.herb_action(action),
             RealmCommand::Kitchen(action) => self.kitchen_action(action),
+            RealmCommand::Alchemy(action) => self.alchemy_action(action),
             RealmCommand::ChooseCalling { quest } => {
                 self.change_satchel(|c, events| calling_choice::choose(c, quest, events))
             }
@@ -2133,6 +2162,7 @@ impl Realm {
         self.tick_fishing(dt, host);
         self.tick_herbs(host);
         self.check_open_kitchen();
+        self.check_open_alchemy();
         let Some(w) = &mut self.world else {
             return;
         };
@@ -2508,6 +2538,7 @@ impl Realm {
         };
         self.forget_herb_patches(w.guid);
         self.kitchens.close(w.guid);
+        self.alchemies.close(w.guid);
         // Leaving dead is a release: the save puts the character where it comes back.
         if let Some(c) = self.characters.get_mut(w.guid) {
             w.release(c, &mut Vec::new());

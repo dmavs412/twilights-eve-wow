@@ -721,6 +721,7 @@ pub(crate) fn deposit(c: &mut Char, bag: u8, slot: u8, events: &mut Vec<SessionE
 fn journal_of(c: &Char, entry: u32) -> SessionEvent {
     match items::template(entry).and_then(|t| t.journal) {
         Some(items::Profession::Herbalism) => crate::world::herbalism::journal(c),
+        Some(items::Profession::Alchemy) => crate::world::alchemy::journal(c),
         _ => crate::world::fishing::journal(c),
     }
 }

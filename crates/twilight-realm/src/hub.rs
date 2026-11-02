@@ -66,6 +66,9 @@ pub(crate) struct Npc {
     /// Its gossip menu opens its kitchen, `cooking::kitchen_of_cook(entry)` (ADR 0025).
     #[serde(default)]
     pub(crate) cook: bool,
+    /// Its gossip menu opens its alchemy table, `alchemy::table_of_alchemist(entry)` (ADR 0025).
+    #[serde(default)]
+    pub(crate) alchemist: bool,
     /// Its gossip menu sells a Herbalist the forgetting of their perks, for money that doubles
     /// with each reset (ADR 0024).
     #[serde(default)]
@@ -274,6 +277,8 @@ impl crate::Realm {
             player.map_or_else(Vec::new, |c| crate::world::herbalist_options(npc, c))
         } else if npc.cook {
             crate::world::kitchen_options()
+        } else if npc.alchemist {
+            crate::world::alchemy_options()
         } else {
             crate::trainer::options(npc)
         };
@@ -302,6 +307,7 @@ impl crate::Realm {
                 self.herbalist_select(npc, option)
             }
             Some(npc) if npc.cook => self.kitchen_select(npc, option),
+            Some(npc) if npc.alchemist => self.alchemy_select(npc, option),
             Some(_) => self.trainer_select(guid, option),
             None => self.field_gossip_select(guid, option),
         }

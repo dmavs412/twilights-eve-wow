@@ -1906,3 +1906,61 @@ orientation = 4.6489
 text_id = 64166
 teaches_herbalism = true
 greeting = "Briarthorn and Bruiseweed grow thick on these slopes, $C. I can teach you to gather them."
+
+# ── Sister Marla, the Abbey's alchemist (#542) ───────────────────────────────────────────────────
+# Outdoors by the Abbey's herb beds, beside Brother Ansel. Her gossip opens the Northshire table.
+[[npc]]
+guid = 9300069
+entry = 190075
+name = "Sister Marla"
+subname = "Alchemist"
+level = 10
+display_id = 1295
+faction_template = 35
+role = "alchemist"
+npc_flags = 0x1
+map = 0
+position = [-8886.0, -212.0, 81.11]
+orientation = 1.57
+text_id = 64167
+alchemist = true
+greeting = "The Abbey's Mortar has ground a good many herbs, $C. Use my table whenever you like."
+
+# ── Alwen Carrow, Goldshire's alchemist (#542) ───────────────────────────────────────────────────
+# Outdoors in Goldshire, beside Hedda Thornwick. Her gossip opens the Goldshire table.
+[[npc]]
+guid = 9300070
+entry = 190076
+name = "Alwen Carrow"
+subname = "Alchemist"
+level = 10
+display_id = 3237
+faction_template = 35
+role = "alchemist"
+npc_flags = 0x1
+map = 0
+position = [-9452.0, 62.0, 55.90]
+orientation = 3.14
+text_id = 64168
+alchemist = true
+greeting = "Mind the dirty herbs, $C. Use my table, and buy a rumour if you're stuck."
+
+# ── Quartermaster Ilsa Venn, Stormwind's alchemist (#542) ────────────────────────────────────────
+# Inside Stormwind's Alchemy Needs on its ground floor, between Lilyssia Nightbreeze and Tel'Athir.
+# Her gossip opens the Stormwind table.
+[[npc]]
+guid = 9300071
+entry = 190077
+name = "Quartermaster Ilsa Venn"
+subname = "Alchemy Quartermaster"
+level = 10
+display_id = 1482
+faction_template = 35
+role = "alchemist"
+npc_flags = 0x1
+map = 0
+position = [-8989.0, 757.0, 98.33]
+orientation = 0.0
+text_id = 64169
+alchemist = true
+greeting = "Stormwind's table, $C. Everything a flask needs, and rumours of the strong grades."

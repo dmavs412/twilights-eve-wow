@@ -228,6 +228,146 @@ pub struct KitchenIngredient {
     pub untried: bool,
 }
 
+/// Twilight's Eve, not 1.12: one of an alchemy table's five makes (ADR 0025), with its limits, 0
+/// where the make has none.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct AlchemyMakeRow {
+    pub key: String,
+    pub name: String,
+    pub station: String,
+    pub verb: String,
+    pub rule: String,
+    pub open: bool,
+    /// `[min, max]` herbs as the body.
+    pub herbs: [u32; 2],
+    pub tinctures: u32,
+    pub essences: u32,
+    pub fish: u32,
+    pub wash: u32,
+}
+
+/// Twilight's Eve, not 1.12: one value a Herb Note shows: its name, and its points once the note
+/// is filled.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct AlchemyValue {
+    pub name: String,
+    pub points: Option<u32>,
+}
+
+/// Twilight's Eve, not 1.12: one alchemy material held. `kind` is 0 herb, 1 fish, 2 Tincture,
+/// 3 Essence; a herb has `values`, a Tincture or Essence `prop`, `points`, `toxic` and `step`.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct AlchemyMaterial {
+    pub item: u32,
+    pub count: u32,
+    pub kind: u8,
+    pub level: u8,
+    pub values: Vec<AlchemyValue>,
+    pub prop: String,
+    pub points: f32,
+    pub toxic: u32,
+    pub step: f32,
+}
+
+/// Twilight's Eve, not 1.12: one grade a make may target. `threshold` is 0 unless learned or
+/// rumoured.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct AlchemyGrade {
+    pub family: String,
+    pub key: String,
+    pub grade: u8,
+    pub name: String,
+    pub learned: bool,
+    pub rumoured: bool,
+    pub threshold: u32,
+}
+
+/// Twilight's Eve, not 1.12: one Rumour a table sells, its price in copper.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct AlchemyRumour {
+    pub family: String,
+    pub key: String,
+    pub grade: u8,
+    pub name: String,
+    pub price: u32,
+}
+
+/// Twilight's Eve, not 1.12: one property's vial. `unknown` is 0 none, 1 some, 2 all; `bonus`
+/// its share of the Toxic payoff; `tick` the target's threshold when known, else 0.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct AlchemyVial {
+    pub prop: String,
+    pub value: f32,
+    pub unknown: u8,
+    pub main: bool,
+    pub target: bool,
+    pub bonus: f32,
+    pub tick: u32,
+}
+
+/// Twilight's Eve, not 1.12: the Toxic vial.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct AlchemyToxic {
+    pub raw: u32,
+    pub purify: u32,
+    pub net: u32,
+    pub unknown: bool,
+    pub fail_pct: u32,
+    pub bonus: f32,
+}
+
+/// Twilight's Eve, not 1.12: one herb's Herb Note. `rarity` is 0 common to 3 legendary;
+/// `budget` 0 until the values show.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct AlchemyNote {
+    pub item: u32,
+    pub uses: u32,
+    pub level: u8,
+    pub rarity: u8,
+    pub zones: String,
+    pub values: Vec<AlchemyValue>,
+    pub budget: u32,
+}
+
+/// Twilight's Eve, not 1.12: one grade's Journal page. `name` is the x1 item's, `base` the
+/// product's; `effect` its x1 tooltip text once learned, for potions, hybrids and oils.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct AlchemyGradePage {
+    pub family: String,
+    pub key: String,
+    pub grade: u8,
+    pub name: String,
+    pub base: String,
+    pub learned: bool,
+    pub rumoured: bool,
+    pub threshold: u32,
+    pub steps: [u32; 5],
+    pub effect: String,
+}
+
+/// Twilight's Eve, not 1.12: one flask kind and how many were made.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct AlchemyFlaskRow {
+    pub key: String,
+    pub name: String,
+    /// "Armour and Attack power".
+    pub stats: String,
+    pub made: u32,
+}
+
+/// Twilight's Eve, not 1.12: one Brew Log line. `sums` is "Restorative 4, Toxic 2"; `toxic`
+/// "2 · 33%", or "" for a clean make.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct BrewLogRow {
+    pub when: String,
+    pub make: String,
+    pub inputs: Vec<(u32, u32)>,
+    pub sums: String,
+    pub toxic: String,
+    pub result: u32,
+    pub note: String,
+}
+
 /// Twilight's Eve, not 1.12: one Talent Row as the Talents panel shows it (ADR 0028).
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct TalentRowView {
@@ -623,6 +763,68 @@ pub enum SessionEvent {
     },
     /// Twilight's Eve, not 1.12: the kitchen closed. Never wire-decoded.
     KitchenClosed,
+    /// Twilight's Eve, not 1.12: the open alchemy table (ADR 0025), sent when an alchemist opens
+    /// it and after every make, Rumour and sale. `line` is the table's first-visit line; `tiers`
+    /// the grades its Rumours come in; `sludge` the Murky Sludge held. Never wire-decoded.
+    AlchemyBench {
+        npc: u64,
+        table: String,
+        alchemist: String,
+        line: String,
+        tiers: Vec<String>,
+        /// The five makes in `alchemy.toml` order.
+        makes: Vec<AlchemyMakeRow>,
+        /// Every herb, fish, Tincture and Essence held, by kind, then level, then name.
+        tray: Vec<AlchemyMaterial>,
+        /// One per family, key and grade, in `[props]` order.
+        targets: Vec<AlchemyGrade>,
+        rumours: Vec<AlchemyRumour>,
+        sludge: u32,
+    },
+    /// Twilight's Eve, not 1.12: what a make's list would come out as, from what the character's
+    /// Herb Notes know. `product` is 0 while `known` is false. Never wire-decoded.
+    AlchemyPreview {
+        ready: bool,
+        note: String,
+        vials: Vec<AlchemyVial>,
+        toxic: AlchemyToxic,
+        unnoted: u32,
+        /// The vials' top.
+        scale: f32,
+        /// The make's family ladder; a flask's is the Essence ladder.
+        rings: [u32; 4],
+        hybrid: bool,
+        known: bool,
+        product: u32,
+        sludge: bool,
+        carried: u32,
+    },
+    /// Twilight's Eve, not 1.12: a make's result with the true sums. `lines` are (kind, text):
+    /// 0 info, 1 learn, 2 say, 3 product, 4 error. Never wire-decoded.
+    AlchemyMade {
+        product: u32,
+        failed: bool,
+        fail_pct: u32,
+        vials: Vec<AlchemyVial>,
+        toxic: AlchemyToxic,
+        scale: f32,
+        rings: [u32; 4],
+        lines: Vec<(u8, String)>,
+    },
+    /// Twilight's Eve, not 1.12: the alchemy table closed. Never wire-decoded.
+    AlchemyClosed,
+    /// Twilight's Eve, not 1.12: the Alchemy Journal (ADR 0025), sent at login, after every make,
+    /// Rumour and sale, and when the Satchel changes. `log` is newest first; `open` the make keys
+    /// open, the potion first. Never wire-decoded.
+    AlchemyJournal {
+        satchel: Vec<SatchelRow>,
+        notes: Vec<AlchemyNote>,
+        grades: Vec<AlchemyGradePage>,
+        flasks: Vec<AlchemyFlaskRow>,
+        log: Vec<BrewLogRow>,
+        open: Vec<String>,
+        last: String,
+    },
     /// `SMSG_CHAR_CREATE`/`_DELETE`'s raw `WorldResult`; on success a fresh roster comes first.
     CharActionResult { action: CharAction, code: u8 },
     /// We are in the world; the IO thread emits this before any object update.
