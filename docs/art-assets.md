@@ -255,3 +255,13 @@ The Talents panel (`assets/ui/Talents.xml`) uses the Journal's frame art (`journ
 
 The In Cover and Sleeping auras borrow stock icons (`Ability_Stealth`, `Spell_Nature_Sleep`)
 and need no art.
+
+## Travel (spec #560)
+
+| Asset | Where | Notes |
+|---|---|---|
+| Cart stop map mark | the texture `ui_world_map.rs` draws for `MapIcon::CartStop`, at the size the flight master mark uses | A wagon or a signpost. Until painted the stop borrows the flight master icon, and the locked state is the same icon desaturated. |
+| Wagon map blip | the texture the world map draws for a moving wagon | A small wagon seen from above. Until painted it is the flight master icon at 70% scale. |
+
+The Open Road buff borrows a stock icon (`Ability_Tracking`); the wagon, horse and driver are
+stock models (Gypsy Wagon 5392, Caravan Packhorse 14550, a townsfolk display) and need no art.

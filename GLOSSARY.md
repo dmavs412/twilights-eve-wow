@@ -389,3 +389,23 @@ _Avoid_: interrupt (the effect kind a Kick uses), silence
 **Lockout**:
 The seconds after a Kick during which a mob can't start any Creature Spell of the school it was casting. It still swings and casts spells of other schools.
 _Avoid_: silence, school lock
+
+**Server Unlock**:
+A feature a server buys for everyone on it, on until a date (ADR 0031): a row of `unlocks.toml` in content, and a table with an `until` in the `unlocks.toml` beside the saves. Free while the game is tested. Solo buys the same way.
+_Avoid_: premium feature, DLC, entitlement
+
+**Open Road**:
+The +30% run speed a character has out of combat while the terrain texture under them is a road or street named in `roads.toml`. Adds to the Well Fed speed dish. Shown as a buff of the same name.
+_Avoid_: road bonus, path speed
+
+**Cart**:
+A wagon with a horse and a seated driver that rolls back and forth along a Route all day on the realm's wall clock, standing 30 s at each Cart Stop. Right-click it while it stands to sit; mobs ignore it and its riders.
+_Avoid_: taxi, flight path, caravan, transport (the client's word for boats and lifts)
+
+**Cart Stop**:
+One end of a Route: a named point on the road where a Cart stands and riders board, marked on the Living map and grey while Carts is locked.
+_Avoid_: station, node, flight master
+
+**Route**:
+A Cart's run between two Cart Stops: a row of `carts.toml` whose path along the road `road_path.py` traces from the road texture.
+_Avoid_: taxi path, line
