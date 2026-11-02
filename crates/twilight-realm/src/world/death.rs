@@ -88,6 +88,8 @@ impl InWorld {
         self.herb_tracking_shown = false;
         // ...but for a legendary meal's Well Fed buff.
         self.well_fed_dies(c, events);
+        // The flask and the oils stay on; the flask's aura comes back after release.
+        self.flask_shown = false;
         // Notoriety falls to nothing, so the Heat aura is rightly gone with the rest.
         c.notoriety = 0.0;
         self.heat_shown = 0;

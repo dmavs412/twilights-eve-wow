@@ -540,6 +540,57 @@ pub(crate) fn scaled(n: u32, step: Step) -> u32 {
     scale(n, factor(file(), step))
 }
 
+/// The number `key` of `p` at `grade` and `step`, rounded half up: a range's two ends; None when
+/// `p` has no such number.
+pub(crate) fn num(p: &Product, key: &str, grade: Grade, step: Step) -> Option<[u32; 2]> {
+    let g = usize::from(grade.0);
+    Some(match p.nums.get(key)? {
+        Num::One(v) => [scaled(v[g], step); 2],
+        Num::Range(v) => [scaled(v[g][0], step), scaled(v[g][1], step)],
+    })
+}
+
+/// A flask's two stats, each its Essence's grade value times its step: `(stat, amount)`.
+pub(crate) fn flask_stats(entry: u32) -> Vec<(&'static str, u32)> {
+    let Some(Row::Flask {
+        product,
+        first,
+        second,
+    }) = row(entry)
+    else {
+        return Vec::new();
+    };
+    let (a, b) = halves(&product.key);
+    [(a, first), (b, second)]
+        .into_iter()
+        .filter_map(|(key, (grade, step))| {
+            let essence = self::product(Family::Essence, key)?;
+            let stat = essence.stat.as_deref()?;
+            Some((stat, num(essence, stat, grade, step)?[0]))
+        })
+        .collect()
+}
+
+/// Adds the worn flask's two stats to `s`.
+pub(crate) fn add_flask_stats(
+    c: &crate::characters::Char,
+    s: &mut crate::rules::stats::CharacterStats,
+) {
+    let Some(flask) = c.flask else {
+        return;
+    };
+    for (stat, n) in flask_stats(flask.item) {
+        match stat {
+            "armour" => s.armor += n,
+            "attack_power" => s.attack_power += n as i32,
+            "spell_power" => s.spell_power += n,
+            "health_per_5" => s.health_per_5 += n,
+            "power_per_5" => s.power_per_5 += n,
+            _ => {}
+        }
+    }
+}
+
 /// Points as the prototype's `fmtPts` writes them: "15", "7.5", "6.25".
 pub(crate) fn fmt_points(points: f32) -> String {
     if points.fract() == 0.0 {

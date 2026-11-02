@@ -832,6 +832,14 @@ impl Realm {
         }
     }
 
+    /// Sets the player's health to `health`, at most their maximum: a test seam, as
+    /// [`Self::set_creature_health_pct`] is.
+    pub fn set_player_health(&mut self, health: u32) {
+        if let Some(w) = &mut self.world {
+            w.set_health(health, &mut self.events);
+        }
+    }
+
     /// Sets the wall clock to `unix_ms`, milliseconds since the Unix epoch. Ticks advance it in
     /// between; a host without one leaves it running from 0. An item's cooldown runs on it, so
     /// the time between two sessions counts.
@@ -1658,7 +1666,12 @@ impl Realm {
                                 .inventory
                                 .get(slot)
                                 .is_some_and(|i| cooking::buff_of(i.entry).is_some());
-                            let eaten = if meal {
+                            // A potion, oil or flask runs its alchemy effects.
+                            let brewed =
+                                w.use_alchemy(slot, c, self.wall, &mut self.rng, &mut self.events);
+                            let eaten = if brewed.is_some() {
+                                brewed
+                            } else if meal {
                                 Some(w.eat_meal(slot, c, &mut self.events))
                             } else {
                                 w.eat_or_drink(slot, c, self.wall, &mut self.events)

@@ -62,9 +62,9 @@ const AURA_SLOTS: u8 = 48;
 
 // `SpellCastResult` (vmangos `SpellDefines.h`).
 const SPELL_FAILED_AFFECTING_COMBAT: u8 = 0x00;
-const SPELL_FAILED_BAD_TARGETS: u8 = 0x0a;
+pub(super) const SPELL_FAILED_BAD_TARGETS: u8 = 0x0a;
 const SPELL_FAILED_CASTER_AURASTATE: u8 = 0x12;
-const SPELL_FAILED_CASTER_DEAD: u8 = 0x13;
+pub(super) const SPELL_FAILED_CASTER_DEAD: u8 = 0x13;
 pub(super) const SPELL_FAILED_EQUIPPED_ITEM_CLASS: u8 = 0x19;
 const SPELL_FAILED_FLEEING: u8 = 0x1e;
 /// No arrows or bullets for the ranged weapon (#157).
@@ -74,7 +74,7 @@ pub(super) const SPELL_FAILED_NOT_READY: u8 = 0x3c;
 const SPELL_FAILED_NO_COMBO_POINTS: u8 = 0x46;
 const SPELL_FAILED_NO_POWER: u8 = 0x4d;
 const SPELL_FAILED_ONLY_STEALTHED: u8 = 0x57;
-const SPELL_FAILED_OUT_OF_RANGE: u8 = 0x59;
+pub(super) const SPELL_FAILED_OUT_OF_RANGE: u8 = 0x59;
 const SPELL_FAILED_TARGET_AFFECTING_COMBAT: u8 = 0x66;
 const SPELL_FAILED_TARGET_AURASTATE: u8 = 0x67;
 const SPELL_FAILED_TARGETS_DEAD: u8 = 0x65;
@@ -5830,7 +5830,7 @@ impl InWorld {
 
     /// [`Self::hurt`] in `school`.
     #[allow(clippy::too_many_arguments)]
-    fn hurt_school(
+    pub(super) fn hurt_school(
         &mut self,
         target: u64,
         damage: u32,
@@ -6653,6 +6653,76 @@ impl InWorld {
     pub(super) fn hide_marker(&mut self, spell_id: u32, events: &mut Vec<SessionEvent>) {
         let me = self.guid;
         self.skills.hide_marker_on(me, spell_id, events);
+    }
+
+    /// A helpful [`AuraKind::Marker`] of `spell_id` on the player for `secs`, its time shown (a
+    /// flask's aura).
+    pub(super) fn show_timed_marker(
+        &mut self,
+        spell_id: u32,
+        secs: f32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let aura = Aura {
+            unit: self.guid,
+            spell_id,
+            slot: 0,
+            level: 0,
+            left: secs,
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Marker {
+                helpful: true,
+                stacks: 1,
+            },
+            charges: 0,
+        };
+        self.skills.apply(aura, events);
+    }
+
+    /// An alchemy shield of `amount` goes up on the player for `secs`, under `spell_id`.
+    /// Alchemy's shields never stack: it replaces a smaller one, and beside a larger one the
+    /// larger stays. What the larger one has left, when it stays.
+    pub(super) fn alchemy_shield(
+        &mut self,
+        spell_id: u32,
+        amount: u32,
+        secs: f32,
+        events: &mut Vec<SessionEvent>,
+    ) -> Option<u32> {
+        let u = crate::alchemy::use_();
+        let me = self.guid;
+        let alchemy = move |a: &Aura| {
+            a.unit == me
+                && (a.spell_id == u.potion_spell || a.spell_id == u.oil_spell)
+                && matches!(a.kind, AuraKind::Absorb { .. })
+        };
+        let held = self.skills.auras.iter().find_map(|a| match a.kind {
+            AuraKind::Absorb { left, .. } if alchemy(a) => Some(left),
+            _ => None,
+        });
+        if let Some(left) = held.filter(|&left| left >= amount) {
+            return Some(left);
+        }
+        let gone = self.skills.remove_where(alchemy, events);
+        self.faded(&gone, events);
+        let aura = Aura {
+            unit: me,
+            spell_id,
+            slot: 0,
+            level: self.player.stats.level,
+            left: secs,
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Absorb {
+                left: amount,
+                school: None,
+                ward: Ward::default(),
+            },
+            charges: 0,
+        };
+        self.skills.apply(aura, events);
+        None
     }
 
     /// `unit` died: its auras go with it.

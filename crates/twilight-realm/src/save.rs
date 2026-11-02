@@ -246,9 +246,20 @@ struct Save {
     /// save has not chosen.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     calling_chosen: bool,
+    /// The wall time the next potion may be drunk (#543, within version 6).
+    #[serde(default, skip_serializing_if = "is_never")]
+    potion_ready: f64,
     /// The Well Fed buff left (ADR 0025, within version 5): a table, so after the plain keys.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     well_fed: Option<crate::characters::WellFed>,
+    /// The flask and the two hands' oils left (#543, within version 6). TOML has no empty array
+    /// entry, so each hand is its own key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    flask: Option<crate::characters::Worn>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    main_hand_oil: Option<crate::characters::Worn>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    off_hand_oil: Option<crate::characters::Worn>,
     /// The Fishing Journal's Pole and Lure slots (#371), added within version 4: a save without
     /// them has both empty. Each is an item at slot 0.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -440,6 +451,10 @@ fn is_nothing(v: &f32) -> bool {
     *v == 0.0
 }
 
+fn is_never(v: &f64) -> bool {
+    *v == 0.0
+}
+
 pub(crate) fn export(c: &Char) -> String {
     let save = Save {
         version: SAVE_VERSION,
@@ -490,6 +505,10 @@ pub(crate) fn export(c: &Char) -> String {
         herb_picks: c.herb_picks.clone(),
         herb_tracking: c.herb_tracking,
         well_fed: c.well_fed,
+        potion_ready: c.potion_ready,
+        flask: c.flask,
+        main_hand_oil: c.oils[0],
+        off_hand_oil: c.oils[1],
         herb_tour_seen: c.herb_tour_seen,
         herb_perks: c.herb_perks.clone(),
         herb_tool: c.herb_tool,
@@ -609,6 +628,9 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         herb_picks: s.herb_picks,
         herb_tracking: s.herb_tracking,
         well_fed: s.well_fed,
+        potion_ready: s.potion_ready,
+        flask: s.flask,
+        oils: [s.main_hand_oil, s.off_hand_oil],
         herb_tour_seen: s.herb_tour_seen,
         herb_perks: s.herb_perks,
         herb_tool: s.herb_tool,

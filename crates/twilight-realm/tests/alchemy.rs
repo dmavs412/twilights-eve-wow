@@ -3,9 +3,11 @@
 //! every make goes in the Brew Log.
 
 mod common;
+mod gear_common;
 
 use benilla_protocol::{AlchemyGrade, AlchemyGradePage, SessionEvent, START_ELWYNN};
 use common::*;
+use gear_common::*;
 use twilight_realm::{AlchemyAction, Realm, RealmCommand};
 
 const SISTER_MARLA: u32 = 190_075;
@@ -317,6 +319,219 @@ fn the_alchemy_fields_survive_a_save_round_trip() {
         "alchemy_last",
         "brew_log",
     ] {
+        assert!(before.contains_key(key), "{key} is saved");
+        assert_eq!(before.get(key), after.get(key), "{key}");
+    }
+}
+
+// Using alchemy (#543): potions share a cooldown, oils coat a hand and proc, flasks give two stats
+// through death.
+
+const MINOR_HEALING_X125: u32 = 963_101;
+const MINOR_MANA: u32 = 963_160;
+const MINOR_IRONHIDE: u32 = 963_120;
+const LESSER_IRONHIDE: u32 = 963_125;
+const MINOR_BLASTING: u32 = 963_140;
+const MINOR_BURNING_OIL: u32 = 963_240;
+/// A Lesser Fortifying x1 and a Minor Volatile x1 Essence: Flask of Stone and Ember.
+const STONE_AND_EMBER: u32 = 968_720;
+const POTION_SPELL: u32 = 2598;
+const NOT_READY: u8 = 0x3c;
+const BAD_TARGETS: u8 = 0x0a;
+const FIRE: u8 = 2;
+const WALL_MS: u64 = 1_000_000_000;
+
+/// A warrior of `level` holding `items`, the wall clock at [`WALL_MS`].
+fn holding(level: u8, items: &[Carried]) -> (Realm, u64, Vec<SessionEvent>) {
+    let (mut realm, me, events) = warrior_with(level, 0, items);
+    realm.set_wall_clock(WALL_MS);
+    (realm, me, events)
+}
+
+fn use_at(realm: &mut Realm, slot: u8) -> Vec<SessionEvent> {
+    realm.handle(RealmCommand::UseItem { bag: 255, slot });
+    drain(realm)
+}
+
+/// The cast refusals in `events`, by reason.
+fn refusals(events: &[SessionEvent]) -> Vec<u8> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::CastResult {
+                success: false,
+                reason,
+                ..
+            } => *reason,
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn a_healing_potion_heals_and_starts_the_cooldown_every_potion_shares() {
+    let (mut realm, me, _) = holding(
+        20,
+        &[
+            (BACKPACK_1, MINOR_HEALING_X125, 1),
+            (BACKPACK_1 + 1, MINOR_MANA, 1),
+        ],
+    );
+    realm.set_player_health(50);
+    let events = use_at(&mut realm, BACKPACK_1);
+    let healed: Vec<u32> = events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellHealLog(l) if l.target == me && l.spell_id == POTION_SPELL => {
+                Some(l.amount)
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(healed.len(), 1, "{healed:?}");
+    assert!((88..=113).contains(&healed[0]), "{healed:?}");
+    let ready = saved(&realm, me)["potion_ready"].as_float().unwrap();
+    assert_eq!(ready, WALL_MS as f64 / 1000.0 + 120.0);
+    let events = use_at(&mut realm, BACKPACK_1 + 1);
+    assert_eq!(refusals(&events), vec![NOT_READY]);
+    assert_eq!(held(&realm, me, MINOR_MANA), (0, 1));
+}
+
+#[test]
+fn an_ironhide_potion_shields_and_a_smaller_one_leaves_the_larger_standing() {
+    let (mut realm, me, mut seen) = holding(
+        20,
+        &[
+            (BACKPACK_1, LESSER_IRONHIDE, 1),
+            (BACKPACK_1 + 1, MINOR_IRONHIDE, 1),
+        ],
+    );
+    seen.extend(use_at(&mut realm, BACKPACK_1));
+    assert!(
+        descriptor(&seen, me)
+            .unit_aura_ids()
+            .any(|id| id == POTION_SPELL),
+        "the shield's aura is up"
+    );
+    // Past the shared cooldown, though no time passes for the shield.
+    realm.set_wall_clock(WALL_MS + 121_000);
+    let events = use_at(&mut realm, BACKPACK_1 + 1);
+    assert!(lines(&events)
+        .iter()
+        .any(|l| l == "Ironhide Potion: a 60 shield, but your 150 shield is larger and stays."));
+    assert_eq!(held(&realm, me, MINOR_IRONHIDE), (0, 0), "used either way");
+}
+
+#[test]
+fn a_blasting_potion_needs_a_hostile_target_and_burns_it() {
+    let (mut realm, me, events) = holding(10, &[(BACKPACK_1, MINOR_BLASTING, 2)]);
+    let refused = use_at(&mut realm, BACKPACK_1);
+    assert_eq!(refusals(&refused), vec![BAD_TARGETS]);
+    assert_eq!(held(&realm, me, MINOR_BLASTING), (0, 2));
+    let mob = the_mob(&events);
+    stand_by(&mut realm, &mob);
+    realm.handle(RealmCommand::SetSelection { guid: mob.guid });
+    let thrown = use_at(&mut realm, BACKPACK_1);
+    let burns: Vec<(u32, u8)> = thrown
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellDamageLog(l)
+                if l.attacker == me && l.target == mob.guid && l.spell_id == POTION_SPELL =>
+            {
+                Some((l.damage, l.school))
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(burns.len(), 1, "{burns:?}");
+    assert!((30..=45).contains(&burns[0].0) && burns[0].1 == FIRE);
+    let fight = run(&mut realm, 5.0);
+    assert!(
+        fight
+            .iter()
+            .any(|e| matches!(e, SessionEvent::AttackerState(s)
+            if s.attacker == mob.guid && s.victim == me)),
+        "the mob attacks"
+    );
+}
+
+#[test]
+fn an_oil_coats_the_main_hand_then_the_off_hand_weapon_else_the_main_again() {
+    let oil = |realm: &Realm, me: u64, key: &str| {
+        saved(realm, me)
+            .get(key)
+            .map(|o| (o["item"].as_integer(), o["left_secs"].as_float()))
+    };
+    let coated = Some((Some(i64::from(MINOR_BURNING_OIL)), Some(1800.0)));
+    let (mut realm, me, _) = holding(10, &[(BACKPACK_1, MINOR_BURNING_OIL, 2)]);
+    let events = use_at(&mut realm, BACKPACK_1);
+    assert!(lines(&events)
+        .iter()
+        .any(|l| l == "Burning Oil on your main hand for 30 min."));
+    use_at(&mut realm, BACKPACK_1);
+    assert_eq!(oil(&realm, me, "main_hand_oil"), coated);
+    assert_eq!(oil(&realm, me, "off_hand_oil"), None, "no off-hand weapon");
+
+    let (mut realm, me, _) = holding(
+        10,
+        &[
+            (BACKPACK_1, MINOR_BURNING_OIL, 2),
+            (MAIN_HAND_SLOT, THUGS_CUTLASS, 1),
+            (MAIN_HAND_SLOT + 1, THUGS_CUTLASS, 1),
+        ],
+    );
+    use_at(&mut realm, BACKPACK_1);
+    use_at(&mut realm, BACKPACK_1);
+    assert_eq!(oil(&realm, me, "main_hand_oil"), coated);
+    assert_eq!(oil(&realm, me, "off_hand_oil"), coated);
+}
+
+#[test]
+fn a_flask_adds_its_two_stats_survives_death_and_wears_off() {
+    let (mut realm, me, mut seen) = holding(10, &[(BACKPACK_1, STONE_AND_EMBER, 2)]);
+    let stats = |seen: &[SessionEvent]| {
+        let f = descriptor(seen, me);
+        (
+            f.unit_resistance(0).unwrap(),
+            f.unit_attack_power().unwrap(),
+        )
+    };
+    let (armour, ap) = stats(&seen);
+    seen.extend(use_at(&mut realm, BACKPACK_1));
+    assert_eq!(stats(&seen), (armour + 100, ap + 10));
+    let events = use_at(&mut realm, BACKPACK_1);
+    assert!(lines(&events)
+        .iter()
+        .any(|l| l == "Flask of Stone and Ember is replaced; only one flask is active."));
+    realm.set_player_health(0);
+    let died = run(&mut realm, 0.2);
+    assert_eq!(last_health(&died, me), Some(0));
+    assert!(saved(&realm, me).contains_key("flask"), "it survives death");
+    realm.tick(7200.0, &FlatGround);
+    assert!(lines(&drain(&mut realm))
+        .iter()
+        .any(|l| l == "Flask of Stone and Ember has worn off."));
+    assert!(!saved(&realm, me).contains_key("flask"));
+}
+
+#[test]
+fn the_flask_the_oils_and_the_potion_cooldown_survive_a_save_round_trip() {
+    let (mut realm, me, _) = holding(
+        10,
+        &[
+            (BACKPACK_1, MINOR_HEALING_X125, 1),
+            (BACKPACK_1 + 1, MINOR_BURNING_OIL, 1),
+            (BACKPACK_1 + 2, STONE_AND_EMBER, 1),
+        ],
+    );
+    for slot in BACKPACK_1..BACKPACK_1 + 3 {
+        use_at(&mut realm, slot);
+    }
+    let blob = realm.export_character(me).unwrap();
+    let mut again = Realm::with_seed(1);
+    again.import_character(&blob).unwrap();
+    let (before, after) = (saved(&realm, me), saved(&again, me));
+    for key in ["potion_ready", "flask", "main_hand_oil"] {
         assert!(before.contains_key(key), "{key} is saved");
         assert_eq!(before.get(key), after.get(key), "{key}");
     }

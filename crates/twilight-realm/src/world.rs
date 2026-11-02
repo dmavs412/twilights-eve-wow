@@ -31,6 +31,7 @@ use crate::space::distance;
 use crate::Host;
 use power::Power;
 
+mod brew;
 mod death;
 mod discovery;
 mod dungeon;
@@ -407,6 +408,10 @@ pub(crate) struct InWorld {
     reflected: Vec<(u64, u32)>,
     /// Whether the game clock was in the night block at this tick.
     night: bool,
+    /// Whether the flask's aura is up.
+    flask_shown: bool,
+    /// Seconds into the flask's 5 s regeneration tick.
+    flask_regen: f32,
 }
 
 impl InWorld {
@@ -553,9 +558,12 @@ impl InWorld {
             damage_stack: 0,
             reflected: Vec::new(),
             night: false,
+            flask_shown: false,
+            flask_regen: 0.0,
         };
         events.push(w.player_create(c));
         w.show_well_fed(c, events);
+        w.show_flask(c, events);
         w
     }
 
@@ -894,6 +902,7 @@ impl InWorld {
         self.update_combat(dt, events);
         self.eat(dt, c, events);
         self.well_fed_tick(dt, c, events);
+        self.brew_tick(dt, c, events);
         self.regenerate(dt, c, events);
         self.boss_fight_tick(events);
         self.map_marks_tick(c, events);
@@ -1144,6 +1153,7 @@ impl InWorld {
             }
         }
         if swing.damage > 0 {
+            self.oil_swing_landed(target, off_hand, c, rng, events, ticked);
             self.sweep(target, swing.damage, c, rng, events, ticked);
             self.seal_swing_landed(target, c, rng, events, ticked);
             self.melee_hit(target, c, rng, events, ticked);

@@ -119,6 +119,11 @@ pub(crate) struct Char {
     pub(crate) herb_tracking: bool,
     /// The meal they last ate, while its Well Fed buff lasts (ADR 0025).
     pub(crate) well_fed: Option<WellFed>,
+    /// The flask on, and each hand's weapon oil (main hand, off hand), while they last.
+    pub(crate) flask: Option<Worn>,
+    pub(crate) oils: [Option<Worn>; 2],
+    /// The wall time the next potion may be drunk.
+    pub(crate) potion_ready: f64,
     /// Whether they have seen the Forager's Grid guided tour.
     pub(crate) herb_tour_seen: bool,
     /// The perk keys they hold, one per slot filled.
@@ -243,6 +248,14 @@ pub(crate) struct WellFed {
     pub(crate) left_secs: f32,
 }
 
+/// A flask or weapon oil on (alchemy, ADR 0025): the item used, and the seconds left. It keeps its
+/// time over a logout.
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct Worn {
+    pub(crate) item: u32,
+    pub(crate) left_secs: f32,
+}
+
 /// A known recipe's line in the Dish Journal: how often it was cooked, and when and where first
 /// ("Day 2, 08:00, Lion's Pride kitchen"; "" before the first cook).
 #[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -362,6 +375,9 @@ impl Characters {
             herb_picks: Vec::new(),
             herb_tracking: false,
             well_fed: None,
+            flask: None,
+            oils: [None; 2],
+            potion_ready: 0.0,
             herb_tour_seen: false,
             herb_perks: Vec::new(),
             herb_tool: None,

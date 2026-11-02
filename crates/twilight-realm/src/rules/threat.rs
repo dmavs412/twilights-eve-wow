@@ -25,6 +25,13 @@ impl Table {
         }
     }
 
+    /// Takes `amount` off `player`'s threat, never below 0 (a Fade Potion).
+    pub fn lower(&mut self, player: u64, amount: f32) {
+        if let Some((_, t)) = self.0.iter_mut().find(|(g, _)| *g == player) {
+            *t = (*t - amount).max(0.0);
+        }
+    }
+
     /// Puts `player` on the table with `amount` if they are not on it yet: the puller's seed.
     pub fn seed(&mut self, player: u64, amount: f32) {
         if !self.contains(player) {
@@ -145,6 +152,16 @@ mod tests {
         t.seed(1, 50.0);
         t.seed(2, 50.0);
         assert_eq!((t.of(1), t.of(2)), (5.0, 50.0));
+    }
+
+    #[test]
+    fn lower_takes_threat_down_and_never_below_0() {
+        let mut t = table(&[(1, 500.0), (2, 10.0)]);
+        t.lower(1, 150.0);
+        t.lower(2, 150.0);
+        t.lower(3, 150.0);
+        assert_eq!((t.of(1), t.of(2)), (350.0, 0.0));
+        assert!(!t.contains(3));
     }
 
     #[test]

@@ -86,6 +86,9 @@ pub struct CharacterStats {
     pub quiver_haste_pct: u32,
     pub weapon_skill: u16,
     pub defense: u16,
+    /// Health and power regenerated every 5 s, in combat too (a flask's).
+    pub health_per_5: u32,
+    pub power_per_5: u32,
 }
 
 /// A weapon worn in the off hand: its swing before the off hand's halving, attack power included.
@@ -366,6 +369,8 @@ impl CharacterStats {
             quiver_haste_pct: 0,
             weapon_skill: skill,
             defense,
+            health_per_5: 0,
+            power_per_5: 0,
         }
     }
 }
