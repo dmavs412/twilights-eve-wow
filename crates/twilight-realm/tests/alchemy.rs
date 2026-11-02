@@ -5,10 +5,11 @@
 mod common;
 mod gear_common;
 
+use benilla_protocol::messages::PeriodicTick;
 use benilla_protocol::{AlchemyGrade, AlchemyGradePage, SessionEvent, START_ELWYNN};
 use common::*;
 use gear_common::*;
-use twilight_realm::{AlchemyAction, Realm, RealmCommand};
+use twilight_realm::{AlchemyAction, Audience, Realm, RealmCommand};
 
 const SISTER_MARLA: u32 = 190_075;
 const ALWEN_CARROW: u32 = 190_076;
@@ -337,6 +338,7 @@ const MINOR_BURNING_OIL: u32 = 963_240;
 const STONE_AND_EMBER: u32 = 968_720;
 const POTION_SPELL: u32 = 2598;
 const NOT_READY: u8 = 0x3c;
+const STUNNED: u8 = 0x64;
 const BAD_TARGETS: u8 = 0x0a;
 const FIRE: u8 = 2;
 const WALL_MS: u64 = 1_000_000_000;
@@ -535,4 +537,313 @@ fn the_flask_the_oils_and_the_potion_cooldown_survive_a_save_round_trip() {
         assert!(before.contains_key(key), "{key} is saved");
         assert_eq!(before.get(key), after.get(key), "{key}");
     }
+}
+
+// Hybrid potions (#544), each at Minor x1: heal over time, sleep, invisibility, burst and mana
+// shields, area bombs and the rest.
+
+const TROLLBLOOD: u32 = 963_300;
+const BLOODFIRE: u32 = 963_320;
+const REJUVENATING: u32 = 963_340;
+const DEEPSLEEP: u32 = 963_360;
+const EMBER_SHIELD: u32 = 963_380;
+const MANA_SHIELD: u32 = 963_400;
+const STEADY_STANCE: u32 = 963_420;
+const SPELLFIRE: u32 = 963_440;
+const SMOKE_BOMB: u32 = 963_460;
+const INVISIBILITY: u32 = 963_480;
+
+/// A level 10 Initiate (a mana user) holding `items`, at no mana and 50 health, the wall clock at
+/// [`WALL_MS`].
+fn mage_holding(items: &[Carried]) -> (Realm, u64, Vec<SessionEvent>) {
+    let (guid, blob) = save_with(10, 0, items);
+    let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"initiate\"");
+    let (mut realm, me, events) = enter_saved(guid, &blob);
+    realm.set_wall_clock(WALL_MS);
+    realm.set_player_health(50);
+    realm.set_player_power(0);
+    drain(&mut realm);
+    (realm, me, events)
+}
+
+/// The potion spell's heals on `me`, at once and in ticks.
+fn heals(events: &[SessionEvent], me: u64) -> (Vec<u32>, Vec<u32>) {
+    let mut once = Vec::new();
+    let mut ticks = Vec::new();
+    for e in events {
+        match e {
+            SessionEvent::SpellHealLog(l) if l.target == me && l.spell_id == POTION_SPELL => {
+                once.push(l.amount)
+            }
+            SessionEvent::PeriodicAuraLog(l) if l.target == me && l.spell_id == POTION_SPELL => {
+                for t in &l.ticks {
+                    if let PeriodicTick::Heal { amount } = t {
+                        ticks.push(*amount);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    (once, ticks)
+}
+
+/// The potion spell's damage from `me` at `target`: `(damage, school)`.
+fn potion_damage(events: &[SessionEvent], me: u64, target: u64) -> Vec<(u32, u8)> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellDamageLog(l)
+                if l.attacker == me && l.target == target && l.spell_id == POTION_SPELL =>
+            {
+                Some((l.damage, l.school))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// The potion spell's power gains on `me`.
+fn energized(events: &[SessionEvent], me: u64) -> Vec<u32> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellEnergizeLog(l) if l.target == me && l.spell_id == POTION_SPELL => {
+                Some(l.amount)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// The control changes for `me` in `events`.
+fn control(events: &[SessionEvent], me: u64) -> Vec<bool> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::ClientControl { mover, allow_move } if *mover == me => Some(*allow_move),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Whether `mob` swung at `me` in `events`.
+fn swung_at(events: &[SessionEvent], mob: u64, me: u64) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::AttackerState(s) if s.attacker == mob && s.victim == me))
+}
+
+/// Stands beside the first mob and selects it: the mob.
+fn at_the_mob(realm: &mut Realm, events: &[SessionEvent]) -> Mob {
+    let mob = the_mob(events);
+    stand_by(realm, &mob);
+    realm.handle(RealmCommand::SetSelection { guid: mob.guid });
+    mob
+}
+
+#[test]
+fn trollblood_draught_heals_12_every_2_s_for_10_s() {
+    let (mut realm, me, _) = holding(20, &[(BACKPACK_1, TROLLBLOOD, 1)]);
+    realm.set_player_health(50);
+    let mut events = use_at(&mut realm, BACKPACK_1);
+    events.extend(run(&mut realm, 11.0));
+    assert_eq!(heals(&events, me), (vec![], vec![12; 5]));
+}
+
+#[test]
+fn bloodfire_bomb_burns_25_to_35_fire_and_heals_half_of_it() {
+    let (mut realm, me, events) = holding(10, &[(BACKPACK_1, BLOODFIRE, 1)]);
+    realm.set_player_health(50);
+    let mob = at_the_mob(&mut realm, &events);
+    let thrown = use_at(&mut realm, BACKPACK_1);
+    let burns = potion_damage(&thrown, me, mob.guid);
+    assert_eq!(burns.len(), 1, "{burns:?}");
+    let (damage, school) = burns[0];
+    assert!((25..=35).contains(&damage) && school == FIRE, "{burns:?}");
+    assert_eq!(heals(&thrown, me), (vec![damage / 2], vec![]));
+}
+
+#[test]
+fn rejuvenating_draught_restores_60_health_and_60_mana() {
+    let (mut realm, me, _) = mage_holding(&[(BACKPACK_1, REJUVENATING, 1)]);
+    let events = use_at(&mut realm, BACKPACK_1);
+    assert_eq!(heals(&events, me), (vec![60], vec![]));
+    assert_eq!(energized(&events, me), vec![60]);
+}
+
+#[test]
+fn deepsleep_takes_control_for_12_s_and_heals_150_over_it() {
+    let (mut realm, me, _) = holding(20, &[(BACKPACK_1, DEEPSLEEP, 1)]);
+    realm.set_player_health(50);
+    let slept = use_at(&mut realm, BACKPACK_1);
+    assert_eq!(control(&slept, me), vec![false]);
+    realm.handle(RealmCommand::CastSpell {
+        spell_id: POTION_SPELL,
+        target: None,
+    });
+    assert_eq!(refusals(&drain(&mut realm)), vec![STUNNED]);
+    let events = run(&mut realm, 11.5);
+    assert!(control(&events, me).is_empty(), "still asleep at 11.5 s");
+    let (_, ticks) = heals(&events, me);
+    let events = run(&mut realm, 1.0);
+    assert_eq!(control(&events, me), vec![true]);
+    let (_, last) = heals(&events, me);
+    assert_eq!(ticks.iter().chain(&last).sum::<u32>(), 150);
+    assert_eq!(ticks.len() + last.len(), 6);
+}
+
+#[test]
+fn a_blow_wakes_the_sleeper_gives_control_back_and_stops_the_heal() {
+    let (mut realm, me, events) = holding(10, &[(BACKPACK_1, DEEPSLEEP, 1)]);
+    realm.set_player_health(100);
+    let mob = the_mob(&events);
+    stand_by(&mut realm, &mob);
+    assert_eq!(control(&use_at(&mut realm, BACKPACK_1), me), vec![false]);
+    let events = run(&mut realm, 12.0);
+    let woke = events
+        .iter()
+        .position(|e| matches!(e, SessionEvent::ClientControl { mover, allow_move: true } if *mover == me))
+        .expect("the player wakes");
+    let blow = events
+        .iter()
+        .position(|e| {
+            matches!(e, SessionEvent::AttackerState(s)
+            if s.attacker == mob.guid && s.victim == me && s.damage > 0)
+        })
+        .expect("the mob lands a blow");
+    assert!(blow < woke, "woken by the blow");
+    let (_, after) = heals(&events[woke..], me);
+    assert!(after.is_empty(), "the heal stops: {after:?}");
+}
+
+#[test]
+fn ember_shield_soaks_40_and_bursts_20_fire_on_each_mob_within_8_yd() {
+    let (mut realm, me, mut seen) = holding(10, &[(BACKPACK_1, EMBER_SHIELD, 1)]);
+    let mob = the_mob(&seen);
+    stand_by(&mut realm, &mob);
+    seen.extend(use_at(&mut realm, BACKPACK_1));
+    assert!(descriptor(&seen, me)
+        .unit_aura_ids()
+        .any(|id| id == POTION_SPELL));
+    let events = run(&mut realm, 30.0);
+    let bursts = potion_damage(&events, me, mob.guid);
+    assert_eq!(bursts, vec![(20, FIRE)]);
+}
+
+#[test]
+fn mana_shield_gives_15_mana_for_each_blow_it_soaks() {
+    let (mut realm, me, events) = mage_holding(&[(BACKPACK_1, MANA_SHIELD, 1)]);
+    realm.set_player_health(300);
+    let mob = the_mob(&events);
+    stand_by(&mut realm, &mob);
+    use_at(&mut realm, BACKPACK_1);
+    let events = run(&mut realm, 6.0);
+    let gains = energized(&events, me);
+    assert!(!gains.is_empty(), "a blow was soaked");
+    assert!(gains.iter().all(|&g| g == 15), "{gains:?}");
+}
+
+#[test]
+fn steady_stance_halves_the_threat_the_players_damage_makes() {
+    let (mut realm, me, events) = holding(10, &[(BACKPACK_1, STEADY_STANCE, 1)]);
+    let mob = at_the_mob(&mut realm, &events);
+    use_at(&mut realm, BACKPACK_1);
+    // The mob notices them: its seed.
+    run(&mut realm, 0.1);
+    let before = realm.creature_threat(mob.guid, me);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    let mut dealt = 0;
+    for _ in 0..60 {
+        realm.tick(0.1, &FlatGround);
+        dealt += drain(&mut realm)
+            .iter()
+            .filter_map(|e| match e {
+                SessionEvent::AttackerState(s) if s.attacker == me => Some(s.damage),
+                _ => None,
+            })
+            .sum::<u32>();
+        if dealt > 0 {
+            break;
+        }
+    }
+    assert!(dealt > 0, "a swing landed");
+    let after = realm.creature_threat(mob.guid, me);
+    assert_eq!(after - before, dealt as f32 / 2.0);
+}
+
+#[test]
+fn spellfire_bomb_burns_25_to_35_fire() {
+    let (mut realm, me, events) = holding(10, &[(BACKPACK_1, SPELLFIRE, 1)]);
+    let mob = at_the_mob(&mut realm, &events);
+    let burns = potion_damage(&use_at(&mut realm, BACKPACK_1), me, mob.guid);
+    assert_eq!(burns.len(), 1, "{burns:?}");
+    assert!((25..=35).contains(&burns[0].0) && burns[0].1 == FIRE);
+}
+
+#[test]
+fn smoke_bomb_hits_a_second_mob_5_yd_off_and_drops_threat_on_each_by_100() {
+    let (mut realm, me, events) = holding(10, &[(BACKPACK_1, SMOKE_BOMB, 1)]);
+    let mob = at_the_mob(&mut realm, &events);
+    let entry = mob.fields.object_entry().unwrap();
+    let level = mob.fields.unit_level().unwrap() as u8;
+    let [x, y, z] = mob.position;
+    let other = realm
+        .spawn_for(&FlatGround, entry, level, [x, y, z], 1, Audience::of(&[me]))
+        .expect("a second mob of its kind");
+    realm.place_creature(other, [x + 5.0, y, z]);
+    for guid in [mob.guid, other] {
+        realm.add_creature_threat(guid, me, 1000.0);
+    }
+    let thrown = use_at(&mut realm, BACKPACK_1);
+    for guid in [mob.guid, other] {
+        let burns = potion_damage(&thrown, me, guid);
+        assert_eq!(burns.len(), 1, "{burns:?}");
+        assert!((20..=30).contains(&burns[0].0));
+        let threat = realm.creature_threat(guid, me);
+        assert_eq!(threat, 900.0 + burns[0].0 as f32, "{guid}");
+    }
+}
+
+#[test]
+fn invisibility_clears_threat_stops_the_mob_returns_60_mana_and_a_swing_ends_it() {
+    let (mut realm, me, events) = mage_holding(&[(BACKPACK_1, INVISIBILITY, 1)]);
+    realm.set_player_health(300);
+    let mob = at_the_mob(&mut realm, &events);
+    let fight = run(&mut realm, 3.0);
+    assert!(swung_at(&fight, mob.guid, me), "the mob attacks");
+    let mut seen = events;
+    seen.extend(fight);
+    let drunk = use_at(&mut realm, BACKPACK_1);
+    assert_eq!(energized(&drunk, me), vec![60]);
+    assert_eq!(realm.creature_threat(mob.guid, me), 0.0);
+    seen.extend(drunk);
+    let quiet = run(&mut realm, 3.0);
+    assert!(!swung_at(&quiet, mob.guid, me), "the mob stops attacking");
+    seen.extend(quiet);
+    assert!(descriptor(&seen, me)
+        .unit_aura_ids()
+        .any(|id| id == POTION_SPELL));
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    seen.extend(run(&mut realm, 1.0));
+    assert!(!descriptor(&seen, me)
+        .unit_aura_ids()
+        .any(|id| id == POTION_SPELL));
+}
+
+#[test]
+fn a_second_hybrid_inside_the_cooldown_is_refused() {
+    let (mut realm, me, _) = holding(
+        20,
+        &[
+            (BACKPACK_1, TROLLBLOOD, 1),
+            (BACKPACK_1 + 1, REJUVENATING, 1),
+        ],
+    );
+    use_at(&mut realm, BACKPACK_1);
+    assert_eq!(
+        refusals(&use_at(&mut realm, BACKPACK_1 + 1)),
+        vec![NOT_READY]
+    );
+    assert_eq!(held(&realm, me, REJUVENATING), (0, 1));
 }

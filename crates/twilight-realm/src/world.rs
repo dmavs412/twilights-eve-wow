@@ -410,6 +410,8 @@ pub(crate) struct InWorld {
     night: bool,
     /// Whether the flask's aura is up.
     flask_shown: bool,
+    /// Whether a sleep took the client's control, to give back when it ends (#544).
+    slept: bool,
     /// Seconds into the flask's 5 s regeneration tick.
     flask_regen: f32,
 }
@@ -559,6 +561,7 @@ impl InWorld {
             reflected: Vec::new(),
             night: false,
             flask_shown: false,
+            slept: false,
             flask_regen: 0.0,
         };
         events.push(w.player_create(c));
@@ -629,7 +632,7 @@ impl InWorld {
         if !self.player.alive() {
             return;
         }
-        if self.fear.is_some() {
+        if self.fear.is_some() || self.asleep() {
             events.push(SessionEvent::AttackSwingError(
                 AttackSwingError::DeadOrUnattackable,
             ));
@@ -697,6 +700,11 @@ impl InWorld {
     /// Whether other clients are kept from seeing the player: stealthed.
     pub(crate) fn hidden(&self) -> bool {
         self.skills.stealthed()
+    }
+
+    /// The percent of its threat the player's damage makes now (Steady Stance).
+    pub(crate) fn threat_pct(&self) -> u32 {
+        self.skills.threat_pct()
     }
 
     pub(crate) fn alive(&self) -> bool {
@@ -922,7 +930,7 @@ impl InWorld {
     /// stealthed player only inside the short stealth range, and a Well Fed `night_aggro_half`
     /// shrinks it at night.
     fn notice_radius(&self, mob: &Mob, player_level: u8) -> f32 {
-        if self.in_cover() {
+        if self.in_cover() || self.skills.unseen() {
             return 0.0;
         }
         let r = aggro::radius(mob.template.detection_range, player_level, mob.level())
@@ -987,7 +995,7 @@ impl InWorld {
         let Some(target) = p.attacking else {
             return;
         };
-        if !p.alive() || self.fear.is_some() {
+        if !p.alive() || self.fear.is_some() || self.skills.incapacitated(self.guid) {
             return;
         }
         // The off hand swings on its own timer, at the main hand's target and under its reach and
@@ -1504,6 +1512,8 @@ impl InWorld {
     ) {
         if damage > 0 {
             self.last_hit_by = Some(from);
+            // A blow wakes a sleeper, and ends what heals them in their sleep.
+            self.woken_by_damage(self.guid, events);
         }
         self.skills.break_stealth(events);
         let damage = self.fed_damage_taken(from, level, damage, school);

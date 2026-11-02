@@ -67,6 +67,14 @@ impl InWorld {
         p.health = health.min(max);
         events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, p.health)]));
     }
+
+    /// Sets the player's power to `amount` as the client's field holds it, at most their
+    /// maximum: a test seam.
+    pub(crate) fn set_power(&mut self, amount: u32, events: &mut Vec<SessionEvent>) {
+        let power = &mut self.player.power;
+        power.current = amount.min(power.max);
+        events.push(values(self.guid, &[power.field()]));
+    }
 }
 
 /// A flask's regeneration tick.

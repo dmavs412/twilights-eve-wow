@@ -144,7 +144,7 @@ impl InWorld {
             return false;
         }
         // The client has no control while feared; the realm moves the player.
-        if self.fear.is_some() {
+        if self.fear.is_some() || self.asleep() {
             return false;
         }
         let stepped = crate::space::distance(from, to) > MOVE_EPSILON;

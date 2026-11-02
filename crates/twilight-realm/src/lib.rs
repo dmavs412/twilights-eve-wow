@@ -840,6 +840,47 @@ impl Realm {
         }
     }
 
+    /// Sets the player's power (mana, rage or energy) to `amount`, at most their maximum: a test
+    /// seam, as [`Self::set_player_health`] is.
+    pub fn set_player_power(&mut self, amount: u32) {
+        if let Some(w) = &mut self.world {
+            w.set_power(amount, &mut self.events);
+        }
+    }
+
+    /// Every creature with `guid`, wherever it is (a shard, the world, a parked session's).
+    fn creatures_mut(&mut self, guid: u64) -> impl Iterator<Item = &mut mobs::Mob> {
+        self.give_back();
+        let shards = self.shards.values_mut().flat_map(|s| s.mobs.iter_mut());
+        let worlds = std::iter::once(&mut self.world)
+            .chain(self.parked.iter_mut().map(|(_, s)| &mut s.world))
+            .flatten()
+            .flat_map(|w| w.mobs.iter_mut());
+        shards.chain(worlds).filter(move |m| m.guid == guid)
+    }
+
+    /// Creature `guid`'s threat on `player`, 0 when it has none: a test seam.
+    pub fn creature_threat(&mut self, guid: u64, player: u64) -> f32 {
+        self.creatures_mut(guid)
+            .map(|m| m.threat.of(player))
+            .next()
+            .unwrap_or(0.0)
+    }
+
+    /// Adds `amount` to creature `guid`'s threat on `player`: a test seam.
+    pub fn add_creature_threat(&mut self, guid: u64, player: u64, amount: f32) {
+        for mob in self.creatures_mut(guid) {
+            mob.threat.add(player, amount);
+        }
+    }
+
+    /// Puts creature `guid` at `at`: a test seam. The clients learn of it from its next move.
+    pub fn place_creature(&mut self, guid: u64, at: [f32; 3]) {
+        for mob in self.creatures_mut(guid) {
+            mob.position = at;
+        }
+    }
+
     /// Sets the wall clock to `unix_ms`, milliseconds since the Unix epoch. Ticks advance it in
     /// between; a host without one leaves it running from 0. An item's cooldown runs on it, so
     /// the time between two sessions counts.
@@ -1016,7 +1057,7 @@ impl Realm {
             }
         }
         if let Some(w) = &self.world {
-            shard::note_threat(&mut shard.mobs, w.guid, &new);
+            shard::note_threat(&mut shard.mobs, w.guid, w.threat_pct(), &new);
         }
         self.show_others(map, &new);
         let kills = self
@@ -1660,6 +1701,7 @@ impl Realm {
                             if equipment::deposit(c, bag, slot.slot, &mut self.events) {
                                 self.save(guid);
                             }
+                        } else if w.refused_asleep(slot, c, &mut self.events) {
                         } else if !quests::use_starter(c, slot, &mut self.events) {
                             // A meal gives its Well Fed buff.
                             let meal = c

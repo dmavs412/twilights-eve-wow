@@ -462,9 +462,10 @@ impl Shard {
     }
 }
 
-/// Adds the threat `events` show `player` making (#147): their damage to each mob 1:1, and
-/// their heals at half, split across the living mobs that hate the one healed.
-pub(crate) fn note_threat(mobs: &mut [Mob], player: u64, events: &[SessionEvent]) {
+/// Adds the threat `events` show `player` making (#147): their damage to each mob 1:1, at
+/// `threat_pct` percent of it (Steady Stance, #544), and their heals at half, split across the
+/// living mobs that hate the one healed.
+pub(crate) fn note_threat(mobs: &mut [Mob], player: u64, threat_pct: u32, events: &[SessionEvent]) {
     use benilla_protocol::messages::PeriodicTick;
     for e in events {
         let (victim, damage, healed, who) = match e {
@@ -491,7 +492,8 @@ pub(crate) fn note_threat(mobs: &mut [Mob], player: u64, events: &[SessionEvent]
         };
         if let Some(m) = mobs.iter_mut().find(|m| m.guid == victim) {
             // Even a miss puts the attacker on the table.
-            m.threat.add(player, damage as f32);
+            m.threat
+                .add(player, damage as f32 * threat_pct as f32 / 100.0);
             continue;
         }
         if healed > 0 {

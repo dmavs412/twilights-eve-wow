@@ -75,6 +75,7 @@ const SPELL_FAILED_NO_COMBO_POINTS: u8 = 0x46;
 const SPELL_FAILED_NO_POWER: u8 = 0x4d;
 const SPELL_FAILED_ONLY_STEALTHED: u8 = 0x57;
 pub(super) const SPELL_FAILED_OUT_OF_RANGE: u8 = 0x59;
+pub(super) const SPELL_FAILED_STUNNED: u8 = 0x64;
 const SPELL_FAILED_TARGET_AFFECTING_COMBAT: u8 = 0x66;
 const SPELL_FAILED_TARGET_AURASTATE: u8 = 0x67;
 const SPELL_FAILED_TARGETS_DEAD: u8 = 0x65;
@@ -609,7 +610,10 @@ struct TickRiders {
 
 /// What a shield of the player's does besides soaking (#506): `energize_pct` percent of each soak
 /// back as power, `attacker_aura` on the enemy whose damage it soaks, and when it breaks, its whole
-/// `amount` in `burst_school` at every enemy within `burst_radius_yd`.
+/// `amount` in `burst_school` at every enemy within `burst_radius_yd`. An alchemy shield's (#544):
+/// `burst_amount` in place of the whole amount when not 0, `power_per_soak` mana back for each
+/// blow it soaks, and while it holds the player's damage makes `threat_pct` percent of its threat
+/// (0 for no change).
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub(super) struct Ward {
     amount: u32,
@@ -617,6 +621,29 @@ pub(super) struct Ward {
     attacker_aura: Option<&'static callings::AuraDef>,
     burst_radius_yd: f32,
     burst_school: School,
+    burst_amount: u32,
+    power_per_soak: u32,
+    threat_pct: u32,
+}
+
+impl Ward {
+    /// An alchemy shield's riders: a fire burst of `burst` within `burst_radius_yd` when it
+    /// breaks, `mana_per_hit` for each blow it soaks, and `threat_pct`.
+    pub(super) fn alchemy(
+        burst: u32,
+        burst_radius_yd: f32,
+        mana_per_hit: u32,
+        threat_pct: u32,
+    ) -> Self {
+        Self {
+            burst_radius_yd: if burst > 0 { burst_radius_yd } else { 0.0 },
+            burst_school: School::Fire,
+            burst_amount: burst,
+            power_per_soak: mana_per_hit,
+            threat_pct,
+            ..Self::default()
+        }
+    }
 }
 
 /// What a heal heals past the healed player's maximum bursts into: each enemy within `radius_yd`
@@ -714,6 +741,8 @@ enum AuraKind {
     /// The player heals `per_tick` a tick (Blood Craze).
     Heal {
         per_tick: u32,
+        /// The first ticks that heal one more, so a total that does not divide still adds up.
+        carry: u32,
     },
     /// The player's one active Seal, and the attack power it adds (Seal of the Crusader's, sized
     /// when cast).
@@ -1113,6 +1142,29 @@ impl Skills {
         self.auras
             .iter()
             .any(|a| a.unit == self.me && matches!(a.kind, AuraKind::Stealth { .. }))
+    }
+
+    /// Whether the player is stealthed under alchemy's potion spell (an Invisibility Draught):
+    /// no mob notices them at all, however near.
+    pub(crate) fn unseen(&self) -> bool {
+        let potion = crate::alchemy::use_().potion_spell;
+        self.auras.iter().any(|a| {
+            a.unit == self.me && a.spell_id == potion && matches!(a.kind, AuraKind::Stealth { .. })
+        })
+    }
+
+    /// The percent of its threat the player's damage makes: the lowest a shield of theirs
+    /// holding a `threat_pct` sets (Steady Stance), else 100.
+    pub(crate) fn threat_pct(&self) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .filter_map(|a| match a.kind {
+                AuraKind::Absorb { ward, .. } if ward.threat_pct > 0 => Some(ward.threat_pct),
+                _ => None,
+            })
+            .min()
+            .unwrap_or(100)
     }
 
     /// Takes the player's stealth off (an attack, a cast, a blow taken). `Some(opener_crit)` when
@@ -2324,6 +2376,10 @@ impl InWorld {
         let ticked = Ticked::default();
         if self.fear.is_some() {
             events.push(refused(spell_id, SPELL_FAILED_FLEEING));
+            return ticked;
+        }
+        if self.asleep() {
+            events.push(refused(spell_id, SPELL_FAILED_STUNNED));
             return ticked;
         }
         // Casting takes the player out of Cover, and loses a fish.
@@ -4777,6 +4833,7 @@ impl InWorld {
                         .and_then(|id| callings::of(c.calling).aura_by_spell(id)),
                     burst_radius_yd,
                     burst_school,
+                    ..Ward::default()
                 };
                 let allies: Vec<u64> = self
                     .friendly_players(c)
@@ -5005,7 +5062,7 @@ impl InWorld {
                     return;
                 }
                 let mut a = aura(
-                    AuraKind::Heal { per_tick },
+                    AuraKind::Heal { per_tick, carry: 0 },
                     aura_spell_id.unwrap_or(skill.spell_id),
                     duration_ms,
                     tick_ms,
@@ -5601,7 +5658,7 @@ impl InWorld {
                 if let Some((spell_id, tick_ms, duration_ms, pct)) = on.crit_heal {
                     let max = buffed(&self.player.stats, &self.skills).max_health;
                     let per_tick = heal_tick(max, pct, duration_ms / tick_ms.max(1));
-                    let kind = AuraKind::Heal { per_tick };
+                    let kind = AuraKind::Heal { per_tick, carry: 0 };
                     self.buff_self(
                         kind,
                         spell_id,
@@ -5798,9 +5855,10 @@ impl InWorld {
         }
     }
 
-    /// `unit` took damage: every incapacitate on it that breaks on damage ends.
+    /// `unit` took damage: every incapacitate on it that breaks on damage ends. A sleep on the
+    /// player takes the heals under its spell with it (a Deepsleep Potion's).
     pub(super) fn woken_by_damage(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
-        let gone = self.skills.remove_where(
+        let mut gone = self.skills.remove_where(
             |a| {
                 a.unit == unit
                     && matches!(
@@ -5812,6 +5870,17 @@ impl InWorld {
             },
             events,
         );
+        if unit == self.guid {
+            let slept: Vec<u32> = gone.iter().map(|a| a.spell_id).collect();
+            gone.extend(self.skills.remove_where(
+                |a| {
+                    a.unit == unit
+                        && slept.contains(&a.spell_id)
+                        && matches!(a.kind, AuraKind::Heal { .. })
+                },
+                events,
+            ));
+        }
         self.faded(&gone, events);
     }
 
@@ -6223,6 +6292,15 @@ impl InWorld {
                             }
                         }
                     }
+                    if let AuraKind::Heal { per_tick, carry } = &mut a.kind {
+                        if *carry > 0 {
+                            *carry -= 1;
+                            tick.kind = AuraKind::Heal {
+                                per_tick: *per_tick + 1,
+                                carry: 0,
+                            };
+                        }
+                    }
                     due.push(tick);
                 }
             }
@@ -6323,7 +6401,7 @@ impl InWorld {
                         }
                     }
                 }
-                AuraKind::Heal { per_tick } => {
+                AuraKind::Heal { per_tick, .. } => {
                     let max = buffed(&self.player.stats, &self.skills).max_health;
                     let per_tick = scaled(per_tick, self.healing_taken(c, max));
                     let p = &mut self.player;
@@ -6688,6 +6766,7 @@ impl InWorld {
         spell_id: u32,
         amount: u32,
         secs: f32,
+        ward: Ward,
         events: &mut Vec<SessionEvent>,
     ) -> Option<u32> {
         let u = crate::alchemy::use_();
@@ -6717,12 +6796,75 @@ impl InWorld {
             kind: AuraKind::Absorb {
                 left: amount,
                 school: None,
-                ward: Ward::default(),
+                ward: Ward { amount, ..ward },
             },
             charges: 0,
         };
         self.skills.apply(aura, events);
         None
+    }
+
+    /// An alchemy aura of `kind` on the player for `secs` under `spell_id`, ticking every
+    /// `period` seconds (0 for none).
+    fn alchemy_aura(
+        &mut self,
+        spell_id: u32,
+        kind: AuraKind,
+        secs: f32,
+        period: f32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let aura = Aura {
+            unit: self.guid,
+            spell_id,
+            slot: 0,
+            level: self.player.stats.level,
+            left: secs,
+            period,
+            next_tick: period,
+            kind,
+            charges: 0,
+        };
+        self.skills.apply(aura, events);
+    }
+
+    /// The player heals `per_tick` every `every_secs` for `secs` under `spell_id`, the first
+    /// `carry` ticks one more (a hybrid's heal over time).
+    pub(super) fn alchemy_heal_over_time(
+        &mut self,
+        spell_id: u32,
+        per_tick: u32,
+        carry: u32,
+        every_secs: f32,
+        secs: f32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let kind = AuraKind::Heal { per_tick, carry };
+        self.alchemy_aura(spell_id, kind, secs, every_secs, events);
+    }
+
+    /// The player is asleep for `secs` under `spell_id`: an incapacitate that damage ends.
+    pub(super) fn alchemy_sleep(
+        &mut self,
+        spell_id: u32,
+        secs: f32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let kind = AuraKind::Incapacitate {
+            break_on_damage: true,
+        };
+        self.alchemy_aura(spell_id, kind, secs, 0.0, events);
+    }
+
+    /// The player is unseen for `secs` under `spell_id`: a stealth with no opener crit.
+    pub(super) fn alchemy_stealth(
+        &mut self,
+        spell_id: u32,
+        secs: f32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let kind = AuraKind::Stealth { opener_crit: false };
+        self.alchemy_aura(spell_id, kind, secs, 0.0, events);
     }
 
     /// `unit` died: its auras go with it.
@@ -7247,6 +7389,9 @@ impl InWorld {
         for soak in soaks {
             let ward = soak.ward;
             self.energize_player(soak.spell_id, soak.soaked * ward.energize_pct / 100, events);
+            if self.player.power.kind == PowerKind::Mana {
+                self.energize_player(soak.spell_id, ward.power_per_soak, events);
+            }
             if let Some(def) = ward.attacker_aura {
                 if self.mobs.iter().any(|m| m.guid == from && m.alive()) {
                     self.put_aura(def, from, soak.level, events);
@@ -7255,7 +7400,11 @@ impl InWorld {
             if soak.broke && ward.burst_radius_yd > 0.0 {
                 self.skills.bursts.push(Burst {
                     spell_id: soak.spell_id,
-                    amount: ward.amount,
+                    amount: if ward.burst_amount > 0 {
+                        ward.burst_amount
+                    } else {
+                        ward.amount
+                    },
                     radius_yd: ward.burst_radius_yd,
                     school: ward.burst_school,
                 });
@@ -7433,6 +7582,7 @@ impl InWorld {
                 } => AuraKind::Heal {
                     per_tick: tick.map_or(0, |t| t.at(level, 0))
                         + self.share(*pct_of, *pct, def.duration_ms, *tick_ms),
+                    carry: 0,
                 },
                 callings::AuraEffect::ModDamageTakenPct { pct, school } => AuraKind::DamageTaken {
                     pct: *pct,
@@ -8050,7 +8200,7 @@ fn run_speed(pct: i32) -> AuraKind {
 }
 
 /// The living units among `mobs` that `caster` may attack, within `radius_yd` of `at`.
-fn enemies_within(
+pub(super) fn enemies_within(
     mobs: &[crate::mobs::Mob],
     caster: u64,
     at: [f32; 3],

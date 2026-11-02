@@ -27,6 +27,13 @@ thread_local! {
     static ALWAYS_PROC: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
+/// What an effect did, for the effect after it: the damage it dealt and the mobs it hit.
+#[derive(Default)]
+struct Done {
+    damage: u32,
+    hit: Vec<u64>,
+}
+
 /// A product being used: its row's grade and step, the spell its effects show as, and the mob
 /// they act on (the selected one for a potion, the one hit for an oil).
 #[derive(Clone, Copy)]
@@ -269,7 +276,7 @@ impl InWorld {
         true
     }
 
-    /// Runs `used`'s effects in order. The hybrid-only kinds are #544's.
+    /// Runs `used`'s effects in order, each reading what the one before it did.
     fn run_effects(
         &mut self,
         used: Used,
@@ -279,11 +286,46 @@ impl InWorld {
         ticked: &mut Ticked,
     ) {
         let me = self.guid;
+        let mut before = Done::default();
         for e in &used.product.effects {
+            let mut done = Done::default();
             match e.kind.as_str() {
                 "heal" => {
                     let amount = roll(used, e, "amount", rng);
                     self.heal_from(me, c, used.spell_id, amount, events);
+                }
+                "heal_pct_of_damage" => {
+                    let pct = int(e, "pct");
+                    let amount = before.damage * pct / 100;
+                    self.heal_from(me, c, used.spell_id, amount, events);
+                }
+                "heal_over_time" => {
+                    let every = int(e, "every_secs").max(1);
+                    let secs = int(e, "secs");
+                    let ticks = (secs / every).max(1);
+                    let (per_tick, carry) = if e.params.contains_key("total") {
+                        let total = roll(used, e, "total", rng);
+                        (total / ticks, total % ticks)
+                    } else {
+                        (roll(used, e, "tick", rng), 0)
+                    };
+                    self.alchemy_heal_over_time(
+                        used.spell_id,
+                        per_tick,
+                        carry,
+                        every as f32,
+                        secs as f32,
+                        events,
+                    );
+                }
+                "sleep" => self.fall_asleep(used.spell_id, int(e, "secs") as f32, events),
+                // No mob carries mana, so on one this does nothing; the bomb's fire still lands.
+                "burn_mana" => {}
+                "invisible" => {
+                    for mob in &mut self.mobs {
+                        mob.threat.remove(me);
+                    }
+                    self.alchemy_stealth(used.spell_id, int(e, "secs") as f32, events);
                 }
                 "restore_power" => {
                     let key = if self.player.power.kind == PowerKind::Mana {
@@ -301,7 +343,14 @@ impl InWorld {
                         .get("secs")
                         .and_then(|v| v.as_integer())
                         .unwrap_or(i64::from(alchemy::use_().potion_shield_secs));
-                    let kept = self.alchemy_shield(used.spell_id, amount, secs as f32, events);
+                    let ward = cast::Ward::alchemy(
+                        roll(used, e, "burst", rng),
+                        int(e, "burst_radius_yd") as f32,
+                        roll(used, e, "mana_per_hit", rng),
+                        int(e, "threat_pct"),
+                    );
+                    let kept =
+                        self.alchemy_shield(used.spell_id, amount, secs as f32, ward, events);
                     if let Some(larger) = kept {
                         let line = format!(
                             "{}: a {amount} shield, but your {larger} shield is larger and stays.",
@@ -314,26 +363,96 @@ impl InWorld {
                     let Some(target) = used.target else {
                         continue;
                     };
-                    let amount = roll(used, e, "amount", rng);
+                    // With `radius_yd`, every other living enemy that close to the target too.
+                    let radius = int(e, "radius_yd") as f32;
+                    let mut hit = vec![target];
+                    if let Some(at) = self.mobs.iter().find(|m| m.guid == target) {
+                        let around = cast::enemies_within(&self.mobs, me, at.position, radius);
+                        hit.extend(around.map(|m| m.guid).filter(|&g| g != target));
+                    }
                     let school = school_of(e);
-                    events.push(SessionEvent::SpellDamageLog(cast::damage_log(
-                        me,
-                        target,
-                        used.spell_id,
-                        amount,
-                        school,
-                        false,
-                    )));
-                    self.hurt_school(target, amount, school, c, rng, events, ticked);
+                    for guid in hit {
+                        let amount = roll(used, e, "amount", rng);
+                        events.push(SessionEvent::SpellDamageLog(cast::damage_log(
+                            me,
+                            guid,
+                            used.spell_id,
+                            amount,
+                            school,
+                            false,
+                        )));
+                        self.hurt_school(guid, amount, school, c, rng, events, ticked);
+                        done.damage += amount;
+                        done.hit.push(guid);
+                    }
                 }
                 "drop_threat" => {
                     let amount = roll(used, e, "amount", rng);
-                    if let Some(mob) = self.mobs.iter_mut().find(|m| Some(m.guid) == used.target) {
+                    let on: Vec<u64> = if str_of(e, "on") == Some("each_hit") {
+                        before.hit.clone()
+                    } else {
+                        used.target.into_iter().collect()
+                    };
+                    for mob in self.mobs.iter_mut().filter(|m| on.contains(&m.guid)) {
                         mob.threat.lower(me, amount as f32);
                     }
                 }
                 _ => {}
             }
+            before = done;
+        }
+    }
+
+    /// Whether the player cannot act: asleep, or under any other incapacitate.
+    pub(super) fn asleep(&self) -> bool {
+        self.skills.incapacitated(self.guid)
+    }
+
+    /// `CMSG_USE_ITEM` while asleep: refused with `SPELL_FAILED_STUNNED`. Whether it was.
+    pub(crate) fn refused_asleep(
+        &self,
+        slot: crate::inventory::Pos,
+        c: &Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        if !self.asleep() {
+            return false;
+        }
+        let spell_id = c
+            .inventory
+            .get(slot)
+            .and_then(|i| items::template(i.entry))
+            .map_or(0, |t| t.use_spell);
+        events.push(cast::refused(spell_id, cast::SPELL_FAILED_STUNNED));
+        true
+    }
+
+    /// The player sleeps for `secs` under `spell_id`: their cast, channel, shot and swing stop
+    /// and the realm takes their control, as a fear does, until the sleep ends.
+    fn fall_asleep(&mut self, spell_id: u32, secs: f32, events: &mut Vec<SessionEvent>) {
+        self.interrupt_cast(events);
+        self.end_channel(true, events);
+        self.stop_shooting(events);
+        self.stop_attack(events);
+        self.alchemy_sleep(spell_id, secs, events);
+        if !self.slept {
+            self.slept = true;
+            events.push(SessionEvent::ClientControl {
+                mover: self.guid,
+                allow_move: false,
+            });
+        }
+    }
+
+    /// A sleep that ran out, broke on a blow or went with a death gives the client its control
+    /// back.
+    fn wake_tick(&mut self, events: &mut Vec<SessionEvent>) {
+        if self.slept && !self.asleep() {
+            self.slept = false;
+            events.push(SessionEvent::ClientControl {
+                mover: self.guid,
+                allow_move: true,
+            });
         }
     }
 
@@ -373,8 +492,10 @@ impl InWorld {
         self.run_effects(used, c, rng, events, ticked);
     }
 
-    /// The oils and the flask run down by `dt`; at nothing each wears off.
+    /// The oils and the flask run down by `dt`; at nothing each wears off. A sleeper whose sleep
+    /// ended wakes.
     pub(super) fn brew_tick(&mut self, dt: f32, c: &mut Char, events: &mut Vec<SessionEvent>) {
+        self.wake_tick(events);
         for hand in [MAIN, OFF] {
             let Some(oil) = &mut c.oils[hand] else {
                 continue;
@@ -434,6 +555,20 @@ fn roll(used: Used, e: &UseEffect, param: &str, rng: &mut Rng) -> u32 {
         .and_then(|v| v.as_str())
         .and_then(|key| alchemy::num(used.product, key, used.grade, used.step))
         .map_or(0, |[lo, hi]| rng.urand(lo, hi))
+}
+
+/// Effect `e`'s whole number `param` as written (yards, seconds, a percent); 0 when it leaves
+/// it out.
+fn int(e: &UseEffect, param: &str) -> u32 {
+    e.params
+        .get(param)
+        .and_then(|v| v.as_integer())
+        .map_or(0, |n| n.max(0) as u32)
+}
+
+/// Effect `e`'s word `param`, if it names one.
+fn str_of<'a>(e: &'a UseEffect, param: &str) -> Option<&'a str> {
+    e.params.get(param).and_then(|v| v.as_str())
 }
 
 /// Effect `e`'s `school`; physical when it names none.
