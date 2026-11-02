@@ -30,25 +30,25 @@ hub_radius = 100.0
 at = 100
 xp = 1.1
 aura = 1130
-hunter_minutes = 15.0
+hunter_minutes = 1.0
 
 [[heat]]
 at = 300
 xp = 1.25
 aura = 14323
-hunter_minutes = 10.0
+hunter_minutes = 1.0
 
 [[heat]]
 at = 600
 xp = 1.5
 aura = 14324
-hunter_minutes = 6.0
+hunter_minutes = 1.0
 
 [[heat]]
 at = 1000
 xp = 2.0
 aura = 14325
-hunter_minutes = 4.0
+hunter_minutes = 1.0
 
 # Bounty Hunters (#177): a hard elite `level_above` the character's level, its class's
 # `mob_class_stats.toml` numbers times `health`, `damage` and `armor`. It comes `spawn_yd` away,
