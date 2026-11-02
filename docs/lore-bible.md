@@ -1,7 +1,7 @@
 # Twilight's Eve: Lore Bible
 
-Davis, started 2026-10-23. Copied on 2026-10-27 from the live doc at
-https://claude.ai/artifact/FCEWQ3Ng5RHp5bHrtPpzgJ (revision 43), which replaces the earlier PDF.
+Davis, started 2026-10-23. Copied on 2026-11-02 from the live doc at
+https://claude.ai/artifact/FCEWQ3Ng5RHp5bHrtPpzgJ (revision 46), which replaces the earlier PDF.
 The live doc is the source; refresh this copy when it changes. Every quest, rumour, item text and
 NPC line follows it. Where content disagrees with it, the bible wins.
 
@@ -240,7 +240,9 @@ learn what Anchors do when they go wrong. Mourncrown hangs over it, drawn by the
 The city doesn't know it's sealed. Ships are "delayed by weather" and letters go unanswered. Regent
 Bolvar gets clean reports from Prestor's office. The House of Nobles protects Cedric, and Prestor
 protects the House. Players arrive with Dughan's evidence and run into politics. Dughan stays in
-Goldshire, and his reports to the city keep disappearing in Prestor's office.
+Goldshire, and his reports to the city keep disappearing in Prestor's office. The court itself is
+shut. The Keep gate is sealed until a quest attunes the player, so the politics before 60 play out
+through NPCs in the city, not in the throne room.
 
 - **The Stockade (about 30-34).** A prison riot, with Defias inmates paid in Twilight coin. It's the
   natural place to resolve Hogger's capture.
@@ -250,9 +252,11 @@ Goldshire, and his reports to the city keep disappearing in Prestor's office.
   Entrance: the tram station in the Dwarven District.
 - **The Cathedral of Light (about 48-50).** Cedric takes sanctuary in the Cathedral when the players
   close in. He confesses, gives up the Anchor locations, and Prestor's agents kill him on
-  consecrated ground before he can reach the regent. Entrance: the Cathedral doors.
+  consecrated ground before he can reach the regent. Entrance: the Cathedral doors, never gated.
 - **Stormwind Keep (60).** Prestor reveals herself as Onyxia in the throne room, in front of Bolvar
-  and the House of Nobles. Entrance: the Keep gate.
+  and the House of Nobles. Entrance: the Keep gate, sealed until a quest grants the court's
+  attunement. A guard turns away anyone without it. Prestor and Anduin stay inside the Keep, so
+  players meet them only once attuned. The House of Nobles sits elsewhere in the city.
 
 ### Burning Steppes and Blackrock (50-60): the dragons' side
 
@@ -397,3 +401,5 @@ a rewrite.
 - [ ] When Sareth's agents take Toren, and which Mourncrown dungeon holds him.
 - [ ] Names and personalities for Sareth's four quarter lieutenants (unnamed for now).
 - [ ] Moira's thread during the war (decide later).
+- [ ] The quest that grants the Keep attunement (decide later).
+- [ ] Where the House of Nobles sits in the city, and where Bolvar stands before 60.
