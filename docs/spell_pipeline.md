@@ -239,7 +239,8 @@ say `cooldowns differ` and why, since the client draws the sweep from its own va
 `class` or rows of one Calling that disagree on it, an unknown effect kind or malformed params on
 a modelled row (an `energize` without a known `power`, an `add_combo_points` without a positive
 whole `amount`, a `per_combo` that is not a formula block), a half-filled spellmod, a `talent`
-row with neither `variant_of` nor `row_key`, or a filled tree column (ADR 0028). The DBC check needs `--data` or `WOW_DATA`; `--no-dbc-check`
+row with neither `variant_of` nor `row_key`, a Skill Choice with an `icon` of its own, or a filled
+tree column (ADR 0028). The DBC check needs `--data` or `WOW_DATA`; `--no-dbc-check`
 skips it (the tests use that). Run it by hand after a CSV edit and commit the CSV and both outputs
 together, so a diff shows what a cell changed. `--check` writes nothing and exits 1 when the
 committed outputs differ from a fresh build; CI runs it with `--no-dbc-check`, which compares the
@@ -270,7 +271,8 @@ components `docs/bevy_guidelines.md` names for each `kind`.
 
 `client_dbc_patch.json` is a list of complete spell rows, `{spell_id, fields: {power_type, cost,
 stances, cooldown_ms, ..., implicit_targets, spell_family, family_flags, icon, visual, dbc_effects},
-spellmods}`. A Skill Choice or a Talent is a spell row like any skill. The patch has no
+spellmods}`. A Skill Choice or a Talent is a spell row like any skill; a Skill Choice's `icon` is
+its skill's. The patch has no
 `talent_tabs` or `talents` key, and the client patches neither `Talent.dbc` nor `TalentTab.dbc`
 (ADR 0028). The client's Talents panel (`assets/ui/Talents.xml`) reads each choice's name, icon
 and description from its own patched Spell.dbc row.

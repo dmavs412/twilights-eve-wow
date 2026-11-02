@@ -180,7 +180,7 @@ A row of three choices on the Talents panel, opening at one of its Tier's Row Le
 _Avoid_: talent tree, talent point, tab, tier (of a tree), respec
 
 **Skill Choice**:
-One of the three choices in a skill's Talent Row: the skill with one strength added and nothing taken away, its own spell with its own name and icon. While set it replaces the plain skill in the spell book and on the action bar. In the sheet, a `talent` row with `variant_of`.
+One of the three choices in a skill's Talent Row: the skill with one strength added and nothing taken away, its own spell with its own name, shown with the skill's icon. While set it replaces the plain skill in the spell book and on the action bar. In the sheet, a `talent` row with `variant_of`.
 _Avoid_: variant, card, glyph, rank
 
 **Change Line**:

@@ -19,7 +19,8 @@ last section): rows open at fixed Row Levels shared by a Tier, and the Tier 1 Ca
   it replaces the skills.
 - **Two kinds of row.** A Skill Choice row belongs to one skill: its three choices are variants of
   that skill, each a strict upgrade (nothing taken away, one strength added), each its own spell
-  with its own id, name, icon and description. While set, the choice replaces the plain skill in
+  with its own id, name and description, shown with the skill's icon (amended 2026-11-02, see the
+  last section). While set, the choice replaces the plain skill in
   the spell book and on the action bar. A Talent row belongs to no skill: its three choices are
   passives (one-rank effects in the old talent vocabulary) or actives (a skill of their own,
   learned while set). Both kinds share the panel, the levels, the set rule and the innkeeper.
@@ -102,3 +103,14 @@ Calling and level, the model picks one build row by row and fights every cell at
 with it. A set choice fights with its own built spell, and the model reads its numbers from
 `server_spells.json`. The pick rule and the list of mechanics the model leaves out are in
 `docs/balance/rules.md`, "The character". Tickets #524 to #530.
+
+## Amended 2026-11-02: a Skill Choice shows its skill's icon
+
+Davis dropped the rule that every Skill Choice gets an icon of its own. A choice now shows the
+plain skill's icon on the Talents panel, in the spell book and on the action bar, and its name
+tells the three apart.
+
+- A Skill Choice row leaves `icon` empty and inherits the skill's. The build refuses a filled one.
+- A Talent row's choices keep icons of their own, as do the aura rows a choice puts up.
+- The 87 icons the grills picked for Skill Choices are gone from the sheet. The Icon columns in
+  `docs/specs/talents/README.md` still record them.

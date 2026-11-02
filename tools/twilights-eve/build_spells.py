@@ -66,7 +66,8 @@ CHANGE_AURA_FIELDS = {"duration": "duration_ms", "stacks": "max_stacks", "charge
 TREE_COLUMNS = ("talent_id", "source_tab_id", "tab", "tab_row", "tab_column", "prereq_key", "prereq_rank",
                 "max_rank", "tab_id", "background", "tab_order", "exceptional")
 # The cells a Skill Choice never inherits from its skill: they are the choice's own, empty or not.
-CHOICE_OWN_COLUMNS = ("kind", "key", "name", "rank", "spell_id", "icon", "visual", "status", "description",
+# Its `icon` is not one of them: a Skill Choice shows its skill's icon and leaves its own empty.
+CHOICE_OWN_COLUMNS = ("kind", "key", "name", "rank", "spell_id", "visual", "status", "description",
                       "assumptions", "notes", "modelled", "variant_of", CHANGE_COLUMN)
 # A choice cell of this blanks the inherited cell.
 BLANK = "-"
@@ -2132,6 +2133,8 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
             whole(row["row_level"], f"{where} row_level")
         if row[CHANGE_COLUMN] and not choice_of:
             raise BuildError(f"{where} change: set on a {row_kind} row; only a Skill Choice carries a Change Line")
+        if choice_of and row["icon"]:
+            raise BuildError(f"{where} icon: a Skill Choice shows its skill's icon; leave it empty")
         if kind != "aura":
             for column in AURA_ONLY_COLUMNS:
                 # A from-scratch row shows its own dispel type and mechanic on the client.

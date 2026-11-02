@@ -1463,7 +1463,7 @@ class CheckOutputs(unittest.TestCase):
 def choice(key: str, spell_id: int, skill: str = "strike", **extra: str) -> dict:
     """A Skill Choice of `skill` (ADR 0028): a talent row with variant_of and its own spell."""
     return {"kind": "talent", "calling": "vanguard", "key": key, "name": key.title(), "rank": "1",
-            "variant_of": skill, "spell_id": str(spell_id), "visual": "78", "icon": "Interface\\Icons\\Ability_X",
+            "variant_of": skill, "spell_id": str(spell_id), "visual": "78",
             "modelled": "yes", "description": f"{key}.", "change": "Hits harder.", **extra}
 
 
@@ -1516,6 +1516,19 @@ class TalentRows(BuildSpells):
         # The client reads a choice from its own Spell.dbc row; the patch has no tree.
         self.assertNotIn("talent_tabs", self.patch)
         self.assertNotIn("talents", self.patch)
+
+    def test_a_skill_choice_shows_its_skills_icon(self):
+        icon = "Interface\\Icons\\Ability_X"
+        rows = [{**CALLING, "row_levels": "3"}, {**STRIKE, "row_level": "3", "icon": icon}, *self.three()]
+        done, _ = self.run_build(rows)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        patch = {o["spell_id"]: o["fields"] for o in self.patch["spells"]}
+        self.assertEqual([patch[i]["icon"] for i in (1000501, 1000502, 1000503)], [icon] * 3)
+
+    def test_a_skill_choice_with_an_icon_of_its_own_fails(self):
+        rows = [{**CALLING, "row_levels": "3"}, {**STRIKE, "row_level": "3"},
+                *self.three(icon="Interface\\Icons\\Ability_X")]
+        self.assert_fails(rows, "(vanguard/a) icon: a Skill Choice shows its skill's icon; leave it empty")
 
     def test_rows_sort_by_level_then_sheet_order(self):
         shout = {**STRIKE, "key": "shout", "spell_id": "1000079", "row_level": "2"}
@@ -2086,6 +2099,27 @@ class TalentRows(BuildSpells):
         tab = {"kind": "talent_tab", "calling": "vanguard", "key": "arms", "name": "Arms"}
         self.assert_fails([CALLING, tab], "kind is 'talent_tab', want one of skill, talent, calling, aura")
 
+    def assert_committed_icons(self, key: str) -> None:
+        """Every Skill Choice of the committed Calling `key` shows its skill's icon, and its Talents
+        show icons of their own: no two alike, and none a plain skill's of any Calling."""
+        data = os.path.join(HERE, "..", "..", "..", "data", "twilights-eve")
+        with open(os.path.join(data, "server_spells.json"), encoding="utf-8") as f:
+            callings = json.load(f)
+        with open(os.path.join(data, "client_dbc_patch.json"), encoding="utf-8") as f:
+            icons = {s["spell_id"]: s["fields"].get("icon") for s in json.load(f)["spells"]}
+        calling = next(c for c in callings if c["key"] == key)
+        skills = {s["key"]: s["spell_id"] for s in calling["skills"]}
+        for row in calling["rows"]:
+            if row["kind"] == "skill_choice":
+                skill_icon = icons[skills[row["skill"]]]
+                self.assertTrue(skill_icon, row["skill"])
+                for choice in row["choices"]:
+                    self.assertEqual(icons[choice["spell_id"]], skill_icon, choice["key"])
+        talents = [icons[c["spell_id"]] for r in calling["rows"] if r["kind"] == "talent" for c in r["choices"]]
+        self.assertEqual(len(set(talents)), len(talents), talents)
+        plain = {icons.get(s["spell_id"]) for c in callings for s in c["skills"]}
+        self.assertFalse(plain & set(talents), plain & set(talents))
+
     def test_the_committed_basic_warrior_has_four_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
                   encoding="utf-8") as f:
@@ -2094,6 +2128,7 @@ class TalentRows(BuildSpells):
                          [("charge", 2), ("fire_blast", 4), ("gouge", 6), ("heroic_strike", 8)])
         self.assertTrue(all(len(r["choices"]) == 3 for r in warrior["rows"]))
         self.assertEqual(warrior["row_levels"], [2, 4, 6, 8])
+        self.assert_committed_icons("basic_warrior")
 
     def test_the_committed_vanguard_has_six_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
@@ -2116,11 +2151,7 @@ class TalentRows(BuildSpells):
                           ["wrathful_iron", "seal_of_mending", "seal_of_fervor"]])
         self.assertEqual([c["spell_id"] for r in vanguard["rows"] for c in r["choices"]],
                          list(range(1000430, 1000448)))
-        # No two of the choices share an icon.
-        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
-                  encoding="utf-8") as f:
-            icons = [s["fields"]["icon"] for s in json.load(f)["spells"] if 1000430 <= s["spell_id"] < 1000448]
-        self.assertEqual(len(set(icons)), 18, icons)
+        self.assert_committed_icons("vanguard")
 
     def test_the_committed_cutthroat_has_six_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
@@ -2145,14 +2176,7 @@ class TalentRows(BuildSpells):
                          list(range(1000460, 1000478)))
         self.assertEqual(next(a for a in cutthroat["auras"] if a["key"] == "aura_phantom_guile")["spell_id"],
                          1000478)
-        # No two of the choices share an icon, and none is one of Basic Warrior's choices'.
-        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
-                  encoding="utf-8") as f:
-            spells = json.load(f)["spells"]
-        icons = [s["fields"]["icon"] for s in spells if 1000460 <= s["spell_id"] < 1000478]
-        self.assertEqual(len(set(icons)), 18, icons)
-        warrior = {s["fields"].get("icon") for s in spells if s.get("calling") == "basic_warrior"}
-        self.assertFalse(warrior & set(icons), warrior & set(icons))
+        self.assert_committed_icons("cutthroat")
 
     def test_the_committed_initiate_has_six_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
@@ -2181,19 +2205,7 @@ class TalentRows(BuildSpells):
         # Blink has no row, and every choice is modelled.
         self.assertNotIn("blink", [r["skill"] for r in initiate["rows"]])
         self.assertTrue(all(c["modelled"] for r in initiate["rows"] for c in r["choices"]))
-        # No two of the choices share an icon, and none is a plain skill's or another Calling's
-        # choice's.
-        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
-                  encoding="utf-8") as f:
-            spells = {s["spell_id"]: s for s in json.load(f)["spells"]}
-        icons = [spells[i]["fields"]["icon"] for i in range(1000490, 1000508)]
-        self.assertEqual(len(set(icons)), 18, icons)
-        others = {spells[s["spell_id"]]["fields"].get("icon")
-                  for c in callings for s in c["skills"] if s.get("spell_id") in spells}
-        others |= {spells[ch["spell_id"]]["fields"].get("icon")
-                   for c in callings if c["key"] != "initiate" for r in c.get("rows", [])
-                   for ch in r["choices"] if ch.get("spell_id") in spells}
-        self.assertFalse(others & set(icons), others & set(icons))
+        self.assert_committed_icons("initiate")
 
     def test_the_committed_ranger_has_six_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
@@ -2227,19 +2239,7 @@ class TalentRows(BuildSpells):
         gone = {f"aura_guerilla_tactics_{n}" for n in range(1, 5)} | {f"aura_rhythmic_draw_{n}" for n in range(1, 5)}
         gone |= {"aura_flurry_1", "aura_entrenched_1", "aura_entrenched_2"} | {f"aura_sundered_{n}" for n in range(1, 5)}
         self.assertFalse(gone & set(auras), gone & set(auras))
-        # No two of the choices share an icon, and none is a plain skill's or another Calling's
-        # choice's.
-        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
-                  encoding="utf-8") as f:
-            spells = {s["spell_id"]: s for s in json.load(f)["spells"]}
-        icons = [spells[i]["fields"]["icon"] for i in range(1000520, 1000538)]
-        self.assertEqual(len(set(icons)), 18, icons)
-        others = {spells[s["spell_id"]]["fields"].get("icon")
-                  for c in callings for s in c["skills"] if s.get("spell_id") in spells}
-        others |= {spells[ch["spell_id"]]["fields"].get("icon")
-                   for c in callings if c["key"] != "ranger" for r in c.get("rows", [])
-                   for ch in r["choices"] if ch.get("spell_id") in spells}
-        self.assertFalse(others & set(icons), others & set(icons))
+        self.assert_committed_icons("ranger")
 
     def test_the_committed_acolyte_has_six_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
@@ -2282,16 +2282,7 @@ class TalentRows(BuildSpells):
         self.assertEqual(spells[1000561]["fields"]["channel_interrupt_flags"] & move, 0)
         siphon = next(s for s in acolyte["skills"] if s["key"] == "siphon_life")["spell_id"]
         self.assertEqual(spells[siphon]["fields"]["channel_interrupt_flags"] & move, move)
-        # No two of the choices share an icon, and none is a plain skill's or another Calling's
-        # choice's.
-        icons = [spells[i]["fields"]["icon"] for i in range(1000550, 1000568)]
-        self.assertEqual(len(set(icons)), 18, icons)
-        others = {spells[s["spell_id"]]["fields"].get("icon")
-                  for c in callings for s in c["skills"] if s.get("spell_id") in spells}
-        others |= {spells[ch["spell_id"]]["fields"].get("icon")
-                   for c in callings if c["key"] != "acolyte" for r in c.get("rows", [])
-                   for ch in r["choices"] if ch.get("spell_id") in spells}
-        self.assertFalse(others & set(icons), others & set(icons))
+        self.assert_committed_icons("acolyte")
 
 
 class Vocabulary(unittest.TestCase):

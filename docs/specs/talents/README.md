@@ -11,8 +11,9 @@ nothing reads it.
 - **Talent Row.** A row of three on the Talents panel, opened at its `row_level`. One choice set
   per row. Two kinds: a Skill Choice row and a Talent row.
 - **Skill Choice.** One of the three variants of a skill in its row. A strict upgrade of the plain
-  skill, with its own spell id, name, icon and description. While set it replaces the plain skill
-  in the spell book and on the bar. In the sheet, a `talent` row with `variant_of`.
+  skill, with its own spell id, name and description. It shows the plain skill's icon (amended
+  2026-11-02). While set it replaces the plain skill in the spell book and on the bar. In the
+  sheet, a `talent` row with `variant_of`.
 - **Talent.** One of the three choices of a Talent row: a passive (one-rank effects) or an active
   (its own skill). In the sheet, a `talent` row with `row_key`. Acolyte's sixth row is the first.
 - **Change Line.** One sentence naming what a Skill Choice changes from the plain skill: "Stuns for
@@ -47,10 +48,13 @@ Four columns join the master CSV: `variant_of`, `row_key`, `row_level` (#499) an
   a `row_level` below the skill's `learn_level` or above the Calling's `tier_cap`, and a Skill
   Choice whose skill has no `row_level`.
 - A Skill Choice is `kind=talent`, `variant_of=<skill key>` of the same Calling, `rank=1`, its own
-  `spell_id`, `name`, `icon`, `status`, `description`. Every other blank cell inherits the skill
-  row's. A cell of `-` blanks the inherited cell. An `effectN_kind` cell replaces slot N whole
-  (kind and params); `effectN_kind=-` drops slot N. Spellmod cells follow the same rule. The
-  choice gets the skill's family bit. Exactly three choices per skill.
+  `spell_id`, `name`, `status`, `description`. Every other blank cell inherits the skill row's.
+  A cell of `-` blanks the inherited cell. The `icon` cell stays empty, so the choice shows the
+  skill's icon, and the build refuses a filled one (amended 2026-11-02). The Icon columns of the
+  tables below record the grills' picks; in the game only a Talent's icon is its own. An
+  `effectN_kind` cell replaces slot N whole (kind and params); `effectN_kind=-` drops slot N.
+  Spellmod cells follow the same rule. The choice gets the skill's family bit. Exactly three
+  choices per skill.
 - A Talent is `kind=talent`, `row_key=<key>`, `row_level` (equal across the three), `rank=1`, no
   `variant_of`, the old talent effect vocabulary with one rank. An active one has `target` or
   `cast_kind` and is built as a skill. Exactly three rows per `row_key`.
@@ -63,8 +67,8 @@ Four columns join the master CSV: `variant_of`, `row_key`, `row_level` (#499) an
   level-scaled amount for the realm to fill at the player's level when it sends `TalentRows`.
   The text says what it replaces: "Costs {cost} rage instead of {plain.cost}."
 - The tree columns stay in the header and must stay empty; the `talent_tab` kind is gone.
-- No spell icon is on the rows of two Callings. One Calling's skill and the aura rows it puts up
-  may share an icon.
+- No spell icon is on the rows of two Callings. One Calling's skill, its Skill Choices and the aura
+  rows they put up may share an icon.
 
 `server_spells.json` gets `rows` per Calling, in level order:
 `{ key, level, kind: "skill_choice" | "talent", skill: <key or null>, choices: [built row x3] }`,
@@ -441,7 +445,8 @@ Creature Spells, not its other spells.
 The review of #498 found eleven stock icons on the rows of two or three Callings. The row whose
 own or borrowed stock spell shows the icon in 1.12, or whose icon a grill chose, keeps it. Each
 other row takes a stock icon in the 1.12 archives that no other sheet row and no content file
-uses:
+uses. Since 2026-11-02 every Skill Choice in this table shows its skill's icon instead; its Talents
+and auras keep theirs:
 
 | Icon | Keeps it | Moves | New icon |
 | --- | --- | --- | --- |
