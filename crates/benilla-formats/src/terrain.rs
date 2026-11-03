@@ -90,6 +90,32 @@ impl ChunkMesh {
         Some(shadow.get(row * n + col).copied().unwrap_or(0) >= 128)
     }
 
+    /// The MTEX name of the layer on top at a raw WoW position: the overlay with the highest
+    /// alpha there, the base layer where no overlay reaches 128. `None` outside this chunk or
+    /// with no layer.
+    pub fn top_texture_at(&self, wow: [f32; 3]) -> Option<&str> {
+        let nw = *self.positions.first()?;
+        let south = (nw[0] - wow[0]) / TILE_SIZE * 16.0;
+        let east = (nw[1] - wow[1]) / TILE_SIZE * 16.0;
+        if !(0.0..=1.0).contains(&south) || !(0.0..=1.0).contains(&east) {
+            return None;
+        }
+        let base = self.layer_textures.first()?;
+        let Some(alpha) = self.alpha_map.as_ref() else {
+            return Some(base);
+        };
+        let n = ALPHA_MAP_SIZE as usize;
+        let row = ((south * n as f32) as usize).min(n - 1);
+        let col = ((east * n as f32) as usize).min(n - 1);
+        let texel = alpha.get((row * n + col) * 4..)?;
+        // R, G and B weigh layers 1, 2 and 3; a tie goes to the later layer, drawn over.
+        let top = (1..self.layer_textures.len().min(4))
+            .map(|layer| (texel.get(layer - 1).copied().unwrap_or(0), layer))
+            .filter(|&(a, _)| a >= 128)
+            .max();
+        Some(top.map_or(base, |(_, layer)| &self.layer_textures[layer]))
+    }
+
     /// The `GroundEffectTexture` id under a raw WoW position: the `effectId` of the cell's
     /// `predominantTexture` layer, the grid the clutter scatters by.
     pub fn ground_effect_at(&self, wow: [f32; 3]) -> Option<u32> {
@@ -206,6 +232,15 @@ pub fn terrain_height_at(chunks: &[ChunkMesh], wow: [f32; 3]) -> Option<f32> {
     match chunk_at(chunks, wow) {
         Some(c) => c.height_at(wow),
         None => chunks.iter().find_map(|c| c.height_at(wow)),
+    }
+}
+
+/// The MTEX name of the terrain layer on top under a raw WoW column from one tile's chunks
+/// ([`ChunkMesh::top_texture_at`]), `None` off the tile.
+pub fn terrain_texture_at(chunks: &[ChunkMesh], wow: [f32; 3]) -> Option<&str> {
+    match chunk_at(chunks, wow) {
+        Some(c) => c.top_texture_at(wow),
+        None => chunks.iter().find_map(|c| c.top_texture_at(wow)),
     }
 }
 
@@ -674,6 +709,33 @@ mod tests {
             impassable: false,
             liquids: Vec::new(),
         }
+    }
+
+    #[test]
+    fn top_texture_is_the_heaviest_overlay_from_128_else_the_base() {
+        let mut c = chunk(vec![[0.0, 0.0, 0.0]], Vec::new());
+        c.layer_textures = ["Base", "Road", "Rock"].map(String::from).to_vec();
+        let n = ALPHA_MAP_SIZE as usize;
+        let mut alpha = vec![0u8; n * n * 4];
+        // The first texel row: the road at 200 in the west half, the rock over it at 220 from
+        // column 48; the road at 100, under 128, in the east half's rest.
+        for col in 0..n {
+            let texel = &mut alpha[col * 4..col * 4 + 4];
+            texel[0] = if col < 32 { 200 } else { 100 };
+            texel[1] = if col >= 48 { 220 } else { 0 };
+        }
+        c.alpha_map = Some(alpha);
+        let at = |col: usize| [-0.1, -(col as f32 + 0.5) * CHUNK_SIZE / n as f32, 0.0];
+        assert_eq!(c.top_texture_at(at(4)), Some("Road"));
+        assert_eq!(c.top_texture_at(at(40)), Some("Base"));
+        assert_eq!(c.top_texture_at(at(50)), Some("Rock"));
+        assert_eq!(
+            c.top_texture_at([1.0, 0.0, 0.0]),
+            None,
+            "north of the chunk"
+        );
+        c.alpha_map = None;
+        assert_eq!(c.top_texture_at(at(4)), Some("Base"), "one layer, no map");
     }
 
     #[test]

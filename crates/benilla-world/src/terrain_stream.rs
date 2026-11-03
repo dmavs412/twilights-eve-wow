@@ -52,7 +52,8 @@ pub use spawn::{m2_anim_bound, m2_fade, point_light, spawn_model_entities, Spawn
 use queries::update_current_area;
 pub use queries::{
     area_id_under, doodad_ground_shade, ground_effect_under, terrain_height_under,
-    terrain_height_under_cached, AreaAuthoritySet, CurrentArea, ShadeResolve,
+    terrain_height_under_cached, terrain_texture_under, AreaAuthoritySet, CurrentArea,
+    ShadeResolve,
 };
 
 /// Wall-clock per frame for spawning streamed tiles and placements before the rest waits a frame;

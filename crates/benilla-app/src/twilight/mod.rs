@@ -902,6 +902,15 @@ impl Host for TerrainHost<'_, '_, '_, '_, '_> {
             LiquidClaim::Unknown,
         )
     }
+
+    /// The streamed tile's top terrain layer under `(x, y)`, its extension stripped (Open Road).
+    fn ground_texture(&self, _map: u32, x: f32, y: f32) -> Option<String> {
+        let name = self.world.terrain_texture_under(wow_to_bevy([x, y, 0.0]))?;
+        Some(match name.rsplit_once('.') {
+            Some((stem, _)) if !stem.ends_with(['\\', '/']) => stem.to_owned(),
+            _ => name,
+        })
+    }
 }
 
 /// The spell rewrite of ADR 0011, made once the client has loaded its spell data: the compiled-in

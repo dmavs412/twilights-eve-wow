@@ -85,6 +85,20 @@ pub fn terrain_height_under(
     terrain_height_under_cached(streamer, adt_tiles, bevy_pos, &mut None)
 }
 
+/// The MTEX name of the terrain layer on top under a point (Bevy space), from the streamed tile's
+/// MCNK layers and alpha map; `None` off the streamed set.
+pub fn terrain_texture_under(
+    streamer: &TerrainStreamer,
+    adt_tiles: &Assets<AdtTile>,
+    bevy_pos: Vec3,
+) -> Option<String> {
+    let wow = bevy_to_wow(bevy_pos);
+    let (tx, ty) = world_to_tile(wow[0], wow[1]);
+    let ts = streamer.tiles.get(&(tx as i32, ty as i32))?;
+    let adt = adt_tiles.get(&ts.handle)?;
+    benilla_formats::terrain_texture_at(&adt.chunks, wow).map(str::to_owned)
+}
+
 /// [`terrain_height_under`] for many columns at once: the tile resolves once per tile change.
 pub fn terrain_height_under_cached<'a>(
     streamer: &TerrainStreamer,

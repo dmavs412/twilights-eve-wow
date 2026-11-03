@@ -75,6 +75,12 @@ impl SurfaceUnderfoot<'_, '_> {
         terrain_height_under(&self.streamer, &self.adt_tiles, pos)
     }
 
+    /// The MTEX name of the terrain layer on top under `pos` (Bevy space), `None` off the
+    /// streamed set.
+    pub fn terrain_texture_under(&self, pos: Vec3) -> Option<String> {
+        crate::terrain_stream::terrain_texture_under(&self.streamer, &self.adt_tiles, pos)
+    }
+
     /// Whether `feet_world` is inside a building: the faces-only down-ray raced against the
     /// terrain, so the grass above a mine's tunnels is outdoors.
     pub fn indoors_at(&self, feet_world: Vec3) -> bool {

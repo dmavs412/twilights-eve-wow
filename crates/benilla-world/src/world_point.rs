@@ -169,6 +169,11 @@ impl WorldPoint<'_, '_> {
         self.surface.terrain_height_under(pos)
     }
 
+    /// The MTEX name of the terrain layer on top under a point (Bevy space).
+    pub fn terrain_texture_under(&self, pos: Vec3) -> Option<String> {
+        self.surface.terrain_texture_under(pos)
+    }
+
     /// Whether this point is inside a building: the faces-only down-ray, raced against the terrain.
     pub fn indoors_at(&self, feet_world: Vec3) -> bool {
         self.surface.indoors_at(feet_world)
