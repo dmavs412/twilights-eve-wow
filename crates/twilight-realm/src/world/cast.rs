@@ -776,6 +776,10 @@ enum AuraKind {
         /// What it does as it soaks and when it breaks.
         ward: Ward,
     },
+    /// The player's direct hits heal them `pct` percent of the damage they deal.
+    Leech {
+        pct: u32,
+    },
     /// The player's casts are `pct` percent faster; `bits` carry it to the client's cast bars.
     CastSpeed {
         pct: u32,
@@ -962,6 +966,7 @@ impl AuraKind {
                 | AuraKind::Absorb { .. }
                 | AuraKind::HealingTaken { .. }
                 | AuraKind::CastSpeed { .. }
+                | AuraKind::Leech { .. }
                 | AuraKind::SkillAmount { .. }
                 | AuraKind::DamageDone { .. }
                 | AuraKind::MeleeHaste { .. }
@@ -1063,8 +1068,8 @@ impl Skills {
         }
     }
 
-    /// The percents the player's buffs raise their maximum health by, raise the physical damage
-    /// they deal by, and take off their armour.
+    /// The percents the player's buffs raise their maximum health by, raise the damage they deal
+    /// by, and take off their armour.
     fn buff_pcts(&self) -> (u32, u32, u32) {
         self.auras.iter().filter(|a| a.unit == self.me).fold(
             (0, 0, 0),
@@ -1191,9 +1196,20 @@ impl Skills {
         skill.meta.shape.on_cast.breaks_stealth && self.break_stealth(events) == Some(true)
     }
 
-    /// The percent the player's buffs raise the physical damage they deal by.
+    /// The percent the player's buffs raise the damage they deal by.
     pub(super) fn damage_pct(&self) -> u32 {
         self.buff_pcts().1
+    }
+
+    /// The player's leech buff: its spell and the percent of a hit's damage it heals.
+    pub(super) fn leech(&self) -> Option<(u32, u32)> {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .find_map(|a| match a.kind {
+                AuraKind::Leech { pct } => Some((a.spell_id, pct)),
+                _ => None,
+            })
     }
 
     /// A white swing went: the buffs that count swings count one, and go at their last. What
@@ -5329,6 +5345,7 @@ impl InWorld {
             self.guid, target, spell_id, damage, school, false,
         )));
         self.hurt(target, damage, c, rng, events, ticked);
+        self.leech_hit(c, damage, events);
     }
 
     /// A bonus hit of `raw` in `school` at `target` that cannot miss or crit, logged under
@@ -5362,6 +5379,7 @@ impl InWorld {
             self.guid, target, spell_id, damage, school, false,
         )));
         self.hurt(target, damage, c, rng, events, ticked);
+        self.leech_hit(c, damage, events);
         damage
     }
 
@@ -5502,6 +5520,7 @@ impl InWorld {
             how == Landed::Crit,
         )));
         self.hurt(target, damage, c, rng, events, ticked);
+        self.leech_hit(c, damage, events);
         if how == Landed::Crit {
             self.crit_landed(target, damage, c, events);
         }
@@ -5548,6 +5567,19 @@ impl InWorld {
     pub(super) fn dealt(&self, c: &Char, damage: u32) -> u32 {
         let pct = crate::talents::weapon_damage_pct(c) + self.skills.damage_pct();
         damage * (100 + pct) / 100 * (100 + self.damage_stack) / 100
+    }
+
+    /// A swing, shot, or skill or spell hit of the player's dealt `damage`: under a leech buff
+    /// they heal its share, rounded down. Nothing at full health.
+    pub(super) fn leech_hit(&mut self, c: &Char, damage: u32, events: &mut Vec<SessionEvent>) {
+        let Some((spell_id, pct)) = self.skills.leech() else {
+            return;
+        };
+        let max = buffed(&self.player.stats, &self.skills).max_health;
+        let heal = damage * pct / 100;
+        if heal > 0 && self.player.health < max {
+            self.heal_player(c, spell_id, heal, events);
+        }
     }
 
     /// A melee blow of the player's landed `damage` on `from`: under Sweeping Strikes, the
@@ -6197,6 +6229,7 @@ impl InWorld {
             }));
             let worth = self.kill_yields_xp(guid);
             self.hurt(guid, swing.damage, c, rng, events, ticked);
+            self.leech_hit(c, swing.damage, events);
             if swing.damage > 0 && heal_pct > 0 {
                 self.heal_player(c, spell_id, swing.damage * heal_pct / 100, events);
             }
@@ -6324,6 +6357,13 @@ impl InWorld {
                 } => {
                     let per_tick = per_tick * stacks;
                     let on_player = a.unit == self.guid;
+                    // The player's own tick on an enemy grows with their damage buffs, as their
+                    // hits do.
+                    let per_tick = if !on_player && caster == self.guid {
+                        self.dealt(c, per_tick)
+                    } else {
+                        per_tick
+                    };
                     let alive = if on_player {
                         self.player.alive()
                     } else {
@@ -7612,6 +7652,7 @@ impl InWorld {
                 callings::AuraEffect::ModRangedHastePct { pct } => {
                     AuraKind::RangedHaste { pct: *pct }
                 }
+                callings::AuraEffect::LeechPct { pct } => AuraKind::Leech { pct: *pct },
                 callings::AuraEffect::ModRangedCritPct { pct } => {
                     AuraKind::RangedCrit { pct: *pct }
                 }

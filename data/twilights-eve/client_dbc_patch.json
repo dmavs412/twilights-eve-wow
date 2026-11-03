@@ -8228,6 +8228,81 @@
    }
   },
   {
+   "spell_id": 1960001,
+   "trinket": "quick_hands",
+   "fields": {
+    "name": "Quick Hands",
+    "icon": "Interface\\Icons\\Ability_Rogue_SliceDice",
+    "school": 0,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "aura_description": "Swings, shots and casts 25% faster.",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "aura": 4,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1960002,
+   "trinket": "blood_luck",
+   "fields": {
+    "name": "Blood Luck",
+    "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain02",
+    "school": 0,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "aura_description": "Your hits heal you for 20% of the damage they deal.",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "aura": 4,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1960003,
+   "trinket": "sixes",
+   "fields": {
+    "name": "Sixes",
+    "icon": "Interface\\Icons\\Spell_Shadow_UnholyStrength",
+    "school": 0,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "aura_description": "Damage dealt doubled.",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "aura": 4,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
    "spell_id": 7620,
    "fields": {
     "equipped_item_class": -1,

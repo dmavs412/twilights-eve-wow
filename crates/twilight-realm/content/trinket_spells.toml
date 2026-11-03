@@ -23,6 +23,15 @@
 # cooldown_ms  from the click: the item can't be clicked again until it runs out; it is kept in
 #              the save, and the item's tooltip and the client's sweep read the same number
 # effect       optional: what the click does. Without one, the click only starts the cooldown.
+#              Its kinds, which any trinket may name:
+#              roll                     one of `faces` (each an effect) drawn evenly, shown in
+#                                       chat as a /random of 1 to the face count
+#              lose_current_health_pct  `pct` percent of the current health, rounded down; it
+#                                       never drops below 1
+#              heal_max_health_pct      a heal of `pct` percent of the maximum health
+#              energize_max_power_pct   `pct` percent of the power bar's maximum (rage, energy or
+#                                       mana)
+#              aura                     the [[aura]] row `key` goes on the wearer
 #
 # [[aura]], one per buff a trinket puts up, in the shape of a Calling's aura (callings::AuraDef),
 # so it goes on through the same code a skill's does:
@@ -32,7 +41,8 @@
 # icon         as a spell's
 # description  optional: the buff's tooltip
 # duration_ms  how long it lasts
-# effects      what it does while it is on, as an aura row's effects
+# effects      what it does while it is on, as an aura row's effects. A mod_cast_speed_pct with no
+#              family_bits reaches every Calling skill's cast bar.
 
 [[spell]]
 key = "loaded_die"
@@ -42,6 +52,14 @@ icon = 'Interface\Icons\INV_Misc_Dice_01'
 visual = 0
 description = "Roll a die. Each face does something different."
 cooldown_ms = 300000
+effect = { kind = "roll", faces = [
+  { kind = "lose_current_health_pct", pct = 30 },
+  { kind = "heal_max_health_pct", pct = 20 },
+  { kind = "energize_max_power_pct", pct = 25 },
+  { kind = "aura", key = "quick_hands" },
+  { kind = "aura", key = "blood_luck" },
+  { kind = "aura", key = "sixes" },
+] }
 
 [[spell]]
 key = "apprentices_hourglass"
@@ -60,3 +78,35 @@ icon = 'Interface\Icons\INV_Enchant_ShardNexusLarge'
 visual = 0
 description = "Your next skill within 20 sec goes off a second time."
 cooldown_ms = 120000
+
+# The Loaded Die's three buffs (faces 4 to 6). The names are placeholders.
+[[aura]]
+key = "quick_hands"
+spell_id = 1960001
+name = "Quick Hands"
+icon = 'Interface\Icons\Ability_Rogue_SliceDice'
+description = "Swings, shots and casts 25% faster."
+duration_ms = 15000
+effects = [
+  { kind = "mod_melee_haste_pct", pct = 25 },
+  { kind = "mod_ranged_haste_pct", pct = 25 },
+  { kind = "mod_cast_speed_pct", pct = 25 },
+]
+
+[[aura]]
+key = "blood_luck"
+spell_id = 1960002
+name = "Blood Luck"
+icon = 'Interface\Icons\Spell_Shadow_LifeDrain02'
+description = "Your hits heal you for 20% of the damage they deal."
+duration_ms = 15000
+effects = [{ kind = "leech_pct", pct = 20 }]
+
+[[aura]]
+key = "sixes"
+spell_id = 1960003
+name = "Sixes"
+icon = 'Interface\Icons\Spell_Shadow_UnholyStrength'
+description = "Damage dealt doubled."
+duration_ms = 15000
+effects = [{ kind = "mod_damage_done_pct", pct = 100 }]

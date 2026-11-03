@@ -968,6 +968,8 @@ respawn_secs = 300.0
 entry = 96012
 name = "Morgan the Collector"
 rolls = [{ chance = 20, one_of = [904000, 904001, 904002, 904003, 904004, 904005] }, { chance = 50, one_of = [902000, 902001, 902002, 902003, 902004, 902005, 902006, 902007, 902008, 902009, 902010, 902011, 902012, 902013, 902014, 902015, 902016, 902017, 902018, 902019] }]
+# Morgan's Loaded Die (spec #458), on top of whatever the rolls above give.
+extra_rolls = [{ chance = 25, one_of = [906000] }]
 creature_type = 7
 rank = 1
 boss = true

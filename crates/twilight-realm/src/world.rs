@@ -104,6 +104,9 @@ pub(crate) struct Kill {
     pub(crate) key: Option<u32>,
     /// Loot rolls: the first to succeed adds one item to each looter's corpse.
     pub(crate) rolls: &'static [crate::rules::loot::Roll],
+    /// The creature's rolls on top of `rolls`, each on its own: every one that succeeds adds one
+    /// item after the first roll's.
+    pub(crate) extra_rolls: &'static [crate::rules::loot::Roll],
     /// The corpse's money, rolled once for everyone; 0 for a kill made alone, whose loot rolls
     /// its own.
     pub(crate) money: u32,
@@ -1166,6 +1169,7 @@ impl InWorld {
         if idle {
             self.pull(i, None, events);
         }
+        self.leech_hit(c, swing.damage, events);
         if self.mobs[i].health == 0 {
             self.kill(i, c, rng, events, ticked);
         } else {
@@ -1709,6 +1713,7 @@ impl InWorld {
             drops,
             key,
             rolls,
+            extra_rolls: &mob.template.extra_rolls,
             money,
             health_mul,
             position: mob.position,
@@ -1783,6 +1788,9 @@ impl InWorld {
             .extend(k.drops.iter().map(|&item| Some((item, 1))));
         loot.items.extend(k.key.map(|item| Some((item, 1))));
         if let Some(item) = crate::rules::loot::first_roll(k.rolls, rng) {
+            loot.items.push(Some((item, 1)));
+        }
+        for item in crate::rules::loot::each_roll(k.extra_rolls, rng) {
             loot.items.push(Some((item, 1)));
         }
         if let Some(note) = credit.note {

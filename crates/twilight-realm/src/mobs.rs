@@ -119,6 +119,10 @@ pub(crate) struct Template {
     /// Loot rolls on top of the ordinary one: the first to succeed adds one of its items.
     #[serde(default)]
     pub(crate) rolls: Vec<crate::rules::loot::Roll>,
+    /// Loot rolls on top of `rolls`, each rolled on its own: every one that succeeds adds one of
+    /// its items.
+    #[serde(default)]
+    pub(crate) extra_rolls: Vec<crate::rules::loot::Roll>,
     /// The Creature Spells it casts in a fight (`content/creature_spells.toml` keys).
     #[serde(default)]
     pub(crate) spells: Vec<String>,
@@ -315,6 +319,7 @@ impl Template {
             shield: false,
             respawn_secs: None,
             rolls: Vec::new(),
+            extra_rolls: Vec::new(),
             spells,
             equip,
             inert: false,
@@ -888,7 +893,7 @@ pub(crate) fn content() -> &'static Mobs {
         template.extend(dungeon.template);
         lay_kits(&mut template, &overrides.kit);
         for t in &template {
-            for roll in &t.rolls {
+            for roll in t.rolls.iter().chain(&t.extra_rolls) {
                 roll.check(&t.name);
             }
             crate::creature_spells::check_castable(&t.spells, &t.name);

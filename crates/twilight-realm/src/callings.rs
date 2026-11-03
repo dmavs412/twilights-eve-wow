@@ -279,8 +279,11 @@ pub enum AuraEffect {
     ModRangedHastePct { pct: u32 },
     /// The player's ranged attacks crit `pct` percent more often.
     ModRangedCritPct { pct: u32 },
-    /// The player deals `pct` percent more physical damage a stack (Bloodlust).
+    /// The player deals `pct` percent more damage of every school a stack (Bloodlust).
     ModDamageDonePct { pct: u32 },
+    /// Each swing, shot, and skill or spell hit the player lands heals them `pct` percent of the
+    /// damage it dealt after mitigation, under the aura's spell. Periodic ticks don't heal.
+    LeechPct { pct: u32 },
     /// The player's melee swings are `pct` percent faster a stack (Bloodlust).
     ModMeleeHastePct { pct: u32 },
     /// The unit's armour changes by `amount` (a stacking Sunder when negative).

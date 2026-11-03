@@ -2,16 +2,20 @@
 //! cooldown, and the item cools down for the spell's `cooldown_ms`, kept in the save. Putting one
 //! on starts vanilla's 30 s equip wait.
 
+use benilla_protocol::messages::SpellEnergizeLog;
 use benilla_protocol::SessionEvent;
 
 use super::cast::{
-    refused, CAST_FLAG_UNKNOWN2, READY_SLACK_SECS, SPELL_FAILED_CASTER_DEAD,
+    buffed, damage_log, refused, CAST_FLAG_UNKNOWN2, READY_SLACK_SECS, SPELL_FAILED_CASTER_DEAD,
     SPELL_FAILED_NOT_READY, SPELL_FAILED_SPELL_IN_PROGRESS,
 };
 use super::InWorld;
 use crate::characters::Char;
+use crate::fields::{values, UNIT_FIELD_HEALTH};
 use crate::inventory::Pos;
-use crate::trinket_spells::{self, TrinketSpell};
+use crate::rng::Rng;
+use crate::rules::school::School;
+use crate::trinket_spells::{self, TrinketEffect, TrinketSpell};
 use crate::{clock, items};
 
 /// The trinket slots, as `CMSG_USE_ITEM` names them under the player's own bag.
@@ -58,6 +62,7 @@ impl InWorld {
         slot: Pos,
         c: &mut Char,
         wall: f64,
+        rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) {
         if !slot.is_worn() || !TRINKET_SLOTS.contains(&slot.slot) {
@@ -92,8 +97,71 @@ impl InWorld {
             item_caster: Some(guid),
         });
         cool_until(c, entry, wall + f64::from(clock::secs(spell.cooldown_ms)));
-        if let Some(effect) = spell.effect {
-            match effect {}
+        if let Some(effect) = &spell.effect {
+            self.trinket_effect(effect, spell.spell_id, c, rng, events);
+        }
+    }
+
+    /// The Trinket Spell `spell_id`'s `effect` on its wearer, each logged under `spell_id` but a
+    /// buff, which shows its own.
+    fn trinket_effect(
+        &mut self,
+        effect: &'static TrinketEffect,
+        spell_id: u32,
+        c: &Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        match effect {
+            TrinketEffect::Roll { faces } => {
+                let count = faces.len() as u32;
+                let face = rng.below(count);
+                events.push(SessionEvent::RandomRoll {
+                    min: 1,
+                    max: count,
+                    roll: face + 1,
+                    guid: self.guid,
+                });
+                self.trinket_effect(&faces[face as usize], spell_id, c, rng, events);
+            }
+            TrinketEffect::LoseCurrentHealthPct { pct } => {
+                let p = &mut self.player;
+                let lost = (p.health * pct / 100).min(p.health.saturating_sub(1));
+                p.health -= lost;
+                events.push(SessionEvent::SpellDamageLog(damage_log(
+                    self.guid,
+                    self.guid,
+                    spell_id,
+                    lost,
+                    School::Physical,
+                    false,
+                )));
+                events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, p.health)]));
+            }
+            TrinketEffect::HealMaxHealthPct { pct } => {
+                let max = buffed(&self.player.stats, &self.skills).max_health;
+                self.heal_from(self.guid, c, spell_id, max * pct / 100, events);
+            }
+            TrinketEffect::EnergizeMaxPowerPct { pct } => {
+                let p = &mut self.player.power;
+                let (amount, changed) = p.fill_pct(*pct);
+                if changed {
+                    events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
+                        target: self.guid,
+                        caster: self.guid,
+                        spell_id,
+                        power: p.kind.id(),
+                        amount,
+                    }));
+                    events.push(values(self.guid, &[p.field()]));
+                }
+            }
+            TrinketEffect::Aura { key } => {
+                // `trinket_spells::check` has found every key's row.
+                if let Some(def) = trinket_spells::aura(key) {
+                    self.put_aura(def, self.guid, c.power_level(), events);
+                }
+            }
         }
     }
 }

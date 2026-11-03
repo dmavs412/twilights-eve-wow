@@ -1812,7 +1812,7 @@ impl Realm {
                         let slot = inventory::Pos { bag, slot };
                         // A trinket's Trinket Spell goes off only while it is worn (spec #458).
                         if world::trinket::is_trinket(c, slot) {
-                            w.use_trinket(slot, c, self.wall, &mut self.events);
+                            w.use_trinket(slot, c, self.wall, &mut self.rng, &mut self.events);
                             return;
                         }
                         // A Quest Starter opens its quest; food and drink are eaten at once;

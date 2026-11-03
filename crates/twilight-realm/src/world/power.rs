@@ -100,6 +100,15 @@ impl Power {
         self.current != was
     }
 
+    /// `pct` percent of the bar's maximum added, capped, and not scaled by the rage multiplier:
+    /// the whole points it adds before the cap, and whether the bar changed.
+    pub(super) fn fill_pct(&mut self, pct: u32) -> (u32, bool) {
+        let stored = self.max * pct / 100;
+        let was = self.current;
+        self.current = (self.current + stored).min(self.max);
+        (stored / self.kind.stored(1), self.current != was)
+    }
+
     /// Every point of `kind` held, taken; 0 when the bar is of another kind (Execute).
     pub(super) fn take_all(&mut self, kind: PowerKind) -> u32 {
         if kind != self.kind {

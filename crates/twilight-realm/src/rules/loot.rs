@@ -82,6 +82,15 @@ pub(crate) fn first_roll(rolls: &[Roll], rng: &mut Rng) -> Option<u32> {
     })
 }
 
+/// The items of every roll in `rolls` that succeeds, in order. Each roll draws as one of
+/// [`first_roll`]'s does, whether or not those before it succeeded.
+pub(crate) fn each_roll(rolls: &[Roll], rng: &mut Rng) -> Vec<u32> {
+    rolls
+        .iter()
+        .filter_map(|roll| first_roll(std::slice::from_ref(roll), rng))
+        .collect()
+}
+
 /// The quality roll is out of this.
 pub const QUALITY_ROLL: u32 = 100;
 
@@ -323,6 +332,48 @@ mod roll_tests {
         let mut rng = Rng::new(1);
         assert!((0..50).all(|_| matches!(first_roll(&sure, &mut rng), Some(7 | 8))));
         assert_eq!(first_roll(&[], &mut rng), None);
+    }
+
+    #[test]
+    fn each_roll_drops_every_roll_that_hits() {
+        let roll = |chance, item| Roll {
+            chance,
+            one_of: vec![item],
+        };
+        let mut rng = Rng::new(1);
+        assert!((0..50).all(|_| each_roll(&[roll(100, 7)], &mut rng) == [7]));
+        assert_eq!(each_roll(&[roll(0, 7)], &mut rng), Vec::<u32>::new());
+        assert_eq!(each_roll(&[], &mut rng), Vec::<u32>::new());
+        // A seed whose first draw is 25 or over: the quarter roll misses.
+        let seed = (0..)
+            .find(|&s| Rng::new(s).below(100) >= 25)
+            .expect("a seed drawing 25 or over");
+        assert_eq!(
+            each_roll(&[roll(25, 7)], &mut Rng::new(seed)),
+            Vec::<u32>::new()
+        );
+        let both = [roll(100, 7), roll(100, 8)];
+        assert_eq!(each_roll(&both, &mut rng), [7, 8]);
+    }
+
+    #[test]
+    fn morgans_200_kills_drop_the_die_30_to_70_times_beside_his_own_loot() {
+        let morgan = crate::mobs::template(96012).expect("Morgan the Collector");
+        let die = 906000;
+        let blues = 904000..=904005;
+        let (mut dice, mut with_a_blue) = (0, 0);
+        for seed in 0..200 {
+            let mut rng = Rng::new(seed);
+            let first = first_roll(&morgan.rolls, &mut rng);
+            let extra = each_roll(&morgan.extra_rolls, &mut rng);
+            assert!(extra.iter().all(|&i| i == die), "{extra:?}");
+            if extra.contains(&die) {
+                dice += 1;
+                with_a_blue += usize::from(first.is_some_and(|i| blues.contains(&i)));
+            }
+        }
+        assert!((30..=70).contains(&dice), "{dice} dice in 200 kills");
+        assert!(with_a_blue > 0, "the die never dropped beside a blue");
     }
 
     #[test]
