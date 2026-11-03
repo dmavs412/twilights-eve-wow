@@ -103,6 +103,7 @@ pub mod build_id;
 pub use audience::Audience;
 pub use content::{CROSSROADS, KALIMDOR, THE_BARRENS};
 pub use dev::DevMultipliers;
+pub use ground::SETTLE_WINDOW_SECS;
 pub use objects::{ObjectKind, ObjectSpec, CHEST_DISPLAY};
 pub use phased::{test_grounds_start, GameObjectUse, UseKind};
 pub use save::{SaveError, Storage, SAVE_VERSION};

@@ -50,8 +50,9 @@ impl Host for Shelf {
     }
 }
 
-/// A new orc enters the world at the Crossroads over `host`: the creates of the first ticks.
-fn enter(host: &dyn Host) -> Vec<SessionEvent> {
+/// A new orc enters the world at the Crossroads over `host`: the realm, and the creates of the
+/// first ticks.
+fn enter_over(host: &dyn Host) -> (Realm, Vec<SessionEvent>) {
     let mut realm = Realm::with_seed(1).with_quests(TEST_OBJECTS);
     assert_eq!(create(&mut realm, "Stander", ORC, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut realm)[0].guid;
@@ -60,7 +61,12 @@ fn enter(host: &dyn Host) -> Vec<SessionEvent> {
     let mut events = drain(&mut realm);
     realm.tick(0.1, host);
     events.extend(drain(&mut realm));
-    events
+    (realm, events)
+}
+
+/// The creates of the first ticks after a new orc enters the world over `host`.
+fn enter(host: &dyn Host) -> Vec<SessionEvent> {
+    enter_over(host).1
 }
 
 /// Where `guid`'s create in `events` put it.
@@ -155,10 +161,27 @@ fn units_created_without_ground_are_lifted_once_it_streams_in() {
     assert!(!again, "the placed object is left alone");
 }
 
+/// A building's floor can stream in after the terrain under it (#547): a unit placed on the lower
+/// ground is lifted onto the higher one within the window, and never dropped to a lower one.
+#[test]
+fn units_placed_on_one_ground_are_lifted_when_a_higher_one_streams_in() {
+    let (mut realm, _) = enter_over(&Shelf(Some(SHELF)));
+    realm.tick(0.1, &Shelf(Some(SHELF + 1.0)));
+    let events = drain(&mut realm);
+    assert_eq!(lifted_to(&events, CREATURE), [SHELF + 1.0]);
+    assert_eq!(lifted_to(&events, hub_guid(BARG)), [SHELF + 1.0]);
+    realm.tick(0.1, &Shelf(Some(SHELF - 1.0)));
+    let events = drain(&mut realm);
+    assert!(lifted_to(&events, CREATURE).is_empty(), "never down");
+    assert!(lifted_to(&events, hub_guid(BARG)).is_empty(), "never down");
+}
+
 #[test]
 fn a_settled_unit_is_not_asked_again() {
     let mut realm = enter_without_ground();
     realm.tick(0.1, &Shelf(Some(SHELF)));
+    drain(&mut realm);
+    realm.tick(twilight_realm::SETTLE_WINDOW_SECS, &Shelf(Some(SHELF)));
     drain(&mut realm);
     realm.tick(0.1, &Shelf(Some(SHELF + 10.0)));
     let events = drain(&mut realm);

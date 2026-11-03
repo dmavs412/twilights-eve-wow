@@ -92,6 +92,61 @@ pub(crate) fn yes() -> bool {
 /// How far a settled unit's ground may differ from where it stands before it is moved, in yards.
 const SETTLE_YD: f32 = 0.05;
 
+/// How long a placed unit keeps asking for its ground after the host first answers, in seconds:
+/// a building's floor can stream in after the terrain under it (#547). The spawn audit's
+/// `STREAM_LIMIT_SECS`.
+pub const SETTLE_WINDOW_SECS: f32 = 20.0;
+
+/// A placed unit that still asks for its ground: until the host first answers, and for
+/// [`SETTLE_WINDOW_SECS`] after.
+pub(crate) struct Settling {
+    /// Seconds since the host first answered; `None` before it has.
+    answered: Option<f32>,
+}
+
+impl Settling {
+    /// For a unit created on the host's ground (`on_ground`), whose window starts now, or created
+    /// before the host had any.
+    pub(crate) fn new(on_ground: bool) -> Self {
+        Self {
+            answered: on_ground.then_some(0.0),
+        }
+    }
+
+    /// Counts `dt` seconds of the window; false once it has passed.
+    pub(crate) fn tick(&mut self, dt: f32) -> bool {
+        match &mut self.answered {
+            Some(t) => {
+                *t += dt;
+                *t < SETTLE_WINDOW_SECS
+            }
+            None => true,
+        }
+    }
+
+    /// The height a unit standing at `at` on `map` moves to, asked from its row's height `row_z`.
+    /// The host's first answer sets it on that ground, up or down, as for a unit made before its
+    /// ground streamed in; a later one only lifts it, so a floor that unloads behind the player
+    /// never drops it to the terrain.
+    pub(crate) fn ask(
+        &mut self,
+        host: &dyn Host,
+        map: u32,
+        at: [f32; 3],
+        row_z: f32,
+    ) -> Option<f32> {
+        let ground = ground_under(host, map, [at[0], at[1], row_z], true)?;
+        let first = self.answered.is_none();
+        self.answered.get_or_insert(0.0);
+        let moves = if first {
+            (ground - at[2]).abs() >= SETTLE_YD
+        } else {
+            ground - at[2] > SETTLE_YD
+        };
+        moves.then_some(ground)
+    }
+}
+
 /// What a unit created before its ground streamed in finds when it asks again.
 pub(crate) enum Settle {
     /// The host still has no ground there; ask again later.

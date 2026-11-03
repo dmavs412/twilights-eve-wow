@@ -10,7 +10,7 @@ use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 use serde::Deserialize;
 
 use crate::fields::*;
-use crate::ground::{ground_under, lift_event, settle, Settle};
+use crate::ground::{ground_under, lift_event, Settling};
 use crate::rng::Rng;
 use crate::space::flat_distance;
 use crate::Host;
@@ -343,8 +343,9 @@ pub(crate) struct InView {
 /// An NPC in the world: where it is, and what it is doing there.
 struct Standing {
     at: [f32; 3],
-    /// Whether `at` is on the host's ground; false when it spawned before the terrain streamed in.
-    grounded: bool,
+    /// While it still asks for its ground; `None` once the window has passed, or for one that
+    /// keeps its written Z.
+    settling: Option<Settling>,
     walk: Option<Walk>,
     /// Seconds until a wanderer sets off again.
     idle: f32,
@@ -392,7 +393,7 @@ impl InView {
                     *present = Some(Standing {
                         at,
                         // One that keeps its written Z has nothing to settle onto.
-                        grounded: ground.is_some() || !npc.grounded,
+                        settling: npc.grounded.then(|| Settling::new(ground.is_some())),
                         walk: None,
                         idle: rng.frand(WANDER_PAUSE.0, WANDER_PAUSE.1),
                     });
@@ -402,7 +403,7 @@ impl InView {
                     *present = None;
                 }
                 Some(s) => {
-                    s.settle(npc, map, host, events);
+                    s.settle(npc, dt, map, host, events);
                     if npc.wander > 0.0 {
                         s.wander(npc, dt, map, host, rng, events);
                     }
@@ -430,21 +431,32 @@ impl InView {
 }
 
 impl Standing {
-    /// An NPC that spawned before the ground streamed in stood at its spawn's height, often under
-    /// the terrain; once the ground is there, lifts it onto it.
-    fn settle(&mut self, npc: &Npc, map: u32, host: &dyn Host, events: &mut Vec<SessionEvent>) {
-        if self.grounded || self.walk.is_some() {
+    /// A grounded NPC asks again for its ground from its content height for a while after it is
+    /// placed ([`Settling`]): one that spawned before the ground streamed in, often under the
+    /// terrain, is set onto it, and one placed on the terrain before a building's floor over it
+    /// streamed in is lifted onto the floor (#547).
+    fn settle(
+        &mut self,
+        npc: &Npc,
+        dt: f32,
+        map: u32,
+        host: &dyn Host,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let Some(settling) = &mut self.settling else {
+            return;
+        };
+        if !settling.tick(dt) {
+            self.settling = None;
             return;
         }
-        match settle(host, map, self.at) {
-            Settle::Waiting => {}
-            Settle::Level => self.grounded = true,
-            Settle::Lift(ground) => {
-                self.grounded = true;
-                let to = [self.at[0], self.at[1], ground];
-                events.push(lift_event(npc.guid(), self.at, to, npc.facing()));
-                self.at = to;
-            }
+        if self.walk.is_some() {
+            return;
+        }
+        if let Some(ground) = settling.ask(host, map, self.at, npc.position[2]) {
+            let to = [self.at[0], self.at[1], ground];
+            events.push(lift_event(npc.guid(), self.at, to, npc.facing()));
+            self.at = to;
         }
     }
 

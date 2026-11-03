@@ -8,7 +8,7 @@ use std::sync::OnceLock;
 
 use benilla_protocol::SessionEvent;
 
-use crate::ground::{ground_under, lift_event, settle, Settle};
+use crate::ground::{ground_under, lift_event, Settling};
 use crate::mobs::{self, Mob, State};
 use crate::rules::respawn;
 use crate::space::flat_distance;
@@ -77,8 +77,8 @@ pub(crate) struct Population {
     /// Which spawns have a mob in the world, by spawn index.
     present: Vec<bool>,
     dead: Vec<Corpse>,
-    /// The spawns whose mob was created before the host had its ground, by spawn index.
-    settling: Vec<u32>,
+    /// The grounded spawns whose mob still asks for its ground, by spawn index.
+    settling: Vec<(u32, Settling)>,
     /// Counts every spawn, so each comes back at its own level from its range.
     spawns: u32,
 }
@@ -125,7 +125,7 @@ impl Population {
             self.scanned_at = None;
         }
 
-        self.settle(map, host, mobs, events);
+        self.settle(dt, map, host, mobs, events);
 
         self.since_scan += dt;
         if self.since_scan < RESCAN_SECS
@@ -204,8 +204,8 @@ impl Population {
                         events.push(mob.create());
                         mobs.push(mob);
                         self.present[i as usize] = true;
-                        if spawn.grounded && ground.is_none() {
-                            self.settling.push(i);
+                        if spawn.grounded {
+                            self.settling.push((i, Settling::new(ground.is_some())));
                         }
                     }
                 }
@@ -213,33 +213,37 @@ impl Population {
         }
     }
 
-    /// A mob that spawned before the ground streamed in stood at its spawn's height, often under
-    /// the terrain; once the ground is there, an idle one is lifted onto it, once. One that has
-    /// left the world has nothing to settle.
+    /// An idle grounded mob asks again for its ground from its spawn's height for a while after it
+    /// is placed ([`Settling`]): one that spawned before the ground streamed in, often under the
+    /// terrain, is set onto it, and one placed on the terrain before a building's floor over it
+    /// streamed in is lifted onto the floor (#547). One that has left the world has nothing to
+    /// settle.
     fn settle(
         &mut self,
+        dt: f32,
         map: u32,
         host: &dyn Host,
         mobs: &mut [Mob],
         events: &mut Vec<SessionEvent>,
     ) {
-        self.settling.retain(|&spawn| {
-            let Some(m) = mobs.iter_mut().find(|m| m.spawn == spawn) else {
+        let content = mobs::content();
+        self.settling.retain_mut(|(spawn, settling)| {
+            let Some(m) = mobs.iter_mut().find(|m| m.spawn == *spawn) else {
                 return false;
             };
+            if !settling.tick(dt) {
+                return false;
+            }
             if m.state != State::Idle || m.walk.is_some() {
                 return true;
             }
-            match settle(host, map, m.position) {
-                Settle::Waiting => true,
-                Settle::Level => false,
-                Settle::Lift(ground) => {
-                    let (at, to) = (m.position, [m.position[0], m.position[1], ground]);
-                    events.push(lift_event(m.guid, at, to, m.orientation));
-                    m.ground_to(ground);
-                    false
-                }
+            let row_z = content.spawn[*spawn as usize].position[2];
+            if let Some(ground) = settling.ask(host, map, m.position, row_z) {
+                let (at, to) = (m.position, [m.position[0], m.position[1], ground]);
+                events.push(lift_event(m.guid, at, to, m.orientation));
+                m.ground_to(ground);
             }
+            true
         });
     }
 
