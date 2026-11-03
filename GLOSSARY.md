@@ -199,6 +199,10 @@ _Avoid_: milestone, talent tier
 A spell a creature casts in a fight, such as Geomancer Vurx's Corruption. Creature Spells are written by hand in the realm's `creature_spells.toml`, not in the master CSV, and a creature lists the ones it knows. The client only shows them: the cast bar, the icon and the debuff come from a stock spell's row.
 _Avoid_: mob ability, creature ability
 
+**Trinket Spell**:
+The spell a trinket casts when it is clicked, and the buffs it gives, such as the Loaded Die's roll. Trinket Spells are written by hand in the realm's `trinket_spells.toml`, not in the master CSV, and a trinket's `use` cell names one. A trinket in Twilight's Eve carries no stats: its Trinket Spell is all it does (spec #458).
+_Avoid_: on-use effect, item ability
+
 **Field Giver**:
 A quest giver or ender who is not a Hub NPC: a friendly creature the realm places out in the world (Marshal McBride on the Abbey steps) or inside a Phased Dungeon (Brother Neals in the Abbey). It shows the `!` and `?` and answers the quest dialogs exactly as a Hub NPC does.
 _Avoid_: field NPC, quest NPC

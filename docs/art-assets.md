@@ -265,3 +265,14 @@ and need no art.
 
 The Open Road buff borrows a stock icon (`Ability_Tracking`); the wagon, horse and driver are
 stock models (Gypsy Wagon 5392, Caravan Packhorse 14550, a townsfolk display) and need no art.
+
+## Trinkets (spec #458)
+
+| Asset | Where | Notes |
+|---|---|---|
+| Morgan's Loaded Die icon | `data/twilights-eve/art/`, 128 x 128, only if no stock die icon is free | A bone die showing a six. A stock die icon (`INV_Misc_Dice_01` or `_02`) stands in while `icon_check.py` passes it. |
+| Apprentice's Hourglass icon | the same folder, 128 x 128 | An hourglass with sand running. Vanilla has no hourglass icon; until painted it borrows a pocket watch other than `INV_Misc_PocketWatch_02`, which another item holds. |
+| Vael's Echo Shard icon | the same folder, 128 x 128, only if no stock shard icon is free | A violet crystal shard with rings around it. A free stock shard or crystal icon stands in. |
+
+The buffs (Quick Hands, Blood Luck, Sixes, Falling Sand, Echo) borrow stock spell icons and need
+no art.
