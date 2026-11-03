@@ -4,9 +4,13 @@
 // nothing at the top. One warped fractal noise, drifting sideways and upward, moves the fade's
 // start up and down and thins the fade, so the top is ragged. The noise reads world coordinates,
 // so neighbouring segments line up. Each piece of the mesh (the backdrop, the two wisp sheets and
-// the ground skirt) fades in above its own foot under its own alpha ceiling.
+// the ground skirt) fades in above its own foot under its own alpha ceiling, and the wisps and the
+// skirt vanish close to the camera.
 
-#import bevy_pbr::forward_io::VertexOutput
+#import bevy_pbr::{
+    forward_io::VertexOutput,
+    mesh_view_bindings::view,
+}
 
 // rgb: the scene fog colour; w: seconds of drift.
 @group(#{MATERIAL_BIND_GROUP}) @binding(100) var<uniform> fog: vec4<f32>;
@@ -16,7 +20,8 @@
 // x: the foot's desaturation; y: its brightness; z: the yards its colour takes to reach the fog's;
 // w: the yards each piece takes to fade in above its own foot.
 @group(#{MATERIAL_BIND_GROUP}) @binding(102) var<uniform> foot: vec4<f32>;
-// x: the yards the noise moves the fade's start; y: the fade's alpha ceiling at the lowest noise.
+// x: the yards the noise moves the fade's start; y: the fade's alpha ceiling at the lowest noise;
+// z: the yards from the camera within which the wisps and the skirt vanish.
 @group(#{MATERIAL_BIND_GROUP}) @binding(103) var<uniform> rag: vec4<f32>;
 
 // Noise cells per yard of the first octave.
@@ -76,5 +81,12 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let luma = dot(fog.rgb, vec3<f32>(0.299, 0.587, 0.114));
     let dark = mix(fog.rgb, vec3<f32>(luma), foot.x) * foot.y;
     let colour = mix(dark, fog.rgb, smoothstep(0.0, foot.z, above_ground));
-    return vec4<f32>(colour, band * cap * smoothstep(0.0, foot.w, ramp));
+    var alpha = band * cap * smoothstep(0.0, foot.w, ramp);
+    // Only the backdrop has the full ceiling; the wisps and the skirt fade out at the camera. The
+    // margin under 1 keeps an interpolated 0.99999 on the backdrop from counting.
+    if cap < 0.99 {
+        let to_camera = distance(in.world_position.xyz, view.world_position.xyz);
+        alpha = alpha * smoothstep(0.5, rag.z, to_camera);
+    }
+    return vec4<f32>(colour, alpha);
 }

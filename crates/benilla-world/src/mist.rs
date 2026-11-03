@@ -28,8 +28,8 @@ use crate::terrain_stream::TerrainTileRoot;
 pub const BELOW_YD: f32 = 10.0;
 /// Yards the curtain rises above the highest terrain vertex on its side.
 pub const ABOVE_YD: f32 = 120.0;
-/// The fully opaque band from the curtain's foot, in yards, where the noise is middling; above it
-/// the mist fades to nothing.
+/// The fully opaque band above the ground, in yards, where the noise is middling; above it the
+/// mist fades to nothing.
 pub const OPAQUE_YD: f32 = 25.0;
 /// How far the noise moves the fade's start up or down from [`OPAQUE_YD`], in yards.
 pub const RAG_YD: f32 = 20.0;
@@ -54,6 +54,9 @@ pub const WISP_CAP: f32 = 0.5;
 pub const SKIRT_CAP: f32 = 0.6;
 /// Yards the ground skirt floats above the terrain vertices under it.
 pub const SKIRT_RAISE_YD: f32 = 1.5;
+/// Yards from the camera within which the wisp sheets and the skirt vanish, so the camera never
+/// crosses a hard sheet. The backdrop keeps its alpha at every distance.
+pub const CAMERA_FADE_YD: f32 = 3.0;
 
 /// Chunks across a map, both ways: 64 tiles of 16.
 const CHUNKS: u32 = 64 * 16;
@@ -73,7 +76,7 @@ pub struct MistExt {
     /// [`FOOT_DESAT`], [`FOOT_VALUE`], [`COLOUR_RAMP_YD`] and [`FOOT_RAMP_YD`], read by the shader.
     #[uniform(102)]
     pub(crate) foot: Vec4,
-    /// [`RAG_YD`] and [`FADE_FLOOR`], read by the shader.
+    /// [`RAG_YD`], [`FADE_FLOOR`] and [`CAMERA_FADE_YD`], read by the shader.
     #[uniform(103)]
     pub(crate) rag: Vec4,
 }
@@ -299,7 +302,7 @@ fn setup_mist(mut commands: Commands, mut materials: ResMut<Assets<MistMaterial>
             fog: Vec4::ZERO,
             shape: Vec4::new(OPAQUE_YD, DRIFT_YD_S, DRIFT_UP_YD_S, WARP_YD),
             foot: Vec4::new(FOOT_DESAT, FOOT_VALUE, COLOUR_RAMP_YD, FOOT_RAMP_YD),
-            rag: Vec4::new(RAG_YD, FADE_FLOOR, 0.0, 0.0),
+            rag: Vec4::new(RAG_YD, FADE_FLOOR, CAMERA_FADE_YD, 0.0),
         },
     });
     commands.insert_resource(Mist { material });
