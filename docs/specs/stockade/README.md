@@ -34,30 +34,43 @@ report, so the Warden hands them the riot.
 
 ## The building
 
-Vanilla's jail. The entrance lands at (49.0, 0.5, -16.4) and the jail runs east along x.
+Vanilla's jail, drawn to scale in `map.html` (open it in a browser). The loading screen lands
+at (49.0, 0.5, -16.4) and the corridor runs north along x; west is +y. The jail is two halves
+mirrored about the corridor's middle: on each side a stair goes down to a hall of cells, and a
+passage from the hall's far corner leads on to a block of deeper rooms.
 
-- The gate hall and the main corridor, z about -25, from the door to Targorr's old spot at the
-  corridor's end.
-- The Defias block is the south wing (y below 0, z about -35), two cell rows down to Bazil
-  Thredd's old spot. Red Dace holds the far end.
-- The quiet wing is the north wing (y above 0, z about -35). Its gate is at the foot of the
-  stairs; its cells run up to Dextren Ward's old room, the warder's room, which holds the
-  evidence chest.
-- The lower gallery is Hamhock's dead end. Pell is there.
-- The drain is Kam Deepfury's room. The Hush is there.
+- The gate hall and the corridor, z about -25, from the door north to Targorr's old spot at the
+  corridor's end, with a row of cells on either side of its first stretch.
+- The Defias block is the east hall (y below 0, z about -35), down the east stairs. Its two
+  cell rows are the hall's south and north galleries, rows A and B, each a dead end with a
+  lever and a portcullis at its mouth. Red Dace holds the hall's far side. The deep cells past
+  him (Hamhock's and Thredd's old rooms) hold the rest of the riot and nothing the quests need.
+- The quiet wing is the west hall (y above 0, z about -35), down the west stairs. Its gate is
+  where the stairs meet the hall; Marrow stands on the stairs side of it. The four writ cells
+  line the hall. The warder's room at the hall's north end holds the evidence chest and the
+  lower doors, which Pell left open.
+- The lower gallery is the deeper block past the lower doors, the mirror of Hamhock's dead
+  end. Pell is there with the two guards he bought.
+- The drain is that block's last room, Dextren Ward's old room. The Hush is there, and the
+  grate is in its floor.
+
+The walking order is Dace, Marrow, Pell, the Hush, one boss per room and in level order.
 
 ## Bosses
 
-- **Red Dace, 31, elite.** The Defias captain who took the deal. He calls two rioters out of
-  each unlocked cell row every 20 s while he fights. He drops the purse, full of Twilight coin.
+- **Red Dace, 31, elite.** The Defias captain who took the deal, at the far side of the east
+  hall with two Ringleaders. He calls two rioters out of each unlocked cell row every 20 s
+  while he fights. He drops the purse, full of Twilight coin.
 - **Bull Marrow, 32, elite.** The ogre the Defias kept for breaking doors, at the quiet wing's
   gate. A heavy swing and a shove. Health doubled.
-- **Warder Pell, 33, elite.** The turned guard, in the lower gallery with two guards he bought.
-  A shield wall. He fights to the death. He drops the Sealed Ledger, which the player cannot
-  open.
+- **Warder Pell, 33, elite.** The turned guard, in the lower gallery past the quiet wing with
+  two guards he bought. A shield wall. He fights to the death. He drops the Sealed Ledger,
+  which the player cannot open.
 - **The Hush, 34, the boss with the Boss Bar.** A Twilight Silencer who came in through the
-  drain. He silences, fears and casts Shadow Bolt. He carries the Writ of Names, every prisoner
-  in the quiet wing in a clerk's hand. The Stockade Sucker Pot halves his silence.
+  drain, in the last room past the gallery. He is waiting: the writ cells are keyed upstairs,
+  the ogre was to break them and the riot was to take the blame. He silences, fears and casts
+  Shadow Bolt. He carries the Writ of Names, every prisoner in the quiet wing in a clerk's
+  hand. The Stockade Sucker Pot halves his silence.
 
 ## The witnesses
 
@@ -78,7 +91,9 @@ Four cells, four lines, one thread each, in keeping with the bible's rumour rule
   with `after_used` drops, one with `until_used` rises, and a timed call with `until_used` stops.
   Levers reset with the Run.
 - The Defias block has one lever per cell row. Each drops that row's portcullis and stops Red
-  Dace's calls from it. Lock both and Dace fights with his two Ringleaders alone.
+  Dace's calls from it. Lock both and Dace fights with his two Ringleaders alone. A row is a
+  dead-end gallery, so a dropped portcullis seals nothing the player needs. Pell left the rows
+  unbarred; dropping them is the Warden's "get my cells back", and it is optional.
 - The quiet wing's lever only works once Bull Marrow is dead (`needs_dead`), like a ward stone.
   It raises the gate's portcullis.
 
@@ -117,6 +132,18 @@ Eleven quests, 97301 to 97311. The full text is in #580 and is the contract.
 - Gearspan's stopped tram is the Deeprun Tram's door.
 - Fenn's page is the cult's foreknowledge of the mist, a hint and never explained here.
 - Spec #558 says Stockade inmates recognise a notorious player; the east block is where.
+- The four witnesses stay in the quiet wing. Thelwater cannot open a writ cell; only the
+  office that wrote the writ can, and that office sent the names. Their release is the court
+  chain's payoff. He says so at the end of The Drain.
+
+## Whose side
+
+The player helps the Watch, never the Keep. Dughan sends them to Thelwater because he is
+"Watch, not court". The riot is the real threat to the witnesses: the cult paid for it to kill
+the quiet wing, so quelling it is saving them. The player learns what the quiet wing is only
+once the gate has held (97305), and Thelwater, shown the Writ of Names, breaks his own rule and
+sends the evidence to Dughan instead of up the hill (97310). The city splits into the Watch,
+honest and in the dark, and the Keep, which wrote the writs.
 
 ## Reveal check
 
@@ -128,6 +155,11 @@ the dragons.
 
 - Dungeon id 3, map 34, zone 717 (The Stockade). Creature guids 973001 up, GameObjects 983001
   up, templates 97200 to 97211, quests 97301 to 97311, gear 905060 to 905079.
+- North is +x and west is +y, so the quest text's east block (the Defias) is y below 0 and the
+  west block (the quiet wing) is y above 0. The first draft of this note called them south
+  and north; the map and #578 fixed that on 2026-11-03.
+- The first draft put Pell and the Hush in the Defias block, on the way to Dace. They moved
+  below the quiet wing the same day so the player meets the bosses in level order.
 - Every Z on map 34 is written from the vanilla dump with `grounded = false`; the whole jail is
   one footprint box.
 - Entrance and exit are vanilla's triggers 101 and 503. The Portal and the map mark stand at the
