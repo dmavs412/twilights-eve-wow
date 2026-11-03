@@ -43,6 +43,7 @@ mod areas;
 mod audience;
 mod bands;
 mod bounty;
+mod buffs;
 mod calling_choice;
 pub mod callings;
 mod characters;
@@ -78,6 +79,7 @@ mod population;
 mod quests;
 mod rest;
 mod rng;
+mod roads;
 pub mod rules;
 mod rumours;
 mod save;
@@ -130,6 +132,12 @@ pub trait Host {
     /// `at`) touches nothing solid: terrain, a WMO or a doodad. `true` where nothing is loaded.
     fn body_fits(&self, _map: u32, _at: [f32; 3]) -> bool {
         true
+    }
+    /// The name of the terrain texture on top at `(x, y)` on `map`, as the ADT's `MTEX` writes it
+    /// with the extension stripped: the overlay layer with the highest alpha there, the base layer
+    /// where no overlay reaches 128. `None` where nothing is loaded.
+    fn ground_texture(&self, _map: u32, _x: f32, _y: f32) -> Option<String> {
+        None
     }
 }
 
@@ -716,6 +724,8 @@ pub struct Realm {
     unlocks: unlocks::Unlocks,
     /// Each Server Unlock's state at the last check, which runs at login and once a UTC day.
     unlocks_seen: unlocks::Seen,
+    /// The road textures Open Road runs faster on (spec #560).
+    roads: roads::Roads,
 }
 
 impl Realm {
@@ -913,6 +923,15 @@ impl Realm {
     pub fn with_unlock_catalogue(self, toml: &str) -> Self {
         Self {
             unlocks: unlocks::Unlocks::new(unlocks::catalogue(toml)),
+            ..self
+        }
+    }
+
+    /// This realm with the roads in `toml` (the shape of `content/roads.toml`) in place of the
+    /// shipped ones: a test seam, so a script can walk a road on a map the content lists none on.
+    pub fn with_roads(self, toml: &str) -> Self {
+        Self {
+            roads: roads::Roads::parse(toml),
             ..self
         }
     }
@@ -1648,6 +1667,8 @@ impl Realm {
                     {
                         let guid = w.guid;
                         self.characters.set_position(guid, position, orientation);
+                        // The next tick asks the host for the ground under it (Open Road).
+                        w.probe_road();
                         // Trusted, as reported (ADR 0009): the others who see the player see it.
                         if let Some(place) = w.shard_place() {
                             let moved = SessionEvent::UnitMove {
@@ -2248,6 +2269,7 @@ impl Realm {
     }
 
     fn tick_served(&mut self, dt: f32, host: &dyn Host) {
+        let open_road = self.unlock_on("open_road");
         let Some(w) = &mut self.world else {
             return;
         };
@@ -2258,6 +2280,7 @@ impl Realm {
         if let Some(to) = self.dev_teleport.take() {
             w.dev_teleport(to, host, c, &mut self.events);
         }
+        w.step_on_road(host, c, &self.roads, open_road, self.wall);
         let ticked = w.tick(dt, self.wall, host, c, &mut self.rng, &mut self.events);
         self.tick_fishing(dt, host);
         self.tick_herbs(host);

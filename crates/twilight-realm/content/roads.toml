@@ -9,6 +9,9 @@
 # border. No other dirt, grass or rock base is a road.
 #
 # road_textures.py: map 0, 54 tiles of Elwynn Forest, Stormwind City, Duskwood, Redridge Mountains
+# [open_road] speed_pct is the run speed a road adds out of combat, on top of a Well Fed speed.
+# The Open Road buff's tooltip (content/buffs.toml) states the number too.
+#
 # tiles  texture
 #    28  Tileset\Elwynn\ElwynnDirtBase2.blp
 #    28  Tileset\Elwynn\ElwynnGrassBase.blp
@@ -89,6 +92,9 @@
 #     1  Tileset\RedRidge\RedRidgeCrop.blp
 #     1  Tileset\Stranglethorn\StrangleThornRockCracked.blp
 #     1  Tileset\The Badlands\BadlandsRockRed.blp
+
+[open_road]
+speed_pct = 30
 
 [[map]]
 id = 0

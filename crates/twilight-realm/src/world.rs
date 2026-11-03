@@ -56,6 +56,7 @@ pub(crate) use phase::creatures;
 mod procs;
 mod regen;
 mod rest;
+mod road;
 mod specials;
 
 pub(crate) use dungeon::come_out;
@@ -414,6 +415,8 @@ pub(crate) struct InWorld {
     slept: bool,
     /// Seconds into the flask's 5 s regeneration tick.
     flask_regen: f32,
+    /// Open Road (spec #560): when the player last stood on a road, and whether its buff is up.
+    road: road::OpenRoad,
 }
 
 impl InWorld {
@@ -563,6 +566,7 @@ impl InWorld {
             flask_shown: false,
             slept: false,
             flask_regen: 0.0,
+            road: road::OpenRoad::default(),
         };
         events.push(w.player_create(c));
         w.show_well_fed(c, events);
@@ -779,6 +783,7 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) -> Ticked {
         let mut ticked = Ticked::default();
+        self.road.now = wall;
         self.closed_hush = (self.closed_hush - dt).max(0.0);
         self.night = crate::fish::Block::Night.holds(game_clock::minute_of_day(wall));
         if self.transfer {
@@ -1953,19 +1958,21 @@ impl InWorld {
         }
     }
 
-    /// The Well Fed run speed multiplier: out of combat, its speed; else 1.
-    pub(super) fn fed_speed_mul(&self) -> f32 {
-        match &self.fed {
-            Some(f) if !self.player.in_combat => 1.0 + f.speed_pct as f32 / 100.0,
-            _ => 1.0,
+    /// The out-of-combat run speed multiplier: a Well Fed speed and Open Road's percent added
+    /// together; 1 in combat.
+    pub(super) fn ooc_speed_mul(&self) -> f32 {
+        if self.player.in_combat {
+            return 1.0;
         }
+        let fed = self.fed.as_ref().map_or(0, |f| f.speed_pct);
+        1.0 + (fed + self.road_pct()) as f32 / 100.0
     }
 
-    /// What the player's run speed is multiplied by: the auras', with a Well Fed speed in
+    /// What the player's run speed is multiplied by: the auras', with the out-of-combat speed in
     /// place of a smaller sprint.
     pub(super) fn player_speed_mul(&self) -> f32 {
         self.skills
-            .speed_mul_at_least(self.guid, self.fed_speed_mul())
+            .speed_mul_at_least(self.guid, self.ooc_speed_mul())
     }
 }
 

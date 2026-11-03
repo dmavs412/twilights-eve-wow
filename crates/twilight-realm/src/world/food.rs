@@ -19,6 +19,8 @@ const AURA_SLOT: u16 = 31;
 /// The buff slot the Well Fed aura shows in, beside the meal's: the two share their flags and
 /// levels words, so both are always written together.
 const FED_SLOT: u16 = 30;
+/// The buff slot the Open Road aura shows in (spec #560), beside Well Fed's and in its words.
+const ROAD_SLOT: u16 = 29;
 pub(super) const UNIT_FIELD_AURA: u16 = 47;
 pub(super) const UNIT_FIELD_AURAFLAGS: u16 = 95;
 pub(super) const UNIT_FIELD_AURALEVELS: u16 = 101;
@@ -289,11 +291,11 @@ impl InWorld {
     /// `c.well_fed` changed: the stats, the speed and the aura follow it, and a damage stack
     /// built under the old one falls away.
     pub(super) fn well_fed_changed(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
-        let speed_was = self.fed_speed_mul();
+        let speed_was = self.ooc_speed_mul();
         self.fed = cooking::fed(c);
         self.damage_stack = 0;
         self.refresh_gear(c, events);
-        if self.fed_speed_mul() != speed_was {
+        if self.ooc_speed_mul() != speed_was {
             self.update_speed(self.guid, events);
         }
         self.show_food_auras(c, events);
@@ -304,13 +306,14 @@ impl InWorld {
         if self.fed.is_none() {
             return;
         }
-        if self.fed_speed_mul() != 1.0 {
+        if self.ooc_speed_mul() != 1.0 {
             self.update_speed(self.guid, events);
         }
         self.show_food_auras(c, events);
     }
 
-    /// The meal's and the Well Fed slots' fields, and the Well Fed timer while it lasts.
+    /// The meal's, the Well Fed and the Open Road slots' fields, and the Well Fed timer while it
+    /// lasts.
     fn show_food_auras(&self, c: &Char, events: &mut Vec<SessionEvent>) {
         events.push(values(self.guid, &self.food_aura_pairs()));
         if let Some(fed) = c.well_fed.filter(|_| self.fed.is_some()) {
@@ -321,13 +324,15 @@ impl InWorld {
         }
     }
 
-    /// The `UNIT_FIELD_AURA*` fields of the meal's slot and the Well Fed slot, as both stand.
-    fn food_aura_pairs(&self) -> Vec<(u16, u32)> {
+    /// The `UNIT_FIELD_AURA*` fields of the meal's slot, the Well Fed slot and the Open Road
+    /// slot, as all three stand: they share their flags and levels words.
+    pub(super) fn food_aura_pairs(&self) -> Vec<(u16, u32)> {
         let meal = self.meal.as_ref().map_or(0, |m| m.spell);
         let fed = self.fed.as_ref().map_or(0, |_| cooking::eat().buff_spell);
+        let road = self.road_aura_spell();
         let level = u32::from(self.player.stats.level);
         let (mut flags, mut levels) = (0, 0);
-        for (slot, spell) in [(AURA_SLOT, meal), (FED_SLOT, fed)] {
+        for (slot, spell) in [(AURA_SLOT, meal), (FED_SLOT, fed), (ROAD_SLOT, road)] {
             if spell != 0 {
                 flags |= AURA_FLAGS << (4 * (slot % 8));
                 levels |= level << (8 * (slot % 4));
@@ -336,6 +341,7 @@ impl InWorld {
         vec![
             (UNIT_FIELD_AURA + AURA_SLOT, meal),
             (UNIT_FIELD_AURA + FED_SLOT, fed),
+            (UNIT_FIELD_AURA + ROAD_SLOT, road),
             (UNIT_FIELD_AURAFLAGS + AURA_SLOT / 8, flags),
             (UNIT_FIELD_AURALEVELS + AURA_SLOT / 4, levels),
         ]

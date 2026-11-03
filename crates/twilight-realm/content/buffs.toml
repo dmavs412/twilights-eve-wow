@@ -1,0 +1,21 @@
+# Buffs (ADR 0011): the realm's own auras that are no Calling's and no creature's, such as Open
+# Road (spec #560). The realm puts each up and takes it off itself. Each is a spell of its own:
+# tools/twilights-eve/build_spells.py reads this file and writes each one's client row into
+# client_dbc_patch.json, so after an edit to an id, a name or a look, run it again.
+#
+# key          the name the realm asks for
+# spell_id     its own id, 1,950,000 up, unique across this file, creature_spells.toml and
+#              master.csv
+# name         the buff's name
+# icon         a stock icon path, or a PNG in data/twilights-eve/art/
+# visual       the stock spell whose look (SpellVisual) it takes; 0 for none
+# duration_ms  optional: the buff's length; left out, it has no end and shows no timer
+# text         the buff's tooltip
+
+[[spell]]
+key = "open_road"
+spell_id = 1950000
+name = "Open Road"
+icon = "Interface\\Icons\\Ability_Tracking"
+visual = 0
+text = "Run speed increased by 30% on roads and streets."

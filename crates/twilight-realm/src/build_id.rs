@@ -9,6 +9,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/area_parents.toml"),
     include_str!("../content/areas.toml"),
     include_str!("../content/barrens.toml"),
+    include_str!("../content/buffs.toml"),
     include_str!("../content/callings.toml"),
     include_str!("../content/carts.toml"),
     include_str!("../content/combat.toml"),

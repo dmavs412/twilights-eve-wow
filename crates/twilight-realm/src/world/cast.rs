@@ -2583,7 +2583,7 @@ impl InWorld {
     }
 
     /// The movement clocks: moving while a step came in the last [`MOVING_GRACE_SECS`], still
-    /// otherwise; `moving_for` and `still_for` procs as they run.
+    /// otherwise; `moving_for` and `still_for` procs as they run. Open Road follows the road.
     pub(super) fn movement_tick(
         &mut self,
         dt: f32,
@@ -2628,6 +2628,7 @@ impl InWorld {
             events,
             ticked,
         );
+        self.road_tick(events);
     }
 
     /// `CMSG_CANCEL_AUTO_REPEAT_SPELL`, or a shot that cannot go on: the shooting stops.

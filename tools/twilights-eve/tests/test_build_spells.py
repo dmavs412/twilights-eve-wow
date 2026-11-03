@@ -68,6 +68,8 @@ class BuildSpells(unittest.TestCase):
         self.profiles: dict[str, dict | None] = {}
         # The creature_spells.toml `run_build` hands the script: none, unless a test sets it.
         self.creature_spells = ""
+        # The buffs.toml `run_build` hands the script: none, unless a test sets it.
+        self.buffs = ""
         # Content files by name for the `--content` folder `run_build` hands the script: none, unless set.
         self.content: dict[str, str] = {}
 
@@ -100,6 +102,9 @@ class BuildSpells(unittest.TestCase):
         creature_path = os.path.join(tmp, "creature_spells.toml")
         with open(creature_path, "w", encoding="utf-8") as f:
             f.write(self.creature_spells)
+        buffs_path = os.path.join(tmp, "buffs.toml")
+        with open(buffs_path, "w", encoding="utf-8") as f:
+            f.write(self.buffs)
         art_dir = os.path.join(tmp, "art")
         os.mkdir(art_dir)
         for name, data in {"ember_lash.png": PNG, **getattr(self, "extra_art", {})}.items():
@@ -112,8 +117,8 @@ class BuildSpells(unittest.TestCase):
                 f.write(text)
         self.out_dir = tmp
         command = [sys.executable, SCRIPT, "--csv", path, "--callings", callings_path, "--out-dir", tmp,
-                   "--art-dir", art_dir, "--creature-spells", creature_path, "--content", content_dir,
-                   "--no-dbc-check"]
+                   "--art-dir", art_dir, "--creature-spells", creature_path, "--buffs", buffs_path,
+                   "--content", content_dir, "--no-dbc-check"]
         done = subprocess.run(command, capture_output=True, text=True)
         self.patch = None
         data = None
@@ -293,6 +298,48 @@ effect = { kind = "marker" }
     def test_a_creature_spell_on_a_stock_id_fails(self):
         self.creature_spells = self.creature(spell_id=172)
         self.assert_fails([STRIKE], "curse: spell_id 172 is not its own (1,000,000 up)")
+
+    def buff(self, spell_id: int = 1950000, visual: int = 0) -> str:
+        """A buff as buffs.toml writes one: Open Road."""
+        return f"""
+[[spell]]
+key = "open_road"
+spell_id = {spell_id}
+name = "Open Road"
+icon = 'Interface\\Icons\\Ability_Tracking'
+visual = {visual}
+text = "Run speed increased by 30% on roads and streets."
+"""
+
+    def test_a_buff_is_a_dummy_aura_on_its_bearer_with_no_end(self):
+        self.buffs = self.buff()
+        done, data = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        entry = next(e for e in self.patch["spells"] if e["spell_id"] == 1950000)
+        self.assertEqual(entry["buff"], "open_road")
+        self.assertEqual(entry["fields"], {
+            "name": "Open Road", "icon": "Interface\\Icons\\Ability_Tracking", "school": 0,
+            "implicit_targets": [1, 0], "cast_time_ms": 0, "range_min": 0, "range_max": 0,
+            "duration_ms": -1, "aura_description": "Run speed increased by 30% on roads and streets.",
+            "dbc_effects": [{"effect": 6, "aura": 4, "base": 0, "per_level": 0}],
+        })
+        self.assertNotIn("open_road", json.dumps(data))
+
+    def test_a_buff_with_a_visual_takes_that_spells_look(self):
+        self.buffs = self.buff(visual=2050)
+        done, _ = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        fields = next(e for e in self.patch["spells"] if e["spell_id"] == 1950000)["fields"]
+        self.assertEqual(fields["visual_spell"], 2050)
+
+    def test_a_buff_on_a_creature_spells_id_fails(self):
+        self.creature_spells = self.creature(spell_id=1950000)
+        self.buffs = self.buff()
+        self.assert_fails([STRIKE], "open_road: spell_id 1950000 is already claimed by creature_spells.toml curse")
+
+    def test_a_buff_below_its_floor_fails(self):
+        self.buffs = self.buff(spell_id=1900001)
+        self.assert_fails([STRIKE], "open_road: spell_id 1900001 is not a buff's own (1,950,000 up)")
 
     def test_a_missing_png_fails_the_build(self):
         self.assert_fails([{**EMBER, "icon": "nothing.png"}], "icon: 'nothing.png' is not in")
