@@ -133,3 +133,38 @@ fn a_new_character_sees_the_dungeons_and_vendors_but_not_the_test_ones() {
     assert!(marks.iter().all(|m| m.name != "Brother Neals"));
     assert!(marks.iter().all(|m| m.name != "Commander Aldous Wray"));
 }
+
+#[test]
+fn the_map_marks_the_craft_trainers_but_not_the_calling_trainers() {
+    let (_, sent) = new_character();
+    let marks = &sent[0];
+    for name in [
+        "Sergeant Willem Hale",
+        "Jorik Vane",
+        "Elsa Brightwood",
+        "Thalyssa Windbough",
+        "Brother Corwin Ashgrave",
+    ] {
+        assert!(marks.iter().all(|m| m.name != name), "{name} is marked");
+    }
+    // These three give quests, so a quest mark may stand in for their service mark.
+    for name in ["Brother Ansel", "Hedda Thornwick", "Lee Brown"] {
+        mark(marks, name);
+    }
+    for (name, subtitle) in [
+        ("Tomas", "Cook"),
+        ("Brother Hollis", "Cook"),
+        ("Sister Marla", "Alchemist"),
+        ("Alwen Carrow", "Alchemist"),
+        ("Quartermaster Ilsa Venn", "Alchemy Quartermaster"),
+        ("Brother Wendell", "Fisherman"),
+        ("Herbalist Pomeroy", "Herbalism Trainer"),
+        ("Shylamiir", "Herbalism Trainer"),
+        ("Tannysa", "Herbalism Trainer"),
+        ("Alma Jainrose", "Herbalism Trainer"),
+    ] {
+        let m = mark(marks, name);
+        assert_eq!(m.icon, MapIcon::Trainer, "{name}");
+        assert_eq!(m.subtitle, subtitle, "{name}");
+    }
+}

@@ -158,10 +158,12 @@ fn quest_rows(c: &Char, g: &Giver) -> Vec<MarkedQuest> {
 /// A Hub NPC's service icon and its subtitle when the content gives it none.
 fn service(role: &str) -> Option<(MapIcon, &'static str)> {
     Some(match role {
-        "trainer" => (MapIcon::Trainer, "Trainer"),
         "angler" => (MapIcon::Trainer, "Angler"),
         "fisherman" => (MapIcon::Trainer, "Fisherman"),
         "herb_trainer" => (MapIcon::Trainer, "Herbalism Trainer"),
+        "herbalist" => (MapIcon::Trainer, "Herbalist"),
+        "cook" => (MapIcon::Trainer, "Cook"),
+        "alchemist" => (MapIcon::Trainer, "Alchemist"),
         "goods" | "shop" => (MapIcon::Vendor, "Vendor"),
         "repairer" => (MapIcon::Vendor, "Repairs"),
         "blood_coin" => (MapIcon::Vendor, "Blood Coin Broker"),
