@@ -46,6 +46,14 @@ pub const FOOT_DESAT: f32 = 0.6;
 pub const FOOT_VALUE: f32 = 0.35;
 /// Yards above the ground over which the dark foot returns to the pure fog colour.
 pub const COLOUR_RAMP_YD: f32 = 60.0;
+/// Yards over which each sheet fades in above its own foot.
+pub const FOOT_RAMP_YD: f32 = 6.0;
+/// The alpha ceiling of the two wisp sheets on the open chunk's rows 1 and 2.
+pub const WISP_CAP: f32 = 0.5;
+/// The alpha ceiling of the ground skirt.
+pub const SKIRT_CAP: f32 = 0.6;
+/// Yards the ground skirt floats above the terrain vertices under it.
+pub const SKIRT_RAISE_YD: f32 = 1.5;
 
 /// Chunks across a map, both ways: 64 tiles of 16.
 const CHUNKS: u32 = 64 * 16;
@@ -62,7 +70,7 @@ pub struct MistExt {
     /// [`OPAQUE_YD`], [`DRIFT_YD_S`], [`DRIFT_UP_YD_S`] and [`WARP_YD`], read by the shader.
     #[uniform(101)]
     pub(crate) shape: Vec4,
-    /// [`FOOT_DESAT`], [`FOOT_VALUE`] and [`COLOUR_RAMP_YD`], read by the shader.
+    /// [`FOOT_DESAT`], [`FOOT_VALUE`], [`COLOUR_RAMP_YD`] and [`FOOT_RAMP_YD`], read by the shader.
     #[uniform(102)]
     pub(crate) foot: Vec4,
     /// [`RAG_YD`] and [`FADE_FLOOR`], read by the shader.
@@ -100,13 +108,16 @@ struct Mist {
 struct MistBuilt;
 
 /// One curtain segment, in WoW coordinates: along a chunk side from `from` to `to` (`[x, y]`),
-/// from `bottom` up to `top`.
+/// from `bottom` up to `top`, over the open chunk's terrain `rows`.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct Segment {
     pub(crate) from: [f32; 2],
     pub(crate) to: [f32; 2],
     pub(crate) bottom: f32,
     pub(crate) top: f32,
+    /// The open chunk's outer vertex rows 0, 1 and 2 counted inward from the side, each ordered
+    /// from `from` to `to`. Row 0 lies on the side.
+    pub(crate) rows: [[[f32; 3]; 9]; 3],
 }
 
 /// The chunk-grid line of index `i`, along either axis: grid index `i` starts there.
@@ -138,32 +149,48 @@ pub(crate) fn segments(chunks: &[ChunkMesh], closed: impl Fn(u32, u32) -> bool) 
         }
         let (north, south) = (grid_line(gy), grid_line(gy + 1));
         let (west, east) = (grid_line(gx), grid_line(gx + 1));
-        // Each side: its neighbour, its two corners, and its outer-grid vertices (rows of 17, the
-        // 9 outer ones first; columns run west to east, rows north to south).
-        let sides: [(Option<(u32, u32)>, [f32; 2], [f32; 2], [usize; 2]); 4] = [
+        // Each side: its neighbour, its two corners, its outer-grid vertices (rows of 17, the 9
+        // outer ones first; columns run west to east, rows north to south) and the index step to
+        // the next outer row or column inward.
+        let sides: [(Option<(u32, u32)>, [f32; 2], [f32; 2], [isize; 3]); 4] = [
             (
                 gy.checked_sub(1).map(|n| (gx, n)),
                 [north, west],
                 [north, east],
-                [0, 1],
+                [0, 1, 17],
             ),
-            (Some((gx, gy + 1)), [south, west], [south, east], [136, 1]),
+            (
+                Some((gx, gy + 1)),
+                [south, west],
+                [south, east],
+                [136, 1, -17],
+            ),
             (
                 gx.checked_sub(1).map(|w| (w, gy)),
                 [north, west],
                 [south, west],
-                [0, 17],
+                [0, 17, 1],
             ),
-            (Some((gx + 1, gy)), [north, east], [south, east], [8, 17]),
+            (
+                Some((gx + 1, gy)),
+                [north, east],
+                [south, east],
+                [8, 17, -1],
+            ),
         ];
-        for (neighbour, from, to, [start, step]) in sides {
+        for (neighbour, from, to, [start, step, inward]) in sides {
             let Some((nx, ny)) = neighbour.filter(|&(nx, ny)| nx < CHUNKS && ny < CHUNKS) else {
                 continue;
             };
             if !closed(nx, ny) {
                 continue;
             }
-            let zs = (0..9).map(|k| chunk.positions[start + k * step][2]);
+            let rows: [[[f32; 3]; 9]; 3] = std::array::from_fn(|j| {
+                std::array::from_fn(|k| {
+                    chunk.positions[(start + k as isize * step + j as isize * inward) as usize]
+                })
+            });
+            let zs = rows[0].iter().map(|p| p[2]);
             let low = zs.clone().fold(f32::INFINITY, f32::min);
             let high = zs.fold(f32::NEG_INFINITY, f32::max);
             out.push(Segment {
@@ -171,42 +198,92 @@ pub(crate) fn segments(chunks: &[ChunkMesh], closed: impl Fn(u32, u32) -> bool) 
                 to,
                 bottom: low - BELOW_YD,
                 top: high + ABOVE_YD,
+                rows,
             });
         }
     }
     out
 }
 
-/// One mesh of `segments`' quads in Bevy space. UV is `(yards above the foot, the segment's
-/// height)`, which the shader's height band reads.
-fn curtain_mesh(segments: &[Segment]) -> Mesh {
-    let mut positions = Vec::with_capacity(segments.len() * 4);
-    let mut uvs = Vec::with_capacity(segments.len() * 4);
-    let mut indices = Vec::with_capacity(segments.len() * 6);
-    for s in segments {
-        let base = positions.len() as u32;
-        let h = s.top - s.bottom;
-        for (p, z, up) in [
-            (s.from, s.bottom, 0.0),
-            (s.to, s.bottom, 0.0),
-            (s.to, s.top, h),
-            (s.from, s.top, h),
-        ] {
-            positions.push(wow_to_bevy([p[0], p[1], z]).to_array());
-            uvs.push([up, h]);
-        }
-        indices.extend_from_slice(&[base, base + 1, base + 2, base, base + 2, base + 3]);
+/// The curtain mesh's vertices and indices as they are built, positions already in Bevy space.
+#[derive(Default)]
+struct CurtainBuilder {
+    positions: Vec<[f32; 3]>,
+    uv0: Vec<[f32; 2]>,
+    uv1: Vec<[f32; 2]>,
+    indices: Vec<u32>,
+}
+
+impl CurtainBuilder {
+    fn vertex(&mut self, p: [f32; 3], uv0: [f32; 2], uv1: [f32; 2]) {
+        self.positions.push(wow_to_bevy(p).to_array());
+        self.uv0.push(uv0);
+        self.uv1.push(uv1);
     }
-    let n = positions.len();
+
+    /// The quads of the `lines` × 9 grid of vertices ending the buffer, 9 to a line.
+    fn grid(&mut self, lines: u32) {
+        let base = self.positions.len() as u32 - lines * 9;
+        for l in 0..lines - 1 {
+            for k in 0..8 {
+                let a = base + l * 9 + k;
+                let (b, c, d) = (a + 1, a + 10, a + 9);
+                self.indices.extend_from_slice(&[a, b, c, a, c, d]);
+            }
+        }
+    }
+
+    /// A sheet standing on one terrain `row`, each column from `foot(ground)` up to `top`, under
+    /// the alpha ceiling `cap`.
+    fn sheet(&mut self, row: &[[f32; 3]; 9], foot: impl Fn(f32) -> f32, top: f32, cap: f32) {
+        for &[x, y, ground] in row {
+            let f = foot(ground);
+            self.vertex([x, y, f], [f - ground, top - ground], [cap, 0.0]);
+        }
+        for &[x, y, ground] in row {
+            let f = foot(ground);
+            self.vertex([x, y, top], [top - ground, top - ground], [cap, top - f]);
+        }
+        self.grid(2);
+    }
+}
+
+/// One mesh of `segments` in Bevy space, four pieces each: the backdrop on the side, two wisp
+/// sheets on the open chunk's next two rows, and a skirt over all three rows on the ground.
+/// `UV_0` is `(yards above the ground, the sheet top's yards above the ground)` in the vertex's
+/// column, which the shader's height band reads; the skirt's `(0, 1)` keeps it solid. `UV_1` is
+/// `(the piece's alpha ceiling, yards above the piece's own foot)`, which fades it in.
+fn curtain_mesh(segments: &[Segment]) -> Mesh {
+    let mut b = CurtainBuilder::default();
+    for s in segments {
+        // The backdrop: from below every ground point on the side, so it seals the cut.
+        b.sheet(&s.rows[0], |_| s.bottom, s.top, 1.0);
+        for row in &s.rows[1..] {
+            b.sheet(row, |ground| ground - 1.0, s.top, WISP_CAP);
+        }
+        // The skirt: strongest at the side, gone by row 2.
+        for (row, ramp) in s.rows.iter().zip([FOOT_RAMP_YD, FOOT_RAMP_YD / 2.0, 0.0]) {
+            for &[x, y, ground] in row {
+                b.vertex(
+                    [x, y, ground + SKIRT_RAISE_YD],
+                    [0.0, 1.0],
+                    [SKIRT_CAP, ramp],
+                );
+            }
+        }
+        b.grid(3);
+    }
+    let n = b.positions.len();
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::default(),
     );
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, b.positions);
     // Unlit: the normal only satisfies the pipeline.
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 1.0, 0.0]; n]);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
-    mesh.insert_indices(Indices::U32(indices));
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, b.uv0);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_1, b.uv1);
+    mesh.insert_indices(Indices::U32(b.indices));
     mesh
 }
 
@@ -221,7 +298,7 @@ fn setup_mist(mut commands: Commands, mut materials: ResMut<Assets<MistMaterial>
         extension: MistExt {
             fog: Vec4::ZERO,
             shape: Vec4::new(OPAQUE_YD, DRIFT_YD_S, DRIFT_UP_YD_S, WARP_YD),
-            foot: Vec4::new(FOOT_DESAT, FOOT_VALUE, COLOUR_RAMP_YD, 0.0),
+            foot: Vec4::new(FOOT_DESAT, FOOT_VALUE, COLOUR_RAMP_YD, FOOT_RAMP_YD),
             rag: Vec4::new(RAG_YD, FADE_FLOOR, 0.0, 0.0),
         },
     });
@@ -347,25 +424,40 @@ mod tests {
         let found = segments(&[chunk(CX, CY)], closed);
         let (north, south) = (grid_line(CY), grid_line(CY + 1));
         let (west, east) = (grid_line(CX), grid_line(CX + 1));
+        let sides: Vec<_> = found
+            .iter()
+            .map(|s| (s.from, s.to, s.bottom, s.top))
+            .collect();
         assert_eq!(
-            found,
+            sides,
             vec![
                 // South: the bottom outer row, vertices 136..=144.
-                Segment {
-                    from: [south, west],
-                    to: [south, east],
-                    bottom: 136.0 - BELOW_YD,
-                    top: 144.0 + ABOVE_YD,
-                },
+                (
+                    [south, west],
+                    [south, east],
+                    136.0 - BELOW_YD,
+                    144.0 + ABOVE_YD
+                ),
                 // East: the last outer column, vertices 8, 25, ..., 144.
-                Segment {
-                    from: [north, east],
-                    to: [south, east],
-                    bottom: 8.0 - BELOW_YD,
-                    top: 144.0 + ABOVE_YD,
-                },
+                (
+                    [north, east],
+                    [south, east],
+                    8.0 - BELOW_YD,
+                    144.0 + ABOVE_YD
+                ),
             ]
         );
+        let heights = |s: &Segment| s.rows.map(|row| row.map(|p| p[2]));
+        let run = |first: usize, step: usize| std::array::from_fn(|k| (first + k * step) as f32);
+        assert_eq!(heights(&found[0]), [run(136, 1), run(119, 1), run(102, 1)]);
+        assert_eq!(heights(&found[1]), [run(8, 17), run(7, 17), run(6, 17)]);
+        // Row 0 is the side itself, from `from` to `to`.
+        for s in &found {
+            for (p, corner) in [(s.rows[0][0], s.from), (s.rows[0][8], s.to)] {
+                let off = Vec2::new(p[0], p[1]).distance(Vec2::from(corner));
+                assert!(off < 0.01, "row 0 ends {off} yd from its corner");
+            }
+        }
     }
 
     #[test]
@@ -397,6 +489,42 @@ mod tests {
         let found = segments(&[chunk(CX, CY)], closed);
         assert_eq!(found[0].to, found[1].to, "the south-east corner");
         let mesh = curtain_mesh(&found);
-        assert_eq!(mesh.count_vertices(), 8);
+        assert_eq!(mesh.count_vertices(), 162);
+    }
+
+    #[test]
+    fn a_segment_mesh_has_a_backdrop_two_wisp_sheets_and_a_skirt_on_the_ground() {
+        use bevy::mesh::VertexAttributeValues;
+        let found = segments(&[chunk(CX, CY)], |gx, gy| (gx, gy) == (CX, CY + 1));
+        let [s] = found.as_slice() else {
+            panic!("one segment, got {found:?}");
+        };
+        let mesh = curtain_mesh(&found);
+        assert_eq!(mesh.count_vertices(), 81);
+        assert_eq!(mesh.indices().map(|i| i.len()), Some(240));
+        let Some(VertexAttributeValues::Float32x3(positions)) =
+            mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+        else {
+            panic!("no positions");
+        };
+        let Some(VertexAttributeValues::Float32x2(uv1)) = mesh.attribute(Mesh::ATTRIBUTE_UV_1)
+        else {
+            panic!("no UV_1");
+        };
+        // The backdrop's 18 vertices, then each wisp sheet's 18, then the skirt's 27.
+        assert!(uv1[..18].iter().all(|uv| uv[0] == 1.0));
+        assert!(uv1[18..54].iter().all(|uv| uv[0] == WISP_CAP));
+        for (j, row) in s.rows.iter().enumerate() {
+            let ramp = [FOOT_RAMP_YD, FOOT_RAMP_YD / 2.0, 0.0][j];
+            for (k, &[x, y, ground]) in row.iter().enumerate() {
+                let i = 54 + j * 9 + k;
+                let raised = wow_to_bevy([x, y, ground + SKIRT_RAISE_YD]);
+                assert!(
+                    Vec3::from(positions[i]).abs_diff_eq(raised, 1e-3),
+                    "skirt {j}, {k}"
+                );
+                assert_eq!(uv1[i], [SKIRT_CAP, ramp], "skirt {j}, {k}");
+            }
+        }
     }
 }

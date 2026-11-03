@@ -3,7 +3,8 @@
 // up, so the top dissolves into the sky. The alpha is opaque over the foot's band and fades to
 // nothing at the top. One warped fractal noise, drifting sideways and upward, moves the fade's
 // start up and down and thins the fade, so the top is ragged. The noise reads world coordinates,
-// so neighbouring segments line up.
+// so neighbouring segments line up. Each piece of the mesh (the backdrop, the two wisp sheets and
+// the ground skirt) fades in above its own foot under its own alpha ceiling.
 
 #import bevy_pbr::forward_io::VertexOutput
 
@@ -12,7 +13,8 @@
 // x: the opaque band in yards; y, z: the noise's sideways and upward drift in yards per second;
 // w: the domain warp in yards.
 @group(#{MATERIAL_BIND_GROUP}) @binding(101) var<uniform> shape: vec4<f32>;
-// x: the foot's desaturation; y: its brightness; z: the yards its colour takes to reach the fog's.
+// x: the foot's desaturation; y: its brightness; z: the yards its colour takes to reach the fog's;
+// w: the yards each piece takes to fade in above its own foot.
 @group(#{MATERIAL_BIND_GROUP}) @binding(102) var<uniform> foot: vec4<f32>;
 // x: the yards the noise moves the fade's start; y: the fade's alpha ceiling at the lowest noise.
 @group(#{MATERIAL_BIND_GROUP}) @binding(103) var<uniform> rag: vec4<f32>;
@@ -50,8 +52,12 @@ fn fractal(p: vec2<f32>) -> f32 {
 
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
+    // Yards above the terrain vertex in this column, and the sheet top's.
     let above_ground = in.uv.x;
     let top_above_ground = in.uv.y;
+    // The piece's alpha ceiling, and yards above the piece's own foot.
+    let cap = in.uv_b.x;
+    let ramp = in.uv_b.y;
     // A segment runs along one world axis, so the sum of the two is its length coordinate, the
     // same at a shared corner.
     let along = in.world_position.x + in.world_position.z;
@@ -70,5 +76,5 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let luma = dot(fog.rgb, vec3<f32>(0.299, 0.587, 0.114));
     let dark = mix(fog.rgb, vec3<f32>(luma), foot.x) * foot.y;
     let colour = mix(dark, fog.rgb, smoothstep(0.0, foot.z, above_ground));
-    return vec4<f32>(colour, band);
+    return vec4<f32>(colour, band * cap * smoothstep(0.0, foot.w, ramp));
 }
