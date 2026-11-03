@@ -284,3 +284,13 @@ no art.
 | Writ Board model | a GameObject display for the board in the Trade District | A notice board with sealed papers and the Stormwind lion. Until made it is the stock Alliance wanted board (display 3053). |
 
 The City Watch officer is a stock Stormwind City Guard display and needs no art.
+
+## The Stockade (spec #575)
+
+| Asset | Where | Notes |
+|---|---|---|
+| Twilight Coin icon | `data/twilights-eve/art/`, 128 x 128, only if no free stock coin icon passes `icon_check.py` | A dull coin with a hammer over a black sun. A free stock coin icon stands in until then. |
+
+Every creature (Defias, the Stockade guards, the ogre, the Twilight Silencer, the four witnesses),
+the levers, the portcullises, the evidence chest and the drain grate are stock displays and need
+no art. The jail is vanilla's map 34.

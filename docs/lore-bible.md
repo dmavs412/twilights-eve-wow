@@ -1,7 +1,7 @@
 # Twilight's Eve: Lore Bible
 
-Davis, started 2026-10-23. Copied on 2026-11-02 from the live doc at
-https://claude.ai/artifact/FCEWQ3Ng5RHp5bHrtPpzgJ (revision 50), which replaces the earlier PDF.
+Davis, started 2026-10-23. Copied on 2026-11-03 from the live doc at
+https://claude.ai/artifact/FCEWQ3Ng5RHp5bHrtPpzgJ (revision 52), which replaces the earlier PDF.
 The live doc is the source; refresh this copy when it changes. Every quest, rumour, item text and
 NPC line follows it. Where content disagrees with it, the bible wins.
 
@@ -247,8 +247,12 @@ bounties from the City Watch, the House of Nobles and Prestor's office. Prestor'
 players after orcs and the dead and never near the cult, which the court chain in the 40s can point
 out.
 
-- **The Stockade (about 30-34).** A prison riot, with Defias inmates paid in Twilight coin. It's the
-  natural place to resolve Hogger's capture.
+- **The Stockade (about 30-34).** A prison riot, with Defias inmates paid in Twilight coin, bought
+  as cover: the west block, the quiet wing, holds people the Keep sent down by writ for talking
+  about the grey, and the riot was meant to kill them. A turned guard opened the doors, and a
+  Twilight Silencer came in by the drain with their names on a writ. Hogger dies at Forest's Edge
+  and never comes here. Entrance: the jail door on the canal, where Warden Thelwater stands.
+  Spec #575.
 - **The Deeprun Tram (about 38-42).** The tram to Ironforge now ends in grey. The cult uses its
   tunnels as the smuggling channel for tribute. Deep in, a tram car sits stopped halfway into the
   mist with its passengers frozen mid-step: the first time players see the mist from inside.
@@ -398,7 +402,7 @@ a rewrite.
 | "What the Tribute Was For": Morganth paid the cult to dig | Rewrite | Reverse it: the cult employs Morganth. The tribute feeds the Anchor at Ilgalar. |
 | Hogger promised power "through Morganth" | Keep | Morganth needs a second shaft and gnoll labour. |
 | Thalyssa Windbough, sent by Darnassus | Expand | Kalimdor is behind the mist. She's stranded, and doesn't know if Darnassus still exists. A strong personal hook. |
-| Stockades "may not exist" | Resolved | The Stockade exists as a Stormwind dungeon, and it's where Hogger's capture turns in. |
+| Stockades "may not exist" | Resolved | The Stockade exists as a Stormwind dungeon (spec #575). Hogger stays kill only; the riot covers the killing of the quiet wing's witnesses. |
 | Westfall's border: "You cannot go that way" | Keep | Westfall is behind the mist. The Defias who were there are lost. |
 
 ## Open questions
