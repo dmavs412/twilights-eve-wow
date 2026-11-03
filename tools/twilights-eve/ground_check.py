@@ -14,8 +14,10 @@ terrain data are left alone.
 A point (`{ x = ..., y = ... }` in a `points = [...]` array: a Rumour's, or a herbs.toml Herb
 Spot) stands on the terrain, so a point inside a WMO box is flagged (rumour-indoor). A point that
 writes a Z (`{ x = ..., y = ..., z = ... }`, the Herb Spots) must be at the terrain's height within
-the row limits, and `--fix` writes the terrain's. Every row and point then passes the body rules
-of ADR 0021:
+the row limits, and `--fix` writes the terrain's. A carts.toml `[[route]]` places each stop's
+`position` and each `[x, y, z]` of its `path` (road_path.py writes them): each must be at the
+terrain's height within the row limits, `--fix` writes the terrain's, and nothing else is checked
+on them. Every row and point then passes the body rules of ADR 0021:
 - water: no water surface (ADT MCLQ or WMO MLIQ) more than 1.5 yd over its feet, unless it is a
   GameObject or a creature that swims (`swims = true` on our template, vmangos InhabitType & 2
   on an imported one). A Hub NPC and a stop's points are never exempt.
@@ -119,6 +121,12 @@ XY = re.compile(r"\{\s*x\s*=\s*(?P<x>-?[\d.]+)\s*,\s*y\s*=\s*(?P<y>-?[\d.]+)"
                 r"(?:\s*,\s*z\s*=\s*(?P<z>-?[\d.]+))?")
 KEY = re.compile(r'^\s*key\s*=\s*"([^"]*)"')
 STRING = re.compile(r'"[^"]*"')
+# A carts.toml `[[route]]`'s arrays: `stops = [` of inline tables with a `position`, and
+# `path = [` of `[x, y, z]` points.
+ROUTE_ARRAY = re.compile(r"^\s*(stops|path)\s*=\s*\[")
+VEC3 = re.compile(r"\[\s*(?P<x>-?[\d.]+)\s*,\s*(?P<y>-?[\d.]+)\s*,\s*(?P<z>-?[\d.]+)\s*\]")
+STOP_KEY = re.compile(r'\bkey\s*=\s*"([^"]*)"')
+STOP_POSITION = re.compile(r"\bposition\s*=\s*")
 
 Row = collections.namedtuple("Row", "idx label map grounded x y z kind entry on_top display")
 Point = collections.namedtuple("Point", "idx span label map x y z kind entry")
@@ -287,6 +295,71 @@ def xy_points(path):
         code = STRING.sub("", line[start:]).split("#")[0]
         depth += code.count("[") - code.count("]")
     close()
+    return lines, out
+
+
+def _code(line):
+    """`line` up to its comment: the first `#` outside a string."""
+    quoted = False
+    for k, ch in enumerate(line):
+        if ch == '"':
+            quoted = not quoted
+        elif ch == "#" and not quoted:
+            return line[:k]
+    return line
+
+
+def route_points(path):
+    """(lines, [Point]) for carts.toml's `[[route]]` tables: each stop's `position = [x, y, z]`
+    in the route's `stops = [...]`, labelled `route <key> stop <stop key>`, and each `[x, y, z]`
+    in its `path = [...]`, labelled `route <key> path point <n>`. Every one writes its Z, the
+    terrain's (road_path.py), and its `span` is that of its x, y and z."""
+    lines = _read_lines(path)
+    file_map = FILE_DEFAULT_MAP.get(os.path.basename(path), 0)
+    out = []
+    route = None  # the open [[route]]'s key ("?" until its key line), None outside one
+    field = None
+    depth = 0
+    n = 0
+    for i, raw in enumerate(lines):
+        line = raw.rstrip("\r")
+        start = 0
+        if depth == 0:
+            m = HEADER.match(line)
+            if m:
+                route = "?" if m.group(1) == "route" else None
+                continue
+            if route is None:
+                continue
+            m = KEY.match(line)
+            if m:
+                route = m.group(1)
+                continue
+            m = ROUTE_ARRAY.match(line)
+            if not m:
+                continue
+            field, start, n = m.group(1), m.end() - 1, 0
+        elif line.lstrip().startswith("#"):
+            continue
+        code = _code(line)
+        if field == "stops":
+            k = STOP_KEY.search(code, start)
+            p = STOP_POSITION.search(code, start)
+            v = VEC3.match(code, p.end()) if p else None
+            if v:
+                out.append(Point(i, (v.span("x"), v.span("y"), v.span("z")),
+                                 "route %s stop %s" % (route, k.group(1) if k else "?"), file_map,
+                                 float(v.group("x")), float(v.group("y")), float(v.group("z")), "route", None))
+        elif field == "path":
+            for v in VEC3.finditer(code, start):
+                n += 1
+                out.append(Point(i, (v.span("x"), v.span("y"), v.span("z")),
+                                 "route %s path point %d" % (route, n), file_map,
+                                 float(v.group("x")), float(v.group("y")), float(v.group("z")), "route", None))
+        stripped = STRING.sub("", code[start:])
+        depth += stripped.count("[") - stripped.count("]")
+        if depth <= 0:
+            depth, field = 0, None
     return lines, out
 
 
@@ -767,6 +840,23 @@ def main():
             print("nudged %s:%d %s %s: (%.1f %.1f) to (%.1f %.1f%s)"
                   % (name, p.idx + 1, p.label, " ".join(new), p.x, p.y, cx, cy, "" if cz is None else " %.2f" % cz))
             moves.append((p.idx, p.span, cx, cy, cz))
+        # A cart route's stops and path points: their Z only, the terrain's (road_path.py).
+        _, route = route_points(path)
+        for p in route:
+            if p.map not in MAP_DIRS:
+                continue
+            g = world.terrain(p.map).ground_z(p.x, p.y)
+            if g is None:
+                counts["no-terrain"] += 1
+                continue
+            counts["route"] += 1
+            d = p.z - g
+            if d > ABOVE_LIMIT or -d > BELOW_LIMIT:
+                counts[verb] += 1
+                per_file[name] += 1
+                print("%s %s:%d %s z=%.2f terrain=%.2f diff=%+.2f" % (verb, name, p.idx + 1, p.label, p.z, g, d))
+                if a.fix:
+                    moves.append((p.idx, p.span, p.x, p.y, g))
         for idx, span, cx, cy, cz in sorted(moves, key=lambda m: (m[0], -m[1][0][0])):
             set_xy(lines, idx, span, cx, cy, cz)
             changed = True
@@ -776,11 +866,11 @@ def main():
 
     for n, c in sorted(per_file.items()):
         print("  %s: %d" % (n, c))
-    print("checked %d rows (%d stop points) and %d points, %s %d, interior %d (off-floor %d), known %d, "
-          "stale known %d, nudge failed %d, model %d, no-terrain %d"
-          % (counts["checked"], counts["stops"], counts["points"], verb, counts[verb], counts["interior"],
-             counts["off-floor"], counts["known"], counts["stale"], counts["nudge-failed"], counts["model"],
-             counts["no-terrain"]))
+    print("checked %d rows (%d stop points), %d points and %d cart route points, %s %d, interior %d "
+          "(off-floor %d), known %d, stale known %d, nudge failed %d, model %d, no-terrain %d"
+          % (counts["checked"], counts["stops"], counts["points"], counts["route"], verb, counts[verb],
+             counts["interior"], counts["off-floor"], counts["known"], counts["stale"], counts["nudge-failed"],
+             counts["model"], counts["no-terrain"]))
     return 1 if (counts[verb] or counts["off-floor"] or counts["stale"] or counts["nudge-failed"]
                  or counts["model"]) else 0
 

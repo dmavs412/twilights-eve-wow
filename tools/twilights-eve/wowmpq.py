@@ -326,7 +326,7 @@ LIQUID_SENTINEL = 1.0e9
 
 
 class Terrain:
-    """Per-map MCNK area IDs and outer-vertex heights, loaded lazily per ADT."""
+    """Per-map MCNK area IDs, outer-vertex heights and texture layers, loaded lazily per ADT."""
 
     def __init__(self, gd: GameData, map_dir: str):
         self.gd = gd
@@ -353,11 +353,16 @@ class Terrain:
         mmdx = b""
         mmid = ()
         doodads = []
+        # MTEX's texture names, and per MCNK its MCLY layers and raw MCAL bytes (_texture_cells).
+        textures = []
+        layers = {}
         p = 0
         while p + 8 <= len(d):
             tag = d[p : p + 4][::-1]
             size = struct.unpack_from("<I", d, p + 4)[0]
-            if tag == b"MWMO":
+            if tag == b"MTEX":
+                textures = [s.decode("ascii", "replace") for s in d[p + 8 : p + 8 + size].split(b"\0") if s]
+            elif tag == b"MWMO":
                 mwmo = d[p + 8 : p + 8 + size]
             elif tag == b"MWID":
                 mwid = struct.unpack_from("<%dI" % (size // 4), d, p + 8)
@@ -408,8 +413,107 @@ class Terrain:
                     if d[p + ofs_h : p + ofs_h + 4][::-1] == b"MCVT":
                         heights = struct.unpack_from("<145f", d, hp)
                 chunks[(ix, iy)] = (area, px, py, pz, heights, self._liquids(d, p, h))
+                layers[(ix, iy)] = self._layers(d, p, h)
             p += 8 + size
-        return {"chunks": chunks, "wmos": wmos, "placements": placements, "doodads": doodads}
+        return {"chunks": chunks, "wmos": wmos, "placements": placements, "doodads": doodads,
+                "textures": textures, "layers": layers, "alpha": {}}
+
+    @staticmethod
+    def _sub(d, p, ofs, magic):
+        """The payload start and size of the MCNK sub-chunk `magic` at header offset `ofs`, which
+        may count from the MCNK magic or from its data (crates/benilla-adt/src/lib.rs `locate`)."""
+        if not ofs:
+            return None
+        for at in (p + ofs, p + 8 + ofs):
+            if d[at : at + 4][::-1] == magic:
+                return at + 8, struct.unpack_from("<I", d, at + 4)[0]
+        return None
+
+    def _layers(self, d, p, h):
+        """The MCNK's MCLY layers as (texture index, flags, MCAL offset), and its MCAL bytes
+        (`size_alpha` long, as benilla-adt reads them)."""
+        n = struct.unpack_from("<I", d, h + 0x0C)[0]
+        mcly = self._sub(d, p, struct.unpack_from("<I", d, h + 0x1C)[0], b"MCLY")
+        out = []
+        if mcly:
+            start, size = mcly
+            for k in range(min(n, size // 16, 4)):
+                tex, flags, off = struct.unpack_from("<III", d, start + k * 16)
+                out.append((tex, flags, off))
+        mcal = self._sub(d, p, struct.unpack_from("<I", d, h + 0x24)[0], b"MCAL")
+        size_alpha = struct.unpack_from("<I", d, h + 0x28)[0]
+        alpha = d[mcal[0] : mcal[0] + size_alpha] if mcal else b""
+        return tuple(out), alpha
+
+    @staticmethod
+    def _alpha_layer(raw, offset, flags):
+        """One overlay layer's 64x64 alpha as 4096 bytes, row-major: RLE when MCLY flag 0x200 is
+        set (token bit 7 fill, else copy; low 7 bits the count), else 4-bit packed low nibble
+        first, times 17. Vanilla has no big alpha; the last row and column repeat their
+        neighbours, as crates/benilla-adt/src/combined_alpha.rs decodes them."""
+        out = bytearray(4096)
+        if flags & 0x200:
+            o, n = offset, 0
+            while n < 4096 and o < len(raw):
+                token = raw[o]
+                o += 1
+                count = min(token & 0x7F, 4096 - n)
+                if not count:
+                    continue
+                if token & 0x80:
+                    if o >= len(raw):
+                        break
+                    out[n : n + count] = bytes((raw[o],)) * count
+                    o += 1
+                else:
+                    run = raw[o : o + count]
+                    out[n : n + len(run)] = run
+                    o += len(run)
+                    count = len(run)
+                n += count
+        elif offset + 2048 <= len(raw):
+            for k, b in enumerate(raw[offset : offset + 2048]):
+                out[2 * k] = (b & 0x0F) * 17
+                out[2 * k + 1] = (b >> 4) * 17
+        for y in range(64):
+            out[y * 64 + 63] = out[y * 64 + 62]
+        out[63 * 64 : 64 * 64] = out[62 * 64 : 63 * 64]
+        return out
+
+    def texture_cells(self, tx: int, ty: int, ix: int, iy: int):
+        """(names, top) for MCNK (ix, iy) of tile (tx, ty): `names[i]` is layer i's MTEX name and
+        `top` 4096 bytes of the layer on top in each of the chunk's 64x64 alpha cells, row-major
+        from its max-x, max-y corner (rows toward -x, columns toward -y, as its heights run).
+        The top layer is the overlay with the highest alpha, the later one on a tie, when that
+        alpha reaches 128, else the base layer 0. None when the tile or chunk is missing."""
+        t = self._tile(tx, ty)
+        if not t or (ix, iy) not in t["layers"]:
+            return None
+        key = (ix, iy)
+        if key not in t["alpha"]:
+            mcly, raw = t["layers"][key]
+            names = [t["textures"][tex] if tex < len(t["textures"]) else "" for tex, _, _ in mcly]
+            top = bytearray(4096)
+            best = bytearray(4096)
+            for i, (_, flags, off) in enumerate(mcly[1:], 1):
+                a = self._alpha_layer(raw, off, flags)
+                for c in range(4096):
+                    if a[c] >= 128 and a[c] >= best[c]:
+                        best[c] = a[c]
+                        top[c] = i
+            t["alpha"][key] = (names, bytes(top))
+        return t["alpha"][key]
+
+    def top_texture(self, x: float, y: float) -> str | None:
+        """The MTEX name of the terrain texture on top at (x, y) (texture_cells), None where no
+        tile or chunk is loaded."""
+        gx, gy = alpha_texel(x, y)
+        cells = self.texture_cells(gx >> 10, gy >> 10, (gx >> 6) & 15, (gy >> 6) & 15)
+        if cells is None:
+            return None
+        names, top = cells
+        layer = top[(gy & 63) * 64 + (gx & 63)]
+        return names[layer] if layer < len(names) else None
 
     @staticmethod
     def _liquids(d, p, h):
@@ -509,6 +613,13 @@ class Terrain:
             z = sum(corners) / 4.0
             best = z if best is None else max(best, z)
         return best
+
+
+def alpha_texel(x: float, y: float):
+    """The map-wide alpha cell (gx, gy) under world (x, y): 1024 per tile, 64 per MCNK. `gx`
+    counts toward -y (the tile x, chunk ix, alpha column) and `gy` toward -x (tile y, chunk iy,
+    alpha row)."""
+    return (int(math.floor((32.0 - y / TILE) * 1024)), int(math.floor((32.0 - x / TILE) * 1024)))
 
 
 # ---------------------------------------------------------------- DBC fields

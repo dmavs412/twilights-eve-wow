@@ -1,0 +1,108 @@
+# Roads (spec #560): the ADT texture names that are a road or a street, per map. A character
+# whose top terrain texture is one of these is on a road. Names compare case-insensitively,
+# without the extension. Listed by tools/twilights-eve/road_textures.py.
+#
+# Map 0's choice, from the list below. Elwynn's roads, Goldshire's square, Eastvale's camp and
+# Northshire's courtyard are ElwynnDirtBase2, with ElwynnCobbleStoneBase patches along them and
+# on Stormwind's approach. Darkshire's streets are DuskwoodCobblestone; DuskwoodDirt is the ground
+# between them, not a road. The rest are the stone and cobble roads of the zones these tiles
+# border. No other dirt, grass or rock base is a road.
+#
+# road_textures.py: map 0, 54 tiles of Elwynn Forest, Stormwind City, Duskwood, Redridge Mountains
+# tiles  texture
+#    28  Tileset\Elwynn\ElwynnDirtBase2.blp
+#    28  Tileset\Elwynn\ElwynnGrassBase.blp
+#    27  Tileset\Elwynn\ElwynnRockBaseTest2.blp
+#    24  Tileset\Elwynn\ElwynnFlowerBase.blp
+#    21  Tileset\Duskwood\DuskwoodRock.blp
+#    20  Tileset\Duskwood\DuskwoodDirt.blp
+#    20  Tileset\Duskwood\DuskwoodGrassBase.blp
+#    19  Tileset\Aerie Peaks\AeriePeaksScrubBrushBase.blp
+#    18  Tileset\Duskwood\DuskwoodRockGravel.blp
+#    15  Tileset\Westwood\AlphaWestFallLeaf.blp
+#    13  Tileset\RedRidge\RedridgeDirtBase.blp
+#    13  Tileset\RedRidge\RedridgeGrassDirtBase.blp
+#    13  Tileset\RedRidge\RedridgeRockBase.blp
+#    11  Tileset\Elwynn\ElwynnCobbleStoneBase.blp
+#    11  Tileset\Swamp of Sorrows\SwampSorrowsRock02.blp
+#     9  Tileset\Duskwood\DuskwoodCobblestone.blp
+#     8  Tileset\BurningStepps\BurningSteppsAsh01.blp
+#     8  Tileset\Deadwind Pass\DeadwindPassRockBase.blp
+#     8  Tileset\Westwood\WestFallRockBase.blp
+#     7  Tileset\Duskwood\DuskwoodGrassBase02.blp
+#     7  Tileset\Elwynn\ElwynnCrop92.blp
+#     6  Tileset\RedRidge\RedridgeRockRoadBase.blp
+#     6  Tileset\Swamp of Sorrows\SwampSorrowsMuckdark01.blp
+#     6  Tileset\Wetlands\Wetlandsdirtmoss01.blp
+#     5  Tileset\BurningStepps\BurningSteppsRock01.blp
+#     5  Tileset\BurningStepps\BurningSteppsRock03.blp
+#     5  Tileset\Deadwind Pass\DeadwindPassDirt.blp
+#     5  Tileset\Duskwood\DuskwoodCrop.blp
+#     5  Tileset\Stranglethorn\StrangleThornMossroot01.blp
+#     5  Tileset\Westwood\WestFallSandBase.blp
+#     4  Tileset\BurningStepps\BurningSteppsCharcoal01.blp
+#     4  Tileset\Generic\Black.blp
+#     4  Tileset\Stranglethorn\StrangleThornDirt03.blp
+#     4  Tileset\Stranglethorn\StrangleThornGrass.blp
+#     4  Tileset\Stranglethorn\StrangleThornRock05.blp
+#     4  Tileset\Swamp of Sorrows\SwampSorrowsMuckdark02.blp
+#     4  Tileset\Westwood\WestFallStrawBase.blp
+#     4  Tileset\Wetlands\Wetlandsdirt01.blp
+#     3  Tileset\Deadwind Pass\DeadwindPassShale.blp
+#     3  Tileset\Deadwind Pass\DeadwindPassWeeds.blp
+#     3  Tileset\Kalidar\KalidarFerns.blp
+#     3  Tileset\Kalidar\KalidarRock.blp
+#     3  Tileset\Stranglethorn\StrangleThornCobbleStoneRoad.blp
+#     3  Tileset\Stranglethorn\StrangleThornplantsAlpha01.blp
+#     3  Tileset\Swamp of Sorrows\SwampSorrowsMuckdark05.blp
+#     3  Tileset\The Blasted Lands\BlastedLandsBlack.blp
+#     3  Tileset\Westwood\WestFallCobbleStoneBase.blp
+#     3  Tileset\Westwood\WestFallCropBase.blp
+#     3  Tileset\Westwood\WestFallDirtBase.blp
+#     3  Tileset\Westwood\WestFallGrassBase.blp
+#     3  Tileset\Westwood\WestFallRubbleBase.blp
+#     3  Tileset\Westwood\WestfallSandBaseWet.blp
+#     3  Tileset\Wetlands\WetlandsBaseRock.blp
+#     3  Tileset\Wetlands\WetlandsGrassDark01.blp
+#     3  Tileset\Wetlands\WetlandsGrassDark02.blp
+#     2  Tileset\BurningStepps\BurningSteppsSpireRoad01.blp
+#     2  Tileset\Duskwood\DuskwoodCobblestone2.blp
+#     2  Tileset\Generic\UnderwaterGrass02.blp
+#     2  Tileset\Generic\UnderwaterRock01.blp
+#     2  Tileset\Kalidar\KalidarLeaf.blp
+#     2  Tileset\Kalidar\KalidarRoots.blp
+#     2  Tileset\Swamp of Sorrows\SwampSorrowsdirt02.blp
+#     2  Tileset\Swamp of Sorrows\SwampSorrowsStoneRoad07.blp
+#     2  Tileset\Westwood\WestFallCropBurned.blp
+#     2  Tileset\Westwood\WestFallSandGrassBase.blp
+#     2  Tileset\ZulGurub\ZulGurubDirt01.blp
+#     2  Tileset\ZulGurub\ZulGurubFerns.blp
+#     2  Tileset\ZulGurub\ZulGurubRoad01.blp
+#     2  Tileset\ZulGurub\ZulGurubRock01.blp
+#     2  Tileset\ZulGurub\ZulGurubVines.blp
+#     1  Tileset\BurningStepps\BurningSteppsAshCracks.blp
+#     1  Tileset\BurningStepps\BurningSteppsLavatest02.blp
+#     1  Tileset\Elwynn\ElwynnRock2Base.blp
+#     1  Tileset\Hyjal\AlphaHyjalRoad.blp
+#     1  Tileset\IronForge\IronForgeRock08Brown.blp
+#     1  Tileset\Kalidar\KalidarDarnRoad.blp
+#     1  Tileset\RedRidge\RedRidgeCrop.blp
+#     1  Tileset\Stranglethorn\StrangleThornRockCracked.blp
+#     1  Tileset\The Badlands\BadlandsRockRed.blp
+
+[[map]]
+id = 0
+textures = [
+  "Tileset\\Elwynn\\ElwynnDirtBase2",
+  "Tileset\\Elwynn\\ElwynnCobbleStoneBase",
+  "Tileset\\Duskwood\\DuskwoodCobblestone",
+  "Tileset\\Duskwood\\DuskwoodCobblestone2",
+  "Tileset\\RedRidge\\RedridgeRockRoadBase",
+  "Tileset\\Westwood\\WestFallCobbleStoneBase",
+  "Tileset\\Stranglethorn\\StrangleThornCobbleStoneRoad",
+  "Tileset\\Swamp of Sorrows\\SwampSorrowsStoneRoad07",
+  "Tileset\\BurningStepps\\BurningSteppsSpireRoad01",
+  "Tileset\\ZulGurub\\ZulGurubRoad01",
+  "Tileset\\Hyjal\\AlphaHyjalRoad",
+  "Tileset\\Kalidar\\KalidarDarnRoad",
+]
