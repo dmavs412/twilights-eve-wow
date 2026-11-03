@@ -163,7 +163,7 @@ def main():
             )
         (HOME / f"character-{guid}.toml").write_text(body + "\n", "utf-8", newline="\n")
         guids.append(str(guid))
-        print(f"{NAMES[c['key']]:<10} {c['key']:<14} {points:>2} pts, {len(items)} items")
+        print(f"{NAMES[c['key']]:<10} {c['key']:<14} {len(items)} items")
     (HOME / "characters.txt").write_text("\n".join(guids) + "\n", "utf-8", newline="\n")
 
 
