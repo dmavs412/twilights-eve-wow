@@ -159,7 +159,8 @@ impl InWorld {
             TrinketEffect::Aura { key } => {
                 // `trinket_spells::check` has found every key's row.
                 if let Some(def) = trinket_spells::aura(key) {
-                    self.put_aura(def, self.guid, c.power_level(), events);
+                    let stands = Some((c.position, c.orientation));
+                    self.put_aura_more(def, self.guid, c.power_level(), 0, stands, events);
                 }
             }
         }

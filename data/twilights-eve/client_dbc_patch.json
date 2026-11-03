@@ -8303,6 +8303,31 @@
    }
   },
   {
+   "spell_id": 1960006,
+   "trinket": "falling_sand",
+   "fields": {
+    "name": "Falling Sand",
+    "icon": "Interface\\Icons\\Spell_Nature_TimeStop",
+    "school": 0,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "aura_description": "When the sand runs out, you return to where you turned the hourglass.",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "aura": 4,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
    "spell_id": 7620,
    "fields": {
     "equipped_item_class": -1,

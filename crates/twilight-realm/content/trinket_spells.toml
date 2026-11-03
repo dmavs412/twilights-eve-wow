@@ -69,6 +69,7 @@ icon = 'Interface\Icons\INV_Misc_PocketWatch_01'
 visual = 0
 description = "In 6 sec, return to where you stand now, with the health and power you have now."
 cooldown_ms = 300000
+effect = { kind = "aura", key = "falling_sand" }
 
 [[spell]]
 key = "echo_shard"
@@ -110,3 +111,15 @@ icon = 'Interface\Icons\Spell_Shadow_UnholyStrength'
 description = "Damage dealt doubled."
 duration_ms = 15000
 effects = [{ kind = "mod_damage_done_pct", pct = 100 }]
+
+# The Apprentice's Hourglass's buff. When it runs out on its own, the wearer snaps back to where
+# they clicked, with the health and power they had then; dying, going through a door, a
+# Hearthstone or a worldport, or clicking it off ends it with no snap. The name is a placeholder.
+[[aura]]
+key = "falling_sand"
+spell_id = 1960006
+name = "Falling Sand"
+icon = 'Interface\Icons\Spell_Nature_TimeStop'
+description = "When the sand runs out, you return to where you turned the hourglass."
+duration_ms = 6000
+effects = [{ kind = "rewind" }]

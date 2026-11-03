@@ -284,6 +284,10 @@ pub enum AuraEffect {
     /// Each swing, shot, and skill or spell hit the player lands heals them `pct` percent of the
     /// damage it dealt after mitigation, under the aura's spell. Periodic ticks don't heal.
     LeechPct { pct: u32 },
+    /// When the buff runs out on its own, the player snaps back to where they stood as it went
+    /// on, with the health and power they had then, capped at the maximums by then (Falling
+    /// Sand). Dying, any other move to a place, or clicking it off ends it with no snap.
+    Rewind,
     /// The player's melee swings are `pct` percent faster a stack (Bloodlust).
     ModMeleeHastePct { pct: u32 },
     /// The unit's armour changes by `amount` (a stacking Sunder when negative).

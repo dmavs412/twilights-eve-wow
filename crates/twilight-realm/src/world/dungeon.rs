@@ -47,6 +47,8 @@ impl InWorld {
 
     /// Sends the player to `to`: a teleport on this map, a worldport to another.
     pub(super) fn move_to(&mut self, c: &mut Char, to: Place, events: &mut Vec<SessionEvent>) {
+        // Going anywhere ends a Falling Sand with no snap; the snap itself comes once it is off.
+        self.end_rewind(events);
         if to.map == self.map {
             self.teleport(c, to.position, to.orientation, events);
             return;

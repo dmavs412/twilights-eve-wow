@@ -780,6 +780,15 @@ enum AuraKind {
     Leech {
         pct: u32,
     },
+    /// When it runs out on its own, the player snaps back to `position` and `facing` on `map`,
+    /// with `health` and `power` (as the bar's field holds it), capped at their maximums.
+    Rewind {
+        map: u32,
+        position: [f32; 3],
+        facing: f32,
+        health: u32,
+        power: u32,
+    },
     /// The player's casts are `pct` percent faster; `bits` carry it to the client's cast bars.
     CastSpeed {
         pct: u32,
@@ -967,6 +976,7 @@ impl AuraKind {
                 | AuraKind::HealingTaken { .. }
                 | AuraKind::CastSpeed { .. }
                 | AuraKind::Leech { .. }
+                | AuraKind::Rewind { .. }
                 | AuraKind::SkillAmount { .. }
                 | AuraKind::DamageDone { .. }
                 | AuraKind::MeleeHaste { .. }
@@ -6480,6 +6490,7 @@ impl InWorld {
             .skills
             .remove_where(|a| a.left <= CLOCK_EPSILON, events);
         self.faded(&gone, events);
+        self.rewound(&gone, c, events);
         self.ground_tick(dt, c, rng, events, ticked);
         self.drop_tick(dt, c, events);
     }
@@ -6722,6 +6733,50 @@ impl InWorld {
                 _ => {}
             }
         }
+    }
+
+    /// Each [`AuraKind::Rewind`] among `gone`, which ran out on their own, snaps the player back
+    /// where it went on, with the health and power it kept, capped at the maximums now. On
+    /// another map it does nothing.
+    fn rewound(&mut self, gone: &[Aura], c: &mut Char, events: &mut Vec<SessionEvent>) {
+        for a in gone {
+            let AuraKind::Rewind {
+                map,
+                position,
+                facing,
+                health,
+                power,
+            } = a.kind
+            else {
+                continue;
+            };
+            if a.unit != self.guid || map != self.map {
+                continue;
+            }
+            let to = crate::dungeon::Place {
+                map,
+                position,
+                orientation: facing,
+            };
+            self.move_to(c, to, events);
+            let max = buffed(&self.player.stats, &self.skills).max_health;
+            let p = &mut self.player;
+            p.health = health.min(max);
+            p.power.current = power.min(p.power.max);
+            events.push(values(
+                self.guid,
+                &[(UNIT_FIELD_HEALTH, p.health), p.power.field()],
+            ));
+        }
+    }
+
+    /// Takes the player's [`AuraKind::Rewind`] off with no snap: they went somewhere else.
+    pub(super) fn end_rewind(&mut self, events: &mut Vec<SessionEvent>) {
+        let me = self.guid;
+        self.skills.remove_where(
+            |a| a.unit == me && matches!(a.kind, AuraKind::Rewind { .. }),
+            events,
+        );
     }
 
     /// `CMSG_CANCEL_AURA`: the player clicks off one of their own buffs; debuffs stay.
@@ -7190,7 +7245,7 @@ impl InWorld {
         more_stacks: u32,
         events: &mut Vec<SessionEvent>,
     ) {
-        self.put_aura_more(def, self.guid, level, more_stacks, events);
+        self.put_aura_more(def, self.guid, level, more_stacks, None, events);
     }
 
     /// Lands a Blink cast since the last tick: the caster steps along their facing over the
@@ -7565,16 +7620,19 @@ impl InWorld {
         level: u8,
         events: &mut Vec<SessionEvent>,
     ) {
-        self.put_aura_more(def, unit, level, 0, events);
+        self.put_aura_more(def, unit, level, 0, None, events);
     }
 
     /// [`Self::put_aura`] with the most stacks of the kinds that stack raised by `more_stacks`.
+    /// `stands` is where the player stands and faces, for a [`callings::AuraEffect::Rewind`] to
+    /// keep; without it that effect is not put on.
     pub(super) fn put_aura_more(
         &mut self,
         def: &'static callings::AuraDef,
         unit: u64,
         level: u8,
         more_stacks: u32,
+        stands: Option<([f32; 3], f32)>,
         events: &mut Vec<SessionEvent>,
     ) {
         let stacks = def.row.stack_rule.as_deref() == Some("stack");
@@ -7653,6 +7711,16 @@ impl InWorld {
                     AuraKind::RangedHaste { pct: *pct }
                 }
                 callings::AuraEffect::LeechPct { pct } => AuraKind::Leech { pct: *pct },
+                callings::AuraEffect::Rewind => match stands {
+                    Some((position, facing)) if unit == self.guid => AuraKind::Rewind {
+                        map: self.map,
+                        position,
+                        facing,
+                        health: self.player.health,
+                        power: self.player.power.current,
+                    },
+                    _ => continue,
+                },
                 callings::AuraEffect::ModRangedCritPct { pct } => {
                     AuraKind::RangedCrit { pct: *pct }
                 }

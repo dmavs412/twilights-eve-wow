@@ -1031,6 +1031,7 @@ details = "Morganth was my apprentice for eleven years. I taught him to listen t
 progress = "Have you seen the marshal yet?"
 completion = "East, then, toward Redridge. I send a report to Stormwind every week, and every week the same answer comes back. Elwynn considered clear. Someone isn't reading them. Thank you for bringing this. Go and rest; you've earned it."
 money = 0
+rewards = [[906001, 1]]
 choices = [903104, 903105, 903106, 903107]
 zone_or_sort = 12
 

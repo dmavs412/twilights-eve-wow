@@ -9,7 +9,9 @@ use benilla_protocol::SessionEvent;
 use common::fight::CAMP;
 use common::vanguard::{scene_of, vanguard_save, Scene};
 use common::*;
-use gear_common::{descriptor, save_with, BACKPACK_1, SEED};
+use gear_common::{
+    carried, descriptor, save_shooting, save_with, stand_by, the_mob, BACKPACK_1, SEED,
+};
 
 /// Morgan's Loaded Die and its Trinket Spell, 5 minutes a click.
 const DIE: u32 = 906000;
@@ -468,4 +470,277 @@ fn the_cooldown_comes_back_at_login_outside_the_spell_book() {
         })
         .expect("the spell book");
     assert_eq!(book, Vec::new(), "no Trinket Spell in the u16 list");
+}
+
+/// The Apprentice's Hourglass, its Trinket Spell and its Falling Sand buff.
+const HOURGLASS: u32 = 906001;
+const HOURGLASS_SPELL: u32 = 1960004;
+const FALLING_SAND: u32 = 1960006;
+
+/// The Hourglass worn at slot 12, with `items`, in a warrior's save of `level`.
+fn hourglass_save(level: u8, items: &[(u8, u32, u32)]) -> (u64, String) {
+    let mut worn = vec![(TRINKET_SLOT, HOURGLASS, 1)];
+    worn.extend_from_slice(items);
+    save_with(level, 0, &worn)
+}
+
+/// A level 10 warrior wearing the Hourglass at `health`, entered at `T0`: the realm, the guid,
+/// and where they stand.
+fn wearing_the_hourglass(health: u32) -> (Realm, u64, (u32, [f32; 3])) {
+    let (me, blob) = hourglass_save(10, &[]);
+    let (mut realm, _) = enter_at(T0, me, &blob);
+    realm.set_player_health(health);
+    drain(&mut realm);
+    let at = realm.player_positions()[0];
+    (realm, me, at)
+}
+
+/// Clicks the Hourglass: the click's events, with Falling Sand's go.
+fn turn_the_hourglass(realm: &mut Realm) -> Vec<SessionEvent> {
+    let events = click(realm, TRINKET_SLOT);
+    assert!(
+        events.iter().any(|e| matches!(
+            e,
+            SessionEvent::SpellGo {
+                spell_id: HOURGLASS_SPELL,
+                ..
+            }
+        )),
+        "{events:?}"
+    );
+    events
+}
+
+/// Walks the player to `to`.
+fn walk(realm: &mut Realm, to: [f32; 3]) {
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: to,
+        orientation: 1.0,
+    });
+    drain(realm);
+}
+
+/// Ticks `secs` in 0.1 s steps, collecting the events.
+fn ticks(realm: &mut Realm, secs: f32) -> Vec<SessionEvent> {
+    let mut events = Vec::new();
+    for _ in 0..(secs * 10.0).round() as u32 {
+        realm.tick(0.1, &FlatGround);
+        events.extend(drain(realm));
+    }
+    events
+}
+
+/// Where each same-map teleport in `events` sent the player.
+fn teleports(events: &[SessionEvent]) -> Vec<[f32; 3]> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::Teleport { position, .. } => Some(*position),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The player's health in the first update of it after the first teleport in `events`.
+fn health_after_snap(events: &[SessionEvent], me: u64) -> Option<u32> {
+    let at = events
+        .iter()
+        .position(|e| matches!(e, SessionEvent::Teleport { .. }))?;
+    events[at..].iter().find_map(|e| match e {
+        SessionEvent::ObjectValues { guid, fields } if *guid == me => fields.unit_health(),
+        _ => None,
+    })
+}
+
+#[test]
+fn falling_sand_snaps_the_wearer_back_to_the_click_spot_at_the_click_health() {
+    let (mut realm, me, (map, spot)) = wearing_the_hourglass(100);
+    turn_the_hourglass(&mut realm);
+    realm.set_player_health(40);
+    let away = [spot[0] + 20.0, spot[1], spot[2]];
+    walk(&mut realm, away);
+
+    let before = ticks(&mut realm, 5.8);
+    assert_eq!(
+        teleports(&before),
+        Vec::<[f32; 3]>::new(),
+        "no snap before 6 s"
+    );
+    assert_eq!(realm.player_positions()[0], (map, away));
+    let events = ticks(&mut realm, 0.4);
+    assert_eq!(teleports(&events), [spot], "{events:?}");
+    assert_eq!(realm.player_positions()[0], (map, spot));
+    assert_eq!(health_after_snap(&events, me), Some(100));
+}
+
+#[test]
+fn the_rewind_is_true_a_heal_inside_the_six_seconds_is_undone() {
+    let (mut realm, me, _) = wearing_the_hourglass(40);
+    turn_the_hourglass(&mut realm);
+    realm.set_player_health(100);
+    let events = ticks(&mut realm, 6.2);
+    assert_eq!(teleports(&events).len(), 1, "{events:?}");
+    assert_eq!(health_after_snap(&events, me), Some(40));
+}
+
+#[test]
+fn a_skill_used_inside_the_six_seconds_keeps_its_cooldown_after_the_snap() {
+    const RANGED: u8 = 17;
+    const CRACKED_SHORTBOW: u32 = 2773;
+    let dressing = spell("ranger", "field_dressing");
+    let (me, blob) = save_shooting(10, &[(RANGED, CRACKED_SHORTBOW, 1)]);
+    let blob =
+        format!("{blob}\n[[items]]\nslot = {TRINKET_SLOT}\nentry = {HOURGLASS}\ncount = 1\n")
+            .replace("calling = \"basic_warrior\"", "calling = \"ranger\"");
+    let (mut realm, _) = enter_at(T0, me, &blob);
+    realm.set_player_health(50);
+    drain(&mut realm);
+    turn_the_hourglass(&mut realm);
+    realm.handle(fight::cast(dressing, None));
+    assert_eq!(fight::refusal(&drain(&mut realm), dressing), None);
+
+    let events = ticks(&mut realm, 6.2);
+    assert_eq!(teleports(&events).len(), 1, "the snap came");
+    realm.handle(fight::cast(dressing, None));
+    assert_eq!(
+        fight::refusal(&drain(&mut realm), dressing),
+        Some(SPELL_FAILED_NOT_READY)
+    );
+}
+
+#[test]
+fn dying_inside_the_six_seconds_ends_falling_sand_with_no_snap() {
+    let (me, blob) = hourglass_save(1, &[]);
+    let (mut realm, entry) = enter_at(T0, me, &blob);
+    turn_the_hourglass(&mut realm);
+    realm.set_player_health(1);
+    let mob = the_mob(&entry);
+    stand_by(&mut realm, &mob);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    let mut events = drain(&mut realm);
+    for _ in 0..55 {
+        events.extend(ticks(&mut realm, 0.1));
+        if health(&events, me) == Some(0) {
+            break;
+        }
+    }
+    assert_eq!(health(&events, me), Some(0), "the mob killed the wearer");
+
+    let after = ticks(&mut realm, 2.0);
+    assert_eq!(teleports(&after), Vec::<[f32; 3]>::new(), "no snap");
+    assert_eq!(health(&after, me), None, "no health set: {after:?}");
+}
+
+#[test]
+fn clicking_falling_sand_off_ends_it_with_no_snap() {
+    let (mut realm, me, (map, spot)) = wearing_the_hourglass(100);
+    let events = turn_the_hourglass(&mut realm);
+    let mut seen = events;
+    seen.extend(ticks(&mut realm, 1.0));
+    assert!(descriptor(&seen, me)
+        .unit_auras()
+        .any(|a| a.spell_id == FALLING_SAND));
+    realm.handle(RealmCommand::CancelAura {
+        spell_id: FALLING_SAND,
+    });
+    seen.extend(drain(&mut realm));
+    assert!(!descriptor(&seen, me)
+        .unit_auras()
+        .any(|a| a.spell_id == FALLING_SAND));
+    let away = [spot[0] + 20.0, spot[1], spot[2]];
+    walk(&mut realm, away);
+
+    let after = ticks(&mut realm, 6.0);
+    assert_eq!(teleports(&after), Vec::<[f32; 3]>::new(), "no snap");
+    assert_eq!(realm.player_positions()[0], (map, away));
+}
+
+/// `AreaTrigger.dbc` 228, the Wailing Caverns' entrance on Kalimdor, and where it puts the
+/// player inside map 43 (as `tests/wailing_caverns.rs` walks it).
+const WC_ENTRANCE: u32 = 228;
+const WC_ENTRANCE_AT: [f32; 3] = [-753.596, -2212.78, 21.54];
+const WAILING_CAVERNS: u32 = 43;
+const WC_ARRIVAL: [f32; 3] = [-158.441, 131.601, -74.255];
+
+#[test]
+fn walking_through_a_dungeon_door_ends_falling_sand_with_no_snap() {
+    let (me, blob) = hourglass_save(10, &[]);
+    // The character's own keys come before any table.
+    let mut top = true;
+    let blob: String = blob
+        .lines()
+        .map(|l| {
+            top &= !l.starts_with('[');
+            if top && l.starts_with("position = ") {
+                let [x, y, z] = WC_ENTRANCE_AT;
+                format!("position = [{x}, {y}, {z}]\n")
+            } else {
+                format!("{l}\n")
+            }
+        })
+        .collect();
+    let (mut realm, _) = enter_at(T0, me, &blob);
+    turn_the_hourglass(&mut realm);
+    realm.handle(RealmCommand::AreaTrigger { id: WC_ENTRANCE });
+    realm.handle(RealmCommand::WorldportAck);
+    let events = drain(&mut realm);
+    assert!(
+        events.iter().any(
+            |e| matches!(e, SessionEvent::Worldport { map_id, .. } if *map_id == WAILING_CAVERNS)
+        ),
+        "the door took the wearer in: {events:?}"
+    );
+
+    let after = ticks(&mut realm, 7.0);
+    assert_eq!(teleports(&after), Vec::<[f32; 3]>::new(), "no snap");
+    assert_eq!(realm.player_positions()[0], (WAILING_CAVERNS, WC_ARRIVAL));
+}
+
+/// Where It Pointed (94604): Theocritus's letter to Marshal Dughan, at his post in Goldshire.
+const WHERE_IT_POINTED: u32 = 94604;
+const DUGHAN: u64 = 0xF130 << 48 | 240 << 24 | 80334;
+const DUGHAN_AT: [f32; 3] = [-9465.5, 74.0, 57.0];
+const ITS_CHESTS: [u32; 4] = [903104, 903105, 903106, 903107];
+
+#[test]
+fn where_it_pointed_gives_the_hourglass_whatever_chest_is_chosen() {
+    for choice in [0u32, 3] {
+        let mut maker = realm();
+        let RealmCommand::CreateCharacter(mut req) = create_cmd("Pilgrim", HUMAN, 0, WARRIOR)
+        else {
+            unreachable!()
+        };
+        req.start = benilla_protocol::START_ELWYNN;
+        maker.handle(RealmCommand::CreateCharacter(req));
+        let me = roster(&mut maker)[0].guid;
+        let blob = format!(
+            "{}\n[[quests]]\nid = {WHERE_IT_POINTED}\nslot = 0\nkills = [0, 0, 0, 0]\n",
+            maker
+                .export_character(me)
+                .unwrap()
+                .replace("level = 1\n", "level = 22\n")
+                .replace("calling = \"basic_warrior\"", "calling = \"warrior\"")
+        );
+        let (mut realm, mut events) = enter_at(T0, me, &blob);
+        realm.handle(RealmCommand::DevTeleport {
+            x: DUGHAN_AT[0] + 2.0,
+            y: DUGHAN_AT[1],
+            facing: None,
+        });
+        realm.tick(0.1, &FlatGround);
+        events.extend(drain(&mut realm));
+        let npc = DUGHAN;
+        let quest = WHERE_IT_POINTED;
+        realm.handle(RealmCommand::QuestGiverCompleteQuest { npc, quest });
+        realm.handle(RealmCommand::QuestGiverRequestReward { npc, quest });
+        realm.handle(RealmCommand::QuestGiverChooseReward { npc, quest, choice });
+        events.extend(drain(&mut realm));
+        assert_eq!(carried(&events, me, HOURGLASS), 1, "choice {choice}");
+        assert_eq!(
+            carried(&events, me, ITS_CHESTS[choice as usize]),
+            1,
+            "choice {choice}"
+        );
+    }
 }
