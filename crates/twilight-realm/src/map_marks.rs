@@ -85,6 +85,7 @@ fn kind_label(k: Kind) -> &'static str {
         Kind::Bounty => "Bounty",
         Kind::Advancement => "Advancement Quest",
         Kind::Story => "Story Quest",
+        Kind::Writ => "Writ",
         Kind::Once | Kind::Rumour => "Quest",
     }
 }
@@ -132,8 +133,9 @@ fn row(g: &Giver, q: &Quest, ready: bool) -> MarkedQuest {
     }
 }
 
-/// The quests `g` takes in that are ready, then those it offers `c` now.
-fn quest_rows(c: &Char, g: &Giver) -> Vec<MarkedQuest> {
+/// The quests `g` takes in that are ready, then those it offers `c` now, in the Writ Board's
+/// `window`.
+fn quest_rows(c: &Char, g: &Giver, window: u32) -> Vec<MarkedQuest> {
     let mut rows = Vec::new();
     if !g.object {
         for q in content::ended_by(g.entry) {
@@ -148,7 +150,7 @@ fn quest_rows(c: &Char, g: &Giver) -> Vec<MarkedQuest> {
         content::offered_by(g.entry).collect()
     };
     for q in offers {
-        if q.kind != Kind::Rumour && offered(c, q) {
+        if q.kind != Kind::Rumour && offered(c, q, window) {
             rows.push(row(g, q, false));
         }
     }
@@ -174,12 +176,12 @@ fn service(role: &str) -> Option<(MapIcon, &'static str)> {
 }
 
 /// Everything the map marks for `c`: quest marks, then service marks, dungeon marks, and the cart
-/// stops on their map, grey while `carts_locked`.
-pub(crate) fn marks(c: &Char, carts_locked: bool) -> Vec<MapMark> {
+/// stops on their map, grey while `carts_locked`. `window` is the Writ Board's now.
+pub(crate) fn marks(c: &Char, carts_locked: bool, window: u32) -> Vec<MapMark> {
     let mut out = Vec::new();
     let mut quest_marked = Vec::new();
     for g in givers() {
-        let quests = quest_rows(c, g);
+        let quests = quest_rows(c, g, window);
         if quests.is_empty() {
             continue;
         }

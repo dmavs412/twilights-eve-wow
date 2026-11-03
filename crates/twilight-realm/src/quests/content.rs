@@ -155,6 +155,9 @@ pub(crate) enum Kind {
     /// A step of a Rumour (`content/rumours.toml`): once per Rumour instance, offered only by that
     /// instance's giver to its Audience, and failed when the Rumour ends.
     Rumour,
+    /// A Writ (spec #557): a board GameObject offers it while its pool shows it (`crate::writs`),
+    /// once per showing, and it pays its `levels` of XP.
+    Writ,
 }
 
 /// Who offers a quest: an NPC's creature entry (a Hub NPC or a Field Giver), or `"item"` for a
@@ -362,6 +365,9 @@ pub(crate) struct Quest {
     /// The lowest Tier it is offered at, when the Tier of its `level` is not the one.
     #[serde(default)]
     min_tier: Option<u8>,
+    /// A Writ's pay: the levels, 1 to 2, a character of the Tier it is offered from gains from it.
+    #[serde(default)]
+    levels: Option<f64>,
     pub(crate) title: String,
     /// Listed in the Calling Choice popup; picking it there puts it in the log.
     #[serde(default)]
@@ -405,6 +411,7 @@ pub(crate) struct Quest {
     #[serde(default)]
     pub(crate) fail_if_seen: Option<String>,
     /// The quest log's header: a negative `QuestSort.dbc` id, or a zone; The Barrens by default.
+    /// A Writ's names its pool.
     #[serde(default)]
     zone_or_sort: Option<i32>,
     /// An Advancement Quest's Callings: offered at the Tier Cap of one, it advances into the
@@ -471,7 +478,9 @@ impl Quest {
     }
 
     /// The XP a player of level `player` earns handing it in, before the multipliers: an
-    /// Advancement Quest pays in a new Calling instead.
+    /// Advancement Quest pays in a new Calling instead. A Writ pays its `levels` of its own
+    /// level's XP divided by the Tier XP Rate of the Tier it is offered from, whatever the
+    /// player's level, so that rate pays it back in full.
     pub(crate) fn reward_xp(&self, player: u8) -> u32 {
         match self.kind {
             Kind::Bounty | Kind::Hunting | Kind::Story => {
@@ -481,13 +490,18 @@ impl Quest {
             Kind::Rumour => {
                 rules::quest::hunting_reward_xp(player, self.level) * rumours::xp_factor(self.id)
             }
+            Kind::Writ => {
+                let next = rules::xp::xp_to_next(self.level).unwrap_or(0);
+                let rate = rules::xp::tier_rate(self.min_tier());
+                (self.levels.unwrap_or(0.0) * f64::from(next) / f64::from(rate)).ceil() as u32
+            }
             Kind::Advancement | Kind::Once => 0,
         }
     }
 
-    /// Whether a character who has handed it in may take it again.
+    /// Whether a character who has handed it in may take it again: a Writ once per showing.
     pub(crate) fn retakable(&self) -> bool {
-        matches!(self.kind, Kind::Repeatable | Kind::Bounty)
+        matches!(self.kind, Kind::Repeatable | Kind::Bounty | Kind::Writ)
     }
 
     /// Whether the quest is offered to a character whose Calling is at Tier `tier`: from its
@@ -531,7 +545,8 @@ fn friendly_spawn(entry: u32) -> bool {
             .any(|s| s.entry == entry)
 }
 
-/// The shipped quests: `content/quests.toml`, then `content/quests_elwynn.toml`.
+/// The shipped quests: `content/quests.toml`, then `content/quests_elwynn.toml`, then the Writs in
+/// `content/writs.toml`.
 pub(crate) fn shipped() -> &'static [Quest] {
     static FILE: OnceLock<Vec<Quest>> = OnceLock::new();
     FILE.get_or_init(|| {
@@ -543,6 +558,7 @@ pub(crate) fn shipped() -> &'static [Quest] {
                 "quests_elwynn.toml",
                 include_str!("../../content/quests_elwynn.toml"),
             ),
+            ("writs.toml", include_str!("../../content/writs.toml")),
         ] {
             let file: QuestFile =
                 toml::from_str(text).unwrap_or_else(|e| panic!("content/{name} parses: {e}"));
@@ -672,6 +688,29 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
         "quest {} needs exactly one of `giver` and `giver_object`",
         q.id
     );
+    if q.kind == Kind::Writ {
+        assert!(
+            q.levels.is_some_and(|l| (1.0..=2.0).contains(&l)),
+            "Writ {} needs `levels` from 1 to 2",
+            q.id
+        );
+        assert!(
+            q.giver_object.is_some(),
+            "Writ {} needs a `giver_object`: a board offers it",
+            q.id
+        );
+        assert!(
+            q.zone_or_sort.is_some(),
+            "Writ {} needs a `zone_or_sort`: it names the Writ's pool",
+            q.id
+        );
+    } else {
+        assert!(
+            q.levels.is_none(),
+            "quest {} names `levels`, and only a Writ names `levels`",
+            q.id
+        );
+    }
     if let Some(entry) = q.giver_object {
         assert!(
             object(entry),
@@ -1183,6 +1222,27 @@ mod tests {
         let q = quest("bounty");
         assert!(q.retakable());
         assert_eq!((q.reward_xp(10), q.reward_xp(15)), (3800, 3800));
+    }
+
+    /// A Writ of `level` paying `levels`.
+    fn writ(level: u8, levels: &str) -> Quest {
+        toml::from_str(&format!(
+            "kind = \"writ\"\nlevels = {levels}\n{}",
+            quest_body().replace("level = 10", &format!("level = {level}"))
+        ))
+        .expect("a Writ")
+    }
+
+    #[test]
+    fn a_writ_can_be_retaken_and_pays_its_levels_over_its_tiers_rate() {
+        assert!(writ(33, "1").retakable());
+        // 326,400 / 5 and 719,100 x 2 / 5, whatever the player's level.
+        assert_eq!(writ(33, "1").reward_xp(33), 65_280);
+        assert_eq!(writ(47, "2").reward_xp(47), 287_640);
+        assert_eq!(writ(47, "2").reward_xp(12), 287_640);
+        // 112,400 x 1.5 / 3 and 505,200 x 1.5 / 5.
+        assert_eq!(writ(24, "1.5").reward_xp(24), 56_200);
+        assert_eq!(writ(40, "1.5").reward_xp(40), 151_560);
     }
 
     #[test]

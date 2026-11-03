@@ -266,8 +266,9 @@ impl crate::Realm {
             .world
             .as_ref()
             .and_then(|w| self.characters.get(w.guid));
+        let window = crate::writs::window(self.wall as u64);
         let quests = player
-            .map(|c| crate::quests::gossip_rows(c, npc.entry))
+            .map(|c| crate::quests::gossip_rows(c, npc.entry, window))
             .unwrap_or_default();
         let mut options = if npc.is_innkeeper() {
             crate::inn::options()

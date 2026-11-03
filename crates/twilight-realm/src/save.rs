@@ -124,6 +124,10 @@ struct Save {
     /// of this Tier. Added within version 1: a save without it has finished none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     completed: Vec<u32>,
+    /// `[quest id, Writ Board window]` of each Writ's last hand-in (spec #557). Optional within
+    /// the current version: a save without it has handed in no Writ.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    writs_done: Vec<(u32, u32)>,
     /// The `AreaTable.dbc` ids of the areas discovered. Added within version 2: a save without it
     /// has discovered none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -480,6 +484,7 @@ pub(crate) fn export(c: &Char) -> String {
             .map(|&(entry, ready)| (entry, (ready * 1000.0).round() as u64))
             .collect(),
         completed: c.quests.completed.clone(),
+        writs_done: c.quests.writs_done.clone(),
         discovered: c.discovered.clone(),
         bind: Some(SavedBind::from(&c.bind)),
         rested: (c.rest.pool > 0.0).then_some(c.rest.pool),
@@ -550,7 +555,8 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
     if !content::valid_race(s.race) || s.gender > 1 || s.level == 0 {
         return Err(SaveError::Unreadable);
     }
-    let (quests, dropped) = crate::quests::load(&s.quests, &s.completed)?;
+    let (mut quests, dropped) = crate::quests::load(&s.quests, &s.completed)?;
+    quests.writs_done = s.writs_done;
     let mut c = Char {
         guid: s.guid,
         name: s.name,

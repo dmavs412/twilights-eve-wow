@@ -117,6 +117,7 @@ struct Done {
 impl Realm {
     /// A quest giver command: they need the character in the world.
     pub(crate) fn handle_quest(&mut self, command: RealmCommand) {
+        let window = crate::writs::window(self.wall as u64);
         let Some(w) = &mut self.world else {
             return;
         };
@@ -130,7 +131,7 @@ impl Realm {
                 if let Some(g) = any_speaker(npc) {
                     events.push(SessionEvent::QuestGiverStatus {
                         npc,
-                        status: status(c, g),
+                        status: status(c, g, window),
                     });
                 }
             }
@@ -144,21 +145,21 @@ impl Realm {
             RealmCommand::QuestGiverHello { npc } => {
                 if let Some(g) = talking_to(c, w, npc) {
                     if g.object {
-                        object_hello(c, g.entry, npc, events);
+                        object_hello(c, g.entry, npc, window, events);
                     } else {
-                        hello(c, g, npc, events);
+                        hello(c, g, npc, window, events);
                     }
                 }
             }
             RealmCommand::QuestGiverQueryQuest { npc, quest } => {
-                let offered = talking_to(c, w, npc).and_then(|g| offer(c, g, quest));
-                if let Some(q) = offered.or_else(|| starter_offer(c, npc, quest)) {
+                let offered = talking_to(c, w, npc).and_then(|g| offer(c, g, quest, window));
+                if let Some(q) = offered.or_else(|| starter_offer(c, npc, quest, window)) {
                     events.push(SessionEvent::QuestDetail(details(npc, q)));
                 }
             }
             RealmCommand::QuestGiverAcceptQuest { npc, quest } => {
-                let offered = talking_to(c, w, npc).and_then(|g| offer(c, g, quest));
-                if let Some(q) = offered.or_else(|| starter_offer(c, npc, quest)) {
+                let offered = talking_to(c, w, npc).and_then(|g| offer(c, g, quest, window));
+                if let Some(q) = offered.or_else(|| starter_offer(c, npc, quest, window)) {
                     done.save = accept(c, q, events);
                     if done.save {
                         done.accepted = Some(q.id);
@@ -183,7 +184,7 @@ impl Realm {
                     let chosen = q.choices.get(choice as usize).copied();
                     if (q.choices.is_empty() || chosen.is_some())
                         && is_complete(c, q)
-                        && reward(c, q, chosen, events)
+                        && reward(c, q, chosen, window, events)
                     {
                         let gained = w.reward_xp(c, q.reward_xp(c.level), events);
                         w.notorious(c, crate::rules::notoriety::quest_gain());
@@ -203,10 +204,9 @@ impl Realm {
                             w.advance(c, to, events);
                         }
                         // The next in the chain opens at once (vmangos `GetNextQuest`).
-                        if let Some(next) = q
-                            .followers()
-                            .find_map(|n| talking_to(c, w, npc).and_then(|g| offer(c, g, n.id)))
-                        {
+                        if let Some(next) = q.followers().find_map(|n| {
+                            talking_to(c, w, npc).and_then(|g| offer(c, g, n.id, window))
+                        }) {
                             events.push(SessionEvent::QuestDetail(details(npc, next)));
                         }
                         done.save = true;
@@ -245,7 +245,7 @@ impl Realm {
             return;
         };
         let options = super::talk_options(c, entry);
-        let quests = gossip_rows(c, entry);
+        let quests = gossip_rows(c, entry, crate::writs::window(self.wall as u64));
         let hint = w.key_hint_text(guid);
         if options.is_empty() && quests.is_empty() && hint.is_none() {
             return;
@@ -358,10 +358,10 @@ fn talking_to(c: &Char, w: &crate::world::InWorld, npc: u64) -> Option<Speaker> 
 
 /// `quest`, if the Quest Starter the player carries as item `item` offers it now: the quest the
 /// item begins, theirs to take. The item is the giver, as vmangos makes it one.
-fn starter_offer(c: &Char, item: u64, quest: u32) -> Option<&'static Quest> {
+fn starter_offer(c: &Char, item: u64, quest: u32, window: u32) -> Option<&'static Quest> {
     let (_, carried) = c.inventory.iter().find(|(_, i)| i.guid == item)?;
     items::template(carried.entry).filter(|t| t.start_quest == quest)?;
-    content::quest(quest).filter(|q| q.giver == content::Giver::Item && offered(c, q))
+    content::quest(quest).filter(|q| q.giver == content::Giver::Item && offered(c, q, window))
 }
 
 // `SMSG_QUESTGIVER_QUEST_INVALID` reasons (vmangos `QuestFailedReasons`).
@@ -373,10 +373,11 @@ const INVALIDREASON_QUEST_ALREADY_DONE: u32 = 7;
 const INVALIDREASON_QUEST_ALREADY_ON: u32 = 13;
 
 /// `CMSG_USE_ITEM` on the item at `slot`: a Quest Starter opens its quest's offer with the item as
-/// the giver, or says why not. Whether the item was one.
+/// the giver, or says why not. Whether the item was one. `window` is the Writ Board's.
 pub(crate) fn use_starter(
     c: &Char,
     slot: crate::inventory::Pos,
+    window: u32,
     events: &mut Vec<SessionEvent>,
 ) -> bool {
     let Some(item) = c.inventory.get(slot) else {
@@ -394,7 +395,7 @@ pub(crate) fn use_starter(
         Some(INVALIDREASON_QUEST_ALREADY_DONE)
     } else if !q.offered_at_tier(crate::callings::of(c.calling).tier) {
         Some(INVALIDREASON_QUEST_FAILED_LOW_LEVEL)
-    } else if !offered(c, q) {
+    } else if !offered(c, q, window) {
         Some(INVALIDREASON_DONT_HAVE_REQ)
     } else {
         None
@@ -407,7 +408,7 @@ pub(crate) fn use_starter(
 }
 
 /// `quest`, if `g` offers it to the player now: theirs to take, and not in the log already.
-fn offer(c: &Char, g: Speaker, quest: u32) -> Option<&'static Quest> {
+fn offer(c: &Char, g: Speaker, quest: u32, window: u32) -> Option<&'static Quest> {
     let gives = |q: &Quest| {
         if g.object {
             q.giver_object == Some(g.entry)
@@ -415,19 +416,25 @@ fn offer(c: &Char, g: Speaker, quest: u32) -> Option<&'static Quest> {
             q.giver.npc() == Some(g.entry)
         }
     };
-    content::quest(quest).filter(|q| gives(q) && offered(c, q))
+    content::quest(quest).filter(|q| gives(q) && offered(c, q, window))
 }
 
 /// The click on the giver GameObject `guid`: the quest panel, or the list of its quests when it
-/// has several, or nothing when it has none for the player.
-pub(crate) fn object_hello(c: &Char, entry: u32, guid: u64, events: &mut Vec<SessionEvent>) {
+/// has several, or nothing when it has none for the player in the Writ Board's `window`.
+pub(crate) fn object_hello(
+    c: &Char,
+    entry: u32,
+    guid: u64,
+    window: u32,
+    events: &mut Vec<SessionEvent>,
+) {
     let g = Speaker {
         entry,
         greeting: "",
         object: true,
     };
     let open: Vec<_> = content::offered_by_object(entry)
-        .filter(|q| offered(c, q))
+        .filter(|q| offered(c, q, window))
         .collect();
     match open.as_slice() {
         [] => {}
@@ -450,8 +457,13 @@ pub(crate) fn object_hello(c: &Char, entry: u32, guid: u64, events: &mut Vec<Ses
     }
 }
 
-pub(crate) fn offered(c: &Char, q: &Quest) -> bool {
+/// Whether `c` may take `q` now. `window` is the Writ Board's window now: a Writ is offered while
+/// its pool shows it, unless `c` handed it in during this window.
+pub(crate) fn offered(c: &Char, q: &Quest, window: u32) -> bool {
     if c.quests.get(q.id).is_some() || done_for_now(c, q) || !after_met(c, q) {
+        return false;
+    }
+    if q.kind == content::Kind::Writ && !crate::writs::open_to(c, q, window) {
         return false;
     }
     if q.min_herbalist_level > 0
@@ -493,7 +505,7 @@ pub(crate) fn is_complete(c: &Char, q: &Quest) -> bool {
 /// its giver. A quest the player is too low for, an Advancement Quest that is not theirs yet, a
 /// Hunting Quest done this Tier, and a quest whose earlier step is not handed in show nothing:
 /// no grey `!`, so the world shows only the quests the player can take now.
-fn status(c: &Char, g: Speaker) -> u32 {
+fn status(c: &Char, g: Speaker, window: u32) -> u32 {
     let to_hand_in = content::ended_by(g.entry).map(|q| match c.quests.get(q.id) {
         Some(a) if complete(c, a) => dialog_status::REWARD2,
         Some(_) => dialog_status::INCOMPLETE,
@@ -501,7 +513,7 @@ fn status(c: &Char, g: Speaker) -> u32 {
     });
     let to_take = content::offered_by(g.entry).map(|q| match c.quests.get(q.id) {
         Some(_) => dialog_status::NONE,
-        None if offered(c, q) => dialog_status::AVAILABLE,
+        None if offered(c, q, window) => dialog_status::AVAILABLE,
         None => dialog_status::NONE,
     });
     to_hand_in
@@ -513,28 +525,28 @@ fn status(c: &Char, g: Speaker) -> u32 {
 /// The quests the NPC `giver` lists for the player, `(quest, icon)`: the ones under way that it
 /// takes in first, as vmangos's menu lists them (4 for one to hand in, 3 for one under way), then
 /// the ones it has on offer.
-fn rows(c: &Char, giver: u32) -> Vec<(&'static Quest, u32)> {
+fn rows(c: &Char, giver: u32, window: u32) -> Vec<(&'static Quest, u32)> {
     let active = content::ended_by(giver)
         .filter(|q| c.quests.get(q.id).is_some())
         .map(|q| (q, if is_complete(c, q) { 4 } else { 3 }));
     let open = content::offered_by(giver)
-        .filter(|q| offered(c, q))
+        .filter(|q| offered(c, q, window))
         .map(|q| (q, dialog_status::AVAILABLE));
     active.chain(open).collect()
 }
 
 /// The quest rows of a gossip menu (`SMSG_GOSSIP_MESSAGE`), `(quest, icon, level, title)`: what
-/// the NPC with entry `giver` has for the player.
-pub(crate) fn gossip_rows(c: &Char, giver: u32) -> Vec<(u32, u32, u32, String)> {
-    rows(c, giver)
+/// the NPC with entry `giver` has for the player in the Writ Board's `window`.
+pub(crate) fn gossip_rows(c: &Char, giver: u32, window: u32) -> Vec<(u32, u32, u32, String)> {
+    rows(c, giver, window)
         .into_iter()
         .map(|(q, icon)| (q.id, icon, u32::from(q.level), q.title.clone()))
         .collect()
 }
 
 /// `CMSG_QUESTGIVER_HELLO`: a lone quest opens its own panel, several open the greeting list.
-fn hello(c: &Char, g: Speaker, npc: u64, events: &mut Vec<SessionEvent>) {
-    match rows(c, g.entry).as_slice() {
+fn hello(c: &Char, g: Speaker, npc: u64, window: u32, events: &mut Vec<SessionEvent>) {
+    match rows(c, g.entry, window).as_slice() {
         [(q, icon)] if *icon != dialog_status::AVAILABLE => turn_in(c, npc, q, events),
         [(q, _)] => events.push(SessionEvent::QuestDetail(details(npc, q))),
         rows => {
@@ -691,8 +703,14 @@ fn turn_in(c: &Char, npc: u64, q: &Quest, events: &mut Vec<SessionEvent>) {
 /// The hand-in's goods: the collected items go, the money, reward items and `chosen` item come, and the
 /// slot clears. The XP is the world's to pay. Goods that would not fit in the bags refuse the
 /// hand-in before anything changes, as vmangos `Player::CanRewardQuest` does; whether it went
-/// through.
-fn reward(c: &mut Char, q: &Quest, chosen: Option<u32>, events: &mut Vec<SessionEvent>) -> bool {
+/// through. A Writ remembers the Writ Board's `window` it was handed in.
+fn reward(
+    c: &mut Char,
+    q: &Quest,
+    chosen: Option<u32>,
+    window: u32,
+    events: &mut Vec<SessionEvent>,
+) -> bool {
     let given: Vec<(u32, u32)> = fixed_rewards(q)
         .into_iter()
         .chain(chosen.map(|item| (item, 1)))
@@ -718,6 +736,9 @@ fn reward(c: &mut Char, q: &Quest, chosen: Option<u32>, events: &mut Vec<Session
     }
     if !c.quests.completed.contains(&q.id) {
         c.quests.completed.push(q.id);
+    }
+    if q.kind == content::Kind::Writ {
+        c.quests.hand_in_writ(q.id, window);
     }
     if let Some(i) = c.quests.active.iter().position(|a| a.id == q.id) {
         let a = c.quests.active.remove(i);

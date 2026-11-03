@@ -932,13 +932,14 @@ impl InWorld {
         self.brew_tick(dt, c, events);
         self.regenerate(dt, c, events);
         self.boss_fight_tick(events);
-        self.map_marks_tick(c, events);
+        self.map_marks_tick(c, wall, events);
         ticked
     }
 
     /// The world map's marks, sent when they differ from the last list sent.
-    fn map_marks_tick(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
-        let marks = crate::map_marks::marks(c, self.carts_locked);
+    fn map_marks_tick(&mut self, c: &Char, wall: f64, events: &mut Vec<SessionEvent>) {
+        let window = crate::writs::window(wall as u64);
+        let marks = crate::map_marks::marks(c, self.carts_locked, window);
         if self.marks_sent.as_ref() != Some(&marks) {
             self.marks_sent = Some(marks.clone());
             events.push(SessionEvent::MapMarks { marks });

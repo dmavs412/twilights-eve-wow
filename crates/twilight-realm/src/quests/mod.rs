@@ -72,11 +72,28 @@ pub(crate) struct QuestLog {
     /// The quests handed in, once each, in the order first finished: every quest the character
     /// has finished, Advancement leaves it alone.
     pub(crate) completed: Vec<u32>,
+    /// `(quest id, Writ Board window)` of each Writ's last hand-in: a character does each showing
+    /// once.
+    pub(crate) writs_done: Vec<(u32, u32)>,
 }
 
 impl QuestLog {
     pub(crate) fn get(&self, id: u32) -> Option<&Active> {
         self.active.iter().find(|a| a.id == id)
+    }
+
+    /// The window Writ `id` was last handed in.
+    pub(crate) fn writ_done(&self, id: u32) -> Option<u32> {
+        self.writs_done
+            .iter()
+            .find(|&&(q, _)| q == id)
+            .map(|&(_, window)| window)
+    }
+
+    /// Writ `id` was handed in during `window`.
+    pub(crate) fn hand_in_writ(&mut self, id: u32, window: u32) {
+        self.writs_done.retain(|&(q, _)| q != id);
+        self.writs_done.push((id, window));
     }
 
     /// The lowest empty slot.

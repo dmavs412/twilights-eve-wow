@@ -97,6 +97,7 @@ mod wear;
 #[cfg(feature = "wire")]
 pub mod wire;
 mod world;
+mod writs;
 
 use benilla_protocol::{CharCreateReq, RealmInfo, SessionEvent};
 
@@ -1829,7 +1830,12 @@ impl Realm {
                                 self.save(guid);
                             }
                         } else if w.refused_asleep(slot, c, &mut self.events) {
-                        } else if !quests::use_starter(c, slot, &mut self.events) {
+                        } else if !quests::use_starter(
+                            c,
+                            slot,
+                            writs::window(self.wall as u64),
+                            &mut self.events,
+                        ) {
                             // A meal gives its Well Fed buff.
                             let meal = c
                                 .inventory
@@ -1892,7 +1898,8 @@ impl Realm {
                         .get(player)
                         .and_then(|c| Some((c, w.giver_object_within_reach(guid, c.position)?)));
                     if let Some((c, entry)) = giver {
-                        quests::object_hello(c, entry, guid, &mut self.events);
+                        let window = writs::window(self.wall as u64);
+                        quests::object_hello(c, entry, guid, window, &mut self.events);
                     } else {
                         let quest_object = self
                             .characters

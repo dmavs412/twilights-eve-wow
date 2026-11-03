@@ -1,0 +1,18 @@
+# The Writ Board (spec #557, docs/specs/writs/README.md): the Writs Stormwind posts, read after
+# content/quests_elwynn.toml with the same `[[quest]]` and `[[gameobject]]` schema.
+#
+# A Writ is `kind = "writ"`. It names `levels`, 1 to 2: the levels a character of the Tier it is
+# offered from gains from its hand-in. Its `giver_object` is the board, and its `zone_or_sort`
+# names its pool: Elwynn 12, Redridge 44, Duskwood 10. Each pool shows one Writ per window, never
+# the one it showed in the window before; a pool of one shows its Writ every window. A Writ's band
+# is its rank by level within its pool (low, mid, high). A character can do each showing once, and
+# a Writ in the log stays there when the board changes.
+#
+# `[board]`: window 0 starts at `anchor`'s midnight UTC, and a window lasts `window_days`. Each
+# `apart` pair names two pools by zone: the second's draw also skips the band the first drew in
+# that window. The draw is a pure function of the window (`src/writs.rs`), so nothing is saved.
+
+[board]
+anchor = "2026-11-02"   # window 0 starts at this date's midnight UTC
+window_days = 2
+apart = [[44, 10]]      # Duskwood's (10) draw skips the band Redridge (44) drew
