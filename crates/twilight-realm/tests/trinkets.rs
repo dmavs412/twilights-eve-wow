@@ -744,3 +744,208 @@ fn where_it_pointed_gives_the_hourglass_whatever_chest_is_chosen() {
         );
     }
 }
+
+/// Vael's Echo Shard and its Echo buff.
+const SHARD: u32 = 906002;
+const ECHO: u32 = 1960007;
+
+/// `calling`'s save of `level` wearing the shard, with `items`, entered at `T0` beside the first
+/// mob in view, `yards` from it: the realm, the guid, the mob and every event so far.
+fn wearing_the_shard(
+    calling: &str,
+    level: u8,
+    items: &[(u8, u32, u32)],
+    yards: f32,
+) -> (Realm, u64, fight::Mob, Vec<SessionEvent>) {
+    let mut worn = vec![(TRINKET_SLOT, SHARD, 1)];
+    worn.extend_from_slice(items);
+    let (me, blob) = save_shooting(level, &worn);
+    let blob = blob.replace(
+        "calling = \"basic_warrior\"",
+        &format!("calling = \"{calling}\""),
+    );
+    let (mut realm, mut all) = enter_at(T0, me, &blob);
+    let mob = the_mob(&all);
+    let mob = fight::Mob {
+        guid: mob.guid,
+        position: mob.position,
+    };
+    fight::stand_at(&mut realm, &mob, yards);
+    all.extend(drain(&mut realm));
+    (realm, me, mob, all)
+}
+
+/// Clicks the shard: Echo is on after.
+fn echo_on(realm: &mut Realm, me: u64, all: &mut Vec<SessionEvent>) {
+    all.extend(click(realm, TRINKET_SLOT));
+    assert!(echoing(all, me), "Echo is on");
+}
+
+fn echoing(all: &[SessionEvent], me: u64) -> bool {
+    descriptor(all, me).unit_auras().any(|a| a.spell_id == ECHO)
+}
+
+/// How many times `spell_id` went off in `events`.
+fn gos(events: &[SessionEvent], spell_id: u32) -> usize {
+    events
+        .iter()
+        .filter(|e| matches!(e, SessionEvent::SpellGo { spell_id: s, .. } if *s == spell_id))
+        .count()
+}
+
+/// The damage each `spell_id` hit dealt in `events`.
+fn hits_of(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellDamageLog(l) if l.spell_id == spell_id => Some(l.damage),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Casts `spell_id` at `target` and checks it went off: what it sent.
+fn use_skill(realm: &mut Realm, spell_id: u32, target: Option<u64>) -> Vec<SessionEvent> {
+    realm.handle(fight::cast(spell_id, target));
+    let events = drain(realm);
+    assert_eq!(
+        fight::refusal(&events, spell_id),
+        None,
+        "{spell_id} goes off"
+    );
+    realm.handle(RealmCommand::AttackStop);
+    events
+}
+
+#[test]
+fn under_echo_smash_strikes_twice_for_one_cost_and_the_next_smash_once() {
+    let smash = spell("vanguard", "righteous_smash");
+    let skill = twilight_realm::callings::calling("vanguard")
+        .and_then(|v| v.skill_by_key("righteous_smash"))
+        .unwrap();
+    let cooldown = skill.cooldown_ms as f32 / 1000.0;
+    // Queues the on-next-swing strike, then swings until it goes: the strike's tick, and the
+    // rage it took.
+    let strike = |s: &mut Scene| {
+        s.realm.set_player_power(u32::MAX);
+        s.view.drain(&mut s.realm);
+        s.realm.handle(fight::cast(smash, Some(s.mob.guid)));
+        s.realm
+            .handle(RealmCommand::AttackSwing { guid: s.mob.guid });
+        s.view.drain(&mut s.realm);
+        for _ in 0..50 {
+            let rage = s.view.rage(s.me);
+            let events = s.view.run(&mut s.realm, 0.1);
+            if gos(&events, smash) > 0 {
+                s.realm.handle(RealmCommand::AttackStop);
+                s.view.drain(&mut s.realm);
+                return (events, rage - s.view.rage(s.me));
+            }
+        }
+        panic!("Smash never went");
+    };
+    for seed in 0..40 {
+        let (me, blob) = with_the_shard(vanguard_save(VANGUARD_LEVEL, true));
+        let mut s = scene_of(me, &blob, seed, &[], common::vanguard::STURDY);
+        // The charge brings the Vanguard to the mob; a skill that moves its caster passes Echo by
+        // anyway.
+        s.cast_at_mob(spell("vanguard", "bulwark_charge"));
+        s.view.run(&mut s.realm, 1.0);
+        s.realm.handle(RealmCommand::UseItem {
+            bag: PLAYER_BAG,
+            slot: TRINKET_SLOT,
+        });
+        s.view.drain(&mut s.realm);
+        let on = |s: &Scene| s.view.fields(me).unit_auras().any(|a| a.spell_id == ECHO);
+        assert!(on(&s), "Echo is on");
+
+        let (events, paid) = strike(&mut s);
+        assert!(!on(&s), "Echo is used up");
+        assert_eq!(gos(&events, smash), 2, "seed {seed}: Smash and its echo");
+        if hits_of(&events, smash).len() < 2 {
+            continue;
+        }
+        assert_eq!(paid, skill.power_cost, "seed {seed}: one Smash's cost");
+
+        s.view.run(&mut s.realm, cooldown + 0.2);
+        let (events, _) = strike(&mut s);
+        assert_eq!(gos(&events, smash), 1, "the next Smash goes off once");
+        assert!(hits_of(&events, smash).len() <= 1);
+        return;
+    }
+    panic!("no seed landed Smash and its echo");
+}
+
+/// `save` with the shard worn.
+fn with_the_shard((me, blob): (u64, String)) -> (u64, String) {
+    (
+        me,
+        format!("{blob}\n[[items]]\nslot = {TRINKET_SLOT}\nentry = {SHARD}\ncount = 1\n"),
+    )
+}
+
+#[test]
+fn under_echo_dark_mending_heals_twice() {
+    let mending = spell("acolyte", "dark_mending");
+    let (mut realm, me, _, mut all) = wearing_the_shard("acolyte", 10, &[], 30.0);
+    let max = descriptor(&all, me).unit_max_health().unwrap();
+    realm.set_player_health(max / 2);
+    all.extend(drain(&mut realm));
+    echo_on(&mut realm, me, &mut all);
+    let events = use_skill(&mut realm, mending, None);
+    assert_eq!(gos(&events, mending), 2);
+    assert_eq!(heals(&events, me, mending).len(), 2, "{events:?}");
+    all.extend(events);
+    assert!(!echoing(&all, me), "Echo is used up");
+}
+
+#[test]
+fn auto_shot_passes_echo_by_and_the_next_shot_skill_spends_it() {
+    const RANGED: u8 = 17;
+    const CRACKED_SHORTBOW: u32 = 2773;
+    let auto_shot = spell("ranger", "auto_shot");
+    let snapshot = spell("ranger", "snapshot");
+    let (mut realm, me, mob, mut all) =
+        wearing_the_shard("ranger", 1, &[(RANGED, CRACKED_SHORTBOW, 1)], 20.0);
+    echo_on(&mut realm, me, &mut all);
+    realm.handle(fight::cast(auto_shot, Some(mob.guid)));
+    all.extend(drain(&mut realm));
+    // The first shot, then the shooting stops, so the mob lives for the Snapshot.
+    for _ in 0..30 {
+        let shots = ticks(&mut realm, 0.1);
+        let fired = gos(&shots, auto_shot) > 0;
+        all.extend(shots);
+        if fired {
+            break;
+        }
+    }
+    realm.handle(RealmCommand::CancelAutoRepeat);
+    all.extend(drain(&mut realm));
+    assert!(gos(&all, auto_shot) >= 1, "Auto Shot fired");
+    assert!(echoing(&all, me), "Auto Shot leaves Echo on");
+
+    let events = use_skill(&mut realm, snapshot, Some(mob.guid));
+    assert_eq!(gos(&events, snapshot), 2, "Snapshot and its echo");
+    all.extend(events);
+    assert!(!echoing(&all, me), "Snapshot used Echo up");
+}
+
+#[test]
+fn a_channelled_skill_passes_echo_by() {
+    let siphon = spell("acolyte", "siphon_life");
+    let (mut realm, me, mob, mut all) = wearing_the_shard("acolyte", 24, &[], 15.0);
+    echo_on(&mut realm, me, &mut all);
+    all.extend(use_skill(&mut realm, siphon, Some(mob.guid)));
+    all.extend(ticks(&mut realm, 2.0));
+    assert!(echoing(&all, me), "the channel leaves Echo on");
+}
+
+#[test]
+fn echo_runs_out_at_20_seconds_with_no_skill_used() {
+    let (mut realm, me, _, mut all) = wearing_the_shard("basic_warrior", 10, &[], 30.0);
+    echo_on(&mut realm, me, &mut all);
+    all.extend(ticks(&mut realm, 19.9));
+    assert!(echoing(&all, me), "on at 19.9 s");
+    all.extend(ticks(&mut realm, 0.2));
+    assert!(!echoing(&all, me), "gone at 20.1 s");
+}

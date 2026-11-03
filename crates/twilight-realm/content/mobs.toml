@@ -1631,6 +1631,8 @@ respawn_secs = 300.0
 entry = 96040
 name = "Speaker Vael"
 rolls = [{ chance = 20, one_of = [904012, 904013, 904014, 904015, 904016, 904017] }, { chance = 50, one_of = [902060, 902061, 902062, 902063, 902064, 902065, 902066, 902067, 902068, 902069, 902070, 902071, 902072, 902073, 902074, 902075, 902076, 902077, 902078, 902079] }]
+# Vael's Echo Shard (spec #458), on top of whatever the rolls above give.
+extra_rolls = [{ chance = 25, one_of = [906002] }]
 creature_type = 7
 rank = 1
 boss = true

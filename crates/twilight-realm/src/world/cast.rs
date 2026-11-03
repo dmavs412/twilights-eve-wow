@@ -1286,9 +1286,7 @@ impl Skills {
     ) -> impl Iterator<Item = (&'static callings::NextCast, i32)> + 'a {
         let me = self.me;
         self.auras.iter().filter_map(move |a| match a.kind {
-            AuraKind::NextCast { next, stacks, .. }
-                if a.unit == me && next.skill.iter().any(|s| skill.is(s)) =>
-            {
+            AuraKind::NextCast { next, stacks, .. } if a.unit == me && next.reaches(skill) => {
                 Some((next, stacks as i32))
             }
             _ => None,
@@ -1338,7 +1336,8 @@ impl Skills {
     }
 
     /// `skill` went off: each `next_cast` buff for it loses a charge (one with none lasts its
-    /// duration), and the buffs that share a group with one used go too. What went.
+    /// duration), and the buffs that share a group with one used go too. A free cast leaves a
+    /// `repeat` buff on. What went.
     fn use_next_casts(&mut self, skill: &Skill, events: &mut Vec<SessionEvent>) -> Vec<Aura> {
         let me = self.me;
         let mut groups: Vec<&'static str> = Vec::new();
@@ -1346,7 +1345,7 @@ impl Skills {
             let AuraKind::NextCast { next, group, .. } = a.kind else {
                 continue;
             };
-            if a.unit != me || !next.skill.iter().any(|s| skill.is(s)) {
+            if a.unit != me || !next.reaches(skill) || (next.repeat && self.free) {
                 continue;
             }
             groups.extend(group);
@@ -2521,18 +2520,18 @@ impl InWorld {
             return;
         };
         if let Some(skill) = crate::talents::current(c, key) {
-            self.free_cast(skill, target, true, c, rng, events, ticked);
+            self.free_cast(skill, Some(target), true, c, rng, events, ticked);
         }
     }
 
     /// `skill` goes off at once at `target` if it stands in reach: no cost, no cooldown, no global
-    /// cooldown and no cast bar. A `repeat` (Twin Arrows) repeats nothing itself, and nothing
-    /// repeats inside one; a `cast_skill`'s cast (Parting Shot) may be repeated.
+    /// cooldown and no cast bar. A `repeat` (Twin Arrows, Echo) repeats nothing itself, and
+    /// nothing repeats inside one; a `cast_skill`'s cast (Parting Shot) may be repeated.
     #[allow(clippy::too_many_arguments)]
     pub(super) fn free_cast(
         &mut self,
         skill: &'static Skill,
-        target: u64,
+        target: Option<u64>,
         repeat: bool,
         c: &mut Char,
         rng: &mut Rng,
@@ -2545,8 +2544,8 @@ impl InWorld {
         let (free, repeating) = (self.skills.free, self.skills.repeating);
         self.skills.free = true;
         self.skills.repeating |= repeat;
-        if let Ok(targets) = self.check(skill, Some(target), false, c) {
-            let done = self.go(skill, Some(target), targets, true, c, rng, events);
+        if let Ok(targets) = self.check(skill, target, false, c) {
+            let done = self.go(skill, target, targets, true, c, rng, events);
             ticked.leveled |= done.leveled;
             ticked.discovered |= done.discovered;
         }
@@ -2585,7 +2584,7 @@ impl InWorld {
             if !host.line_of_sight(self.map, eye(c.position), eye(mob.position)) {
                 continue;
             }
-            self.free_cast(skill, target, false, c, rng, events, ticked);
+            self.free_cast(skill, Some(target), false, c, rng, events, ticked);
         }
     }
 
@@ -3316,7 +3315,8 @@ impl InWorld {
                 );
             }
         }
-        // The next-cast buffs this cast used, landed or not.
+        // The next-cast buffs this cast used, landed or not; one may echo it (Echo).
+        let echo = !self.skills.free && self.skills.next_casts(skill).any(|(n, _)| n.repeat);
         let gone = self.skills.use_next_casts(skill, events);
         self.faded(&gone, events);
         if let Some(&(first, _)) = crits.first() {
@@ -3391,8 +3391,12 @@ impl InWorld {
         });
         if let (Some(chance), Some(again), true) = (repeat, target, any_landed) {
             if !self.skills.repeating && rng.below(100) < chance {
-                self.free_cast(skill, again, true, c, rng, events, &mut ticked);
+                self.free_cast(skill, Some(again), true, c, rng, events, &mut ticked);
             }
+        }
+        // A next-cast buff's echo: once more at the same target, landed or not, by the same path.
+        if echo {
+            self.free_cast(skill, target, true, c, rng, events, &mut ticked);
         }
         ticked
     }
@@ -6085,7 +6089,7 @@ impl InWorld {
         let Some(skill) = crate::talents::skill(c, spell_id) else {
             return false;
         };
-        if !self.player.power.has(self.power_cost(c, skill)) {
+        if !self.skills.free && !self.player.power.has(self.power_cost(c, skill)) {
             events.push(refused(spell_id, SPELL_FAILED_NO_POWER));
             return false;
         }
@@ -6266,6 +6270,18 @@ impl InWorld {
             if swing.damage > 0 {
                 self.melee_hit(guid, c, rng, events, ticked);
             }
+        }
+        // A next-cast buff's echo, landed or not: the strike once more at once, free, and never
+        // again inside it (Echo).
+        if !self.skills.free && self.skills.next_casts(skill).any(|(n, _)| n.repeat) {
+            let gone = self.skills.use_next_casts(skill, events);
+            self.faded(&gone, events);
+            let free = std::mem::replace(&mut self.skills.free, true);
+            let repeating = std::mem::replace(&mut self.skills.repeating, true);
+            self.skills.queued = Some(spell_id);
+            self.next_swing_strike(target, from_front, c, rng, events, ticked);
+            self.skills.free = free;
+            self.skills.repeating = repeating;
         }
         true
     }

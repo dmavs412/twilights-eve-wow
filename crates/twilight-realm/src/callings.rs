@@ -442,6 +442,7 @@ pub struct AuraProc {
 /// such cast; with none, it lasts its duration.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct NextCast {
+    /// Empty: every skill but the ones that pass a next-cast buff by (see [`NextCast::reaches`]).
     #[serde(deserialize_with = "one_or_many")]
     pub skill: Vec<String>,
     #[serde(default)]
@@ -459,6 +460,21 @@ pub struct NextCast {
     /// The skills' `SpellFamilyFlags` bits, resolved by the build, for the client's cast bar.
     #[serde(default)]
     pub family_bits: Vec<u8>,
+    /// The cast goes off a second time at once, at the same target, free and off the global
+    /// cooldown; the second never repeats (Vael's Echo Shard).
+    #[serde(default)]
+    pub repeat: bool,
+}
+
+impl NextCast {
+    /// Whether the buff changes the next cast of `skill`: one of its `skill` list, or with an
+    /// empty list, any skill but an auto-repeat shot, a channel, or one that moves the caster.
+    pub fn reaches(&self, skill: &Skill) -> bool {
+        if self.skill.is_empty() {
+            return !skill.passes_next_cast_by();
+        }
+        self.skill.iter().any(|s| skill.is(s))
+    }
 }
 
 /// Up to four spell ids, the rest 0.
@@ -2120,6 +2136,18 @@ impl Skill {
         self.effects
             .iter()
             .any(|e| matches!(e, Effect::AddComboPoints { .. }))
+    }
+
+    /// An auto-repeat shot, a channel, or a skill that moves the caster (a charge, a leap or a
+    /// blink): a next-cast buff for any skill passes it by.
+    pub fn passes_next_cast_by(&self) -> bool {
+        matches!(
+            self.meta.shape.cast_kind.as_deref(),
+            Some("auto_repeat" | "channel")
+        ) || self
+            .effects
+            .iter()
+            .any(|e| matches!(e, Effect::Charge { .. } | Effect::Blink { .. }))
     }
 }
 

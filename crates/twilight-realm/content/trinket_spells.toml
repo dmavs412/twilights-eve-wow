@@ -41,8 +41,13 @@
 # icon         as a spell's
 # description  optional: the buff's tooltip
 # duration_ms  how long it lasts
+# charges      optional: the casts that use it up, as an aura row's
 # effects      what it does while it is on, as an aura row's effects. A mod_cast_speed_pct with no
-#              family_bits reaches every Calling skill's cast bar.
+#              family_bits reaches every Calling skill's cast bar. A next_cast with an empty
+#              `skill` list reaches every Calling skill but the ones that pass it by: auto-repeat
+#              shots, channelled skills, and skills that move the caster (a charge, a leap or a
+#              blink). Its `repeat = true` makes that cast go off a second time at once, at the
+#              same target, free.
 
 [[spell]]
 key = "loaded_die"
@@ -79,6 +84,7 @@ icon = 'Interface\Icons\INV_Enchant_ShardNexusLarge'
 visual = 0
 description = "Your next skill within 20 sec goes off a second time."
 cooldown_ms = 120000
+effect = { kind = "aura", key = "echo" }
 
 # The Loaded Die's three buffs (faces 4 to 6). The names are placeholders.
 [[aura]]
@@ -123,3 +129,17 @@ icon = 'Interface\Icons\Spell_Nature_TimeStop'
 description = "When the sand runs out, you return to where you turned the hourglass."
 duration_ms = 6000
 effects = [{ kind = "rewind" }]
+
+# Vael's Echo Shard's buff. The next Calling skill goes off a second time at once, at the same
+# target, free and off the global cooldown, and the second cast never echoes again. Auto Shot,
+# wand shots, channelled skills and skills that move the caster pass it by and leave it on. The
+# name is a placeholder.
+[[aura]]
+key = "echo"
+spell_id = 1960007
+name = "Echo"
+icon = 'Interface\Icons\Spell_Nature_Purge'
+description = "Your next skill goes off a second time."
+duration_ms = 20000
+charges = 1
+effects = [{ kind = "next_cast", skill = [], repeat = true }]

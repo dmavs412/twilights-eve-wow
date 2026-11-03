@@ -8328,6 +8328,31 @@
    }
   },
   {
+   "spell_id": 1960007,
+   "trinket": "echo",
+   "fields": {
+    "name": "Echo",
+    "icon": "Interface\\Icons\\Spell_Nature_Purge",
+    "school": 0,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "aura_description": "Your next skill goes off a second time.",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "aura": 4,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 18
+   }
+  },
+  {
    "spell_id": 7620,
    "fields": {
     "equipped_item_class": -1,

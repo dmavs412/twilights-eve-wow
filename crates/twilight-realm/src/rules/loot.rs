@@ -377,6 +377,25 @@ mod roll_tests {
     }
 
     #[test]
+    fn vaels_200_kills_drop_the_shard_30_to_70_times_beside_his_own_loot() {
+        let vael = crate::mobs::template(96040).expect("Speaker Vael");
+        let shard = 906002;
+        let (mut shards, mut with_loot) = (0, 0);
+        for seed in 0..200 {
+            let mut rng = Rng::new(seed);
+            let first = first_roll(&vael.rolls, &mut rng);
+            let extra = each_roll(&vael.extra_rolls, &mut rng);
+            assert!(extra.iter().all(|&i| i == shard), "{extra:?}");
+            if extra.contains(&shard) {
+                shards += 1;
+                with_loot += usize::from(first.is_some());
+            }
+        }
+        assert!((30..=70).contains(&shards), "{shards} shards in 200 kills");
+        assert!(with_loot > 0, "the shard never dropped beside his loot");
+    }
+
+    #[test]
     fn the_abbots_200_kills_each_drop_one_of_22_and_the_epic_comes_3_to_25_times() {
         let rolls = creature_rolls(780015);
         let epic = 900599;
