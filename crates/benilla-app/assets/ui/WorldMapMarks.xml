@@ -4,7 +4,8 @@
         dungeon marks as landmarks whose texture index is 64 or more (`TWILIGHT_ICON_BASE` in
         ui_world_map.rs). The stock POI draws a cell of `POIIcons` for every landmark; this file
         swaps in the stock gossip icon for index 64 and up, and gives those POIs a tooltip with the
-        name and one line per line of the description.
+        name and one line per line of the description. It also draws each cart's wagon where it is
+        (spec #560), a blip per `GetMapCarts()` entry with the route's name as its tooltip.
 
         A mark's POI sits one level above the stock POIs. The `AreaPOI.dbc` rows come first in the
         landmark list, and at an equal level the earlier link takes the mouse while the later one
@@ -22,7 +23,15 @@
             [69] = "Interface\\GossipFrame\\TaxiGossipIcon",
             -- A dungeon door has no stock 1.12 icon; the skeleton key stands for the way in.
             [70] = "Interface\\Icons\\INV_Misc_Key_03",
+            -- A cart stop borrows the flight master icon until its own is painted (spec #560).
+            [71] = "Interface\\GossipFrame\\TaxiGossipIcon",
+            [72] = "Interface\\GossipFrame\\TaxiGossipIcon",
         }
+        -- A cart stop on a server whose Carts unlock is off: grey, at half alpha.
+        BENILLA_MARK_LOCKED_CART = 72
+        -- The mark icon's side, and a wagon blip's at 70% of it until a wagon icon is painted.
+        BENILLA_MARK_ICON_SIZE = 16
+        BENILLA_CART_BLIP_SIZE = BENILLA_MARK_ICON_SIZE * 0.7
 
         -- The landmark index of a pool frame, from its name `WorldMapFramePOI<i>`.
         local function BenillaMark_Index(poi)
@@ -50,11 +59,16 @@
                     if textureIndex and textureIndex >= BENILLA_MARK_ICON_BASE then
                         texture:SetTexture(BENILLA_MARK_ICONS[textureIndex] or "Interface\\Minimap\\POIIcons")
                         texture:SetTexCoord(0, 1, 0, 1)
+                        local locked = textureIndex == BENILLA_MARK_LOCKED_CART
+                        texture:SetDesaturated(locked and 1 or nil)
+                        texture:SetAlpha(locked and 0.5 or 1)
                         poi:SetFrameLevel(WorldMapButton:GetFrameLevel() + 2)
                         poi.benillaMark = true
                     elseif poi.benillaMark then
                         -- The pool reuses frames; the stock update already reset the tex coords.
                         texture:SetTexture("Interface\\Minimap\\POIIcons")
+                        texture:SetDesaturated(nil)
+                        texture:SetAlpha(1)
                         poi:SetFrameLevel(WorldMapButton:GetFrameLevel() + 1)
                         poi.benillaMark = nil
                     end
@@ -86,6 +100,57 @@
                 return BenillaMark_OldLeave()
             end
             WorldMapTooltip:Hide()
+        end
+
+        -- The wagons' blips (spec #560), one per `GetMapCarts()` entry, placed as the stock update
+        -- places the party's: CENTER against the detail frame's TOPLEFT, v running down the sheet.
+        local function BenillaCart_Blip(i)
+            local name = "BenillaMapCart" .. i
+            local blip = getglobal(name)
+            if blip then
+                return blip
+            end
+            blip = CreateFrame("Button", name, WorldMapButton)
+            blip:SetWidth(BENILLA_CART_BLIP_SIZE)
+            blip:SetHeight(BENILLA_CART_BLIP_SIZE)
+            -- Over the marks, so a wagon at its stop takes the hover.
+            blip:SetFrameLevel(WorldMapButton:GetFrameLevel() + 3)
+            local texture = blip:CreateTexture(name .. "Texture", "ARTWORK")
+            texture:SetWidth(BENILLA_CART_BLIP_SIZE)
+            texture:SetHeight(BENILLA_CART_BLIP_SIZE)
+            texture:SetPoint("CENTER", blip, "CENTER", 0, 0)
+            texture:SetTexture("Interface\\GossipFrame\\TaxiGossipIcon")
+            blip:SetScript("OnEnter", function()
+                WorldMapTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                WorldMapTooltip:SetText(this.benillaName or "")
+                WorldMapTooltip:Show()
+            end)
+            blip:SetScript("OnLeave", function()
+                WorldMapTooltip:Hide()
+            end)
+            return blip
+        end
+
+        local BenillaCart_OldUpdate = WorldMapButton_OnUpdate
+        function WorldMapButton_OnUpdate(elapsed)
+            BenillaCart_OldUpdate(elapsed)
+            local carts = GetMapCarts()
+            local width = WorldMapDetailFrame:GetWidth()
+            local height = WorldMapDetailFrame:GetHeight()
+            local count = table.getn(carts)
+            for i = 1, count do
+                local cart = carts[i]
+                local blip = BenillaCart_Blip(i)
+                blip.benillaName = cart.name
+                blip:ClearAllPoints()
+                blip:SetPoint("CENTER", "WorldMapDetailFrame", "TOPLEFT", cart.x * width, -cart.y * height)
+                blip:Show()
+            end
+            local i = count + 1
+            while getglobal("BenillaMapCart" .. i) do
+                getglobal("BenillaMapCart" .. i):Hide()
+                i = i + 1
+            end
         end
     ]]></Script>
 </Ui>

@@ -12,7 +12,7 @@
         local function category(icon)
             if icon == 64 or icon == 65 then return "quests" end
             if icon == 70 then return "dungeons" end
-            if icon and icon >= 66 and icon <= 69 then return "services" end
+            if icon and ((icon >= 66 and icon <= 69) or icon == 71 or icon == 72) then return "services" end
             return nil
         end
 
@@ -24,6 +24,8 @@
             if icon == 68 then return "Innkeeper" end
             if icon == 69 then return "Flight master" end
             if icon == 70 then return "Dungeon entrance" end
+            if icon == 71 then return "Cart stop" end
+            if icon == 72 then return "Cart stop, not running" end
             return "Landmark"
         end
 

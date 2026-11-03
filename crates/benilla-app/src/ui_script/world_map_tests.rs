@@ -992,6 +992,142 @@ fn hovering_a_twilight_mark_shows_the_world_map_tooltip() {
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 
+/// A cart stop (icon 71) draws the flight master icon; a locked one (72) draws it grey at half
+/// alpha, and a slot reused by another mark gets full colour back (spec #560).
+#[test]
+fn a_locked_cart_stop_draws_the_flight_master_icon_grey_at_half_alpha() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = UiScript::new().unwrap();
+    s.set_screen_size(1024.0, 768.0);
+    let failures = super::load_default_ui(&s);
+    assert!(failures.is_empty(), "manifest load errors: {failures:#?}");
+    s.resolve();
+    s.run("ShowUIPanel(WorldMapFrame)").unwrap();
+    s.set_world_map_landmarks(vec![
+        landmark("Goldshire", 71, (0.25, 0.5)),
+        landmark("Eastvale", 72, (0.75, 0.5)),
+    ]);
+    s.run("WorldMapFrame_Update()").unwrap();
+    s.resolve();
+
+    for i in [1, 2] {
+        let file: String = s
+            .eval(&format!("return WorldMapFramePOI{i}Texture:GetTexture()"))
+            .unwrap();
+        assert!(file.contains("TaxiGossipIcon"), "POI {i} got {file}");
+    }
+    let alpha = |s: &UiScript, i: u32| -> f64 {
+        s.eval(&format!("return WorldMapFramePOI{i}Texture:GetAlpha()"))
+            .unwrap()
+    };
+    assert_eq!(alpha(&s, 1), 1.0, "an open stop draws at full alpha");
+    assert!(
+        (alpha(&s, 2) - 0.5).abs() < 1e-6,
+        "a locked stop draws at half alpha"
+    );
+    let greys: Vec<bool> = s
+        .extract()
+        .into_iter()
+        .filter_map(|q| match q.content {
+            QuadContent::Texture {
+                path: Some(p),
+                desaturated,
+                ..
+            } if p.contains("TaxiGossipIcon") => Some(desaturated),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(greys.len(), 2, "both stops draw");
+    assert_eq!(
+        greys.iter().filter(|g| **g).count(),
+        1,
+        "only the locked stop is grey"
+    );
+
+    // The locked stop's slot reused by a quest mark is full colour again.
+    s.set_world_map_landmarks(vec![
+        landmark("Goldshire", 71, (0.25, 0.5)),
+        landmark("Marshal Dughan", 64, (0.75, 0.5)),
+    ]);
+    s.run("WorldMapFrame_Update()").unwrap();
+    s.resolve();
+    assert_eq!(alpha(&s, 2), 1.0);
+    let grey = s.extract().into_iter().any(|q| {
+        matches!(q.content, QuadContent::Texture { desaturated: true, path: Some(ref p), .. }
+            if p.contains("GossipIcon"))
+    });
+    assert!(!grey, "no mark is grey once the locked stop is gone");
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// A wagon blip per `GetMapCarts()` entry, placed as a party blip is, at 70% of a mark's icon,
+/// named by its route on hover, and hidden once the wagon is gone (spec #560).
+#[test]
+fn a_wagon_blip_sits_at_its_map_position_with_its_routes_name() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = harness();
+    s.set_world_map_carts(vec![benilla_ui::script::WorldMapCartView {
+        name: "Goldshire Cart".into(),
+        uv: (0.25, 0.75),
+    }]);
+    update(&mut s);
+    assert!(s.eval::<bool>("return BenillaMapCart1:IsShown()").unwrap());
+
+    let (w, h) = s
+        .eval::<(f64, f64)>(
+            "return WorldMapDetailFrame:GetWidth(), WorldMapDetailFrame:GetHeight()",
+        )
+        .unwrap();
+    let (left, top) = s
+        .eval::<(f64, f64)>("return WorldMapDetailFrame:GetLeft(), WorldMapDetailFrame:GetTop()")
+        .unwrap();
+    let (x, y) = s
+        .eval::<(f64, f64)>("return BenillaMapCart1:GetCenter()")
+        .unwrap();
+    assert!(
+        (x - (left + 0.25 * w)).abs() < 0.5,
+        "u scales by the sheet's width"
+    );
+    assert!((y - (top - 0.75 * h)).abs() < 0.5, "v runs down the sheet");
+
+    // A mark's icon beside it, for the size.
+    s.set_world_map_landmarks(vec![landmark("Goldshire", 71, (0.5, 0.5))]);
+    s.run("WorldMapFrame_Update()").unwrap();
+    let (blip, mark) = s
+        .eval::<(f64, f64)>(
+            "return BenillaMapCart1Texture:GetWidth(), WorldMapFramePOI1Texture:GetWidth()",
+        )
+        .unwrap();
+    assert!(
+        (blip - 0.7 * mark).abs() < 1e-3,
+        "blip {blip} against mark {mark}"
+    );
+    let file: String = s
+        .eval("return BenillaMapCart1Texture:GetTexture()")
+        .unwrap();
+    assert!(file.contains("TaxiGossipIcon"), "got {file}");
+
+    s.run("this = BenillaMapCart1 this:GetScript(\"OnEnter\")() this = nil")
+        .unwrap();
+    assert!(s.eval::<bool>("return WorldMapTooltip:IsShown()").unwrap());
+    assert_eq!(
+        s.eval::<String>("return WorldMapTooltipTextLeft1:GetText()")
+            .unwrap(),
+        "Goldshire Cart"
+    );
+    s.run("this = BenillaMapCart1 this:GetScript(\"OnLeave\")() this = nil")
+        .unwrap();
+    assert!(!s.eval::<bool>("return WorldMapTooltip:IsShown()").unwrap());
+
+    s.set_world_map_carts(Vec::new());
+    update(&mut s);
+    assert!(
+        !s.eval::<bool>("return BenillaMapCart1:IsShown()").unwrap(),
+        "no wagon, no blip"
+    );
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
 /// The canvas rect of #410 over Duskwood, Redridge Mountains, Elwynn Forest and Stormwind City.
 const CANVAS: (f32, f32, f32, f32) = (1579.69, -3785.94, -7939.58, -11516.67);
 

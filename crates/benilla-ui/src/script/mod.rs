@@ -290,8 +290,8 @@ pub use unit::{
 pub use weapon_enchant::WeaponEnchant;
 pub use who_sort::{WhoSortChain, WhoSortKey};
 pub use worldmap::{
-    WorldMapCanvasView, WorldMapContinentView, WorldMapLandmarkView, WorldMapOverlayView,
-    WorldMapState, WorldMapZoneView,
+    WorldMapCanvasView, WorldMapCartView, WorldMapContinentView, WorldMapLandmarkView,
+    WorldMapOverlayView, WorldMapState, WorldMapZoneView,
 };
 pub use worldstate::WorldStateUiView;
 pub use worn_display::WornDisplay;

@@ -450,6 +450,8 @@ fn pump(
         }
         // A cart route, just before its wagon's create, which the transport arm reads (spec #560).
         if let SessionEvent::CartRoute {
+            name,
+            map,
             wagon_guid,
             points,
             speed_yd_s,
@@ -461,7 +463,7 @@ fn pump(
         {
             if let Some(routes) = reel.9.as_deref_mut() {
                 let route = crate::transport::RoadRoute::new(
-                    points, speed_yd_s, dwell_ms, period_ms, stops,
+                    name, map, points, speed_yd_s, dwell_ms, period_ms, stops,
                 );
                 routes.0.insert(wagon_guid, std::sync::Arc::new(route));
             }

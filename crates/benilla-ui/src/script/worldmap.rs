@@ -43,6 +43,16 @@ pub struct WorldMapLandmarkView {
     pub uv: (f32, f32),
 }
 
+/// Twilight's Eve, not 1.12: a cart's wagon on the displayed map (spec #560), a blip fed every
+/// frame like the party's.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct WorldMapCartView {
+    /// The route's name, the blip's tooltip.
+    pub name: String,
+    /// Position on the displayed map, UV from its top-left.
+    pub uv: (f32, f32),
+}
+
 /// A sub-area's map art, drawn over the base tiles once any of its explore bits is set.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct WorldMapOverlayView {
@@ -240,6 +250,8 @@ pub struct WorldMapState {
     /// `PLAYER_EXPLORED_ZONES_1`, 64 words, bit n being `AreaTable.dbc` exploreFlag n.
     pub explored: Vec<u32>,
     pub landmarks: Vec<WorldMapLandmarkView>,
+    /// The wagons on the displayed map, `GetMapCarts()`.
+    pub carts: Vec<WorldMapCartView>,
 }
 
 fn explored_bit(explored: &[u32], n: u32) -> bool {
@@ -549,6 +561,11 @@ impl super::UiScript {
         model.worldmap.corpse_uv = corpse_uv;
         model.worldmap.party_uv = party_uv;
         model.worldmap.raid_uv = raid_uv;
+    }
+
+    /// Pushes the wagons on the displayed map, every frame like [`Self::set_world_map_feed`].
+    pub fn set_world_map_carts(&mut self, carts: Vec<WorldMapCartView>) {
+        self.model_mut().worldmap.carts = carts;
     }
 
     /// The selection's three cells, which the app reads each frame to project the feed: continent,
@@ -958,6 +975,24 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
                 out.push(t)?;
             }
             Ok(Value::Table(out))
+        })?,
+    )?;
+
+    // GetMapCarts() → an array of {name, x, y}, one per wagon on the displayed map at its map UV
+    // (spec #560). Twilight only: the stock client has no such verb.
+    g.set(
+        "GetMapCarts",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let out = lua.create_table()?;
+            for cart in &model.worldmap.carts {
+                let t = lua.create_table()?;
+                t.set("name", cart.name.as_str())?;
+                t.set("x", f64::from(cart.uv.0))?;
+                t.set("y", f64::from(cart.uv.1))?;
+                out.push(t)?;
+            }
+            Ok(out)
         })?,
     )?;
 

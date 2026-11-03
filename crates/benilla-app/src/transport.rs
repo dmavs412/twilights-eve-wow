@@ -121,6 +121,10 @@ enum Drive {
 /// at the first stop, rolls `points` at `speed_yd_s`, stands at the last stop and rolls back,
 /// every `period_ms`.
 pub(crate) struct RoadRoute {
+    /// The route's name, the world map's tooltip for its wagon.
+    pub(crate) name: String,
+    /// The map the route runs on.
+    pub(crate) map: u32,
     pub(crate) points: Vec<[f32; 3]>,
     pub(crate) speed_yd_s: f32,
     pub(crate) dwell_ms: u32,
@@ -132,6 +136,8 @@ pub(crate) struct RoadRoute {
 
 impl RoadRoute {
     pub(crate) fn new(
+        name: String,
+        map: u32,
         points: Vec<[f32; 3]>,
         speed_yd_s: f32,
         dwell_ms: u32,
@@ -140,6 +146,8 @@ impl RoadRoute {
     ) -> Self {
         let along = twilight_realm::carts::along(&points);
         Self {
+            name,
+            map,
             points,
             speed_yd_s,
             dwell_ms,
@@ -169,6 +177,13 @@ impl RoadRoute {
             moving: pose.state == twilight_realm::carts::CartState::Rolling,
         }
     }
+
+    /// The wagon's position at `wall_ms`, milliseconds since the Unix epoch, which the realm's
+    /// timetable starts from: where the world map draws a wagon it does not stream.
+    pub(crate) fn position_at(&self, wall_ms: u64) -> [f32; 3] {
+        let cycle_ms = wall_ms % u64::from(self.period_ms.max(1));
+        self.sample(cycle_ms as u32, self.map).pos
+    }
 }
 
 /// Every cart route the realm has sent, keyed by its wagon's guid: [`arm_transports`] arms a
@@ -188,6 +203,8 @@ impl CartRoutes {
 pub(crate) fn test_road_transport() -> Transport {
     Transport {
         drive: Drive::Road(Arc::new(RoadRoute::new(
+            String::new(),
+            0,
             vec![[0.0; 3], [10.0, 0.0, 0.0]],
             10.0,
             1000,
@@ -943,6 +960,8 @@ mod tests {
         let stops = vec![stop(0), stop(points.len() - 1)];
         Transport {
             drive: Drive::Road(Arc::new(RoadRoute::new(
+                String::new(),
+                0,
                 points.clone(),
                 10.0,
                 dwell_ms,
@@ -1018,6 +1037,8 @@ mod tests {
         routes.0.insert(
             WAGON,
             Arc::new(RoadRoute::new(
+                String::new(),
+                0,
                 vec![[0.0; 3], [10.0, 0.0, 0.0]],
                 10.0,
                 1000,

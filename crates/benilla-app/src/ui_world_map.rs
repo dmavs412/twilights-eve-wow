@@ -16,8 +16,8 @@ use benilla_formats::{
     load_zone_map, WorldMapArea,
 };
 use benilla_ui::script::{
-    UiScript, WorldMapCanvasView, WorldMapContinentView, WorldMapLandmarkView, WorldMapOverlayView,
-    WorldMapZoneView,
+    UiScript, WorldMapCanvasView, WorldMapCartView, WorldMapContinentView, WorldMapLandmarkView,
+    WorldMapOverlayView, WorldMapZoneView,
 };
 
 use crate::net::{ObjectStore, SelfPlayer};
@@ -890,6 +890,78 @@ fn feed_world_map(
     script.set_world_map_player_direct_area(player_sel.direct);
 }
 
+/// Where the client sees a cart's wagon (spec #560).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum WagonSeen {
+    /// Not streamed, out of range: the map draws it at its timetable's pose.
+    Away,
+    /// Streamed and armed as a road transport, at this WoW x and y.
+    At([f32; 2]),
+    /// Streamed but not armed: a locked server's wagon, parked with no anchor.
+    Parked,
+}
+
+/// The wagons' blips (spec #560), one per route the realm sent: a streamed wagon at its own
+/// position, as the `party1..4` blips are placed, and an unstreamed one at its timetable's pose
+/// for `wall_ms`, each through `project`. A parked wagon draws none; with no routes there are none.
+pub(crate) fn cart_blips(
+    routes: &crate::transport::CartRoutes,
+    seen: impl Fn(u64) -> WagonSeen,
+    wall_ms: u64,
+    project: impl Fn(u32, f32, f32) -> Option<(f32, f32)>,
+) -> Vec<WorldMapCartView> {
+    let mut blips: Vec<(u64, WorldMapCartView)> = routes
+        .0
+        .iter()
+        .filter_map(|(&guid, route)| {
+            let [x, y] = match seen(guid) {
+                WagonSeen::Parked => return None,
+                WagonSeen::At(xy) => xy,
+                WagonSeen::Away => {
+                    let p = route.position_at(wall_ms);
+                    [p[0], p[1]]
+                }
+            };
+            let uv = project(route.map, x, y).filter(|uv| *uv != (0.0, 0.0))?;
+            let name = route.name.clone();
+            Some((guid, WorldMapCartView { name, uv }))
+        })
+        .collect();
+    // In guid order, so each blip frame keeps its wagon from one frame to the next.
+    blips.sort_by_key(|(guid, _)| *guid);
+    blips.into_iter().map(|(_, blip)| blip).collect()
+}
+
+/// The wagons' blips every frame (spec #560), beside [`feed_world_map`]'s party blips.
+fn feed_world_map_carts(
+    script: Option<NonSendMut<UiScript>>,
+    data: Option<Res<WorldMapUiData>>,
+    routes: Option<Res<crate::transport::CartRoutes>>,
+    guids: Res<crate::net::GuidIndex>,
+    wagons: Query<(&GlobalTransform, Has<crate::transport::Transport>)>,
+) {
+    let (Some(mut script), Some(data), Some(routes)) = (script, data, routes) else {
+        return;
+    };
+    let seen = |guid: u64| match guids.0.get(&guid).and_then(|e| wagons.get(*e).ok()) {
+        None => WagonSeen::Away,
+        Some((_, false)) => WagonSeen::Parked,
+        Some((tf, true)) => {
+            let w = bevy_to_wow(tf.translation());
+            WagonSeen::At([w[0], w[1]])
+        }
+    };
+    // The realm's timetable runs from the Unix epoch.
+    let wall_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis() as u64);
+    let selection = script.world_map_selection();
+    let blips = cart_blips(&routes, seen, wall_ms, |map, x, y| {
+        project_on_displayed(&data, selection, map, x, y)
+    });
+    script.set_world_map_carts(blips);
+}
+
 /// Alt+click the world map to go there, a dev jump: the click's UV back through the displayed
 /// rect to a world `(x, y)`, sent as vmangos's `.go xy x y <mapid>` so the server finds the ground.
 /// It declines on the world sheet, where the client's click law `0x4a7100` does not invert its
@@ -975,6 +1047,7 @@ impl Plugin for WorldMapUiPlugin {
             (
                 // After the script tick: a selection changed this tick projects on the next.
                 feed_world_map.after(UiInput),
+                feed_world_map_carts.after(UiInput),
                 // After the script tick, so the jump hit-tests this tick's frame rects.
                 dev_map_jump.after(UiInput),
             ),
@@ -1718,5 +1791,84 @@ mod direct_area_tests {
         assert_eq!(both[1].texture_index, 70, "a dungeon is icon 70");
         let degenerate = |_: u32, _: f32, _: f32| Some((0.0, 0.0));
         assert!(mark_landmarks(&marks, MapLevel::Zone, degenerate).is_empty());
+    }
+
+    /// A cart stop lands as icon 71 with its name and "Cart to" line; a locked one as icon 72,
+    /// which WorldMapMarks.xml greys, with the realm's locked line under the name (spec #560).
+    #[test]
+    fn a_cart_stop_mark_lands_with_its_name_and_subtitle() {
+        let mut open = mark(0, MapIcon::CartStop, Vec::new());
+        open.name = "Goldshire".into();
+        open.subtitle = "Cart to Stormwind Gate".into();
+        let mut locked = mark(0, MapIcon::CartStopLocked, Vec::new());
+        locked.name = "Goldshire".into();
+        locked.subtitle = "The carts are not running on this server.".into();
+        let all = |_: u32, _: f32, _: f32| Some((0.25, 0.5));
+        let landmarks = mark_landmarks(&[open, locked], MapLevel::Zone, all);
+        assert_eq!(landmarks.len(), 2);
+        assert_eq!(landmarks[0].name, "Goldshire");
+        assert_eq!(landmarks[0].texture_index, 71, "a cart stop is icon 71");
+        assert_eq!(
+            landmarks[0].description,
+            "|cffa0a0a0Cart to Stormwind Gate|r"
+        );
+        assert_eq!(landmarks[1].texture_index, 72, "a locked stop is icon 72");
+        assert_eq!(
+            landmarks[1].description,
+            "|cffa0a0a0The carts are not running on this server.|r"
+        );
+    }
+
+    /// One route 100 yd along x: 1 s at the first stop, then 10 s to the far end, every 22 s.
+    fn routes() -> crate::transport::CartRoutes {
+        let route = crate::transport::RoadRoute::new(
+            "Goldshire Cart".into(),
+            0,
+            vec![[0.0, 0.0, 0.0], [100.0, 0.0, 0.0]],
+            10.0,
+            1000,
+            22_000,
+            Vec::new(),
+        );
+        let mut routes = crate::transport::CartRoutes::default();
+        routes
+            .0
+            .insert(0xF120_0000_0000_0001, std::sync::Arc::new(route));
+        routes
+    }
+
+    /// An unstreamed wagon's blip sits at the projected UV of its timetable's pose now, a
+    /// streamed one at its own position, a parked one nowhere, and with no routes there is none.
+    #[test]
+    fn a_wagon_blip_sits_at_the_projected_uv_of_its_sampled_position() {
+        let project =
+            |map: u32, x: f32, y: f32| (map == 0).then_some((x / 1000.0, 0.5 + y / 1000.0));
+        // 6 s into a later period: 5 s of the 10 s leg rolled, so halfway, at x 50.
+        let wall_ms = 22_000 * 1_000 + 6_000;
+        let away = cart_blips(&routes(), |_| WagonSeen::Away, wall_ms, project);
+        assert_eq!(away.len(), 1);
+        assert_eq!(
+            away[0].name, "Goldshire Cart",
+            "the route's name is the tooltip"
+        );
+        let (u, v) = away[0].uv;
+        assert!(
+            (u - 0.05).abs() < 1e-6 && (v - 0.5).abs() < 1e-6,
+            "got {:?}",
+            away[0].uv
+        );
+
+        let streamed = cart_blips(&routes(), |_| WagonSeen::At([200.0, 0.0]), wall_ms, project);
+        assert_eq!(
+            streamed[0].uv,
+            (0.2, 0.5),
+            "a streamed wagon is where it is drawn"
+        );
+
+        assert!(cart_blips(&routes(), |_| WagonSeen::Parked, wall_ms, project).is_empty());
+        let off_map = |_: u32, _: f32, _: f32| None;
+        assert!(cart_blips(&routes(), |_| WagonSeen::Away, wall_ms, off_map).is_empty());
+        let none = crate::transport::CartRoutes::default();
+        assert!(cart_blips(&none, |_| WagonSeen::Away, wall_ms, project).is_empty());
     }
 }
