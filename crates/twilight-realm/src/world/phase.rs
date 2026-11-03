@@ -2,6 +2,7 @@
 //! mobs for a fresh set of the dungeon's and starts its Run; stepping out, or dying, ends the
 //! Run and swaps them back.
 
+use benilla_protocol::messages::{ChatMessage, CHAT_MSG_MONSTER_SAY};
 use benilla_protocol::{PhaseMeterState, SessionEvent};
 
 use super::InWorld;
@@ -103,9 +104,7 @@ impl InWorld {
         if let Phase::Dungeon(id) = now {
             let door = phased::dungeon(id).and_then(|d| d.portal.door.as_ref());
             if let Some(door) = door.filter(|_| !self.doors_open.contains(&id)) {
-                events.push(SessionEvent::Notification {
-                    text: door.sealed_text.clone(),
-                });
+                events.push(self.refusal(door));
                 self.teleport(c, door.outside, c.orientation, events);
                 return;
             }
@@ -647,9 +646,7 @@ impl InWorld {
         }
         let opened = c.doors_opened.contains(&door.entry);
         if !opened && c.inventory.count(door.opens_with) == 0 {
-            events.push(SessionEvent::Notification {
-                text: door.sealed_text.clone(),
-            });
+            events.push(self.refusal(door));
             return DoorClick::Ignored;
         }
         if !opened {
@@ -662,6 +659,32 @@ impl InWorld {
             secs: door.open_secs,
             first: !opened,
         }
+    }
+
+    /// What tells the player `door` stays shut: its speaker says the sealed text when the
+    /// player sees them, else a notification shows it.
+    fn refusal(&self, door: &phased::Door) -> SessionEvent {
+        let speaker = door.speaker.and_then(|low| {
+            self.mobs.iter().find(|m| {
+                m.spawn_row()
+                    .is_some_and(|s| s.guid == low && s.phase == Phase::OpenWorld)
+            })
+        });
+        let Some(speaker) = speaker else {
+            return SessionEvent::Notification {
+                text: door.sealed_text.clone(),
+            };
+        };
+        SessionEvent::Chat(ChatMessage {
+            chat_type: CHAT_MSG_MONSTER_SAY,
+            language: 0,
+            sender_guid: speaker.guid,
+            target_guid: 0,
+            sender_name: Some(speaker.template.name.clone()),
+            channel: None,
+            text: door.sealed_text.clone(),
+            chat_tag: 0,
+        })
     }
 
     /// Streams `d`'s GameObjects in and out with the view, those for the Phase only while the

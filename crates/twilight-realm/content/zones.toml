@@ -51,7 +51,9 @@ removed_guids = [
   # Cathedral of Light (cathedral_of_light.toml): every creature inside its footprint.
   1079, 5000, 7566, 7629, 15216, 33919, 37556, 37571, 37585, 37586, 39536, 39538, 44022, 52472,
   300992,
-  # Stormwind Keep (stormwind_keep.toml): every creature inside its footprint.
+  # Stormwind Keep (stormwind_keep.toml): every creature inside its footprint. Lady Katrana
+  # Prestor (10497) and Anduin Wrynn (10494) come back inside the Run as the Keep's own
+  # creatures (#559).
   8704, 10494, 10495, 10497, 10498, 10499, 10500, 10502, 10507, 10508, 10509, 10510, 10511,
   10512, 10513, 10514, 10515, 10516, 10517, 10518, 10519, 10520, 10521, 10522, 10523, 10524,
   10525, 10526, 10527, 10528, 14740, 16182, 16365, 30018, 33821, 42893, 43667, 45707, 51984,

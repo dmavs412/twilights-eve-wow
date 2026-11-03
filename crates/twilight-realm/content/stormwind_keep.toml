@@ -9,7 +9,8 @@
 #
 # A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the throne room
 # so a character can see the Phase, and the open-world creatures that stood inside the boxes are
-# deleted. Guids: creatures 971001 up, one a dungeon.
+# deleted. Guids: creatures 971001 up, one a dungeon. Lady Katrana Prestor and Anduin Wrynn
+# came back inside it with the gate (#559), on guids 971009 and 971010.
 
 id = 13
 name = "Stormwind Keep"
@@ -173,6 +174,22 @@ z = [19.0, 42.0]
 position = [-8535.1, 451.0, 104.92]
 orientation = 5.38
 
+# The Keep's gate (#559, the lore bible's "Stormwind City (hub): the court"): sealed until a
+# character carrying a Writ of Audience opens it once, which is the court's attunement. The
+# Royal Guard at the gate (79747, stormwind.toml) speaks the refusal. `outside` is five yards
+# from the portal away from the throne room, on the floor wmo_floor.py finds there. The model
+# is vanilla's Doodad_LargePortcullis04 (GameObjectDisplayInfo 3631), for the wide archway.
+[portal.door]
+entry = 98003
+display = 3631
+position = [-8535.1, 451.0, 104.92]
+orientation = 5.38
+outside = [-8539.0, 456.0, 104.25]
+open_secs = 15.0
+opens_with = 980122
+sealed_text = "Halt. The Keep is closed by order of the House. No one passes without a writ of audience."
+speaker = 79747
+
 # The Phase Tester: friendly, no quests.
 [[creature]]
 guid = 971006
@@ -180,3 +197,19 @@ entry = 97100
 level = 60
 position = [-8448.8, 342.0, 120.89]
 orientation = 5.38
+
+# Lady Katrana Prestor, by the throne as in vanilla. Friendly, no quests.
+[[creature]]
+guid = 971009
+entry = 1749
+level = 62
+position = [-8438.0, 331.0, 122.58]
+orientation = 2.27
+
+# Anduin Wrynn, at her side as in vanilla. Friendly, no quests.
+[[creature]]
+guid = 971010
+entry = 1747
+level = 5
+position = [-8439.7, 331.0, 122.58]
+orientation = 2.23

@@ -31,4 +31,7 @@ item = [
   # The Keystone's reward (#236), kept for good: the item that opens the sealed door in Jasperlode
   # Mine. The display is the Twilight Relic's, a placeholder.
   { entry = 980013, name = "Jasperlode Keystone", quality = 1, item_level = 15, class = 15, display_id = 7697, max_count = 1, description = "Opens the sealed door in Jasperlode Mine." },
+  # The writ that opens Stormwind Keep's gate (#559), kept for good: the door never takes it.
+  # No quest gives it yet. Its icon is INV_Scroll_03, a sealed scroll no other item shows.
+  { entry = 980122, name = "Writ of Audience", quality = 1, item_level = 60, class = 12, display_id = 811, max_count = 1, description = "Admits the bearer to Stormwind Keep." },
 ]

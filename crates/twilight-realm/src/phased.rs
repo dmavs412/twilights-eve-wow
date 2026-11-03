@@ -251,6 +251,10 @@ pub(crate) struct Door {
     /// The item a character needs in their bags for their first opening.
     pub(crate) opens_with: u32,
     pub(crate) sealed_text: String,
+    /// The open-world creature, by low guid, who says `sealed_text` to a refused character in
+    /// place of the notification while that character sees them.
+    #[serde(default)]
+    pub(crate) speaker: Option<u32>,
 }
 
 impl Door {
@@ -824,6 +828,22 @@ impl Dungeon {
         Some(&h.hint)
     }
 
+    /// Fails loading when its door names a `speaker` that is no open-world creature of `spawns`
+    /// on its map.
+    pub(crate) fn check_speaker(&self, spawns: &[crate::mobs::Spawn]) {
+        let Some(speaker) = self.portal.door.as_ref().and_then(|door| door.speaker) else {
+            return;
+        };
+        let spawned = spawns
+            .iter()
+            .any(|s| s.guid == speaker && s.map == self.map && s.phase == Phase::OpenWorld);
+        assert!(
+            spawned,
+            "{}: door speaker {speaker} is no open-world creature",
+            self.name
+        );
+    }
+
     /// The index of the stop whose box holds `position` on `map`.
     pub(crate) fn stop_at(&self, map: u32, position: [f32; 3]) -> Option<usize> {
         if map != self.map {
@@ -1334,6 +1354,19 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "door speaker 971006 is no open-world creature")]
+    fn a_door_speaker_that_is_no_open_world_creature_is_refused() {
+        // The Keep's Phase Tester stands in a Phase, not the open world.
+        let text = include_str!("../content/sealed_yard.toml").replacen(
+            "sealed_text =",
+            "speaker = 971006\nsealed_text =",
+            1,
+        );
+        let d: Dungeon = toml::from_str(&text).expect("the Sealed Yard parses");
+        d.check_speaker(&crate::mobs::content().spawn);
+    }
+
+    #[test]
     fn the_eye_below_never_moves_or_swings_and_calls_two_tentacles_at_66_and_33() {
         let template = |entry| crate::mobs::template(entry).expect("a template");
         let d = content().iter().find(|d| d.id == 6).expect("Jasperlode");
@@ -1630,18 +1663,24 @@ mod lore_bible_dungeons {
         assert!(found.is_empty(), "{}", found.join("\n"));
     }
 
+    /// Stormwind Keep, whose Prestor and Anduin stand beside its Phase Tester (#559).
+    const STORMWIND_KEEP: u32 = 13;
+
     #[test]
-    fn each_holds_its_one_friendly_creature_and_its_portal_stands_at_the_door() {
+    fn each_holds_only_friendly_creatures_and_its_portal_stands_at_the_door() {
         for id in IDS {
             let d = dungeon(id).expect("a dungeon");
-            assert_eq!(d.creature.len(), 1, "{}", d.name);
-            let c = &d.creature[0];
-            assert!(crate::mobs::template(c.entry).is_some_and(|t| t.friendly));
-            assert!(
-                d.holds(d.map, c.position),
-                "{}: its creature stands outside",
-                d.name
-            );
+            let want = if id == STORMWIND_KEEP { 3 } else { 1 };
+            assert_eq!(d.creature.len(), want, "{}", d.name);
+            for c in &d.creature {
+                assert!(crate::mobs::template(c.entry).is_some_and(|t| t.friendly));
+                assert!(
+                    d.holds(d.map, c.position),
+                    "{}: creature {} stands outside",
+                    d.name,
+                    c.guid
+                );
+            }
             assert!(d.levels.is_some(), "{}: a map mark", d.name);
             let near = d
                 .footprint_points(1.0)

@@ -1032,6 +1032,9 @@ pub(crate) fn content() -> &'static Mobs {
                 }
             }
         }
+        for d in phased::content() {
+            d.check_speaker(&spawn);
+        }
         Mobs {
             difficulty,
             zones: zone_factors,
