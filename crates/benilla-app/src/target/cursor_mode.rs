@@ -257,6 +257,9 @@ pub(crate) struct GoOverrides {
     pub(crate) channel_owned: bool,
     /// MEETINGSTONE: this stone's area is the one we are queued at.
     pub(crate) meeting_stone_queued: bool,
+    /// TRANSPORT: this is a cart's wagon (spec #560), which a right-click sits in or stands up
+    /// from; Twilight's Eve's own, as no 1.12 transport is used.
+    pub(crate) road_wagon: bool,
 }
 
 /// `GAMEOBJECT_TYPE_MEETINGSTONE` (23): its `+0x14` (`0x5f6990`) is only
@@ -274,6 +277,9 @@ fn highlightable_flags(
     reaction: Option<u8>,
     overrides: GoOverrides,
 ) -> bool {
+    if type_id == GO_TYPE_TRANSPORT && overrides.road_wagon {
+        return true;
+    }
     if strategy_never_highlightable(type_id) {
         return false;
     }
@@ -340,6 +346,7 @@ pub(crate) fn mouseover_eligible(
     overrides: GoOverrides,
 ) -> bool {
     match type_id {
+        GO_TYPE_TRANSPORT if overrides.road_wagon => true,
         GO_TYPE_TRANSPORT | GO_TYPE_MAP_OBJECT | GO_TYPE_MO_TRANSPORT => false,
         GO_TYPE_SPELL_FOCUS
         | GO_TYPE_DUEL_ARBITER
@@ -612,6 +619,9 @@ pub(super) fn classify(
                 tmpl.and_then(|t| t.meeting_stone).map(|m| m.area),
                 stone.as_deref().map_or(0, |s| s.area),
             ),
+            road_wagon: hovered_object
+                .guid
+                .is_some_and(|g| go_inputs.is_road_wagon(g)),
         };
         if !go_highlightable(store, reaction, overrides) {
             return None;

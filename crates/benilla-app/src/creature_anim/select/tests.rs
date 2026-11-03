@@ -91,6 +91,41 @@ fn the_walk_bit_reaches_the_clip_through_the_speed_and_nothing_else() {
     );
 }
 
+/// A cart's horse (spec #560): forward in its wagon's frame with no world motion of its own, at
+/// the speed `net::objects` seeds its remote leg with from the create. Its gait is a run: Sprint
+/// at the cart's 24 yd/s, falling back to Run on a model without one.
+#[test]
+fn an_observed_rider_with_forward_flags_on_a_transport_selects_the_run() {
+    use crate::creature_anim::move_flags as f;
+    let horse = benilla_protocol::MoveSpeeds {
+        walk: 2.5,
+        run: 24.0,
+        run_back: 4.5,
+        swim: 4.722,
+        swim_back: 2.5,
+        turn_rate: std::f32::consts::PI,
+    };
+    let flags = f::FORWARD | f::ON_TRANSPORT;
+    let rm = crate::net::RemoteMotion {
+        wow_pos: [0.0; 3],
+        orientation: 0.0,
+        flags,
+        pitch: 0.0,
+        speed: crate::net::current_speed(&horse, flags),
+        vertical_velocity: 0.0,
+        jump_xy_vel: [0.0; 2],
+        fall_start_z: None,
+        pending: Default::default(),
+        relay: Default::default(),
+        last_apply_ms: 0.0,
+        last_apply_pos: [0.0; 3],
+    };
+    let mv = unify(None, Some(&rm), None, false, None);
+    let gait = gait_candidates(&mv, horse.walk, None, None);
+    assert!(gait.contains(&5), "a run, not a stand: {gait:?}");
+    assert!(gait_is_locomotion(&mv, horse.walk));
+}
+
 #[test]
 fn boundary_scales_with_the_units_own_walk_speed() {
     assert_eq!(gait_candidates(&moving_forward(7.0), 4.0, None, None)[0], 4);

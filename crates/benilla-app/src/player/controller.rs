@@ -310,8 +310,10 @@ pub(super) fn control(
         //   validates the victim, so this gate is the immobility.
         // - `reseat`: the mover guid is changing and the claimed unit has not streamed in; moves
         //   carry no guid, so driving would write one body's pose onto another.
+        // - `seat`: we sit in a cart's wagon; `seat::drive_seat` has posed us at the seat and sends
+        //   the one report that stands us up.
         // Possession is none of these: it runs the ordinary path below, on the creature.
-        if player.server_riding || player.control_lost || player.reseat {
+        if player.server_riding || player.control_lost || player.reseat || player.seat.is_some() {
             // The moving body's transform is the truth; without this the camera stays behind
             // during a fear. Not while reseating, when `Player` still holds the body let go.
             if player.control_lost && !player.reseat {

@@ -57,6 +57,8 @@ pub(crate) mod mover;
 mod scoped_view;
 // Riding a transport: the deck carry and attach.
 mod ride;
+// A cart seat (spec #560): the wagon's frame owns the pose until the realm stands us up.
+mod seat;
 mod server_ride;
 mod setup;
 mod state;
@@ -78,6 +80,8 @@ use camera_zoom::{apply_zoom_scroll, CAM_DIST_DEFAULT};
 // `/follow`: chat sends the request, `crate::target` resolves the subject into the state, and
 // `follow` owns the motion.
 pub(crate) use follow::{FollowRequest, FollowState};
+// The Twilight session pump queues `Seated` and `Unseated` here.
+pub(crate) use seat::SeatInbox;
 // Click to Move: `crate::target`'s dispatchers start it and run the verb it owes on arrival.
 pub(crate) use approach::{
     can_auto_interact, Approach, ApproachVerb, AutoMove, Refused, Subject, RANGE_STOP_FRACTION,
@@ -288,6 +292,17 @@ impl Plugin for PlayerPlugin {
             Update,
             server_ride::drive_self_ride
                 .in_set(WorldStage::Input)
+                .before(control)
+                .run_if(not(resource_exists::<crate::run_mode::CaptureMode>))
+                .in_set(crate::char_select::InWorldGated),
+        )
+        // A cart seat poses us before `control` reads `pos`, as a server ride does.
+        .init_resource::<SeatInbox>()
+        .add_systems(
+            Update,
+            seat::drive_seat
+                .in_set(WorldStage::Input)
+                .after(server_ride::drive_self_ride)
                 .before(control)
                 .run_if(not(resource_exists::<crate::run_mode::CaptureMode>))
                 .in_set(crate::char_select::InWorldGated),

@@ -351,6 +351,8 @@ pub(super) fn inspect_ui(
                     go_guid.and_then(|g| Some(go_templates.get(g)?.meeting_stone?.area)),
                     queued_area,
                 ),
+                // The inspector reads no cart routes: a wagon shows as the plain type 11 it is.
+                road_wagon: false,
             };
             let interact = if crate::target::cursor_mode::go_highlightable(s, reaction, overrides) {
                 "interact ✓"

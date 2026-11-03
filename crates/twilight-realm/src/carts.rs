@@ -28,6 +28,10 @@ const FRIENDLY: u32 = 35;
 const HEALTH: u32 = 1500;
 /// How far to the wagon's right a rider stands up, in yards.
 const STEP_DOWN_YD: f32 = 2.0;
+/// `UNIT_FIELD_BYTES_1`: its low byte is the stand state.
+const UNIT_FIELD_BYTES_1: u16 = 138;
+/// `UNIT_STAND_STATE_SIT`: the driver sits on the front bench.
+const SITTING: u32 = 1;
 
 /// The `[cart]` table: what every route's wagon shares.
 #[derive(Deserialize)]
@@ -132,10 +136,7 @@ fn file() -> &'static (Cart, Vec<Route>) {
 
 fn route(cart: &Cart, index: usize, r: RouteRow) -> Route {
     assert!(r.path.len() >= 2, "route {} has no path", r.key);
-    let mut along = vec![0.0];
-    for w in r.path.windows(2) {
-        along.push(along[along.len() - 1] + dist(w[0], w[1]));
-    }
+    let along = along(&r.path);
     let length_yd = along[along.len() - 1];
     let leg_ms = (f64::from(length_yd) / f64::from(cart.speed_yd_s) * 1000.0).round() as u64;
     let dwell_ms = (f64::from(cart.dwell_s) * 1000.0).round() as u64;
@@ -185,25 +186,34 @@ fn dist(a: [f32; 3], b: [f32; 3]) -> f32 {
     ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt()
 }
 
-impl Route {
-    /// The point `d` yards along the path and the heading of the segment it is on.
-    fn at(&self, d: f32) -> ([f32; 3], f32) {
-        let i = self
-            .along
-            .windows(2)
-            .position(|w| d <= w[1])
-            .unwrap_or(self.along.len() - 2);
-        let (a, b) = (self.path[i], self.path[i + 1]);
-        let span = self.along[i + 1] - self.along[i];
-        let f = if span > 0.0 {
-            ((d - self.along[i]) / span).clamp(0.0, 1.0)
-        } else {
-            0.0
-        };
-        let point = std::array::from_fn(|k| a[k] + (b[k] - a[k]) * f);
-        (point, heading(a, b))
+/// The yards along `path` to each of its points, from 0.
+pub fn along(path: &[[f32; 3]]) -> Vec<f32> {
+    let mut along = vec![0.0];
+    for w in path.windows(2) {
+        along.push(along[along.len() - 1] + dist(w[0], w[1]));
     }
+    along
+}
 
+/// The point `d` yards along `path` and the heading of the segment it is on; `along` is
+/// [`along`] of `path`.
+fn at(path: &[[f32; 3]], along: &[f32], d: f32) -> ([f32; 3], f32) {
+    let i = along
+        .windows(2)
+        .position(|w| d <= w[1])
+        .unwrap_or(along.len() - 2);
+    let (a, b) = (path[i], path[i + 1]);
+    let span = along[i + 1] - along[i];
+    let f = if span > 0.0 {
+        ((d - along[i]) / span).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    let point = std::array::from_fn(|k| a[k] + (b[k] - a[k]) * f);
+    (point, heading(a, b))
+}
+
+impl Route {
     /// The last stop's index.
     fn last_stop(&self) -> usize {
         self.stops.len().saturating_sub(1)
@@ -240,22 +250,44 @@ fn heading(a: [f32; 3], b: [f32; 3]) -> f32 {
 /// the first stop for `dwell_ms`, rolls the path forward, stands at the last stop and rolls it
 /// back. Standing, it faces the way it leaves.
 pub fn pose(route: &Route, wall_ms: u64) -> Pose {
-    let t = wall_ms % route.period_ms.max(1);
-    let (dwell, leg) = (route.dwell_ms, route.leg_ms.max(1));
+    sample(
+        &route.path,
+        &route.along,
+        route.dwell_ms,
+        route.leg_ms,
+        route.last_stop(),
+        wall_ms % route.period_ms.max(1),
+    )
+}
+
+/// A wagon's pose `t` ms into its period, `t < 2 * (leg_ms + dwell_ms)`: standing `dwell_ms` at
+/// the first stop, rolling `path` in `leg_ms`, standing at the last stop (`last_stop`, its index)
+/// and rolling back. `along` is [`along`] of `path`. The realm's [`pose`] and the client's road
+/// drive (#565) both sample it, so a rider and a bystander agree where the wagon is.
+pub fn sample(
+    path: &[[f32; 3]],
+    along: &[f32],
+    dwell_ms: u64,
+    leg_ms: u64,
+    last_stop: usize,
+    t: u64,
+) -> Pose {
+    let (dwell, leg) = (dwell_ms, leg_ms.max(1));
+    let length_yd = along[along.len() - 1];
+    let at = |d: f32| at(path, along, d);
     let back = |(point, yaw): ([f32; 3], f32)| {
         (point, (yaw + std::f32::consts::PI) % std::f32::consts::TAU)
     };
     let (state, (point, yaw)) = if t < dwell {
-        (CartState::Standing(0), route.at(0.0))
+        (CartState::Standing(0), at(0.0))
     } else if t < dwell + leg {
-        let d = (t - dwell) as f32 / leg as f32 * route.length_yd;
-        (CartState::Rolling, route.at(d))
+        let d = (t - dwell) as f32 / leg as f32 * length_yd;
+        (CartState::Rolling, at(d))
     } else if t < 2 * dwell + leg {
-        let stop = CartState::Standing(route.last_stop());
-        (stop, back(route.at(route.length_yd)))
+        (CartState::Standing(last_stop), back(at(length_yd)))
     } else {
-        let d = (1.0 - (t - 2 * dwell - leg) as f32 / leg as f32) * route.length_yd;
-        (CartState::Rolling, back(route.at(d)))
+        let d = (1.0 - (t - 2 * dwell - leg) as f32 / leg as f32) * length_yd;
+        (CartState::Rolling, back(at(d)))
     };
     Pose { point, yaw, state }
 }
@@ -356,6 +388,7 @@ pub(crate) fn creates(route: &Route, wall_ms: u64, on: bool) -> Vec<(u64, Sessio
         display: cart.horse_display,
         offset: [cart.horse_ahead_yd, 0.0, 0.0],
         forward: rolling,
+        stand_state: 0,
     };
     let driver = Rider {
         guid: route.driver_guid(),
@@ -363,6 +396,7 @@ pub(crate) fn creates(route: &Route, wall_ms: u64, on: bool) -> Vec<(u64, Sessio
         display: cart.driver_display,
         offset: cart.driver_offset,
         forward: false,
+        stand_state: SITTING,
     };
     vec![
         (wagon, wagon_create),
@@ -403,6 +437,8 @@ struct Rider {
     display: u32,
     offset: [f32; 3],
     forward: bool,
+    /// Its `UNIT_FIELD_BYTES_1` stand state: the driver sits, the horse stands.
+    stand_state: u32,
 }
 
 impl Rider {
@@ -423,6 +459,7 @@ impl Rider {
             (UNIT_FIELD_COMBATREACH, float(1.5)),
             (UNIT_FIELD_DISPLAYID, self.display),
             (UNIT_FIELD_NATIVEDISPLAYID, self.display),
+            (UNIT_FIELD_BYTES_1, self.stand_state),
         ];
         pairs.extend(guid_pairs(OBJECT_FIELD_GUID, self.guid));
         let flags = if self.forward { MOVE_FORWARD } else { 0 };

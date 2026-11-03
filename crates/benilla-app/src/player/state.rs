@@ -455,6 +455,22 @@ pub(crate) struct Player {
     /// [`crate::transport::Transport`] support, kept through deck jumps, detached on world ground,
     /// in water or when the transport despawns.
     pub(super) ride: Option<PlayerRide>,
+    /// Sitting in a cart's wagon (spec #560), from `SessionEvent::Seated` to `Unseated`: the seat
+    /// owns the pose, and input, physics and the movement stream yield ([`super::seat`]).
+    pub(super) seat: Option<PlayerSeat>,
+}
+
+/// Our cart seat ([`Player::seat`]).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct PlayerSeat {
+    /// The wagon's guid, which the one movement report's transport tail carries.
+    pub(super) wagon_guid: u64,
+    /// The seat in the wagon's frame, raw WoW coords.
+    pub(super) local_pos: [f32; 3],
+    /// The seat's facing in the wagon's frame (WoW radians).
+    pub(super) local_orientation: f32,
+    /// The movement report that asks to stand up has gone out; nothing more goes until `Unseated`.
+    pub(super) asked: bool,
 }
 
 /// The player's attachment to a transport's frame ([`Player::ride`]).
@@ -556,6 +572,7 @@ impl Player {
             (self.modes.rooted, "root"),
             (self.control_lost, "control-lost"),
             (self.server_riding, "server-ride"),
+            (self.seat.is_some(), "seated"),
             (self.foreign_mover.is_some(), "possession"),
             (self.reseat, "reseat-pending"),
         ];

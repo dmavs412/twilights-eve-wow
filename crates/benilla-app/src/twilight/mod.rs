@@ -319,6 +319,8 @@ fn pump(
         Option<ResMut<crate::kitchen::KitchenOutbox>>,
         Option<ResMut<crate::talent_rows::TalentRowsInbox>>,
         Option<ResMut<crate::talent_rows::TalentRowsOutbox>>,
+        Option<ResMut<crate::transport::CartRoutes>>,
+        Option<ResMut<crate::player::SeatInbox>>,
     ),
 ) {
     let LocalRealm {
@@ -444,6 +446,35 @@ fn pump(
                 entry: patch_entry,
                 on,
             });
+            continue;
+        }
+        // A cart route, just before its wagon's create, which the transport arm reads (spec #560).
+        if let SessionEvent::CartRoute {
+            wagon_guid,
+            points,
+            speed_yd_s,
+            dwell_ms,
+            period_ms,
+            stops,
+            ..
+        } = event
+        {
+            if let Some(routes) = reel.9.as_deref_mut() {
+                let route = crate::transport::RoadRoute::new(
+                    points, speed_yd_s, dwell_ms, period_ms, stops,
+                );
+                routes.0.insert(wagon_guid, std::sync::Arc::new(route));
+            }
+            continue;
+        }
+        // Our cart seat and its end go to the seat (spec #560).
+        if matches!(
+            event,
+            SessionEvent::Seated { .. } | SessionEvent::Unseated { .. }
+        ) {
+            if let Some(inbox) = reel.10.as_deref_mut() {
+                inbox.0.push(event);
+            }
             continue;
         }
         // The Calling Choice popup's options go to its own feed (spec #414).

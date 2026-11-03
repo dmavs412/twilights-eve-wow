@@ -528,12 +528,20 @@ pub(crate) struct GoGateInputs<'w> {
     pub(crate) factions: Option<Res<'w, super::ring::Factions>>,
     /// Absent in a net-less build, read as the reference's zeroed `[0xb72038]`: not queued.
     pub(crate) stone: Option<Res<'w, crate::ui_dialog_verbs::MeetingStone>>,
+    /// The cart routes, whose wagons a right-click uses (spec #560).
+    pub(crate) cart_routes: Option<Res<'w, crate::transport::CartRoutes>>,
 }
 
 impl GoGateInputs<'_> {
     /// `[0xb72038]`, the area we are queued at, or 0.
     pub(crate) fn queued_area(&self) -> u32 {
         self.stone.as_deref().map_or(0, |s| s.area)
+    }
+
+    /// Whether the GameObject `guid` is a cart's wagon.
+    pub(crate) fn is_road_wagon(&self, guid: Option<u64>) -> bool {
+        let routes = self.cart_routes.as_deref();
+        guid.is_some_and(|g| routes.is_some_and(|r| r.is_wagon(g)))
     }
 }
 
@@ -686,6 +694,7 @@ pub(super) fn update_hovered_object(
                                 .map(|m| m.area),
                             go_gate.queued_area(),
                         ),
+                        road_wagon: go_gate.is_road_wagon(go_guid),
                     };
                     u32::from(crate::target::cursor_mode::go_highlightable(
                         s, reaction, overrides,
@@ -745,6 +754,7 @@ pub(super) fn update_hovered_object(
                     tmpl.and_then(|t| t.meeting_stone).map(|m| m.area),
                     go_gate.queued_area(),
                 ),
+                road_wagon: go_gate.is_road_wagon(Some(guid.0)),
             },
         ) {
             if probing {

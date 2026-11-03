@@ -499,6 +499,7 @@ fn object_create(
     // A GameObject is placed by its quaternion. A mover's create block also seeds its flags
     // (`0x618c30`, merge mask `0x75a07dff`) and pitch (`0x7c6420`) before the model is built
     // (`0x613e10`), so a swimmer that streams in nose-down is drawn nose-down from the first frame.
+    let created_flags = mover.as_ref().map_or(0, |m| m.flags);
     let placement = match kind {
         EntityKind::GameObject => gameobject_rotation(go_quat, orientation),
         _ => mover.map_or_else(
@@ -516,6 +517,26 @@ fn object_create(
             local_pos: [t.pos.x, t.pos.y, t.pos.z],
             local_orientation: t.orientation,
         });
+    // A unit created moving in a transport's frame (a cart's horse, spec #560) plays its gait from
+    // the first frame: its pose comes only from the deck, so with no remote leg until its next
+    // relay the selector would read it still. The leg is seeded as a first relay would seed it.
+    let moving = created_flags & crate::creature_anim::move_flags::ANY_MOVE != 0;
+    let rider_motion = (rider.is_some() && moving).then(|| RemoteMotion {
+        wow_pos: position,
+        orientation,
+        flags: created_flags,
+        pitch: 0.0,
+        speed: speeds
+            .as_ref()
+            .map_or(0.0, |s| crate::net::current_speed(s, created_flags)),
+        vertical_velocity: 0.0,
+        jump_xy_vel: [0.0; 2],
+        fall_start_z: None,
+        pending: std::collections::VecDeque::new(),
+        relay: Default::default(),
+        last_apply_ms: 0.0,
+        last_apply_pos: position,
+    });
     // Warm the name cache as a unit streams in, the reference's timing: its create path
     // (`0x5fb880`) queries every creature (`0x60afb0`, at `0x60b157`), whose name is the record's
     // field 0 (`0x60934b`). Its `CreatureCache.wdb` answers without the wire; ours lasts a session.
@@ -609,6 +630,9 @@ fn object_create(
         }
         if let Some(r) = rider {
             entity.insert(r);
+        }
+        if let Some(rm) = rider_motion {
+            entity.insert(rm);
         }
         if let Some(s) = walk {
             entity.insert(s);

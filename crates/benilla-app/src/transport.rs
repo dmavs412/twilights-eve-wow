@@ -9,6 +9,8 @@
 //!   by template entry, at `spawn + R(spawn_quat)·lerp(keyframes, (anchor + elapsed) % period)`
 //!   ([`benilla_formats::elevator_sample`], the reference's `0x5f6280`; vmangos does the same in
 //!   `ElevatorTransport::Update`, `Transport.cpp:396`).
+//! - A cart's wagon (spec #560), a type 11 whose guid has a [`CartRoutes`] entry: the realm's
+//!   road timetable ([`twilight_realm::carts::sample`]) at `(anchor + elapsed) % period`.
 //!
 //! This module only moves the streamed GameObject; riding keys on [`Transport`], not the drive.
 
@@ -37,6 +39,7 @@ pub(crate) struct TransportPlugin;
 impl Plugin for TransportPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Timetables>()
+            .init_resource::<CartRoutes>()
             // After `AssetSet::Open`, whose Commands insert `WorldAssets`; unordered, this finds
             // none and silently does nothing.
             .add_systems(
@@ -110,6 +113,103 @@ enum Drive {
     Taxi(Arc<TransportTimetable>),
     /// Type 11: the authored `TransportAnimation` keyframe path.
     Lift(Lift),
+    /// A cart's wagon: the road timetable its `SessionEvent::CartRoute` carried.
+    Road(Arc<RoadRoute>),
+}
+
+/// A cart route as `SessionEvent::CartRoute` carried it (spec #560): the wagon stands `dwell_ms`
+/// at the first stop, rolls `points` at `speed_yd_s`, stands at the last stop and rolls back,
+/// every `period_ms`.
+pub(crate) struct RoadRoute {
+    pub(crate) points: Vec<[f32; 3]>,
+    pub(crate) speed_yd_s: f32,
+    pub(crate) dwell_ms: u32,
+    pub(crate) period_ms: u32,
+    pub(crate) stops: Vec<benilla_protocol::CartStop>,
+    /// The yards along `points` to each point ([`twilight_realm::carts::along`]).
+    along: Vec<f32>,
+}
+
+impl RoadRoute {
+    pub(crate) fn new(
+        points: Vec<[f32; 3]>,
+        speed_yd_s: f32,
+        dwell_ms: u32,
+        period_ms: u32,
+        stops: Vec<benilla_protocol::CartStop>,
+    ) -> Self {
+        let along = twilight_realm::carts::along(&points);
+        Self {
+            points,
+            speed_yd_s,
+            dwell_ms,
+            period_ms,
+            stops,
+            along,
+        }
+    }
+
+    /// The wagon at `cycle_ms` into its period, through the realm's own sample. One way takes
+    /// half the period less a dwell, the realm's `leg_ms`. `here` is the viewer's map: a wagon is
+    /// streamed only on its own.
+    fn sample(&self, cycle_ms: u32, here: u32) -> TransportSample {
+        let leg_ms = (self.period_ms / 2).saturating_sub(self.dwell_ms);
+        let pose = twilight_realm::carts::sample(
+            &self.points,
+            &self.along,
+            u64::from(self.dwell_ms),
+            u64::from(leg_ms),
+            self.stops.len().saturating_sub(1),
+            u64::from(cycle_ms),
+        );
+        TransportSample {
+            map: here,
+            pos: pose.point,
+            heading: pose.yaw,
+            moving: pose.state == twilight_realm::carts::CartState::Rolling,
+        }
+    }
+}
+
+/// Every cart route the realm has sent, keyed by its wagon's guid: [`arm_transports`] arms a
+/// wagon create whose guid is here as a road drive. Filled by the Twilight session pump.
+#[derive(Resource, Default)]
+pub(crate) struct CartRoutes(pub(crate) HashMap<u64, Arc<RoadRoute>>);
+
+impl CartRoutes {
+    /// Whether the GameObject `guid` is a cart's wagon, which a right-click uses (spec #560).
+    pub(crate) fn is_wagon(&self, guid: u64) -> bool {
+        self.0.contains_key(&guid)
+    }
+}
+
+/// A cart's wagon on a two-point road, for the seat's tests.
+#[cfg(test)]
+pub(crate) fn test_road_transport() -> Transport {
+    Transport {
+        drive: Drive::Road(Arc::new(RoadRoute::new(
+            vec![[0.0; 3], [10.0, 0.0, 0.0]],
+            10.0,
+            1000,
+            4000,
+            Vec::new(),
+        ))),
+        was_moving: false,
+    }
+}
+
+/// A pose in a deck's frame in the world: the deck's transform times the local position (raw WoW
+/// coords) and facing (WoW radians). An observed rider ([`compose_riders`]) and our own cart seat
+/// (`player::seat`) both compose through it.
+pub(crate) fn deck_pose(
+    deck: &Transform,
+    local_pos: [f32; 3],
+    local_orientation: f32,
+) -> (Vec3, f32) {
+    let local = benilla_assets::coords::wow_to_bevy(local_pos);
+    let world = deck.translation + deck.rotation * local;
+    let yaw = local_orientation + deck.rotation.to_euler(EulerRot::YXZ).0;
+    (world, yaw)
 }
 
 /// No map field: vmangos sends a player the map's whole transport set on entry
@@ -130,6 +230,7 @@ impl Transport {
         match &self.drive {
             Drive::Taxi(_) => "taxi",
             Drive::Lift(_) => "lift",
+            Drive::Road(_) => "road",
         }
     }
 
@@ -137,7 +238,13 @@ impl Transport {
         match &self.drive {
             Drive::Taxi(t) => t.period_ms,
             Drive::Lift(l) => l.period_ms,
+            Drive::Road(r) => r.period_ms,
         }
+    }
+
+    /// Whether it is a cart's wagon, whose riders sit at fixed seats.
+    pub(crate) fn is_road(&self) -> bool {
+        matches!(self.drive, Drive::Road(_))
     }
 
     /// The live cycle position for an anchor, shared by the tick and the rider math.
@@ -175,7 +282,7 @@ impl Transport {
     pub(crate) fn touches_map(&self, map_id: u32) -> bool {
         match &self.drive {
             Drive::Taxi(t) => t.touches_map(map_id),
-            Drive::Lift(_) => false,
+            Drive::Lift(_) | Drive::Road(_) => false,
         }
     }
 
@@ -193,6 +300,7 @@ impl Transport {
                     moving,
                 }
             }
+            Drive::Road(r) => r.sample(cycle_ms, here),
         }
     }
 
@@ -243,6 +351,7 @@ fn arm_transports(
     mut commands: Commands,
     mut timetables: ResMut<Timetables>,
     templates: Res<GameObjectTemplates>,
+    cart_routes: Res<CartRoutes>,
     // A re-created lift is already armed but carries a fresh seed, so it re-enters to consume it.
     pending: Query<
         (Entity, &Guid, Option<&ElevatorSeed>),
@@ -256,6 +365,22 @@ fn arm_transports(
         return;
     }
     for (entity, guid, seed) in &pending {
+        // The road arm, ahead of the lift's: a wagon is a type 11 with no authored keyframes, and
+        // its route came just before its create. A locked server's wagon carries no anchor.
+        if let Some(route) = cart_routes.0.get(&guid.0) {
+            debug!(
+                "transport: cart wagon {:#x} armed — period {} ms at {} yd/s",
+                guid.0, route.period_ms, route.speed_yd_s
+            );
+            commands.entity(entity).remove::<ElevatorSeed>().insert((
+                Transport {
+                    drive: Drive::Road(route.clone()),
+                    was_moving: false,
+                },
+                RigidBody::Kinematic,
+            ));
+            continue;
+        }
         // The lift arm.
         if let Some(seed) = seed {
             let Timetables {
@@ -583,9 +708,7 @@ fn compose_riders(
         let Ok(boat) = boats.get(boat_entity) else {
             continue;
         };
-        let local = benilla_assets::coords::wow_to_bevy(rider.local_pos);
-        let world = boat.translation + boat.rotation * local;
-        let yaw = rider.local_orientation + boat.rotation.to_euler(EulerRot::YXZ).0;
+        let (world, yaw) = deck_pose(boat, rider.local_pos, rider.local_orientation);
         transform.translation = world;
         transform.rotation = Quat::from_rotation_y(yaw);
         if let Some(mut rm) = motion {
@@ -610,26 +733,35 @@ fn compose_riders(
 /// Not modelled: `0x616af0`'s anti-warp guard takes the wire Z verbatim, skipping the re-ground,
 /// when the horizontal step exceeds 3 yd (`[0x80c5bc]` = 9.0, squared) or 60 yd/s, the common
 /// first substep on a deck; ours re-grounds that frame, and both settle the same the next.
+///
+/// A cart's wagon is not a deck: its riders sit at fixed seats in its frame (spec #560), so none
+/// is dropped to the ray.
 #[allow(clippy::type_complexity)] // one Bevy system's full input set
 fn ground_deck_riders(
     world: benilla_world::collision::WorldCollision,
+    guid_index: Res<crate::net::GuidIndex>,
+    decks: Query<&Transport>,
     mut riders: Query<
         (
+            &TransportRider,
             &mut Transform,
             Option<&mut crate::net::RemoteMotion>,
             &crate::net::Spline,
         ),
-        (With<TransportRider>, Without<Transport>),
+        Without<Transport>,
     >,
 ) {
     /// The probe's reach above and below the seat, the creature clamp's
     /// (`GROUND_CLAMP_UP`/`_DOWN`): short of a deck one storey up.
     const UP: f32 = 2.5;
     const DOWN: f32 = 4.0;
-    for (mut transform, motion, spline) in &mut riders {
+    for (rider, mut transform, motion, spline) in &mut riders {
         // Only a grounded deck path: a flying one (the `0x200` bit) owns its altitude, and a
         // world-frame spline is `ground_clamp_creatures`'.
         if spline.deck.is_none() || !spline.grounded {
+            continue;
+        }
+        if seated(&guid_index, &decks, rider) {
             continue;
         }
         let origin = transform.translation + Vec3::Y * UP;
@@ -645,6 +777,19 @@ fn ground_deck_riders(
             rm.wow_pos = benilla_assets::coords::bevy_to_wow(transform.translation);
         }
     }
+}
+
+/// Whether `rider` sits in a cart's wagon rather than standing on a deck.
+fn seated(
+    guid_index: &crate::net::GuidIndex,
+    decks: &Query<&Transport>,
+    rider: &TransportRider,
+) -> bool {
+    guid_index
+        .0
+        .get(&rider.transport_guid)
+        .and_then(|&e| decks.get(e).ok())
+        .is_some_and(Transport::is_road)
 }
 
 /// Publish the ride frame onto every model standing on a transport, the reference's `SetMoveBase`
@@ -783,6 +928,128 @@ mod tests {
             at: Instant::now(),
         };
         assert!(lift.reseek_to_map(&mut anchor, 1).is_none());
+    }
+
+    /// A road along `points` at 10 yd/s with a 1 s dwell, stops at both ends.
+    fn road(points: Vec<[f32; 3]>) -> Transport {
+        let length: f32 = twilight_realm::carts::along(&points)[points.len() - 1];
+        let (dwell_ms, leg_ms) = (1000, (length / 10.0 * 1000.0).round() as u32);
+        let stop = |point_index: usize| benilla_protocol::CartStop {
+            key: format!("s{point_index}"),
+            name: String::new(),
+            position: points[point_index],
+            point_index,
+        };
+        let stops = vec![stop(0), stop(points.len() - 1)];
+        Transport {
+            drive: Drive::Road(Arc::new(RoadRoute::new(
+                points.clone(),
+                10.0,
+                dwell_ms,
+                2 * (leg_ms + dwell_ms),
+                stops,
+            ))),
+            was_moving: false,
+        }
+    }
+
+    #[track_caller]
+    fn assert_near(got: [f32; 3], want: [f32; 3]) {
+        let off = (0..3).map(|k| (got[k] - want[k]).abs()).fold(0.0, f32::max);
+        assert!(off < 1e-3, "expected {want:?}, got {got:?}");
+    }
+
+    /// A straight 30 yd road: a 3 s leg, so a period of 8 s.
+    #[test]
+    fn the_road_sample_walks_the_timetable() {
+        let road = road(vec![[0.0, 0.0, 0.0], [10.0, 0.0, 0.0], [30.0, 0.0, 0.0]]);
+        let (dwell, leg, period) = (1000, 3000, road.period_ms());
+        assert_eq!(period, 8000);
+        let at = |ms: u32| road.sample(ms, 0);
+        let start = at(0);
+        assert_near(start.pos, [0.0; 3]);
+        assert!(!start.moving, "at t = 0 it stands at the first stop");
+        let half = at(dwell + leg / 2);
+        assert_near(half.pos, [15.0, 0.0, 0.0]);
+        assert!(half.moving, "half way along the path length");
+        assert_near(at(dwell + leg).pos, [30.0, 0.0, 0.0]);
+        assert!(!at(dwell + leg).moving, "at the last stop");
+        // A clock a whole period on stands at the first stop again.
+        let anchor = TransportAnchor {
+            progress_ms: period,
+            at: Instant::now(),
+        };
+        assert_near(road.sample_at(&anchor, 0).pos, [0.0; 3]);
+        // Rolling back, it faces the way it goes.
+        let back = at(dwell + leg + dwell + leg / 2);
+        assert_near(back.pos, [15.0, 0.0, 0.0]);
+        assert!((back.heading - std::f32::consts::PI).abs() < 1e-4);
+    }
+
+    /// A bent road: 15 yd along it is half way up its second segment, Z included.
+    #[test]
+    fn a_road_point_between_two_path_points_lies_on_their_segment() {
+        let road = road(vec![[0.0, 0.0, 0.0], [10.0, 0.0, 2.0], [10.0, 10.0, 4.0]]);
+        let length =
+            twilight_realm::carts::along(&[[0.0, 0.0, 0.0], [10.0, 0.0, 2.0], [10.0, 10.0, 4.0]])
+                [2];
+        let first = twilight_realm::carts::along(&[[0.0, 0.0, 0.0], [10.0, 0.0, 2.0]])[1];
+        // The instant the wagon is a quarter of the second segment past the bend.
+        let d = first + (length - first) / 4.0;
+        let ms = 1000 + (d / 10.0 * 1000.0).round() as u32;
+        let s = road.sample(ms, 0);
+        let p = s.pos;
+        assert!((p[0] - 10.0).abs() < 1e-3, "on the second segment: {p:?}");
+        assert!((0.0..=10.0).contains(&p[1]), "between its ends: {p:?}");
+        // Z lies on the same segment: two yards of rise over ten across.
+        assert!((p[2] - (2.0 + 0.2 * p[1])).abs() < 1e-2, "{p:?}");
+        assert!(
+            (s.heading - std::f32::consts::FRAC_PI_2).abs() < 1e-4,
+            "yaw along the segment"
+        );
+    }
+
+    /// A wagon create is a type 11 with an anchor and a lift seed; its route arms it as a road.
+    #[test]
+    fn a_wagon_with_a_route_arms_as_a_road_not_a_lift() {
+        const WAGON: u64 = 0xF120_0000_0000_0001;
+        let mut app = App::new();
+        let mut routes = CartRoutes::default();
+        routes.0.insert(
+            WAGON,
+            Arc::new(RoadRoute::new(
+                vec![[0.0; 3], [10.0, 0.0, 0.0]],
+                10.0,
+                1000,
+                4000,
+                Vec::new(),
+            )),
+        );
+        app.insert_resource(routes)
+            .init_resource::<Timetables>()
+            .init_resource::<GameObjectTemplates>()
+            .add_systems(Update, arm_transports);
+        let seed = || ElevatorSeed {
+            entry: 190100,
+            base_pos: [0.0; 3],
+            yaw: 0.0,
+            quat: None,
+        };
+        let anchor = || TransportAnchor {
+            progress_ms: 0,
+            at: Instant::now(),
+        };
+        let wagon = app.world_mut().spawn((Guid(WAGON), anchor(), seed())).id();
+        // A type 11 with no route stays the lift arm's.
+        let lift = app
+            .world_mut()
+            .spawn((Guid(WAGON + 1), anchor(), seed()))
+            .id();
+        app.update();
+        let armed = app.world().get::<Transport>(wagon).expect("the wagon arms");
+        assert!(armed.is_road());
+        assert!(app.world().get::<ElevatorSeed>(wagon).is_none());
+        assert!(app.world().get::<Transport>(lift).is_none());
     }
 
     /// A two-frame pause path at `base_pos`.

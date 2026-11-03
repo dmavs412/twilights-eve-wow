@@ -114,6 +114,11 @@ impl BindingsState {
     pub(crate) fn just_pressed(&self, i: Input) -> bool {
         self.just.contains(&i)
     }
+    /// A press edge of `i` this frame, as a test's stand-in for a key.
+    #[cfg(test)]
+    pub(crate) fn press_for_test(&mut self, i: Input) {
+        self.just.push(i);
+    }
     /// Did this one-shot fire this frame?
     pub(crate) fn fired(&self, i: Input) -> bool {
         self.fired.contains(&i)

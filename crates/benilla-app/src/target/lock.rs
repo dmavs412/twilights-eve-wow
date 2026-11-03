@@ -38,6 +38,17 @@ pub(crate) struct GoLockInputs<'w, 's> {
     pub(crate) items: Res<'w, crate::items::Items>,
     /// The object index the key-item scan walks the bags through.
     pub(crate) objects: crate::net::Objects<'w, 's>,
+    /// The cart routes, whose wagons a right-click uses (spec #560); absent in a headless build.
+    pub(crate) cart_routes: Option<Res<'w, crate::transport::CartRoutes>>,
+}
+
+impl GoLockInputs<'_, '_> {
+    /// Whether the GameObject `guid` is a cart's wagon.
+    pub(crate) fn is_road_wagon(&self, guid: u64) -> bool {
+        self.cart_routes
+            .as_deref()
+            .is_some_and(|r| r.is_wagon(guid))
+    }
 }
 
 /// The wire facts the Action gate and the requirement fallback read, gathered by the caller.
