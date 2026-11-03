@@ -2284,6 +2284,21 @@ class TalentRows(BuildSpells):
         self.assertEqual(spells[siphon]["fields"]["channel_interrupt_flags"] & move, move)
         self.assert_committed_icons("acolyte")
 
+    def test_the_committed_acolyte_mana_costs_are_doubled(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            callings = json.load(f)
+        acolyte = next(c for c in callings if c["key"] == "acolyte")
+        skills = {s["key"]: s for s in acolyte["skills"]}
+        # #551: the five mana costs doubled; the two health costs stay.
+        self.assertEqual({k: (skills[k]["cost_kind"], skills[k]["realm_cost"])
+                          for k in ("creeping_blight", "siphon_life", "miasma", "hush", "grasping_shadows",
+                                    "blood_lance", "dark_mending")},
+                         {"creeping_blight": ("pct_base", 10), "siphon_life": ("pct_base", 16),
+                          "miasma": ("pct_base", 30), "hush": ("pct_base", 10),
+                          "grasping_shadows": ("pct_base", 24),
+                          "blood_lance": ("health", 3), "dark_mending": ("health", 15)})
+
 
 class Vocabulary(unittest.TestCase):
     """The build's vocabulary matches the realm's: every known kind is a realm enum variant, and a
