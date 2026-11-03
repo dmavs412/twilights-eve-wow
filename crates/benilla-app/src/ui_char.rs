@@ -62,6 +62,8 @@ struct CharFeedMemo {
     /// flight, this catches the frame a lock clears with no object moving
     /// (`SMSG_INVENTORY_CHANGE_FAILURE`).
     pending_epoch: gate::Watch,
+    /// `Cooldowns::feed_epoch`: a worn item's use cooldown started, cleared or was pruned.
+    cooldown_epoch: gate::Watch,
 }
 
 /// The character-window feed; its bindings are `benilla-ui`'s `char_stats`.
@@ -74,9 +76,12 @@ impl Plugin for UiCharPlugin {
             (
                 // Before `feed_containers`: a `BAG_UPDATE` handler may read the bag item's own
                 // row (`GetInventoryItemLink("player", ContainerIDToInventoryID(bag))`), so the
-                // inventory push lands first.
+                // inventory push lands first. The worn slots' cooldowns must be in the VM before
+                // `feed_action_state`'s synchronous `BAG_UPDATE_COOLDOWN` makes the doll's slot
+                // buttons re-read them.
                 feed_char
                     .before(crate::ui_items::feed::feed_containers)
+                    .before(crate::ui_action::CooldownEvents)
                     .in_set(UiFeed),
                 watch_skill_ups.in_set(UiFeed),
                 feed_skills.in_set(UiFeed),
@@ -521,6 +526,16 @@ fn combat_stats(
     }
 }
 
+/// What a worn item's use cooldown is read from, as a bag slot's is: the player's cooldown list,
+/// the spell catalog, and `crate::ui_script::UiClock`'s anchor pair.
+#[derive(Clone, Copy)]
+struct CooldownRead<'a> {
+    cooldowns: &'a crate::spell::Cooldowns,
+    spells: Option<&'a benilla_formats::SpellCatalog>,
+    now: bevy::platform::time::Instant,
+    ui_now: f64,
+}
+
 /// One slot's view from the item object and its ask-once template (no icon while in flight).
 /// Keyed by guid and live id: the doll (`PLAYER_FIELD_INV_SLOT_*`, live id = slot + 1) and the
 /// bank bags (`PLAYER_FIELD_BANK_BAG_SLOT_*`, 64..=69) read their guids from different arrays.
@@ -536,6 +551,7 @@ fn slot_view(
     sub_classes: Option<&crate::ui_items::ItemSubClasses>,
     // The player's `ChrClasses.dbc` relic flag, which decides `find_equip_slot`'s INVSLOT 17.
     has_relic_slot: bool,
+    cooldown_read: CooldownRead,
     guid: u64,
     live_id: u32,
 ) -> Option<InvSlotView> {
@@ -583,6 +599,19 @@ fn slot_view(
     // already in the slots above.
     let roll = obj.item_random_properties_id();
     let t = items.template(entry, guid, commands);
+    // The use spell's record, as `ui_items::feed`'s bag slot reads it.
+    let cooldown = t.and_then(|t| t.use_spell).and_then(|u| {
+        let CooldownRead {
+            cooldowns,
+            spells,
+            now,
+            ui_now,
+        } = cooldown_read;
+        let sd = spells.and_then(|s| s.get(u.spell_id));
+        cooldowns
+            .info(u.spell_id, entry, sd, now)
+            .ui_triple(now, ui_now)
+    });
     let (name, quality, display, link, equip_slots, kind, bar_placeable) = match t {
         Some(t) => {
             let name = rolls.name(&t.name, roll);
@@ -635,6 +664,7 @@ fn slot_view(
         creator,
         enchants,
         duration_ms,
+        cooldown,
     })
 }
 
@@ -680,6 +710,7 @@ fn inventory_slots(
     names: &crate::names::NameCache,
     sub_classes: Option<&crate::ui_items::ItemSubClasses>,
     classes: Option<&benilla_formats::ChrClasses>,
+    cooldown_read: CooldownRead,
 ) -> InventorySlots {
     // The Calling's class table, not the class byte (ADR 0011).
     let has_relic_slot = crate::twilight::self_calling()
@@ -721,6 +752,8 @@ fn inventory_slots(
             // No ammo instance streams, only its template id: no enchants, no countdown.
             enchants: Vec::new(),
             duration_ms: None,
+            // Ammo is never used from the doll.
+            cooldown: None,
         });
     }
     // Equipment 1..=19, then `Bag0Slot`..`Bag3Slot` (20..=23 in `PaperDollItemFrame.dbc`), the
@@ -739,6 +772,7 @@ fn inventory_slots(
             names,
             sub_classes,
             has_relic_slot,
+            cooldown_read,
             guid,
             live,
         );
@@ -759,6 +793,7 @@ fn bank_bag_slots(
     pending: &PendingItemOps,
     names: &crate::names::NameCache,
     sub_classes: Option<&crate::ui_items::ItemSubClasses>,
+    cooldown_read: CooldownRead,
 ) -> BankBagSlots {
     let mut bags: BankBagSlots = Default::default();
     for (i, bag) in bags.iter_mut().enumerate() {
@@ -776,6 +811,7 @@ fn bank_bag_slots(
             sub_classes,
             // A bank bag slot holds a bag; the relic flag decides INVSLOT 17 alone.
             false,
+            cooldown_read,
             guid,
             BANK_BAG_LIVE_FIRST + i as u32,
         );
@@ -898,10 +934,17 @@ pub(crate) fn feed_char(
     names: Res<crate::names::NameCache>,
     // `ItemSubClass.dbc`, for `GetInventoryItemCount`'s container count bit.
     sub_classes: Option<Res<crate::ui_items::ItemSubClasses>>,
+    // A worn item's use cooldown, read as `feed_containers` reads a bag slot's.
+    cooldown_inputs: (
+        Res<crate::spell::Cooldowns>,
+        Option<Res<crate::ui_action::Spells>>,
+        Res<crate::ui_script::UiClock>,
+    ),
 ) {
     let Some(mut script) = script else {
         return;
     };
+    let (cooldowns, spells, clock) = cooldown_inputs;
     // The stock `CharacterModelFrame` owns the yaw (`Model_Rotate*` call `SetRotation`); the booth
     // mirrors it, written only on change so it is not marked changed every frame.
     let yaw = script.model_pane_facing("CharacterModelFrame");
@@ -944,6 +987,11 @@ pub(crate) fn feed_char(
         || props.as_ref().is_some_and(|r| r.is_changed());
     let pending_held = !pending.is_empty();
     let pending_moved = memo.pending_epoch.moved(pending.epoch());
+    // A running cooldown's pushed start is absolute, so only the store's epoch and the frame a
+    // timer crosses zero can move a slot's `cooldown`, as in `feed_containers`.
+    let cooldowns_moved = memo.cooldown_epoch.moved(cooldowns.feed_epoch());
+    let sweep = cooldowns.sweep_pending(clock.anchor);
+    let spells_changed = spells.as_ref().is_some_and(|r| r.is_changed());
     gate::trace(
         "feed_char",
         &[
@@ -957,6 +1005,9 @@ pub(crate) fn feed_char(
             ("enchants", enchants_changed),
             ("pending", pending_held),
             ("pending-epoch", pending_moved),
+            ("cooldowns", cooldowns_moved),
+            ("sweep", sweep),
+            ("spells", spells_changed),
         ],
     );
     let gate = gate::Gate::new(
@@ -969,12 +1020,21 @@ pub(crate) fn feed_char(
             || icons_added
             || enchants_changed
             || pending_held
-            || pending_moved,
+            || pending_moved
+            || cooldowns_moved
+            || sweep
+            || spells_changed,
     );
     if gate.skip() {
         return;
     }
 
+    let cooldown_read = CooldownRead {
+        cooldowns: &cooldowns,
+        spells: spells.as_deref().map(|s| &s.catalog),
+        now: clock.anchor,
+        ui_now: clock.ui_now,
+    };
     let stats = combat_stats(store, objects, &items, &commands);
     if memo.last_stats.as_ref() != Some(&stats) {
         gate.audit("feed_char", "the combat-stats snapshot");
@@ -999,6 +1059,7 @@ pub(crate) fn feed_char(
         &names,
         sub_classes.as_deref(),
         classes.as_deref().map(|t| &t.0),
+        cooldown_read,
     );
     let bank_bags = bank_bag_slots(
         store,
@@ -1013,6 +1074,7 @@ pub(crate) fn feed_char(
         &pending,
         &names,
         sub_classes.as_deref(),
+        cooldown_read,
     );
     // Both bands push under one `UNIT_INVENTORY_CHANGED`: one wire update, one event.
     // `PLAYERBANKSLOTS_CHANGED`'s two producers, planned off the old memo: `false` is the
@@ -1060,7 +1122,8 @@ pub(crate) fn feed_char(
     }
 }
 
-/// Whether two bank-bag views hold the same item; `locked` is `ITEM_LOCK_CHANGED`'s business.
+/// Whether two bank-bag views hold the same item; `locked` is `ITEM_LOCK_CHANGED`'s business. A
+/// changed `cooldown` counts as a change.
 fn same_item(a: Option<&InvSlotView>, b: Option<&InvSlotView>) -> bool {
     match (a, b) {
         (None, None) => true,
@@ -1183,6 +1246,8 @@ mod tests {
             .init_resource::<Items>()
             .init_resource::<crate::net::GuidIndex>()
             .init_resource::<crate::names::NameCache>()
+            .init_resource::<crate::spell::Cooldowns>()
+            .init_resource::<crate::ui_script::UiClock>()
             .insert_resource(NetCommands(tx));
         let fields = match bag {
             Some(g) => ObjectFields::from_pairs(&[

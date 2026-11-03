@@ -264,6 +264,7 @@ mod tests {
             equip_slots: vec![1],
             creator: None,
             enchants: Vec::new(),
+            cooldown: None,
         });
         slots[11] = Some(InvSlotView {
             duration_ms: None,
@@ -282,6 +283,7 @@ mod tests {
             equip_slots: vec![11, 12], // either finger: the doll-to-doll swap
             creator: None,
             enchants: Vec::new(),
+            cooldown: None,
         });
         slots[19] = Some(InvSlotView {
             duration_ms: None,
@@ -300,6 +302,7 @@ mod tests {
             equip_slots: vec![19],
             creator: None,
             enchants: Vec::new(),
+            cooldown: None,
         });
         slots
     }
@@ -469,6 +472,7 @@ mod tests {
             equip_slots: vec![20, 21, 22, 23],
             creator: None,
             enchants: Vec::new(),
+            cooldown: None,
         });
         s.set_inventory_slots(slots);
 

@@ -68,6 +68,7 @@ fn inventory_with_head_item() -> InventorySlots {
         equip_slots: vec![1],
         creator: None,
         enchants: Vec::new(),
+        cooldown: None,
     });
     slots
 }
@@ -1215,4 +1216,161 @@ fn an_addons_tab_click_selects_through_the_generic_entry_point() {
         "the newly selected tab wears the Active art"
     );
     assert!(s.errors().is_empty(), "no handler errors: {:?}", s.errors());
+}
+
+/// Stock `PaperDollItemSlotButton_OnEvent` answers `BAG_UPDATE_COOLDOWN`, which
+/// `feed_action_state` fires when any cooldown starts, by re-reading the slot's
+/// `GetInventoryItemCooldown` (`PaperDollFrame.lua:691`).
+#[test]
+fn a_doll_slot_rereads_its_cooldown_on_bag_update_cooldown() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = UiScript::new().unwrap();
+    s.set_screen_size(1024.0, 768.0);
+    for f in super::test_ui::CHARACTER_UI {
+        super::test_ui::load_ui_strict(&s, f);
+    }
+    s.set_unit("player", Some(player_unit()));
+    s.set_player_combat_stats(Some(combat_stats()));
+    s.tick(10.0);
+    let mut slots: InventorySlots = Default::default();
+    slots[13] = Some(InvSlotView {
+        item_id: 4000,
+        icon: Some("Interface\\Icons\\INV_Misc_Bone_01".into()),
+        count: 1,
+        cooldown: Some((5_000, 300_000, true)),
+        ..Default::default()
+    });
+    s.set_inventory_slots(slots);
+    s.run(r#"ToggleCharacter("PaperDollFrame")"#).unwrap();
+    s.run(
+        r#"
+        READS = {}
+        local read = GetInventoryItemCooldown
+        GetInventoryItemCooldown = function(unit, slot)
+            table.insert(READS, unit .. " " .. slot)
+            return read(unit, slot)
+        end
+    "#,
+    )
+    .unwrap();
+
+    s.fire_event("BAG_UPDATE_COOLDOWN", vec![]);
+    let reads = s.eval::<Vec<String>>("return READS").unwrap();
+    assert!(
+        reads.contains(&"player 13".to_string()),
+        "Trinket0Slot re-reads its cooldown, got {reads:?}"
+    );
+    assert!(s.errors().is_empty(), "no handler errors: {:?}", s.errors());
+}
+
+/// A worn trinket's use cooldown reaches `GetInventoryItemCooldown` through `feed_char`: first the
+/// 30 s `SMSG_ITEM_COOLDOWN` record after equipping it, then its click's own. Each moves the gated
+/// feed with no item object changing.
+#[test]
+fn a_worn_items_use_cooldown_feeds_its_character_slot() {
+    use benilla_protocol::field::FIELD_PLAYER_INV_SLOT_HEAD;
+    use benilla_protocol::messages::ItemUseSpell;
+    use benilla_protocol::ObjectFields;
+    use bevy::prelude::*;
+
+    /// `OBJECT_FIELD_ENTRY` on the item object.
+    const F_OBJECT_ENTRY: u16 = 3;
+    /// `EQUIPMENT_SLOT_TRINKET1`, 0-based; its live id is 13 (`Trinket0Slot`).
+    const TRINKET1: u16 = 12;
+    const TRINKET: u64 = 0x4000_0000_0000_0571;
+    const ENTRY: u32 = 4000;
+    const SPELL: u32 = 9001;
+
+    let (tx, _rx) = crossbeam_channel::unbounded();
+    let clock = crate::ui_script::UiClock {
+        anchor: bevy::platform::time::Instant::now(),
+        ui_now: 100.0,
+    };
+    let anchor = clock.anchor;
+    let mut app = App::new();
+    app.init_resource::<crate::ui_char::CharFeedState>()
+        .init_resource::<crate::portrait::PaperDollBooth>()
+        .init_resource::<crate::pending_item_ops::PendingItemOps>()
+        .init_resource::<crate::items::Items>()
+        .init_resource::<crate::net::GuidIndex>()
+        .init_resource::<crate::names::NameCache>()
+        .init_resource::<crate::spell::Cooldowns>()
+        .insert_resource(clock)
+        .insert_resource(crate::net::NetCommands(tx));
+    let slot_field = FIELD_PLAYER_INV_SLOT_HEAD + TRINKET1 * 2;
+    app.world_mut().spawn((
+        crate::net::SelfPlayer,
+        crate::net::ObjectStore(ObjectFields::from_pairs(&[
+            (slot_field, TRINKET as u32),
+            (slot_field + 1, (TRINKET >> 32) as u32),
+        ])),
+    ));
+    crate::items::test_spawn_item(
+        app.world_mut(),
+        TRINKET,
+        ObjectFields::from_pairs(&[(F_OBJECT_ENTRY, ENTRY)]),
+        false,
+    );
+    let use_spell = ItemUseSpell {
+        spell_id: SPELL,
+        cooldown_ms: 120_000,
+        category: 0,
+        category_cooldown_ms: -1,
+    };
+    app.world_mut()
+        .resource_mut::<crate::items::Items>()
+        .insert_template(
+            ENTRY,
+            Some(benilla_protocol::messages::ItemInfo {
+                use_spell: Some(use_spell),
+                ..crate::items::test_template("Test Trinket")
+            }),
+        );
+    let mut script = UiScript::new().unwrap();
+    // The VM's `GetTime` agrees with `UiClock::ui_now`.
+    script.tick(100.0);
+    script
+        .run(
+            r#"
+            SEEN = {}
+            local f = CreateFrame("Frame")
+            f:RegisterEvent("UNIT_INVENTORY_CHANGED")
+            f:SetScript("OnEvent", function() table.insert(SEEN, event) end)
+        "#,
+        )
+        .unwrap();
+    app.insert_non_send_resource(script);
+    // One registered system, so its change ticks carry across runs and the gate is the real one.
+    let feed = app.world_mut().register_system(crate::ui_char::feed_char);
+    let step = |app: &mut App| {
+        app.world_mut().run_system(feed).unwrap();
+        let s = app.world_mut().non_send_resource_mut::<UiScript>();
+        let triple = s
+            .eval::<(f64, f64, i64)>(r#"return GetInventoryItemCooldown("player", 13)"#)
+            .unwrap();
+        let seen = s.eval::<Vec<String>>("return SEEN").unwrap();
+        s.run("SEEN = {}").unwrap();
+        (triple, seen)
+    };
+
+    let (triple, seen) = step(&mut app);
+    assert_eq!(triple, (0.0, 0.0, 1), "worn, with no record yet");
+    assert_eq!(seen, ["UNIT_INVENTORY_CHANGED"]);
+    let (_, seen) = step(&mut app);
+    assert!(seen.is_empty(), "nothing moved, nothing pushed: {seen:?}");
+
+    // The `SessionEvent::ItemCooldown` handler's write for the trinket's guid.
+    app.world_mut()
+        .resource_mut::<crate::spell::Cooldowns>()
+        .apply_wire_item_cooldown(ENTRY, SPELL, anchor);
+    let (triple, seen) = step(&mut app);
+    assert_eq!(triple, (100.0, 30.0, 1), "the 30 s wait after equipping");
+    assert_eq!(seen, ["UNIT_INVENTORY_CHANGED"], "the slot repaints");
+
+    // A click's own cooldown outlasts the 30 s record.
+    app.world_mut()
+        .resource_mut::<crate::spell::Cooldowns>()
+        .start_item(ENTRY, &use_spell, None, anchor);
+    let (triple, _) = step(&mut app);
+    assert_eq!(triple, (100.0, 120.0, 1), "the use spell's own cooldown");
 }

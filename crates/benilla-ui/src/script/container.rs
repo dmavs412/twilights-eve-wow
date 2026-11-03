@@ -1363,6 +1363,38 @@ mod tests {
             .unwrap());
     }
 
+    /// A worn item's cooldown reads as a bag slot's does: the player's slot only, cold once past.
+    #[test]
+    fn inventory_item_cooldown_reads_the_gettime_triple() {
+        let mut s = UiScript::new().unwrap();
+        s.tick(10.0);
+        let mut slots: crate::script::InventorySlots = Default::default();
+        // Trinket0Slot: 5 s into a 300 s cooldown that started at GetTime 5.
+        slots[13] = Some(crate::script::InvSlotView {
+            item_id: 4000,
+            cooldown: Some((5_000, 300_000, true)),
+            ..Default::default()
+        });
+        slots[14] = Some(crate::script::InvSlotView {
+            item_id: 4001,
+            ..Default::default()
+        });
+        s.set_inventory_slots(slots);
+
+        let triple = |s: &UiScript, unit: &str, slot: u32| {
+            s.eval::<(f64, f64, i64)>(&format!(
+                "return GetInventoryItemCooldown(\"{unit}\", {slot})"
+            ))
+            .unwrap()
+        };
+        assert_eq!(triple(&s, "player", 13), (5.0, 300.0, 1));
+        assert_eq!(triple(&s, "player", 14), (0.0, 0.0, 1), "no cooldown");
+        assert_eq!(triple(&s, "target", 13), (0.0, 0.0, 1), "another unit");
+        // Past 305, the same stored triple reads cold.
+        s.tick(296.0);
+        assert_eq!(triple(&s, "player", 13), (0.0, 0.0, 1));
+    }
+
     // ── `ContainerIDToInventoryID` (`0x4f94e0`) ─────────────────────────────────────
 
     #[test]

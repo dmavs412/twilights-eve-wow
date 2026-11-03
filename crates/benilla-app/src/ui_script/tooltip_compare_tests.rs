@@ -80,6 +80,7 @@ fn seed_items(s: &mut UiScript) {
         equip_slots: vec![1],
         creator: None,
         enchants: Vec::new(),
+        cooldown: None,
     });
     s.set_inventory_slots(inv);
     s.set_item_template(
@@ -196,6 +197,7 @@ fn doll_hover_renders_the_live_instance() {
         equip_slots: vec![1],
         creator: None,
         enchants: Vec::new(),
+        cooldown: None,
     });
     s.set_inventory_slots(inv);
     s.set_item_template(

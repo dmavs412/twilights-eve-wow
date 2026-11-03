@@ -201,6 +201,9 @@ pub struct InvSlotView {
     pub enchants: Vec<super::EnchantView>,
     /// The instance's remaining lifetime in ms; `None` without a timer.
     pub duration_ms: Option<u64>,
+    /// The use cooldown, `(start_ms on the GetTime clock, duration_ms, enabled)`, as a bag slot's
+    /// [`super::container::ContainerSlot::cooldown`]; `None` if cold.
+    pub cooldown: Option<(i64, u32, bool)>,
 }
 
 /// The doll snapshot: 0 ammo, 1..=19 equipment, 20..=23 the equipped bags, as
@@ -504,6 +507,7 @@ impl InvSlotView {
             // Slot 20 (`Bag0Slot`) among `equip_slots` marks a container (`INVTYPE_BAG`). The bank
             // vault is past the `0x16` short-circuit, so only `Some` versus `None` matters.
             contents_count: slot.equip_slots.contains(&20).then_some(0),
+            cooldown: slot.cooldown,
             ..Default::default()
         }
     }
@@ -845,13 +849,28 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
         })?,
     )?;
 
-    // GetInventoryItemCooldown(unit, slot) → (start, duration, enable). Not fed: with no
-    // equipped-item cooldown source it answers `(0, 0, 1)`, no cooldown, as the container verb
-    // does; stock calls it on every slot update (`PaperDollFrame.lua:691`).
+    // GetInventoryItemCooldown(unit, slot) → (start, duration, enable) on the `GetTime` clock, the
+    // player's slot only, with `GetContainerItemCooldown`'s expiry guard: an expired one reads
+    // cold, so a re-feed cannot replay the finish flash. Another unit, or no cooldown, answers
+    // `(0, 0, 1)`; stock calls it on every slot update (`PaperDollFrame.lua:691`).
     g.set(
         "GetInventoryItemCooldown",
-        lua.create_function(|_, (_token, _slot): (Option<String>, i64)| {
-            Ok((0.0f64, 0.0f64, 1i64))
+        lua.create_function(|lua, (token, slot): (Option<String>, i64)| {
+            let token = token.filter(|t| t.eq_ignore_ascii_case("player"));
+            let cooldown = player_inv_slot(lua, &token, slot).and_then(|v| v.cooldown);
+            let now = crate::script::clock::now(lua);
+            Ok(match cooldown {
+                Some((start_ms, duration_ms, enabled)) => {
+                    let (start, duration) =
+                        (start_ms as f64 / 1000.0, f64::from(duration_ms) / 1000.0);
+                    if start + duration > now || !enabled {
+                        (start, duration, i64::from(enabled))
+                    } else {
+                        (0.0, 0.0, 1)
+                    }
+                }
+                None => (0.0, 0.0, 1),
+            })
         })?,
     )?;
 

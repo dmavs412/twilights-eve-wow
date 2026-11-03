@@ -1422,6 +1422,7 @@ fn the_bar_bag_buttons_name_themselves_on_hover() {
         equip_slots: vec![20],
         creator: None,
         enchants: Vec::new(),
+        cooldown: None,
     });
     s.set_inventory_slots(inv);
     hover(&mut s, "CharacterBag0Slot");
