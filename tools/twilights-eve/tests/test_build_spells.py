@@ -70,6 +70,8 @@ class BuildSpells(unittest.TestCase):
         self.creature_spells = ""
         # The buffs.toml `run_build` hands the script: none, unless a test sets it.
         self.buffs = ""
+        # The trinket_spells.toml `run_build` hands the script: none, unless a test sets it.
+        self.trinket_spells = ""
         # Content files by name for the `--content` folder `run_build` hands the script: none, unless set.
         self.content: dict[str, str] = {}
 
@@ -105,6 +107,9 @@ class BuildSpells(unittest.TestCase):
         buffs_path = os.path.join(tmp, "buffs.toml")
         with open(buffs_path, "w", encoding="utf-8") as f:
             f.write(self.buffs)
+        trinkets_path = os.path.join(tmp, "trinket_spells.toml")
+        with open(trinkets_path, "w", encoding="utf-8") as f:
+            f.write(self.trinket_spells)
         art_dir = os.path.join(tmp, "art")
         os.mkdir(art_dir)
         for name, data in {"ember_lash.png": PNG, **getattr(self, "extra_art", {})}.items():
@@ -118,7 +123,7 @@ class BuildSpells(unittest.TestCase):
         self.out_dir = tmp
         command = [sys.executable, SCRIPT, "--csv", path, "--callings", callings_path, "--out-dir", tmp,
                    "--art-dir", art_dir, "--creature-spells", creature_path, "--buffs", buffs_path,
-                   "--content", content_dir, "--no-dbc-check"]
+                   "--trinket-spells", trinkets_path, "--content", content_dir, "--no-dbc-check"]
         done = subprocess.run(command, capture_output=True, text=True)
         self.patch = None
         data = None
@@ -340,6 +345,59 @@ text = "Run speed increased by 30% on roads and streets."
     def test_a_buff_below_its_floor_fails(self):
         self.buffs = self.buff(spell_id=1900001)
         self.assert_fails([STRIKE], "open_road: spell_id 1900001 is not a buff's own (1,950,000 up)")
+
+    def trinket(self, spell_id: int = 1960000) -> str:
+        """A trinket spell as trinket_spells.toml writes one: the Loaded Die."""
+        return f"""
+[[spell]]
+key = "loaded_die"
+spell_id = {spell_id}
+name = "Morgan's Loaded Die"
+icon = 'Interface\\Icons\\INV_Misc_Dice_01'
+visual = 0
+description = "Roll a die. Each face does something different."
+cooldown_ms = 300000
+"""
+
+    def test_a_trinket_spell_is_instant_off_the_global_cooldown_with_its_recovery_and_use_line(self):
+        self.trinket_spells = self.trinket()
+        done, data = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        entry = next(e for e in self.patch["spells"] if e["spell_id"] == 1960000)
+        self.assertEqual(entry["trinket"], "loaded_die")
+        fields = entry["fields"]
+        self.assertEqual(fields["cooldown_ms"], 300000)
+        self.assertEqual(fields["gcd_ms"], 0)
+        self.assertEqual(fields["cast_time_ms"], 0)
+        self.assertEqual(fields["description"], "Roll a die. Each face does something different.")
+        self.assertEqual(fields["name"], "Morgan's Loaded Die")
+        self.assertNotIn("loaded_die", json.dumps(data))
+
+    def test_a_trinket_aura_is_a_buff_with_its_duration(self):
+        self.trinket_spells = self.trinket() + """
+[[aura]]
+key = "sixes"
+spell_id = 1960003
+name = "Sixes"
+icon = 'Interface\\Icons\\Ability_Rogue_SliceDice'
+duration_ms = 15000
+effects = []
+"""
+        done, _ = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        fields = next(e for e in self.patch["spells"] if e["spell_id"] == 1960003)["fields"]
+        self.assertEqual(fields["duration_ms"], 15000)
+        self.assertEqual(fields["dbc_effects"], [{"effect": 6, "aura": 4, "base": 0, "per_level": 0}])
+
+    def test_a_trinket_spell_outside_its_range_fails(self):
+        for sid in (1959999, 1970000):
+            self.trinket_spells = self.trinket(spell_id=sid)
+            self.assert_fails([STRIKE], f"loaded_die: spell_id {sid} is outside 1,960,000 to 1,969,999")
+
+    def test_a_trinket_spell_on_a_creature_spells_id_fails(self):
+        self.creature_spells = self.creature(spell_id=1960000)
+        self.trinket_spells = self.trinket()
+        self.assert_fails([STRIKE], "loaded_die: spell_id 1960000 is already claimed by creature_spells.toml curse")
 
     def test_a_missing_png_fails_the_build(self):
         self.assert_fails([{**EMBER, "icon": "nothing.png"}], "icon: 'nothing.png' is not in")

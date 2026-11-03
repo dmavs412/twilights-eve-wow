@@ -2168,7 +2168,7 @@ impl Skills {
 /// `SMSG_INITIAL_SPELLS`: the current Calling's skills, a set Skill Choice in its skill's place,
 /// and the set choices' spells, and the
 /// item cooldowns still running at the wall clock's `wall` (the skills' own start afresh each
-/// session).
+/// session). A Trinket Spell's id does not fit its `u16`s: `trinket::login_cooldowns` sends those.
 pub(super) fn spell_book(c: &Char, wall: f64) -> SessionEvent {
     SessionEvent::SpellBook {
         spell_ids: callings::of(c.calling)
@@ -2185,7 +2185,8 @@ pub(super) fn spell_book(c: &Char, wall: f64) -> SessionEvent {
             .iter()
             .filter(|&&(_, ready)| ready > wall)
             .filter_map(|&(entry, ready)| {
-                let t = items::template(entry)?;
+                let t = items::template(entry)
+                    .filter(|t| crate::trinket_spells::spell(t.use_spell).is_none())?;
                 Some(SpellCooldown {
                     spell_id: t.use_spell as u16,
                     item_id: entry as u16,
@@ -7784,9 +7785,9 @@ fn weapon_roll(stats: &CharacterStats, weapon: Weapon, rng: &mut Rng) -> f32 {
 /// `SPELL_FAILED_INTERRUPTED`.
 const SPELL_FAILED_INTERRUPTED: u8 = 0x23;
 /// `SPELL_FAILED_SPELL_IN_PROGRESS`.
-const SPELL_FAILED_SPELL_IN_PROGRESS: u8 = 0x61;
+pub(super) const SPELL_FAILED_SPELL_IN_PROGRESS: u8 = 0x61;
 /// `CAST_FLAG_UNKNOWN2`, which vmangos sets on every player cast's start and go.
-const CAST_FLAG_UNKNOWN2: u16 = 0x02;
+pub(super) const CAST_FLAG_UNKNOWN2: u16 = 0x02;
 
 impl InWorld {
     /// `CMSG_USE_ITEM` on the item at player slot `slot`: its on-use spell starts casting, or is

@@ -30,7 +30,10 @@ entry is no Gear.
 
 Columns besides the words: `speed` in seconds; `dmg_min`, `dmg_max` and `dmg_school` hold one
 value per damage line, `;`-separated (a weapon with a bonus school hit has two); `equip`, `use`
-and `on_hit` are `;`-separated spell ids.
+and `on_hit` are `;`-separated spell ids. A `use` may name a spell of
+crates/twilight-realm/content/trinket_spells.toml (spec #458): the item takes that spell's
+`cooldown_ms` as `use_cooldown_ms`, a Trinket row with one takes `max_count = 1`, and a Trinket
+row with one, no stat cells and `budget` 0 skips the tier rule.
 
 `spell_power` (#272) is the flat Spell Power a Weapon, a held Offhand or a Wand carries; any
 other slot with one is refused. The realm reads the column; the client sees it as the vanilla
@@ -61,6 +64,7 @@ DEFAULT_CSV = os.path.join(REPO, "data", "twilights-eve", "gear.csv")
 DEFAULT_DROPS = os.path.join(REPO, "data", "twilights-eve", "gear_drops.csv")
 DEFAULT_MASTER = os.path.join(REPO, "data", "twilights-eve", "master.csv")
 DEFAULT_OUT = os.path.join(REPO, "crates", "twilight-realm", "content", "gear.toml")
+DEFAULT_TRINKET_SPELLS = os.path.join(REPO, "crates", "twilight-realm", "content", "trinket_spells.toml")
 
 COLUMNS = (
     "entry", "name", "slot", "type", "hand", "quality", "item_level", "required_level",
@@ -319,6 +323,15 @@ def known_spells(master_path: str) -> dict[int, str]:
     return spells
 
 
+def trinket_spells(path: str) -> dict[int, dict]:
+    """trinket_spells.toml's `[[spell]]` rows by spell id."""
+    try:
+        with open(path, "rb") as f:
+            return {s["spell_id"]: s for s in tomllib.load(f).get("spell", [])}
+    except (OSError, tomllib.TOMLDecodeError, KeyError) as error:
+        raise SheetError(f"cannot read {path}: {error}") from error
+
+
 def toml_string(s: str) -> str:
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
@@ -327,7 +340,11 @@ def fmt_float(v: float) -> str:
     return repr(float(v))
 
 
-def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
+def build(rows: list[dict], drops: list[dict], spells: dict[int, str],
+          trinkets: dict[int, dict] | None = None) -> str:
+    """gear.toml's text. `trinkets` is trinket_spells.toml's `[[spell]]` rows by spell id: a
+    `use` may name one, and the item takes its name and cooldown."""
+    trinkets = trinkets or {}
     seen = set()
     items, wardrobes, lines, line_icons = [], {}, {}, {}
     for row in rows:
@@ -369,7 +386,11 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
                 raise SheetError(f"{where}: line {row['line']!r} shows {what(shows)}, but its "
                                  f"other rows show {what(first)}")
         spent = sum(integer(row[col], col, where) for col, _ in STATS) + -(-spell_power // 2)
-        if is_checked(entry):
+        uses = ids(row["use"], "use", where)
+        # A trinket that is only its Use (spec #458) spends no stat points.
+        use_only = (row["slot"] == "Trinket" and uses and spent == 0
+                    and integer(row["budget"], "budget", where) == 0)
+        if is_checked(entry) and not use_only:
             check_tier(row, entry, where, spent)
         elif row["budget"]:
             budget = integer(row["budget"], "budget", where)
@@ -383,10 +404,11 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
             wardrobes[entry] = cells
         for column in ("equip", "use"):
             for spell in ids(row[column], column, where):
+                if column == "use" and spell in trinkets:
+                    continue
                 if spell not in spells and spell not in VANILLA_SPELLS:
-                    raise SheetError(f"{where}: {column} spell {spell} is in neither master.csv "
-                                     "nor the seeded vanilla spells")
-        uses = ids(row["use"], "use", where)
+                    raise SheetError(f"{where}: {column} spell {spell} is in neither master.csv, "
+                                     "trinket_spells.toml nor the seeded vanilla spells")
         if len(uses) > 1:
             raise SheetError(f"{where}: one use spell at most")
         mins = row["dmg_min"].split(";") if row["dmg_min"] else []
@@ -441,7 +463,7 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
     ]
     for item in items:
         out.append(row_line(item, spells, pool_level.get(item["entry"], 0),
-                            wardrobes.get(item["entry"]), look_entry, icon_display))
+                            wardrobes.get(item["entry"]), look_entry, icon_display, trinkets))
     for (i, display), entry in look_entry.items():
         part, inv = WARDROBE[i]
         out.append("  { " + ", ".join([
@@ -461,7 +483,7 @@ def icon_value(icon: str) -> str:
 
 
 def row_line(item: dict, spells: dict[int, str], pool: int, wardrobe: dict | None,
-             look_entry: dict, icon_display: dict) -> str:
+             look_entry: dict, icon_display: dict, trinkets: dict[int, dict]) -> str:
     row, where = item["row"], item["where"]
     num = lambda column: integer(row[column], column, where)  # noqa: E731
     stack = AMMO_STACK if row["slot"] == "Ammo" or row["type"] == "Thrown" else 1
@@ -513,7 +535,15 @@ def row_line(item: dict, spells: dict[int, str], pool: int, wardrobe: dict | Non
     if item["use"]:
         spell = item["use"][0]
         parts.append(f"use_spell = {spell}")
-        parts.append(f"use_spell_name = {toml_string(spell_name(spell, spells))}")
+        if spell in trinkets:
+            # The item query's cooldown is the Trinket Spell's, which the realm runs; a trinket
+            # with a Use is unique (spec #458).
+            parts.append(f"use_spell_name = {toml_string(trinkets[spell]['name'])}")
+            parts.append(f"use_cooldown_ms = {trinkets[spell]['cooldown_ms']}")
+            if row["slot"] == "Trinket":
+                parts.append("max_count = 1")
+        else:
+            parts.append(f"use_spell_name = {toml_string(spell_name(spell, spells))}")
     if wardrobe is not None:
         looks = [str(look_entry.get((i, wardrobe[part]), 0)) for i, (part, _) in enumerate(WARDROBE)]
         parts.append(f"wardrobe = [{', '.join(looks)}]")
@@ -533,11 +563,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--csv", default=DEFAULT_CSV)
     parser.add_argument("--drops", default=DEFAULT_DROPS)
     parser.add_argument("--master", default=DEFAULT_MASTER)
+    parser.add_argument("--trinket-spells", default=DEFAULT_TRINKET_SPELLS)
     parser.add_argument("--out", default=DEFAULT_OUT, help="the generated table; - for stdout")
     args = parser.parse_args(argv)
     try:
         text = build(read_csv(args.csv, COLUMNS), read_csv(args.drops, ("entry", "pool_level")),
-                     known_spells(args.master))
+                     known_spells(args.master), trinket_spells(args.trinket_spells))
     except SheetError as e:
         print(f"build_gear: {e}", file=sys.stderr)
         return 1

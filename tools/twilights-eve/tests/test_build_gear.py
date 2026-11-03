@@ -183,6 +183,35 @@ class IconColumn(unittest.TestCase):
             self.assertIn("900001", str(e.exception))
 
 
+DIE_SPELL = {1960000: {"spell_id": 1960000, "name": "Morgan's Loaded Die", "cooldown_ms": 300000}}
+
+
+def die(**cells) -> dict:
+    return row(**{"entry": "906000", "name": "Morgan's Loaded Die", "slot": "Trinket", "type": "Misc",
+                  "quality": "Rare", "item_level": "14", "required_level": "", "use": "1960000",
+                  "budget": "0", "bonding": "Pickup", **cells})
+
+
+class TrinketUse(unittest.TestCase):
+    def test_a_statless_trinket_with_a_use_spell_passes(self):
+        build_gear.build([die()], [], {}, DIE_SPELL)
+
+    def test_a_trinket_with_an_unknown_use_spell_is_refused(self):
+        with self.assertRaises(build_gear.SheetError) as e:
+            build_gear.build([die(use="1960099")], [], {}, DIE_SPELL)
+        self.assertIn("use spell 1960099", str(e.exception))
+
+    def test_the_die_takes_its_spells_cooldown_and_is_unique(self):
+        line = item_line(build_gear.build([die()], [], {}, DIE_SPELL), 906000)
+        self.assertIn("use_spell = 1960000,", line)
+        self.assertIn("use_cooldown_ms = 300000,", line)
+        self.assertIn("max_count = 1", line)
+
+    def test_a_trinket_with_stats_is_still_held_to_its_budget(self):
+        with self.assertRaises(build_gear.SheetError):
+            build_gear.build([die(sta="5", budget="5")], [], {}, DIE_SPELL)
+
+
 class SpellPowerTooltip(unittest.TestCase):
     def values(self, n):
         by_spell = {v: k for k, v in build_gear.SPELL_POWER_SPELLS.items()}

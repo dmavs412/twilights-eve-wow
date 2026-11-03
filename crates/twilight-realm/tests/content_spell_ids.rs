@@ -38,7 +38,7 @@ const NOT_IDS: &[&str] = &["client_spellmods", "spells", "spell_power"];
 /// Files whose rows are spells of their own (ADR 0011): a row's `spell_id` goes by its `name`,
 /// which the build script writes into the client row. The script refuses an id two rows share
 /// across these files and master.csv.
-const OWN_SPELLS: &[&str] = &["buffs.toml", "creature_spells.toml"];
+const OWN_SPELLS: &[&str] = &["buffs.toml", "creature_spells.toml", "trinket_spells.toml"];
 
 #[derive(Clone, Copy)]
 enum Ids {

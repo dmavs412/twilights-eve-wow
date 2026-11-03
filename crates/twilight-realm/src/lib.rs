@@ -90,6 +90,7 @@ mod tables;
 mod talents;
 mod trade;
 mod trainer;
+mod trinket_spells;
 mod unlocks;
 mod vendor;
 mod wear;
@@ -1809,6 +1810,11 @@ impl Realm {
                 if let Some(w) = &mut self.world {
                     if let Some(c) = self.characters.get_mut(w.guid) {
                         let slot = inventory::Pos { bag, slot };
+                        // A trinket's Trinket Spell goes off only while it is worn (spec #458).
+                        if world::trinket::is_trinket(c, slot) {
+                            w.use_trinket(slot, c, self.wall, &mut self.events);
+                            return;
+                        }
                         // A Quest Starter opens its quest; food and drink are eaten at once;
                         // anything else casts its spell.
                         // A Journal Item that is not food or drink goes back to its Satchel.
@@ -2108,6 +2114,8 @@ impl Realm {
             }
             looted.flag = None;
         }
+        // A trinket put on waits before it can be clicked (spec #458).
+        world::trinket::equip_wait(c, &moved.changed, self.wall, events);
         moved.gear_changed |= traded.gear_changed;
         looted.took |= traded.changed;
         // A quiver in a bag slot moves the ranged speed (#158).

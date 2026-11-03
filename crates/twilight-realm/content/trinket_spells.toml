@@ -1,0 +1,62 @@
+# Trinket Spells (spec #458): what a worn trinket does when it is clicked, and the buffs it puts
+# up. Hand-written, not from master.csv, as creature_spells.toml is. Each is a spell of its own:
+# tools/twilights-eve/build_spells.py reads this file and writes each one's client row into
+# client_dbc_patch.json, and tools/twilights-eve/build_gear.py checks a Gear row's `use` against
+# it and writes the item's use cooldown from it, so after an edit here run both again.
+#
+# A Gear row of data/twilights-eve/gear.csv names its spell in the `use` column. Only a worn
+# trinket (slot 12 or 13) is clicked; one in a bag does nothing. A click is instant, triggers no
+# global cooldown, keeps stealth, and is refused while dead or while a cast bar or a channel runs.
+# Putting a trinket on starts a 30 s wait before it can be clicked, unless its own cooldown has
+# longer to run.
+#
+# Ids run from 1,960,000 to 1,969,999, unique across this file, creature_spells.toml and
+# master.csv.
+#
+# [[spell]], one per trinket:
+# key          the name the realm knows it by
+# spell_id     its own id
+# name         the spell's name
+# icon         a stock icon path, or a PNG in data/twilights-eve/art/
+# visual       the stock spell whose look (SpellVisual) it takes, or 0 for none
+# description  the tooltip's "Use:" line
+# cooldown_ms  from the click: the item can't be clicked again until it runs out; it is kept in
+#              the save, and the item's tooltip and the client's sweep read the same number
+# effect       optional: what the click does. Without one, the click only starts the cooldown.
+#
+# [[aura]], one per buff a trinket puts up, in the shape of a Calling's aura (callings::AuraDef),
+# so it goes on through the same code a skill's does:
+# key          the name an effect names it by
+# spell_id     its own id, the buff the client shows
+# name         the buff's name
+# icon         as a spell's
+# description  optional: the buff's tooltip
+# duration_ms  how long it lasts
+# effects      what it does while it is on, as an aura row's effects
+
+[[spell]]
+key = "loaded_die"
+spell_id = 1960000
+name = "Morgan's Loaded Die"
+icon = 'Interface\Icons\INV_Misc_Dice_01'
+visual = 0
+description = "Roll a die. Each face does something different."
+cooldown_ms = 300000
+
+[[spell]]
+key = "apprentices_hourglass"
+spell_id = 1960004
+name = "Apprentice's Hourglass"
+icon = 'Interface\Icons\INV_Misc_PocketWatch_01'
+visual = 0
+description = "In 6 sec, return to where you stand now, with the health and power you have now."
+cooldown_ms = 300000
+
+[[spell]]
+key = "echo_shard"
+spell_id = 1960005
+name = "Vael's Echo Shard"
+icon = 'Interface\Icons\INV_Enchant_ShardNexusLarge'
+visual = 0
+description = "Your next skill within 20 sec goes off a second time."
+cooldown_ms = 120000

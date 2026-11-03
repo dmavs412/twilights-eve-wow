@@ -387,6 +387,8 @@ pub(crate) fn receive_from(
 pub(crate) struct Moved {
     pub(crate) gear_changed: bool,
     pub(crate) bags_changed: bool,
+    /// The places whose item changed.
+    pub(crate) changed: Vec<Pos>,
 }
 
 impl Moved {
@@ -394,6 +396,7 @@ impl Moved {
         Self {
             gear_changed: changed.iter().any(|p| p.is_worn()),
             bags_changed: changed.iter().any(|p| p.is_bag_slot()),
+            changed: changed.to_vec(),
         }
     }
 }

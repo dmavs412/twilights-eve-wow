@@ -270,7 +270,7 @@ stock models (Gypsy Wagon 5392, Caravan Packhorse 14550, a townsfolk display) an
 
 | Asset | Where | Notes |
 |---|---|---|
-| Morgan's Loaded Die icon | `data/twilights-eve/art/`, 128 x 128, only if no stock die icon is free | A bone die showing a six. A stock die icon (`INV_Misc_Dice_01` or `_02`) stands in while `icon_check.py` passes it. |
+| Morgan's Loaded Die icon | `data/twilights-eve/art/`, 128 x 128 | A bone die showing a six. No ItemDisplayInfo.dbc row shows a die (`INV_Misc_Dice_01` and `_02` are spell icons only), so `INV_Misc_Bone_09` stands in on the item (#567). The spell row keeps `INV_Misc_Dice_01`. |
 | Apprentice's Hourglass icon | the same folder, 128 x 128 | An hourglass with sand running. Vanilla has no hourglass icon; until painted it borrows a pocket watch other than `INV_Misc_PocketWatch_02`, which another item holds. |
 | Vael's Echo Shard icon | the same folder, 128 x 128, only if no stock shard icon is free | A violet crystal shard with rings around it. A free stock shard or crystal icon stands in. |
 

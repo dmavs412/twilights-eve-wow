@@ -36,6 +36,7 @@ DEFAULT_CSV = os.path.join(REPO, "data", "twilights-eve", "master.csv")
 DEFAULT_CALLINGS = os.path.join(REPO, "data", "twilights-eve", "callings.csv")
 DEFAULT_CREATURE_SPELLS = os.path.join(REPO, "crates", "twilight-realm", "content", "creature_spells.toml")
 DEFAULT_BUFFS = os.path.join(REPO, "crates", "twilight-realm", "content", "buffs.toml")
+DEFAULT_TRINKET_SPELLS = os.path.join(REPO, "crates", "twilight-realm", "content", "trinket_spells.toml")
 DEFAULT_OUT_DIR = os.path.join(REPO, "data", "twilights-eve")
 MAX_EFFECTS = 5
 CLIENT_EFFECTS = 3
@@ -115,6 +116,8 @@ STATUSES = ("placeholder", "wip", "done")
 FROM_SCRATCH_MIN_ID = 1_000_000
 # A buffs.toml row's id floor: the realm's own buffs sit above the creature spells.
 BUFF_MIN_ID = 1_950_000
+# A trinket_spells.toml row's ids (spec #458), above the buffs.
+TRINKET_IDS = range(1_960_000, 1_970_000)
 # Columns of the borrowing era, refused by name so an old sheet fails loudly.
 GONE_COLUMNS = ("client_spell_id", "realm_spell_id", "borrowed_from_class", "borrowed_family_bit", "class",
                 "armour")
@@ -491,6 +494,64 @@ def build_buffs(buffs: list[dict], creature_spells: list[dict], rows: list[dict]
         entries.append({"spell_id": sid, "buff": key, "fields": fields})
     if bad:
         raise BuildError(f"{len(bad)} buff spell ids are not their own:\n" + "\n".join(bad))
+    return entries
+
+
+def build_trinket_spells(trinkets: dict, taken_by: list[tuple[str, list[dict]]], rows: list[dict],
+                         art: list[str], art_dir: str) -> list[dict]:
+    """The client rows of `trinket_spells.toml` (spec #458). Each `[[spell]]` is a worn trinket's
+    click: instant, off the global cooldown, its `description` the tooltip's Use: line and its
+    `cooldown_ms` the row's RecoveryTime. Each `[[aura]]` is a buff it puts up, with its duration.
+    Every id lies in TRINKET_IDS and no master.csv row, creature spell, buff or other trinket row
+    claims it."""
+    taken = {int(r["spell_id"]): f"line {line} ({r['calling']}/{r['key']})"
+             for line, r in enumerate(rows, start=2) if r["spell_id"].strip().isdigit()}
+    for file, spells in taken_by:
+        taken.update({s["spell_id"]: f"{file} {s.get('key', '?')}"
+                      for s in spells if isinstance(s.get("spell_id"), int)})
+    entries, bad = [], []
+    for table in ("spell", "aura"):
+        for row in trinkets.get(table, []):
+            key = row.get("key", "?")
+            where = f"trinket_spells.toml {key}"
+            sid = row.get("spell_id")
+            if not isinstance(sid, int) or sid not in TRINKET_IDS:
+                bad.append(f"{where}: spell_id {sid!r} is outside 1,960,000 to 1,969,999")
+                continue
+            if sid in taken:
+                bad.append(f"{where}: spell_id {sid} is already claimed by {taken[sid]}")
+                continue
+            taken[sid] = where
+            for column in ("name", "icon"):
+                if not row.get(column):
+                    raise BuildError(f"{where}: {column} is required")
+            fields = {"name": row["name"], "icon": icon_path(row["icon"], art, art_dir, where),
+                      "school": SCHOOLS.index("physical"), "implicit_targets": list(IMPLICIT_TARGETS["self"]),
+                      "cast_time_ms": 0, "range_min": 0, "range_max": 0}
+            if table == "spell":
+                if not isinstance(row.get("cooldown_ms"), int) or row["cooldown_ms"] <= 0:
+                    raise BuildError(f"{where}: cooldown_ms {row.get('cooldown_ms')!r} is not a whole number above 0")
+                if not row.get("description"):
+                    raise BuildError(f"{where}: description is required")
+                if not isinstance(row.get("visual"), int):
+                    raise BuildError(f"{where}: visual is required (0 for none)")
+                fields.update({"description": row["description"], "cooldown_ms": row["cooldown_ms"], "gcd_ms": 0,
+                               # A dummy effect: the click does what the realm says.
+                               "dbc_effects": [{"effect": DUMMY_EFFECT[0], "base": 0, "per_level": 0}]})
+                # Visual 0 is no look: the row keeps the from-scratch default.
+                if row["visual"]:
+                    fields["visual_spell"] = row["visual"]
+            else:
+                if not isinstance(row.get("duration_ms"), int) or row["duration_ms"] <= 0:
+                    raise BuildError(f"{where}: duration_ms {row.get('duration_ms')!r} is not a whole number above 0")
+                fields["duration_ms"] = row["duration_ms"]
+                if row.get("description"):
+                    fields["aura_description"] = row["description"]
+                fields["dbc_effects"] = [{"effect": CREATURE_EFFECTS_OF["marker"][0],
+                                          "aura": CREATURE_EFFECTS_OF["marker"][1], "base": 0, "per_level": 0}]
+            entries.append({"spell_id": sid, "trinket": key, "fields": fields})
+    if bad:
+        raise BuildError(f"{len(bad)} trinket spell ids are not their own:\n" + "\n".join(bad))
     return entries
 
 
@@ -2088,7 +2149,8 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
           calling_rows: list[dict] | None = None,
           creature_spells: list[dict] | None = None,
           content_dir: str | None = None,
-          buffs: list[dict] | None = None) -> tuple[list[dict], dict]:
+          buffs: list[dict] | None = None,
+          trinkets: dict | None = None) -> tuple[list[dict], dict]:
     for column in (rows[0] if rows else {}):
         found = re.fullmatch(r"spellmod(\d+)_\w+", column)
         if found and int(found.group(1)) > MAX_SPELLMODS:
@@ -2265,6 +2327,8 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
         resolve_skill_keys(calling)
     overrides.extend(build_creature_spells(creature_spells or [], rows, art, art_dir))
     overrides.extend(build_buffs(buffs or [], creature_spells or [], rows, art, art_dir))
+    overrides.extend(build_trinket_spells(trinkets or {}, [("creature_spells.toml", creature_spells or []),
+                                                          ("buffs.toml", buffs or [])], rows, art, art_dir))
     if content_dir:
         overrides.extend(fishing_spell(content_dir))
     patch: dict = {"callings": [client_calling(c, profiles[c["key"]]["name"]) for c in callings.values()],
@@ -2286,6 +2350,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="the realm's creature_spells.toml, whose client rows the patch carries")
     parser.add_argument("--buffs", default=DEFAULT_BUFFS,
                         help="the realm's buffs.toml, whose client rows the patch carries")
+    parser.add_argument("--trinket-spells", default=DEFAULT_TRINKET_SPELLS,
+                        help="the realm's trinket_spells.toml, whose client rows the patch carries")
     parser.add_argument("--content", default=DEFAULT_CONTENT,
                         help="the realm's content folder, whose items with a painted icon the patch carries")
     parser.add_argument("--out-dir", default=DEFAULT_OUT_DIR)
@@ -2312,7 +2378,12 @@ def main(argv: list[str] | None = None) -> int:
                 buffs = tomllib.load(f).get("spell", [])
         except (OSError, tomllib.TOMLDecodeError) as error:
             raise BuildError(f"cannot read {args.buffs}: {error}") from error
-        server, patch = build(rows, args.art_dir, calling_rows, creature_spells, args.content, buffs)
+        try:
+            with open(args.trinket_spells, "rb") as f:
+                trinkets = tomllib.load(f)
+        except (OSError, tomllib.TOMLDecodeError) as error:
+            raise BuildError(f"cannot read {args.trinket_spells}: {error}") from error
+        server, patch = build(rows, args.art_dir, calling_rows, creature_spells, args.content, buffs, trinkets)
         art = patch.pop("art", [])
         if not args.no_dbc_check:
             check_dbc_ids(rows, args.data)

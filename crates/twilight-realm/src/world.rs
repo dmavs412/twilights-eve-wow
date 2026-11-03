@@ -44,6 +44,7 @@ pub(crate) mod herbalism;
 mod notoriety;
 mod phase;
 mod root;
+pub(crate) mod trinket;
 pub(crate) use phase::{DoorClick, LockedClick};
 mod sleep;
 pub(crate) use fishing::{angler_options, find_hint, hint_options, is_hint_option};
@@ -459,6 +460,7 @@ impl InWorld {
             timescale: game_clock::TIMESCALE,
         });
         events.push(cast::spell_book(c, wall));
+        events.extend(trinket::login_cooldowns(c, wall));
         events.push(crate::talents::rows_event(c, false));
         events.push(fishing::angler(c));
         events.push(herbalism::herbalist(c));
