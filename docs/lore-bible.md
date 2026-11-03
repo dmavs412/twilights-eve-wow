@@ -1,7 +1,7 @@
 # Twilight's Eve: Lore Bible
 
 Davis, started 2026-10-23. Copied on 2026-11-02 from the live doc at
-https://claude.ai/artifact/FCEWQ3Ng5RHp5bHrtPpzgJ (revision 46), which replaces the earlier PDF.
+https://claude.ai/artifact/FCEWQ3Ng5RHp5bHrtPpzgJ (revision 47), which replaces the earlier PDF.
 The live doc is the source; refresh this copy when it changes. Every quest, rumour, item text and
 NPC line follows it. Where content disagrees with it, the bible wins.
 
@@ -242,7 +242,10 @@ Bolvar gets clean reports from Prestor's office. The House of Nobles protects Ce
 protects the House. Players arrive with Dughan's evidence and run into politics. Dughan stays in
 Goldshire, and his reports to the city keep disappearing in Prestor's office. The court itself is
 shut. The Keep gate is sealed until a quest attunes the player, so the politics before 60 play out
-through NPCs in the city, not in the throne room.
+through NPCs in the city, not in the throne room. The Writ Board in the Trade District posts huge
+bounties from the City Watch, the House of Nobles and Prestor's office. Prestor's Writs send
+players after orcs and the dead and never near the cult, which the court chain in the 40s can point
+out.
 
 - **The Stockade (about 30-34).** A prison riot, with Defias inmates paid in Twilight coin. It's the
   natural place to resolve Hogger's capture.

@@ -276,3 +276,11 @@ stock models (Gypsy Wagon 5392, Caravan Packhorse 14550, a townsfolk display) an
 
 The buffs (Quick Hands, Blood Luck, Sixes, Falling Sand, Echo) borrow stock spell icons and need
 no art.
+
+## Writs (spec #557)
+
+| Asset | Where | Notes |
+|---|---|---|
+| Writ Board model | a GameObject display for the board in the Trade District | A notice board with sealed papers and the Stormwind lion. Until made it is the stock Alliance wanted board (display 3053). |
+
+The City Watch officer is a stock Stormwind City Guard display and needs no art.

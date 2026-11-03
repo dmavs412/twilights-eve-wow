@@ -215,6 +215,10 @@ _Avoid_: main quest, campaign quest
 An item that begins a quest when used, as the Smoldering Twilight Idol begins The Idol in the Deep. It drops only until its quest is taken or done, only one can be carried, and it stays in the bags until the quest is handed in.
 _Avoid_: quest item (any item a quest asks for)
 
+**Writ**:
+A huge kill quest from the Writ Board in Stormwind's Trade District (spec #557): a sweep of about 100 kills of creature families plus named elites, for one zone. Each zone shows one Writ at a time, the same for everyone, and the board draws a new one every other day at midnight UTC. A character does each showing once, and a Writ pays 1 to 2 levels at its own level. One City Watch officer takes them all back.
+_Avoid_: bounty (a field giver's), contract, daily quest
+
 **Rumour**:
 A quest chain that a kill in a Hunting Ground drops by chance (spec #284). The drop spawns a Field Giver at one of the Rumour's listed points for its Audience, and a note for the looter that names the place. Its steps are ordinary quests from that giver; a step may spawn a named creature or a GameObject for the Audience. A timer from the drop ends it: the giver and everything it spawned despawn and the quest fails. Its Grade (easy, hard, deadly) sets the XP and the chest at the end. An ordinary Rumour can be found and done again; a Calling Rumour has no timer, leads to a trainer and is done once per character.
 _Avoid_: event, world quest, random quest
