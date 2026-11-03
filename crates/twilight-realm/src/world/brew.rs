@@ -322,9 +322,7 @@ impl InWorld {
                 // No mob carries mana, so on one this does nothing; the bomb's fire still lands.
                 "burn_mana" => {}
                 "invisible" => {
-                    for mob in &mut self.mobs {
-                        mob.threat.remove(me);
-                    }
+                    self.leave_threat_lists();
                     self.alchemy_stealth(used.spell_id, int(e, "secs") as f32, events);
                 }
                 "restore_power" => {

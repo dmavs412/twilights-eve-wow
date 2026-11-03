@@ -56,6 +56,7 @@ pub(crate) use phase::creatures;
 mod procs;
 mod regen;
 mod rest;
+pub(crate) mod ride;
 mod road;
 mod specials;
 
@@ -417,6 +418,11 @@ pub(crate) struct InWorld {
     flask_regen: f32,
     /// Open Road (spec #560): when the player last stood on a road, and whether its buff is up.
     road: road::OpenRoad,
+    /// The cart seat the player sits in (spec #560), while they ride.
+    pub(crate) rider: Option<ride::Rider>,
+    /// The map marks show the cart stops grey: the Carts unlock is off, as of the realm's last
+    /// sync.
+    pub(crate) carts_locked: bool,
 }
 
 impl InWorld {
@@ -567,6 +573,8 @@ impl InWorld {
             slept: false,
             flask_regen: 0.0,
             road: road::OpenRoad::default(),
+            rider: None,
+            carts_locked: false,
         };
         events.push(w.player_create(c));
         w.show_well_fed(c, events);
@@ -692,6 +700,7 @@ impl InWorld {
                 .collect();
             *fields = ObjectFields::from_pairs(&pairs).into_created(ObjectType::Player);
         }
+        self.seated(&mut create);
         create
     }
 
@@ -924,18 +933,18 @@ impl InWorld {
 
     /// The world map's marks, sent when they differ from the last list sent.
     fn map_marks_tick(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
-        let marks = crate::map_marks::marks(c);
+        let marks = crate::map_marks::marks(c, self.carts_locked);
         if self.marks_sent.as_ref() != Some(&marks) {
             self.marks_sent = Some(marks.clone());
             events.push(SessionEvent::MapMarks { marks });
         }
     }
 
-    /// How close the player may come before an idle `mob` notices them: not at all in Cover, a
-    /// stealthed player only inside the short stealth range, and a Well Fed `night_aggro_half`
-    /// shrinks it at night.
+    /// How close the player may come before an idle `mob` notices them: not at all in Cover or a
+    /// cart seat, a stealthed player only inside the short stealth range, and a Well Fed
+    /// `night_aggro_half` shrinks it at night.
     fn notice_radius(&self, mob: &Mob, player_level: u8) -> f32 {
-        if self.in_cover() || self.skills.unseen() {
+        if self.in_cover() || self.skills.unseen() || self.rider.is_some() {
             return 0.0;
         }
         let r = aggro::radius(mob.template.detection_range, player_level, mob.level())

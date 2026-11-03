@@ -10,6 +10,22 @@ horse_ahead_yd = 4.5
 driver_display = 4530     # a human man, the Caravan Merchant's (vanilla creature 5526)
 driver_name = "Cart Driver"
 locked_line = "No carts run on this server yet."
+# The realm's own entries: the wagon's GameObject and the horse's and driver's creatures. Each
+# route's three share them; the guid's counter is the route's place in this file, from 1.
+wagon_entry = 190100
+horse_entry = 190101
+horse_name = "Draft Horse"
+driver_entry = 190102
+# Offsets in the wagon's frame, in yards: x forward, y left, z up. The driver sits on the front
+# bench; the five seats run across the bed behind him.
+driver_offset = [1.6, 0.0, 1.2]
+seat_offsets = [
+  [-0.4, 0.6, 1.0],
+  [-0.4, -0.6, 1.0],
+  [-1.2, 0.6, 1.0],
+  [-1.2, -0.6, 1.0],
+  [-2.0, 0.0, 1.0],
+]
 
 # A route's stops and path are written by tools/twilights-eve/road_path.py <route key>: it snaps
 # each stop to the road texture within 15 yd, traces the road between them and writes every Z

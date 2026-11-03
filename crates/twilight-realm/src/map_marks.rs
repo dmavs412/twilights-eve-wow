@@ -173,8 +173,9 @@ fn service(role: &str) -> Option<(MapIcon, &'static str)> {
     })
 }
 
-/// Everything the map marks for `c`: quest marks, then service marks, then dungeon marks.
-pub(crate) fn marks(c: &Char) -> Vec<MapMark> {
+/// Everything the map marks for `c`: quest marks, then service marks, dungeon marks, and the cart
+/// stops on their map, grey while `carts_locked`.
+pub(crate) fn marks(c: &Char, carts_locked: bool) -> Vec<MapMark> {
     let mut out = Vec::new();
     let mut quest_marked = Vec::new();
     for g in givers() {
@@ -234,6 +235,33 @@ pub(crate) fn marks(c: &Char) -> Vec<MapMark> {
             subtitle: format!("Phased Dungeon, levels {lo}-{hi}"),
             quests: Vec::new(),
         });
+    }
+    for r in crate::carts::routes().iter().filter(|r| r.map == c.map) {
+        for (i, stop) in r.stops.iter().enumerate() {
+            // The stop at the route's other end; a middle stop names the far end.
+            let other = if i + 1 == r.stops.len() {
+                &r.stops[0]
+            } else {
+                &r.stops[r.stops.len() - 1]
+            };
+            let (icon, subtitle) = if carts_locked {
+                (
+                    MapIcon::CartStopLocked,
+                    crate::carts::cart().locked_line.clone(),
+                )
+            } else {
+                (MapIcon::CartStop, format!("Cart to {}", other.name))
+            };
+            out.push(MapMark {
+                map: r.map,
+                position: [stop.position[0], stop.position[1]],
+                guid: 0,
+                icon,
+                name: stop.name.clone(),
+                subtitle,
+                quests: Vec::new(),
+            });
+        }
     }
     out
 }

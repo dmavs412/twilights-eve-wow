@@ -38,6 +38,8 @@ pub(crate) struct Shard {
     audience_spawned: u32,
     /// The guids of the Audience's creatures made before the host had their ground.
     settling: Vec<u64>,
+    /// The open world's cart wagons (spec #560); none in a Phase.
+    pub(crate) carts: crate::carts::Fleet,
 }
 
 /// A player standing on a shard, as the realm sees them for a tick.
@@ -102,6 +104,11 @@ impl Shard {
             run,
             audience_spawned: 0,
             settling: Vec::new(),
+            carts: if dungeon {
+                Default::default()
+            } else {
+                crate::carts::Fleet::on_map(place.map)
+            },
         }
     }
 
@@ -328,13 +335,16 @@ impl Shard {
     }
 
     /// Streams spawns and Hub NPCs in around `players` and out once none is near, brings back
-    /// the dead whose time is up, and walks the Hub's wanderers. The destroys and moves it makes;
-    /// the creates go to each client as its view takes them in.
+    /// the dead whose time is up, walks the Hub's wanderers, and runs the cart wagons to
+    /// `wall_ms` with the Carts unlock `carts_on`. The destroys and moves it makes; the creates go
+    /// to each client as its view takes them in.
     pub(crate) fn update(
         &mut self,
         dt: f32,
         players: &[[f32; 3]],
         host: &dyn Host,
+        wall_ms: u64,
+        carts_on: bool,
     ) -> Vec<SessionEvent> {
         let mut events = Vec::new();
         if let Some(run) = &mut self.run {
@@ -348,6 +358,7 @@ impl Shard {
             .update(dt, players, map, host, &mut self.mobs, &mut events);
         self.settle_audience(host, &mut events);
         self.hub.update(dt, players, map, host, &mut events);
+        events.extend(self.carts.update(wall_ms, carts_on));
         events.retain(|e| !matches!(e, SessionEvent::ObjectCreate { .. }));
         events
     }
@@ -424,6 +435,7 @@ impl Shard {
             .map(|m| (m.guid, m.create()))
             .collect();
         seen.extend(self.hub.in_view(me));
+        seen.extend(self.carts.in_view());
         seen
     }
 

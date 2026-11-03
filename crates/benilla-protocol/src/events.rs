@@ -501,6 +501,21 @@ pub enum MapIcon {
     Innkeeper,
     FlightMaster,
     Dungeon,
+    /// A cart stop (spec #560) on a server with Carts on.
+    CartStop,
+    /// A cart stop on a server whose Carts unlock is off: drawn grey.
+    CartStopLocked,
+}
+
+/// Twilight's Eve, not 1.12: one stop of a [`SessionEvent::CartRoute`].
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
+pub struct CartStop {
+    pub key: String,
+    pub name: String,
+    /// WoW x, y, z.
+    pub position: [f32; 3],
+    /// The route point it stands on: the wagon stands at the path's ends.
+    pub point_index: usize,
 }
 
 /// One quest row in a quest [`MapMark`]'s tooltip.
@@ -563,6 +578,32 @@ pub enum SessionEvent {
     /// Twilight's Eve, not 1.12: everything the world map marks for this character, complete on
     /// every change. Never wire-decoded.
     MapMarks { marks: Vec<MapMark> },
+    /// Twilight's Eve, not 1.12: a cart route (spec #560), sent before its wagon's first create.
+    /// The wagon stands `dwell_ms` at the first stop, rolls `points` forward at `speed_yd_s`,
+    /// stands `dwell_ms` at the last stop and rolls back, every `period_ms` from the Unix epoch:
+    /// the client samples the same timetable the realm does. Never wire-decoded.
+    CartRoute {
+        key: String,
+        name: String,
+        map: u32,
+        wagon_guid: u64,
+        horse_guid: u64,
+        driver_guid: u64,
+        points: Vec<[f32; 3]>,
+        speed_yd_s: f32,
+        dwell_ms: u32,
+        period_ms: u32,
+        stops: Vec<CartStop>,
+    },
+    /// Twilight's Eve, not 1.12: the player sat in the wagon `wagon_guid`; `pose` is their seat in
+    /// its frame. Never wire-decoded.
+    Seated {
+        wagon_guid: u64,
+        pose: TransportPose,
+    },
+    /// Twilight's Eve, not 1.12: the player stood up out of their wagon seat at `position`. Never
+    /// wire-decoded.
+    Unseated { position: [f32; 3] },
     /// Twilight's Eve, not 1.12: a fish bit (ADR 0018), with everything the client needs to run
     /// the Reeling Bar. The realm has already chosen the fish and any treasure. Never
     /// wire-decoded.

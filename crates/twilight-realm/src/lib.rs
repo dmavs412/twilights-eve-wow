@@ -46,6 +46,7 @@ mod bounty;
 mod buffs;
 mod calling_choice;
 pub mod callings;
+pub mod carts;
 mod characters;
 pub mod chat;
 mod clock;
@@ -663,6 +664,50 @@ fn tuned_line(place: shard::Place, n: u32) -> Option<String> {
         "{first}{} is now tuned for {n} {players}.",
         chars.as_str()
     ))
+}
+
+/// Rider `guid`'s relay to the others who see them as they sit or stand up (spec #560): at `at`,
+/// in the wagon's frame at `seat` while seated. A teleport relay, so the client snaps them.
+fn rider_relay(
+    guid: u64,
+    at: [f32; 3],
+    orientation: f32,
+    seat: Option<benilla_protocol::TransportPose>,
+    wall_ms: u64,
+) -> SessionEvent {
+    SessionEvent::UnitMove {
+        guid,
+        position: at,
+        orientation,
+        flags: if seat.is_some() {
+            carts::ON_TRANSPORT
+        } else {
+            0
+        },
+        pitch: 0.0,
+        time: wall_ms as u32,
+        verb: benilla_protocol::RelayVerb::Teleport,
+        fall_time: 0,
+        jump: None,
+        transport: seat,
+    }
+}
+
+impl RealmCommand {
+    /// Whether it is an act a cart rider cannot do (spec #560): a swing, a cast, an item used, a
+    /// loot opened or a trade started.
+    fn acts(&self) -> bool {
+        matches!(
+            self,
+            Self::AttackSwing { .. }
+                | Self::CastSpell { .. }
+                | Self::CastSpellAtDest { .. }
+                | Self::UseItem { .. }
+                | Self::Loot { .. }
+                | Self::InitiateTrade { .. }
+                | Self::BeginTrade
+        )
+    }
 }
 
 /// The realm: its characters, the sessions and who of theirs is in the world, and the events not
@@ -1319,6 +1364,7 @@ impl Realm {
             });
         }
         self.shards.retain(|map, _| on.contains_key(map));
+        let (wall_ms, carts_on) = (self.wall_ms(), self.unlock_on("carts"));
         for (map, players) in &on {
             let shard = self
                 .shards
@@ -1331,7 +1377,7 @@ impl Realm {
             let alive: Vec<u64> = players.iter().filter(|p| p.alive).map(|p| p.guid).collect();
             let (head_count, scaled) = shard.scale_to_head_count(&alive);
             let tuned = head_count.and_then(|n| tuned_line(*map, n));
-            let mut made = shard.update(dt, &positions, host);
+            let mut made = shard.update(dt, &positions, host, wall_ms, carts_on);
             made.extend(scaled);
             let mut owners = shard.owners(players);
             let shard = &self.shards[map];
@@ -1411,6 +1457,10 @@ impl Realm {
                             events.push(SessionEvent::Callings {
                                 by_guid: vec![(guid, o.calling.clone())],
                             });
+                        }
+                        // A running wagon's route comes first: the client drives it from that.
+                        if let Some(r) = carts::by_wagon(guid).filter(|_| carts_on) {
+                            events.push(carts::route_event(r));
                         }
                         events.push(create);
                     }
@@ -1624,6 +1674,12 @@ impl Realm {
     }
 
     fn handle_served(&mut self, command: RealmCommand) {
+        let riding = self.world.as_ref().is_some_and(|w| w.rider.is_some());
+        if riding && command.acts() {
+            self.events
+                .push(quests::system_line("You are riding.".to_string()));
+            return;
+        }
         match command {
             RealmCommand::ListCharacters => self.send_roster(),
             RealmCommand::CreateCharacter(req) => {
@@ -1657,7 +1713,10 @@ impl Realm {
                 orientation,
                 motion,
             } => {
-                if let Some(w) = &mut self.world {
+                if let Some(r) = self.world.as_mut().and_then(|w| w.rider.as_mut()) {
+                    // A rider's move stands them up beside the wagon at the next tick.
+                    r.leaving = true;
+                } else if let Some(w) = &mut self.world {
                     let from = self.characters.get(w.guid).map(|c| c.position);
                     let walled = from.is_some_and(|from| {
                         w.closed_off(from, position, orientation, &mut self.events)
@@ -1810,6 +1869,9 @@ impl Realm {
                     self.characters.set_action_button(w.guid, slot, packed);
                 }
             }
+            RealmCommand::UseGameObject { guid } if carts::by_wagon(guid).is_some() => {
+                self.use_wagon(guid);
+            }
             RealmCommand::UseGameObject { guid } if self.objects.get(guid).is_some() => {
                 self.use_runtime_object(guid);
             }
@@ -1897,8 +1959,9 @@ impl Realm {
                 }
             }
             RealmCommand::CreatureQuery { entry } => {
-                let answer =
-                    hub::creature_name(entry).unwrap_or_else(|| mobs::creature_name(entry));
+                let answer = hub::creature_name(entry)
+                    .or_else(|| carts::creature_name(entry))
+                    .unwrap_or_else(|| mobs::creature_name(entry));
                 self.events.push(answer);
             }
             RealmCommand::Chat {
@@ -2084,6 +2147,7 @@ impl Realm {
                 }
             }
         }
+        self.tick_riders(&ids, host);
         self.tick_shards(dt, host);
         self.refresh_phase_mates();
         for id in ids {
@@ -2270,9 +2334,11 @@ impl Realm {
 
     fn tick_served(&mut self, dt: f32, host: &dyn Host) {
         let open_road = self.unlock_on("open_road");
+        let carts_locked = !self.unlock_on("carts");
         let Some(w) = &mut self.world else {
             return;
         };
+        w.carts_locked = carts_locked;
         let Some(c) = self.characters.get_mut(w.guid) else {
             return;
         };
@@ -2649,9 +2715,122 @@ impl Realm {
         self.check_unlocks();
     }
 
+    /// The wall clock in milliseconds since the Unix epoch.
+    fn wall_ms(&self) -> u64 {
+        (self.wall * 1000.0) as u64
+    }
+
+    /// [`RealmCommand::UseGameObject`] on a cart wagon (spec #560). The player's own wagon stands
+    /// them up at the next tick. Another sits them in a free seat when the Carts unlock is on and
+    /// the wagon stands within reach; else a line says why not.
+    fn use_wagon(&mut self, guid: u64) {
+        let Some(route) = carts::by_wagon(guid) else {
+            return;
+        };
+        let (on, wall_ms) = (self.unlock_on("carts"), self.wall_ms());
+        let taken: Vec<usize> = self
+            .parked
+            .values()
+            .filter_map(|s| s.world.as_ref()?.rider)
+            .filter(|r| r.route == route.index)
+            .map(|r| r.seat)
+            .collect();
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get(w.guid) else {
+            return;
+        };
+        if let Some(r) = &mut w.rider {
+            r.leaving |= r.route == route.index;
+            return;
+        }
+        let cart = carts::cart();
+        let pose = carts::pose_now(route, wall_ms, on);
+        let seats = (cart.seats as usize).min(cart.seat_offsets.len());
+        let free = (0..seats).find(|s| !taken.contains(s));
+        let refusal = if !on {
+            Some(cart.locked_line.as_str())
+        } else if pose.state == carts::CartState::Rolling {
+            Some("The cart is moving.")
+        } else if c.map != route.map
+            || space::flat_distance(c.position, pose.point) > cart.use_range_yd
+        {
+            Some("You are too far away.")
+        } else if free.is_none() {
+            Some("The cart is full.")
+        } else {
+            None
+        };
+        if let Some(line) = refusal {
+            self.events.push(quests::system_line(line.to_string()));
+            return;
+        }
+        let seat = free.unwrap_or(0);
+        w.sit(route.index, seat, &mut self.events);
+        let Some(rider) = w.rider else {
+            return;
+        };
+        let (me, at) = (w.guid, rider.world_at(&pose));
+        let place = w.shard_place();
+        self.characters.set_position(me, at, pose.yaw);
+        if let Some(place) = place {
+            let relay = rider_relay(me, at, pose.yaw, Some(rider.pose()), wall_ms);
+            self.show_others(place, &[relay]);
+        }
+    }
+
+    /// Each rider among `sessions` follows their wagon's seat, so range checks and discovery see
+    /// where they are; one who asked to stand up is set down beside the wagon on the host's
+    /// ground, and the others who see them are shown it.
+    fn tick_riders(&mut self, sessions: &[SessionId], host: &dyn Host) {
+        let (on, wall_ms) = (self.unlock_on("carts"), self.wall_ms());
+        for &id in sessions {
+            self.serve(id);
+            let Some(w) = &mut self.world else { continue };
+            let Some(rider) = w.rider else { continue };
+            let Some(c) = self.characters.get_mut(w.guid) else {
+                continue;
+            };
+            let pose = carts::pose_now(&carts::routes()[rider.route], wall_ms, on);
+            let (me, map) = (w.guid, c.map);
+            let (at, transport) = if rider.leaving {
+                let [x, y, z] = carts::step_down(&pose);
+                let ground = host.ground_height(map, x, y, z + 2.0).unwrap_or(z);
+                let at = [x, y, ground];
+                w.stand_up(at, &mut self.events);
+                (at, None)
+            } else {
+                (rider.world_at(&pose), Some(rider.pose()))
+            };
+            c.position = at;
+            let explored = quests::explore(c, &mut self.events);
+            // Only standing up is relayed: the clients move a seated rider with the wagon.
+            if let (true, Some(place)) = (rider.leaving, w.shard_place()) {
+                w.probe_road();
+                let relay = rider_relay(me, at, pose.yaw, transport, wall_ms);
+                self.show_others(place, &[relay]);
+            }
+            if explored {
+                self.save(me);
+            }
+        }
+    }
+
     /// A logout is always instant: no timer, no rest-area rule, no refusal in combat.
     fn logout(&mut self) {
         self.dev_teleport = None;
+        // A rider stands up beside their wagon first, at its path's height: there is no host.
+        let (on, wall_ms) = (self.unlock_on("carts"), self.wall_ms());
+        if let Some(w) = &mut self.world {
+            if let Some(rider) = w.rider {
+                let pose = carts::pose_now(&carts::routes()[rider.route], wall_ms, on);
+                let at = carts::step_down(&pose);
+                w.stand_up(at, &mut self.events);
+                let guid = w.guid;
+                self.characters.set_position(guid, at, pose.yaw);
+            }
+        }
         self.give_back();
         // A cast or a bar under way is lost, and its bobber goes.
         if let Some(w) = &mut self.world {
