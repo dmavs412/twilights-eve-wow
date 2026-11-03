@@ -580,6 +580,10 @@ struct ZoneOverrides {
     /// The zone's Level Stretch, for its hostile and neutral creatures.
     #[serde(default)]
     levels: Option<Stretch>,
+    /// Spawns added by hand, as `Overrides::added`: each a camp of its own, at its own levels,
+    /// past the Level Stretch.
+    #[serde(default)]
+    added: Vec<Added>,
 }
 
 #[derive(Clone, Copy, Deserialize)]
@@ -865,7 +869,8 @@ pub(crate) fn content() -> &'static Mobs {
                 [s.level_min, s.level_max] = range;
             }
         }
-        for a in overrides.added {
+        let zone_added = zone_overrides.zone.into_iter().flat_map(|z| z.added);
+        for a in overrides.added.into_iter().chain(zone_added) {
             let t = template
                 .iter()
                 .find(|t| t.entry == a.entry)

@@ -2,6 +2,8 @@
 # stormwind.toml (spec #466), which are never edited. One [[zone]] per file.
 # `levels` is the zone's Level Stretch: every spawn but friendly NPCs and critters has its vanilla
 # levels mapped linearly from `from` onto `to`, rounded and clamped into `to`.
+# A `[[zone.added]]` row places a creature by hand, in the shape of elwynn_overrides.toml's
+# `[[added]]`: a camp of its own at its own levels, past the Level Stretch.
 
 [[zone]]
 file = "duskwood"
@@ -59,3 +61,14 @@ removed_guids = [
   10525, 10526, 10527, 10528, 14740, 16182, 16365, 30018, 33821, 42893, 43667, 45707, 51984,
   54614, 54625, 79748, 79749,
 ]
+
+# Watch Officer Harlan Pike (#574), beside the Writ Board in the Trade District; he takes every
+# Writ in. He stands on the street floor of the city model (group 277), where a City Patroller
+# spawns (vmangos guid 79792).
+[[zone.added]]
+guid = 960601
+entry = 96047
+level_min = 45
+level_max = 45
+position = [-8820.0, 660.0, 95.42]
+orientation = 3.9

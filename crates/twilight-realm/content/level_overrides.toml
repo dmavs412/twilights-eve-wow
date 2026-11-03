@@ -30,3 +30,47 @@ y = [110.0, 120.0]
 creature = [
   { entry = 79, levels = [14, 14] },
 ]
+
+# The Writs' Elwynn named creatures (#574): mobs.toml's elite templates for Thuros Lightfingers and
+# Dead-Tooth Jack are not vanilla, so the Level Bands pass them by. Each box holds their spawns and
+# gives them the levels of the band they stand in, under that band's name.
+[[area]]
+name = "Crystal Lake & Fargodeep"
+band = [13, 16]
+map = 0
+x = [-9306.0, -9293.0]
+y = [-295.0, -282.0]
+creature = [
+  { entry = 61, levels = [13, 16] },   # Thuros Lightfingers, spawn 81107
+]
+
+[[area]]
+name = "The Farmlands"
+band = [11, 14]
+map = 0
+x = [-9871.0, -9857.0]
+y = [-230.0, -217.0]
+creature = [
+  { entry = 61, levels = [11, 14] },   # Thuros Lightfingers, spawn 83185
+]
+
+[[area]]
+name = "The Farmlands"
+band = [11, 14]
+map = 0
+x = [-9291.0, -9278.0]
+y = [506.0, 519.0]
+creature = [
+  { entry = 61, levels = [11, 14] },   # Thuros Lightfingers, spawn 83186
+]
+
+[[area]]
+name = "Eastvale & Ridgepoint"
+band = [20, 24]
+map = 0
+x = [-9791.0, -9762.0]
+y = [-1575.0, -1559.0]
+creature = [
+  { entry = 61, levels = [20, 24] },   # Thuros Lightfingers, spawn 83187
+  { entry = 6093, levels = [20, 24] }, # Dead-Tooth Jack, spawn 81411
+]

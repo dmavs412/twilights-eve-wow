@@ -16,3 +16,174 @@
 anchor = "2026-11-02"   # window 0 starts at this date's midnight UTC
 window_days = 2
 apart = [[44, 10]]      # Duskwood's (10) draw skips the band Redridge (44) drew
+
+# The Writ Board in the Trade District (#574). Display 3053 is the stock Alliance wanted board, a
+# placeholder (docs/art-assets.md, Writs). It stands on the street floor of the city model (group
+# 277), where a City Patroller spawns (vmangos guid 79792).
+[[gameobject]]
+guid = 791001
+entry = 980201
+display = 3053
+map = 0
+position = [-8821.0, 663.0, 95.42]
+orientation = 0.0
+respawn = 60.0
+
+# ── The seven Writs (#574) ───────────────────────────────────────────────────────────────────────
+#
+# Watch Officer Harlan Pike (mobs.toml, 96047) reads each one out and takes it back, whoever
+# issued it: the City Watch, the House of Nobles or Lady Prestor's office. Money is
+# 140 x levels x level copper. A sweep is two family lines; the named creatures are kill lines of
+# one. Burning Steppes' three wait for the spec that brings in that zone's mobs.
+
+# Elwynn (12), level 24, from the City Watch.
+[[quest]]
+id = 95001
+kind = "writ"
+giver_object = 980201
+ender = 96047
+zone_or_sort = 12
+level = 24
+levels = 1.5
+title = "Writ of the Watch: Eastern Elwynn"
+objectives = "Slay 50 prowlers and forest bears and 50 Defias in Elwynn Forest, and kill Dead-Tooth Jack and Thuros Lightfingers. Then return to Watch Officer Harlan Pike at the Writ Board."
+details = "A writ of the City Watch, for Elwynn. Fifty prowlers and forest bears, fifty Defias, and the two names at the bottom. That's what it says. It doesn't say that the Watch kept a patrol on the Eastvale road until spring. Then the harbour wanted men to wait for the ships, and the walls wanted men, and the road got nobody. Now the farms out east bar their doors at sundown. Dead-Tooth Jack runs the Defias in the woods below Ridgepoint. Thuros Lightfingers works the roads and never sleeps in the same place twice. Bring them both down."
+progress = "The writ's still open, is it? The Watch pays when the work's done, not before."
+completion = "Jack and Lightfingers both. I'll have their names struck off the board. Here's the Watch's money, every copper of it. It's more than they'd pay a soldier, but then they haven't got any soldiers to pay."
+money = 5040
+kill = [
+  { family = "Prowlers and forest bears slain", entries = [118, 822], count = 50 },
+  { family = "Defias slain", entries = [116, 474], count = 50 },
+  [6093, 1],
+  [61, 1],
+]
+
+# Redridge (44), low band, level 33, from the House of Nobles.
+[[quest]]
+id = 95002
+kind = "writ"
+giver_object = 980201
+ender = 96047
+zone_or_sort = 44
+level = 33
+levels = 1.0
+title = "Writ of the Nobles: Lakeshire's Fields"
+objectives = "Slay 60 Redridge gnolls and 40 Lakeshire murlocs in the Redridge Mountains, and kill Ribchaser and Squiddic. Then return to Watch Officer Harlan Pike at the Writ Board."
+details = "This one's from the House of Nobles. Good paper, a wax seal, and a page of writing that says what I could say in three lines. The lords who own the fields around Lakeshire want the gnolls off their land and the murlocs off their shore. Sixty gnolls and forty murlocs. They name two more. Ribchaser leads the gnolls that raid the farms, and Squiddic leads the murlocs along the lake. The lords would rather pay a writ than a garrison. A writ costs less, and it goes home when it's done."
+progress = "The lords will want to hear their fields are clear. Are they?"
+completion = "Ribchaser and Squiddic. I'll send word up to the House. Some lord's steward will be glad to read it. The fee is yours. They paid it in advance, which tells you how worried they were."
+money = 4620
+kill = [
+  { family = "Redridge gnolls slain", entries = [423, 424, 426, 430], count = 60 },
+  { family = "Lakeshire murlocs slain", entries = [1083, 548, 422], count = 40 },
+  [14271, 1],
+  [14270, 1],
+]
+
+# Redridge (44), mid band, level 40, from the House of Nobles.
+[[quest]]
+id = 95003
+kind = "writ"
+giver_object = 980201
+ender = 96047
+zone_or_sort = 44
+level = 40
+levels = 1.5
+title = "Writ of the Nobles: The Redridge Road"
+objectives = "Slay 50 Blackrock orcs and 50 condors and tarantulas in the Redridge Mountains, and kill Seeker Aqualon and Chatter. Then return to Watch Officer Harlan Pike at the Writ Board."
+details = "The House of Nobles again. Their wagons come down from Lakeshire with timber and stone for the lords' building, and every month fewer of them arrive. Blackrock orcs hold the high ground over the road, and the condors and tarantulas take whatever the orcs leave. Fifty orcs, fifty beasts. The writ names Chatter, a spider the drivers swear is the size of a cart, and Seeker Aqualon, something in the lake that pulls fishermen off the docks. I'd call that last one a tavern story, but the House put coin on it."
+progress = "Are the wagons still being turned back on that road?"
+completion = "The drivers will be glad of it, and the lords gladder. Here's the House's money. Count it if you like. The House never shorts a writ."
+money = 8400
+kill = [
+  { family = "Blackrock orcs slain", entries = [440, 485, 437, 4064, 4065], count = 50 },
+  { family = "Condors and tarantulas slain", entries = [428, 505], count = 50 },
+  [14269, 1],
+  [616, 1],
+]
+
+# Redridge (44), high band, level 47, from Lady Prestor's office: a routine order.
+[[quest]]
+id = 95004
+kind = "writ"
+giver_object = 980201
+ender = 96047
+zone_or_sort = 44
+level = 47
+levels = 2.0
+title = "Court Writ: The Blackrock in Redridge"
+objectives = "Slay 50 Shadowhide gnolls and 50 Blackrock veterans in the Redridge Mountains, and kill Tharil'zun and Kazon. Then return to Watch Officer Harlan Pike at the Writ Board."
+details = "From Lady Prestor's office. I'll read it as it's written. 'By order of the office of Lady Katrana Prestor, on behalf of His Excellency the Regent. Item: the Shadowhide gnolls of eastern Redridge, fifty. Item: veterans of the Blackrock clan in the same district, fifty. Item: the orc called Tharil'zun. Item: the orc called Kazon. Payment on presentation of proof to the City Watch.' That's all of it. The court's clerks write a fair hand, I'll give them that."
+progress = "The court wants proof, not stories. Have you got it?"
+completion = "Tharil'zun and Kazon. I'll write it up for the court the way they like it, item by item. Here's the office's payment. It's the full sum, and it came on time. I wish the Watch's wages came that way."
+money = 13160
+kill = [
+  { family = "Shadowhide gnolls slain", entries = [433, 434, 432, 568, 429, 431], count = 50 },
+  { family = "Blackrock veterans slain", entries = [435, 4463, 615, 436, 4462], count = 50 },
+  [486, 1],
+  [584, 1],
+]
+
+# Duskwood (10), low band, level 33, from the House of Nobles.
+[[quest]]
+id = 95005
+kind = "writ"
+giver_object = 980201
+ender = 96047
+zone_or_sort = 10
+level = 33
+levels = 1.0
+title = "Writ of the Nobles: The Duskwood Road"
+objectives = "Slay 50 Duskwood spiders and 50 dire wolves in Duskwood, and kill Lupos. Then return to Watch Officer Harlan Pike at the Writ Board."
+details = "From the House of Nobles. Some of the lords hold timber rights in Duskwood from before the forest went dark, and they still send carts for it. The carts come back half loaded, or they don't come back. The writ wants fifty spiders off the road and fifty dire wolves out of the woods. It names Lupos, a wolf the Darkshire folk say you can't see until it's on you. Darkshire's own watchmen would deal with it themselves if they had the men. They don't."
+progress = "Still wolves on the Duskwood road?"
+completion = "Lupos too. The lords' carters will sleep better, and so will Darkshire. Here's the House's fee. Spend some of it on a good lantern. You'll want one down there."
+money = 4620
+kill = [
+  { family = "Duskwood spiders slain", entries = [539, 217, 569], count = 50 },
+  { family = "Dire wolves slain", entries = [213, 565], count = 50 },
+  [521, 1],
+]
+
+# Duskwood (10), mid band, level 40, from Lady Prestor's office: a routine order.
+[[quest]]
+id = 95006
+kind = "writ"
+giver_object = 980201
+ender = 96047
+zone_or_sort = 10
+level = 40
+levels = 1.5
+title = "Court Writ: The Duskwood Graveyards"
+objectives = "Slay 60 restless dead and 40 Black Ravagers in Duskwood, and kill Naraxis. Then return to Watch Officer Harlan Pike at the Writ Board."
+details = "Another from Lady Prestor's office. 'By order of the office of Lady Katrana Prestor, on behalf of His Excellency the Regent. Item: the restless dead in the graveyards of Duskwood, sixty. Item: the black ravager hounds of the same district, forty. Item: the spider called Naraxis. Payment on presentation of proof to the City Watch.' Sixty dead men, written down like a grain order. Somebody in that office thinks it's routine. I suppose it is, these days."
+progress = "Proof for the court. Have you got it?"
+completion = "Sixty of the dead, forty of the hounds, and Naraxis. I'll write it up for the court. Here's the office's payment. They paid ahead, as they always do."
+money = 8400
+kill = [
+  { family = "Restless dead slain", entries = [48, 203, 202, 531, 3, 210, 1110, 604], count = 60 },
+  { family = "Black Ravagers slain", entries = [923, 628, 1258], count = 40 },
+  [574, 1],
+]
+
+# Duskwood (10), high band, level 47, from the City Watch.
+[[quest]]
+id = 95007
+kind = "writ"
+giver_object = 980201
+ender = 96047
+zone_or_sort = 10
+level = 47
+levels = 2.0
+title = "Writ of the Watch: Darkshire's Woods"
+objectives = "Slay 60 Nightbane worgen and 40 Splinter Fist ogres in Duskwood, and kill Morbent Fel and Mor'Ladim. Then return to Watch Officer Harlan Pike at the Writ Board."
+details = "This one's ours. The Night Watch in Darkshire wrote to the city asking for men. We sent them this writ instead, because it's all we have. The worgen come out of the woods every night, and the Splinter Fist ogres hold the hills. Sixty worgen and forty ogres. The two names are Darkshire's oldest troubles, Morbent Fel and Mor'Ladim. Ask anyone in Darkshire about them, and they'll tell you more than you wanted to hear."
+progress = "The Night Watch is counting on that writ. How goes it?"
+completion = "Fel and Mor'Ladim both. I'll send word to Darkshire, so the Night Watch knows the city didn't forget them, even if all it sent was you. Here's the Watch's money. You've earned more than that, but it's what we have."
+money = 13160
+kill = [
+  { family = "Nightbane worgen slain", entries = [898, 533, 205, 206, 920], count = 60 },
+  { family = "Splinter Fist ogres slain", entries = [889, 891, 1251, 212], count = 40 },
+  [1200, 1],
+  [522, 1],
+]

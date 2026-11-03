@@ -3,6 +3,7 @@
 //! somewhere, so no objective can never be met.
 
 mod common;
+mod gear_common;
 
 use benilla_protocol::SessionEvent;
 use common::*;
@@ -429,4 +430,334 @@ fn every_elwynn_story_quest_offers_gear_it_can_be_worn_at() {
         checked += 1;
     }
     assert_eq!(checked, 27);
+}
+
+// ── The Writ Board (#574, spec #557) ─────────────────────────────────────────────────────────────
+
+/// The Writ Board's GameObject entry and guid (`content/writs.toml`).
+const WRIT_BOARD_ENTRY: u32 = 980201;
+const WRIT_BOARD: u64 = 0xF110 << 48 | 791001;
+const WRIT_BOARD_AT: [f32; 2] = [-8821.0, 663.0];
+/// Watch Officer Harlan Pike, who takes every Writ in.
+const WRIT_OFFICER: u32 = 96047;
+
+/// The seven Writs: `(id, pool, level, levels, money)`. The pool is the `zone_or_sort`: Elwynn
+/// 12, Redridge 44, Duskwood 10.
+const WRITS: [(u32, i32, u8, f64, u32); 7] = [
+    (95001, 12, 24, 1.5, 5040),
+    (95002, 44, 33, 1.0, 4620),
+    (95003, 44, 40, 1.5, 8400),
+    (95004, 44, 47, 2.0, 13160),
+    (95005, 10, 33, 1.0, 4620),
+    (95006, 10, 40, 1.5, 8400),
+    (95007, 10, 47, 2.0, 13160),
+];
+
+/// 2026-11-02T00:00Z in Unix ms, the start of the board's window 0; a window lasts two days.
+const WRIT_ANCHOR_MS: u64 = 1_793_577_600_000;
+const HOUR_MS: u64 = 3_600_000;
+const WRIT_WINDOW_MS: u64 = 48 * HOUR_MS;
+
+fn writs() -> Vec<toml::Value> {
+    let file: toml::Value =
+        toml::from_str(include_str!("../content/writs.toml")).expect("writs.toml parses");
+    file["quest"]
+        .as_array()
+        .expect("writs.toml's quests")
+        .clone()
+}
+
+/// A TOML number, written as an integer or a float.
+fn number(v: &toml::Value) -> f64 {
+    v.as_float()
+        .or_else(|| v.as_integer().map(|i| i as f64))
+        .expect("a number")
+}
+
+/// The integers of the array `key` in `table`, none when it has no such key.
+fn integers(table: &toml::Value, key: &str) -> Vec<i64> {
+    table
+        .get(key)
+        .and_then(|a| a.as_array())
+        .into_iter()
+        .flatten()
+        .filter_map(|i| i.as_integer())
+        .collect()
+}
+
+/// `content/zones.toml`'s `[[zone]]` for the generated file `name`.
+fn zone_overrides(name: &str) -> toml::Value {
+    let zones: toml::Value =
+        toml::from_str(include_str!("../content/zones.toml")).expect("zones.toml parses");
+    zones["zone"]
+        .as_array()
+        .expect("zones.toml's zones")
+        .iter()
+        .find(|z| z["file"].as_str() == Some(name))
+        .unwrap_or_else(|| panic!("zones.toml has no [[zone]] for {name}"))
+        .clone()
+}
+
+#[test]
+fn the_seven_writs_load_with_their_pools_levels_and_pay() {
+    let writs = writs();
+    assert_eq!(writs.len(), WRITS.len());
+    let mut realm = realm();
+    for (id, pool, level, levels, money) in WRITS {
+        let q = writs
+            .iter()
+            .find(|q| q["id"].as_integer() == Some(i64::from(id)))
+            .unwrap_or_else(|| panic!("Writ {id} is in writs.toml"));
+        assert_eq!(q["kind"].as_str(), Some("writ"), "Writ {id}");
+        assert_eq!(
+            q["giver_object"].as_integer(),
+            Some(i64::from(WRIT_BOARD_ENTRY)),
+            "Writ {id}"
+        );
+        assert_eq!(
+            q["ender"].as_integer(),
+            Some(i64::from(WRIT_OFFICER)),
+            "Writ {id}"
+        );
+        assert_eq!(number(&q["levels"]), levels, "Writ {id}");
+        // 140 copper per level of the Writ, per level of XP it pays.
+        assert_eq!(
+            f64::from(money),
+            140.0 * levels * f64::from(level),
+            "Writ {id}"
+        );
+        realm.handle(RealmCommand::QuestQuery { quest: id });
+        let t = drain(&mut realm)
+            .into_iter()
+            .find_map(|e| match e {
+                SessionEvent::QuestTemplate(t) => Some(t),
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("Writ {id}'s template"));
+        assert_eq!(
+            (t.zone_or_sort, t.level, t.money),
+            (pool, u32::from(level), money as i32),
+            "Writ {id}"
+        );
+    }
+}
+
+/// A level 30 Zealot's save (Tier 2, so every Writ is theirs to take), standing at the Writ Board
+/// in Stormwind's Trade District.
+fn at_the_writ_board() -> (u64, String) {
+    let (guid, blob) = gear_common::save_with(30, 0, &[]);
+    let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"zealot\"");
+    let (head, tail) = blob.split_once("\n[").unwrap_or((&blob, ""));
+    let [x, y] = WRIT_BOARD_AT;
+    let head = head
+        .lines()
+        .map(|line| {
+            if line.starts_with("map = ") {
+                "map = 0".to_string()
+            } else if line.starts_with("zone = ") {
+                "zone = 1519".to_string()
+            } else if line.starts_with("position = [") {
+                format!("position = [{:.1}, {:.1}, 95.43]", x + 1.0, y - 1.0)
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let blob = if tail.is_empty() {
+        head
+    } else {
+        format!("{head}\n[{tail}")
+    };
+    (guid, blob)
+}
+
+#[test]
+fn the_writ_board_shows_one_writ_per_pool_and_every_writ_in_turn() {
+    let (guid, blob) = at_the_writ_board();
+    let mut realm = realm();
+    realm
+        .import_character(&blob)
+        .unwrap_or_else(|e| panic!("{e:?}: {blob}"));
+    realm.handle(RealmCommand::EnterWorld { guid });
+    for _ in 0..5 {
+        realm.tick(0.1, &FlatGround);
+        drain(&mut realm);
+    }
+    let mut seen = std::collections::BTreeSet::new();
+    for window in 0..30 {
+        realm.set_wall_clock(WRIT_ANCHOR_MS + window * WRIT_WINDOW_MS + HOUR_MS);
+        realm.handle(RealmCommand::UseGameObject { guid: WRIT_BOARD });
+        let offered: Vec<u32> = drain(&mut realm)
+            .into_iter()
+            .flat_map(|e| match e {
+                SessionEvent::QuestGreeting(list) => {
+                    list.quests.iter().map(|q| q.quest_id).collect()
+                }
+                SessionEvent::QuestDetail(d) => vec![d.quest_id],
+                _ => Vec::new(),
+            })
+            .collect();
+        for pool in [12, 44, 10] {
+            let shown = offered
+                .iter()
+                .filter(|&&id| WRITS.iter().any(|w| w.0 == id && w.1 == pool))
+                .count();
+            assert_eq!(shown, 1, "window {window}: pool {pool} in {offered:?}");
+        }
+        assert_eq!(offered.len(), 3, "window {window}: {offered:?}");
+        seen.extend(offered);
+    }
+    assert_eq!(
+        seen.into_iter().collect::<Vec<_>>(),
+        WRITS.map(|w| w.0),
+        "in 30 windows"
+    );
+}
+
+/// Every creature a Writ's kill lines count has a spawn in its pool's zone that the overrides
+/// keep: not one of their `removed` entries, and not one of their `removed_guids`, the creatures
+/// that stood inside a Phased Dungeon's footprint.
+#[test]
+fn every_writ_creature_spawns_in_its_zone_outside_the_removed_footprints() {
+    let elwynn_overrides: toml::Value =
+        toml::from_str(include_str!("../content/elwynn_overrides.toml")).expect("parses");
+    let pools = [
+        (12, include_str!("../content/elwynn.toml"), elwynn_overrides),
+        (
+            44,
+            include_str!("../content/redridge.toml"),
+            zone_overrides("redridge"),
+        ),
+        (
+            10,
+            include_str!("../content/duskwood.toml"),
+            zone_overrides("duskwood"),
+        ),
+    ];
+    let spawns: Vec<(i64, Vec<(i64, i64)>, Vec<i64>, Vec<i64>)> = pools
+        .into_iter()
+        .map(|(pool, text, overrides)| {
+            let file: toml::Value = toml::from_str(text).expect("the zone file parses");
+            let rows = file["spawns"]
+                .as_array()
+                .expect("the zone's spawns")
+                .iter()
+                .map(|r| (r[0].as_integer().unwrap(), r[1].as_integer().unwrap()))
+                .collect();
+            let removed = integers(&overrides, "removed");
+            let removed_guids = integers(&overrides, "removed_guids");
+            (pool, rows, removed, removed_guids)
+        })
+        .collect();
+    let mut checked = 0;
+    for q in writs() {
+        let id = q["id"].as_integer().unwrap();
+        let pool = q["zone_or_sort"].as_integer().unwrap();
+        let (_, rows, removed, removed_guids) = spawns
+            .iter()
+            .find(|s| s.0 == pool)
+            .unwrap_or_else(|| panic!("Writ {id}: pool {pool} is no Elwynn, Redridge or Duskwood"));
+        let entries: Vec<i64> = q["kill"]
+            .as_array()
+            .unwrap_or_else(|| panic!("Writ {id} has kill lines"))
+            .iter()
+            .flat_map(|k| match k.as_array() {
+                Some(one) => vec![one[0].as_integer().unwrap()],
+                None => integers(k, "entries"),
+            })
+            .collect();
+        assert!(!entries.is_empty(), "Writ {id}");
+        for entry in entries {
+            assert!(
+                !removed.contains(&entry),
+                "Writ {id}: creature {entry} is removed from its zone"
+            );
+            let kept = rows
+                .iter()
+                .filter(|&&(guid, e)| e == entry && !removed_guids.contains(&guid))
+                .count();
+            assert!(
+                kept > 0,
+                "Writ {id}: creature {entry} has no spawn in its zone outside the removed footprints"
+            );
+            checked += 1;
+        }
+    }
+    assert!(checked >= 7 * 5, "only {checked} creatures checked");
+}
+
+#[test]
+fn the_writs_named_creatures_are_elite() {
+    let mut realm = realm();
+    // Eight rares made rare elite (2) and Dead-Tooth Jack made elite (1); Tharil'zun, Morbent Fel
+    // and Mor'Ladim were elite already.
+    let ranks = [
+        (61, 2),
+        (14271, 2),
+        (14270, 2),
+        (14269, 2),
+        (616, 2),
+        (584, 2),
+        (521, 2),
+        (574, 2),
+        (6093, 1),
+        (486, 1),
+        (1200, 1),
+        (522, 1),
+    ];
+    for (entry, want) in ranks {
+        realm.handle(RealmCommand::CreatureQuery { entry });
+        let rank = drain(&mut realm).into_iter().find_map(|e| match e {
+            SessionEvent::CreatureName { entry: e, rank, .. } if e == entry => Some(rank),
+            _ => None,
+        });
+        assert_eq!(rank, Some(want), "creature {entry}");
+    }
+}
+
+#[test]
+fn the_writ_officer_is_a_friendly_creature_with_one_spawn_in_stormwind() {
+    let mobs: toml::Value =
+        toml::from_str(include_str!("../content/mobs.toml")).expect("mobs.toml parses");
+    let officer = mobs["template"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|t| t["entry"].as_integer() == Some(i64::from(WRIT_OFFICER)))
+        .expect("the officer's template in mobs.toml");
+    assert_eq!(officer["friendly"].as_bool(), Some(true));
+    let added: Vec<i64> = zone_overrides("stormwind")
+        .get("added")
+        .and_then(|a| a.as_array())
+        .into_iter()
+        .flatten()
+        .filter(|a| a["entry"].as_integer() == Some(i64::from(WRIT_OFFICER)))
+        .map(|a| a["guid"].as_integer().unwrap())
+        .collect();
+    assert_eq!(added.len(), 1, "zones.toml's Stormwind places {added:?}");
+    // The realm stands that one spawn beside the board, on Eastern Kingdoms.
+    let placed: Vec<_> = twilight_realm::audit_rows()
+        .into_iter()
+        .filter(|r| r.what.ends_with(&format!("(entry {WRIT_OFFICER})")))
+        .collect();
+    assert_eq!(placed.len(), 1, "{placed:?}");
+    let [x, y, _] = placed[0].position;
+    assert_eq!(placed[0].map, 0);
+    assert!(
+        (x - WRIT_BOARD_AT[0]).hypot(y - WRIT_BOARD_AT[1]) < 5.0,
+        "the officer stands at {x}, {y}"
+    );
+    // The content load takes him as every Writ's ender: the Writs load, and he answers to a name.
+    let mut realm = realm();
+    for (id, ..) in WRITS {
+        realm.handle(RealmCommand::QuestQuery { quest: id });
+        assert!(
+            drain(&mut realm)
+                .into_iter()
+                .any(|e| matches!(e, SessionEvent::QuestTemplate(t) if t.quest_id == id)),
+            "Writ {id}"
+        );
+    }
+    assert!(creature_named(&mut realm, WRIT_OFFICER));
 }

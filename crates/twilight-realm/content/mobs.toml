@@ -1918,3 +1918,215 @@ speed_run = 0.857
 detection_range = 18.0
 respawn_secs = 300.0
 spells = ["corruption_creature"]
+
+# ── The Writ Board (#574, spec #557) ─────────────────────────────────────────────────────────────
+
+# Watch Officer Harlan Pike, who stands beside the Writ Board in the Trade District and takes every
+# Writ in, whoever issued it. The name is a placeholder. Display 5446 is the Stormwind City Guard's
+# (stormwind.toml, entry 68); faction 12 is Stormwind's. His spawn is in zones.toml.
+[[template]]
+entry = 96047
+name = "Watch Officer Harlan Pike"
+subname = "City Watch"
+creature_type = 7
+rank = 0
+display_id = 5446
+faction_template = 12
+hostile = false
+unit_class = "warrior"
+level_min = 45
+level_max = 45
+health_multiplier = 1.0
+damage_multiplier = 0.75
+armor_multiplier = 1.0
+base_attack_time = 1500
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+friendly = true
+
+# The Writs' named creatures, made elite. Each row shadows its generated one (elwynn.toml,
+# redridge.toml, duskwood.toml), as Garrick Padfoot's does: a copy with only `rank` changed. A rare
+# (4) becomes a rare elite (2), and Dead-Tooth Jack, a normal creature, an elite (1). Tharil'zun,
+# Morbent Fel and Mor'Ladim are elite already and keep their generated rows. Thuros and Jack keep
+# their Elwynn Level Band levels through level_overrides.toml, since the bands read only vanilla
+# templates.
+[[template]]
+entry = 61
+name = "Thuros Lightfingers"
+subname = ""
+creature_type = 7
+rank = 2
+display_id = 3341
+faction_template = 17
+hostile = true
+unit_class = "warrior"
+level_min = 11
+level_max = 11
+health_multiplier = 1.0
+damage_multiplier = 0.85
+armor_multiplier = 1.0
+base_attack_time = 1700
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+
+[[template]]
+entry = 6093
+name = "Dead-Tooth Jack"
+subname = ""
+creature_type = 7
+rank = 1
+display_id = 4947
+faction_template = 17
+hostile = true
+unit_class = "warrior"
+level_min = 11
+level_max = 11
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 14271
+name = "Ribchaser"
+subname = ""
+creature_type = 7
+rank = 2
+display_id = 500
+faction_template = 19
+hostile = true
+unit_class = "warrior"
+level_min = 17
+level_max = 17
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.2
+speed_run = 1.143
+detection_range = 20.0
+
+[[template]]
+entry = 14270
+name = "Squiddic"
+subname = ""
+creature_type = 7
+rank = 2
+display_id = 5243
+faction_template = 18
+hostile = true
+unit_class = "warrior"
+level_min = 19
+level_max = 19
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+
+[[template]]
+entry = 14269
+name = "Seeker Aqualon"
+subname = ""
+creature_type = 4
+rank = 2
+display_id = 525
+faction_template = 91
+hostile = true
+unit_class = "warrior"
+level_min = 21
+level_max = 21
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.556
+speed_run = 1.143
+detection_range = 20.0
+
+[[template]]
+entry = 616
+name = "Chatter"
+subname = ""
+creature_type = 1
+rank = 2
+display_id = 821
+faction_template = 22
+hostile = true
+unit_class = "warrior"
+level_min = 23
+level_max = 23
+health_multiplier = 1.02
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+
+[[template]]
+entry = 584
+name = "Kazon"
+subname = ""
+creature_type = 7
+rank = 2
+display_id = 6041
+faction_template = 40
+hostile = true
+unit_class = "warrior"
+level_min = 27
+level_max = 27
+health_multiplier = 1.05
+damage_multiplier = 2.332
+armor_multiplier = 1.0
+base_attack_time = 2800
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+
+[[template]]
+entry = 521
+name = "Lupos"
+subname = ""
+creature_type = 1
+rank = 2
+display_id = 11412
+faction_template = 38
+hostile = true
+unit_class = "warrior"
+level_min = 23
+level_max = 23
+health_multiplier = 1.02
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.429
+detection_range = 20.0
+
+[[template]]
+entry = 574
+name = "Naraxis"
+subname = ""
+creature_type = 1
+rank = 2
+display_id = 963
+faction_template = 22
+hostile = true
+unit_class = "warrior"
+level_min = 27
+level_max = 27
+health_multiplier = 1.05
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
