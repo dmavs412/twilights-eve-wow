@@ -170,7 +170,7 @@ fn complete(c: &Char, a: &Active) -> bool {
     q.kill
         .iter()
         .zip(a.kills)
-        .all(|(&(_, count), killed)| u32::from(killed) >= count)
+        .all(|(k, killed)| u32::from(killed) >= k.count)
         && (0..q.talk.len()).all(|i| a.kills[q.talk_slot(i)] >= 1)
         && q.use_object
             .iter()
@@ -195,15 +195,16 @@ pub(crate) fn uses_done(a: &Active) -> bool {
     })
 }
 
+/// The most one objective's counter in a log slot holds: it is six bits wide.
+pub(crate) const COUNTER_MAX: u8 = 63;
+
 /// One slot's three fields: `a`'s quest, or empty.
 fn slot_pairs(slot: u8, a: Option<&Active>) -> [(u16, u32); 3] {
     let base = PLAYER_QUEST_LOG_1_1 + 3 * u16::from(slot);
     let (id, counters) = a.map_or((0, 0), |a| {
-        let mut counters = a
-            .kills
-            .iter()
-            .enumerate()
-            .fold(0, |acc, (i, &k)| acc | u32::from(k.min(63)) << (6 * i));
+        let mut counters = a.kills.iter().enumerate().fold(0, |acc, (i, &k)| {
+            acc | u32::from(k.min(COUNTER_MAX)) << (6 * i)
+        });
         if a.failed {
             counters |= QUEST_STATE_FAILED << 24;
         } else if a.done {
@@ -242,7 +243,7 @@ pub(crate) fn credit_kill(c: &mut Char, entry: u32, events: &mut Vec<SessionEven
             .kill
             .iter()
             .zip(a.kills)
-            .position(|(&(e, count), killed)| e == entry && u32::from(killed) < count)
+            .position(|(k, killed)| k.counts(entry) && u32::from(killed) < k.count)
         else {
             continue;
         };
@@ -252,7 +253,7 @@ pub(crate) fn credit_kill(c: &mut Char, entry: u32, events: &mut Vec<SessionEven
             quest_id: a.id,
             entry,
             count: u32::from(a.kills[o]),
-            required: q.kill[o].1,
+            required: q.kill[o].count,
         });
         update_slot(c, i, events);
     }

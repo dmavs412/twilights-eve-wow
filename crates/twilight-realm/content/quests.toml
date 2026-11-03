@@ -28,7 +28,11 @@
 # the dialog texts, `money` (copper) on hand-in, and its objectives: `kill` rows of
 # `[creature entry, count]`, and `collect` rows of an `item` (content/quest_items.toml), its
 # `count`, and the creatures it drops `from` at `chance` percent while the quest wants more.
-# At most four of each.
+# At most four of each. A `kill` row can count a family of creatures instead:
+# `{ family = "Blackrock orcs slain", entries = [440, 485, 437], count = 50 }` counts a kill of
+# any of its `entries`, and the log shows the `family` text in place of a creature name. A kill
+# row counts at most 63, the most the log's counter holds; the content load refuses more, and a
+# family with no entries.
 #
 # A "find" quest sends the player to a place or a person:
 # - `explore`: a spot the player walks into, `{ place, position = [x, y], radius, map }` (WoW

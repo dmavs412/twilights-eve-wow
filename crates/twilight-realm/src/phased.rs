@@ -1335,7 +1335,7 @@ mod tests {
         let q = crate::quests::content::quest(94004).unwrap();
         assert!(matches!(q.giver, crate::quests::content::Giver::Npc(952)));
         assert_eq!(q.after.ids(), [94002]);
-        assert_eq!(q.kill, [(96005, 1)]);
+        assert_eq!(q.kill, [crate::quests::content::Kill::one(96005, 1)]);
     }
 
     #[test]

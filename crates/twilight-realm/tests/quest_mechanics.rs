@@ -7,8 +7,10 @@ mod gear_common;
 mod quest_common;
 
 use benilla_protocol::{SessionEvent, START_ELWYNN};
+use common::party::died;
 use common::*;
 use quest_common::*;
+use twilight_realm::Audience;
 
 const HIGHGUID_UNIT: u64 = 0xF130;
 const HIGHGUID_GAMEOBJECT: u64 = 0xF110;
@@ -457,6 +459,124 @@ money = 0
 kill = [[6, 1], [38, 1]]
 talk = [{ npc = 197, option = "a", reply = "b" }]
 use = [[990001, 1], [990001, 2]]
+"#,
+    );
+}
+
+const KOBOLD_VERMIN: u32 = 6;
+const KOBOLD_WORKER: u32 = 257;
+const KOBOLDS: u32 = 99210;
+
+/// A quest with one kill line that counts a family: either kind of kobold (#572).
+const KOBOLD_FAMILY: &str = r#"
+[[quest]]
+id = 99210
+kind = "story"
+giver = 197
+level = 5
+title = "Kobolds"
+objectives = "-"
+details = "-"
+progress = "-"
+completion = "-"
+money = 0
+kill = [{ family = "Kobolds slain", entries = [6, 257], count = 3 }]
+"#;
+
+/// Spawns a level 1 `entry` three yards east of the player, for them alone, and kills it; the
+/// events on the way.
+fn slay(realm: &mut Realm, entry: u32) -> Vec<SessionEvent> {
+    let me = roster(realm)[0].guid;
+    let (map, at) = realm.player_positions()[0];
+    let prey = [at[0] + 3.0, at[1], at[2]];
+    let creature = realm
+        .spawn_for(&AbbeyFloor, entry, 1, prey, map, Audience::of(&[me]))
+        .expect("a creature");
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: at,
+        orientation: 0.0,
+    });
+    realm.handle(RealmCommand::AttackSwing { guid: creature });
+    let mut events = Vec::new();
+    for _ in 0..300 {
+        events.extend(wait(realm, 1.0));
+        if died(&events, creature) {
+            events.extend(wait(realm, 0.5));
+            return events;
+        }
+    }
+    panic!("creature {entry} never died");
+}
+
+/// The kill credits in `events`: `(entry, count, required)`.
+fn kill_credits(events: &[SessionEvent], quest: u32) -> Vec<(u32, u32, u32)> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::QuestObjectiveKill {
+                quest_id,
+                entry,
+                count,
+                required,
+            } if *quest_id == quest => Some((*entry, *count, *required)),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn a_family_kill_line_counts_any_of_its_creatures_toward_one_count() {
+    let mut realm = in_northshire().with_quests(KOBOLD_FAMILY);
+    take(&mut realm, KOBOLDS);
+
+    let first = slay(&mut realm, KOBOLD_VERMIN);
+    assert_eq!(kill_credits(&first, KOBOLDS), [(KOBOLD_VERMIN, 1, 3)]);
+    let second = slay(&mut realm, KOBOLD_WORKER);
+    assert_eq!(kill_credits(&second, KOBOLDS), [(KOBOLD_WORKER, 2, 3)]);
+    assert!(completed(&turn_in(&mut realm, KOBOLDS)).is_none());
+
+    let third = slay(&mut realm, KOBOLD_WORKER);
+    assert_eq!(kill_credits(&third, KOBOLDS), [(KOBOLD_WORKER, 3, 3)]);
+    assert!(completed(&turn_in(&mut realm, KOBOLDS)).is_some());
+}
+
+#[test]
+fn a_family_kill_line_sends_its_family_as_the_objective_text() {
+    let mut realm = in_northshire().with_quests(KOBOLD_FAMILY);
+    realm.handle(RealmCommand::QuestQuery { quest: KOBOLDS });
+    let template = drain(&mut realm)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::QuestTemplate(t) => Some(t),
+            _ => None,
+        })
+        .expect("the quest template");
+    let line = &template.objectives[0];
+    assert_eq!(
+        (line.creature_or_go, line.required_count, line.text.as_str()),
+        (KOBOLD_VERMIN, 3, "Kobolds slain")
+    );
+    assert_eq!(template.objectives[1].creature_or_go, 0);
+}
+
+#[test]
+#[should_panic(expected = "more than the log's counter holds")]
+fn a_kill_line_above_the_log_counter_fails_validation() {
+    let _ = Realm::new().with_quests(
+        r#"
+[[quest]]
+id = 99297
+kind = "story"
+giver = 197
+level = 5
+title = "Too many kobolds"
+objectives = "-"
+details = "-"
+progress = "-"
+completion = "-"
+money = 0
+kill = [[6, 64]]
 "#,
     );
 }

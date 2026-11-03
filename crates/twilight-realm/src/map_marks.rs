@@ -100,7 +100,7 @@ fn monsters(g: &Giver, q: &Quest) -> Option<[u8; 2]> {
     let targets: Vec<&mobs::Spawn> = mobs::content()
         .spawn
         .iter()
-        .filter(|s| s.phase == Phase::OpenWorld && q.kill.iter().any(|&(e, _)| e == s.entry))
+        .filter(|s| s.phase == Phase::OpenWorld && q.kill.iter().any(|k| k.counts(s.entry)))
         .collect();
     let area = mobs::level_area(g.map, g.position[0], g.position[1]);
     let near: Vec<&mobs::Spawn> = match area {

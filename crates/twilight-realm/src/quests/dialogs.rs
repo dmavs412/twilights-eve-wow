@@ -18,9 +18,10 @@ use crate::{equipment, items, Realm, RealmCommand};
 pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
     let q = content::quest(id)?;
     let objectives = std::array::from_fn(|i| {
-        // Kills, then talk targets (count 1), then GameObjects (a negative entry).
-        let (creature, kills) = if i < q.kill.len() {
-            q.kill[i]
+        // Kills (a family line sends its first entry), then talk targets (count 1), then
+        // GameObjects (a negative entry).
+        let (creature, kills) = if let Some(k) = q.kill.get(i) {
+            (k.entries[0], k.count)
         } else if i < q.use_slot(0) {
             (q.talk[i - q.kill.len()].npc, 1)
         } else if i < q.explore_slot(0) {
@@ -31,12 +32,18 @@ pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
         } else {
             (0, 0)
         };
-        // A listed explore row names its place in the objective text.
+        // A family kill line names its family in the objective text, and a listed explore row its
+        // place; the log shows that text in place of a creature name.
         let text = q
-            .explore
-            .listed()
-            .get(i.wrapping_sub(q.explore_slot(0)))
-            .map(|e| e.place.clone())
+            .kill
+            .get(i)
+            .and_then(|k| k.family.clone())
+            .or_else(|| {
+                q.explore
+                    .listed()
+                    .get(i.wrapping_sub(q.explore_slot(0)))
+                    .map(|e| e.place.clone())
+            })
             .unwrap_or_default();
         let (item, items) = q.collect.get(i).map_or((0, 0), |o| (o.item, o.count));
         QuestObjective {

@@ -222,6 +222,64 @@ impl After {
     }
 }
 
+/// A kill objective: `count` kills of any of its creatures. Written `[entry, count]` for one
+/// creature, or `{ family, entries, count }` for a line that counts several, which the log names
+/// by its `family` text in place of a creature name.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct Kill {
+    pub(crate) entries: Vec<u32>,
+    pub(crate) count: u32,
+    pub(crate) family: Option<String>,
+}
+
+impl<'de> Deserialize<'de> for Kill {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Written {
+            One(u32, u32),
+            Family {
+                family: String,
+                entries: Vec<u32>,
+                count: u32,
+            },
+        }
+        Ok(match Written::deserialize(d)? {
+            Written::One(entry, count) => Kill {
+                entries: vec![entry],
+                count,
+                family: None,
+            },
+            Written::Family {
+                family,
+                entries,
+                count,
+            } => Kill {
+                entries,
+                count,
+                family: Some(family),
+            },
+        })
+    }
+}
+
+impl Kill {
+    /// Whether a kill of creature `entry` counts toward it.
+    pub(crate) fn counts(&self, entry: u32) -> bool {
+        self.entries.contains(&entry)
+    }
+
+    /// The `[entry, count]` form's line.
+    #[cfg(test)]
+    pub(crate) fn one(entry: u32, count: u32) -> Kill {
+        Kill {
+            entries: vec![entry],
+            count,
+            family: None,
+        }
+    }
+}
+
 /// A talk-to objective: while the quest is active and the credit not yet given, `npc`'s gossip
 /// menu shows `option`; choosing it shows `reply` and gives the credit.
 #[derive(Deserialize)]
@@ -326,9 +384,8 @@ pub(crate) struct Quest {
     /// to the ender, which a `collect` objective then takes at the hand-in.
     #[serde(default)]
     pub(crate) gives: Vec<(u32, u32)>,
-    /// `(creature entry, count)`.
     #[serde(default)]
-    pub(crate) kill: Vec<(u32, u32)>,
+    pub(crate) kill: Vec<Kill>,
     /// Talk-to objectives, after the kills in the log's four creature/GameObject slots.
     #[serde(default)]
     pub(crate) talk: Vec<Talk>,
@@ -750,6 +807,21 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
          spots count too), or collect objectives",
         q.id
     );
+    for k in &q.kill {
+        assert!(
+            !k.entries.is_empty(),
+            "quest {}'s kill line {:?} counts no creature",
+            q.id,
+            k.family.as_deref().unwrap_or_default()
+        );
+        assert!(
+            k.count <= u32::from(super::COUNTER_MAX),
+            "quest {} asks for {} kills on one line, more than the log's counter holds ({})",
+            q.id,
+            k.count,
+            super::COUNTER_MAX
+        );
+    }
     for &area in &q.discover {
         assert!(
             crate::areas::get(area).is_some(),
@@ -908,7 +980,7 @@ mod tests {
                 "{id}'s giver"
             );
             assert_eq!(q.min_tier(), tier, "{id}'s Tier");
-            let killed: Vec<u32> = q.kill.iter().map(|&(e, _)| e).collect();
+            let killed: Vec<u32> = q.kill.iter().flat_map(|k| &k.entries).copied().collect();
             assert_eq!(killed, kills, "{id}'s kills");
             assert_eq!(q.collect.first().map(|c| c.item), item, "{id}'s item");
         }
@@ -956,7 +1028,7 @@ mod tests {
         assert!(q(94401).use_object.is_empty());
         assert_eq!(q(94401).ender(), 96015);
         assert_eq!(q(94402).after.ids(), [94401]);
-        assert_eq!(q(94402).kill, [(96022, 1)]);
+        assert_eq!(q(94402).kill, [Kill::one(96022, 1)]);
         assert_eq!(q(94402).money, 1000);
         assert_eq!(q(94402).choices.len(), 3);
         assert_eq!(q(94403).after.ids(), [94402]);
@@ -973,9 +1045,9 @@ mod tests {
         let q = |id| super::quest(id).unwrap();
         assert!(q(94501).after.ids().is_empty());
         assert_eq!(q(94501).use_object, [(980104, 5)]);
-        assert_eq!(q(94501).kill, [(96023, 6)]);
+        assert_eq!(q(94501).kill, [Kill::one(96023, 6)]);
         assert_eq!(q(94502).after.ids(), [94501, 94403]);
-        assert_eq!(q(94502).kill, [(96025, 1)]);
+        assert_eq!(q(94502).kill, [Kill::one(96025, 1)]);
         assert_eq!(q(94502).money, 800);
         assert_eq!(q(94502).choices.len(), 3);
         assert_eq!(q(94503).after.ids(), [94502]);
@@ -1025,7 +1097,7 @@ mod tests {
             );
             assert_eq!(q.min_tier(), 1, "{id}'s Tier");
             assert_eq!(q.money, money, "{id}'s copper");
-            let killed: Vec<u32> = q.kill.iter().map(|&(e, _)| e).collect();
+            let killed: Vec<u32> = q.kill.iter().flat_map(|k| &k.entries).copied().collect();
             assert_eq!(killed, kills, "{id}'s kills");
             let used: Vec<u32> = q.use_object.iter().map(|&(e, _)| e).collect();
             assert_eq!(used, uses, "{id}'s uses");
@@ -1057,7 +1129,7 @@ mod tests {
             );
             assert_eq!(q.min_tier(), 1, "{id}'s Tier");
             assert_eq!(q.money, money, "{id}'s copper");
-            let killed: Vec<u32> = q.kill.iter().map(|&(e, _)| e).collect();
+            let killed: Vec<u32> = q.kill.iter().flat_map(|k| &k.entries).copied().collect();
             assert_eq!(killed, kills, "{id}'s kills");
             assert_eq!(q.collect.first().map(|c| c.item), item, "{id}'s item");
         }
