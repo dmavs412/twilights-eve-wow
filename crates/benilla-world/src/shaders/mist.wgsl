@@ -1,21 +1,24 @@
 // The Closed Zones' mist curtain (`crate::mist`). The colour is the scene fog's, raw gamma like
 // every fogged surface, desaturated and darkened at the foot and back to the pure fog colour higher
 // up, so the top dissolves into the sky. The alpha is opaque over the foot's band and fades to
-// nothing at the top, and two layers of value noise drifting sideways along the curtain thin it to
-// 0.75. The noise reads world coordinates, so neighbouring segments line up.
+// nothing at the top. One warped fractal noise, drifting sideways and upward, moves the fade's
+// start up and down and thins the fade, so the top is ragged. The noise reads world coordinates,
+// so neighbouring segments line up.
 
 #import bevy_pbr::forward_io::VertexOutput
 
 // rgb: the scene fog colour; w: seconds of drift.
 @group(#{MATERIAL_BIND_GROUP}) @binding(100) var<uniform> fog: vec4<f32>;
-// x: the opaque band in yards; y, z: the two layers' drift in yards per second.
+// x: the opaque band in yards; y, z: the noise's sideways and upward drift in yards per second;
+// w: the domain warp in yards.
 @group(#{MATERIAL_BIND_GROUP}) @binding(101) var<uniform> shape: vec4<f32>;
 // x: the foot's desaturation; y: its brightness; z: the yards its colour takes to reach the fog's.
 @group(#{MATERIAL_BIND_GROUP}) @binding(102) var<uniform> foot: vec4<f32>;
+// x: the yards the noise moves the fade's start; y: the fade's alpha ceiling at the lowest noise.
+@group(#{MATERIAL_BIND_GROUP}) @binding(103) var<uniform> rag: vec4<f32>;
 
-// Noise cells per yard for the two layers.
-const FAST_SCALE: f32 = 1.0 / 9.0;
-const SLOW_SCALE: f32 = 1.0 / 23.0;
+// Noise cells per yard of the first octave.
+const NOISE_SCALE: f32 = 1.0 / 23.0;
 
 // An integer hash of a lattice point, in [0, 1].
 fn hash(p: vec2<i32>) -> f32 {
@@ -38,25 +41,34 @@ fn value_noise(p: vec2<f32>) -> f32 {
     return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
 
+// Three octaves of value noise at a point in yards, in [0, 1].
+fn fractal(p: vec2<f32>) -> f32 {
+    let q = p * NOISE_SCALE;
+    let sum = 0.5 * value_noise(q) + 0.25 * value_noise(q * 2.0) + 0.125 * value_noise(q * 4.0);
+    return sum / 0.875;
+}
+
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
-    let above_foot = in.uv.x;
-    let height = in.uv.y;
-    let opaque = shape.x;
-    var band = 1.0;
-    if above_foot > opaque {
-        band = clamp(1.0 - (above_foot - opaque) / max(height - opaque, 0.001), 0.0, 1.0);
-    }
+    let above_ground = in.uv.x;
+    let top_above_ground = in.uv.y;
     // A segment runs along one world axis, so the sum of the two is its length coordinate, the
     // same at a shared corner.
     let along = in.world_position.x + in.world_position.z;
     let up = in.world_position.y;
     let t = fog.w;
-    let fast = value_noise(vec2<f32>((along + shape.y * t) * FAST_SCALE, up * FAST_SCALE));
-    let slow = value_noise(vec2<f32>((along - shape.z * t) * SLOW_SCALE, up * SLOW_SCALE));
-    let thin = mix(0.75, 1.0, 0.5 * (fast + slow));
+    let p = vec2<f32>(along - shape.y * t, up - shape.z * t);
+    // The domain warp: two more samples, far from `p` and from each other, push the point.
+    let warp = vec2<f32>(fractal(p + vec2<f32>(57.0, 13.0)), fractal(p + vec2<f32>(-31.0, 89.0)));
+    let n = fractal(p + (warp - 0.5) * 2.0 * shape.w);
+    let start = shape.x + (n - 0.5) * 2.0 * rag.x;
+    var band = 1.0;
+    if above_ground > start {
+        band = clamp(1.0 - (above_ground - start) / max(top_above_ground - start, 0.001), 0.0, 1.0);
+        band = band * mix(rag.y, 1.0, n);
+    }
     let luma = dot(fog.rgb, vec3<f32>(0.299, 0.587, 0.114));
     let dark = mix(fog.rgb, vec3<f32>(luma), foot.x) * foot.y;
-    let colour = mix(dark, fog.rgb, smoothstep(0.0, foot.z, above_foot));
-    return vec4<f32>(colour, band * thin);
+    let colour = mix(dark, fog.rgb, smoothstep(0.0, foot.z, above_ground));
+    return vec4<f32>(colour, band);
 }

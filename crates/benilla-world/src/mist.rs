@@ -27,12 +27,19 @@ use crate::terrain_stream::TerrainTileRoot;
 /// Yards the curtain reaches below the lowest terrain vertex on its side.
 pub const BELOW_YD: f32 = 10.0;
 /// Yards the curtain rises above the highest terrain vertex on its side.
-pub const ABOVE_YD: f32 = 80.0;
-/// The fully opaque band from the curtain's foot, in yards; above it the mist fades to nothing.
-pub const OPAQUE_YD: f32 = 40.0;
-/// The two noise layers' sideways drift, in yards per second.
-pub const DRIFT_FAST_YD_S: f32 = 1.5;
-pub const DRIFT_SLOW_YD_S: f32 = 0.6;
+pub const ABOVE_YD: f32 = 120.0;
+/// The fully opaque band from the curtain's foot, in yards, where the noise is middling; above it
+/// the mist fades to nothing.
+pub const OPAQUE_YD: f32 = 25.0;
+/// How far the noise moves the fade's start up or down from [`OPAQUE_YD`], in yards.
+pub const RAG_YD: f32 = 20.0;
+/// The fade's alpha ceiling where the noise is lowest; it reaches 1 where the noise is highest.
+pub const FADE_FLOOR: f32 = 0.3;
+/// The noise's drift sideways along the curtain and upward, in yards per second.
+pub const DRIFT_YD_S: f32 = 0.4;
+pub const DRIFT_UP_YD_S: f32 = 0.3;
+/// The domain warp: how far a second noise sample pushes the sample point, in yards.
+pub const WARP_YD: f32 = 8.0;
 /// How far the foot's colour moves from the fog colour towards its own grey (0 keeps the hue).
 pub const FOOT_DESAT: f32 = 0.6;
 /// The foot's brightness as a share of that grey's.
@@ -43,7 +50,7 @@ pub const COLOUR_RAMP_YD: f32 = 60.0;
 /// Chunks across a map, both ways: 64 tiles of 16.
 const CHUNKS: u32 = 64 * 16;
 
-/// The mist material: the scene fog's colour, alpha from the height band and two noise layers.
+/// The mist material: the scene fog's colour, alpha from a height band that one noise rags.
 pub type MistMaterial = ExtendedMaterial<StandardMaterial, MistExt>;
 
 #[derive(Asset, AsBindGroup, Clone, TypePath)]
@@ -52,12 +59,15 @@ pub struct MistExt {
     /// noise has drifted for.
     #[uniform(100)]
     pub(crate) fog: Vec4,
-    /// [`OPAQUE_YD`], [`DRIFT_FAST_YD_S`] and [`DRIFT_SLOW_YD_S`], read by the shader.
+    /// [`OPAQUE_YD`], [`DRIFT_YD_S`], [`DRIFT_UP_YD_S`] and [`WARP_YD`], read by the shader.
     #[uniform(101)]
     pub(crate) shape: Vec4,
     /// [`FOOT_DESAT`], [`FOOT_VALUE`] and [`COLOUR_RAMP_YD`], read by the shader.
     #[uniform(102)]
     pub(crate) foot: Vec4,
+    /// [`RAG_YD`] and [`FADE_FLOOR`], read by the shader.
+    #[uniform(103)]
+    pub(crate) rag: Vec4,
 }
 
 impl MaterialExtension for MistExt {
@@ -210,8 +220,9 @@ fn setup_mist(mut commands: Commands, mut materials: ResMut<Assets<MistMaterial>
         },
         extension: MistExt {
             fog: Vec4::ZERO,
-            shape: Vec4::new(OPAQUE_YD, DRIFT_FAST_YD_S, DRIFT_SLOW_YD_S, 0.0),
+            shape: Vec4::new(OPAQUE_YD, DRIFT_YD_S, DRIFT_UP_YD_S, WARP_YD),
             foot: Vec4::new(FOOT_DESAT, FOOT_VALUE, COLOUR_RAMP_YD, 0.0),
+            rag: Vec4::new(RAG_YD, FADE_FLOOR, 0.0, 0.0),
         },
     });
     commands.insert_resource(Mist { material });
