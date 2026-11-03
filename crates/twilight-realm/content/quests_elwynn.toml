@@ -719,11 +719,12 @@ collect = [{ item = 6292, count = 1 }]
 
 # ── Jasperlode Mine (#224) ───────────────────────────────────────────────────────────────────
 #
-# The Phased Dungeon behind the sealed door (content/jasperlode.toml). The boss is the Eye Below.
+# The Phased Dungeon at the end of the tunnel (content/jasperlode.toml). The boss is the Eye Below.
 # Chieftain Grik's camp inside cannot be attacked. Ids and ranges follow docs/specs/elwynn-10-30.
 
-# Dughan sends the character through the door with the keystone; Grik takes the quest at the camp
-# inside. The objective is the door's first opening. XP only.
+# Dughan sends the character into the mine; Grik takes the quest at the camp inside. No objective
+# since the door went (#552): speaking to Grik completes it. The text still names the door and the
+# keystone, by Davis's choice. XP only.
 [[quest]]
 id = 94401
 kind = "story"
@@ -739,7 +740,6 @@ completion = "You are the first of the big folk to come through that door. Sit, 
 money = 0
 choices = [903032, 903033, 903034]
 zone_or_sort = 12
-use = [[98002, 1]]
 
 # Grik gives and takes it. An item quest with placeholder rewards until the gear pass: 1000 copper,
 # no choices.

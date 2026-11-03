@@ -1327,11 +1327,9 @@ mod tests {
     }
 
     #[test]
-    fn jasperlodes_portal_stands_behind_a_door_the_keystone_opens() {
+    fn jasperlodes_portal_stands_open_with_no_door() {
         let d = content().iter().find(|d| d.id == 6).expect("Jasperlode");
-        let door = d.portal.door.as_ref().expect("a door");
-        assert_eq!(door.opens_with, 980013, "the Jasperlode Keystone");
-        assert_eq!(door.open_secs, 15.0);
+        assert!(d.portal.door.is_none());
         assert!(!d.footprint.is_empty() && !d.creature.is_empty());
     }
 

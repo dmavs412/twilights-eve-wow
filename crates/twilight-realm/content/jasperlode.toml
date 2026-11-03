@@ -1,13 +1,14 @@
-# Jasperlode Mine, the Phased Dungeon behind the sealed door (spec #224, issue #237). Hand-written.
+# Jasperlode Mine, the Phased Dungeon at the end of the tunnel (spec #224, issue #237; the sealed
+# door went in #552). Hand-written.
 #
 # The mine is the stock md_spidermine.wmo, placed by the ADT's MODF at (-9154.65, -594.39, 62.90)
 # with heading 8.5, so `origin` is that point and `yaw` is -171.5 (heading less 180), as the Abbey's
 # is. The footprint is the WMO's own interior groups (its MOGI table, in the model's frame), minus
 # the entrance: groups 4 (gnollgarrison01) and 6 (interior02) are the tunnel from the cave mouth,
-# which stays open world, and every other group is inside the door. The door stands where the tunnel
-# meets the first chamber (group 5, smallroom04), at model x 14, on the tunnel's axis (y 2.4, the
-# line of the stock Kobold Miner that stood in the tunnel). The boxes stop at model x 12 so the door
-# and the Portal, at x 14 and 12.6, stand outside them. Terrain heights are the stock spawns' (the
+# which stays open world, and every other group is the dungeon. The Portal stands where the tunnel
+# meets the first chamber (group 5, smallroom04), at model x 12.6, on the tunnel's axis (y 2.4, the
+# line of the stock Kobold Miner that stood in the tunnel), and is always open. The boxes stop at
+# model x 12 so the Portal stands outside them. Terrain heights are the stock spawns' (the
 # floor is about 5 yd under the tunnel's in the first chamber and about 10 yd under it at the pit);
 # the cover pillars, camp and packs are hand-placed on that floor, and each position needs a look in
 # game. The Eye's pit is the deepest floor (model z -9.9), where the stock Mother Fang stood.
@@ -85,18 +86,6 @@ z = [-6.7, 10.7]
 [portal]
 position = [-9166.8, -598.6, 62.9]
 orientation = 0.15
-
-# The inner door: display 4791 is vmangos's Stone Door (gameobject 177444). Entry 98002, the Sealed
-# Yard's neighbour. The Jasperlode Keystone (#236) opens it; `outside` is 4 yd up the tunnel.
-[portal.door]
-entry = 98002
-display = 4791
-position = [-9168.1, -598.8, 62.9]
-orientation = 3.29
-outside = [-9172.1, -599.4, 62.9]
-open_secs = 15.0
-opens_with = 980013
-sealed_text = "The door is sealed. A rune-marked keystone would fit it."
 
 # Grik's camp (the first chamber): Chieftain Grik, who gives and takes The Kobold King's Plea, and
 # four frightened kobolds. All friendly.

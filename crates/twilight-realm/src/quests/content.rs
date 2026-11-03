@@ -953,7 +953,7 @@ mod tests {
     fn jasperlodes_quests_chain_from_the_keystone_to_the_orders() {
         let q = |id| super::quest(id).unwrap();
         assert_eq!(q(94401).after.ids(), [94303]);
-        assert_eq!(q(94401).use_object, [(98002, 1)]);
+        assert!(q(94401).use_object.is_empty());
         assert_eq!(q(94401).ender(), 96015);
         assert_eq!(q(94402).after.ids(), [94401]);
         assert_eq!(q(94402).kill, [(96022, 1)]);
