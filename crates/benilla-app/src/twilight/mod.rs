@@ -202,8 +202,9 @@ fn save_path(guid: u64) -> Option<PathBuf> {
 }
 
 /// Imports every indexed save; one that cannot be read is skipped with a warning and left on
-/// disk, so a newer build can still read it.
+/// disk, so a newer build can still read it. Reads the Server Unlocks first (ADR 0031).
 fn load_saves(realm: &mut Realm) -> BTreeSet<u64> {
+    load_unlocks(realm);
     let mut saved = BTreeSet::new();
     let Some(index) = index_path().and_then(|p| crate::local_state::read_to_string(&p).ok()) else {
         return saved;
@@ -230,6 +231,27 @@ fn load_saves(realm: &mut Realm) -> BTreeSet<u64> {
     }
     info!("twilight: {} character save(s) loaded", saved.len());
     saved
+}
+
+/// `benilla-config/twilight/unlocks.toml`, beside the saves: the Server Unlocks bought. A missing
+/// file is nothing bought. The wall clock is set first, so the unlocks are checked by today.
+fn load_unlocks(realm: &mut Realm) {
+    if let Ok(now) = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+        realm.set_wall_clock(now.as_millis() as u64);
+    }
+    let path = index_path().map(|p| p.with_file_name("unlocks.toml"));
+    let text = match path.as_deref().map(crate::local_state::read_to_string) {
+        Some(Ok(text)) => Some(text),
+        Some(Err(e)) if e.kind() != std::io::ErrorKind::NotFound => {
+            warn!("twilight: cannot read unlocks.toml, so nothing is bought: {e}");
+            None
+        }
+        _ => None,
+    };
+    realm.set_unlocks(text.as_deref());
+    for line in realm.drain_log() {
+        warn!("twilight: {line}");
+    }
 }
 
 /// Carries out the realm's save requests.
@@ -379,6 +401,10 @@ fn pump(
             realm.tick(time.delta_secs(), &host);
             for op in realm.drain_storage() {
                 store(op, saved);
+            }
+            // A Server Unlock that went on or off at midnight or at login.
+            for line in realm.drain_log() {
+                warn!("twilight: {line}");
             }
             realm.drain_events()
         }

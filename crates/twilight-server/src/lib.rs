@@ -205,6 +205,7 @@ struct Conn {
 /// The realm thread: applies commands as they arrive and ticks at [`TICK`].
 fn run_realm(rx: Receiver<Inbound>, data_dir: &Path, mut world: Box<dyn World>) {
     let mut realm = Realm::with_seed(seed());
+    load_unlocks(&mut realm, data_dir);
     load_saves(&mut realm, data_dir);
     let mut accounts = Accounts::load(data_dir);
     let mut conns: HashMap<u64, Conn> = HashMap::new();
@@ -334,6 +335,26 @@ fn seed() -> u64 {
 /// `<data-dir>/characters/<guid>.toml`: one character's save, the blob solo writes.
 fn save_path(data_dir: &Path, guid: u64) -> PathBuf {
     data_dir.join("characters").join(format!("{guid}.toml"))
+}
+
+/// `<data-dir>/unlocks.toml`: the Server Unlocks bought (ADR 0031). A missing file is nothing
+/// bought. The wall clock is set first, so the unlocks are checked by today.
+fn load_unlocks(realm: &mut Realm, data_dir: &Path) {
+    if let Ok(wall) = SystemTime::now().duration_since(UNIX_EPOCH) {
+        realm.set_wall_clock(wall.as_millis() as u64);
+    }
+    let text = match std::fs::read_to_string(data_dir.join("unlocks.toml")) {
+        Ok(text) => Some(text),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+        Err(e) => {
+            eprintln!("twilight-server: cannot read unlocks.toml, so nothing is bought: {e}");
+            None
+        }
+    };
+    realm.set_unlocks(text.as_deref());
+    for line in realm.drain_log() {
+        eprintln!("twilight-server: {line}");
+    }
 }
 
 /// Imports every save under `data_dir`; one that cannot be read keeps its guid reserved.

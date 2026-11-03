@@ -87,6 +87,7 @@ mod tables;
 mod talents;
 mod trade;
 mod trainer;
+mod unlocks;
 mod vendor;
 mod wear;
 #[cfg(feature = "wire")]
@@ -711,6 +712,10 @@ pub struct Realm {
     alchemies: world::Alchemies,
     /// The Rumours under way: not saved.
     rumours: rumours::Rumours,
+    /// The Server Unlocks (ADR 0031): the catalogue and what the state file says was bought.
+    unlocks: unlocks::Unlocks,
+    /// Each Server Unlock's state at the last check, which runs at login and once a UTC day.
+    unlocks_seen: unlocks::Seen,
 }
 
 impl Realm {
@@ -887,6 +892,41 @@ impl Realm {
     /// the time between two sessions counts.
     pub fn set_wall_clock(&mut self, unix_ms: u64) {
         self.wall = unix_ms as f64 / 1000.0;
+    }
+
+    /// Reads the Server Unlocks state file (ADR 0031), `unlocks.toml` in the realm's data folder;
+    /// `None` when there is none, so nothing is bought. What it names wrong goes to the log as a
+    /// warning, and so does each unlock whose state this changes. Set the wall clock first.
+    pub fn set_unlocks(&mut self, text: Option<&str>) {
+        let catalogue = self.unlocks.catalogue().to_vec();
+        self.unlocks = match text {
+            Some(text) => unlocks::Unlocks::parse(catalogue, text),
+            None => unlocks::Unlocks::new(catalogue),
+        };
+        self.log.extend_from_slice(self.unlocks.warnings());
+        self.check_unlocks();
+    }
+
+    /// This realm with the Server Unlock catalogue `toml` (the shape of `content/unlocks.toml`) in
+    /// place of the shipped one, and nothing bought: a test seam, so a test can sell an unlock
+    /// the content makes free.
+    pub fn with_unlock_catalogue(self, toml: &str) -> Self {
+        Self {
+            unlocks: unlocks::Unlocks::new(unlocks::catalogue(toml)),
+            ..self
+        }
+    }
+
+    /// Whether Server Unlock `key` is on by the wall clock: free, or bought until a later date. A
+    /// feature asks when it acts, so a lapse or a purchase needs no restart.
+    pub fn unlock_on(&self, key: &str) -> bool {
+        self.unlocks.on(key, self.wall as u64)
+    }
+
+    /// Checks every Server Unlock by the wall clock and logs each change since the last check.
+    fn check_unlocks(&mut self) {
+        self.unlocks_seen
+            .check(&self.unlocks, self.wall as u64, &mut self.log);
     }
 
     /// A new session, with no character in the world.
@@ -2004,6 +2044,10 @@ impl Realm {
     /// Advances the world by `dt` seconds: every session's, in session order.
     pub fn tick(&mut self, dt: f32, host: &dyn Host) {
         self.wall += f64::from(dt);
+        // Midnight UTC passed, by this tick or by the host's clock since the last.
+        if self.unlocks_seen.new_day(self.wall as u64) {
+            self.check_unlocks();
+        }
         self.doors.tick(dt);
         let mut ids: Vec<SessionId> = self.parked.keys().copied().collect();
         ids.push(self.active);
@@ -2364,7 +2408,8 @@ impl Realm {
     }
 
     /// What the realm has to report since the last drain, for the host to log as warnings: what
-    /// a save named that the realm no longer has.
+    /// a save named that the realm no longer has, what the Server Unlocks state file named wrong,
+    /// and each Server Unlock that went on or off.
     pub fn drain_log(&mut self) -> Vec<String> {
         std::mem::take(&mut self.log)
     }
@@ -2578,6 +2623,7 @@ impl Realm {
         self.world = Some(entry);
         self.events.push(chat::joined_world_channel());
         self.events.extend(calling_choice::at_login(c));
+        self.check_unlocks();
     }
 
     /// A logout is always instant: no timer, no rest-area rule, no refusal in combat.

@@ -1,0 +1,13 @@
+# Server Unlocks (ADR 0031): features a server buys. `free = true` is the test build's state:
+# on with nothing bought. The state file is `unlocks.toml` in the realm's data folder.
+[[unlock]]
+key = "open_road"
+name = "Open Road"
+blurb = "Roads and streets carry you 30% faster out of combat."
+free = true
+
+[[unlock]]
+key = "carts"
+name = "Carts"
+blurb = "Wagons run between Goldshire, the Stormwind gate and Eastvale."
+free = true
