@@ -1,7 +1,7 @@
 # Twilight's Eve: Lore Bible
 
 Davis, started 2026-10-23. Copied on 2026-11-02 from the live doc at
-https://claude.ai/artifact/FCEWQ3Ng5RHp5bHrtPpzgJ (revision 47), which replaces the earlier PDF.
+https://claude.ai/artifact/FCEWQ3Ng5RHp5bHrtPpzgJ (revision 50), which replaces the earlier PDF.
 The live doc is the source; refresh this copy when it changes. Every quest, rumour, item text and
 NPC line follows it. Where content disagrees with it, the bible wins.
 
@@ -195,7 +195,7 @@ Duskwood is the warning, Stormwind is the court, and the Burning Steppes are the
 | Redridge Mountains | 30-50 | The Anchor: Morganth's workshop and the Blackrock front. | Tower of Ilgalar, Stonewatch Keep |
 | Duskwood | 30-50 | The warning: the first failed Anchor and the Scourge. | Mistmantle Manor, Raven Hill Deeps; Mourncrown at 60 |
 | Stormwind City | Hub, 30-60 | The court: politics, cover-ups and Prestor. | The Stockade, the Deeprun Tram, the Cathedral of Light, Stormwind Keep |
-| Burning Steppes and Blackrock | 50-60 | The dragons' side: the last Anchor site. | Blackrock Stronghold, Dreadmaul Rock, plus Blackrock Mountain |
+| Burning Steppes and Blackrock | 50-60 | The dragons' side: the last Anchor site. | Altar of Storms, Blackrock Stronghold, Dreadmaul Rock, plus Blackrock Mountain |
 
 ### Elwynn Forest (1-30): the quarry
 
@@ -222,7 +222,7 @@ failure notes, to break it and clear the pass into the Burning Steppes.
   final boss and dies here. Players find Sareth's letters among his notebooks. The Anchor survives
   his death; a running machine doesn't need its tuner. Players recover the failure notes here and
   come back to break the Anchor around 48-50.
-- **Stonewatch Keep (about 44-48).** The Blackrock have taken the keep, with black dragonkin among
+- **Stonewatch Keep (about 45-48).** The Blackrock have taken the keep, with black dragonkin among
   them. It proves the orcs and the cult answer to the same master.
 
 **Duskwood: the warning.** Duskwood's endless night is the cult's first test Anchor, untuned and
@@ -232,7 +232,7 @@ learn what Anchors do when they go wrong. Mourncrown hangs over it, drawn by the
 - **Mistmantle Manor (about 32-36).** The household above the test Anchor went silent on the night
   it was switched on. It's a haunted-house dungeon and players' first look at what the mist does to
   people.
-- **Raven Hill Deeps (about 44-48).** Sareth's cultists dig Duskwood's seam under the cemetery for
+- **Raven Hill Deeps (about 40-44).** Sareth's cultists dig Duskwood's seam under the cemetery for
   his own Anchor. Players learn the undead aren't silenced, and see Mourncrown's shadow up close.
 
 ### Stormwind City (hub): the court
@@ -268,6 +268,10 @@ find Nefarian's real plan: the breach at Blackrock Stronghold, a breach in the m
 Blackrock Horde can come and go once the ring is closed. Cedric never knew it existed, and neither
 does most of the cult.
 
+- **Altar of Storms (about 50-52).** The cult's camp in the walled bowl west of Blackrock Mountain,
+  and the first dungeon past the pass. The cult took the tuning method when Ilgalar fell, and its
+  tuners are working the last Anchor's cores here without Morganth; without him the cores come out
+  wrong. Entrance: the path up from the south, the bowl's one way in.
 - **Blackrock Stronghold (about 52-55).** The orcs' walled fort, with the breach in the mist inside
   it, held by black dragonkin and Blackrock. Entrance: the fort gate.
 - **Dreadmaul Rock (about 55-58).** Ogres paid in tribute. It's where the tribute ends up.
