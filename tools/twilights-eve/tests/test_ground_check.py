@@ -107,6 +107,49 @@ class HerbSpots(unittest.TestCase):
                          "points = [{ x = -9001.5, y = 120.0, z = 57.25 }, { x = -9000.0, y = 130.0, z = 58.00 }]")
 
 
+STOPS = """\
+id = 7
+map = 1
+
+[[stop]]
+key = "water"
+x = [-9210.0, -9170.0]
+arrival = [-9200.0, -2020.0, 43.0, 0.0]
+return_portal = [-9197.0, -2020.0, 43.0, 3.14]
+
+[[inner_portal]]
+stop = "water"
+position = [-9560.0, -720.5, 64.74]
+back = [-9558.0, -718.5, 64.74, 0.8]
+"""
+
+
+class StopPoints(unittest.TestCase):
+    def setUp(self):
+        fd, self.path = tempfile.mkstemp(suffix=".toml")
+        with os.fdopen(fd, "wb") as f:
+            f.write(STOPS.encode("utf-8"))
+
+    def tearDown(self):
+        os.remove(self.path)
+
+    def test_a_stops_arrival_and_return_portal_are_rows_on_the_files_map(self):
+        _, found = ground_check.rows(self.path)
+        got = [(r.label, r.map, r.kind, r.x, r.y, r.z) for r in found]
+        self.assertEqual(got, [
+            ("stop water arrival", 1, "stop", -9200.0, -2020.0, 43.0),
+            ("stop water return_portal", 1, "stop", -9197.0, -2020.0, 43.0),
+            (None, 1, "inner_portal", -9560.0, -720.5, 64.74),
+        ])
+
+    def test_set_z_rewrites_a_stop_points_z_and_keeps_its_facing(self):
+        lines, found = ground_check.rows(self.path)
+        for r in found[:2]:
+            ground_check.set_z(lines, r.idx, 108.734)
+        self.assertEqual(lines[found[0].idx], "arrival = [-9200.0, -2020.0, 108.73, 0.0]")
+        self.assertEqual(lines[found[1].idx], "return_portal = [-9197.0, -2020.0, 108.73, 3.14]")
+
+
 class Water(unittest.TestCase):
     TEMPLATES = {97010: {"ours": True, "swims": False}, 97020: {"ours": True, "swims": True},
                  80: {"ours": False, "swims": False}, 123: {"ours": False, "swims": False}}
@@ -126,6 +169,9 @@ class Water(unittest.TestCase):
 
     def test_a_hub_npc_is_never_exempt(self):
         self.assertTrue(ground_check.water_checked("npc", 97020, self.TEMPLATES, set()))
+
+    def test_a_stop_point_is_never_exempt(self):
+        self.assertTrue(ground_check.water_checked("stop", None, self.TEMPLATES, set()))
 
     def test_another_kind_follows_its_entry(self):
         self.assertTrue(ground_check.water_checked("rumour", 97010, self.TEMPLATES, set()))
@@ -308,10 +354,10 @@ class Model(unittest.TestCase):
 
 
 class TableKinds(unittest.TestCase):
-    def test_every_table_kind_the_gate_reads_is_a_creature_or_a_gameobject(self):
+    def test_every_table_kind_the_gate_reads_is_a_creature_a_gameobject_or_a_players_spot(self):
         # A new kind would fall through the water and model rules unchecked: name it in
-        # CREATURE_KINDS or GAMEOBJECT_KINDS.
-        known = ground_check.CREATURE_KINDS | ground_check.GAMEOBJECT_KINDS
+        # CREATURE_KINDS, GAMEOBJECT_KINDS or PLAYER_KINDS.
+        known = ground_check.CREATURE_KINDS | ground_check.GAMEOBJECT_KINDS | ground_check.PLAYER_KINDS
         for path in sorted(glob.glob(os.path.join(ground_check.CONTENT, "*.toml"))):
             for r in ground_check.rows(path)[1]:
                 self.assertIn(r.kind, known, "%s:%d" % (os.path.basename(path), r.idx + 1))

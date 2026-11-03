@@ -41,7 +41,9 @@ const CACHE: u64 = 975004;
 const BY_INNER_WATER: [f32; 3] = [-9558.5, -718.5, 64.74];
 const BY_INNER_FIRE: [f32; 3] = [-9550.5, -709.5, 75.06];
 const BY_INNER_SHADOW: [f32; 3] = [-9552.5, -707.5, 90.41];
-const ARRIVAL_FIRE: [f32; 3] = [-8995.0, -2380.0, 100.0];
+/// The arrivals stand on Redridge's terrain, as ground_check.py wrote them (#549).
+const ARRIVAL_WATER: [f32; 3] = [-9200.0, -2020.0, 108.73];
+const ARRIVAL_FIRE: [f32; 3] = [-8995.0, -2380.0, 132.56];
 /// Beside each mini-boss in its stop, and each mini-boss's spot.
 const BY_GRESH: [f32; 3] = [-9179.5, -2015.0, 116.06];
 const GRESH_AT: [f32; 3] = [-9178.0, -2015.0, 116.06];
@@ -277,7 +279,7 @@ fn the_water_portal_is_open_and_the_fire_and_shadow_portals_are_closed() {
     click(&mut p, 0, INNER_WATER);
     assert_eq!(
         teleports(&p, 0, from),
-        [[-9200.0, -2020.0, 43.0]],
+        [ARRIVAL_WATER],
         "the water portal is closed"
     );
 }
@@ -312,7 +314,7 @@ fn the_water_portal_stands_on_the_floor_not_the_terrain_under_the_tower() {
     assert_eq!(z, Some(64.74), "the portal is buried or never shown");
     let from = p.seen(0).len();
     click(&mut p, 0, INNER_WATER);
-    assert_eq!(teleports(&p, 0, from), [[-9200.0, -2020.0, 43.0]]);
+    assert_eq!(teleports(&p, 0, from), [ARRIVAL_WATER]);
 }
 
 /// `GAMEOBJECT_TYPE_GOOBER`: the client lets a player use it. A GENERIC (5) it never does, so a

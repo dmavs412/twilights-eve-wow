@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Check (and with --fix, rewrite) the spot of every placed unit in the realm content TOML.
 
-A row is any table with a `position = [x, y, z]` line. Its Z is compared with the ADT terrain
+A row is any table with a `position = [x, y, z]` line, and each of a `[[stop]]` table's
+`arrival` and `return_portal` (`[x, y, z, facing]`), where a stop's portal lands a player and
+the portal home stands; `--fix` keeps their facing. Its Z is compared with the ADT terrain
 height. A row inside a WMO placement box (with a 2 yd margin, Z range included) is interior: it
 must stand on one of the building's floors (wmo_floor.py) or on the terrain, within the same
 limits. `--fix` moves an interior row only onto a floor within 2 yd of its Z; farther off, a
@@ -16,7 +18,7 @@ the row limits, and `--fix` writes the terrain's. Every row and point then passe
 of ADR 0021:
 - water: no water surface (ADT MCLQ or WMO MLIQ) more than 1.5 yd over its feet, unless it is a
   GameObject or a creature that swims (`swims = true` on our template, vmangos InhabitType & 2
-  on an imported one). A Hub NPC is never exempt.
+  on an imported one). A Hub NPC and a stop's points are never exempt.
 - wall: no colliding, unwalkable WMO triangle crosses its body, a 0.4 yd capsule from 0.3 to 2 yd
   over its feet.
 - roof: it does not stand on a floor of an outdoor WMO group more than 3 yd over the terrain,
@@ -91,6 +93,9 @@ BODY_RULES = ("water", "wall", "roof", "doodad")
 # names a template, else a GameObject.
 GAMEOBJECT_KINDS = {"gameobject", "locked_door", "portal", "portal.door", "inner_portal", "cover", "entrance", "exit"}
 CREATURE_KINDS = {"creature", "creature.on_health", "creature.every", "spawn", "added", "moved", "npc"}
+# Table kinds whose rows a player stands on: a stop's arrival and return portal. The water rule
+# always checks them, and they place no model of their own.
+PLAYER_KINDS = {"stop"}
 
 HEADER = re.compile(r"^\s*\[\[?\s*([^\]\s]+)\s*\]")
 NAME = re.compile(r'^\s*name\s*=\s*"([^"]*)"')
@@ -101,7 +106,8 @@ GROUNDED = re.compile(r"^\s*grounded\s*=\s*(true|false)")
 ON_TOP = re.compile(r"^\s*on_top\s*=\s*(true|false)")
 DISPLAY = re.compile(r"^\s*display(?:_id)?\s*=\s*(\d+)")
 POSITION = re.compile(
-    r"^(?P<head>\s*position\s*=\s*\[\s*)(?P<x>[^,\]\s]+)(?P<s1>\s*,\s*)(?P<y>[^,\]\s]+)"
+    r"^(?P<head>\s*(?P<field>position|arrival|return_portal)\s*=\s*\[\s*)(?P<x>[^,\]\s]+)"
+    r"(?P<s1>\s*,\s*)(?P<y>[^,\]\s]+)"
     r"(?P<s2>\s*,\s*)(?P<z>[^,\]\s]+)(?P<tail>.*)$",
     re.S,
 )
@@ -124,10 +130,12 @@ def _read_lines(path):
 
 
 def rows(path):
-    """(lines, [Row]) for each 3D position line.
+    """(lines, [Row]) for each 3D position line, and for each `[[stop]]` table's `arrival` and
+    `return_portal`, labelled `stop <key> <field>`.
 
-    A table's `map`, `grounded`, `entry` and `on_top` may sit on either side of its position
-    line, so a row is emitted when the next header or the end of the file closes the table."""
+    A table's `map`, `grounded`, `entry`, `on_top` and `key` may sit on either side of its
+    position line, so a row is emitted when the next header or the end of the file closes the
+    table."""
     lines = _read_lines(path)
     file_map = FILE_DEFAULT_MAP.get(os.path.basename(path), 0)
     label = None
@@ -135,10 +143,15 @@ def rows(path):
     out = []
 
     def close():
-        if cur and cur["pos"] is not None:
-            out.append(Row(cur["pos"], cur["label"], cur["map"] if cur["map"] is not None else file_map,
-                           cur["grounded"], *cur["xyz"], cur["kind"], cur["entry"], cur["on_top"],
-                           cur["display"]))
+        if not cur:
+            return
+        tmap = cur["map"] if cur["map"] is not None else file_map
+        if cur["pos"] is not None:
+            out.append(Row(cur["pos"], cur["label"], tmap, cur["grounded"], *cur["xyz"], cur["kind"],
+                           cur["entry"], cur["on_top"], cur["display"]))
+        for i, field, xyz in cur["stops"]:
+            out.append(Row(i, "stop %s %s" % (cur["key"], field), tmap, cur["grounded"], *xyz,
+                           cur["kind"], None, False, None))
 
     seen_header = False
     for i, raw in enumerate(lines):
@@ -149,7 +162,8 @@ def rows(path):
             seen_header = True
             label = None
             cur = {"pos": None, "label": None, "map": None, "grounded": True, "xyz": None,
-                   "kind": m.group(1), "entry": None, "on_top": False, "display": None}
+                   "kind": m.group(1), "entry": None, "on_top": False, "display": None,
+                   "key": None, "stops": []}
             continue
         m = MAP.match(line)
         if m:
@@ -184,15 +198,22 @@ def rows(path):
         if m:
             cur["display"] = int(m.group(1))
             continue
+        m = KEY.match(line)
+        if m:
+            cur["key"] = m.group(1)
+            continue
         m = POSITION.match(line)
         if m:
             try:
                 xyz = (float(m.group("x")), float(m.group("y")), float(m.group("z")))
             except ValueError:
                 continue
-            cur["pos"] = i
-            cur["label"] = label
-            cur["xyz"] = xyz
+            if m.group("field") == "position":
+                cur["pos"] = i
+                cur["label"] = label
+                cur["xyz"] = xyz
+            elif cur["kind"] == "stop":
+                cur["stops"].append((i, m.group("field"), xyz))
     close()
     return lines, out
 
@@ -310,7 +331,7 @@ def water_checked(kind, entry, templates, swimmers):
     """Whether the water rule applies to a unit of table `kind` naming template `entry`.
     `templates` maps an entry to {"ours", "swims"}; `swimmers` holds the imported entries
     vmangos lets swim."""
-    if kind == "npc":
+    if kind == "npc" or kind in PLAYER_KINDS:
         return True
     if kind in GAMEOBJECT_KINDS or (kind not in CREATURE_KINDS and entry not in templates):
         return False
@@ -437,8 +458,10 @@ class Models:
 
 def model_failure(r, templates, models):
     """(display, why) when the client cannot draw row `r`'s model, None when it can or the row
-    places none of its own (a cover, a portal, an explore point). A creature row's display is its
-    own `display_id`, else its template's; a GameObject's is its `display`."""
+    places none of its own (a cover, a portal, an explore point, a stop's points). A creature row's
+    display is its own `display_id`, else its template's; a GameObject's is its `display`."""
+    if r.kind in PLAYER_KINDS:
+        return None
     if r.kind in GAMEOBJECT_KINDS or (r.kind not in CREATURE_KINDS and r.entry not in templates):
         if r.display is None and r.kind != "gameobject":
             return None
@@ -603,6 +626,8 @@ def main():
         lines, found = rows(path)
         changed = False
         for r in found:
+            if r.kind in PLAYER_KINDS:
+                counts["stops"] += 1
             bad = model_failure(r, world.templates, world.models)
             if known_or_flag({"model": ""} if bad else {}, name, r.label, r.x, r.y, ("model",)):
                 counts["model"] += 1
@@ -751,9 +776,9 @@ def main():
 
     for n, c in sorted(per_file.items()):
         print("  %s: %d" % (n, c))
-    print("checked %d rows and %d points, %s %d, interior %d (off-floor %d), known %d, stale known %d, "
-          "nudge failed %d, model %d, no-terrain %d"
-          % (counts["checked"], counts["points"], verb, counts[verb], counts["interior"],
+    print("checked %d rows (%d stop points) and %d points, %s %d, interior %d (off-floor %d), known %d, "
+          "stale known %d, nudge failed %d, model %d, no-terrain %d"
+          % (counts["checked"], counts["stops"], counts["points"], verb, counts[verb], counts["interior"],
              counts["off-floor"], counts["known"], counts["stale"], counts["nudge-failed"], counts["model"],
              counts["no-terrain"]))
     return 1 if (counts[verb] or counts["off-floor"] or counts["stale"] or counts["nudge-failed"]

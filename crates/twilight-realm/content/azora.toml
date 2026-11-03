@@ -17,11 +17,11 @@
 # `removed_guids`. Servants 80928 and 80936 stand outside the boxes and stay.
 #
 # The stops are 40x40 yd boxes in Redridge, world coordinates on map 0. vmangos could not be opened
-# either, so each spot is a remembered place, not a checked one: no ground height was looked up and
-# every z is a guess. Davis stands in each and fixes it.
-#   water  Lake Everstill's shallows, about (-9190, -2020), z 43.
-#   fire   the Blackrock foothills on Redridge's northern edge, about (-8985, -2380), z 100.
-#   shadow the ground at the foot of the Tower of Ilgalar, about (-9235, -2700), z 60. The cellar
+# either, so each x and y is a remembered place, not a checked one. Every z in a stop, its arrival
+# and return portal included, is the terrain's, written by ground_check.py --fix (#549).
+#   water  Lake Everstill's shallows, about (-9190, -2020).
+#   fire   the Blackrock foothills on Redridge's northern edge, about (-8985, -2380).
+#   shadow the ground at the foot of the Tower of Ilgalar, about (-9235, -2700). The cellar
 #          beneath it is not known to be reachable geometry, so the ground at its foot stands in.
 #
 # Displays are in mobs.toml; the stock ones named there are unchecked against vmangos.
@@ -63,24 +63,24 @@ key = "water"
 x = [-9210.0, -9170.0]
 y = [-2040.0, -2000.0]
 z = [-200.0, 400.0]
-arrival = [-9200.0, -2020.0, 43.0, 0.0]
-return_portal = [-9197.0, -2020.0, 43.0, 3.14]
+arrival = [-9200.0, -2020.0, 108.73, 0.0]
+return_portal = [-9197.0, -2020.0, 109.45, 3.14]
 
 [[stop]]
 key = "fire"
 x = [-9005.0, -8965.0]
 y = [-2400.0, -2360.0]
 z = [-200.0, 400.0]
-arrival = [-8995.0, -2380.0, 100.0, 0.0]
-return_portal = [-8992.0, -2380.0, 100.0, 3.14]
+arrival = [-8995.0, -2380.0, 132.56, 0.0]
+return_portal = [-8992.0, -2380.0, 133.00, 3.14]
 
 [[stop]]
 key = "shadow"
 x = [-9255.0, -9215.0]
 y = [-2720.0, -2680.0]
 z = [-200.0, 400.0]
-arrival = [-9245.0, -2700.0, 60.0, 0.0]
-return_portal = [-9242.0, -2700.0, 60.0, 3.14]
+arrival = [-9245.0, -2699.0, 88.81, 0.0]
+return_portal = [-9242.0, -2700.0, 88.80, 3.14]
 
 # Water on the ground floor, open at the start; fire on floor 75 and shadow on floor 90, closed.
 [[inner_portal]]
