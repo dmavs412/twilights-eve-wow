@@ -1,7 +1,8 @@
 // The Closed Zones' mist curtain (`crate::mist`). The colour is the scene fog's, raw gamma like
-// every fogged surface. The alpha is opaque over the foot's band and fades to nothing at the top,
-// and two layers of value noise drifting sideways along the curtain thin it to 0.75. The noise
-// reads world coordinates, so neighbouring segments line up.
+// every fogged surface, desaturated and darkened at the foot and back to the pure fog colour higher
+// up, so the top dissolves into the sky. The alpha is opaque over the foot's band and fades to
+// nothing at the top, and two layers of value noise drifting sideways along the curtain thin it to
+// 0.75. The noise reads world coordinates, so neighbouring segments line up.
 
 #import bevy_pbr::forward_io::VertexOutput
 
@@ -9,6 +10,8 @@
 @group(#{MATERIAL_BIND_GROUP}) @binding(100) var<uniform> fog: vec4<f32>;
 // x: the opaque band in yards; y, z: the two layers' drift in yards per second.
 @group(#{MATERIAL_BIND_GROUP}) @binding(101) var<uniform> shape: vec4<f32>;
+// x: the foot's desaturation; y: its brightness; z: the yards its colour takes to reach the fog's.
+@group(#{MATERIAL_BIND_GROUP}) @binding(102) var<uniform> foot: vec4<f32>;
 
 // Noise cells per yard for the two layers.
 const FAST_SCALE: f32 = 1.0 / 9.0;
@@ -52,5 +55,8 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let fast = value_noise(vec2<f32>((along + shape.y * t) * FAST_SCALE, up * FAST_SCALE));
     let slow = value_noise(vec2<f32>((along - shape.z * t) * SLOW_SCALE, up * SLOW_SCALE));
     let thin = mix(0.75, 1.0, 0.5 * (fast + slow));
-    return vec4<f32>(fog.rgb, band * thin);
+    let luma = dot(fog.rgb, vec3<f32>(0.299, 0.587, 0.114));
+    let dark = mix(fog.rgb, vec3<f32>(luma), foot.x) * foot.y;
+    let colour = mix(dark, fog.rgb, smoothstep(0.0, foot.z, above_foot));
+    return vec4<f32>(colour, band * thin);
 }

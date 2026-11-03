@@ -33,6 +33,12 @@ pub const OPAQUE_YD: f32 = 40.0;
 /// The two noise layers' sideways drift, in yards per second.
 pub const DRIFT_FAST_YD_S: f32 = 1.5;
 pub const DRIFT_SLOW_YD_S: f32 = 0.6;
+/// How far the foot's colour moves from the fog colour towards its own grey (0 keeps the hue).
+pub const FOOT_DESAT: f32 = 0.6;
+/// The foot's brightness as a share of that grey's.
+pub const FOOT_VALUE: f32 = 0.35;
+/// Yards above the ground over which the dark foot returns to the pure fog colour.
+pub const COLOUR_RAMP_YD: f32 = 60.0;
 
 /// Chunks across a map, both ways: 64 tiles of 16.
 const CHUNKS: u32 = 64 * 16;
@@ -49,6 +55,9 @@ pub struct MistExt {
     /// [`OPAQUE_YD`], [`DRIFT_FAST_YD_S`] and [`DRIFT_SLOW_YD_S`], read by the shader.
     #[uniform(101)]
     pub(crate) shape: Vec4,
+    /// [`FOOT_DESAT`], [`FOOT_VALUE`] and [`COLOUR_RAMP_YD`], read by the shader.
+    #[uniform(102)]
+    pub(crate) foot: Vec4,
 }
 
 impl MaterialExtension for MistExt {
@@ -202,6 +211,7 @@ fn setup_mist(mut commands: Commands, mut materials: ResMut<Assets<MistMaterial>
         extension: MistExt {
             fog: Vec4::ZERO,
             shape: Vec4::new(OPAQUE_YD, DRIFT_FAST_YD_S, DRIFT_SLOW_YD_S, 0.0),
+            foot: Vec4::new(FOOT_DESAT, FOOT_VALUE, COLOUR_RAMP_YD, 0.0),
         },
     });
     commands.insert_resource(Mist { material });
