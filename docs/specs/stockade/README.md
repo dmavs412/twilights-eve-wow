@@ -34,25 +34,26 @@ report, so the Warden hands them the riot.
 
 ## The building
 
-Vanilla's jail, drawn to scale in `map.html` (open it in a browser). The loading screen lands
-at (49.0, 0.5, -16.4) and the corridor runs north along x; west is +y. The jail is two halves
-mirrored about the corridor's middle: on each side a stair goes down to a hall of cells, and a
-passage from the hall's far corner leads on to a block of deeper rooms.
+Vanilla's jail, drawn in `map.html` (open it in a browser). The loading screen lands at
+(49.0, 0.5, -16.4) and the corridor runs north along x; west is +y. The jail is a cross: one
+long hall of cells with a round room at each end, crossed near its middle by the corridor from
+the door. The hall runs from the south-east round room (Bazil Thredd's old spot) to the
+north-west one (Dextren Ward's), about 15 degrees off the y axis, a level below the corridor;
+a stair on each side of the crossing goes down into it.
 
 - The gate hall and the corridor, z about -25, from the door north to Targorr's old spot at the
-  corridor's end, with a row of cells on either side of its first stretch.
-- The Defias block is the east hall (y below 0, z about -35), down the east stairs. Its two
-  cell rows are the hall's south and north galleries, rows A and B, each a dead end with a
-  lever and a portcullis at its mouth. Red Dace holds the hall's far side. The deep cells past
-  him (Hamhock's and Thredd's old rooms) hold the rest of the riot and nothing the quests need.
-- The quiet wing is the west hall (y above 0, z about -35), down the west stairs. Its gate is
-  where the stairs meet the hall; Marrow stands on the stairs side of it. The four writ cells
-  line the hall. The warder's room at the hall's north end holds the evidence chest and the
-  lower doors, which Pell left open.
-- The lower gallery is the deeper block past the lower doors, the mirror of Hamhock's dead
-  end. Pell is there with the two guards he bought.
-- The drain is that block's last room, Dextren Ward's old room. The Hush is there, and the
-  grate is in its floor.
+  corridor's end, with cells on either side of its first stretch.
+- The Defias block is the hall's east wing (y below 0, z about -35), down the east stairs.
+  Row A is the near half of its cells and row B the far half, each with a lever and a
+  portcullis where the row begins. Red Dace holds the round room at the wing's end.
+- The quiet wing is the hall's west wing (y above 0, z about -35), down the west stairs. Its
+  gate is at the foot of the stairs; Marrow stands on the stairs side of it. The four writ
+  cells are the first cells past the gate. The warder's room is a cell halfway along, with the
+  evidence chest and the lower doors, which Pell left open.
+- The lower gallery is the wing's far half, past the lower doors. Pell is there with the two
+  guards he bought.
+- The drain is the round room at the wing's end, Dextren Ward's old room. The Hush is there,
+  and the grate is in its floor.
 
 The walking order is Dace, Marrow, Pell, the Hush, one boss per room and in level order.
 
@@ -160,6 +161,9 @@ the dragons.
   and north; the map and #578 fixed that on 2026-11-03.
 - The first draft put Pell and the Hush in the Defias block, on the way to Dace. They moved
   below the quiet wing the same day so the player meets the bosses in level order.
+- The map's walls are a schematic of the jail's shape, taken from a client map of the
+  Stockade; the spawn points on it are measured, the walls are not. The first map drew each
+  wing as a hall with deeper rooms behind it, read off the spawn points alone, and was wrong.
 - Every Z on map 34 is written from the vanilla dump with `grounded = false`; the whole jail is
   one footprint box.
 - Entrance and exit are vanilla's triggers 101 and 503. The Portal and the map mark stand at the

@@ -7,7 +7,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap">
 <style>
-  /* Layout: one column; a floor plan to scale (north up), then the route, then the bosses. */
+  /* Layout: one column; a floor plan (north up), then the route, then the bosses. */
   :root {
     --bg: #e6e9ee;
     --fg: #1d2129;
@@ -15,6 +15,7 @@
     --floor: #f6f7f9;
     --wall: #58616e;
     --grid: #cfd4db;
+    --cell: #dde1e7;
     --boss: #b23b17;
     --boss-fg: #ffffff;
     --friend: #2c7a46;
@@ -28,18 +29,18 @@
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #1b1f26; --fg: #e4e7ec; --muted: #9aa3b1; --floor: #272c35; --wall: #98a2b1;
-      --grid: #343a45; --boss: #ff7a4a; --boss-fg: #1b1f26; --friend: #6fd18f; --object: #e8b740;
+      --grid: #343a45; --cell: #2f3540; --boss: #ff7a4a; --boss-fg: #1b1f26; --friend: #6fd18f; --object: #e8b740;
       --trash: #6c7482; --card: #222730; --line: #3a414c; color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #1b1f26; --fg: #e4e7ec; --muted: #9aa3b1; --floor: #272c35; --wall: #98a2b1;
-    --grid: #343a45; --boss: #ff7a4a; --boss-fg: #1b1f26; --friend: #6fd18f; --object: #e8b740;
+    --grid: #343a45; --cell: #2f3540; --boss: #ff7a4a; --boss-fg: #1b1f26; --friend: #6fd18f; --object: #e8b740;
     --trash: #6c7482; --card: #222730; --line: #3a414c; color-scheme: dark;
   }
   body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.5; }
   .wrap {
-    max-width: 1040px; margin: 0 auto; padding-block: 28px 48px;
+    max-width: 1060px; margin: 0 auto; padding-block: 28px 48px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     display: flex; flex-direction: column; gap: 28px;
@@ -47,7 +48,7 @@
   header h1 { font-family: var(--display); font-weight: 400; font-size: 2.6rem; margin: 0; line-height: 1.1; text-wrap: balance; }
   header p { margin: 6px 0 0; color: var(--muted); max-width: 64ch; }
   .plan { overflow-x: auto; border: 1px solid var(--line); background: var(--floor); border-radius: 4px; }
-  .plan svg { display: block; min-width: 860px; width: 100%; height: auto; }
+  .plan svg { display: block; min-width: 880px; width: 100%; height: auto; }
   .legend { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 0.9rem; color: var(--muted); }
   .legend span { display: inline-flex; align-items: center; gap: 7px; }
   .legend i { display: inline-block; width: 12px; height: 12px; }
@@ -73,7 +74,7 @@
 <div class="wrap">
   <header>
     <h1>The Stockade</h1>
-    <p>Spec #575. Vanilla's jail, map 34, levels 30 to 34. North is up: the corridor runs north from the canal door, the Defias block is the east wing and the quiet wing is the west wing. Warden Thelwater stands outside at the city door and never appears on this map.</p>
+    <p>Spec #575. Vanilla's jail, map 34, levels 30 to 34. One long hall of cells with a round room at each end, crossed near its middle by the corridor from the canal door. North is up. The east wing of the hall is the Defias block and the west wing is the quiet wing. Warden Thelwater stands outside at the city door and never appears on this map.</p>
   </header>
 
   <div class="plan" id="plan"></div>
@@ -83,19 +84,18 @@
     <span><i class="f"></i>Friendly: Ott and the four witnesses</span>
     <span><i class="o"></i>Lever, portcullis, chest, grate</span>
     <span><i class="t"></i>Rioter packs</span>
-    <span><i class="v"></i>A vanilla spawn point (the walls are fitted to these)</span>
+    <span><i class="v"></i>A vanilla spawn point</span>
   </div>
 
   <section>
     <h2>The route</h2>
     <ol class="route">
-      <li>The gate hall and the corridor. Rioters in three packs; Sergeant Ott at the corridor's end with his back to the wall (Quell the Riot, Guards Below).</li>
-      <li>Down the east stairs into the Defias block. A Ringleader and a Rioter guard each lever. Pull Lever A and Lever B to drop the bars on rows A and B, or fight Red Dace with two more rioters every twenty seconds (Red Dace).</li>
-      <li>The deep cells past Dace hold the rest of the riot and nothing the quests need.</li>
+      <li>The gate hall and the corridor. Rioters in three packs; Sergeant Ott at the corridor's north end with his back to the wall (Quell the Riot, Guards Below).</li>
+      <li>Down the east stairs into the Defias block. A Ringleader and a Rioter guard each lever. Pull Lever A and Lever B to drop the bars on rows A and B, or fight Red Dace with two more rioters every twenty seconds. Dace holds the round room at the wing's end (Red Dace).</li>
       <li>Back up and down the west stairs. Bull Marrow is breaking the quiet wing's gate. Kill him, pull the gate's lever and the bars grind up (The Quiet Wing).</li>
-      <li>The quiet wing. Four writ cells, four witnesses, no enemies. The warder's room at the north end holds the evidence chest and the lower doors, which Pell left open (What They Saw, The Last of Westfall).</li>
-      <li>Through the lower doors into the lower gallery. Warder Pell and his two bought guards, counting the purse (Warder Pell).</li>
-      <li>The drain, the last room. The Hush waits for the ogre to finish the doors. The grate in the floor offers The Drain once Pell is dead.</li>
+      <li>The quiet wing. Four writ cells just past the gate, four witnesses, no enemies. The warder's room halfway along holds the evidence chest and the lower doors, which Pell left open (What They Saw, The Last of Westfall).</li>
+      <li>Through the lower doors into the lower gallery, the wing's far half. Warder Pell and his two bought guards, counting the purse (Warder Pell).</li>
+      <li>The drain, the round room at the wing's end. The Hush waits for the ogre to finish the doors. The grate in the floor offers The Drain once Pell is dead.</li>
     </ol>
   </section>
 
@@ -105,7 +105,7 @@
       <article class="boss">
         <div class="lvl">1 &middot; Level 31 elite</div>
         <h3>Red Dace</h3>
-        <p>The Defias captain who took the deal, at the far side of the east hall with two Ringleaders.</p>
+        <p>The Defias captain who took the deal, in the round room at the east wing's end with two Ringleaders.</p>
         <p>Every 20 s he calls two Rioters out of each row whose bars are still up. Lock both rows and he fights alone. Drops his purse of Twilight coin.</p>
       </article>
       <article class="boss">
@@ -117,160 +117,200 @@
       <article class="boss">
         <div class="lvl">3 &middot; Level 33 elite</div>
         <h3>Warder Pell</h3>
-        <p>The turned guard, in the lower gallery beyond the warder's room, with two Bought Guards.</p>
+        <p>The turned guard, in the west wing's far half beyond the warder's room, with two Bought Guards.</p>
         <p>Shield Wall every 25 s: half damage taken for 8 s. Fights to the death. Drops the Sealed Ledger.</p>
       </article>
       <article class="boss">
         <div class="lvl">4 &middot; Level 34 &middot; Boss Bar</div>
         <h3>The Hush</h3>
-        <p>A Twilight Silencer who came up the drain with the names, in the last room past the gallery.</p>
+        <p>A Twilight Silencer who came up the drain with the names, in the round room at the west wing's end.</p>
         <p>Hush, a 5 s silence every 18 s. Fear every 30 s. Shadow Bolt. Drops the Writ of Names.</p>
       </article>
     </div>
   </section>
 
-  <p class="note">Positions are the spec's reading. The Build lane fits every room, lever and spawn to the jail's walls from the 93 vanilla spawn points shown in grey (ticket #578), so a marker here is a room, not a coordinate.</p>
+  <p class="note">The walls are a schematic of the jail's shape, not a measured plan; the grey rings are the 93 vanilla spawn points, which are measured. The Build lane fits every room, lever and spawn to the real walls (ticket #578), so a marker here names a room, not a coordinate.</p>
 </div>
 
 <script>
 (function () {
   // Game coordinates: x runs north, y runs west. Screen: north up, west left.
-  var S = 2.6, PAD = 16, X_TOP = 212, Y_LEFT = 206;
-  var W = Math.round((Y_LEFT + 160) * S + PAD * 2), H = Math.round((X_TOP - 24) * S + PAD * 2);
+  var S = 2.6, PAD = 16, X_TOP = 216, Y_LEFT = 212, Y_MIN = -168, X_MIN = 22;
+  var W = Math.round((Y_LEFT - Y_MIN) * S + PAD * 2), H = Math.round((X_TOP - X_MIN) * S + PAD * 2);
   function sx(y) { return (Y_LEFT - y) * S + PAD; }
   function sy(x) { return (X_TOP - x) * S + PAD; }
+  function pt(p) { return sx(p[1]).toFixed(1) + ',' + sy(p[0]).toFixed(1); }
 
-  // Rooms as game-coordinate boxes: [x1, x2, y1, y2, label, labelX, labelY]
-  var rooms = [
-    [36, 76, -9, 9, "Gate hall", 56, 0],
-    [76, 168, -6, 6, "", 0, 0],
-    [78, 114, 8, 34, "Corridor cells", 96, 21],
-    [78, 114, -34, -8, "Corridor cells", 96, -21],
-    [124, 136, 6, 36, "", 0, 0],
-    [124, 136, -36, -6, "", 0, 0],
-    [98, 168, 36, 88, "", 0, 0],
-    [92, 162, -88, -36, "", 0, 0],
-    [168, 196, 80, 98, "", 0, 0],
-    [64, 92, -98, -80, "", 0, 0],
-    [140, 182, 96, 150, "", 0, 0],
-    [116, 140, 114, 134, "Cells", 128, 124],
-    [78, 120, -150, -96, "", 0, 0],
-    [120, 144, -134, -114, "Cells", 132, -124]
-  ];
-  // Free-standing labels: [x, y, text, size]
-  var labels = [
-    [122, 0, "The corridor", 12],
-    [130, 21, "Stairs", 10],
-    [130, -21, "Stairs", 10],
-    [146, 62, "The quiet wing (west)", 13],
-    [100, 61, "Fenn's cell", 10],
-    [133, 82, "Dray's cell", 10],
-    [164, 70, "The warder's room", 10],
-    [169, 93, "the lower doors", 9],
-    [110, -62, "Row A", 11],
-    [154, -62, "Row B", 11],
-    [138, -60, "The Defias block (east)", 13],
-    [182, 110, "The lower gallery", 11],
-    [162, 140, "The drain", 12],
-    [100, -122, "The deep cells", 12],
-    [70, -89, "", 10]
-  ];
-  // Walls that are not room edges: [x1, y1, x2, y2]
-  var bars = [];
-  var vanilla = [[67,-90.3],[70.6,-83.9],[76.2,0.3],[77.8,-88.8],[80.7,16.8],[81.5,-2],[82.3,-10.6],[82.6,-94.8],[84,30.6],[86.8,21.1],[87.7,-29],[88.6,-15.5],[91.8,-126],[93.5,3],[94.5,-125.8],[94.9,-60.2],[95.4,-128.7],[95.5,-105.9],[96.4,-54.8],[99.4,-37.7],[100.6,44.3],[100.9,53.3],[102.7,-28.9],[103.2,12.9],[104.1,-55.8],[105.4,70.1],[105.5,-105.8],[108.1,80],[109.1,-114.2],[109.6,21.1],[110.4,30.1],[110.5,42.9],[110.5,-14.3],[110.7,-0.8],[110.8,-66],[111,-29.1],[111.7,-41.3],[114.6,-86.4],[115,46.7],[117.7,-45.9],[119.8,128.8],[121.6,74.7],[123.4,-61.7],[123.9,119.6],[124.7,-68.9],[126.3,-116.8],[127.1,-1.4],[128.6,49],[129,-36],[129.4,21.7],[129.7,-47.4],[130,122.4],[131.1,3.3],[131.2,40.9],[132.3,-123.6],[134.1,71],[138.6,-48.1],[139.7,-128.9],[140.2,-64.5],[140.3,3.1],[141.4,-120.3],[142,84.1],[142.6,-71.9],[145.5,43.4],[146.9,-42.8],[147.5,111.8],[148.4,65.1],[148.5,103.2],[150.3,-76.8],[151,39.1],[151.6,60.1],[152.8,-69.5],[153.7,3.7],[155.1,-52],[155.7,99.6],[156.3,109.5],[159.6,1.3],[159.9,40],[160.1,45.7],[161.1,129.3],[161.1,54],[162.7,59.2],[165.9,1.1],[166.8,134.8],[167.4,127.9],[169,147.9],[171.1,142],[171.1,93.3],[176.1,142.7],[182.7,95.3],[186.3,86.9],[189.2,87.3],[192.8,91.3]];
-  var chests = [[90.6,-145.9],[92.3,-56.2],[104.5,77.3],[147,-121.1],[151.7,-65.1],[165.3,57.7],[173.2,147],[188.6,81.6]];
-  // Our placements
-  var bosses = [
-    [126, -70, 1, "Red Dace", "Red Dace, 31. Calls rioters from rows A and B."],
-    [130, 30, 2, "Bull Marrow", "Bull Marrow, 32. At the quiet wing's gate."],
-    [152, 108, 3, "Warder Pell", "Warder Pell, 33. The lower gallery."],
-    [168, 136, 4, "The Hush", "The Hush, 34. The drain. Boss Bar."]
-  ];
-  var friends = [
-    [161, 2, "Ott", "Sergeant Ott, talk target of Guards Below"],
-    [118, 44, "Gearspan", "Pim Gearspan, gives What They Saw"],
-    [104, 68, "Fenn", "Mara Fenn, gives The Last of Westfall"],
-    [126, 82, "Dray", "Hollis Dray"],
-    [156, 42, "Orrel", "Tam Orrel"]
-  ];
-  var objects = [
-    [112, -50, "Lever A", "Lever A (983001) drops row A's bars"],
-    [142, -50, "Lever B", "Lever B (983003) drops row B's bars"],
-    [122, 32, "Gate lever", "The quiet wing's lever (983005), works once Marrow is dead"],
-    [165, 58, "Chest", "The evidence chest (983007), The Last of Westfall"],
-    [172, 144, "Grate", "The drain grate (983008), offers The Drain once Pell is dead"]
-  ];
-  // Portcullises as thick bars: [x1, y1, x2, y2, title]
-  var gates = [
-    [108, -66, 108, -58, "Portcullis A (983002), down once Lever A is pulled"],
-    [146, -66, 146, -58, "Portcullis B (983004), down once Lever B is pulled"],
-    [125, 36, 135, 36, "The quiet wing's portcullis (983006), up once the gate lever is pulled"]
-  ];
-  var packs = [[60,0],[78,0],[105,0],[138,0],[160,-3],[128,18],[96,-44],[96,-62],[96,-80],[158,-44],[158,-62],[158,-80],[112,-54],[142,-54],[100,-108],[88,-132],[148,112]];
+  // The long hall: a line through the junction J, tilted about 15 degrees off the y axis.
+  // t runs along the hall (positive toward the west wing), s across it (positive north-east).
+  var J = [130.8, 0], u = [0.2696, 0.9629], n = [0.9629, -0.2696];
+  function gp(t, s) { return [J[0] + u[0] * t + n[0] * s, J[1] + u[1] * t + n[1] * s]; }
+  function hallRect(t0, t1, s0, s1) { return [gp(t0, s0), gp(t1, s0), gp(t1, s1), gp(t0, s1)]; }
+  function xyRect(x0, x1, y0, y1) { return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]; }
+  function poly(pts, fill, stroke, extra) {
+    return '<polygon points="' + pts.map(pt).join(' ') + '" fill="' + fill + '" stroke="' + (stroke || 'none') + '" stroke-width="1.2"' + (extra || '') + '/>';
+  }
 
   var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" font-family="system-ui, sans-serif" role="img" aria-label="Floor plan of the Stockade with the four bosses">';
   s += '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="var(--floor)"/>';
-  // Rooms
-  rooms.forEach(function (r) {
-    var left = sx(r[3]), top = sy(r[1]), w = (r[3] - r[2]) * S, h = (r[1] - r[0]) * S;
-    s += '<rect x="' + left + '" y="' + top + '" width="' + w + '" height="' + h + '" fill="var(--grid)" stroke="var(--wall)" stroke-width="1.5"/>';
+
+  // Floors: corridors and rooms, walls drawn as outlines first, then floors re-filled so joins read as openings.
+  var floors = [];
+  floors.push(hallRect(-140, 145, -6, 6));                       // the long hall
+  floors.push(xyRect(36, 170, -6, 6));                            // the corridor from the door
+  floors.push(xyRect(36, 62, -10, 10));                           // the gate hall
+  floors.push(hallRect(92, 100, 6, 38));                          // side passages near the ends
+  floors.push(hallRect(122, 130, -38, -6));
+  floors.push(hallRect(-100, -92, -38, -6));
+  floors.push(hallRect(-130, -122, 6, 38));
+  var rooms = [[gp(-150, 0), 17], [gp(150, 0), 17]];              // the round rooms
+  // Cells: along the hall in groups of three, two deep near the crossing; along the corridor's first stretch.
+  var cells = [];
+  [1, -1].forEach(function (wing) {
+    [1, -1].forEach(function (side) {
+      [[40, 1], [77, 0], [114, 0]].forEach(function (g) {
+        for (var i = 0; i < 3; i++) {
+          var t0 = g[0] + i * 10.5, t1 = t0 + 9;
+          if (t1 > 134) continue;
+          cells.push(hallRect(wing * t0, wing * t1, side * 6, side * 15));
+          if (g[1]) cells.push(hallRect(wing * t0, wing * t1, side * 15.5, side * 24.5));
+        }
+      });
+      // a pair of cells at the end of each side passage
+      var pt0 = wing > 0 ? (side > 0 ? 92 : 122) : (side > 0 ? -130 : -100);
+      cells.push(hallRect(pt0 - 10, pt0 - 1, side * 29, side * 38));
+      cells.push(hallRect(pt0 + 9, pt0 + 18, side * 29, side * 38));
+    });
   });
-  // Re-fill room interiors so shared edges read as openings
-  rooms.forEach(function (r) {
-    var left = sx(r[3]) + 1.5, top = sy(r[1]) + 1.5, w = (r[3] - r[2]) * S - 3, h = (r[1] - r[0]) * S - 3;
-    s += '<rect x="' + left + '" y="' + top + '" width="' + w + '" height="' + h + '" fill="var(--grid)"/>';
-    if (r[4]) s += '<text x="' + sx(r[6]) + '" y="' + (sy(r[5]) + 4) + '" text-anchor="middle" font-size="10" fill="var(--muted)">' + r[4] + '</text>';
+  [1, -1].forEach(function (side) {
+    [80, 90.5, 101].forEach(function (x0) {
+      cells.push(xyRect(x0, x0 + 9, side * 8, side * 17));
+      cells.push(xyRect(x0, x0 + 9, side * 18.5, side * 27.5));
+    });
   });
-  // Vanilla spawn points
+
+  function drawAll(fill, stroke, shrink) {
+    var out = '';
+    floors.forEach(function (f) { out += poly(f, fill, stroke); });
+    rooms.forEach(function (r) { out += '<circle cx="' + sx(r[0][1]) + '" cy="' + sy(r[0][0]) + '" r="' + (r[1] * S - shrink) + '" fill="' + fill + '" stroke="' + (stroke || 'none') + '" stroke-width="1.2"/>'; });
+    return out;
+  }
+  s += drawAll('var(--grid)', 'var(--wall)', 0);
+  s += drawAll('var(--grid)', 'none', 1.5);
+  cells.forEach(function (c) { s += poly(c, 'var(--cell)', 'var(--wall)'); });
+  // Stairs: hatching across the hall between the corridor and each wing
+  [1, -1].forEach(function (wing) {
+    for (var t = 8; t <= 32; t += 4) {
+      var a = gp(wing * t, -6), b = gp(wing * t, 6);
+      s += '<line x1="' + sx(a[1]) + '" y1="' + sy(a[0]) + '" x2="' + sx(b[1]) + '" y2="' + sy(b[0]) + '" stroke="var(--wall)" stroke-width="0.8" opacity="0.6"/>';
+    }
+  });
+
+  // Vanilla spawn points and chests
+  var vanilla = [[67,-90.3],[70.6,-83.9],[76.2,0.3],[77.8,-88.8],[80.7,16.8],[81.5,-2],[82.3,-10.6],[82.6,-94.8],[84,30.6],[86.8,21.1],[87.7,-29],[88.6,-15.5],[91.8,-126],[93.5,3],[94.5,-125.8],[94.9,-60.2],[95.4,-128.7],[95.5,-105.9],[96.4,-54.8],[99.4,-37.7],[100.6,44.3],[100.9,53.3],[102.7,-28.9],[103.2,12.9],[104.1,-55.8],[105.4,70.1],[105.5,-105.8],[108.1,80],[109.1,-114.2],[109.6,21.1],[110.4,30.1],[110.5,42.9],[110.5,-14.3],[110.7,-0.8],[110.8,-66],[111,-29.1],[111.7,-41.3],[114.6,-86.4],[115,46.7],[117.7,-45.9],[119.8,128.8],[121.6,74.7],[123.4,-61.7],[123.9,119.6],[124.7,-68.9],[126.3,-116.8],[127.1,-1.4],[128.6,49],[129,-36],[129.4,21.7],[129.7,-47.4],[130,122.4],[131.1,3.3],[131.2,40.9],[132.3,-123.6],[134.1,71],[138.6,-48.1],[139.7,-128.9],[140.2,-64.5],[140.3,3.1],[141.4,-120.3],[142,84.1],[142.6,-71.9],[145.5,43.4],[146.9,-42.8],[147.5,111.8],[148.4,65.1],[148.5,103.2],[150.3,-76.8],[151,39.1],[151.6,60.1],[152.8,-69.5],[153.7,3.7],[155.1,-52],[155.7,99.6],[156.3,109.5],[159.6,1.3],[159.9,40],[160.1,45.7],[161.1,129.3],[161.1,54],[162.7,59.2],[165.9,1.1],[166.8,134.8],[167.4,127.9],[169,147.9],[171.1,142],[171.1,93.3],[176.1,142.7],[182.7,95.3],[186.3,86.9],[189.2,87.3],[192.8,91.3]];
+  var chests = [[90.6,-145.9],[92.3,-56.2],[104.5,77.3],[147,-121.1],[151.7,-65.1],[165.3,57.7],[173.2,147],[188.6,81.6]];
   vanilla.forEach(function (p) {
     s += '<circle cx="' + sx(p[1]) + '" cy="' + sy(p[0]) + '" r="2.2" fill="none" stroke="var(--wall)" stroke-width="0.8" opacity="0.7"/>';
   });
   chests.forEach(function (p) {
     s += '<rect x="' + (sx(p[1]) - 2.5) + '" y="' + (sy(p[0]) - 2.5) + '" width="5" height="5" fill="none" stroke="var(--wall)" stroke-width="0.8" opacity="0.7"/>';
   });
-  // Labels
+
+  // Labels: [game point, text, size]
+  var labels = [
+    [[70, 0], "The corridor", 11],
+    [[50, -22], "Gate hall", 10],
+    [[96, 40], "Cells", 9],
+    [[96, -40], "Cells", 9],
+    [[124, -22], "Stairs", 9],
+    [[124, 22], "Stairs", 9],
+    [gp(-70, 32), "The Defias block (east wing)", 12],
+    [gp(-50, -26), "Row A", 10],
+    [gp(-96, 26), "Row B", 10],
+    [gp(70, -34), "The quiet wing (west wing)", 12],
+    [gp(96, -24), "Warder's room", 9],
+    [gp(104, 20), "the lower doors", 9],
+    [gp(120, 30), "The lower gallery", 10],
+    [gp(150, 30), "The drain", 11],
+    [gp(-150, -30), "Dace's round room", 10]
+  ];
   labels.forEach(function (l) {
-    if (!l[2]) return;
-    s += '<text x="' + sx(l[1]) + '" y="' + (sy(l[0]) + l[3] * 0.35) + '" text-anchor="middle" font-size="' + l[3] + '" fill="var(--muted)" font-style="italic">' + l[2] + '</text>';
+    s += '<text x="' + sx(l[0][1]) + '" y="' + (sy(l[0][0]) + l[2] * 0.35) + '" text-anchor="middle" font-size="' + l[2] + '" fill="var(--muted)" font-style="italic">' + l[1] + '</text>';
   });
+
   // Entrance and exit
   s += '<g><title>The loading screen lands here (vanilla trigger 101)</title>';
   s += '<polygon points="' + sx(0.5) + ',' + (sy(49) - 8) + ' ' + (sx(0.5) - 5) + ',' + (sy(49) + 4) + ' ' + (sx(0.5) + 5) + ',' + (sy(49) + 4) + '" fill="var(--fg)"/>';
-  s += '<text x="' + (sx(0.5) + 10) + '" y="' + (sy(44) + 4) + '" font-size="10" fill="var(--fg)">In</text></g>';
+  s += '<text x="' + (sx(0.5) + 10) + '" y="' + (sy(46) + 4) + '" font-size="10" fill="var(--fg)">In</text></g>';
   s += '<g><title>Walking back out (vanilla trigger 503) returns to the city door</title>';
   s += '<circle cx="' + sx(0.8) + '" cy="' + sy(39.4) + '" r="4" fill="none" stroke="var(--fg)" stroke-width="1.2"/>';
   s += '<text x="' + (sx(0.8) + 10) + '" y="' + (sy(39.4) + 4) + '" font-size="10" fill="var(--fg)">Out</text></g>';
-  // Packs
+
+  // Rioter packs
+  var packs = [[60, 0], [78, 0], [105, 0], [150, 0], [160, -3], gp(20, 0), gp(-44, 10), gp(-58, -8), gp(-72, 8), gp(-90, -10), gp(-108, 8), gp(-124, -8), gp(-150, -10), gp(-150, 10)];
   packs.forEach(function (p) {
     s += '<circle cx="' + sx(p[1]) + '" cy="' + sy(p[0]) + '" r="3.2" fill="var(--trash)"><title>Rioters</title></circle>';
   });
-  // Gates
+
+  // Gates: thick bars. [a, b, title]
+  var gates = [
+    [gp(-52, 6), gp(-44, 6), "Portcullis A (983002), down once Lever A is pulled"],
+    [gp(-98, -6), gp(-90, -6), "Portcullis B (983004), down once Lever B is pulled"],
+    [gp(38, -6), gp(38, 6), "The quiet wing's portcullis (983006), up once the gate lever is pulled"]
+  ];
   gates.forEach(function (g) {
-    s += '<line x1="' + sx(g[1]) + '" y1="' + sy(g[0]) + '" x2="' + sx(g[3]) + '" y2="' + sy(g[2]) + '" stroke="var(--object)" stroke-width="5" stroke-linecap="butt"><title>' + g[4] + '</title></line>';
+    s += '<line x1="' + sx(g[0][1]) + '" y1="' + sy(g[0][0]) + '" x2="' + sx(g[1][1]) + '" y2="' + sy(g[1][0]) + '" stroke="var(--object)" stroke-width="5"><title>' + g[2] + '</title></line>';
   });
-  // Objects
+  // The lower doors, open: a dashed line across the hall
+  var ld0 = gp(104, -6), ld1 = gp(104, 6);
+  s += '<line x1="' + sx(ld0[1]) + '" y1="' + sy(ld0[0]) + '" x2="' + sx(ld1[1]) + '" y2="' + sy(ld1[0]) + '" stroke="var(--fg)" stroke-width="2" stroke-dasharray="3 3"><title>The lower doors, left open by Pell</title></line>';
+
+  // Objects: [point, label, title]
+  var objects = [
+    [gp(-44, -10), "Lever A", "Lever A (983001) drops row A's bars"],
+    [gp(-90, 10), "Lever B", "Lever B (983003) drops row B's bars"],
+    [gp(30, 10), "Gate lever", "The quiet wing's lever (983005), works once Marrow is dead"],
+    [gp(96, -14), "Chest", "The evidence chest (983007), The Last of Westfall"],
+    [gp(156, -6), "Grate", "The drain grate (983008), offers The Drain once Pell is dead"]
+  ];
   objects.forEach(function (o) {
-    var cx = sx(o[1]), cy = sy(o[0]);
-    s += '<g><title>' + o[3] + '</title><rect x="' + (cx - 5) + '" y="' + (cy - 5) + '" width="10" height="10" fill="var(--object)"/>';
-    s += '<text x="' + (cx + 8) + '" y="' + (cy + 4) + '" font-size="10" fill="var(--fg)">' + o[2] + '</text></g>';
+    var cx = sx(o[0][1]), cy = sy(o[0][0]);
+    s += '<g><title>' + o[2] + '</title><rect x="' + (cx - 5) + '" y="' + (cy - 5) + '" width="10" height="10" fill="var(--object)"/>';
+    s += '<text x="' + (cx + 8) + '" y="' + (cy + 4) + '" font-size="10" fill="var(--fg)">' + o[1] + '</text></g>';
   });
+
   // Friendlies
+  var friends = [
+    [[161, 2], "Ott", "Sergeant Ott, talk target of Guards Below"],
+    [gp(45, -10), "Gearspan", "Pim Gearspan, gives What They Saw"],
+    [gp(56, 10), "Orrel", "Tam Orrel"],
+    [gp(66, -10), "Fenn", "Mara Fenn, gives The Last of Westfall"],
+    [gp(78, 10), "Dray", "Hollis Dray"]
+  ];
   friends.forEach(function (f) {
-    var cx = sx(f[1]), cy = sy(f[0]);
-    s += '<g><title>' + f[3] + '</title><rect x="' + (cx - 5) + '" y="' + (cy - 5) + '" width="10" height="10" fill="var(--friend)" transform="rotate(45 ' + cx + ' ' + cy + ')"/>';
-    s += '<text x="' + (cx + 9) + '" y="' + (cy + 4) + '" font-size="10" fill="var(--fg)">' + f[2] + '</text></g>';
+    var cx = sx(f[0][1]), cy = sy(f[0][0]);
+    s += '<g><title>' + f[2] + '</title><rect x="' + (cx - 5) + '" y="' + (cy - 5) + '" width="10" height="10" fill="var(--friend)" transform="rotate(45 ' + cx + ' ' + cy + ')"/>';
+    s += '<text x="' + (cx + 9) + '" y="' + (cy + 4) + '" font-size="10" fill="var(--fg)">' + f[1] + '</text></g>';
   });
+
   // Bosses
+  var bosses = [
+    [gp(-152, 0), 1, "Red Dace", "Red Dace, 31. Calls rioters from rows A and B."],
+    [gp(30, 0), 2, "Bull Marrow", "Bull Marrow, 32. At the quiet wing's gate."],
+    [gp(118, 0), 3, "Warder Pell", "Warder Pell, 33. The lower gallery."],
+    [gp(150, 0), 4, "The Hush", "The Hush, 34. The drain. Boss Bar."]
+  ];
   bosses.forEach(function (b) {
-    var cx = sx(b[1]), cy = sy(b[0]);
-    s += '<g><title>' + b[4] + '</title><circle cx="' + cx + '" cy="' + cy + '" r="10" fill="var(--boss)"/>';
-    s += '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" font-size="11" font-weight="700" fill="var(--boss-fg)">' + b[2] + '</text>';
-    s += '<text x="' + (cx + 14) + '" y="' + (cy + 4) + '" font-size="12" font-weight="600" fill="var(--fg)">' + b[3] + '</text></g>';
+    var cx = sx(b[0][1]), cy = sy(b[0][0]);
+    s += '<g><title>' + b[3] + '</title><circle cx="' + cx + '" cy="' + cy + '" r="10" fill="var(--boss)"/>';
+    s += '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" font-size="11" font-weight="700" fill="var(--boss-fg)">' + b[1] + '</text>';
+    s += '<text x="' + (cx + 14) + '" y="' + (cy + 4) + '" font-size="12" font-weight="600" fill="var(--fg)">' + b[2] + '</text></g>';
   });
+
   // Compass and scale
-  s += '<g font-size="10" fill="var(--muted)"><text x="' + (W - 60) + '" y="' + (PAD + 12) + '" text-anchor="middle">N</text>';
-  s += '<line x1="' + (W - 60) + '" y1="' + (PAD + 16) + '" x2="' + (W - 60) + '" y2="' + (PAD + 40) + '" stroke="var(--muted)" stroke-width="1.2"/>';
-  s += '<polygon points="' + (W - 60) + ',' + (PAD + 14) + ' ' + (W - 64) + ',' + (PAD + 22) + ' ' + (W - 56) + ',' + (PAD + 22) + '" fill="var(--muted)"/>';
+  s += '<g font-size="10" fill="var(--muted)"><text x="' + (W - 40) + '" y="' + (PAD + 12) + '" text-anchor="middle">N</text>';
+  s += '<line x1="' + (W - 40) + '" y1="' + (PAD + 16) + '" x2="' + (W - 40) + '" y2="' + (PAD + 40) + '" stroke="var(--muted)" stroke-width="1.2"/>';
+  s += '<polygon points="' + (W - 40) + ',' + (PAD + 14) + ' ' + (W - 44) + ',' + (PAD + 22) + ' ' + (W - 36) + ',' + (PAD + 22) + '" fill="var(--muted)"/>';
   s += '<line x1="' + PAD + '" y1="' + (H - PAD - 6) + '" x2="' + (PAD + 50 * S) + '" y2="' + (H - PAD - 6) + '" stroke="var(--muted)" stroke-width="1.5"/>';
   s += '<text x="' + (PAD + 25 * S) + '" y="' + (H - PAD - 10) + '" text-anchor="middle">50 yd</text></g>';
   s += '</svg>';
