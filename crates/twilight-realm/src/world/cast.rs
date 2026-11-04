@@ -75,6 +75,8 @@ const SPELL_FAILED_NO_COMBO_POINTS: u8 = 0x46;
 const SPELL_FAILED_NO_POWER: u8 = 0x4d;
 const SPELL_FAILED_ONLY_STEALTHED: u8 = 0x57;
 pub(super) const SPELL_FAILED_OUT_OF_RANGE: u8 = 0x59;
+/// "Can't do that while silenced".
+const SPELL_FAILED_SILENCED: u8 = 0x60;
 pub(super) const SPELL_FAILED_STUNNED: u8 = 0x64;
 const SPELL_FAILED_TARGET_AFFECTING_COMBAT: u8 = 0x66;
 const SPELL_FAILED_TARGET_AURASTATE: u8 = 0x67;
@@ -715,6 +717,8 @@ enum AuraKind {
     Fear,
     /// The unit cannot move; it still attacks and casts, and damage does not break it.
     Root,
+    /// The player cannot start a cast; they still swing and move, and damage does not break it.
+    Silence,
     /// A stun that damage ends when `break_on_damage` (Gouge).
     Incapacitate {
         break_on_damage: bool,
@@ -1277,6 +1281,13 @@ impl Skills {
         self.auras
             .iter()
             .any(|a| a.unit == unit && matches!(a.kind, AuraKind::Incapacitate { .. }))
+    }
+
+    /// Whether `unit` is silenced.
+    pub(super) fn silenced(&self, unit: u64) -> bool {
+        self.auras
+            .iter()
+            .any(|a| a.unit == unit && a.kind == AuraKind::Silence)
     }
 
     /// The player's `next_cast` buffs for `skill`, or for the skill a Skill Choice replaces.
@@ -2406,6 +2417,10 @@ impl InWorld {
         }
         if self.asleep() {
             events.push(refused(spell_id, SPELL_FAILED_STUNNED));
+            return ticked;
+        }
+        if self.skills.silenced(self.guid) {
+            events.push(refused(spell_id, SPELL_FAILED_SILENCED));
             return ticked;
         }
         // Casting takes the player out of Cover, and loses a fish.
@@ -7095,6 +7110,24 @@ impl InWorld {
             };
             self.skills.apply(aura, events);
             self.start_fear(from, duration_ms, events);
+            return;
+        }
+        if let CreatureEffect::Silence { duration_ms } = spell.effect {
+            let aura = Aura {
+                unit: self.guid,
+                spell_id: spell.spell_id,
+                slot: 0,
+                level,
+                left: clock::secs(self.fed_cc_ms(duration_ms, false)),
+                period: 0.0,
+                next_tick: 0.0,
+                kind: AuraKind::Silence,
+                charges: 0,
+            };
+            self.skills.apply(aura, events);
+            // Whatever they were casting or channelling stops; a swing or a shot goes on.
+            self.interrupt_cast(events);
+            self.end_channel(true, events);
             return;
         }
         if let CreatureEffect::Snare { pct, duration_ms } = spell.effect {

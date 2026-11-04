@@ -39,6 +39,9 @@
 #                  caster), or
 #                  fear { duration_ms } (the target flees from the caster for duration_ms, cannot
 #                  act, and gets control back; damage does not break it),
+#                  silence { duration_ms } (the target cannot start a cast for duration_ms, and a
+#                  cast under way is interrupted; swings, movement and item use go on; a Well Fed
+#                  cc_half shortens it, fear_half does not),
 #                  root { radius, duration_ms } (every character in the Phase within radius yards
 #                  of the caster can't move for duration_ms; they can still cast and swing),
 #                  ground_patch { radius, duration_ms, tick_ms, tick } (a fire patch at the
@@ -342,6 +345,22 @@ cooldown_ms = 20000
 range_max = 60.0
 chance = 100
 effect = { kind = "fear", duration_ms = 6000 }
+
+# A silence (#577), for the Gaze Hall's test creature. Looks like the priest's Silence (visual
+# 15487). Placeholders: the target cannot cast for 4 s after a 1 s cast, then every 20 s.
+[[spell]]
+key = "test_silence"
+spell_id = 1900043
+name = "Stifle"
+icon = 'Interface\Icons\Spell_Shadow_ImpPhaseShift'
+visual = 15487
+aura_description = "Silenced."
+school = "shadow"
+cast_time_ms = 1000
+cooldown_ms = 20000
+range_max = 60.0
+chance = 100
+effect = { kind = "silence", duration_ms = 4000 }
 
 # A snare on a random character within 10 yd of the caster (#239), for the tests of the `target`
 # field. Looks like Frost Nova's chill (visual 8092 stands in).

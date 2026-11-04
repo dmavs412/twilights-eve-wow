@@ -140,8 +140,8 @@ impl InWorld {
         }
     }
 
-    /// `duration_ms` of a fear (`fear`) or a root on the player, shortened to `cc_half`'s
-    /// percent and, for a fear, `fear_half`'s; the two multiply.
+    /// `duration_ms` of a fear (`fear`), a root or a silence on the player, shortened to
+    /// `cc_half`'s percent and, for a fear, `fear_half`'s; the two multiply.
     pub(super) fn fed_cc_ms(&self, duration_ms: u32, fear: bool) -> u32 {
         let mut ms = u64::from(duration_ms);
         if let Some(pct) = self.fed_param("cc_half", "pct") {

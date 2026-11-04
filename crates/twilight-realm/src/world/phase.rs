@@ -10,7 +10,7 @@ use crate::characters::Char;
 use crate::dungeon::Place;
 use crate::ground::{ground_under, grounded_at, settle, Settle};
 use crate::mobs::{self, Mob};
-use crate::phased::{self, GameObjectUse, Phase, StopPortal, UseKind};
+use crate::phased::{self, GameObjectUse, Phase, StopPortal};
 use crate::population::VIEW_YD;
 use crate::quests;
 use crate::space::flat_distance;
@@ -344,17 +344,17 @@ impl InWorld {
             && self.send_back(d.id, stop, c, events)
     }
 
-    /// The player clicks the ward stone `used`: whether the click is theirs to make, in reach of a
-    /// stone they see.
-    pub(crate) fn ward_click(&self, used: GameObjectUse, c: &Char) -> bool {
-        let stone = phased::dungeon(used.dungeon).and_then(|d| d.usable(used.guid));
-        let Some((stone, UseKind::Ward)) = stone else {
+    /// The player clicks the ward stone or lever `used`: whether the click is theirs to make, in
+    /// reach of one they see.
+    pub(crate) fn use_click(&self, used: GameObjectUse, c: &Char) -> bool {
+        let Some((object, _)) = phased::dungeon(used.dungeon).and_then(|d| d.usable(used.guid))
+        else {
             return false;
         };
         self.player.alive()
             && self.phase == Phase::Dungeon(used.dungeon)
             && self.dungeon_objects.contains(&used.guid)
-            && flat_distance(stone.position, c.position) <= crate::space::INTERACTION_YD
+            && flat_distance(object.position, c.position) <= crate::space::INTERACTION_YD
     }
 
     /// The player clicks the GameObject of `guid`, which may be one of a stop's two portals. An
@@ -704,8 +704,9 @@ impl InWorld {
                 f32::INFINITY
             };
             let guid = o.object_guid();
-            let seen =
-                o.seen_from(self.phase, d.id) && o.appears.met(&self.run_pinned, &self.run_dead);
+            let seen = o.seen_from(self.phase, d.id)
+                && o.appears
+                    .met(&self.run_pinned, &self.run_dead, &self.run_used);
             if !self.dungeon_objects.contains(&guid) {
                 if seen && d_yd <= VIEW_YD {
                     self.dungeon_objects.insert(guid);
@@ -896,7 +897,7 @@ pub(crate) fn creatures(phase: Phase) -> Vec<Mob> {
         .iter()
         .enumerate()
         .filter(|(_, s)| s.phase == phase && s.called_by.is_none() && s.timed_by.is_none())
-        .filter(|(_, s)| s.appears.is_none_or(|a| a.met(&[], &[])))
+        .filter(|(_, s)| s.appears.is_none_or(|a| a.met(&[], &[], &[])))
         .filter_map(|(i, s)| Mob::spawn(i as u32, s.level_min, s.position[2], zone))
         .collect()
 }

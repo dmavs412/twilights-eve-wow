@@ -1,5 +1,6 @@
 # The Ward Test: a Phased Dungeon with two stops, for the ward stone, appears-after and timed
-# call scripts (#242) to try their mechanics where the shipped dungeons have none. Hand-written.
+# call scripts (#242) and the lever (#577) to try their mechanics where the shipped dungeons have
+# none. Hand-written.
 #
 # A 40x40 yd open-air box centred on (-9800, 555) in Elwynn, 300 yd north of the Test Grounds.
 # Terrain flatness and nearby spawns are unchecked; the ground there is taken as about z 47.
@@ -76,7 +77,8 @@ position = [-9795.0, 560.0, 47.2]
 orientation = 3.14
 after_dead = 800001
 
-# A level 10 Brother that calls two level 1 Brothers every 20 seconds of a fight.
+# A level 10 Brother that calls two level 1 Brothers every 20 seconds of a fight, until the lever
+# at the water stop is pulled.
 [[creature]]
 guid = 800004
 entry = 96003
@@ -90,6 +92,25 @@ entry = 96003
 level = 1
 count = 2
 position = [-9805.0, 565.0, 47.2]
+until_used = 810005
+
+# In the building from the moment the lever is pulled.
+[[creature]]
+guid = 800005
+entry = 96003
+level = 1
+position = [-9795.0, 540.0, 47.2]
+orientation = 3.14
+after_used = 810005
+
+# In the building until the lever is pulled.
+[[creature]]
+guid = 800006
+entry = 96003
+level = 1
+position = [-9800.0, 540.0, 47.2]
+orientation = 3.14
+until_used = 810005
 
 # The ward stone at the water stop.
 [[gameobject]]
@@ -127,3 +148,31 @@ position = [-9795.0, 560.0, 47.2]
 orientation = 0.0
 sides = "inside"
 until_dead = 800001
+
+# A lever at the water stop: held while the guard lives, then pulled once a Run.
+[[gameobject]]
+guid = 810005
+display = 461
+position = [-9684.0, 562.0, 47.2]
+orientation = 0.0
+sides = "inside"
+use = "lever"
+lever = { needs_dead = 800001, held_text = "The guard's chain holds the lever.", used_text = "The bars drop." }
+
+# Scenery in the building that appears once the lever is pulled.
+[[gameobject]]
+guid = 810006
+display = 461
+position = [-9800.0, 550.0, 47.2]
+orientation = 0.0
+sides = "inside"
+after_used = 810005
+
+# Scenery in the building that stands until the lever is pulled.
+[[gameobject]]
+guid = 810007
+display = 461
+position = [-9800.0, 560.0, 47.2]
+orientation = 0.0
+sides = "inside"
+until_used = 810005

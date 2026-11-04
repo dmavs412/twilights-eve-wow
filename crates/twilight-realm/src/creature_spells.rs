@@ -40,6 +40,9 @@ pub(crate) enum CreatureEffect {
     Nova { damage: u32, radius: f32 },
     /// The target flees from the caster for `duration_ms` and then gets control back.
     Fear { duration_ms: u32 },
+    /// The target can't start a cast for `duration_ms`, and one under way is cut short. They
+    /// still swing, move and use items.
+    Silence { duration_ms: u32 },
     /// When the cast lands, every character in the caster's Phase within `radius` yards of the
     /// caster can't move for `duration_ms`. They can still cast and swing.
     Root { radius: f32, duration_ms: u32 },

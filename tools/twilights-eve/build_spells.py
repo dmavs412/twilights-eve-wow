@@ -151,7 +151,8 @@ DUMMY_EFFECT = (3, 0)
 # The same numbers for a Creature Spell's effect kinds: a curse, a heal, a snare. A marker is
 # SPELL_AURA_DUMMY, an aura the realm puts up and takes off itself.
 CREATURE_EFFECTS_OF = {"periodic_damage": (6, 3), "heal": (10, 0), "snare": (6, 33), "charge": DUMMY_EFFECT,
-                       "gaze": DUMMY_EFFECT, "nova": DUMMY_EFFECT, "fear": (6, 7), "root": (6, 26),
+                       "gaze": DUMMY_EFFECT, "nova": DUMMY_EFFECT, "fear": (6, 7), "silence": (6, 27),
+                       "root": (6, 26),
                        "ground_patch": DUMMY_EFFECT, "absorb": (6, 69), "hit": DUMMY_EFFECT,
                        "armor_debuff": (6, 22), "stance": (6, 79), "marker": (6, 4)}
 # SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN, a stance's second effect, and the school mask of every school.

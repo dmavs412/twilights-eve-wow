@@ -1,6 +1,6 @@
 //! Ward stones, creatures and GameObjects that appear after something, and timed calls for help
-//! (#242), tried on the Ward Test (`content/ward_test.toml`): a Phased Dungeon with two stops,
-//! "water" (open) and "fire" (dark until the ward stone at "water" is used).
+//! (#242), and levers (#577), tried on the Ward Test (`content/ward_test.toml`): a Phased Dungeon
+//! with two stops, "water" (open) and "fire" (dark until the ward stone at "water" is used).
 
 mod common;
 
@@ -53,8 +53,19 @@ const CALLER_AT: [f32; 3] = [-9810.0, 570.0, 47.2];
 /// Where the inner portals put a character back, and where "fire" lands one.
 const BACK_WATER: [f32; 3] = [-9788.0, 565.0, 47.2];
 const ARRIVAL_FIRE: [f32; 3] = [-9590.0, 555.0, 47.2];
-/// A quest that wants one use of the ward stone.
+/// The lever at the water stop, which holds until the guard dies; the scenery and creatures that
+/// come after its pull and stand until it; and a spot in its reach.
+const LEVER: u64 = 810005;
+const SCENERY_AFTER_PULL: u64 = 810006;
+const SCENERY_UNTIL_PULL: u64 = 810007;
+const AFTER_PULL: u64 = 800005;
+const UNTIL_PULL: u64 = 800006;
+const BY_LEVER: [f32; 3] = [-9684.0, 560.0, 47.2];
+const LEVER_HELD: &str = "The guard's chain holds the lever.";
+const LEVER_USED: &str = "The bars drop.";
+/// A quest that wants one use of the ward stone, and one that wants a pull of the lever.
 const TOUCH_THE_WARD: u32 = 99302;
+const PULL_THE_LEVER: u32 = 99303;
 
 const TEST_QUESTS: &str = r#"
 [[quest]]
@@ -69,14 +80,30 @@ progress = "-"
 completion = "-"
 money = 0
 use = [[810001, 1]]
+
+[[quest]]
+id = 99303
+kind = "story"
+giver = 197
+level = 5
+title = "Pull the Lever"
+objectives = "Pull the lever."
+details = "-"
+progress = "-"
+completion = "-"
+money = 0
+use = [[810005, 1]]
 "#;
 
-/// `blob` with the quest to use the ward stone under way.
+/// `blob` with the quests to use the ward stone and pull the lever under way.
 fn with_quest(blob: String) -> String {
-    format!("{blob}\n[[quests]]\nid = {TOUCH_THE_WARD}\nslot = 0\nkills = [0, 0, 0, 0]\n")
+    format!(
+        "{blob}\n[[quests]]\nid = {TOUCH_THE_WARD}\nslot = 0\nkills = [0, 0, 0, 0]\n\
+         \n[[quests]]\nid = {PULL_THE_LEVER}\nslot = 1\nkills = [0, 0, 0, 0]\n"
+    )
 }
 
-/// Level 60 warriors: the quest under way for the first two.
+/// Level 60 warriors: the quests under way for the first two.
 fn party(n: usize) -> Party {
     let realm = Realm::with_seed(1).with_quests(TEST_QUESTS);
     let mut p = Party::edited(
@@ -132,19 +159,29 @@ fn ack(p: &mut Party, i: usize) {
 }
 
 fn held_notes(p: &Party, i: usize) -> usize {
+    notes(p, i, HELD)
+}
+
+/// The notifications saying `said` that player `i` has been shown.
+fn notes(p: &Party, i: usize, said: &str) -> usize {
     p.seen(i)
         .iter()
-        .filter(|e| matches!(e, SessionEvent::Notification { text } if text == HELD))
+        .filter(|e| matches!(e, SessionEvent::Notification { text } if text == said))
         .count()
 }
 
 /// Objective credits player `i` has been shown for the ward stone's quest.
 fn credits(p: &Party, i: usize) -> usize {
+    quest_credits(p, i, TOUCH_THE_WARD)
+}
+
+/// Objective credits player `i` has been shown for `quest`.
+fn quest_credits(p: &Party, i: usize, quest: u32) -> usize {
     p.seen(i)
         .iter()
         .filter(|e| {
             matches!(e, SessionEvent::QuestObjectiveKill { quest_id, .. }
-                if *quest_id == TOUCH_THE_WARD)
+                if *quest_id == quest)
         })
         .count()
 }
@@ -345,4 +382,133 @@ fn a_creature_with_timed_calls_brings_its_adds_on_the_clock_and_they_go_when_it_
     for g in &brought {
         assert!(!holds(&p, 0, *g), "{g:#x} outlived its caller");
     }
+}
+
+/// Player `i` kills the guard and walks back to the lever.
+fn free_the_lever(p: &mut Party, i: usize) {
+    kill(p, i, BY_GUARD, GUARD_AT, unit(GUARD));
+    p.go(i, BY_LEVER, 0.0);
+    p.run(0.2);
+}
+
+#[test]
+fn a_lever_holds_while_its_creature_lives_and_its_pull_brings_and_takes_things_once() {
+    let mut p = party(2);
+    p.go(0, BY_INNER_FIRE, 0.0);
+    p.go(1, BY_LEVER, 0.0);
+    p.run(1.0);
+    assert!(shows(&p, 1, object(LEVER)), "the lever is not shown");
+    assert!(
+        shows(&p, 0, object(SCENERY_UNTIL_PULL)),
+        "until_used scenery"
+    );
+    assert!(
+        !shows(&p, 0, object(SCENERY_AFTER_PULL)),
+        "after_used scenery"
+    );
+    assert!(holds(&p, 0, unit(UNTIL_PULL)), "until_used creature");
+    assert!(!holds(&p, 0, unit(AFTER_PULL)), "after_used creature");
+
+    // Out of reach, nothing; in reach while the guard lives, it holds and sets nothing.
+    click(&mut p, 0, object(LEVER));
+    assert_eq!(notes(&p, 0, LEVER_HELD) + notes(&p, 0, LEVER_USED), 0);
+    click(&mut p, 1, object(LEVER));
+    assert_eq!(notes(&p, 1, LEVER_HELD), 1, "no held text");
+    assert_eq!(notes(&p, 1, LEVER_USED), 0, "pulled while held");
+    p.run(0.5);
+    assert!(
+        shows(&p, 0, object(SCENERY_UNTIL_PULL)),
+        "held, and it went"
+    );
+    assert!(
+        !shows(&p, 0, object(SCENERY_AFTER_PULL)),
+        "held, and it came"
+    );
+    assert_eq!(quest_credits(&p, 1, PULL_THE_LEVER), 0);
+
+    free_the_lever(&mut p, 1);
+    click(&mut p, 1, object(LEVER));
+    assert_eq!(notes(&p, 1, LEVER_USED), 1, "no used text");
+    assert_eq!(notes(&p, 1, LEVER_HELD), 1, "held after the kill");
+    assert_eq!(quest_credits(&p, 1, PULL_THE_LEVER), 1, "the pull's credit");
+    assert_eq!(
+        quest_credits(&p, 0, PULL_THE_LEVER),
+        0,
+        "credit to a bystander"
+    );
+    p.run(0.5);
+    assert!(
+        shows(&p, 0, object(SCENERY_AFTER_PULL)),
+        "after_used scenery"
+    );
+    assert!(
+        !shows(&p, 0, object(SCENERY_UNTIL_PULL)),
+        "until_used scenery"
+    );
+    assert!(holds(&p, 0, unit(AFTER_PULL)), "after_used creature");
+    assert!(!holds(&p, 0, unit(UNTIL_PULL)), "until_used creature");
+
+    // A second pull does nothing.
+    click(&mut p, 1, object(LEVER));
+    assert_eq!(notes(&p, 1, LEVER_USED), 1, "pulled twice");
+    assert_eq!(notes(&p, 1, LEVER_HELD), 1);
+    assert_eq!(quest_credits(&p, 1, PULL_THE_LEVER), 1, "credited twice");
+}
+
+#[test]
+fn a_timed_call_until_used_brings_its_adds_before_the_pull_and_none_after() {
+    let mut p = party(2);
+    p.go_facing(0, BY_CALLER, CALLER_AT);
+    p.go(1, BY_LEVER, 0.0);
+    p.run(0.5);
+    p.cmd(0, RealmCommand::AttackSwing { guid: unit(CALLER) });
+    p.run(0.2);
+    p.cmd(0, RealmCommand::AttackStop);
+    p.run(21.0);
+    assert_eq!(adds(&p, 0).len(), 2, "no call at 20 s: {:?}", adds(&p, 0));
+
+    free_the_lever(&mut p, 1);
+    click(&mut p, 1, object(LEVER));
+    assert_eq!(notes(&p, 1, LEVER_USED), 1);
+    // Well past the second call's 40 s.
+    p.run(25.0);
+    assert_eq!(adds(&p, 0).len(), 2, "a call after the pull");
+}
+
+#[test]
+fn a_run_that_resets_puts_the_lever_back() {
+    let mut p = party(2);
+    p.go(0, BY_INNER_FIRE, 0.0);
+    p.go(1, BY_LEVER, 0.0);
+    p.run(1.0);
+    free_the_lever(&mut p, 1);
+    click(&mut p, 1, object(LEVER));
+    p.run(0.5);
+    assert!(holds(&p, 0, unit(AFTER_PULL)));
+    assert!(!shows(&p, 0, object(SCENERY_UNTIL_PULL)));
+    // Everyone leaves, as in `a_run_that_resets_puts_them_back_as_they_were`.
+    p.go(1, BY_INNER_FIRE, 0.0);
+    p.run(0.5);
+    p.go(0, [-9900.0, 555.0, 47.2], 0.0);
+    p.go(1, [-9900.0, 555.0, 47.2], 0.0);
+    p.run(1.0);
+    p.go(0, BY_INNER_FIRE, 0.0);
+    p.go(1, BY_LEVER, 0.0);
+    p.run(1.0);
+    assert!(
+        shows(&p, 0, object(SCENERY_UNTIL_PULL)),
+        "until_used scenery"
+    );
+    assert!(
+        !shows(&p, 0, object(SCENERY_AFTER_PULL)),
+        "after_used scenery"
+    );
+    assert!(holds(&p, 0, unit(UNTIL_PULL)), "until_used creature");
+    assert!(!holds(&p, 0, unit(AFTER_PULL)), "after_used creature");
+    // The guard is back and holds it; after the kill it pulls again.
+    click(&mut p, 1, object(LEVER));
+    assert_eq!(notes(&p, 1, LEVER_HELD), 1, "the guard is not back");
+    free_the_lever(&mut p, 1);
+    click(&mut p, 1, object(LEVER));
+    assert_eq!(notes(&p, 1, LEVER_USED), 2, "the lever stayed pulled");
 }

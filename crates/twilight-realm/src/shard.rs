@@ -156,11 +156,13 @@ impl Shard {
         }
     }
 
-    /// The stops pinned and the creatures dead in the Run; none with no Run.
-    pub(crate) fn run_facts(&self) -> (Vec<String>, Vec<u32>) {
-        self.run.as_ref().map_or((Vec::new(), Vec::new()), |r| {
-            (r.pinned.clone(), r.dead.clone())
-        })
+    /// The stops pinned, the creatures dead and the levers used in the Run; none with no Run.
+    pub(crate) fn run_facts(&self) -> (Vec<String>, Vec<u32>, Vec<u32>) {
+        self.run
+            .as_ref()
+            .map_or((Vec::new(), Vec::new(), Vec::new()), |r| {
+                (r.pinned.clone(), r.dead.clone(), r.used.clone())
+            })
     }
 
     /// The creature that carries the Run's key and the locked doors unlocked in it; none with no
@@ -188,6 +190,11 @@ impl Shard {
         self.run.as_ref().is_some_and(|r| r.dead.contains(&guid))
     }
 
+    /// Marks the lever of `guid` used in the Run. Whether it was newly used.
+    pub(crate) fn pull(&mut self, guid: u32) -> bool {
+        self.run.as_mut().is_some_and(|r| r.pull(guid))
+    }
+
     /// Pins stop `key` in the Run, darkens its inner portal and opens the one of `opens`. Whether
     /// the stop was newly pinned.
     pub(crate) fn pin(&mut self, key: &str, opens: Option<&str>) -> bool {
@@ -204,7 +211,6 @@ impl Shard {
         true
     }
 
-    /// The Run's creatures come and go on its facts: a death is recorded, a creature whose
     /// Stands the Run's starting creatures on `host`'s ground, once: [`Shard::new`] has no host,
     /// and the first tick comes before any client is shown them.
     fn ground_run(&mut self, host: &dyn Host) {
@@ -224,8 +230,10 @@ impl Shard {
         }
     }
 
-    /// `until_dead` has died is gone, and one whose `after_pinned` or `after_dead` has come true
-    /// appears, once, standing on `host`'s ground.
+    /// The Run's creatures come and go on its facts: a death is recorded, a creature whose
+    /// `until_dead` has died or whose `until_used` lever is pulled is gone, and one whose
+    /// `after_pinned`, `after_dead` or `after_used` has come true appears, once, standing on
+    /// `host`'s ground.
     fn run_changes(&mut self, host: &dyn Host) {
         let Phase::Dungeon(_) = self.place.phase else {
             return;
@@ -243,19 +251,16 @@ impl Shard {
                 }
             }
         }
-        let gone = |s: &mobs::Spawn| {
-            s.appears
-                .is_some_and(|a| a.until_dead.is_some_and(|g| run.dead.contains(&g)))
-        };
+        let gone = |s: &mobs::Spawn| s.appears.is_some_and(|a| a.gone(&run.dead, &run.used));
         self.mobs
             .retain(|m| !m.spawn_row().is_some_and(|s| gone(s)));
         for (i, s) in content.spawn.iter().enumerate() {
             let Some(a) = s.appears.filter(|_| s.phase == self.place.phase) else {
                 continue;
             };
-            if (a.after_pinned.is_some() || a.after_dead.is_some())
+            if a.comes_later()
                 && !run.appeared.contains(&s.guid)
-                && a.met(&run.pinned, &run.dead)
+                && a.met(&run.pinned, &run.dead, &run.used)
             {
                 run.appeared.push(s.guid);
                 let z = crate::ground::grounded_z(host, s.map, s.position, s.grounded);

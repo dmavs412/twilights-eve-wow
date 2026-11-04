@@ -15,9 +15,10 @@ use crate::Host;
 static TIMED_SEQ: AtomicU32 = AtomicU32::new(0);
 
 impl InWorld {
-    /// Makes each timed call that a fighting creature's clock has come to, and takes away the
-    /// creatures of the calls of one that died, left combat, or is gone. The clock is the time
-    /// since the pull, so a creature that fights again starts it over.
+    /// Makes each timed call that a fighting creature's clock has come to, but none whose
+    /// `until_used` lever is pulled in the Run, and takes away the creatures of the calls of one
+    /// that died, left combat, or is gone. The clock is the time since the pull, so a creature
+    /// that fights again starts it over.
     pub(super) fn timed_calls(&mut self, host: &dyn Host, events: &mut Vec<SessionEvent>) {
         let mut made = Vec::new();
         let mut ended = Vec::new();
@@ -33,6 +34,9 @@ impl InWorld {
                 continue;
             }
             for (k, call) in spawn.every.iter().enumerate() {
+                if call.until_used.is_some_and(|g| self.run_used.contains(&g)) {
+                    continue;
+                }
                 let due = (mob.engaged_secs / call.every_s) as u32;
                 while mob.timed_made[k] < due {
                     mob.timed_made[k] += 1;

@@ -1479,7 +1479,7 @@ impl Realm {
                 }
                 w.runs = owners.remove(&id).unwrap_or_default();
                 w.inner_open = shard.portals_open();
-                (w.run_pinned, w.run_dead) = shard.run_facts();
+                (w.run_pinned, w.run_dead, w.run_used) = shard.run_facts();
                 (w.run_key_holder, w.run_unlocked) = shard.key_facts();
                 w.others = players
                     .iter()
@@ -1899,7 +1899,7 @@ impl Realm {
             }
             RealmCommand::UseGameObject { guid } => {
                 let mut credited = None;
-                let mut ward = None;
+                let mut clicked = None;
                 let mut unlock = None;
                 if let Some(w) = &mut self.world {
                     let player = w.guid;
@@ -1957,16 +1957,19 @@ impl Realm {
                             // A stop's portal, taken or dark.
                         } else if let Some(used) = w.use_gameobject(guid) {
                             if let Some(c) = self.characters.get(w.guid) {
-                                if w.ward_click(used, c) {
-                                    ward = Some(used);
+                                if w.use_click(used, c) {
+                                    clicked = Some(used);
                                 }
                             }
                             self.uses.push(used);
                         }
                     }
                 }
-                if let Some(used) = ward {
-                    self.use_ward(used);
+                if let Some(used) = clicked {
+                    match used.kind {
+                        UseKind::Ward => self.use_ward(used),
+                        UseKind::Lever => self.use_lever(used),
+                    }
                 }
                 if let Some((dungeon, door)) = unlock {
                     let place = shard::Place {
@@ -2508,6 +2511,49 @@ impl Realm {
         }
         if shard.pin(&ward.stop, ward.opens.as_deref()) {
             self.recall_stop(d.id, &ward.stop, Some(stone.guid));
+        }
+    }
+
+    /// The active session pulls the lever `used`, in reach. While the creature it needs lives,
+    /// they are told it holds; after, the first pull marks the lever used in the Run, tells them
+    /// its `used_text` and credits them with a use of it. A pulled lever does nothing.
+    fn use_lever(&mut self, used: GameObjectUse) {
+        let Some((d, (object, _))) =
+            phased::dungeon(used.dungeon).and_then(|d| Some((d, d.usable(used.guid)?)))
+        else {
+            return;
+        };
+        let Some(lever) = &object.lever else {
+            return;
+        };
+        let place = shard::Place {
+            map: d.map,
+            phase: phased::Phase::Dungeon(d.id),
+        };
+        let Some(shard) = self.shards.get_mut(&place) else {
+            return;
+        };
+        if lever.needs_dead.is_some_and(|guid| !shard.is_dead(guid)) {
+            self.events.push(SessionEvent::Notification {
+                text: lever.held_text.clone(),
+            });
+            return;
+        }
+        if !shard.pull(object.guid) {
+            return;
+        }
+        self.events.push(SessionEvent::Notification {
+            text: lever.used_text.clone(),
+        });
+        let Some(player) = self.world.as_ref().map(|w| w.guid) else {
+            return;
+        };
+        let credited = self
+            .characters
+            .get_mut(player)
+            .is_some_and(|c| quests::credit_use(c, object.guid, &mut self.events));
+        if credited {
+            self.save(player);
         }
     }
 

@@ -201,6 +201,9 @@ pub(crate) struct Every {
     /// A cast the client shows as the call goes out.
     #[serde(default)]
     pub(crate) client_spell_id: Option<u32>,
+    /// The guid of the lever whose pull stops the call for the rest of the Run.
+    #[serde(default)]
+    pub(crate) until_used: Option<u32>,
 }
 
 /// When a creature or GameObject of a Phased Dungeon is in the Run: from the start, unless one of
@@ -216,16 +219,35 @@ pub(crate) struct Appears {
     /// In the Run until the creature of this guid has died in it.
     #[serde(default)]
     pub(crate) until_dead: Option<u32>,
+    /// Out of the Run until the lever of this guid has been pulled in it.
+    #[serde(default)]
+    pub(crate) after_used: Option<u32>,
+    /// In the Run until the lever of this guid has been pulled in it.
+    #[serde(default)]
+    pub(crate) until_used: Option<u32>,
 }
 
 impl Appears {
-    /// Whether it is in a Run with these stops `pinned` and creatures `dead`.
-    pub(crate) fn met(&self, pinned: &[String], dead: &[u32]) -> bool {
+    /// Whether it is in a Run with these stops `pinned`, creatures `dead` and levers `used`.
+    pub(crate) fn met(&self, pinned: &[String], dead: &[u32], used: &[u32]) -> bool {
         self.after_pinned
             .as_ref()
             .is_none_or(|key| pinned.contains(key))
             && self.after_dead.is_none_or(|guid| dead.contains(&guid))
             && self.until_dead.is_none_or(|guid| !dead.contains(&guid))
+            && self.after_used.is_none_or(|guid| used.contains(&guid))
+            && self.until_used.is_none_or(|guid| !used.contains(&guid))
+    }
+
+    /// Whether it comes into the Run after its start, once something has happened in it.
+    pub(crate) fn comes_later(&self) -> bool {
+        self.after_pinned.is_some() || self.after_dead.is_some() || self.after_used.is_some()
+    }
+
+    /// Whether it has left a Run with these creatures `dead` and levers `used`.
+    pub(crate) fn gone(&self, dead: &[u32], used: &[u32]) -> bool {
+        self.until_dead.is_some_and(|guid| dead.contains(&guid))
+            || self.until_used.is_some_and(|guid| used.contains(&guid))
     }
 }
 
@@ -325,6 +347,20 @@ pub(crate) enum Sides {
 pub enum UseKind {
     /// A ward stone: see [`Ward`].
     Ward,
+    /// A lever: see [`Lever`].
+    Lever,
+}
+
+/// What a lever does. While the creature `needs_dead` lives in the Run, a click shows
+/// `held_text`. After, or from the start with no `needs_dead`, the first click marks it used for
+/// the Run and shows the clicker `used_text`; a later click does nothing.
+#[derive(Deserialize)]
+pub(crate) struct Lever {
+    #[serde(default)]
+    pub(crate) needs_dead: Option<u32>,
+    #[serde(default)]
+    pub(crate) held_text: String,
+    pub(crate) used_text: String,
 }
 
 /// What a ward stone does. While the creature `needs_dead` lives in the Run, a click shows
@@ -364,6 +400,9 @@ pub(crate) struct DungeonObject {
     /// What a `use = "ward"` does.
     #[serde(default)]
     pub(crate) ward: Option<Ward>,
+    /// What a `use = "lever"` does.
+    #[serde(default)]
+    pub(crate) lever: Option<Lever>,
     /// A quest's `giver_object` names this GameObject's guid as its entry: a click offers it.
     #[serde(default)]
     pub(crate) gives_quests: bool,
@@ -423,6 +462,59 @@ impl Dungeon {
             o.cover_yd
                 .is_some_and(|yd| flat_distance(o.position, at) <= yd)
         })
+    }
+
+    /// Refuses a lever table on a GameObject without `use = "lever"` and the use without the
+    /// table, a lever's `needs_dead` that names no creature of the dungeon, and an `after_used`,
+    /// `until_used` or timed call's `until_used` that names no lever of it.
+    fn check_levers(&self) {
+        let levers: Vec<u32> = self
+            .gameobject
+            .iter()
+            .filter(|o| o.use_kind == Some(UseKind::Lever))
+            .map(|o| o.guid)
+            .collect();
+        for o in &self.gameobject {
+            assert_eq!(
+                o.lever.is_some(),
+                o.use_kind == Some(UseKind::Lever),
+                "{}: GameObject {} has a lever table or use = \"lever\" without the other",
+                self.name,
+                o.guid
+            );
+            if let Some(guid) = o.lever.as_ref().and_then(|l| l.needs_dead) {
+                assert!(
+                    self.creature.iter().any(|c| c.guid == guid),
+                    "{}: lever {} needs_dead {guid}, no creature of it",
+                    self.name,
+                    o.guid
+                );
+            }
+        }
+        let appears = self
+            .creature
+            .iter()
+            .map(|c| (c.guid, &c.appears))
+            .chain(self.gameobject.iter().map(|o| (o.guid, &o.appears)));
+        for (guid, a) in appears {
+            for lever in [a.after_used, a.until_used].into_iter().flatten() {
+                assert!(
+                    levers.contains(&lever),
+                    "{}: {guid} waits on {lever}, no lever of it",
+                    self.name
+                );
+            }
+        }
+        for c in &self.creature {
+            for lever in c.every.iter().filter_map(|e| e.until_used) {
+                assert!(
+                    levers.contains(&lever),
+                    "{}: creature {}'s timed call stops on {lever}, no lever of it",
+                    self.name,
+                    c.guid
+                );
+            }
+        }
     }
 
     /// The dungeon GameObject of this guid that has a use, if any.
@@ -991,14 +1083,14 @@ impl Dungeon {
     }
 }
 
-/// Whether a Phased Dungeon's door or ward stone has this GameObject entry: a use objective may
-/// name either.
+/// Whether a Phased Dungeon's door, ward stone or lever has this GameObject entry: a use
+/// objective may name any of them.
 pub(crate) fn is_door(entry: u32) -> bool {
     content().iter().any(|d| {
         d.portal.door.as_ref().is_some_and(|o| o.entry == entry)
             || d.gameobject
                 .iter()
-                .any(|o| o.guid == entry && (o.use_kind == Some(UseKind::Ward) || o.gives_quests))
+                .any(|o| o.guid == entry && (o.use_kind.is_some() || o.gives_quests))
     })
 }
 
@@ -1097,6 +1189,7 @@ pub(crate) fn content() -> &'static [Dungeon] {
                     assert_eq!(door.opens_with, key.item, "{}: door {}", d.name, door.guid);
                 }
             }
+            d.check_levers();
         })
         .collect()
     })
@@ -1176,6 +1269,8 @@ pub(crate) struct Run {
     pub(crate) pinned: Vec<String>,
     /// The guids of the dungeon's creatures that have died in it.
     pub(crate) dead: Vec<u32>,
+    /// The guids of the levers pulled in it.
+    pub(crate) used: Vec<u32>,
     /// The guids of the creatures that came into the Run after its start.
     pub(crate) appeared: Vec<u32>,
     /// Whether the creatures it started with stand on the host's ground: the shard makes them
@@ -1201,6 +1296,7 @@ impl Run {
             portals_open: self::dungeon(dungeon).map_or(Vec::new(), |d| d.portals_open_at_start()),
             pinned: Vec::new(),
             dead: Vec::new(),
+            used: Vec::new(),
             appeared: Vec::new(),
             grounded: false,
             key_holder: self::dungeon(dungeon)
@@ -1221,6 +1317,15 @@ impl Run {
         let new = !self.pinned.iter().any(|k| k == key);
         if new {
             self.pinned.push(key.to_string());
+        }
+        new
+    }
+
+    /// Marks the lever `guid` used for the rest of the Run. Whether it was not used already.
+    pub(crate) fn pull(&mut self, guid: u32) -> bool {
+        let new = !self.used.contains(&guid);
+        if new {
+            self.used.push(guid);
         }
         new
     }
@@ -1328,6 +1433,131 @@ mod tests {
         assert!(!call.reached(51, 100));
         assert!(call.reached(50, 100));
         assert!(call.reached(1, 100));
+    }
+
+    /// A dungeon file of one creature (guid 1) and a lever (guid 2), with `more` after them.
+    fn with_lever(more: &str) -> Dungeon {
+        let file = format!(
+            r#"
+id = 99
+name = "the Lever Check"
+map = 0
+origin = [0.0, 0.0, 0.0]
+yaw = 0.0
+footprint = []
+portal = {{ position = [0.0, 0.0, 0.0], orientation = 0.0 }}
+
+[[creature]]
+guid = 1
+entry = 96003
+level = 1
+position = [0.0, 0.0, 0.0]
+orientation = 0.0
+
+[[gameobject]]
+guid = 2
+display = 461
+position = [0.0, 0.0, 0.0]
+orientation = 0.0
+sides = "inside"
+use = "lever"
+lever = {{ needs_dead = 1, held_text = "held", used_text = "used" }}
+{more}"#
+        );
+        toml::from_str(&file).expect("the dungeon parses")
+    }
+
+    #[test]
+    fn a_lever_and_what_waits_on_it_pass_the_check() {
+        with_lever(
+            r#"
+[[gameobject]]
+guid = 3
+display = 461
+position = [0.0, 0.0, 0.0]
+orientation = 0.0
+sides = "inside"
+after_used = 2
+until_used = 2
+"#,
+        )
+        .check_levers();
+    }
+
+    #[test]
+    #[should_panic(expected = "a lever table or use")]
+    fn a_lever_table_without_the_use_is_refused() {
+        with_lever(
+            r#"
+[[gameobject]]
+guid = 3
+display = 461
+position = [0.0, 0.0, 0.0]
+orientation = 0.0
+sides = "inside"
+lever = { used_text = "used" }
+"#,
+        )
+        .check_levers();
+    }
+
+    #[test]
+    #[should_panic(expected = "needs_dead 7, no creature")]
+    fn a_lever_that_needs_no_creature_of_the_dungeon_is_refused() {
+        with_lever(
+            r#"
+[[gameobject]]
+guid = 3
+display = 461
+position = [0.0, 0.0, 0.0]
+orientation = 0.0
+sides = "inside"
+use = "lever"
+lever = { needs_dead = 7, used_text = "used" }
+"#,
+        )
+        .check_levers();
+    }
+
+    #[test]
+    #[should_panic(expected = "waits on 1, no lever")]
+    fn an_after_used_that_names_no_lever_is_refused() {
+        with_lever(
+            r#"
+[[gameobject]]
+guid = 3
+display = 461
+position = [0.0, 0.0, 0.0]
+orientation = 0.0
+sides = "inside"
+after_used = 1
+"#,
+        )
+        .check_levers();
+    }
+
+    #[test]
+    #[should_panic(expected = "stops on 3, no lever")]
+    fn a_timed_call_until_used_that_names_no_lever_is_refused() {
+        with_lever(
+            r#"
+[[creature]]
+guid = 4
+entry = 96003
+level = 1
+position = [0.0, 0.0, 0.0]
+orientation = 0.0
+
+[[creature.every]]
+every_s = 20
+entry = 96003
+level = 1
+count = 2
+position = [0.0, 0.0, 0.0]
+until_used = 3
+"#,
+        )
+        .check_levers();
     }
 
     #[test]

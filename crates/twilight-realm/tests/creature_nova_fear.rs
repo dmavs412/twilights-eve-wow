@@ -1,5 +1,5 @@
-//! A nova, a fear and a random target (#239), tried on the Gaze Hall's Vile Familiar
-//! (`content/gaze_hall.toml`), which each test gives one Creature Spell.
+//! A nova, a fear and a random target (#239), and a silence (#577), tried on the Gaze Hall's Vile
+//! Familiar (`content/gaze_hall.toml`), which each test gives one Creature Spell.
 
 mod common;
 
@@ -26,6 +26,9 @@ const UNIT_FIELD_FLAGS: u16 = 46;
 const UNIT_FLAG_FLEEING: u32 = 0x0080_0000;
 const SPELL_FAILED_FLEEING: u8 = 0x1e;
 const SPELL_FAILED_NOT_KNOWN: u8 = 0x38;
+const SPELL_FAILED_SILENCED: u8 = 0x60;
+/// A meal whose Well Fed special is `cc_half` 50.
+const STOCKADE_SUCKER_POT: u32 = 962207;
 
 struct Seen {
     at: f32,
@@ -244,6 +247,82 @@ fn a_feared_character_runs_from_the_caster_and_can_not_cast() {
         Some(SPELL_FAILED_NOT_KNOWN),
         "control back: the cast is judged on its spell again"
     );
+}
+
+/// A level 20 warrior in the familiar's reach under `meal`'s Well Fed buff (0 for none), the
+/// familiar casting `test_silence` (4 s): they try a cast every 0.1 s for 10 s and, from the first
+/// one refused for the silence, swing at the familiar. When each cast was refused for the silence,
+/// and when each of their swings went out, in seconds.
+fn silenced(meal: u32) -> (Vec<f32>, Vec<f32>) {
+    let realm = realm().with_creature_spells(FAMILIAR, &["test_silence"]);
+    let mut p = Party::edited(realm, &[20], START_ELWYNN, Box::new(NoGround), |_, blob| {
+        if meal == 0 {
+            blob
+        } else {
+            blob + &format!("\n[well_fed]\nmeal = {meal}\nleft_secs = 3600.0\n")
+        }
+    });
+    p.go_facing(0, EXPOSED, CASTER);
+    p.run(0.5);
+    let me = p.guids[0];
+    let (familiar, _) = p.unit(0, FAMILIAR, CASTER);
+    let (mut refused, mut swings) = (Vec::new(), Vec::new());
+    for tick in 0..100 {
+        let at = tick as f32 * 0.1;
+        let before = p.seen(0).len();
+        p.cmd(
+            0,
+            RealmCommand::CastSpell {
+                spell_id: 1,
+                target: None,
+            },
+        );
+        let silence = p.seen(0)[before..].iter().any(|e| {
+            matches!(e, SessionEvent::CastResult { spell_id: 1, reason: Some(r), .. }
+                if *r == SPELL_FAILED_SILENCED)
+        });
+        if silence {
+            if refused.is_empty() {
+                p.cmd(0, RealmCommand::AttackSwing { guid: familiar });
+            }
+            refused.push(at);
+        }
+        if !swung_at(&p.run(0.1)[0], me).is_empty() {
+            swings.push(at);
+        }
+    }
+    (refused, swings)
+}
+
+/// How long the casts in `refused`, tried every 0.1 s, were refused, in seconds; and whether
+/// the refusals ran without a gap.
+fn silence_secs(refused: &[f32]) -> (f32, bool) {
+    let (Some(first), Some(last)) = (refused.first(), refused.last()) else {
+        panic!("no cast was refused for the silence");
+    };
+    let span = last - first + 0.1;
+    (span, (refused.len() as f32 * 0.1 - span).abs() < 0.05)
+}
+
+#[test]
+fn a_silenced_character_can_not_cast_for_its_duration_and_still_swings() {
+    let (refused, swings) = silenced(0);
+    let (secs, unbroken) = silence_secs(&refused);
+    assert!((secs - 4.0).abs() < 0.3, "4 s of silence: {secs} s");
+    assert!(unbroken, "a cast went through mid-silence: {refused:?}");
+    let (first, last) = (refused[0], *refused.last().unwrap());
+    assert!(
+        swings.iter().any(|&t| t >= first && t <= last),
+        "no swing while silenced ({first} to {last}): {swings:?}"
+    );
+}
+
+#[test]
+fn cc_half_halves_a_silence() {
+    let (refused, _) = silenced(STOCKADE_SUCKER_POT);
+    let (secs, unbroken) = silence_secs(&refused);
+    assert!((secs - 2.0).abs() < 0.3, "{secs} s");
+    assert!(unbroken, "{refused:?}");
 }
 
 #[test]

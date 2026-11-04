@@ -330,9 +330,11 @@ pub(crate) struct InWorld {
     /// The stops whose inner portal is open in the Run the player is in, as of the realm's last
     /// sync.
     pub(crate) inner_open: Vec<String>,
-    /// The stops a ward stone has pinned in the Run, and the creatures dead in it.
+    /// The stops a ward stone has pinned in the Run, the creatures dead in it and the levers
+    /// pulled in it.
     pub(crate) run_pinned: Vec<String>,
     pub(crate) run_dead: Vec<u32>,
+    pub(crate) run_used: Vec<u32>,
     /// The creature that carries the Run's key, and the locked doors unlocked in the Run.
     pub(crate) run_key_holder: Option<u32>,
     pub(crate) run_unlocked: Vec<u32>,
@@ -535,6 +537,7 @@ impl InWorld {
             inner_open: Vec::new(),
             run_pinned: Vec::new(),
             run_dead: Vec::new(),
+            run_used: Vec::new(),
             run_key_holder: None,
             run_unlocked: Vec::new(),
             locked_shown: Default::default(),
