@@ -1,7 +1,7 @@
 # Twilight's Eve: Lore Bible
 
 Davis, started 2026-10-23. Copied on 2026-11-03 from the live doc at
-https://claude.ai/artifact/FCEWQ3Ng5RHp5bHrtPpzgJ (revision 52), which replaces the earlier PDF.
+https://claude.ai/artifact/FCEWQ3Ng5RHp5bHrtPpzgJ (revision 53), which replaces the earlier PDF.
 The live doc is the source; refresh this copy when it changes. Every quest, rumour, item text and
 NPC line follows it. Where content disagrees with it, the bible wins.
 
