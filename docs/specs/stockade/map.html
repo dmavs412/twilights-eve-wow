@@ -7,7 +7,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap">
 <style>
-  /* Layout: one column; a floor plan (north up), then the route, then the bosses. */
+  /* Layout: one column; a floor plan (north up), then each dungeon's route and bosses. */
   :root {
     --bg: #e6e9ee;
     --fg: #1d2129;
@@ -16,6 +16,8 @@
     --wall: #58616e;
     --grid: #cfd4db;
     --cell: #dde1e7;
+    --riot: #e8c9b8;
+    --quiet: #c9d3e6;
     --boss: #b23b17;
     --boss-fg: #ffffff;
     --friend: #2c7a46;
@@ -29,14 +31,14 @@
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #1b1f26; --fg: #e4e7ec; --muted: #9aa3b1; --floor: #272c35; --wall: #98a2b1;
-      --grid: #343a45; --cell: #2f3540; --boss: #ff7a4a; --boss-fg: #1b1f26; --friend: #6fd18f; --object: #e8b740;
-      --trash: #6c7482; --card: #222730; --line: #3a414c; color-scheme: dark;
+      --grid: #343a45; --cell: #2f3540; --riot: #4a3328; --quiet: #2b3a55; --boss: #ff7a4a; --boss-fg: #1b1f26;
+      --friend: #6fd18f; --object: #e8b740; --trash: #6c7482; --card: #222730; --line: #3a414c; color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #1b1f26; --fg: #e4e7ec; --muted: #9aa3b1; --floor: #272c35; --wall: #98a2b1;
-    --grid: #343a45; --cell: #2f3540; --boss: #ff7a4a; --boss-fg: #1b1f26; --friend: #6fd18f; --object: #e8b740;
-    --trash: #6c7482; --card: #222730; --line: #3a414c; color-scheme: dark;
+    --grid: #343a45; --cell: #2f3540; --riot: #4a3328; --quiet: #2b3a55; --boss: #ff7a4a; --boss-fg: #1b1f26;
+    --friend: #6fd18f; --object: #e8b740; --trash: #6c7482; --card: #222730; --line: #3a414c; color-scheme: dark;
   }
   body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.5; }
   .wrap {
@@ -57,8 +59,12 @@
   .legend .o { background: var(--object); }
   .legend .t { background: var(--trash); border-radius: 50%; width: 7px; height: 7px; }
   .legend .v { border: 1px solid var(--wall); border-radius: 50%; width: 7px; height: 7px; }
+  .legend .r { background: var(--riot); border: 1px solid var(--wall); }
+  .legend .q { background: var(--quiet); border: 1px solid var(--wall); }
   h2 { font-family: var(--display); font-weight: 400; font-size: 1.6rem; margin: 0 0 8px; }
-  ol.route { margin: 0; padding-left: 1.4em; max-width: 68ch; display: flex; flex-direction: column; gap: 6px; }
+  h2 small { font-family: var(--body); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-left: 10px; }
+  section p { margin: 0 0 10px; max-width: 70ch; }
+  ol.route { margin: 0 0 14px; padding-left: 1.4em; max-width: 68ch; display: flex; flex-direction: column; gap: 6px; }
   .bosses { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
   .boss { background: var(--card); border-top: 3px solid var(--boss); padding: 12px 14px 14px; min-width: 0; }
   .boss h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.3rem; }
@@ -74,62 +80,77 @@
 <div class="wrap">
   <header>
     <h1>The Stockade</h1>
-    <p>Spec #575. Vanilla's jail, map 34, levels 30 to 34. One long hall of cells with a round room at each end, crossed near its middle by the corridor from the canal door. North is up. The east wing of the hall is the Defias block and the west wing is the quiet wing. Warden Thelwater stands outside at the city door and never appears on this map.</p>
+    <p>Spec #575. Vanilla's jail, map 34, two dungeons with the City Watch between them. One long hall of cells with a round room at each end, crossed near its middle by the corridor from the canal door. North is up. The corridor is the Watch's and is open ground; the east wing is the riot (30 to 34) and the west wing is the quiet wing (36 to 40), each a Phased Dungeon from the head of its stairs.</p>
   </header>
 
   <div class="plan" id="plan"></div>
 
   <div class="legend">
+    <span><i class="r"></i>The riot's footprint</span>
+    <span><i class="q"></i>The quiet wing's footprint</span>
     <span><i class="b"></i>Boss, numbered in walking order</span>
-    <span><i class="f"></i>Friendly: Ott and the four witnesses</span>
-    <span><i class="o"></i>Lever, portcullis, chest, grate</span>
-    <span><i class="t"></i>Rioter packs</span>
+    <span><i class="f"></i>Friendly: the Watch, Ash and the four witnesses</span>
+    <span><i class="o"></i>Lever, portcullis, sealed door, grate</span>
+    <span><i class="t"></i>A pack</span>
     <span><i class="v"></i>A vanilla spawn point</span>
   </div>
 
   <section>
-    <h2>The route</h2>
-    <ol class="route">
-      <li>The gate hall and the corridor. Rioters in three packs; Sergeant Ott at the corridor's north end with his back to the wall (Quell the Riot, Guards Below).</li>
-      <li>Down the east stairs into the Defias block. A Ringleader and a Rioter guard each lever. Pull Lever A and Lever B to drop the bars on rows A and B, or fight Red Dace with two more rioters every twenty seconds. Dace holds the round room at the wing's end (Red Dace).</li>
-      <li>Back up and down the west stairs. Bull Marrow is breaking the quiet wing's gate. Kill him, pull the gate's lever and the bars grind up (The Quiet Wing).</li>
-      <li>The quiet wing. Four writ cells just past the gate, four witnesses, no enemies. The warder's room halfway along holds the evidence chest and the lower doors, which Pell left open (What They Saw, The Last of Westfall).</li>
-      <li>Through the lower doors into the lower gallery, the wing's far half. Warder Pell and his two bought guards, counting the purse (Warder Pell).</li>
-      <li>The drain, the round room at the wing's end. The Hush waits for the ogre to finish the doors. The grate in the floor offers The Drain once Pell is dead.</li>
-    </ol>
+    <h2>The Watch's ground</h2>
+    <p>The gate hall, the corridor and its cells, open world on map 34. Warden Thelwater stands at the crossing and gives the quests. Quartermaster Mae Tollin repairs in the gate hall. Sergeant Hale stands across the head of the west stairs and speaks the Keep's refusal. Watchmen hold the east stairs, the door and the corridor's end. Convicts behind the corridor's bars recognise a notorious player (spec #558).</p>
   </section>
 
   <section>
-    <h2>The bosses</h2>
+    <h2>The riot <small>east wing, 30 to 34</small></h2>
+    <ol class="route">
+      <li>Down the east stairs past the Portal. Two Rioters and a Ringleader at the foot (Quell the Riot).</li>
+      <li>Row A, the near half of the cells. Three cells of two Rioters; a Ringleader and a Rioter at the lever post. Pull Lever A to drop the row's bars, or leave them up and Cutter calls two more out every twenty seconds.</li>
+      <li>Varl Cutter where the rows meet, with two Ringleaders (Varl Cutter).</li>
+      <li>Row B, the far half, the same again with Lever B.</li>
+      <li>The round room at the wing's end. Captain Rook and two Bought Watchmen stand between you and the cell where Bertram Ash has barred himself in (The Turnkey). Ash gives The Captain's Keys once Rook is dead.</li>
+    </ol>
     <div class="bosses">
       <article class="boss">
-        <div class="lvl">1 &middot; Level 31 elite</div>
-        <h3>Red Dace</h3>
-        <p>The Defias captain who took the deal, in the round room at the east wing's end with two Ringleaders.</p>
-        <p>Every 20 s he calls two Rioters out of each row whose bars are still up. Lock both rows and he fights alone. Drops his purse of Twilight coin.</p>
+        <div class="lvl">1 &middot; Level 32 elite</div>
+        <h3>Varl Cutter</h3>
+        <p>The Defias ringleader who took Rook's purse, where row A meets row B, with two Ringleaders.</p>
+        <p>Calls two Rioters from each unlocked row every 20 s. Shiv, a bleed every 12 s. Fire Bottle every 20 s: a 4 yd fire patch for 10 s under a random character, with a warning. Drops the purse of Twilight coin.</p>
       </article>
       <article class="boss">
-        <div class="lvl">2 &middot; Level 32 elite</div>
-        <h3>Bull Marrow</h3>
-        <p>The ogre the Defias kept for breaking doors, at the foot of the west stairs against the quiet wing's gate.</p>
-        <p>Beam Swing, 250% of a swing every 8 s. Shove, a 6 yd nova with a two second warning. Health doubled. The gate's lever works once he is dead.</p>
-      </article>
-      <article class="boss">
-        <div class="lvl">3 &middot; Level 33 elite</div>
-        <h3>Warder Pell</h3>
-        <p>The turned guard, in the west wing's far half beyond the warder's room, with two Bought Guards.</p>
-        <p>Shield Wall every 25 s: half damage taken for 8 s. Fights to the death. Drops the Sealed Ledger.</p>
-      </article>
-      <article class="boss">
-        <div class="lvl">4 &middot; Level 34 &middot; Boss Bar</div>
-        <h3>The Hush</h3>
-        <p>A Twilight Silencer who came up the drain with the names, in the round room at the west wing's end.</p>
-        <p>Hush, a 5 s silence every 18 s. Fear every 30 s. Shadow Bolt. Drops the Writ of Names.</p>
+        <div class="lvl">2 &middot; Level 34 &middot; Boss Bar</div>
+        <h3>Captain Ansel Rook</h3>
+        <p>The Watch's captain, in the round room at the wing's end with two Bought Watchmen, in front of Ash's cell.</p>
+        <p>Shield Wall every 30 s: 60% less damage taken and 30% less dealt for 8 s. Captain's Cut at 200% every 10 s. Hamstring, a 50% snare for 6 s, every 15 s. Drops Rook's Keyring and Rook's Letters.</p>
       </article>
     </div>
   </section>
 
-  <p class="note">The walls are a schematic of the jail's shape, not a measured plan; the grey rings are the 93 vanilla spawn points, which are measured. The Build lane fits every room, lever and spawn to the real walls (ticket #578), so a marker here names a room, not a coordinate.</p>
+  <section>
+    <h2>The quiet wing <small>west wing, 36 to 40</small></h2>
+    <ol class="route">
+      <li>The sealed door at the head of the west stairs opens once for a character carrying Rook's Key (The Quiet Wing). Two Writ Warders at the foot of the stairs.</li>
+      <li>The writ cells, the first four past the stairs: Wender Cogg, Hesper Lowe, Dorrin Vask and Tobin Marsh. Two patrol pairs, a Writ Warder and a Twilight Listener each, walk the hall between them.</li>
+      <li>The scribe's room, a cell halfway along. Sister Quill and two Listeners (The Scribe, from Marsh).</li>
+      <li>The lower gallery, the wing's far half. Three packs of three Hushed. They make no sound.</li>
+      <li>The drain, the round room at the wing's end. The Hush. The grate in the floor offers The Drain once Quill is dead.</li>
+    </ol>
+    <div class="bosses">
+      <article class="boss">
+        <div class="lvl">3 &middot; Level 38 elite</div>
+        <h3>Sister Quill</h3>
+        <p>The Keep's scribe, in the scribe's room with two Twilight Listeners, writing down what each prisoner knows.</p>
+        <p>Take Down, a 4 s silence on a random character every 15 s. Ink every 25 s, a 2 s cast with a warning, then nobody within 8 yd of her can move for 3 s. Shadow Bolt. Drops the Book of Takings.</p>
+      </article>
+      <article class="boss">
+        <div class="lvl">4 &middot; Level 40 &middot; Boss Bar</div>
+        <h3>The Hush</h3>
+        <p>A Twilight Silencer who came up the drain with the names, in the round room at the wing's end.</p>
+        <p>Hush, a 5 s silence every 18 s. Fear every 30 s. Shadow Bolt. Stillness every 40 s, a shield that soaks damage for 10 s. Drops the Writ of Names.</p>
+      </article>
+    </div>
+  </section>
+
+  <p class="note">The walls are a schematic of the jail's shape, not a measured plan; the grey rings are the 93 vanilla spawn points, which are measured. The Build lane fits every footprint box, room, lever and spawn to the real walls (tickets #576, #578 and #581), so a marker here names a room, not a coordinate.</p>
 </div>
 
 <script>
@@ -150,9 +171,16 @@
   function poly(pts, fill, stroke, extra) {
     return '<polygon points="' + pts.map(pt).join(' ') + '" fill="' + fill + '" stroke="' + (stroke || 'none') + '" stroke-width="1.2"' + (extra || '') + '/>';
   }
+  function line(a, b, stroke, width, extra) {
+    return '<line x1="' + sx(a[1]) + '" y1="' + sy(a[0]) + '" x2="' + sx(b[1]) + '" y2="' + sy(b[0]) + '" stroke="' + stroke + '" stroke-width="' + width + '"' + (extra || '') + '/>';
+  }
 
-  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" font-family="system-ui, sans-serif" role="img" aria-label="Floor plan of the Stockade with the four bosses">';
+  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" font-family="system-ui, sans-serif" role="img" aria-label="Floor plan of the Stockade: the Watch holds the corridor, the riot is the east wing and the quiet wing the west wing">';
   s += '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="var(--floor)"/>';
+
+  // Footprints: a tint under each wing from the head of its stairs to the round room.
+  s += poly(hallRect(-170, -7, -30, 30), 'var(--riot)', 'none', ' opacity="0.55"');
+  s += poly(hallRect(7, 170, -30, 30), 'var(--quiet)', 'none', ' opacity="0.55"');
 
   // Floors: corridors and rooms, walls drawn as outlines first, then floors re-filled so joins read as openings.
   var floors = [];
@@ -201,8 +229,7 @@
   // Stairs: hatching across the hall between the corridor and each wing
   [1, -1].forEach(function (wing) {
     for (var t = 8; t <= 32; t += 4) {
-      var a = gp(wing * t, -6), b = gp(wing * t, 6);
-      s += '<line x1="' + sx(a[1]) + '" y1="' + sy(a[0]) + '" x2="' + sx(b[1]) + '" y2="' + sy(b[0]) + '" stroke="var(--wall)" stroke-width="0.8" opacity="0.6"/>';
+      s += line(gp(wing * t, -6), gp(wing * t, 6), 'var(--wall)', 0.8, ' opacity="0.6"');
     }
   });
 
@@ -218,21 +245,21 @@
 
   // Labels: [game point, text, size]
   var labels = [
-    [[70, 0], "The corridor", 11],
+    [[70, 0], "The Watch's ground", 11],
     [[50, -22], "Gate hall", 10],
-    [[96, 40], "Cells", 9],
-    [[96, -40], "Cells", 9],
+    [[96, 40], "Convicts", 9],
+    [[96, -40], "Convicts", 9],
     [[124, -22], "Stairs", 9],
     [[124, 22], "Stairs", 9],
-    [gp(-70, 32), "The Defias block (east wing)", 12],
-    [gp(-50, -26), "Row A", 10],
-    [gp(-96, 26), "Row B", 10],
-    [gp(70, -34), "The quiet wing (west wing)", 12],
-    [gp(96, -24), "Warder's room", 9],
-    [gp(104, 20), "the lower doors", 9],
-    [gp(120, 30), "The lower gallery", 10],
-    [gp(150, 30), "The drain", 11],
-    [gp(-150, -30), "Dace's round room", 10]
+    [gp(-70, 32), "The riot (east wing, 30 to 34)", 12],
+    [gp(-56, -26), "Row A", 10],
+    [gp(-110, 26), "Row B", 10],
+    [gp(-150, -30), "Rook's round room", 10],
+    [gp(66, -34), "The quiet wing (west wing, 36 to 40)", 12],
+    [gp(60, 26), "Writ cells", 10],
+    [gp(104, -26), "Scribe's room", 9],
+    [gp(122, 28), "The lower gallery", 10],
+    [gp(150, 30), "The drain", 11]
   ];
   labels.forEach(function (l) {
     s += '<text x="' + sx(l[0][1]) + '" y="' + (sy(l[0][0]) + l[2] * 0.35) + '" text-anchor="middle" font-size="' + l[2] + '" fill="var(--muted)" font-style="italic">' + l[1] + '</text>';
@@ -246,32 +273,43 @@
   s += '<circle cx="' + sx(0.8) + '" cy="' + sy(39.4) + '" r="4" fill="none" stroke="var(--fg)" stroke-width="1.2"/>';
   s += '<text x="' + (sx(0.8) + 10) + '" y="' + (sy(39.4) + 4) + '" font-size="10" fill="var(--fg)">Out</text></g>';
 
-  // Rioter packs
-  var packs = [[60, 0], [78, 0], [105, 0], [150, 0], [160, -3], gp(20, 0), gp(-44, 10), gp(-58, -8), gp(-72, 8), gp(-90, -10), gp(-108, 8), gp(-124, -8), gp(-150, -10), gp(-150, 10)];
+  // Portals: where each Phase begins, at the head of its stairs
+  [[gp(-7, 0), "The riot's Portal"], [gp(7, 0), "The quiet wing's Portal, behind the sealed door"]].forEach(function (p) {
+    var cx = sx(p[0][1]), cy = sy(p[0][0]);
+    s += '<g><title>' + p[1] + '</title><circle cx="' + cx + '" cy="' + cy + '" r="5" fill="none" stroke="var(--fg)" stroke-width="1.4"/>';
+    s += '<circle cx="' + cx + '" cy="' + cy + '" r="2" fill="var(--fg)"/></g>';
+  });
+
+  // Packs: [point, title]
+  var packs = [
+    [gp(-36, 0), "Two Rioters and a Ringleader"],
+    [gp(-44, -10), "A Ringleader and a Rioter at Lever A"],
+    [gp(-52, 10), "Two Rioters"], [gp(-64, -10), "Two Rioters"], [gp(-76, 10), "Two Rioters"],
+    [gp(-92, 10), "A Ringleader and a Rioter at Lever B"],
+    [gp(-100, -10), "Two Rioters"], [gp(-112, 10), "Two Rioters"], [gp(-124, -10), "Two Rioters"],
+    [gp(36, 0), "Two Writ Warders"],
+    [gp(52, 0), "A Writ Warder and a Twilight Listener"], [gp(74, 0), "A Writ Warder and a Twilight Listener"],
+    [gp(112, 8), "Three Hushed"], [gp(122, -8), "Three Hushed"], [gp(132, 6), "Three Hushed"]
+  ];
   packs.forEach(function (p) {
-    s += '<circle cx="' + sx(p[1]) + '" cy="' + sy(p[0]) + '" r="3.2" fill="var(--trash)"><title>Rioters</title></circle>';
+    s += '<circle cx="' + sx(p[0][1]) + '" cy="' + sy(p[0][0]) + '" r="3.2" fill="var(--trash)"><title>' + p[1] + '</title></circle>';
   });
 
   // Gates: thick bars. [a, b, title]
   var gates = [
-    [gp(-52, 6), gp(-44, 6), "Portcullis A (983002), down once Lever A is pulled"],
-    [gp(-98, -6), gp(-90, -6), "Portcullis B (983004), down once Lever B is pulled"],
-    [gp(38, -6), gp(38, 6), "The quiet wing's portcullis (983006), up once the gate lever is pulled"]
+    [gp(-48, -6), gp(-48, 6), "Portcullis A, down once Lever A is pulled"],
+    [gp(-96, -6), gp(-96, 6), "Portcullis B, down once Lever B is pulled"],
+    [gp(7, -6), gp(7, 6), "The sealed door at the head of the west stairs, opens once for Rook's Key"]
   ];
   gates.forEach(function (g) {
-    s += '<line x1="' + sx(g[0][1]) + '" y1="' + sy(g[0][0]) + '" x2="' + sx(g[1][1]) + '" y2="' + sy(g[1][0]) + '" stroke="var(--object)" stroke-width="5"><title>' + g[2] + '</title></line>';
+    s += line(g[0], g[1], 'var(--object)', 5, '><title>' + g[2] + '</title></line><line x1="0" y1="0" x2="0" y2="0" stroke="none"');
   });
-  // The lower doors, open: a dashed line across the hall
-  var ld0 = gp(104, -6), ld1 = gp(104, 6);
-  s += '<line x1="' + sx(ld0[1]) + '" y1="' + sy(ld0[0]) + '" x2="' + sx(ld1[1]) + '" y2="' + sy(ld1[0]) + '" stroke="var(--fg)" stroke-width="2" stroke-dasharray="3 3"><title>The lower doors, left open by Pell</title></line>';
 
   // Objects: [point, label, title]
   var objects = [
-    [gp(-44, -10), "Lever A", "Lever A (983001) drops row A's bars"],
-    [gp(-90, 10), "Lever B", "Lever B (983003) drops row B's bars"],
-    [gp(30, 10), "Gate lever", "The quiet wing's lever (983005), works once Marrow is dead"],
-    [gp(96, -14), "Chest", "The evidence chest (983007), The Last of Westfall"],
-    [gp(156, -6), "Grate", "The drain grate (983008), offers The Drain once Pell is dead"]
+    [gp(-44, 10), "Lever A", "Lever A drops row A's bars and stops Cutter's calls from it"],
+    [gp(-92, -10), "Lever B", "Lever B drops row B's bars and stops Cutter's calls from it"],
+    [gp(156, -6), "Grate", "The drain grate offers The Drain once Quill is dead"]
   ];
   objects.forEach(function (o) {
     var cx = sx(o[0][1]), cy = sy(o[0][0]);
@@ -279,26 +317,35 @@
     s += '<text x="' + (cx + 8) + '" y="' + (cy + 4) + '" font-size="10" fill="var(--fg)">' + o[1] + '</text></g>';
   });
 
-  // Friendlies
+  // Friendlies: [point, label, title]
   var friends = [
-    [[161, 2], "Ott", "Sergeant Ott, talk target of Guards Below"],
-    [gp(45, -10), "Gearspan", "Pim Gearspan, gives What They Saw"],
-    [gp(56, 10), "Orrel", "Tam Orrel"],
-    [gp(66, -10), "Fenn", "Mara Fenn, gives The Last of Westfall"],
-    [gp(78, 10), "Dray", "Hollis Dray"]
+    [[131, 3], "Thelwater", "Warden Thelwater, the quest giver, at the crossing"],
+    [[45, 6], "Tollin", "Quartermaster Mae Tollin, repairs"],
+    [[131, 10], "Hale", "Sergeant Hale, across the west stairs; speaks the Keep's refusal"],
+    [[131, -10], "", "A Watchman at the east stairs"],
+    [[42, -5], "", "A Watchman at the door"],
+    [[160, 1], "", "A Watchman at the corridor's end"],
+    [[84, 12], "", "A convict behind bars"], [[95, -12], "", "A convict behind bars"],
+    [[106, 12], "", "A convict behind bars"], [[84, -12], "", "A convict behind bars"],
+    [gp(-128, 10), "Ash", "Bertram Ash, the night turnkey, barred into the last cell"],
+    [gp(46, -10), "Cogg", "Wender Cogg, the tram engineer"],
+    [gp(58, 10), "Lowe", "Hesper Lowe, the last out of Moonbrook"],
+    [gp(68, -10), "Vask", "Dorrin Vask, the harbour pilot"],
+    [gp(80, 10), "Marsh", "Tobin Marsh, the Keep page; gives The Scribe"]
   ];
   friends.forEach(function (f) {
     var cx = sx(f[0][1]), cy = sy(f[0][0]);
     s += '<g><title>' + f[2] + '</title><rect x="' + (cx - 5) + '" y="' + (cy - 5) + '" width="10" height="10" fill="var(--friend)" transform="rotate(45 ' + cx + ' ' + cy + ')"/>';
-    s += '<text x="' + (cx + 9) + '" y="' + (cy + 4) + '" font-size="10" fill="var(--fg)">' + f[1] + '</text></g>';
+    if (f[1]) s += '<text x="' + (cx + 9) + '" y="' + (cy + 4) + '" font-size="10" fill="var(--fg)">' + f[1] + '</text>';
+    s += '</g>';
   });
 
   // Bosses
   var bosses = [
-    [gp(-152, 0), 1, "Red Dace", "Red Dace, 31. Calls rioters from rows A and B."],
-    [gp(30, 0), 2, "Bull Marrow", "Bull Marrow, 32. At the quiet wing's gate."],
-    [gp(118, 0), 3, "Warder Pell", "Warder Pell, 33. The lower gallery."],
-    [gp(150, 0), 4, "The Hush", "The Hush, 34. The drain. Boss Bar."]
+    [gp(-86, 0), 1, "Varl Cutter", "Varl Cutter, 32. Calls rioters from rows A and B."],
+    [gp(-150, 0), 2, "Captain Rook", "Captain Ansel Rook, 34. The round room. Boss Bar."],
+    [gp(104, -10), 3, "Sister Quill", "Sister Quill, 38. The scribe's room."],
+    [gp(150, 0), 4, "The Hush", "The Hush, 40. The drain. Boss Bar."]
   ];
   bosses.forEach(function (b) {
     var cx = sx(b[0][1]), cy = sy(b[0][0]);

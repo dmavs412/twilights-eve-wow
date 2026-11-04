@@ -247,12 +247,15 @@ bounties from the City Watch, the House of Nobles and Prestor's office. Prestor'
 players after orcs and the dead and never near the cult, which the court chain in the 40s can point
 out.
 
-- **The Stockade (about 30-34).** A prison riot, with Defias inmates paid in Twilight coin, bought
-  as cover: the west block, the quiet wing, holds people the Keep sent down by writ for talking
-  about the grey, and the riot was meant to kill them. A turned guard opened the doors, and a
-  Twilight Silencer came in by the drain with their names on a writ. Hogger dies at Forest's Edge
-  and never comes here. Entrance: the jail door on the canal, where Warden Thelwater stands.
-  Spec #575.
+- **The Stockade (two dungeons, about 30-34 and 36-40).** The Watch holds the jail's corridor;
+  the wings are the dungeons. East, the riot: a Watch captain sold the quiet wing's list of
+  names, the night turnkey saw him, and the captain unbarred the Defias block and paid its
+  ringleader in Twilight coin to bury the witness. West, the quiet wing, behind the Keep's key:
+  four people sent down by writ for seeing the grey, a Keep scribe writing down what they know,
+  and the Twilight Silencer who came in by the drain to take their voices. The Watch turns the
+  Keep's key at 36 and sends what it finds to Dughan, not up the hill. Hogger dies at Forest's
+  Edge and never comes here. Entrance: the jail door on the canal; Warden Thelwater stands
+  inside at the crossing. Spec #575.
 - **The Deeprun Tram (about 38-42).** The tram to Ironforge now ends in grey. The cult uses its
   tunnels as the smuggling channel for tribute. Deep in, a tram car sits stopped halfway into the
   mist with its passengers frozen mid-step: the first time players see the mist from inside.
@@ -402,7 +405,7 @@ a rewrite.
 | "What the Tribute Was For": Morganth paid the cult to dig | Rewrite | Reverse it: the cult employs Morganth. The tribute feeds the Anchor at Ilgalar. |
 | Hogger promised power "through Morganth" | Keep | Morganth needs a second shaft and gnoll labour. |
 | Thalyssa Windbough, sent by Darnassus | Expand | Kalimdor is behind the mist. She's stranded, and doesn't know if Darnassus still exists. A strong personal hook. |
-| Stockades "may not exist" | Resolved | The Stockade exists as a Stormwind dungeon (spec #575). Hogger stays kill only; the riot covers the killing of the quiet wing's witnesses. |
+| Stockades "may not exist" | Resolved | The Stockade is two Stormwind dungeons with the Watch between them (spec #575). Hogger stays kill only; the riot covers the killing of the turnkey who saw a Watch captain sell the quiet wing's names. |
 | Westfall's border: "You cannot go that way" | Keep | Westfall is behind the mist. The Defias who were there are lost. |
 
 ## Open questions

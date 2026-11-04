@@ -1,36 +1,54 @@
-# The Stockade: the quiet cells (spec #575)
+# The Stockade: the riot and the quiet wing (spec #575)
 
-Status: grilled 2026-11-03, tickets ready-for-agent. Unplayed.
+Status: redesigned 2026-11-04 as two dungeons, tickets ready-for-agent. Unplayed.
 
-Grilled 2026-11-03 from "let's build out the Stockade". ADR 0032 lets a Phased Dungeon live on
-an instance map. This note holds the design the tickets build and every reading taken where the
-grill left a choice open. Lore: `docs/lore-bible.md`, "Stormwind City (hub): the court".
+Grilled 2026-11-03 from "let's build out the Stockade" and redesigned 2026-11-04 from "split the
+Stockade into two dungeons". ADR 0032 lets Phased Dungeons live on an instance map. This note
+holds the design the tickets build and every reading taken where Davis left a choice open.
+Lore: `docs/lore-bible.md`, "Stormwind City (hub): the court". The first design (one dungeon,
+four bosses in a line, a turned warder named Pell) is in this file's history before 2026-11-04.
 
 ## Premise
 
-The Stockade is the first Stormwind dungeon, levels 30 to 34, on vanilla's jail map (34). The
-east block holds the Defias the Watch has caught since Elwynn. The west block, called the quiet
-wing by the guards, holds people sent down by writ "from the Keep" for spreading panic. None of
-them is a criminal. Each one saw the grey and said so.
+Vanilla's jail (map 34) holds two dungeons with the City Watch between them.
 
-An hour before the player arrives, a guard named Pell took a purse of Twilight coin and left the
-lower doors unbarred. The Defias think they are breaking out. The purse was paid to empty the
-quiet wing. The Watch's reinforcements are "delayed", and the player is at the door with Dughan's
-report, so the Warden hands them the riot.
+The east wing is **the riot**, levels 30 to 34. Captain Ansel Rook of the Watch, the Warden's
+second, sold the quiet wing's list of names to a stranger on the canal. Bertram Ash, the night
+turnkey, saw him do it. Rook unbarred the east block and paid Varl Cutter, the Defias
+ringleader, a purse of Twilight coin to make sure Ash does not live to say so. The Watch held
+the crossing. Rook has "gone down after Ash with two men".
 
-## Decisions (grill 2026-11-03)
+The west wing is **the quiet wing**, levels 36 to 40. The Keep sends people down to it by writ
+for talking about the grey, and the Watch is told not to ask what for. Rook held its key for the
+Keep. Behind the gate: four prisoners who each saw the grey from a different side, Sister Quill,
+a Keep scribe who writes down what each one knows before the Hush takes their voice, and the
+Hush himself, a Twilight Silencer who came in by the drain with their names on a writ.
 
-1. **Hogger stays kill only.** The Elwynn 10-30 decision of 2026-10-20 stands. The bible's line
-   about resolving his capture here is rewritten (rev 52).
-2. **The lore is three ideas in one.** The quiet cells (witnesses the city locked up), the turned
-   guard (Pell opened the doors) and the last of Westfall (Mara Fenn saw the cult leave before the
-   mist). The Stockade is filled by those who know about the greater world.
-3. **The Hush is the finale.** A Twilight Silencer seen in the flesh, the first cultist inside
-   the city walls. Named cultists already appear as elites in Elwynn.
-4. **Map 34 behind a loading screen.** The real cell blocks, as Wailing Caverns. The realm learns
-   to run a Phased Dungeon on another map (ADR 0032).
-5. **Lockdown levers, no meter, no fail state.** The cells are the shape; levers lock rows and
-   open the quiet wing.
+The middle is **the Watch's**: the gate hall, the corridor and its cells. Warden Thelwater runs
+the jail from the crossing, a quartermaster repairs, and a sergeant stands across the west
+stairs with the Keep's order in his mouth.
+
+## Decisions
+
+1. **Two dungeons, one map, the Watch between** (Davis, 2026-11-04). The corridor is open
+   world on map 34: Hub NPCs stand there and characters meet there. Each wing is a Phased
+   Dungeon with its own Run, Portal and footprint (ADR 0032, amended).
+2. **Brackets: the riot 30 to 34, the quiet wing 36 to 40** (Davis, 2026-11-04). The quiet
+   wing sits between Ilgalar (34 to 38) and the Deeprun Tram (38 to 42), and the Writ of Names
+   starts the 40s court chain at 40.
+3. **The story is "the turnkey"** (Davis's pick of five, 2026-11-04): the riot is cover for
+   killing a guard who saw a Watch captain sell the quiet wing's names.
+4. **The lock is Rook's key.** Thelwater takes it off Rook's body as evidence and will not turn
+   it until Dughan has read Rook's letters. At 36 he hands it to the player: "I said I wouldn't
+   turn it. I'm not. You are." The west stairs carry a sealed door in the Keep gate's form
+   (`stormwind_keep.toml`, `[portal.door]`), opened once by a character carrying the key.
+5. **The Hush is the finale**, as decided 2026-11-03. Hogger stays kill only. Map 34 behind a
+   loading screen. Lockdown levers in the riot, no meter, no fail state.
+6. **The two wings play differently.** The riot is loud: packs, a ringleader who calls more
+   rioters out of every unlocked row, fire bottles, levers, a captain behind a shield wall, and
+   every creature shouts an aggro line. The quiet wing is quiet: elite warders in pairs, casters,
+   prisoners whose voices are gone and who make no sound, a scribe who silences and roots, and
+   the Hush. No creature in the quiet wing has an aggro line.
 
 ## The building
 
@@ -38,150 +56,197 @@ Vanilla's jail, drawn in `map.html` (open it in a browser). The loading screen l
 (49.0, 0.5, -16.4) and the corridor runs north along x; west is +y. The jail is a cross: one
 long hall of cells with a round room at each end, crossed near its middle by the corridor from
 the door. The hall runs from the south-east round room (Bazil Thredd's old spot) to the
-north-west one (Dextren Ward's), about 15 degrees off the y axis, a level below the corridor;
-a stair on each side of the crossing goes down into it.
+north-west one (Dextren Ward's), about 15 degrees off the y axis, a level below the corridor; a
+stair on each side of the crossing goes down into it.
 
-- The gate hall and the corridor, z about -25, from the door north to Targorr's old spot at the
-  corridor's end, with cells on either side of its first stretch.
-- The Defias block is the hall's east wing (y below 0, z about -35), down the east stairs.
-  Row A is the near half of its cells and row B the far half, each with a lever and a
-  portcullis where the row begins. Red Dace holds the round room at the wing's end.
-- The quiet wing is the hall's west wing (y above 0, z about -35), down the west stairs. Its
-  gate is at the foot of the stairs; Marrow stands on the stairs side of it. The four writ
-  cells are the first cells past the gate. The warder's room is a cell halfway along, with the
-  evidence chest and the lower doors, which Pell left open.
-- The lower gallery is the wing's far half, past the lower doors. Pell is there with the two
-  guards he bought.
-- The drain is the round room at the wing's end, Dextren Ward's old room. The Hush is there,
-  and the grate is in its floor.
-
-The walking order is Dace, Marrow, Pell, the Hush, one boss per room and in level order.
+- **The Watch's ground**, z about -25: the gate hall, the corridor from the door north to
+  Targorr's old spot at its end, and the cells on either side of its first stretch, which hold
+  convicts behind bars. Open world. Thelwater at the crossing, Quartermaster Mae Tollin in the
+  gate hall, Sergeant Hale at the head of the west stairs, Watchmen at the east stairs, the door
+  and the corridor's end. Each dungeon's Portal stands at the head of its stairs.
+- **The riot**, the hall's east wing (y below 0, z about -35), from the east stairs down. Row A
+  is the near half of its cells and row B the far half, each with a lever and a portcullis where
+  the row begins. Varl Cutter holds the hall where the rows meet. Captain Rook holds the round
+  room at the wing's end, in front of the cell where Ash has barred himself in.
+- **The quiet wing**, the hall's west wing (y above 0, z about -35), from the west stairs down.
+  The sealed door is at the stair head, on the Watch's side. The four writ cells are the first
+  cells past the foot of the stairs. The scribe's room is a cell halfway along. The lower gallery
+  is the wing's far half, where the Hushed walk. The drain is the round room at the wing's end,
+  Dextren Ward's old room, with the grate in its floor.
 
 ## Bosses
 
-- **Red Dace, 31, elite.** The Defias captain who took the deal, at the far side of the east
-  hall with two Ringleaders. He calls two rioters out of each unlocked cell row every 20 s
-  while he fights. He drops the purse, full of Twilight coin.
-- **Bull Marrow, 32, elite.** The ogre the Defias kept for breaking doors, at the quiet wing's
-  gate. A heavy swing and a shove. Health doubled.
-- **Warder Pell, 33, elite.** The turned guard, in the lower gallery past the quiet wing with
-  two guards he bought. A shield wall. He fights to the death. He drops the Sealed Ledger,
-  which the player cannot open.
-- **The Hush, 34, the boss with the Boss Bar.** A Twilight Silencer who came in through the
-  drain, in the last room past the gallery. He is waiting: the writ cells are keyed upstairs,
-  the ogre was to break them and the riot was to take the blame. He silences, fears and casts
-  Shadow Bolt. He carries the Writ of Names, every prisoner in the quiet wing in a clerk's
-  hand. The Stockade Sucker Pot halves his silence.
+The riot:
+
+- **Varl Cutter, 32, elite.** The Defias ringleader who took Rook's purse, where row A meets
+  row B, with two Ringleaders. Every 20 s he calls two Rioters out of each row whose bars are
+  still up; lock both rows and he fights with his Ringleaders alone. Shiv: a bleed on his target
+  every 12 s. Fire Bottle: every 20 s he throws a bottle at a random character, a fire patch of
+  4 yd for 10 s where it lands, with a warning. He drops the purse of Twilight coin.
+- **Captain Ansel Rook, 34, elite, the Boss Bar.** The Watch's captain, in the round room at the
+  wing's end with two Bought Watchmen, between the player and Ash's cell. He draws on sight:
+  nobody was meant to get this far. Shield Wall every 30 s: 60% less damage taken and 30% less
+  dealt for 8 s, so the burn is between walls. Captain's Cut: a blow at 200% every 10 s.
+  Hamstring: a 50% snare for 6 s every 15 s. He drops Rook's Keyring and Rook's Letters.
+
+The quiet wing:
+
+- **Sister Quill, 38, elite.** The Keep's scribe, in the scribe's room with two Twilight
+  Listeners. Take Down: a 4 s silence on a random character every 15 s; she writes your words
+  down and you lose them. Ink: a 2 s cast every 25 s with a warning, then every character within
+  8 yd of her cannot move for 3 s. Shadow Bolt. She drops the Book of Takings.
+- **The Hush, 40, elite, the Boss Bar.** A Twilight Silencer who came up the drain, in the round
+  room at the wing's end. Hush: a 5 s silence on a random character every 18 s. Fear every 30 s.
+  Shadow Bolt. Stillness: every 40 s a shield that soaks damage for 10 s. He carries the Writ of
+  Names, every prisoner in the quiet wing in a clerk's hand with a hammer over a black sun below
+  them. The Stockade Sucker meal halves his silence (`cc_half`).
+
+## The monsters
+
+The riot, about 28 creatures:
+
+- **Defias Rioter**, 30 to 31, normal. The trash. Each has an aggro line.
+- **Defias Ringleader**, 31 to 32, elite. Pack leaders and the lever guards.
+- **Bought Watchman**, 33, elite. Two, with Rook. Watch tabards; they turned with him.
+- Packs: two Rioters and a Ringleader at the foot of the stairs; three cells of two Rioters in
+  each row, a Ringleader and a Rioter at each lever post; Cutter with two Ringleaders where the
+  rows meet; Rook with two Bought Watchmen in the round room. Bertram Ash, friendly, in the last
+  cell before the round room.
+
+The quiet wing, about 24 creatures:
+
+- **Writ Warder**, 36 to 37, elite. The Keep's own warders, who turned with the coin. Two at
+  the foot of the stairs, and one in each patrol pair.
+- **Twilight Listener**, 37 to 38, normal. Cultists who came up the drain. Casters: Shadow Bolt
+  and a short snare. One in each patrol pair, two with Quill.
+- **The Hushed**, 38 to 39, normal. Prisoners whose voices the Hush took. Slow, hit hard, make
+  no sound. Three packs of three in the lower gallery.
+- The four witnesses, friendly, in the first four cells. Nothing in the wing has an aggro line.
 
 ## The witnesses
 
 Four cells, four lines, one thread each, in keeping with the bible's rumour rule.
 
-- **Pim Gearspan**, a gnome tram engineer. Stopped the tram because the rails run into grey.
+- **Wender Cogg**, a gnome tram engineer. Stopped the tram because the rails run into grey.
   Charged with sabotage. He plants the Deeprun Tram at 38 to 42.
-- **Mara Fenn**, Defias, the last one out of Westfall. The hooded men left Moonbrook the day
-  before the mist came. Her ledger page carries the hammer and black sun.
-- **Hollis Dray**, a post-rider. Every letter to Ironforge comes back unopened, and there is a
-  room in the city full of them. He never names whose.
-- **Tam Orrel**, a canal boatman. Rowed out the sluice and found grey a mile out. The harbour
-  knows.
+- **Hesper Lowe**, a Westfall farmwife, the last one out of Moonbrook. The hooded men packed
+  their crates and left the day before the grey came. They knew.
+- **Dorrin Vask**, a harbour pilot. A mile out the sea goes grey and the water under it does not
+  move, and the Keep's own cutter was out there, watching it, before he was.
+- **Tobin Marsh**, a Keep page. He copied an order closing the Westfall road, dated three days
+  before the mist came, and asked who signed it. He gives the quest for Quill.
 
-## Levers
+## Levers and the lock
 
-- A lever is a dungeon GameObject with `use = "lever"`. Pulling it is Run state: a portcullis
-  with `after_used` drops, one with `until_used` rises, and a timed call with `until_used` stops.
-  Levers reset with the Run.
-- The Defias block has one lever per cell row. Each drops that row's portcullis and stops Red
-  Dace's calls from it. Lock both and Dace fights with his two Ringleaders alone. A row is a
-  dead-end gallery, so a dropped portcullis seals nothing the player needs. Pell left the rows
-  unbarred; dropping them is the Warden's "get my cells back", and it is optional.
-- The quiet wing's lever only works once Bull Marrow is dead (`needs_dead`), like a ward stone.
-  It raises the gate's portcullis.
+- A lever is a dungeon GameObject with `use = "lever"` (#577). Pulling it is Run state: a
+  portcullis with `after_used` drops and a timed call with `until_used` stops. Levers reset with
+  the Run.
+- The riot has one lever per cell row. Each drops that row's portcullis and stops Cutter's calls
+  from it. A row is a stretch of cells on a through hall, so a dropped portcullis seals nothing
+  the player needs. Cutter's men unbarred the rows; dropping them is Thelwater's "get my cells
+  back", and it is optional.
+- The quiet wing has no lever. Its door at the west stair head is sealed, in the Keep gate's
+  form, and opens once for a character carrying Rook's Key, which quest 97308 gives. Sergeant
+  Hale speaks the refusal. Head Count and the Run start past the door.
 
 ## Quests
 
-Eleven quests, 97301 to 97311. The full text is in #580 and is the contract.
+Twelve quests, 97301 to 97312. The full text is in #580 and is the contract.
 
 | # | Quest | Lvl | Giver | Task |
 |---|---|---|---|---|
-| 97301 | A Report for the Watch | 30 | Dughan | Carry his report to Thelwater at the Stockade door |
+| 97301 | A Report for the Watch | 30 | Dughan | Carry his report to Thelwater at the crossing inside the Stockade |
 | 97302 | Quell the Riot | 30 | Thelwater | Kill 12 Defias Rioters |
-| 97303 | Guards Below | 31 | Thelwater | Find Sergeant Ott (talk); he names Pell |
-| 97304 | Red Dace | 31 | Thelwater | Kill Dace, bring the purse. Item quest |
-| 97305 | The Quiet Wing | 32 | Thelwater | Kill Bull Marrow, pull the gate lever |
-| 97306 | What They Saw | 32 | Gearspan | Talk to Fenn, Dray and Orrel |
-| 97307 | The Last of Westfall | 33 | Fenn | Take her page from the evidence chest |
-| 97308 | Warder Pell | 33 | Thelwater | Kill Pell, bring the Sealed Ledger. Item quest |
-| 97309 | The Drain | 34 | the drain grate | Kill the Hush, bring the Writ of Names. Item quest |
-| 97310 | Not Up the Hill | 34 | Thelwater | Carry the Ledger and the Writ to Dughan |
-| 97311 | Twilight Coin | 32, repeatable | Thelwater | Bring 10 Twilight Coins |
+| 97303 | Varl Cutter | 32 | Thelwater | Kill Cutter, bring the purse. Item quest |
+| 97304 | The Turnkey | 33 | Thelwater | Find Bertram Ash in the east wing (Rook is in the way) |
+| 97305 | The Captain's Keys | 34 | Ash | Bring Rook's Keyring and Rook's Letters to Thelwater. Item quest |
+| 97306 | Rook's Letters | 34 | Thelwater | Carry the Letters to Dughan |
+| 97307 | The Seal | 36 | Dughan | Carry Dughan's answer back to Thelwater |
+| 97308 | The Quiet Wing | 37 | Thelwater | Take Rook's Key, open the west door, speak with the four |
+| 97309 | The Scribe | 38 | Marsh | Kill Sister Quill, bring the Book of Takings. Item quest |
+| 97310 | The Drain | 40 | the drain grate | Kill the Hush, bring the Writ of Names. Item quest |
+| 97311 | Not Up the Hill | 40 | Thelwater | Carry the Book and the Writ to Dughan |
+| 97312 | Twilight Coin | 32, repeatable | Thelwater | Bring 10 Twilight Coins |
 
 ## Loot
 
-- A Stockade set of twenty blues, entries 905060 to 905079, item level 34, required level 31, one
-  per line of the Hogger's camp set, stems Warder's, Hushed and Convict's. Dace, Marrow and Pell
-  roll one at 50%, the Hush at 100%. No epics.
-- The item quests choose among the set's four chests.
+- Two sets of twenty blues, one per line of the Hogger's camp set, as the dungeons before them.
+  The Riot set, entries 905060 to 905079, item level 34, required level 31, stems Convict's,
+  Watchman's and Rioter's. The Quiet Wing set, entries 905080 to 905099, item level 40, required
+  level 37, stems Hushed, Scribe's and Warder's. No epics.
+- Cutter and Quill roll one of their set at 50%; Rook and the Hush at 100%.
+- The item quests choose among their set's four chests.
 - Trash rolls the last Loot Band (27 to 30) until a later pass extends the bands past 30.
 
 ## Hooks forward
 
-- The Writ of Names and "by writ from the Keep" are the 40s court chain's starting point. The
-  Stockade never says which office.
-- Pell's Sealed Ledger goes to Dughan, not up the hill. It is the paper that later traces the
-  money to Cedric.
-- Gearspan's stopped tram is the Deeprun Tram's door.
-- Fenn's page is the cult's foreknowledge of the mist, a hint and never explained here.
-- Spec #558 says Stockade inmates recognise a notorious player; the east block is where.
-- The four witnesses stay in the quiet wing. Thelwater cannot open a writ cell; only the
-  office that wrote the writ can, and that office sent the names. Their release is the court
-  chain's payoff. He says so at the end of The Drain.
+- The Writ of Names, the Book of Takings and the seal on Rook's letters are the 40s court
+  chain's starting point. The Stockade never says which office.
+- Rook's Letters go to Dughan, not up the hill. Dughan matches the seal to the one on his own
+  returned reports.
+- Cogg's stopped tram is the Deeprun Tram's door. Lowe's day-before is the cult's foreknowledge
+  of the mist. Marsh's order is the Keep's. Vask's cutter is the harbour's.
+- Spec #558 says Stockade inmates recognise a notorious player; the corridor's cells are where.
+- The four witnesses stay in their cells. Thelwater cannot open a writ cell; only the office that
+  wrote the writ can. Their release is the court chain's payoff. He says so at the end of The
+  Drain.
 
 ## Whose side
 
 The player helps the Watch, never the Keep. Dughan sends them to Thelwater because he is
-"Watch, not court". The riot is the real threat to the witnesses: the cult paid for it to kill
-the quiet wing, so quelling it is saving them. The player learns what the quiet wing is only
-once the gate has held (97305), and Thelwater, shown the Writ of Names, breaks his own rule and
-sends the evidence to Dughan instead of up the hill (97310). The city splits into the Watch,
+"Watch, not court". The riot is the Watch's own house: its captain sold names and bought a
+riot to bury the witness, and the Watch cleans that up itself. The quiet wing is the Keep's.
+Opening it is the Watch breaking the Keep's rule, with the player as its hand, and Thelwater
+sends what comes out of it to Dughan instead of up the hill. The city splits into the Watch,
 honest and in the dark, and the Keep, which wrote the writs.
 
 ## Reveal check
 
-At 30 to 34 the player learns that the cult pays locals, that the cult knew the mist was coming,
-and that the city locks up people who talk about it. Nobody names Prestor, Cedric, the Anchors or
+At 30 to 34 the player learns that a Watch captain sold a list of names, that the cult pays in
+its own coin, and that the Keep keeps a wing nobody asks about. At 36 to 40 they learn that the
+city locks up people who talk about the grey, that the cult knew the mist was coming, and that
+the Keep closed the Westfall road before it did. Nobody names Prestor, Cedric, the Anchors or
 the dragons.
 
 ## Readings
 
-- Dungeon id 3, map 34, zone 717 (The Stockade). Creature guids 973001 up, GameObjects 983001
-  up, templates 97200 to 97211, quests 97301 to 97311, gear 905060 to 905079.
-- North is +x and west is +y, so the quest text's east block (the Defias) is y below 0 and the
-  west block (the quiet wing) is y above 0. The first draft of this note called them south
-  and north; the map and #578 fixed that on 2026-11-03.
-- The first draft put Pell and the Hush in the Defias block, on the way to Dace. They moved
-  below the quiet wing the same day so the player meets the bosses in level order.
-- The map's walls are a schematic of the jail's shape, taken from a client map of the
-  Stockade; the spawn points on it are measured, the walls are not. The first map drew each
-  wing as a hall with deeper rooms behind it, read off the spawn points alone, and was wrong.
-- Every Z on map 34 is written from the vanilla dump with `grounded = false`; the whole jail is
-  one footprint box.
-- Entrance and exit are vanilla's triggers 101 and 503. The Portal and the map mark stand at the
-  city door, where Warden Thelwater already stands (`stormwind.toml` spawn 89325).
+- Dungeon ids 16 (the riot) and 17 (the quiet wing); id 3 is the test grounds. Map 34, zone 717
+  (The Stockade). Creature guids 973001 up, GameObjects 983001 up, templates 97200 to 97219,
+  quests 97301 to 97312, gear 905060 to 905099, Hub NPC guids 9300072 up.
+- An instance map is content of its own (`instance_maps.toml`): its door triggers, its zone and
+  its map mark. A Phased Dungeon on it is a footprint like any other; the map outside every
+  footprint is open world. ADR 0032, amended 2026-11-04.
+- North is +x and west is +y, so the east wing is y below 0 and the west wing y above 0.
+- Thelwater's stock spawn at the city door (`stormwind.toml` guid 89325) is deleted and he
+  stands inside as a Hub NPC on map 34. The Dungeon mark and the Portal of the whole jail stay at
+  the city door.
+- The map's walls are a schematic of the jail's shape, taken from a client map of the Stockade;
+  the spawn points on it are measured, the walls are not. The Build lane fits every box, spawn
+  and object to the 93 stock spawns.
+- Every Z on map 34 is written from the vanilla dump with `grounded = false`; Hub NPCs there the
+  same.
+- Entrance and exit are vanilla's triggers 101 and 503, on the instance map.
 - The Dughan hook has no prerequisite beyond level 30. Witness talks are quest dialogue, not
   rumours.
-- Sergeant Ott is the one talk target of Guards Below: a talk row counts an entry once.
-- Bull Marrow uses the stock ogre display, so no scale field is needed.
+- Rook is hostile from the Run's start. He never appears in the hub; Thelwater says where he
+  went.
+- The Bought Watchmen use the stock Stockade Guard display; Rook the Stormwind guard captain's.
+  Quill a stock robed woman's. No new models.
 - Silence counts as crowd control for `cc_half` and not for `fear_half`.
 - Chases stay straight lines; a route graph like the Caverns' waits for play.
 - Art: no new models. One icon row (the Twilight Coin) in `docs/art-assets.md`.
 
 ## Tickets
 
-- #576 Phased Dungeons on an instance map: the Stockade shell on map 34 (ADR 0032)
+- #576 Phased Dungeons on an instance map: the Stockade shell on map 34 (the first design's
+  shell, one dungeon over the whole jail; it was mid-build when the split was decided and lands
+  as written)
 - #577 Lockdown levers and the silence effect
-- #578 The Stockade: the riot, the quiet wing, four bosses and the levers (blocked by #576 and
-  #577)
-- #579 The Stockade set: twenty blues at item level 34 and the bosses' rolls (blocked by #578)
-- #580 The Stockade's eleven quests, Dughan's hook, Thelwater and the quest items (blocked by
-  #578 and #579)
+- #581 Instance maps and the Watch's corridor: split the Stockade shell into two dungeons
+  (ADR 0032 amended; blocked by #576)
+- #578 The riot: Cutter, Rook, the rows and the levers (blocked by #576, #577 and #581)
+- #582 The quiet wing: the sealed door, the witnesses, Quill and the Hush (blocked by #576,
+  #577 and #581)
+- #579 Two Stockade sets: forty blues and the bosses' rolls (blocked by #578 and #582)
+- #580 The Stockade's twelve quests, Dughan's hook, Thelwater and the quest items (blocked by
+  #578, #582 and #579)
