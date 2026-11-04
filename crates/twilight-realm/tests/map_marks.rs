@@ -135,6 +135,27 @@ fn a_new_character_sees_the_dungeons_and_vendors_but_not_the_test_ones() {
 }
 
 #[test]
+fn the_stockade_is_marked_at_its_door_in_the_city() {
+    let (_, sent) = new_character();
+    let marks: Vec<&MapMark> = sent[0]
+        .iter()
+        .filter(|m| m.name == "The Stockade")
+        .collect();
+    assert_eq!(marks.len(), 1);
+    let stockade = marks[0];
+    assert_eq!(stockade.icon, MapIcon::Dungeon);
+    assert_eq!(stockade.subtitle, "Phased Dungeon, levels 30-34");
+    assert_eq!(stockade.map, 0, "on the city's map, not the jail's");
+    // The Portal's position: trigger 101's, in the jail door.
+    let [x, y] = stockade.position;
+    assert!(
+        (x - -8761.85).abs() < 0.01 && (y - 848.557).abs() < 0.01,
+        "{:?}",
+        stockade.position
+    );
+}
+
+#[test]
 fn the_map_marks_the_craft_trainers_but_not_the_calling_trainers() {
     let (_, sent) = new_character();
     let marks = &sent[0];

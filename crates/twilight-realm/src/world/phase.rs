@@ -570,7 +570,7 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) {
         for d in phased::content() {
-            let d_yd = if d.map == self.map {
+            let d_yd = if d.portal_map() == self.map {
                 flat_distance(d.portal.position, me)
             } else {
                 f32::INFINITY

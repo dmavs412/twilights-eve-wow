@@ -64,6 +64,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/raven_hill_deeps.toml"),
     include_str!("../content/stonewatch_keep.toml"),
     include_str!("../content/stormwind_keep.toml"),
+    include_str!("../content/stockade.toml"),
     include_str!("../content/unlocks.toml"),
     include_str!("../content/writs.toml"),
     include_str!("../content/zones.toml"),

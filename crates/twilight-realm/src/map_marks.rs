@@ -228,8 +228,9 @@ pub(crate) fn marks(c: &Char, carts_locked: bool, window: u32) -> Vec<MapMark> {
         let Some([lo, hi]) = d.levels else {
             continue;
         };
+        // A dungeon on an instance map is marked at its door on the open world.
         out.push(MapMark {
-            map: d.map,
+            map: d.portal_map(),
             position: [d.portal.position[0], d.portal.position[1]],
             guid: 0,
             icon: MapIcon::Dungeon,

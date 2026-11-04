@@ -903,6 +903,16 @@ impl Realm {
         }
     }
 
+    /// Kills the player where they stand, as a killing blow would: a test seam, as
+    /// [`Self::set_player_health`] is.
+    pub fn kill_player(&mut self) {
+        if let Some(w) = &mut self.world {
+            if let Some(c) = self.characters.get_mut(w.guid) {
+                w.die_here(c, &mut self.events);
+            }
+        }
+    }
+
     /// Sets the player's power (mana, rage or energy) to `amount`, at most their maximum: a test
     /// seam, as [`Self::set_player_health`] is.
     pub fn set_player_power(&mut self, amount: u32) {

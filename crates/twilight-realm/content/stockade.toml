@@ -1,0 +1,63 @@
+# The Stockade, a Phased Dungeon for levels 30 to 34 under Stormwind City (spec #575,
+# docs/specs/stockade/README.md). Hand-written, from the game data.
+#
+# The first Phased Dungeon on an instance map (ADR 0032): vanilla's jail is map 34, one WMO with
+# no terrain, behind a loading screen as the Wailing Caverns are. One footprint box covers the
+# whole jail, so a character on the map is in the Phase. Map 34 has no terrain, so every Z here
+# is written from the vanilla dump with `grounded = false`, as the Caverns' are; ground_check.py
+# leaves the rows alone. The jail's 93 stock spawns span x 67 to 193, y -129 to 148 and z -35 to
+# -25, and the entrance lands at (49.0, 0.5, -16.4).
+#
+# A shell for now (#576): one friendly Phase Tester stands inside the gate so a character can
+# see the Phase. #578 fills the file. Guids: creatures 973001 up.
+
+id = 16
+name = "The Stockade"
+levels = [30, 34]
+map = 34
+zone = 717
+origin = [0.0, 0.0, 0.0]
+yaw = 0.0
+
+# The whole jail. It reaches back to x 30 so the gate hall's first yards and the exit's trigger,
+# whose centre is at x 39.4, are in the Phase too.
+[[footprint]]
+x = [30.0, 200.0]
+y = [-140.0, 160.0]
+z = [-45.0, -5.0]
+
+# `AreaTrigger.dbc` 101, "Stormwind Stockades - Entrance", in the city's jail door, and where
+# vmangos' `areatrigger_teleport` sends the player. The DBC's row is a box, 4.97 by 9.69 by 7.44
+# yd turned 0.663 rad, not a sphere: `radius` is the sphere round it. The position is the box's
+# centre, the DBC's own, so ground_check.py leaves it alone.
+[entrance]
+trigger = 101
+map = 0
+position = [-8761.85, 848.557, 87.805]
+grounded = false
+radius = 6.6
+to = { map = 34, position = [49.0, 0.5, -16.4], orientation = 0.0 }
+
+# `AreaTrigger.dbc` 503 inside, back out to the jail door.
+[exit]
+trigger = 503
+map = 34
+position = [39.374, 0.803, -12.788]
+radius = 8.0
+to = { map = 0, position = [-8766.1, 845.5, 88.0], orientation = 3.84 }
+
+# In the city's jail door, where the entrance's trigger stands (the Portal stands on the
+# entrance's map), facing in along the trigger box's yaw.
+[portal]
+position = [-8761.85, 848.557, 87.805]
+orientation = 0.66
+
+# The Phase Tester: friendly, no quests, a few yards up the corridor from where the loading screen
+# lands, facing back toward it.
+[[creature]]
+guid = 973001
+entry = 97100
+level = 30
+position = [60.0, 0.5, -16.4]
+grounded = false
+orientation = 3.14

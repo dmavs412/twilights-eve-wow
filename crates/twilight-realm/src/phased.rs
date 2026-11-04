@@ -1,5 +1,6 @@
-//! Phased Dungeons (ADR 0006): dungeons on the open world map, each a set of footprint boxes in
-//! its own content file. A character standing in a box is in that dungeon's Phase and sees,
+//! Phased Dungeons (ADR 0006): dungeons on the open world map, or on an instance map behind an
+//! entrance trigger (ADR 0032), each a set of footprint boxes in its own content file. A
+//! character standing in a box is in that dungeon's Phase and sees,
 //! targets and fights only that Phase's creatures; everyone shares one Run per dungeon, which
 //! starts when the first character enters and resets the dungeon when the last one leaves.
 
@@ -9,6 +10,7 @@ use benilla_protocol::messages::ObjectType;
 use benilla_protocol::{EntityKind, ObjectFields, SessionEvent};
 use serde::Deserialize;
 
+use crate::dungeon::Trigger;
 use crate::fields::{
     float, guid_pairs, OBJECT_FIELD_ENTRY, OBJECT_FIELD_SCALE_X, OBJECT_FIELD_TYPE,
 };
@@ -447,6 +449,12 @@ impl Dungeon {
         HIGHGUID_GAMEOBJECT << 48 | u64::from(self.id)
     }
 
+    /// The map its Portal stands on: the entrance's, at the door on the open world, for a
+    /// dungeon on an instance map; its own otherwise.
+    pub(crate) fn portal_map(&self) -> u32 {
+        self.entrance.as_ref().map_or(self.map, |e| e.map)
+    }
+
     /// The portal's create: a GameObject that only shows, never clicked, standing on `host`'s
     /// ground.
     pub(crate) fn portal_create(&self, host: &dyn Host) -> SessionEvent {
@@ -457,10 +465,24 @@ impl Dungeon {
             type_id: GENERIC,
             flags: NOT_SELECTABLE,
             faction: 0,
-            position: grounded_at(host, self.map, self.portal.position, true),
+            position: grounded_at(host, self.portal_map(), self.portal.position, true),
             orientation: self.portal.orientation,
         })
     }
+}
+
+/// The entrance or exit trigger of this `AreaTrigger.dbc` id, of the Phased Dungeon that has it.
+pub(crate) fn with_trigger(id: u32) -> Option<&'static Trigger> {
+    content()
+        .iter()
+        .flat_map(|d| [&d.entrance, &d.exit])
+        .flatten()
+        .find(|t| t.trigger == id)
+}
+
+/// The Phased Dungeon whose own map is `map`, when that is an instance map (ADR 0032).
+pub(crate) fn on_instance_map(map: u32) -> Option<&'static Dungeon> {
+    content().iter().find(|d| d.map == map && d.exit.is_some())
 }
 
 /// A GameObject as its create shows it, standing in `GO_STATE_READY`.
@@ -536,6 +558,12 @@ pub(crate) struct Dungeon {
     yaw: f32,
     footprint: Vec<Footprint>,
     pub(crate) portal: Portal,
+    /// On an instance map (ADR 0032): the trigger on the open world that worldports a character
+    /// in, and the one inside that sends them back out to the door. None on Eastern Kingdoms.
+    #[serde(default)]
+    pub(crate) entrance: Option<Trigger>,
+    #[serde(default)]
+    pub(crate) exit: Option<Trigger>,
     /// Where a probe drops a character into the dungeon: `[x, y, facing]`.
     #[serde(default)]
     start: Option<[f32; 3]>,
@@ -1023,10 +1051,31 @@ pub(crate) fn content() -> &'static [Dungeon] {
             include_str!("../content/stormwind_keep.toml"),
             include_str!("../content/blackrock_stronghold.toml"),
             include_str!("../content/dreadmaul_rock.toml"),
+            include_str!("../content/stockade.toml"),
         ]
         .into_iter()
         .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
         .inspect(|d: &Dungeon| {
+            // On Eastern Kingdoms a dungeon is walked into; on an instance map it is worldported
+            // into by its entrance and out by its exit, which stands on that map (ADR 0032).
+            if d.map == crate::content::EASTERN_KINGDOMS {
+                assert!(
+                    d.entrance.is_none() && d.exit.is_none(),
+                    "{}: an entrance or exit on Eastern Kingdoms",
+                    d.name
+                );
+            } else {
+                let (Some(entrance), Some(exit)) = (&d.entrance, &d.exit) else {
+                    panic!("{}: on map {} with no entrance or exit", d.name, d.map);
+                };
+                assert!(
+                    entrance.to.map == d.map && exit.map == d.map,
+                    "{}: its entrance leads to map {} and its exit stands on map {}",
+                    d.name,
+                    entrance.to.map,
+                    exit.map
+                );
+            }
             for c in &d.creature {
                 for roll in &c.rolls {
                     roll.check(&format!("creature {}", c.guid));

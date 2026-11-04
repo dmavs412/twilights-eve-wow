@@ -104,6 +104,13 @@ impl InWorld {
         }
     }
 
+    /// The player's health falls to nothing where they stand and they die (a test seam).
+    pub(crate) fn die_here(&mut self, c: &mut Char, events: &mut Vec<SessionEvent>) {
+        self.player.health = 0;
+        events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, 0)]));
+        self.die(c, events);
+    }
+
     /// `CMSG_REPOP_REQUEST`: the dead player stands up at the respawn point at full health.
     /// Whether they were dead, so the character must be saved where they now stand.
     pub(crate) fn release(&mut self, c: &mut Char, events: &mut Vec<SessionEvent>) -> bool {
