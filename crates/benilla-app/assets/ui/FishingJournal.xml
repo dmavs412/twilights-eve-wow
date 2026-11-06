@@ -2,7 +2,7 @@
     <!--
         The Journal (spec #323, #396, #435), opened by TOGGLEFISHINGJOURNAL (J) or /journal. One
         420 x 660 frame with a profession bookmark column on its right edge (Fishing; Herbalism
-        once GetHerbalistInfo() says the character knows it, until then greyed; Cooking) and three
+        once GetHerbalistInfo() says the character knows it, until then greyed; Cooking; Alchemy) and three
         bottom tabs, each a child frame: Zones (the default), Inventory and Progression. The
         bookmark switches the three tabs between the Fishing frames and the Herbalism frames
         (BenillaFishingJournalHerbZones, HerbInventory and HerbProgression, described below).
@@ -54,6 +54,23 @@
         only GetCookingJournal(), GetDishPage(i) and GetDishPageIngredient(i, j);
         COOKING_JOURNAL_UPDATE says when to repaint. A Fish Page tooltip also names the fish's own
         dish ("Own dish: ...", or "Learned on first catch") and the bait it cuts into.
+
+        The Alchemy bookmark (ADR 0025, #546) is greyed until GetAlchemyJournal() counts a Brew Log
+        row or a Satchel row. Like Cooking it has no bottom tabs: choosing it hides them and shows
+        one frame, BenillaFishingJournalAlchemy, in the same 880 x 800 collection. Across the top a
+        Discoveries strip (makes open, herbs fully noted, grades learned, flask kinds made, the last
+        grade learned and a "Try next" line), then nine sub-pages, each paged with the arrows: the
+        Alchemy Satchel (Tinctures, Essences and Murky Sludge as slots; right-click withdraws a stack
+        through WithdrawAlchemyItem, shift-right-click one; a bag item dropped on the window
+        deposits), Herb Notes (a card per herb with a bar per value it names), Potions, Hybrids,
+        Weapon oils, Tinctures and Essences (a card per property or pair, each with four grade
+        segments: the threshold, a pip per Strength Step made, the effect line and, while the
+        Alchemy window is open, "Make this", which calls BenillaAlchemy_SetTarget), Flasks (the
+        fifteen kinds and how many were made) and the Brew Log, newest first. The frame reads only
+        GetAlchemyJournal(), IsAlchemyMakeOpen(key), GetAlchemySatchelItem(i), GetAlchemyNote(i),
+        GetAlchemyNoteValue(i, j), GetAlchemyGradePage(i), GetAlchemyFlask(i), GetAlchemyLog(i) and
+        GetAlchemyLogInput(i, j); ALCHEMY_JOURNAL_UPDATE says when to repaint, and ALCHEMY_UPDATE
+        and ALCHEMY_CLOSED show or hide "Make this".
     -->
     <Script><![CDATA[
         BENILLA_JOURNAL_ART = "Interface\\Benilla\\journal\\"
@@ -74,6 +91,7 @@
             { key = "fishing", icon = "prof_fishing", live = true },
             { key = "herbalism", icon = "prof_herbalism", live = true },
             { key = "cooking", icon = "prof_cooking", live = true, tip = "Cooking: learn a recipe at a kitchen first" },
+            { key = "alchemy", icon = "prof_alchemy", live = true, tip = "Alchemy: make something at an alchemy table first" },
         }
         -- The tip on the bookmark of a profession the character has not learned, unless its row
         -- names its own.
@@ -444,12 +462,15 @@
         end
 
         -- Whether the character has learned a profession; Fishing is open to everyone, Cooking once
-        -- the Cooking Journal has a page.
+        -- the Cooking Journal has a page, Alchemy once the Brew Log or the Satchel has a row.
         function BenillaJournal_Known(key)
             if key == "herbalism" then
                 return (GetHerbalistInfo()) and true or false
             elseif key == "cooking" then
                 return GetCookingJournal() > 0
+            elseif key == "alchemy" then
+                local numSatchel, _, _, _, numLog = GetAlchemyJournal()
+                return numSatchel > 0 or numLog > 0
             end
             return true
         end
@@ -495,10 +516,11 @@
         end
 
         -- Show the child frame of one bottom tab and hide the others. The chosen profession's
-        -- frame shows; the other profession's frame of the same tab hides. The Cooking bookmark
-        -- has no tabs: it hides them and every tab's frames and shows its Dish Pages.
+        -- frame shows; the other profession's frame of the same tab hides. The Cooking and Alchemy
+        -- bookmarks have no tabs: they hide them and every tab's frames and show their own frame.
         function BenillaJournal_ShowPage(name)
             local herbs = (BenillaFishingJournal.profession == "herbalism")
+            local alchemy = (BenillaFishingJournal.profession == "alchemy")
             local cooking = (BenillaFishingJournal.profession == "cooking")
             BenillaFishingJournal.pageName = name
             BenillaFishingJournalHerbPerkList:Hide()
@@ -507,6 +529,12 @@
             else
                 BenillaFishingJournalCookPages:Hide()
             end
+            if alchemy then
+                BenillaFishingJournalAlchemy:Show()
+            else
+                BenillaFishingJournalAlchemy:Hide()
+            end
+            cooking = cooking or alchemy
             for i = 1, table.getn(BENILLA_JOURNAL_PAGES) do
                 local page = BENILLA_JOURNAL_PAGES[i]
                 local fishing = getglobal("BenillaFishingJournal" .. page)
@@ -610,6 +638,7 @@
                 name:SetHeight(26)
             end
             BenillaCookJournal_Build()
+            BenillaAlchemyJournal_Build()
         end
 
         function BenillaJournalTalent_OnEnter()
@@ -698,7 +727,7 @@
             if frame.profession and not BenillaJournal_Known(frame.profession) then
                 frame.profession = "fishing"
             end
-            BenillaCookJournal_Layout(frame.profession == "cooking")
+            BenillaCookJournal_Layout(frame.profession == "cooking" or frame.profession == "alchemy")
             BenillaJournal_ShowPage(frame.pageName or BENILLA_JOURNAL_PAGES[1])
             BenillaJournal_PaintProfessions()
             if frame.profession == "herbalism" then
@@ -708,6 +737,10 @@
             elseif frame.profession == "cooking" then
                 BenillaFishingJournalTitle:SetText("Cooking Journal")
                 BenillaCookJournal_Paint()
+                return
+            elseif frame.profession == "alchemy" then
+                BenillaFishingJournalTitle:SetText("Alchemy Journal")
+                BenillaAlchemyJournal_Paint()
                 return
             end
             BenillaFishingJournalTitle:SetText("Fishing Journal")
@@ -808,7 +841,8 @@
             end
         end
 
-        -- Expand only the cooking collection; the other two professions keep their compact book.
+        -- Expand only the cooking and alchemy collections; the other two professions keep their
+        -- compact book.
         function BenillaCookJournal_Layout(cooking)
             local root = BenillaFishingJournal
             if root.cookLayout ~= cooking then
@@ -927,6 +961,749 @@
                     BenillaCookJournal_PaintCard(card, i)
                 end
             end
+        end
+
+        -- ── The Alchemy bookmark ──
+
+        -- A make that is not a key IsAlchemyMakeOpen knows counts as shut; the realm has five.
+        BENILLA_JOURNAL_ALCHEMY_MAKES = 5
+        BENILLA_JOURNAL_ALCHEMY_SUBS = {
+            { key = "satchel", label = "Satchel" },
+            { key = "herbs", label = "Herb Notes" },
+            { key = "potion", label = "Potions" },
+            { key = "hybrid", label = "Hybrids" },
+            { key = "oil", label = "Weapon oils" },
+            { key = "tincture", label = "Tinctures" },
+            { key = "essence", label = "Essences" },
+            { key = "flasks", label = "Flasks" },
+            { key = "log", label = "Brew Log" },
+        }
+        -- What one screen of each page holds.
+        BENILLA_JOURNAL_ALCHEMY_SLOTS = 40
+        BENILLA_JOURNAL_ALCHEMY_NOTES = 9
+        BENILLA_JOURNAL_ALCHEMY_RECIPES = 4
+        BENILLA_JOURNAL_ALCHEMY_FLASKS = 20
+        BENILLA_JOURNAL_ALCHEMY_LOG = 14
+        BENILLA_JOURNAL_ALCHEMY_BARS = 4
+        BENILLA_JOURNAL_ALCHEMY_BAR_WIDTH = 100
+        BENILLA_JOURNAL_ALCHEMY_SEGMENT = 184
+        -- A grade's label by the realm's 0-based index, and its quality colour.
+        BENILLA_JOURNAL_ALCHEMY_GRADES = { [0] = "Minor", [1] = "Lesser", [2] = "Plain", [3] = "Greater" }
+        BENILLA_JOURNAL_ALCHEMY_GRADE_COLOURS = {
+            [0] = { 1, 1, 1 }, [1] = { 0.118, 1, 0 }, [2] = { 0, 0.439, 0.867 }, [3] = { 0.639, 0.208, 0.933 },
+        }
+        -- A herb's rarity, 0 common to 3 legendary, and its colour.
+        BENILLA_JOURNAL_ALCHEMY_RARITY = { [0] = "common", [1] = "uncommon", [2] = "rare", [3] = "legendary" }
+        BENILLA_JOURNAL_ALCHEMY_RARITY_COLOURS = {
+            [0] = { 1, 1, 1 }, [1] = { 0.118, 1, 0 }, [2] = { 0, 0.439, 0.867 }, [3] = { 1, 0.502, 0 },
+        }
+        -- The Strength Steps a grade page counts, x1 to x2.
+        BENILLA_JOURNAL_ALCHEMY_STEPS = { "x1", "x1.25", "x1.5", "x1.75", "x2" }
+        BENILLA_JOURNAL_ALCHEMY_COLOURS = {
+            Restorative = { 0.910, 0.314, 0.314 }, Fortifying = { 0.941, 0.659, 0.188 },
+            Volatile = { 1.000, 0.478, 0.102 }, Arcane = { 0.710, 0.424, 1.000 },
+            Calming = { 0.247, 0.827, 0.878 }, Toxic = { 0.361, 0.839, 0.361 },
+            Purifying = { 0.788, 0.839, 0.871 },
+        }
+        BENILLA_JOURNAL_ALCHEMY_EDGE = { 0.431, 0.337, 0.161 }
+        BENILLA_JOURNAL_ALCHEMY_LEGEND = { 1, 0.502, 0 }
+        BENILLA_JOURNAL_ALCHEMY_RUMOUR = { 0.55, 0.36, 0.16 }
+        BENILLA_JOURNAL_ALCHEMY_PALE = { 0.92, 0.88, 0.78 }
+        BENILLA_JOURNAL_ALCHEMY_DIM = { 0.788, 0.690, 0.541 }
+        -- The prototype's `sub` line of each family's recipe pages.
+        BENILLA_JOURNAL_ALCHEMY_FAMILY_LINES = {
+            potion = "Mortar · 2 to 4 herbs · rolls against Toxic",
+            hybrid = "Mortar · both properties on the hybrid ladder · the pair's own potion",
+            tincture = "Still · 5 herbs · rolls, and carries half its Toxic",
+            essence = "Still · 15 herbs, or 3 Tinctures · rolls against Toxic",
+            oil = "Oil Tin · 2 Tinctures and 2 fish · rolls on the Tinctures' Toxic",
+        }
+        -- The prototype's `discoveries` lines, the first that holds; the fifth counts blanks.
+        BENILLA_JOURNAL_ALCHEMY_TRY = {
+            still = "Brew any potion to open the Still.",
+            essence = "Distill five herbs into a Tincture to open Essences and the Oil Tin.",
+            flask = "Condense an Essence (15 herbs, or 3 Tinctures) to open the Flask Rack.",
+            join = "Join two Essences into a flask.",
+            blanks = " herbs still have blanks in their notes. Five uses fill a note.",
+            greater = "Chase the Greater grades: dirty herbs that hold pay their Toxic back as points.",
+        }
+        -- The Brew Log names a make by its key; these are the Alchemy window's names.
+        BENILLA_JOURNAL_ALCHEMY_MAKE_NAMES = {
+            potion = "Potion", tincture = "Tincture", essence = "Essence", oil = "Weapon Oil", flask = "Flask",
+        }
+        BENILLA_JOURNAL_ALCHEMY_UNKNOWN = "Unknown. Use it in any craft to find out what it holds."
+        BENILLA_JOURNAL_ALCHEMY_FLASK_LINE = "two Essences each · rolls on their Toxic · 2 hours · survives death · one active"
+        BENILLA_JOURNAL_ALCHEMY_LOG_LINE = "every make, with its materials, their summed values and the Toxic roll"
+        BENILLA_JOURNAL_ALCHEMY_CAPTIONS = {
+            satchel = "Right-click withdraws a stack, shift-right-click one. Drop alchemy items from your bags here.",
+            herbs = "Every craft a herb goes into is a use. Its values show at five.",
+            recipe = "Learn a grade by making it, or buy its Rumour at an alchemy table.",
+            open = "Make this sets the open table's target.",
+        }
+
+        -- A font string on `parent`, left-justified and placed when `x` is given. The font
+        -- object may be missing without game data.
+        function BenillaAlchemyJournal_Text(parent, name, font, w, h, x, y)
+            local fs = parent:CreateFontString(name, "OVERLAY", getglobal(font) and font or nil)
+            fs:SetJustifyH("LEFT")
+            if x then
+                BenillaCookJournal_Place(fs, parent, x, y, w, h)
+            end
+            return fs
+        end
+
+        -- A flat colour texture on `parent`.
+        function BenillaAlchemyJournal_Fill(parent, name, layer, c, a, x, y, w, h)
+            local t = parent:CreateTexture(name, layer or "BACKGROUND")
+            t:SetTexture(c[1], c[2], c[3], a or 1)
+            BenillaCookJournal_Place(t, parent, x, y, w, h)
+            return t
+        end
+
+        -- A 1 px line on each edge of `frame`, `w` x `h`; returns the four.
+        function BenillaAlchemyJournal_Edge(frame, w, h)
+            local c = BENILLA_JOURNAL_ALCHEMY_EDGE
+            local fill = BenillaAlchemyJournal_Fill
+            return {
+                fill(frame, nil, "BORDER", c, 1, 0, 0, w, 1),
+                fill(frame, nil, "BORDER", c, 1, 0, h - 1, w, 1),
+                fill(frame, nil, "BORDER", c, 1, 0, 0, 1, h),
+                fill(frame, nil, "BORDER", c, 1, w - 1, 0, 1, h),
+            }
+        end
+
+        function BenillaAlchemyJournal_SetEdge(lines, c)
+            for _, line in ipairs(lines) do
+                line:SetTexture(c[1], c[2], c[3], 1)
+            end
+        end
+
+        function BenillaAlchemyJournal_Ink(fs, c)
+            fs:SetTextColor(c[1], c[2], c[3])
+        end
+
+        -- A card: a dark fill and a gold-dim edge.
+        function BenillaAlchemyJournal_Card(name, parent, x, y, w, h)
+            local card = CreateFrame("Frame", name, parent)
+            BenillaCookJournal_Place(card, parent, x, y, w, h)
+            BenillaAlchemyJournal_Fill(card, nil, "BACKGROUND", { 0.075, 0.047, 0.024 }, 1, 0, 0, w, h)
+            card.edge = BenillaAlchemyJournal_Edge(card, w, h)
+            return card
+        end
+
+        function BenillaAlchemyJournal_BuildSatchel(a)
+            local page = CreateFrame("Frame", "BenillaFishingJournalAlchemySatchel", a)
+            BenillaCookJournal_Place(page, a, 0, 0, 880, 800)
+            for k = 1, BENILLA_JOURNAL_ALCHEMY_SLOTS do
+                local slot = CreateFrame("Button", "BenillaFishingJournalAlchemySlot" .. k, page, "BenillaFishingJournalSlotTemplate")
+                BenillaCookJournal_Place(slot, page, 82 + math.mod(k - 1, 10) * 72,
+                    170 + math.floor((k - 1) / 10) * 72, 52, 52)
+                slot.kind = "alchemysatchel"
+            end
+        end
+
+        function BenillaAlchemyJournal_BuildNotes(a)
+            local page = CreateFrame("Frame", "BenillaFishingJournalAlchemyHerbs", a)
+            BenillaCookJournal_Place(page, a, 0, 0, 880, 800)
+            local T = BenillaAlchemyJournal_Text
+            for n = 1, BENILLA_JOURNAL_ALCHEMY_NOTES do
+                local name = "BenillaFishingJournalAlchemyNote" .. n
+                local card = BenillaAlchemyJournal_Card(name, page, 52 + math.mod(n - 1, 3) * 262,
+                    160 + math.floor((n - 1) / 3) * 180, 252, 172)
+                local icon = card:CreateTexture(name .. "Icon", "ARTWORK")
+                BenillaCookJournal_Place(icon, card, 10, 10, 32, 32)
+                T(card, name .. "Name", "GameFontNormal", 192, 16, 50, 10)
+                BenillaAlchemyJournal_Ink(T(card, name .. "Kind", "GameFontHighlightSmall", 196, 12, 50, 28), BENILLA_JOURNAL_ALCHEMY_DIM)
+                local unknown = T(card, name .. "Unknown", "GameFontHighlightSmall", 232, 40, 10, 54)
+                unknown:SetJustifyV("TOP")
+                BenillaAlchemyJournal_Ink(unknown, BENILLA_JOURNAL_ALCHEMY_PALE)
+                for v = 1, BENILLA_JOURNAL_ALCHEMY_BARS do
+                    local bar = name .. "Value" .. v
+                    local y = 54 + (v - 1) * 22
+                    BenillaAlchemyJournal_Fill(card, bar .. "Chip", "ARTWORK", { 1, 1, 1 }, 1, 10, y + 3, 8, 8)
+                    BenillaAlchemyJournal_Ink(T(card, bar .. "Name", "GameFontHighlightSmall", 84, 14, 22, y), BENILLA_JOURNAL_ALCHEMY_PALE)
+                    BenillaAlchemyJournal_Fill(card, bar .. "Track", "ARTWORK", { 0, 0, 0 }, 0.45, 108, y + 2, BENILLA_JOURNAL_ALCHEMY_BAR_WIDTH, 10)
+                    BenillaAlchemyJournal_Fill(card, bar .. "Fill", "OVERLAY", { 1, 1, 1 }, 1, 108, y + 2, BENILLA_JOURNAL_ALCHEMY_BAR_WIDTH, 10)
+                    local points = T(card, bar .. "Points", "GameFontHighlightSmall", 30, 14, 212, y)
+                    points:SetJustifyH("RIGHT")
+                end
+                BenillaAlchemyJournal_Ink(T(card, name .. "Uses", "GameFontHighlightSmall", 232, 14, 10, 148), BENILLA_JOURNAL_ALCHEMY_DIM)
+                card:EnableMouse(true)
+                card:SetScript("OnEnter", BenillaAlchemyJournal_ItemEnter)
+                card:SetScript("OnLeave", BenillaFishingJournalSlot_OnLeave)
+            end
+        end
+
+        function BenillaAlchemyJournal_BuildRecipes(a)
+            local page = CreateFrame("Frame", "BenillaFishingJournalAlchemyRecipes", a)
+            BenillaCookJournal_Place(page, a, 0, 0, 880, 800)
+            local T = BenillaAlchemyJournal_Text
+            local W = BENILLA_JOURNAL_ALCHEMY_SEGMENT
+            for n = 1, BENILLA_JOURNAL_ALCHEMY_RECIPES do
+                local name = "BenillaFishingJournalAlchemyRecipe" .. n
+                local card = BenillaAlchemyJournal_Card(name, page, 52, 160 + (n - 1) * 136, 776, 128)
+                BenillaAlchemyJournal_Fill(card, name .. "Swatch1", "ARTWORK", { 1, 1, 1 }, 1, 10, 10, 14, 15)
+                BenillaAlchemyJournal_Fill(card, name .. "Swatch2", "ARTWORK", { 1, 1, 1 }, 1, 10, 25, 14, 15)
+                T(card, name .. "Base", "GameFontNormal", 700, 16, 32, 8)
+                BenillaAlchemyJournal_Ink(T(card, name .. "Line", "GameFontHighlightSmall", 736, 12, 32, 26), BENILLA_JOURNAL_ALCHEMY_DIM)
+                for g = 1, 4 do
+                    local seg = name .. "Grade" .. g
+                    local x = 10 + (g - 1) * 190
+                    T(card, seg .. "Label", "GameFontNormalSmall", 90, 14, x, 46)
+                    local threshold = T(card, seg .. "Threshold", "GameFontHighlightSmall", 84, 14, x + 100, 46)
+                    threshold:SetJustifyH("RIGHT")
+                    BenillaAlchemyJournal_Fill(card, seg .. "Track", "BORDER", { 0, 0, 0 }, 0.45, x, 64, W, 12)
+                    BenillaAlchemyJournal_Fill(card, seg .. "Fill", "ARTWORK", { 1, 1, 1 }, 0.8, x, 64, W, 12)
+                    BenillaAlchemyJournal_Fill(card, seg .. "Rumour", "OVERLAY", BENILLA_JOURNAL_ALCHEMY_RUMOUR, 1, x, 64, W, 2)
+                    for s = 1, 5 do
+                        local px = x + math.floor((s - 0.5) / 5 * W) - 6
+                        BenillaAlchemyJournal_Fill(card, seg .. "Pip" .. s, "OVERLAY", { 1, 0.82, 0 }, 1, px, 64, 12, 12)
+                        local count = T(card, seg .. "Pip" .. s .. "Count", "GameFontHighlightSmall", 20, 12, px - 4, 64)
+                        count:SetJustifyH("CENTER")
+                        count:SetTextColor(0, 0, 0)
+                    end
+                    local effect = T(card, seg .. "Effect", "GameFontHighlightSmall", W, 24, x, 80)
+                    effect:SetJustifyV("TOP")
+                    BenillaAlchemyJournal_Ink(effect, BENILLA_JOURNAL_ALCHEMY_PALE)
+                    local make = CreateFrame("Button", seg .. "Make", card, "BenillaAlchemyJournalMakeTemplate")
+                    BenillaCookJournal_Place(make, card, x + W - 70, 104, 70, 18)
+                end
+            end
+        end
+
+        function BenillaAlchemyJournal_BuildFlasks(a)
+            local page = CreateFrame("Frame", "BenillaFishingJournalAlchemyFlasks", a)
+            BenillaCookJournal_Place(page, a, 0, 0, 880, 800)
+            local T = BenillaAlchemyJournal_Text
+            T(page, nil, "GameFontNormal", 200, 16, 52, 160):SetText("Flasks")
+            BenillaAlchemyJournal_Ink(T(page, "BenillaFishingJournalAlchemyFlaskLine", "GameFontHighlightSmall", 776, 14, 52, 178), BENILLA_JOURNAL_ALCHEMY_DIM)
+            BenillaFishingJournalAlchemyFlaskLine:SetText(BENILLA_JOURNAL_ALCHEMY_FLASK_LINE)
+            for _, col in ipairs({ { "Flask", 52 }, { "Gives", 330 }, { "Made", 720 } }) do
+                T(page, nil, "GameFontNormalSmall", 200, 14, col[2], 200):SetText(col[1])
+            end
+            for n = 1, BENILLA_JOURNAL_ALCHEMY_FLASKS do
+                local row = "BenillaFishingJournalAlchemyFlask" .. n
+                local y = 220 + (n - 1) * 22
+                local stripe = BenillaAlchemyJournal_Fill(page, row .. "Stripe", "BACKGROUND", { 1, 1, 1 }, 0.05, 44, y - 4, 792, 22)
+                if math.mod(n, 2) == 0 then
+                    stripe:SetTexture(0, 0, 0, 0.25)
+                end
+                T(page, row .. "Name", "GameFontHighlightSmall", 270, 14, 52, y)
+                T(page, row .. "Stats", "GameFontHighlightSmall", 380, 14, 330, y)
+                T(page, row .. "Made", "GameFontHighlightSmall", 100, 14, 720, y)
+            end
+        end
+
+        BENILLA_JOURNAL_ALCHEMY_LOG_COLUMNS = {
+            { "When", "When", 52, 110 }, { "Make", "Make", 166, 70 }, { "In", "In", 240, 200 },
+            { "Summed values", "Sums", 444, 150 }, { "Toxic", "Toxic", 598, 70 }, { "Out", "Out", 672, 156 },
+        }
+
+        function BenillaAlchemyJournal_BuildLog(a)
+            local page = CreateFrame("Frame", "BenillaFishingJournalAlchemyBrewLog", a)
+            BenillaCookJournal_Place(page, a, 0, 0, 880, 800)
+            local T = BenillaAlchemyJournal_Text
+            T(page, nil, "GameFontNormal", 200, 16, 52, 160):SetText("Brew Log")
+            BenillaAlchemyJournal_Ink(T(page, "BenillaFishingJournalAlchemyLogLine", "GameFontHighlightSmall", 776, 14, 52, 178), BENILLA_JOURNAL_ALCHEMY_DIM)
+            BenillaFishingJournalAlchemyLogLine:SetText(BENILLA_JOURNAL_ALCHEMY_LOG_LINE)
+            local empty = T(page, "BenillaFishingJournalAlchemyLogEmpty", "GameFontHighlightSmall", 776, 14, 52, 222)
+            empty:SetText("Nothing brewed yet.")
+            BenillaAlchemyJournal_Ink(empty, BENILLA_JOURNAL_ALCHEMY_PALE)
+            for _, col in ipairs(BENILLA_JOURNAL_ALCHEMY_LOG_COLUMNS) do
+                T(page, "BenillaFishingJournalAlchemyLogHead" .. col[2], "GameFontNormalSmall", col[4], 14, col[3], 200):SetText(col[1])
+            end
+            for n = 1, BENILLA_JOURNAL_ALCHEMY_LOG do
+                local name = "BenillaFishingJournalAlchemyLog" .. n
+                local row = CreateFrame("Frame", name, page)
+                BenillaCookJournal_Place(row, page, 44, 216 + (n - 1) * 34, 792, 34)
+                local stripe = BenillaAlchemyJournal_Fill(row, nil, "BACKGROUND", { 1, 1, 1 }, 0.05, 0, 0, 792, 34)
+                if math.mod(n, 2) == 0 then
+                    stripe:SetTexture(0, 0, 0, 0.25)
+                end
+                for _, col in ipairs(BENILLA_JOURNAL_ALCHEMY_LOG_COLUMNS) do
+                    local fs = T(row, name .. col[2], "GameFontHighlightSmall", col[4], 30, col[3] - 44, 3)
+                    fs:SetJustifyV("TOP")
+                    BenillaAlchemyJournal_Ink(fs, BENILLA_JOURNAL_ALCHEMY_PALE)
+                end
+                getglobal(name .. "Out"):SetHeight(14)
+                BenillaAlchemyJournal_Ink(T(row, name .. "Note", "GameFontHighlightSmall", 156, 14, 672 - 44, 18), BENILLA_JOURNAL_ALCHEMY_DIM)
+            end
+        end
+
+        -- The Alchemy frame's parts, made once at load: the Discoveries strip, the sub-page row,
+        -- one frame per page kind and the arrows. Every font string goes through
+        -- BenillaAlchemyJournal_Text.
+        function BenillaAlchemyJournal_Build()
+            local a = BenillaFishingJournalAlchemy
+            local place = BenillaCookJournal_Place
+            local T = BenillaAlchemyJournal_Text
+            BenillaAlchemyJournal_Fill(a, nil, "BACKGROUND", { 0.055, 0.035, 0.018 }, 0.65, 44, 54, 792, 64)
+            for n = 1, 4 do
+                BenillaAlchemyJournal_Ink(T(a, "BenillaFishingJournalAlchemyDisc" .. n, "GameFontHighlightSmall", 190, 14, 52 + (n - 1) * 196, 60), BENILLA_JOURNAL_ALCHEMY_PALE)
+            end
+            T(a, "BenillaFishingJournalAlchemyLast", "GameFontNormalSmall", 776, 14, 52, 78)
+            BenillaAlchemyJournal_Ink(T(a, "BenillaFishingJournalAlchemyTry", "GameFontHighlightSmall", 776, 14, 52, 96), BENILLA_JOURNAL_ALCHEMY_DIM)
+            for i, sub in ipairs(BENILLA_JOURNAL_ALCHEMY_SUBS) do
+                local b = CreateFrame("Button", "BenillaFishingJournalAlchemyTab" .. i, a, "BenillaAlchemyJournalTabTemplate")
+                b:SetID(i)
+                b:SetText(sub.label)
+                b.key = sub.key
+                place(b, a, 52 + (i - 1) * 86, 124, 84, 26)
+            end
+            BenillaAlchemyJournal_BuildSatchel(a)
+            BenillaAlchemyJournal_BuildNotes(a)
+            BenillaAlchemyJournal_BuildRecipes(a)
+            BenillaAlchemyJournal_BuildFlasks(a)
+            BenillaAlchemyJournal_BuildLog(a)
+            BenillaAlchemyJournal_Ink(T(a, "BenillaFishingJournalAlchemyCaption", "GameFontHighlightSmall", 600, 14, 52, 724), BENILLA_JOURNAL_ALCHEMY_DIM)
+            place(BenillaFishingJournalAlchemyScreen, a, 722, 720, 68, 20)
+            BenillaFishingJournalAlchemyScreen:SetTextColor(0.788, 0.690, 0.541)
+            place(BenillaFishingJournalAlchemyPrev, a, 680, 716, 26, 26)
+            place(BenillaFishingJournalAlchemyNext, a, 802, 716, 26, 26)
+        end
+
+        -- Whether the Alchemy window is open, so "Make this" can set its target.
+        function BenillaAlchemyJournal_TableOpen()
+            return BenillaAlchemy and BenillaAlchemy:IsShown() and BenillaAlchemy_SetTarget and true or false
+        end
+
+        -- The Discoveries strip across the top.
+        function BenillaAlchemyJournal_PaintDiscoveries()
+            local _, numNotes, numGrades, numFlasks, _, numOpen, last = GetAlchemyJournal()
+            local noted, learned, made = 0, 0, 0
+            for i = 1, numNotes do
+                local _, _, _, _, _, budget = GetAlchemyNote(i)
+                if budget and budget > 0 then
+                    noted = noted + 1
+                end
+            end
+            for i = 1, numGrades do
+                local _, _, _, _, _, isLearned = GetAlchemyGradePage(i)
+                if isLearned then
+                    learned = learned + 1
+                end
+            end
+            for i = 1, numFlasks do
+                local _, _, _, times = GetAlchemyFlask(i)
+                if times and times > 0 then
+                    made = made + 1
+                end
+            end
+            BenillaFishingJournalAlchemyDisc1:SetText("Makes open " .. numOpen .. " of " .. BENILLA_JOURNAL_ALCHEMY_MAKES)
+            BenillaFishingJournalAlchemyDisc2:SetText("Herbs fully noted " .. noted .. " of " .. numNotes)
+            BenillaFishingJournalAlchemyDisc3:SetText("Grades learned " .. learned .. " of " .. numGrades)
+            BenillaFishingJournalAlchemyDisc4:SetText("Flask kinds made " .. made .. " of " .. numFlasks)
+            BenillaFishingJournalAlchemyLast:SetText("Last learned: " .. ((last and last ~= "") and last or "Nothing yet."))
+            local try = BENILLA_JOURNAL_ALCHEMY_TRY
+            local line
+            if not IsAlchemyMakeOpen("tincture") then
+                line = try.still
+            elseif not IsAlchemyMakeOpen("essence") then
+                line = try.essence
+            elseif not IsAlchemyMakeOpen("flask") then
+                line = try.flask
+            elseif made == 0 then
+                line = try.join
+            elseif noted < numNotes then
+                line = (numNotes - noted) .. try.blanks
+            else
+                line = try.greater
+            end
+            BenillaFishingJournalAlchemyTry:SetText("Try next: " .. line)
+        end
+
+        function BenillaAlchemyJournal_PaintSatchel(first)
+            for k = 1, BENILLA_JOURNAL_ALCHEMY_SLOTS do
+                local slot = getglobal("BenillaFishingJournalAlchemySlot" .. k)
+                local row = first + k
+                local item, count = GetAlchemySatchelItem(row)
+                BenillaFishingJournal_Face(slot, item and "caught" or "empty", item)
+                slot.kind = "alchemysatchel"
+                slot.row = item and row or nil
+                slot.count = count
+                getglobal(slot:GetName() .. "Stack"):SetText((count and count > 1) and count or "")
+                getglobal(slot:GetName() .. "Glow"):Hide()
+            end
+        end
+
+        -- One Herb Note card from note `i`: a bar per value once the note names them, filled to
+        -- points over the budget (8 before the budget shows).
+        function BenillaAlchemyJournal_PaintNote(card, i)
+            local name = card:GetName()
+            local item, uses, level, rarity, zones, budget, numValues = GetAlchemyNote(i)
+            local label = getglobal(name .. "Name")
+            label:SetText(BenillaFishingJournal_ItemName(item))
+            BenillaAlchemyJournal_Ink(label, BENILLA_JOURNAL_ALCHEMY_RARITY_COLOURS[rarity] or { 1, 1, 1 })
+            getglobal(name .. "Icon"):SetTexture(BenillaFishingJournal_Icon(item))
+            local kind = "level " .. level .. " · " .. (BENILLA_JOURNAL_ALCHEMY_RARITY[rarity] or "common")
+            if zones and zones ~= "" then
+                kind = kind .. " · " .. zones
+            end
+            getglobal(name .. "Kind"):SetText(kind)
+            BenillaAlchemyJournal_SetEdge(card.edge, (rarity == 3) and BENILLA_JOURNAL_ALCHEMY_LEGEND or BENILLA_JOURNAL_ALCHEMY_EDGE)
+            if card.SetAlpha then
+                card:SetAlpha((uses == 0) and 0.55 or 1)
+            end
+            local unknown = (numValues == 0)
+            getglobal(name .. "Unknown"):SetText(unknown and BENILLA_JOURNAL_ALCHEMY_UNKNOWN or "")
+            local scale = (budget > 0) and budget or 8
+            for v = 1, BENILLA_JOURNAL_ALCHEMY_BARS do
+                local bar = name .. "Value" .. v
+                local value, points
+                if v <= numValues then
+                    value, points = GetAlchemyNoteValue(i, v)
+                end
+                local parts = { getglobal(bar .. "Chip"), getglobal(bar .. "Track") }
+                if value then
+                    local c = BENILLA_JOURNAL_ALCHEMY_COLOURS[value] or { 1, 1, 1 }
+                    getglobal(bar .. "Chip"):SetTexture(c[1], c[2], c[3], 1)
+                    getglobal(bar .. "Name"):SetText(value)
+                    getglobal(bar .. "Points"):SetText(points or "?")
+                    for _, part in ipairs(parts) do part:Show() end
+                    local fill = getglobal(bar .. "Fill")
+                    if points then
+                        fill:SetTexture(c[1], c[2], c[3], 1)
+                        fill:SetWidth(math.max(1, BENILLA_JOURNAL_ALCHEMY_BAR_WIDTH * math.min(1, points / scale)))
+                        fill:Show()
+                    else
+                        fill:Hide()
+                    end
+                else
+                    getglobal(bar .. "Name"):SetText("")
+                    getglobal(bar .. "Points"):SetText("")
+                    for _, part in ipairs(parts) do part:Hide() end
+                    getglobal(bar .. "Fill"):Hide()
+                end
+            end
+            local noted = math.min(5, uses) .. " of 5 uses noted"
+            if budget > 0 then
+                noted = noted .. " · budget " .. budget
+            elseif not unknown then
+                noted = noted .. " · values at 5"
+            end
+            getglobal(name .. "Uses"):SetText(noted)
+            card.item = item
+            card:Show()
+        end
+
+        function BenillaAlchemyJournal_PaintNotes(first)
+            local _, numNotes = GetAlchemyJournal()
+            for n = 1, BENILLA_JOURNAL_ALCHEMY_NOTES do
+                local card = getglobal("BenillaFishingJournalAlchemyNote" .. n)
+                if first + n > numNotes then
+                    card.item = nil
+                    card:Hide()
+                else
+                    BenillaAlchemyJournal_PaintNote(card, first + n)
+                end
+            end
+        end
+
+        -- `family`'s grade pages, one ladder per key in the realm's order, each with its four
+        -- grades by the realm's 0-based index.
+        function BenillaAlchemyJournal_Ladders(family)
+            local _, _, numGrades = GetAlchemyJournal()
+            local ladders, byKey = {}, {}
+            for i = 1, numGrades do
+                local f, key, grade, name, base, learned, rumoured, threshold, s1, s2, s3, s4, s5, effect = GetAlchemyGradePage(i)
+                if f == family then
+                    local ladder = byKey[key]
+                    if not ladder then
+                        ladder = { key = key, base = base, grades = {} }
+                        byKey[key] = ladder
+                        table.insert(ladders, ladder)
+                    end
+                    ladder.grades[grade] = {
+                        name = name, learned = learned, rumoured = rumoured, threshold = threshold,
+                        steps = { s1, s2, s3, s4, s5 }, effect = effect,
+                    }
+                end
+            end
+            return ladders
+        end
+
+        -- "Made: x1 ×2, x1.5 ×1", or nil before the first make.
+        function BenillaAlchemyJournal_Made(steps)
+            local made = {}
+            for s = 1, 5 do
+                if steps[s] and steps[s] > 0 then
+                    table.insert(made, BENILLA_JOURNAL_ALCHEMY_STEPS[s] .. " ×" .. steps[s])
+                end
+            end
+            if table.getn(made) == 0 then
+                return nil
+            end
+            return "Made: " .. table.concat(made, ", ")
+        end
+
+        -- One grade segment: its label, "≥ 12" or "?", the bar with a pip per step made, the
+        -- effect line and "Make this" while the Alchemy window is open.
+        function BenillaAlchemyJournal_PaintSegment(seg, family, key, grade, page, colour, open)
+            local label = getglobal(seg .. "Label")
+            label:SetText(BENILLA_JOURNAL_ALCHEMY_GRADES[grade])
+            BenillaAlchemyJournal_Ink(label, BENILLA_JOURNAL_ALCHEMY_GRADE_COLOURS[grade])
+            local fill, rumour = getglobal(seg .. "Fill"), getglobal(seg .. "Rumour")
+            local make = getglobal(seg .. "Make")
+            make.family, make.key, make.grade = family, key, grade
+            if open then make:Show() else make:Hide() end
+            if not page then
+                getglobal(seg .. "Threshold"):SetText("?")
+                getglobal(seg .. "Effect"):SetText("Not yet made")
+                fill:Hide()
+                rumour:Hide()
+                for s = 1, 5 do
+                    getglobal(seg .. "Pip" .. s):Hide()
+                    getglobal(seg .. "Pip" .. s .. "Count"):SetText("")
+                end
+                return
+            end
+            getglobal(seg .. "Threshold"):SetText((page.threshold > 0) and ("≥ " .. page.threshold) or "?")
+            if page.learned then
+                fill:SetTexture(colour[1], colour[2], colour[3], 0.8)
+                fill:Show()
+            else
+                fill:Hide()
+            end
+            if page.rumoured and not page.learned then rumour:Show() else rumour:Hide() end
+            for s = 1, 5 do
+                local pip, count = getglobal(seg .. "Pip" .. s), getglobal(seg .. "Pip" .. s .. "Count")
+                local n = page.steps[s] or 0
+                if n > 0 then pip:Show() else pip:Hide() end
+                count:SetText((n > 1) and n or "")
+            end
+            local effect = page.effect
+            if not effect or effect == "" then
+                effect = (page.learned and BenillaAlchemyJournal_Made(page.steps)) or "Not yet made"
+            end
+            getglobal(seg .. "Effect"):SetText(effect)
+        end
+
+        function BenillaAlchemyJournal_PaintLadder(card, family, ladder, open)
+            local name = card:GetName()
+            local plus = string.find(ladder.key, "+", 1, true)
+            local first = plus and string.sub(ladder.key, 1, plus - 1) or ladder.key
+            local second = plus and string.sub(ladder.key, plus + 1) or ladder.key
+            local c1 = BENILLA_JOURNAL_ALCHEMY_COLOURS[first] or { 1, 1, 1 }
+            local c2 = BENILLA_JOURNAL_ALCHEMY_COLOURS[second] or c1
+            getglobal(name .. "Swatch1"):SetTexture(c1[1], c1[2], c1[3], 1)
+            getglobal(name .. "Swatch2"):SetTexture(c2[1], c2[2], c2[3], 1)
+            getglobal(name .. "Base"):SetText(ladder.base)
+            local props = plus and (first .. " + " .. second) or first
+            getglobal(name .. "Line"):SetText(props .. " · " .. (BENILLA_JOURNAL_ALCHEMY_FAMILY_LINES[family] or ""))
+            for g = 0, 3 do
+                BenillaAlchemyJournal_PaintSegment(name .. "Grade" .. (g + 1), family, ladder.key, g,
+                    ladder.grades[g], c1, open)
+            end
+            card:Show()
+        end
+
+        function BenillaAlchemyJournal_PaintRecipes(family, ladders, first)
+            local open = BenillaAlchemyJournal_TableOpen()
+            for n = 1, BENILLA_JOURNAL_ALCHEMY_RECIPES do
+                local card = getglobal("BenillaFishingJournalAlchemyRecipe" .. n)
+                local ladder = ladders[first + n]
+                if ladder then
+                    BenillaAlchemyJournal_PaintLadder(card, family, ladder, open)
+                else
+                    card:Hide()
+                end
+            end
+        end
+
+        function BenillaAlchemyJournal_PaintFlasks(first)
+            local _, _, _, numFlasks = GetAlchemyJournal()
+            for n = 1, BENILLA_JOURNAL_ALCHEMY_FLASKS do
+                local row = "BenillaFishingJournalAlchemyFlask" .. n
+                local parts = { getglobal(row .. "Name"), getglobal(row .. "Stats"), getglobal(row .. "Made") }
+                local stripe = getglobal(row .. "Stripe")
+                if first + n > numFlasks then
+                    for _, fs in ipairs(parts) do fs:SetText("") end
+                    stripe:Hide()
+                else
+                    local _, flask, stats, made = GetAlchemyFlask(first + n)
+                    parts[1]:SetText(flask)
+                    parts[2]:SetText(stats)
+                    parts[3]:SetText((made > 0) and made or "—")
+                    local ink = (made > 0) and BENILLA_JOURNAL_ALCHEMY_PALE or { 0.5, 0.45, 0.38 }
+                    for _, fs in ipairs(parts) do BenillaAlchemyJournal_Ink(fs, ink) end
+                    stripe:Show()
+                end
+            end
+        end
+
+        -- "Peacebloom ×2, Amber Sap ×2" for log row `i`.
+        function BenillaAlchemyJournal_Inputs(i, numInputs)
+            local inputs = {}
+            for j = 1, numInputs do
+                local item, count = GetAlchemyLogInput(i, j)
+                table.insert(inputs, BenillaFishingJournal_ItemName(item) .. " ×" .. count)
+            end
+            return table.concat(inputs, ", ")
+        end
+
+        function BenillaAlchemyJournal_PaintLog(first)
+            local _, _, _, _, numLog = GetAlchemyJournal()
+            if numLog == 0 then
+                BenillaFishingJournalAlchemyLogEmpty:Show()
+            else
+                BenillaFishingJournalAlchemyLogEmpty:Hide()
+            end
+            for _, col in ipairs(BENILLA_JOURNAL_ALCHEMY_LOG_COLUMNS) do
+                local head = getglobal("BenillaFishingJournalAlchemyLogHead" .. col[2])
+                if numLog == 0 then head:Hide() else head:Show() end
+            end
+            for n = 1, BENILLA_JOURNAL_ALCHEMY_LOG do
+                local name = "BenillaFishingJournalAlchemyLog" .. n
+                local row = getglobal(name)
+                local i = first + n
+                if i > numLog then
+                    row:Hide()
+                else
+                    local when, make, sums, toxic, result, note, numInputs = GetAlchemyLog(i)
+                    getglobal(name .. "When"):SetText(when)
+                    getglobal(name .. "Make"):SetText(BENILLA_JOURNAL_ALCHEMY_MAKE_NAMES[make] or make)
+                    getglobal(name .. "In"):SetText(BenillaAlchemyJournal_Inputs(i, numInputs))
+                    getglobal(name .. "Sums"):SetText(sums)
+                    getglobal(name .. "Toxic"):SetText((toxic ~= "") and toxic or "—")
+                    getglobal(name .. "Out"):SetText((result > 0) and BenillaFishingJournal_ItemName(result) or "")
+                    getglobal(name .. "Note"):SetText(note or "")
+                    row:Show()
+                end
+            end
+        end
+
+        -- How many of the current page's things there are and how many fit on a screen.
+        function BenillaAlchemyJournal_Count(sub, ladders)
+            local numSatchel, numNotes, _, numFlasks, numLog = GetAlchemyJournal()
+            if sub == "satchel" then
+                return numSatchel, BENILLA_JOURNAL_ALCHEMY_SLOTS
+            elseif sub == "herbs" then
+                return numNotes, BENILLA_JOURNAL_ALCHEMY_NOTES
+            elseif sub == "flasks" then
+                return numFlasks, BENILLA_JOURNAL_ALCHEMY_FLASKS
+            elseif sub == "log" then
+                return numLog, BENILLA_JOURNAL_ALCHEMY_LOG
+            end
+            return table.getn(ladders), BENILLA_JOURNAL_ALCHEMY_RECIPES
+        end
+
+        -- The Alchemy frame: the Discoveries strip, the sub-page row and the chosen page, paged
+        -- with the arrows.
+        function BenillaAlchemyJournal_Paint()
+            local frame = BenillaFishingJournal
+            local sub = frame.alchemySub or "satchel"
+            frame.alchemySub = sub
+            frame.alchemyScreens = frame.alchemyScreens or {}
+            BenillaAlchemyJournal_PaintDiscoveries()
+            for i, row in ipairs(BENILLA_JOURNAL_ALCHEMY_SUBS) do
+                local bg = getglobal("BenillaFishingJournalAlchemyTab" .. i .. "Bg")
+                bg:SetTexture(BENILLA_JOURNAL_ART .. ((row.key == sub) and "bottom_tab_selected" or "bottom_tab"))
+            end
+            local recipe = BENILLA_JOURNAL_ALCHEMY_FAMILY_LINES[sub] ~= nil
+            local ladders = recipe and BenillaAlchemyJournal_Ladders(sub) or {}
+            local pages = {
+                BenillaFishingJournalAlchemySatchel = (sub == "satchel"),
+                BenillaFishingJournalAlchemyHerbs = (sub == "herbs"),
+                BenillaFishingJournalAlchemyRecipes = recipe,
+                BenillaFishingJournalAlchemyFlasks = (sub == "flasks"),
+                BenillaFishingJournalAlchemyBrewLog = (sub == "log"),
+            }
+            for page, shown in pairs(pages) do
+                if shown then getglobal(page):Show() else getglobal(page):Hide() end
+            end
+            local count, per = BenillaAlchemyJournal_Count(sub, ladders)
+            local screens = math.max(1, math.ceil(count / per))
+            local screen = math.max(1, math.min(frame.alchemyScreens[sub] or 1, screens))
+            frame.alchemyScreens[sub] = screen
+            local first = (screen - 1) * per
+            BenillaFishingJournalAlchemyScreen:SetText((screens > 1) and (screen .. " / " .. screens) or "")
+            if screens > 1 then
+                BenillaFishingJournalAlchemyPrev:Show()
+                BenillaFishingJournalAlchemyNext:Show()
+                if screen > 1 then BenillaFishingJournalAlchemyPrev:Enable() else BenillaFishingJournalAlchemyPrev:Disable() end
+                if screen < screens then BenillaFishingJournalAlchemyNext:Enable() else BenillaFishingJournalAlchemyNext:Disable() end
+            else
+                BenillaFishingJournalAlchemyPrev:Hide()
+                BenillaFishingJournalAlchemyNext:Hide()
+            end
+            local caption = BENILLA_JOURNAL_ALCHEMY_CAPTIONS[sub] or ""
+            if sub == "satchel" then
+                BenillaAlchemyJournal_PaintSatchel(first)
+            elseif sub == "herbs" then
+                BenillaAlchemyJournal_PaintNotes(first)
+            elseif sub == "flasks" then
+                BenillaAlchemyJournal_PaintFlasks(first)
+            elseif sub == "log" then
+                BenillaAlchemyJournal_PaintLog(first)
+            else
+                BenillaAlchemyJournal_PaintRecipes(sub, ladders, first)
+                caption = BenillaAlchemyJournal_TableOpen() and BENILLA_JOURNAL_ALCHEMY_CAPTIONS.open
+                    or BENILLA_JOURNAL_ALCHEMY_CAPTIONS.recipe
+            end
+            BenillaFishingJournalAlchemyCaption:SetText(caption)
+        end
+
+        function BenillaAlchemyJournal_ShowSub(i)
+            local row = BENILLA_JOURNAL_ALCHEMY_SUBS[i]
+            if row then
+                BenillaFishingJournal.alchemySub = row.key
+                BenillaFishingJournal_Paint()
+            end
+        end
+
+        function BenillaAlchemyJournal_Turn(step)
+            local frame = BenillaFishingJournal
+            local sub = frame.alchemySub or "satchel"
+            frame.alchemyScreens = frame.alchemyScreens or {}
+            frame.alchemyScreens[sub] = (frame.alchemyScreens[sub] or 1) + step
+            BenillaFishingJournal_Paint()
+        end
+
+        -- "Make this": the segment's grade becomes the open Alchemy window's target, which also
+        -- picks its make.
+        function BenillaAlchemyJournalMake_OnClick()
+            local button = this
+            if BenillaAlchemyJournal_TableOpen() and button.family then
+                BenillaAlchemy_SetTarget(button.family, button.key, button.grade)
+            end
+        end
+
+        function BenillaAlchemyJournal_ItemEnter()
+            local card = this
+            if card.item and GameTooltip then
+                GameTooltip:SetOwner(card, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink("item:" .. card.item .. ":0:0:0")
+                GameTooltip:Show()
+            end
+        end
+
+        -- A right-click on an Alchemy Satchel item withdraws the stack, or one with shift; a bag
+        -- item dropped on a slot deposits. Returns whether the slot was an Alchemy one.
+        function BenillaAlchemyJournal_OnClick(slot, button)
+            if slot.kind ~= "alchemysatchel" then
+                return false
+            end
+            if BenillaFishingJournal_Deposit() or not slot.item then
+                return true
+            end
+            if button == "RightButton" then
+                local one = (IsShiftKeyDown and IsShiftKeyDown()) and true or false
+                WithdrawAlchemyItem(slot.row, one)
+            end
+            return true
+        end
+
+        -- The tooltip of an Alchemy Satchel slot. Returns whether the slot was one.
+        function BenillaAlchemyJournal_OnEnter(slot)
+            if slot.kind ~= "alchemysatchel" then
+                return false
+            end
+            if slot.item then
+                GameTooltip:SetHyperlink("item:" .. slot.item .. ":0:0:0")
+                GameTooltip:AddLine("Right-click to withdraw.", 1, 1, 1, 1)
+                GameTooltip:Show()
+            end
+            return true
         end
 
         -- ── The Herbalism tab ──
@@ -1357,7 +2134,7 @@
 
         function BenillaFishingJournalSlot_OnClick(button)
             local slot = this
-            if BenillaHerbJournal_OnClick(slot, button) then
+            if BenillaHerbJournal_OnClick(slot, button) or BenillaAlchemyJournal_OnClick(slot, button) then
                 return
             end
             if slot.kind == "satchel" then
@@ -1384,7 +2161,7 @@
                 return
             end
             GameTooltip:SetOwner(slot, "ANCHOR_RIGHT")
-            if BenillaHerbJournal_OnEnter(slot) then
+            if BenillaHerbJournal_OnEnter(slot) or BenillaAlchemyJournal_OnEnter(slot) then
                 return
             end
             if slot.kind == "satchel" and not slot.item then
@@ -1686,6 +2463,41 @@
         </Scripts>
     </Button>
 
+    <!-- One of the Alchemy bookmark's sub-page buttons; its id indexes BENILLA_JOURNAL_ALCHEMY_SUBS. -->
+    <Button name="BenillaAlchemyJournalTabTemplate" virtual="true">
+        <Size><AbsDimension x="84" y="26"/></Size>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentBg" file="Interface\Benilla\journal\bottom_tab" setAllPoints="true"/>
+            </Layer>
+        </Layers>
+        <ButtonText name="$parentText"/>
+        <HighlightTexture file="Interface\Benilla\journal\bottom_tab_hover" alphaMode="ADD"/>
+        <NormalFont inherits="GameFontNormalSmall"/>
+        <HighlightFont inherits="GameFontHighlightSmall"/>
+        <Scripts>
+            <OnClick>BenillaAlchemyJournal_ShowSub(this:GetID())</OnClick>
+        </Scripts>
+    </Button>
+
+    <!-- "Make this" on a grade segment, shown while the Alchemy window is open. -->
+    <Button name="BenillaAlchemyJournalMakeTemplate" virtual="true" hidden="true">
+        <Size><AbsDimension x="70" y="18"/></Size>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentBg" setAllPoints="true"><Color r="0.2" g="0.13" b="0.06" a="1"/></Texture>
+            </Layer>
+        </Layers>
+        <ButtonText name="$parentText"/>
+        <HighlightTexture file="Interface\Buttons\CheckButtonHilight" alphaMode="ADD"/>
+        <NormalFont inherits="GameFontNormalSmall"/>
+        <HighlightFont inherits="GameFontHighlightSmall"/>
+        <Scripts>
+            <OnLoad>this:SetText("Make this")</OnLoad>
+            <OnClick>BenillaAlchemyJournalMake_OnClick()</OnClick>
+        </Scripts>
+    </Button>
+
     <!-- A roomy recipe card: meal, effect and ingredients, then cooking history. -->
     <Frame name="BenillaJournalDishPageTemplate" virtual="true" hidden="true" enableMouse="true">
         <Size><AbsDimension x="406" y="182"/></Size>
@@ -1749,6 +2561,7 @@
             <Button name="BenillaFishingJournalProf1" inherits="BenillaJournalProfessionTemplate" id="1"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournal" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-8" y="-64"/></Offset></Anchor></Anchors></Button>
             <Button name="BenillaFishingJournalProf2" inherits="BenillaJournalProfessionTemplate" id="2"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournal" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-8" y="-112"/></Offset></Anchor></Anchors></Button>
             <Button name="BenillaFishingJournalProf3" inherits="BenillaJournalProfessionTemplate" id="3"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournal" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-8" y="-160"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaFishingJournalProf4" inherits="BenillaJournalProfessionTemplate" id="4"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournal" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-8" y="-208"/></Offset></Anchor></Anchors></Button>
             <Button name="BenillaFishingJournalTab1" inherits="BenillaJournalTabTemplate" id="1"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="24" y="10"/></Offset></Anchor></Anchors></Button>
             <Button name="BenillaFishingJournalTab2" inherits="BenillaJournalTabTemplate" id="2"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="150" y="10"/></Offset></Anchor></Anchors></Button>
             <Button name="BenillaFishingJournalTab3" inherits="BenillaJournalTabTemplate" id="3"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="276" y="10"/></Offset></Anchor></Anchors></Button>
@@ -2049,6 +2862,19 @@
                 </Frames>
             </Frame>
 
+            <!-- The Alchemy bookmark's one frame, in place of the bottom tabs: the arrows and the screen count; BenillaAlchemyJournal_Build makes the strip, the sub-page row and the pages. -->
+            <Frame name="$parentAlchemy" setAllPoints="true" hidden="true">
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="BenillaFishingJournalAlchemyScreen" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-80"/></Offset></Anchor></Anchors></FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <Button name="BenillaFishingJournalAlchemyPrev" hidden="true"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="60" y="-62"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\arrow_normal"/><PushedTexture file="Interface\Benilla\journal\arrow_pushed"/><HighlightTexture file="Interface\Benilla\journal\arrow_hover" alphaMode="ADD"/><DisabledTexture file="Interface\Benilla\journal\arrow_disabled"/><Scripts><OnLoad>this:GetNormalTexture():SetTexCoord(1, 0, 0, 1) this:GetPushedTexture():SetTexCoord(1, 0, 0, 1) this:GetHighlightTexture():SetTexCoord(1, 0, 0, 1) this:GetDisabledTexture():SetTexCoord(1, 0, 0, 1)</OnLoad><OnClick>BenillaAlchemyJournal_Turn(-1)</OnClick></Scripts></Button>
+                    <Button name="BenillaFishingJournalAlchemyNext" hidden="true"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-60" y="-62"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\arrow_normal"/><PushedTexture file="Interface\Benilla\journal\arrow_pushed"/><HighlightTexture file="Interface\Benilla\journal\arrow_hover" alphaMode="ADD"/><DisabledTexture file="Interface\Benilla\journal\arrow_disabled"/><Scripts><OnClick>BenillaAlchemyJournal_Turn(1)</OnClick></Scripts></Button>
+                </Frames>
+            </Frame>
+
             <!-- The list an empty perk slot opens: every perk, Boons gold and Pacts purple. -->
             <Frame name="BenillaFishingJournalHerbPerkList" frameStrata="DIALOG" enableMouse="true" hidden="true">
                 <Size><AbsDimension x="324" y="480"/></Size>
@@ -2083,6 +2909,9 @@
                 this:RegisterEvent("HERBALIST_UPDATE")
                 this:RegisterEvent("HERBALISM_JOURNAL_UPDATE")
                 this:RegisterEvent("COOKING_JOURNAL_UPDATE")
+                this:RegisterEvent("ALCHEMY_JOURNAL_UPDATE")
+                this:RegisterEvent("ALCHEMY_UPDATE")
+                this:RegisterEvent("ALCHEMY_CLOSED")
                 if UISpecialFrames then
                     tinsert(UISpecialFrames, "BenillaFishingJournal")
                 end

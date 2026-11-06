@@ -123,8 +123,8 @@ same names.
 ### Alchemy Journal bookmark, placeholder
 
 `crates/benilla-app/assets/ui/journal/prof_alchemy.tga`, 128 x 128 RGBA TGA: the Journal's
-Alchemy bookmark, beside `prof_cooking`. The placeholder is a round flask on brown, painted by
-the Journal ticket.
+Alchemy bookmark, beside `prof_cooking`. The placeholder is a round flask of green liquid on
+brown, painted by #546; Davis's icon replaces it under the same name.
 
 ### Cooking item icons, painted
 

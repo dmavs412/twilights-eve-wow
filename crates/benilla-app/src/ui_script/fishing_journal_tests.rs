@@ -355,10 +355,11 @@ fn fishing_is_the_selected_bookmark_and_herbalism_is_inert() {
     assert!(shown(&s, "BenillaFishingJournalProf1"));
     assert!(shown(&s, "BenillaFishingJournalProf2"));
     assert!(shown(&s, "BenillaFishingJournalProf3"));
+    assert!(shown(&s, "BenillaFishingJournalProf4"));
     assert!(
-        s.eval::<bool>("return BenillaFishingJournalProf4 == nil")
+        s.eval::<bool>("return BenillaFishingJournalProf5 == nil")
             .unwrap(),
-        "three bookmarks"
+        "four bookmarks"
     );
     assert!(s
         .eval::<bool>("return BenillaFishingJournalProf1.selected")

@@ -698,6 +698,8 @@ mod combat_text_tests;
 mod combo_frame_tests;
 
 #[cfg(test)]
+mod alchemy_journal_tests;
+#[cfg(test)]
 mod alchemy_tests;
 #[cfg(test)]
 mod boss_bar_tests;
