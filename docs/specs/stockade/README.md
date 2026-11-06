@@ -1,6 +1,6 @@
 # The Stockade: the riot and the quiet wing (spec #575)
 
-Status: redesigned 2026-11-04 as two dungeons, tickets ready-for-agent. Unplayed.
+Status: all tickets landed 2026-11-06 (#576-#582), spec #575 closed. Unplayed.
 
 Grilled 2026-11-03 from "let's build out the Stockade" and redesigned 2026-11-04 from "split the
 Stockade into two dungeons". ADR 0032 lets Phased Dungeons live on an instance map. This note
