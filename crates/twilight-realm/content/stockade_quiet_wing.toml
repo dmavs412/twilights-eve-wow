@@ -1,0 +1,65 @@
+# The Quiet Wing, the Stockade's west wing: a Phased Dungeon for levels 36 to 40 under Stormwind
+# City (spec #575, docs/specs/stockade/README.md). Hand-written, from the game data.
+#
+# On the Stockade's instance map, 34 (instance_maps.toml, ADR 0032 amended 2026-11-04), beside
+# the riot (stockade_riot.toml), which holds the east wing. North is +x and west is +y: this
+# dungeon's footprint is the hall's west wing, at y above 0 a level below the corridor, and the
+# stairs down to it. The Watch holds the gate hall and the corridor, open world. Map 34 has no
+# terrain, so every Z here is written from the vmangos dump with `grounded = false`, each naming
+# the stock spawn it came from; ground_check.py leaves the rows alone.
+#
+# A shell for now (#581): one friendly Phase Tester stands at the foot of the stairs so a
+# character can see the Phase. #582 fills the file. Guids: creatures 973001 up, shared with the
+# riot, since both stand on map 34.
+
+id = 17
+name = "The Quiet Wing"
+levels = [36, 40]
+map = 34
+zone = 717
+origin = [0.0, 0.0, 0.0]
+yaw = 0.0
+
+# The west wing, a level below the corridor: every stock spawn with y above 30 there.
+[[footprint]]
+x = [95.0, 205.0]
+y = [30.0, 165.0]
+z = [-45.0, -28.0]
+
+# The west stairs, from the crossing's edge down to the wing.
+[[footprint]]
+x = [120.0, 142.0]
+y = [7.0, 36.0]
+z = [-36.0, -22.0]
+
+# At the head of the west stairs, facing down them. Z: the corridor's floor at Defias Prisoner
+# 79056 (131.1, 3.3, -25.52).
+[portal]
+position = [131.0, 7.0, -25.5229]
+orientation = 1.57
+
+# The sealed door across the head of the west stairs, on the Watch's side, in the Keep gate's
+# form (stormwind_keep.toml): vanilla's Doodad_PortcullisActive01 (GameObjectDisplayInfo 411).
+# Sergeant Hale (hub.toml 9300074), who stands behind it, speaks the refusal. `outside` is the
+# crossing, where Warden Thelwater stands. Zs: Defias Prisoner 79056 (131.1, 3.3, -25.52).
+# `opens_with` is the Writ of Audience, a stand-in until #580 makes Rook's Key.
+[portal.door]
+entry = 98004
+display = 411
+position = [131.0, 8.0, -25.5229]
+orientation = 1.57
+outside = [131.0, 3.0, -25.5229]
+open_secs = 15.0
+opens_with = 980122
+sealed_text = "The west wing is closed by order of the Keep. The Warden holds no key to it, and neither do you."
+speaker = 9300074
+
+# The Phase Tester: friendly, no quests, at the foot of the stairs, facing up them. Z: Defias
+# Inmate 79082 (145.5, 43.4, -34.77), on the wing's floor beside it.
+[[creature]]
+guid = 973002
+entry = 97100
+level = 36
+position = [140.0, 35.0, -34.7729]
+grounded = false
+orientation = 4.71

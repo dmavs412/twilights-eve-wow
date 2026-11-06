@@ -115,6 +115,16 @@ pub(crate) fn npcs() -> &'static [Npc] {
     })
 }
 
+/// The Hub NPC of spawn `low` (its low guid) standing on `map`.
+pub(crate) fn spawned(low: u32, map: u32) -> Option<&'static Npc> {
+    npcs().iter().find(|n| n.guid == low && n.map == map)
+}
+
+/// Whether a player at `at` on the Hub NPC's map has it in view.
+pub(crate) fn in_view(npc: &Npc, at: [f32; 3]) -> bool {
+    flat_distance(npc.position, at) <= VIEW_YD
+}
+
 impl Npc {
     /// What it takes in place of copper, if it is a vendor of that kind.
     pub(crate) fn currency(&self) -> Option<&'static crate::currency_vendor::Currency> {

@@ -1,0 +1,38 @@
+# Instance maps (ADR 0032, amended 2026-11-04), written by hand: maps behind a loading screen
+# that hold Phased Dungeons (src/instance_map.rs). Each has an entrance trigger on the open
+# world, which worldports a character in, and an exit trigger inside, which sends them back out
+# to the door, in the Wailing Caverns' trigger form. The map outside every dungeon's footprint
+# is open world, where Hub NPCs stand. `name` and `levels` are the map's Dungeon mark, which
+# stands at the entrance on the open world; a Phased Dungeon on the map makes no mark of its own.
+# `zone` is the `AreaTable.dbc` area a character on the map is listed in. Release Spirit and a
+# save made inside both come out at the exit's destination.
+
+# The Stockade (spec #575, docs/specs/stockade/README.md): vanilla's jail under Stormwind City,
+# one WMO with no terrain. Its two dungeons are stockade_riot.toml (16, the east wing) and
+# stockade_quiet_wing.toml (17, the west wing); the Watch holds the gate hall and the corridor
+# between them.
+[[instance_map]]
+map = 34
+name = "The Stockade"
+zone = 717
+levels = [30, 40]
+
+# `AreaTrigger.dbc` 101, "Stormwind Stockades - Entrance", in the city's jail door, and where
+# vmangos' `areatrigger_teleport` sends the player. The DBC's row is a box, 4.97 by 9.69 by 7.44
+# yd turned 0.663 rad, not a sphere: `radius` is the sphere round it. The position is the box's
+# centre, the DBC's own, so ground_check.py leaves it alone.
+[instance_map.entrance]
+trigger = 101
+map = 0
+position = [-8761.85, 848.557, 87.805]
+grounded = false
+radius = 6.6
+to = { map = 34, position = [49.0, 0.5, -16.4], orientation = 0.0 }
+
+# `AreaTrigger.dbc` 503 inside, back out to the jail door.
+[instance_map.exit]
+trigger = 503
+map = 34
+position = [39.374, 0.803, -12.788]
+radius = 8.0
+to = { map = 0, position = [-8766.1, 845.5, 88.0], orientation = 3.84 }

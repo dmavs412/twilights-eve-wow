@@ -144,15 +144,19 @@ fn the_stockade_is_marked_at_its_door_in_the_city() {
     assert_eq!(marks.len(), 1);
     let stockade = marks[0];
     assert_eq!(stockade.icon, MapIcon::Dungeon);
-    assert_eq!(stockade.subtitle, "Phased Dungeon, levels 30-34");
+    assert_eq!(stockade.subtitle, "Phased Dungeon, levels 30-40");
     assert_eq!(stockade.map, 0, "on the city's map, not the jail's");
-    // The Portal's position: trigger 101's, in the jail door.
+    // The instance map's entrance, trigger 101, in the jail door.
     let [x, y] = stockade.position;
     assert!(
         (x - -8761.85).abs() < 0.01 && (y - 848.557).abs() < 0.01,
         "{:?}",
         stockade.position
     );
+    // Its two dungeons, 16 and 17, make no mark of their own (ADR 0032).
+    for name in ["The Riot", "The Quiet Wing"] {
+        assert!(sent[0].iter().all(|m| m.name != name), "{name} is marked");
+    }
 }
 
 #[test]

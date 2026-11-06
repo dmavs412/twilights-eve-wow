@@ -686,12 +686,12 @@ impl InWorld {
         }
     }
 
-    /// The shard this player shares, when they stand on an open-world map or a Phased Dungeon's
-    /// instance map: its open world, or the Run of the Phased Dungeon they stand in. The realm
+    /// The shard this player shares, when they stand on an open-world map or an instance map
+    /// (ADR 0032): its open world, or the Run of the Phased Dungeon they stand in. The realm
     /// lends it its mobs and sends it what comes into view.
     pub(crate) fn shard_place(&self) -> Option<crate::shard::Place> {
         let shared =
-            content::open_world(self.map) || crate::phased::on_instance_map(self.map).is_some();
+            content::open_world(self.map) || crate::instance_map::of_map(self.map).is_some();
         (!self.transfer && shared).then_some(crate::shard::Place {
             map: self.map,
             phase: self.phase,

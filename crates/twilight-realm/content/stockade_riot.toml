@@ -1,0 +1,50 @@
+# The Riot, the Stockade's east wing: a Phased Dungeon for levels 30 to 34 under Stormwind City
+# (spec #575, docs/specs/stockade/README.md). Hand-written, from the game data.
+#
+# On the Stockade's instance map, 34 (instance_maps.toml, ADR 0032 amended 2026-11-04), whose
+# doors and Dungeon mark are the map's own. Vanilla's jail is a cross: the corridor from the door
+# runs north along x, and the hall of cells crosses it a level below, the east wing at y below 0
+# and the west wing (stockade_quiet_wing.toml) at y above 0. The Watch holds the gate hall and
+# the corridor, open world; this dungeon's footprint is the east wing and the stairs down to it.
+# Map 34 has no terrain, so every Z here is written from the vmangos dump with
+# `grounded = false`, each naming the stock spawn it came from; ground_check.py leaves the rows
+# alone. The jail's 93 stock spawns span x 67 to 193, y -129 to 148 and z -35 to -25.
+#
+# A shell for now (#581): one friendly Phase Tester stands at the foot of the stairs so a
+# character can see the Phase. #578 fills the file. Guids: creatures 973001 up.
+
+id = 16
+name = "The Riot"
+levels = [30, 34]
+map = 34
+zone = 717
+origin = [0.0, 0.0, 0.0]
+yaw = 0.0
+
+# The east wing, a level below the corridor: every stock spawn with y below -30.
+[[footprint]]
+x = [60.0, 170.0]
+y = [-160.0, -30.0]
+z = [-45.0, -28.0]
+
+# The east stairs, from the crossing's edge down to the wing.
+[[footprint]]
+x = [120.0, 142.0]
+y = [-36.0, -7.0]
+z = [-36.0, -22.0]
+
+# At the head of the east stairs, facing down them. Z: the corridor's floor at Defias Prisoner
+# 79068 (127.1, -1.4, -25.52).
+[portal]
+position = [131.0, -7.0, -25.5229]
+orientation = 4.71
+
+# The Phase Tester: friendly, no quests, at the foot of the stairs, facing up them. Z: Defias
+# Insurgent 79038 (129.0, -36.0, -33.86), on the wing's floor beside it.
+[[creature]]
+guid = 973001
+entry = 97100
+level = 30
+position = [121.0, -35.0, -33.8562]
+grounded = false
+orientation = 1.57

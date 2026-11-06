@@ -1964,3 +1964,191 @@ orientation = 0.0
 text_id = 64169
 alchemist = true
 greeting = "Stormwind's table, $C. Everything a flask needs, and rumours of the strong grades."
+
+# ── The Watch, inside the Stockade (#581) ────────────────────────────────────────────────────────
+# The Watch holds the Stockade's gate hall, its corridor and the corridor's cells, open world on
+# the jail's instance map, 34 (instance_maps.toml, ADR 0032 amended 2026-11-04), between the riot
+# (stockade_riot.toml) and the quiet wing (stockade_quiet_wing.toml). Map 34 has no terrain, so
+# every Z is written from the vmangos dump with `grounded = false`, each naming the stock spawn
+# or trigger it came from. North is +x and west is +y.
+
+# Warden Thelwater: the stock template (stormwind.toml, entry 1719), whose spawn at the city's
+# jail door (89325) zones.toml deletes; he now stands at the crossing, facing the west wing's
+# door. He talks only until #580 gives him his quests, which make him a quest giver (0x3). Z:
+# Defias Prisoner 79056 (131.1, 3.3, -25.52).
+[[npc]]
+guid = 9300072
+entry = 1719
+name = "Warden Thelwater"
+level = 30
+display_id = 1865
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 34
+position = [131.0, 3.0, -25.5229]
+grounded = false
+orientation = 1.57
+text_id = 64170
+greeting = "Keep to the corridor unless you've business below, $C. The east wing is in riot, and the west wing answers to the Keep, not to me."
+
+# Quartermaster Mae Tollin: repairs in the gate hall, in a Stormwind City Guard's look
+# (creature_template 68, display 3167). Z: where `areatrigger_teleport` 101 lands a character in
+# the gate hall (49.0, 0.5, -16.39).
+[[npc]]
+guid = 9300073
+entry = 190078
+name = "Quartermaster Mae Tollin"
+subname = "Repairs"
+level = 30
+display_id = 3167
+faction_template = 35
+role = "repairer"
+npc_flags = 0x4004
+map = 34
+position = [45.0, 6.0, -16.3942]
+grounded = false
+orientation = 4.71
+
+# Sergeant Hale: across the head of the west stairs, behind the sealed door, facing down the
+# stairs; he speaks the door's refusal (stockade_quiet_wing.toml). Display 2989, the Stockade
+# Guard's. Z: Defias Prisoner 79056 (131.1, 3.3, -25.52).
+[[npc]]
+guid = 9300074
+entry = 190079
+name = "Sergeant Hale"
+subname = "The Watch"
+level = 38
+display_id = 2989
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 34
+position = [131.0, 10.0, -25.5229]
+grounded = false
+orientation = 1.57
+text_id = 64171
+greeting = "The west wing stays shut, $C. Those are the Keep's orders, and I keep them."
+
+# The Watchmen, one entry, display 2989 (the Stockade Guard's): at the head of the east stairs,
+# facing down them (Z: Defias Prisoner 79068, (127.1, -1.4, -25.52)); at the door, facing up the
+# gate hall (Z: where trigger 101 lands, (49.0, 0.5, -16.39)); and at the corridor's end, where
+# Targorr stood, facing back down it (Z: Targorr the Dread 84027, (159.6, 1.3, -25.61)).
+[[npc]]
+guid = 9300075
+entry = 190080
+name = "Watchman"
+subname = "The Watch"
+level = 35
+display_id = 2989
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 34
+position = [131.0, -10.0, -25.5229]
+grounded = false
+orientation = 4.71
+text_id = 64172
+greeting = "Rook took two men down after Ash. Stay behind the Warden."
+
+[[npc]]
+guid = 9300076
+entry = 190080
+name = "Watchman"
+subname = "The Watch"
+level = 35
+display_id = 2989
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 34
+position = [42.0, -5.0, -16.3942]
+grounded = false
+orientation = 0.0
+text_id = 64173
+greeting = "The Warden's at the crossing, $C. Straight down the corridor."
+
+[[npc]]
+guid = 9300077
+entry = 190080
+name = "Watchman"
+subname = "The Watch"
+level = 35
+display_id = 2989
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 34
+position = [160.0, 1.0, -25.6062]
+grounded = false
+orientation = 3.14
+text_id = 64174
+greeting = "Nothing past here but an empty cell. Back to the crossing, $C."
+
+# The Convicts, one entry, display 2146 (the Defias Inmate's), in the corridor's cells on either
+# side of its first stretch, each facing the bars. Zs: the cells' floor at Defias Captive 79059
+# (80.7, 16.8, -26.44), Defias Prisoner 79043 (88.6, -15.5, -26.44), Defias Captive 79065
+# (103.2, 12.9, -26.44) and Defias Captive 79035 (82.3, -10.6, -26.44).
+[[npc]]
+guid = 9300078
+entry = 190081
+name = "Convict"
+level = 30
+display_id = 2146
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 34
+position = [84.0, 12.0, -26.4396]
+grounded = false
+orientation = 4.71
+text_id = 64175
+greeting = "I know your face."
+
+[[npc]]
+guid = 9300079
+entry = 190081
+name = "Convict"
+level = 30
+display_id = 2146
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 34
+position = [95.0, -12.0, -26.4396]
+grounded = false
+orientation = 1.57
+text_id = 64176
+greeting = "I know your face."
+
+[[npc]]
+guid = 9300080
+entry = 190081
+name = "Convict"
+level = 30
+display_id = 2146
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 34
+position = [106.0, 12.0, -26.4396]
+grounded = false
+orientation = 4.71
+text_id = 64177
+greeting = "I know your face."
+
+[[npc]]
+guid = 9300081
+entry = 190081
+name = "Convict"
+level = 30
+display_id = 2146
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 34
+position = [84.0, -12.0, -26.4396]
+grounded = false
+orientation = 1.57
+text_id = 64178
+greeting = "I know your face."

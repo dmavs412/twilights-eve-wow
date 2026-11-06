@@ -104,7 +104,7 @@ impl InWorld {
         if let Phase::Dungeon(id) = now {
             let door = phased::dungeon(id).and_then(|d| d.portal.door.as_ref());
             if let Some(door) = door.filter(|_| !self.doors_open.contains(&id)) {
-                events.push(self.refusal(door));
+                events.push(self.refusal(door, c.position));
                 self.teleport(c, door.outside, c.orientation, events);
                 return;
             }
@@ -570,7 +570,7 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) {
         for d in phased::content() {
-            let d_yd = if d.portal_map() == self.map {
+            let d_yd = if d.map == self.map {
                 flat_distance(d.portal.position, me)
             } else {
                 f32::INFINITY
@@ -646,7 +646,7 @@ impl InWorld {
         }
         let opened = c.doors_opened.contains(&door.entry);
         if !opened && c.inventory.count(door.opens_with) == 0 {
-            events.push(self.refusal(door));
+            events.push(self.refusal(door, c.position));
             return DoorClick::Ignored;
         }
         if !opened {
@@ -661,16 +661,25 @@ impl InWorld {
         }
     }
 
-    /// What tells the player `door` stays shut: its speaker says the sealed text when the
-    /// player sees them, else a notification shows it.
-    fn refusal(&self, door: &phased::Door) -> SessionEvent {
-        let speaker = door.speaker.and_then(|low| {
+    /// What tells the player at `me` that `door` stays shut: its speaker, an open-world creature
+    /// or a Hub NPC, says the sealed text when the player sees them, else a notification shows it.
+    fn refusal(&self, door: &phased::Door, me: [f32; 3]) -> SessionEvent {
+        let creature = door.speaker.and_then(|low| {
             self.mobs.iter().find(|m| {
                 m.spawn_row()
                     .is_some_and(|s| s.guid == low && s.phase == Phase::OpenWorld)
             })
         });
-        let Some(speaker) = speaker else {
+        // A Hub NPC streams in with the open world's view.
+        let hub = || {
+            let npc = crate::hub::spawned(door.speaker?, self.map)?;
+            (self.phase == Phase::OpenWorld && crate::hub::in_view(npc, me))
+                .then(|| (npc.guid(), npc.name.clone()))
+        };
+        let speaker = creature
+            .map(|m| (m.guid, m.template.name.clone()))
+            .or_else(hub);
+        let Some((guid, name)) = speaker else {
             return SessionEvent::Notification {
                 text: door.sealed_text.clone(),
             };
@@ -678,9 +687,9 @@ impl InWorld {
         SessionEvent::Chat(ChatMessage {
             chat_type: CHAT_MSG_MONSTER_SAY,
             language: 0,
-            sender_guid: speaker.guid,
+            sender_guid: guid,
             target_guid: 0,
-            sender_name: Some(speaker.template.name.clone()),
+            sender_name: Some(name),
             channel: None,
             text: door.sealed_text.clone(),
             chat_tag: 0,

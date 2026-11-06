@@ -1,6 +1,6 @@
-//! Phased Dungeons (ADR 0006): dungeons on the open world map, or on an instance map behind an
-//! entrance trigger (ADR 0032), each a set of footprint boxes in its own content file. A
-//! character standing in a box is in that dungeon's Phase and sees,
+//! Phased Dungeons (ADR 0006): dungeons on the open world map, or on an instance map behind a
+//! loading screen (ADR 0032, `crate::instance_map`), each a set of footprint boxes in its own
+//! content file. A character standing in a box is in that dungeon's Phase and sees,
 //! targets and fights only that Phase's creatures; everyone shares one Run per dungeon, which
 //! starts when the first character enters and resets the dungeon when the last one leaves.
 
@@ -10,7 +10,6 @@ use benilla_protocol::messages::ObjectType;
 use benilla_protocol::{EntityKind, ObjectFields, SessionEvent};
 use serde::Deserialize;
 
-use crate::dungeon::Trigger;
 use crate::fields::{
     float, guid_pairs, OBJECT_FIELD_ENTRY, OBJECT_FIELD_SCALE_X, OBJECT_FIELD_TYPE,
 };
@@ -275,8 +274,8 @@ pub(crate) struct Door {
     /// The item a character needs in their bags for their first opening.
     pub(crate) opens_with: u32,
     pub(crate) sealed_text: String,
-    /// The open-world creature, by low guid, who says `sealed_text` to a refused character in
-    /// place of the notification while that character sees them.
+    /// The open-world creature or Hub NPC, by low guid, who says `sealed_text` to a refused
+    /// character in place of the notification while that character sees them.
     #[serde(default)]
     pub(crate) speaker: Option<u32>,
 }
@@ -287,7 +286,7 @@ impl Door {
     }
 
     /// Its create, in the closed state: a door anyone can click, standing on `host`'s ground on
-    /// `map`.
+    /// an open-world `map`; on an instance map, with no terrain, at its written Z.
     pub(crate) fn create(&self, host: &dyn Host, map: u32) -> SessionEvent {
         gameobject_create(&GameObject {
             guid: self.guid(),
@@ -296,7 +295,7 @@ impl Door {
             type_id: GAMEOBJECT_TYPE_DOOR,
             flags: 0,
             faction: 0,
-            position: grounded_at(host, map, self.position, true),
+            position: grounded_at(host, map, self.position, crate::content::open_world(map)),
             orientation: self.orientation,
         })
     }
@@ -541,14 +540,9 @@ impl Dungeon {
         HIGHGUID_GAMEOBJECT << 48 | u64::from(self.id)
     }
 
-    /// The map its Portal stands on: the entrance's, at the door on the open world, for a
-    /// dungeon on an instance map; its own otherwise.
-    pub(crate) fn portal_map(&self) -> u32 {
-        self.entrance.as_ref().map_or(self.map, |e| e.map)
-    }
-
     /// The portal's create: a GameObject that only shows, never clicked, standing on `host`'s
-    /// ground.
+    /// ground on an open-world map; an instance map has no terrain, so there it keeps its
+    /// written Z.
     pub(crate) fn portal_create(&self, host: &dyn Host) -> SessionEvent {
         gameobject_create(&GameObject {
             guid: self.portal_guid(),
@@ -557,24 +551,15 @@ impl Dungeon {
             type_id: GENERIC,
             flags: NOT_SELECTABLE,
             faction: 0,
-            position: grounded_at(host, self.portal_map(), self.portal.position, true),
+            position: grounded_at(
+                host,
+                self.map,
+                self.portal.position,
+                crate::content::open_world(self.map),
+            ),
             orientation: self.portal.orientation,
         })
     }
-}
-
-/// The entrance or exit trigger of this `AreaTrigger.dbc` id, of the Phased Dungeon that has it.
-pub(crate) fn with_trigger(id: u32) -> Option<&'static Trigger> {
-    content()
-        .iter()
-        .flat_map(|d| [&d.entrance, &d.exit])
-        .flatten()
-        .find(|t| t.trigger == id)
-}
-
-/// The Phased Dungeon whose own map is `map`, when that is an instance map (ADR 0032).
-pub(crate) fn on_instance_map(map: u32) -> Option<&'static Dungeon> {
-    content().iter().find(|d| d.map == map && d.exit.is_some())
 }
 
 /// A GameObject as its create shows it, standing in `GO_STATE_READY`.
@@ -650,12 +635,6 @@ pub(crate) struct Dungeon {
     yaw: f32,
     footprint: Vec<Footprint>,
     pub(crate) portal: Portal,
-    /// On an instance map (ADR 0032): the trigger on the open world that worldports a character
-    /// in, and the one inside that sends them back out to the door. None on Eastern Kingdoms.
-    #[serde(default)]
-    pub(crate) entrance: Option<Trigger>,
-    #[serde(default)]
-    pub(crate) exit: Option<Trigger>,
     /// Where a probe drops a character into the dungeon: `[x, y, facing]`.
     #[serde(default)]
     start: Option<[f32; 3]>,
@@ -949,17 +928,18 @@ impl Dungeon {
     }
 
     /// Fails loading when its door names a `speaker` that is no open-world creature of `spawns`
-    /// on its map.
+    /// and no Hub NPC on its map.
     pub(crate) fn check_speaker(&self, spawns: &[crate::mobs::Spawn]) {
         let Some(speaker) = self.portal.door.as_ref().and_then(|door| door.speaker) else {
             return;
         };
         let spawned = spawns
             .iter()
-            .any(|s| s.guid == speaker && s.map == self.map && s.phase == Phase::OpenWorld);
+            .any(|s| s.guid == speaker && s.map == self.map && s.phase == Phase::OpenWorld)
+            || crate::hub::spawned(speaker, self.map).is_some();
         assert!(
             spawned,
-            "{}: door speaker {speaker} is no open-world creature",
+            "{}: door speaker {speaker} is no open-world creature or Hub NPC",
             self.name
         );
     }
@@ -1143,31 +1123,21 @@ pub(crate) fn content() -> &'static [Dungeon] {
             include_str!("../content/stormwind_keep.toml"),
             include_str!("../content/blackrock_stronghold.toml"),
             include_str!("../content/dreadmaul_rock.toml"),
-            include_str!("../content/stockade.toml"),
+            include_str!("../content/stockade_riot.toml"),
+            include_str!("../content/stockade_quiet_wing.toml"),
         ]
         .into_iter()
         .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
         .inspect(|d: &Dungeon| {
-            // On Eastern Kingdoms a dungeon is walked into; on an instance map it is worldported
-            // into by its entrance and out by its exit, which stands on that map (ADR 0032).
-            if d.map == crate::content::EASTERN_KINGDOMS {
-                assert!(
-                    d.entrance.is_none() && d.exit.is_none(),
-                    "{}: an entrance or exit on Eastern Kingdoms",
-                    d.name
-                );
-            } else {
-                let (Some(entrance), Some(exit)) = (&d.entrance, &d.exit) else {
-                    panic!("{}: on map {} with no entrance or exit", d.name, d.map);
-                };
-                assert!(
-                    entrance.to.map == d.map && exit.map == d.map,
-                    "{}: its entrance leads to map {} and its exit stands on map {}",
-                    d.name,
-                    entrance.to.map,
-                    exit.map
-                );
-            }
+            // A dungeon stands on Eastern Kingdoms, walked into, or on an instance map, whose
+            // own doors worldport a character in and out (ADR 0032).
+            assert!(
+                d.map == crate::content::EASTERN_KINGDOMS
+                    || crate::instance_map::of_map(d.map).is_some(),
+                "{}: map {} is not Eastern Kingdoms and no instance map",
+                d.name,
+                d.map
+            );
             for c in &d.creature {
                 for roll in &c.rolls {
                     roll.check(&format!("creature {}", c.guid));
@@ -1960,7 +1930,13 @@ mod lore_bible_dungeons {
                     c.guid
                 );
             }
-            assert!(d.levels.is_some(), "{}: a map mark", d.name);
+            // A dungeon makes a mark when it has levels and stands on no instance map, whose
+            // own mark stands at its door (ADR 0032).
+            assert!(
+                d.levels.is_some() && crate::instance_map::of_map(d.map).is_none(),
+                "{}: a map mark",
+                d.name
+            );
             let near = d
                 .footprint_points(1.0)
                 .into_iter()

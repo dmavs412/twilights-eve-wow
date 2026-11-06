@@ -160,22 +160,9 @@ pub fn placed() -> Vec<Placed> {
         }
         put(
             format!("Phased Dungeon {} portal", d.id),
-            d.portal_map(),
+            d.map,
             xy(&d.portal.position),
         );
-        for (name, t) in [("entrance", &d.entrance), ("exit", &d.exit)] {
-            let Some(t) = t else { continue };
-            put(
-                format!("Phased Dungeon {} {name} trigger", d.id),
-                t.map,
-                xy(&t.position),
-            );
-            put(
-                format!("Phased Dungeon {} {name} destination", d.id),
-                t.to.map,
-                xy(&t.to.position),
-            );
-        }
         if let Some(door) = &d.portal.door {
             put(
                 format!("Phased Dungeon {} door", d.id),
@@ -228,6 +215,20 @@ pub fn placed() -> Vec<Placed> {
             t.to.map,
             xy(&t.to.position),
         );
+    }
+    for m in crate::instance_map::content() {
+        for (name, t) in [("entrance", &m.entrance), ("exit", &m.exit)] {
+            put(
+                format!("Instance map {} {name} trigger", m.map),
+                t.map,
+                xy(&t.position),
+            );
+            put(
+                format!("Instance map {} {name} destination", m.map),
+                t.to.map,
+                xy(&t.to.position),
+            );
+        }
     }
     for (name, r) in [
         ("Hub respawn", super::death::Respawn::HUB),

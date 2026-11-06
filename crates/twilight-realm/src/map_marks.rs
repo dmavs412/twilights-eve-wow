@@ -224,13 +224,29 @@ pub(crate) fn marks(c: &Char, carts_locked: bool, window: u32) -> Vec<MapMark> {
             quests: Vec::new(),
         });
     }
+    // An instance map is marked at its door on the open world, by its own name and levels; a
+    // dungeon on it makes no mark of its own (ADR 0032).
+    for m in crate::instance_map::content() {
+        let [lo, hi] = m.levels;
+        out.push(MapMark {
+            map: m.entrance.map,
+            position: [m.entrance.position[0], m.entrance.position[1]],
+            guid: 0,
+            icon: MapIcon::Dungeon,
+            name: m.name.clone(),
+            subtitle: format!("Phased Dungeon, levels {lo}-{hi}"),
+            quests: Vec::new(),
+        });
+    }
     for d in phased::content() {
-        let Some([lo, hi]) = d.levels else {
+        let Some([lo, hi]) = d
+            .levels
+            .filter(|_| crate::instance_map::of_map(d.map).is_none())
+        else {
             continue;
         };
-        // A dungeon on an instance map is marked at its door on the open world.
         out.push(MapMark {
-            map: d.portal_map(),
+            map: d.map,
             position: [d.portal.position[0], d.portal.position[1]],
             guid: 0,
             icon: MapIcon::Dungeon,

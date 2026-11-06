@@ -60,6 +60,9 @@ removed_guids = [
   10512, 10513, 10514, 10515, 10516, 10517, 10518, 10519, 10520, 10521, 10522, 10523, 10524,
   10525, 10526, 10527, 10528, 14740, 16182, 16365, 30018, 33821, 42893, 43667, 45707, 51984,
   54614, 54625, 79748, 79749,
+  # Warden Thelwater (1719) at the city's jail door: he now stands inside the Stockade, at the
+  # crossing, as a Hub NPC on map 34 (hub.toml 9300072, #581).
+  89325,
 ]
 
 # Watch Officer Harlan Pike (#574), beside the Writ Board in the Trade District; he takes every

@@ -68,6 +68,7 @@ mod group;
 mod herbs;
 mod hub;
 mod inn;
+mod instance_map;
 mod inventory;
 mod items;
 mod looting;

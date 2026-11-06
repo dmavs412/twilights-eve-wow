@@ -11,14 +11,14 @@ use crate::content::{EASTERN_KINGDOMS, ELWYNN_FOREST, THE_BARRENS};
 use crate::dungeon::{self, Place};
 use crate::equipment;
 use crate::fields::*;
+use crate::instance_map;
 use crate::mobs::{self, Mob};
-use crate::phased;
 use crate::rules::xp;
 
 impl InWorld {
-    /// Whether the player is inside the Dungeon, or on a Phased Dungeon's instance map.
+    /// Whether the player is inside the Dungeon, or on an instance map (ADR 0032).
     pub(crate) fn in_dungeon(&self) -> bool {
-        self.map == dungeon::content().map || phased::on_instance_map(self.map).is_some()
+        self.map == dungeon::content().map || instance_map::of_map(self.map).is_some()
     }
 
     /// Whether a worldport is waiting for the client's ack: until then the player is out of the
@@ -28,8 +28,8 @@ impl InWorld {
     }
 
     /// `CMSG_AREATRIGGER`: the client walked into trigger `id`. The entrance of the Dungeon or of
-    /// a Phased Dungeon on an instance map takes the player in, its exit out; any other trigger
-    /// does nothing. Whether the player was moved.
+    /// an instance map takes the player in, its exit out; any other trigger does nothing.
+    /// Whether the player was moved.
     pub(crate) fn area_trigger(
         &mut self,
         id: u32,
@@ -40,7 +40,7 @@ impl InWorld {
         let trigger = [&d.entrance, &d.exit]
             .into_iter()
             .find(|t| t.trigger == id)
-            .or_else(|| phased::with_trigger(id));
+            .or_else(|| instance_map::with_trigger(id));
         let Some(trigger) = trigger else {
             return false;
         };
@@ -81,11 +81,10 @@ impl InWorld {
                 position: d.entrance.to.position,
                 orientation: d.entrance.to.orientation,
             };
-        } else if let Some((p, out)) =
-            phased::on_instance_map(to.map).and_then(|p| Some((p, p.exit.as_ref()?.to)))
-        {
+        } else if let Some(m) = instance_map::of_map(to.map) {
             // Dying inside ends the Run, and Release Spirit brings the player out of the door.
-            c.zone = p.zone.unwrap_or(c.zone);
+            let out = m.exit.to;
+            c.zone = m.zone;
             self.respawn = Respawn {
                 map: out.map,
                 position: out.position,
@@ -109,9 +108,9 @@ impl InWorld {
     }
 
     /// `MSG_MOVE_WORLDPORT_ACK`: the client has loaded the new map. The player is created again,
-    /// and inside the Dungeon a fresh copy of its mobs; outside, The Barrens stream back in. On a
-    /// Phased Dungeon's instance map the next tick steps the player into its Phase, and its Run's
-    /// creatures stream in with the view.
+    /// and inside the Dungeon a fresh copy of its mobs; outside, The Barrens stream back in. On an
+    /// instance map the player stands in its open world, whose Hub NPCs stream in with the view;
+    /// walking into a dungeon's footprint there steps them into its Phase, as on the continents.
     pub(crate) fn worldport_ack(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
         if !self.transfer {
             return;
@@ -162,14 +161,14 @@ fn instance(map: u32) -> Vec<Mob> {
         .collect()
 }
 
-/// Where a character saved inside the Dungeon, or on a Phased Dungeon's instance map, logs back
-/// in: at its exit's destination outside, since a run does not outlast the session.
+/// Where a character saved inside the Dungeon, or on an instance map, logs back in: at its exit's
+/// destination outside, since a run does not outlast the session.
 pub(crate) fn come_out(c: &mut Char) {
     let d = dungeon::content();
     let out = if c.map == d.map {
         Some(d.exit.to)
     } else {
-        phased::on_instance_map(c.map).and_then(|p| Some(p.exit.as_ref()?.to))
+        instance_map::of_map(c.map).map(|m| m.exit.to)
     };
     if let Some(to) = out {
         c.map = to.map;
