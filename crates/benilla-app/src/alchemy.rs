@@ -1,15 +1,17 @@
 //! The Alchemy window's host (ADR 0025, spec #522, `assets/ui/Alchemy.xml`): the realm's
 //! `AlchemyBench`, `AlchemyPreview` and `AlchemyMade` become the views Lua reads, `AlchemyClosed`
-//! hides the window, and every `Alchemy*` call the window queued goes back as a
-//! `RealmCommand::Alchemy`. The client computes no result.
+//! hides the window, `AlchemyJournal` feeds the Journal's Alchemy bookmark, and every `Alchemy*`
+//! call the window queued goes back as a `RealmCommand::Alchemy` (the Journal's withdraw as
+//! `RealmCommand::WithdrawFromJournal`). The client computes no result.
 
 use bevy::prelude::*;
 
-use benilla_protocol::{AlchemyToxic, AlchemyVial, SessionEvent};
+use benilla_protocol::{AlchemyToxic, AlchemyVial, SatchelPick, SessionEvent};
 use benilla_ui::script::{
-    AlchemyBenchView, AlchemyCall, AlchemyGradeView, AlchemyMadeView, AlchemyMakeView,
-    AlchemyMaterialView, AlchemyPreviewView, AlchemyRumourView, AlchemyToxicView, AlchemyVialView,
-    UiScript,
+    AlchemyBenchView, AlchemyCall, AlchemyFlaskView, AlchemyGradePageView, AlchemyGradeView,
+    AlchemyJournalView, AlchemyMadeView, AlchemyMakeView, AlchemyMaterialView, AlchemyNoteView,
+    AlchemyPreviewView, AlchemyRumourView, AlchemyToxicView, AlchemyVialView, BrewLogView,
+    SatchelSlot, UiScript,
 };
 use twilight_realm::{AlchemyAction, RealmCommand};
 
@@ -30,7 +32,9 @@ struct Alchemy {
     view: Option<AlchemyBenchView>,
     preview: Option<AlchemyPreviewView>,
     made: Option<AlchemyMadeView>,
-    /// Any of the three changed since the last push.
+    /// The last Alchemy Journal the realm sent.
+    journal: AlchemyJournalView,
+    /// Any of the four changed since the last push.
     changed: bool,
     /// Events for Lua, oldest first.
     events: Vec<&'static str>,
@@ -206,9 +210,99 @@ fn made_of(event: &SessionEvent) -> Option<AlchemyMadeView> {
     })
 }
 
+/// The view of an `AlchemyJournal` event, field for field; `None` for any other event.
+fn journal_of(event: &SessionEvent) -> Option<AlchemyJournalView> {
+    let SessionEvent::AlchemyJournal {
+        satchel,
+        notes,
+        grades,
+        flasks,
+        log,
+        open,
+        last,
+    } = event
+    else {
+        return None;
+    };
+    Some(AlchemyJournalView {
+        satchel: satchel
+            .iter()
+            .map(|r| SatchelSlot {
+                item: r.item,
+                count: r.count,
+                wear: r.wear,
+                tackle: r.tackle,
+            })
+            .collect(),
+        notes: notes
+            .iter()
+            .map(|n| AlchemyNoteView {
+                item: n.item,
+                uses: n.uses,
+                level: n.level,
+                rarity: n.rarity,
+                zones: n.zones.clone(),
+                values: n
+                    .values
+                    .iter()
+                    .map(|v| (v.name.clone(), v.points))
+                    .collect(),
+                budget: n.budget,
+            })
+            .collect(),
+        grades: grades
+            .iter()
+            .map(|g| AlchemyGradePageView {
+                family: g.family.clone(),
+                key: g.key.clone(),
+                grade: g.grade,
+                name: g.name.clone(),
+                base: g.base.clone(),
+                learned: g.learned,
+                rumoured: g.rumoured,
+                threshold: g.threshold,
+                steps: g.steps,
+                effect: g.effect.clone(),
+            })
+            .collect(),
+        flasks: flasks
+            .iter()
+            .map(|f| AlchemyFlaskView {
+                key: f.key.clone(),
+                name: f.name.clone(),
+                stats: f.stats.clone(),
+                made: f.made,
+            })
+            .collect(),
+        log: log
+            .iter()
+            .map(|l| BrewLogView {
+                when: l.when.clone(),
+                make: l.make.clone(),
+                inputs: l.inputs.clone(),
+                sums: l.sums.clone(),
+                toxic: l.toxic.clone(),
+                result: l.result,
+                note: l.note.clone(),
+            })
+            .collect(),
+        open: open.clone(),
+        last: last.clone(),
+    })
+}
+
 /// The realm command a queued call stands for.
 fn command_of(call: AlchemyCall) -> RealmCommand {
     RealmCommand::Alchemy(match call {
+        AlchemyCall::Withdraw { item, count } => {
+            return RealmCommand::WithdrawFromJournal {
+                pick: SatchelPick {
+                    item,
+                    durability: None,
+                },
+                count,
+            }
+        }
         AlchemyCall::Preview {
             make,
             items,
@@ -258,10 +352,15 @@ fn run_alchemy(mut inbox: ResMut<AlchemyInbox>, mut alchemy: ResMut<Alchemy>) {
                 a.made = None;
                 a.events.push("ALCHEMY_CLOSED");
             }
+            SessionEvent::AlchemyJournal { .. } => {
+                a.journal = journal_of(&event).unwrap_or_default();
+                a.events.push("ALCHEMY_JOURNAL_UPDATE");
+            }
             SessionEvent::LoggedOut => {
                 a.view = None;
                 a.preview = None;
                 a.made = None;
+                a.journal = AlchemyJournalView::default();
             }
             _ => continue,
         }
@@ -286,6 +385,7 @@ fn feed_alchemy(
         script.set_alchemy(alchemy.view.clone());
         script.set_alchemy_preview(alchemy.preview.clone());
         script.set_alchemy_made(alchemy.made.clone());
+        script.set_alchemy_journal(alchemy.journal.clone());
     }
     for call in script.take_alchemy_calls() {
         outbox.0.push(command_of(call));
@@ -318,7 +418,8 @@ impl Plugin for AlchemyPlugin {
 mod tests {
     use super::*;
     use benilla_protocol::{
-        AlchemyGrade, AlchemyMakeRow, AlchemyMaterial, AlchemyRumour, AlchemyValue,
+        AlchemyFlaskRow, AlchemyGrade, AlchemyGradePage, AlchemyMakeRow, AlchemyMaterial,
+        AlchemyNote, AlchemyRumour, AlchemyValue, BrewLogRow, SatchelRow,
     };
 
     const PEACEBLOOM: u32 = 2447;
@@ -449,6 +550,153 @@ mod tests {
         );
         assert_eq!(view.sludge, 3);
         assert!(view_of(&SessionEvent::LoggedOut).is_none());
+    }
+
+    fn journal_event() -> SessionEvent {
+        SessionEvent::AlchemyJournal {
+            satchel: vec![SatchelRow {
+                item: 990101,
+                count: 3,
+                wear: None,
+                tackle: false,
+            }],
+            notes: vec![AlchemyNote {
+                item: PEACEBLOOM,
+                uses: 5,
+                level: 1,
+                rarity: 0,
+                zones: "Elwynn".into(),
+                values: vec![AlchemyValue {
+                    name: "Restorative".into(),
+                    points: Some(2),
+                }],
+                budget: 2,
+            }],
+            grades: vec![AlchemyGradePage {
+                family: "potion".into(),
+                key: "Restorative".into(),
+                grade: 0,
+                name: "Minor Healing Potion".into(),
+                base: "Healing Potion".into(),
+                learned: true,
+                rumoured: false,
+                threshold: 4,
+                steps: [2, 1, 0, 0, 0],
+                effect: "Heals 70 to 90.".into(),
+            }],
+            flasks: vec![AlchemyFlaskRow {
+                key: "Fortifying+Volatile".into(),
+                name: "Flask of the Bulwark".into(),
+                stats: "Armour and Attack power".into(),
+                made: 1,
+            }],
+            log: vec![BrewLogRow {
+                when: "Day 2, 08:00".into(),
+                make: "Potion".into(),
+                inputs: vec![(PEACEBLOOM, 2)],
+                sums: "Restorative 4".into(),
+                toxic: String::new(),
+                result: 118,
+                note: "learned".into(),
+            }],
+            open: vec!["potion".into(), "tincture".into()],
+            last: "Minor Healing Potion".into(),
+        }
+    }
+
+    #[test]
+    fn an_alchemy_journal_event_becomes_the_journal_view_field_for_field() {
+        let view = journal_of(&journal_event()).unwrap();
+        assert_eq!(
+            view.satchel,
+            [SatchelSlot {
+                item: 990101,
+                count: 3,
+                wear: None,
+                tackle: false,
+            }]
+        );
+        assert_eq!(
+            view.notes,
+            [AlchemyNoteView {
+                item: PEACEBLOOM,
+                uses: 5,
+                level: 1,
+                rarity: 0,
+                zones: "Elwynn".into(),
+                values: vec![("Restorative".into(), Some(2))],
+                budget: 2,
+            }]
+        );
+        assert_eq!(
+            view.grades,
+            [AlchemyGradePageView {
+                family: "potion".into(),
+                key: "Restorative".into(),
+                grade: 0,
+                name: "Minor Healing Potion".into(),
+                base: "Healing Potion".into(),
+                learned: true,
+                rumoured: false,
+                threshold: 4,
+                steps: [2, 1, 0, 0, 0],
+                effect: "Heals 70 to 90.".into(),
+            }]
+        );
+        assert_eq!(
+            view.flasks,
+            [AlchemyFlaskView {
+                key: "Fortifying+Volatile".into(),
+                name: "Flask of the Bulwark".into(),
+                stats: "Armour and Attack power".into(),
+                made: 1,
+            }]
+        );
+        assert_eq!(
+            view.log,
+            [BrewLogView {
+                when: "Day 2, 08:00".into(),
+                make: "Potion".into(),
+                inputs: vec![(PEACEBLOOM, 2)],
+                sums: "Restorative 4".into(),
+                toxic: String::new(),
+                result: 118,
+                note: "learned".into(),
+            }]
+        );
+        assert_eq!(view.open, ["potion", "tincture"]);
+        assert_eq!(view.last, "Minor Healing Potion");
+        assert!(journal_of(&SessionEvent::AlchemyClosed).is_none());
+    }
+
+    #[test]
+    fn the_feed_pushes_the_journal_and_sends_a_withdraw() {
+        use bevy::ecs::system::RunSystemOnce;
+        let mut world = World::new();
+        world.init_resource::<AlchemyOutbox>();
+        world.init_resource::<Alchemy>();
+        world.insert_resource(AlchemyInbox(vec![journal_event()]));
+        world.insert_non_send_resource(UiScript::new().unwrap());
+        world.run_system_once(run_alchemy).unwrap();
+        world.run_system_once(feed_alchemy).unwrap();
+        let script = world.non_send_resource::<UiScript>();
+        assert_eq!(
+            script
+                .eval::<String>("local s, n, g, f, l, o = GetAlchemyJournal() return s .. n .. g .. f .. l .. o")
+                .unwrap(),
+            "111112"
+        );
+        world
+            .non_send_resource_mut::<UiScript>()
+            .run("WithdrawAlchemyItem(1, true)")
+            .unwrap();
+        world.run_system_once(feed_alchemy).unwrap();
+        let sent = &world.resource::<AlchemyOutbox>().0;
+        assert!(matches!(
+            sent.as_slice(),
+            [RealmCommand::WithdrawFromJournal { pick, count: 1 }]
+                if pick.item == 990101 && pick.durability.is_none()
+        ));
     }
 
     #[test]

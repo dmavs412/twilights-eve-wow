@@ -523,13 +523,14 @@ fn pump(
             continue;
         }
         // The open alchemy table, its preview, a make's result and its close go to the Alchemy
-        // window (ADR 0025).
+        // window (ADR 0025), and the Alchemy Journal to the same feed.
         if matches!(
             event,
             SessionEvent::AlchemyBench { .. }
                 | SessionEvent::AlchemyPreview { .. }
                 | SessionEvent::AlchemyMade { .. }
                 | SessionEvent::AlchemyClosed
+                | SessionEvent::AlchemyJournal { .. }
         ) {
             if let Some(inbox) = reel.11.as_deref_mut() {
                 inbox.0.push(event);

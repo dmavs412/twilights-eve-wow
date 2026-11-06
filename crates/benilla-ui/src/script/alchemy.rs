@@ -142,10 +142,80 @@ pub struct AlchemyMadeView {
     pub lines: Vec<(u8, String)>,
 }
 
+/// One herb's Herb Note, as the realm's `AlchemyNote`. `rarity` is 0 common to 3 legendary;
+/// `values` are `(name, points)` with `None` while only the name shows; `budget` is 0 until the
+/// values show.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct AlchemyNoteView {
+    pub item: u32,
+    pub uses: u32,
+    pub level: u8,
+    pub rarity: u8,
+    pub zones: String,
+    pub values: Vec<(String, Option<u32>)>,
+    pub budget: u32,
+}
+
+/// One grade's Journal page, as the realm's `AlchemyGradePage`. `steps` counts the makes at each
+/// Strength Step, x1 to x2; `threshold` is 0 unless learned or rumoured.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct AlchemyGradePageView {
+    pub family: String,
+    pub key: String,
+    pub grade: u8,
+    pub name: String,
+    pub base: String,
+    pub learned: bool,
+    pub rumoured: bool,
+    pub threshold: u32,
+    pub steps: [u32; 5],
+    pub effect: String,
+}
+
+/// One flask kind and how many were made, as the realm's `AlchemyFlaskRow`.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct AlchemyFlaskView {
+    pub key: String,
+    pub name: String,
+    pub stats: String,
+    pub made: u32,
+}
+
+/// One Brew Log line, as the realm's `BrewLogRow`. `inputs` are `(item, count)`; `toxic` is "" for
+/// a clean make.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct BrewLogView {
+    pub when: String,
+    pub make: String,
+    pub inputs: Vec<(u32, u32)>,
+    pub sums: String,
+    pub toxic: String,
+    pub result: u32,
+    pub note: String,
+}
+
+/// The Alchemy Journal, field for field as the realm's `AlchemyJournal` event. `log` is newest
+/// first; `open` the make keys open.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct AlchemyJournalView {
+    pub satchel: Vec<super::SatchelSlot>,
+    pub notes: Vec<AlchemyNoteView>,
+    pub grades: Vec<AlchemyGradePageView>,
+    pub flasks: Vec<AlchemyFlaskView>,
+    pub log: Vec<BrewLogView>,
+    pub open: Vec<String>,
+    pub last: String,
+}
+
 /// One call the window queued for the host, carrying the realm's `AlchemyAction` fields. `items`
-/// are item entries; `target` is "potion|Restorative|Minor", or "" for none.
+/// are item entries; `target` is "potion|Restorative|Minor", or "" for none. `Withdraw` is the
+/// Journal's: `count` of the Alchemy Satchel's `item` back to the bags.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AlchemyCall {
+    Withdraw {
+        item: u32,
+        count: u32,
+    },
     Preview {
         make: String,
         items: Vec<u32>,
@@ -179,6 +249,11 @@ impl super::UiScript {
     /// Push the last make's result, as `GetAlchemyMade()` answers.
     pub fn set_alchemy_made(&mut self, view: Option<AlchemyMadeView>) {
         self.model_mut().alchemy_made = view;
+    }
+
+    /// Push the Alchemy Journal `GetAlchemyJournal()` and its siblings answer.
+    pub fn set_alchemy_journal(&mut self, view: AlchemyJournalView) {
+        self.model_mut().alchemy_journal = view;
     }
 
     /// Drain the `Alchemy*` calls since the last drain, oldest first.
@@ -573,6 +648,183 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
             Ok(())
         })?,
     )?;
+    install_journal(lua)
+}
+
+/// Register the Alchemy Journal's getters and `WithdrawAlchemyItem`.
+fn install_journal(lua: &Lua) -> mlua::Result<()> {
+    let g = lua.globals();
+    // GetAlchemyJournal(): numSatchel, numNotes, numGrades, numFlasks, numLog, numOpen, last.
+    g.set(
+        "GetAlchemyJournal",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let j = &model.alchemy_journal;
+            Ok(MultiValue::from_vec(vec![
+                num(j.satchel.len() as f64),
+                num(j.notes.len() as f64),
+                num(j.grades.len() as f64),
+                num(j.flasks.len() as f64),
+                num(j.log.len() as f64),
+                num(j.open.len() as f64),
+                text(lua, &j.last)?,
+            ]))
+        })?,
+    )?;
+    // IsAlchemyMakeOpen(key): whether the make `key` ("tincture") is open.
+    g.set(
+        "IsAlchemyMakeOpen",
+        lua.create_function(|lua, key: Option<String>| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(key.is_some_and(|k| model.alchemy_journal.open.contains(&k)))
+        })?,
+    )?;
+    // GetAlchemySatchelItem(i): item, count.
+    g.set(
+        "GetAlchemySatchelItem",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some(row) = index(i).and_then(|i| model.alchemy_journal.satchel.get(i)) else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![num(row.item), num(row.count)]))
+        })?,
+    )?;
+    // GetAlchemyNote(i): item, uses, level, rarity, zones, budget, numValues.
+    g.set(
+        "GetAlchemyNote",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some(n) = index(i).and_then(|i| model.alchemy_journal.notes.get(i)) else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![
+                num(n.item),
+                num(n.uses),
+                num(n.level),
+                num(n.rarity),
+                text(lua, &n.zones)?,
+                num(n.budget),
+                num(n.values.len() as f64),
+            ]))
+        })?,
+    )?;
+    // GetAlchemyNoteValue(i, j): name, points; nil points while unknown.
+    g.set(
+        "GetAlchemyNoteValue",
+        lua.create_function(|lua, (i, j): (i64, i64)| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let v = index(i)
+                .and_then(|i| model.alchemy_journal.notes.get(i))
+                .zip(index(j))
+                .and_then(|(n, j)| n.values.get(j));
+            let Some((name, points)) = v else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![
+                text(lua, name)?,
+                points.map_or(Value::Nil, num),
+            ]))
+        })?,
+    )?;
+    // GetAlchemyGradePage(i): family, key, grade, name, base, learned, rumoured, threshold,
+    // step1, step2, step3, step4, step5, effect.
+    g.set(
+        "GetAlchemyGradePage",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some(p) = index(i).and_then(|i| model.alchemy_journal.grades.get(i)) else {
+                return Ok(MultiValue::new());
+            };
+            let mut out = vec![
+                text(lua, &p.family)?,
+                text(lua, &p.key)?,
+                num(p.grade),
+                text(lua, &p.name)?,
+                text(lua, &p.base)?,
+                Value::Boolean(p.learned),
+                Value::Boolean(p.rumoured),
+                num(p.threshold),
+            ];
+            out.extend(p.steps.iter().map(|&s| num(s)));
+            out.push(text(lua, &p.effect)?);
+            Ok(MultiValue::from_vec(out))
+        })?,
+    )?;
+    // GetAlchemyFlask(i): key, name, stats, made.
+    g.set(
+        "GetAlchemyFlask",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some(f) = index(i).and_then(|i| model.alchemy_journal.flasks.get(i)) else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![
+                text(lua, &f.key)?,
+                text(lua, &f.name)?,
+                text(lua, &f.stats)?,
+                num(f.made),
+            ]))
+        })?,
+    )?;
+    // GetAlchemyLog(i): when, make, sums, toxic, result, note, numInputs; newest first.
+    g.set(
+        "GetAlchemyLog",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some(l) = index(i).and_then(|i| model.alchemy_journal.log.get(i)) else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![
+                text(lua, &l.when)?,
+                text(lua, &l.make)?,
+                text(lua, &l.sums)?,
+                text(lua, &l.toxic)?,
+                num(l.result),
+                text(lua, &l.note)?,
+                num(l.inputs.len() as f64),
+            ]))
+        })?,
+    )?;
+    // GetAlchemyLogInput(i, j): item, count.
+    g.set(
+        "GetAlchemyLogInput",
+        lua.create_function(|lua, (i, j): (i64, i64)| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let input = index(i)
+                .and_then(|i| model.alchemy_journal.log.get(i))
+                .zip(index(j))
+                .and_then(|(l, j)| l.inputs.get(j));
+            let Some(&(item, count)) = input else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![num(item), num(count)]))
+        })?,
+    )?;
+    // WithdrawAlchemyItem(i, one): queues moving Satchel row `i` (the whole stack, or one) to
+    // the bags.
+    g.set(
+        "WithdrawAlchemyItem",
+        lua.create_function(|lua, (i, one): (i64, Option<bool>)| {
+            let row = {
+                let model = lua.app_data_ref::<Model>().expect("model app_data");
+                index(i)
+                    .and_then(|i| model.alchemy_journal.satchel.get(i))
+                    .copied()
+            };
+            if let Some(row) = row {
+                let count = if one == Some(true) { 1 } else { row.count };
+                queue(
+                    lua,
+                    AlchemyCall::Withdraw {
+                        item: row.item,
+                        count,
+                    },
+                );
+            }
+            Ok(())
+        })?,
+    )?;
     Ok(())
 }
 
@@ -597,5 +849,84 @@ mod tests {
             Some("x1")
         );
         assert_eq!(step_of("Vendor junk."), None);
+    }
+
+    #[test]
+    fn the_journal_getters_read_the_pushed_journal() {
+        let mut s = super::super::UiScript::new().unwrap();
+        s.set_alchemy_journal(AlchemyJournalView {
+            satchel: vec![super::super::SatchelSlot {
+                item: 990001,
+                count: 4,
+                ..Default::default()
+            }],
+            notes: vec![AlchemyNoteView {
+                item: 2447,
+                uses: 2,
+                level: 1,
+                rarity: 0,
+                zones: "Elwynn".into(),
+                values: vec![("Restorative".into(), None)],
+                budget: 0,
+            }],
+            grades: vec![AlchemyGradePageView {
+                family: "potion".into(),
+                key: "Restorative".into(),
+                steps: [2, 0, 1, 0, 0],
+                threshold: 4,
+                learned: true,
+                ..Default::default()
+            }],
+            log: vec![BrewLogView {
+                inputs: vec![(2447, 2)],
+                sums: "Restorative 4".into(),
+                ..Default::default()
+            }],
+            open: vec!["potion".into()],
+            last: "Minor Healing Potion".into(),
+            ..Default::default()
+        });
+        let said = |lua: &str| s.eval::<String>(lua).unwrap();
+        assert_eq!(
+            said(
+                "local a, b, c, d, e, f, last = GetAlchemyJournal() \
+                 return a .. b .. c .. d .. e .. f .. last"
+            ),
+            "111011Minor Healing Potion"
+        );
+        assert_eq!(
+            said("return tostring(IsAlchemyMakeOpen('potion')) .. tostring(IsAlchemyMakeOpen('flask'))"),
+            "truefalse"
+        );
+        assert_eq!(
+            said("local n, p = GetAlchemyNoteValue(1, 1) return n .. tostring(p)"),
+            "Restorativenil"
+        );
+        assert_eq!(
+            said(
+                "local f, k, g, _, _, l, _, t, s1, s2, s3 = GetAlchemyGradePage(1) \
+                 return f .. k .. g .. tostring(l) .. t .. s1 .. s2 .. s3"
+            ),
+            "potionRestorative0true4201"
+        );
+        assert_eq!(
+            said("local i, c = GetAlchemyLogInput(1, 1) return i .. 'x' .. c"),
+            "2447x2"
+        );
+        s.run("WithdrawAlchemyItem(1) WithdrawAlchemyItem(1, true) WithdrawAlchemyItem(2)")
+            .unwrap();
+        assert_eq!(
+            s.take_alchemy_calls(),
+            vec![
+                AlchemyCall::Withdraw {
+                    item: 990001,
+                    count: 4
+                },
+                AlchemyCall::Withdraw {
+                    item: 990001,
+                    count: 1
+                },
+            ]
+        );
     }
 }

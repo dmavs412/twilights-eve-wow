@@ -302,6 +302,8 @@ pub(crate) struct Model {
     pub(crate) alchemy_made: Option<super::AlchemyMadeView>,
     /// The `Alchemy*` calls since the host last drained them.
     pub(crate) alchemy_calls: Vec<super::AlchemyCall>,
+    /// The Alchemy Journal the `GetAlchemyJournal` getters read, pushed by the host.
+    pub(crate) alchemy_journal: super::AlchemyJournalView,
     /// The open kitchen the `GetKitchen*` getters read, pushed by the host.
     pub(crate) kitchen: Option<super::KitchenView>,
     /// What the filled pot would cook, and the last cook's result, pushed by the host.
@@ -1189,6 +1191,7 @@ impl Model {
             alchemy_preview: None,
             alchemy_made: None,
             alchemy_calls: Vec::new(),
+            alchemy_journal: Default::default(),
             kitchen: None,
             kitchen_prediction: None,
             kitchen_cooked: None,

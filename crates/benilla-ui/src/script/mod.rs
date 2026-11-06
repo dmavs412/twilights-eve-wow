@@ -156,8 +156,9 @@ pub use addon::AddOnInfo;
 pub use addon_enable::EnableHash;
 pub use addon_message::{AddonDistribution, AddonSend};
 pub use alchemy::{
-    AlchemyBenchView, AlchemyCall, AlchemyGradeView, AlchemyMadeView, AlchemyMakeView,
-    AlchemyMaterialView, AlchemyPreviewView, AlchemyRumourView, AlchemyToxicView, AlchemyVialView,
+    AlchemyBenchView, AlchemyCall, AlchemyFlaskView, AlchemyGradePageView, AlchemyGradeView,
+    AlchemyJournalView, AlchemyMadeView, AlchemyMakeView, AlchemyMaterialView, AlchemyNoteView,
+    AlchemyPreviewView, AlchemyRumourView, AlchemyToxicView, AlchemyVialView, BrewLogView,
 };
 pub use auction::{
     AuctionBid, AuctionCategory, AuctionHighBidder, AuctionItemRow, AuctionListState, AuctionQuery,
