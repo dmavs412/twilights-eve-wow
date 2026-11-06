@@ -1,7 +1,8 @@
-//! The three Dungeon pools and their bosses' rolls (#455): Jasperlode (entries 905000 to 905019),
-//! Azora (905020 to 905039) and Hogger's camp (905040 to 905059 and the four Capstone Chests), and
-//! the nine epics 905900 to 905908. The phased harness of `northshire_abbey.rs` cannot kill a
-//! boss in a dungeon cheaply, so these assert the `rolls` data: chances, lists, no stand-in.
+//! The Dungeon pools and their bosses' rolls (#455): Jasperlode (entries 905000 to 905019), Azora
+//! (905020 to 905039) and Hogger's camp (905040 to 905059 and the four Capstone Chests), and the
+//! nine epics 905900 to 905908; then the Stockade's two sets (#579): the riot (905060 to 905079)
+//! and the quiet wing (905080 to 905099). The phased harness of `northshire_abbey.rs` cannot kill
+//! a boss in a dungeon cheaply, so these assert the `rolls` data: chances, lists, no stand-in.
 
 use std::collections::HashMap;
 
@@ -10,6 +11,8 @@ use toml::Value;
 const JASPERLODE: &str = include_str!("../content/jasperlode.toml");
 const AZORA: &str = include_str!("../content/azora.toml");
 const FOREST_EDGE: &str = include_str!("../content/forest_edge.toml");
+const STOCKADE_RIOT: &str = include_str!("../content/stockade_riot.toml");
+const STOCKADE_QUIET_WING: &str = include_str!("../content/stockade_quiet_wing.toml");
 const MOBS: &str = include_str!("../content/mobs.toml");
 const GEAR: &str = include_str!("../content/gear.toml");
 
@@ -94,6 +97,8 @@ fn range(from: i64, to: i64) -> Vec<i64> {
 
 const J20: (i64, i64) = (905000, 905019);
 const A20: (i64, i64) = (905020, 905039);
+const RIOT20: (i64, i64) = (905060, 905079);
+const QUIET20: (i64, i64) = (905080, 905099);
 
 fn hogger_pool() -> Vec<i64> {
     let mut v = range(905040, 905059);
@@ -203,10 +208,22 @@ fn hogger_rolls_an_epic_or_one_of_twenty_four_and_his_template_rolls_nothing() {
 #[test]
 fn every_dungeon_roll_names_a_sheet_row_of_the_right_quality_and_level() {
     let rows = rows();
-    let pools: [(&str, &str, Vec<i64>, i64); 3] = [
+    let pools: [(&str, &str, Vec<i64>, i64); 5] = [
         ("jasperlode", JASPERLODE, range(J20.0, J20.1), 18),
         ("azora", AZORA, range(A20.0, A20.1), 22),
         ("forest_edge", FOREST_EDGE, range(905040, 905059), 30),
+        (
+            "stockade_riot",
+            STOCKADE_RIOT,
+            range(RIOT20.0, RIOT20.1),
+            34,
+        ),
+        (
+            "stockade_quiet_wing",
+            STOCKADE_QUIET_WING,
+            range(QUIET20.0, QUIET20.1),
+            40,
+        ),
     ];
     for (name, _, ids, level) in &pools {
         for id in ids {
@@ -216,7 +233,13 @@ fn every_dungeon_roll_names_a_sheet_row_of_the_right_quality_and_level() {
     for id in range(905900, 905908) {
         assert_eq!(rows.get(&id).map(|r| r.0), Some(4), "epic {id}");
     }
-    for text in [JASPERLODE, AZORA, FOREST_EDGE] {
+    for text in [
+        JASPERLODE,
+        AZORA,
+        FOREST_EDGE,
+        STOCKADE_RIOT,
+        STOCKADE_QUIET_WING,
+    ] {
         for c in creatures(&parse(text)) {
             for (_, list) in rolls(c) {
                 for id in list {
@@ -233,7 +256,73 @@ fn no_dungeon_file_names_the_abbots_stand_in() {
         ("jasperlode", JASPERLODE),
         ("azora", AZORA),
         ("forest_edge", FOREST_EDGE),
+        ("stockade_riot", STOCKADE_RIOT),
+        ("stockade_quiet_wing", STOCKADE_QUIET_WING),
     ] {
         assert!(!text.contains("900105"), "{name} still names 900105");
+    }
+}
+
+/// The one boss row of `entry` in a dungeon file.
+fn boss<'a>(file: &'a Value, entry: i64) -> &'a Value {
+    let found: Vec<_> = creatures(file)
+        .into_iter()
+        .filter(|c| entry_of(c) == entry)
+        .collect();
+    assert_eq!(found.len(), 1, "boss {entry}");
+    found[0]
+}
+
+#[test]
+fn the_stockade_bosses_roll_their_wings_twenty_and_no_epic() {
+    let riot = parse(STOCKADE_RIOT);
+    let quiet = parse(STOCKADE_QUIET_WING);
+    // Varl Cutter and Sister Quill half the time, Captain Rook and the Hush always.
+    for (file, entry, chance, set) in [
+        (&riot, 97202, 50, RIOT20),
+        (&riot, 97204, 100, RIOT20),
+        (&quiet, 97209, 50, QUIET20),
+        (&quiet, 97210, 100, QUIET20),
+    ] {
+        let b = boss(file, entry);
+        assert_eq!(
+            rolls(b),
+            vec![(chance, range(set.0, set.1))],
+            "boss {entry}"
+        );
+        assert!(drop_of(b).is_empty(), "boss {entry}");
+    }
+    let mobs = parse(MOBS);
+    for entry in [97202, 97204, 97209, 97210] {
+        assert!(rolls(template(&mobs, entry)).is_empty(), "template {entry}");
+    }
+}
+
+#[test]
+fn the_stockade_sets_are_twenty_blues_at_their_wings_item_level() {
+    let rows = rows();
+    for (set, level) in [(RIOT20, 34), (QUIET20, 40)] {
+        for id in range(set.0, set.1) {
+            assert_eq!(rows.get(&id), Some(&(3, level)), "row {id}");
+        }
+    }
+}
+
+#[test]
+fn no_stockade_file_names_the_abbots_placeholder_blues() {
+    for (name, text) in [
+        ("stockade_riot", STOCKADE_RIOT),
+        ("stockade_quiet_wing", STOCKADE_QUIET_WING),
+    ] {
+        for c in creatures(&parse(text)) {
+            for (_, list) in rolls(c) {
+                for id in list {
+                    assert!(
+                        !(A20.0..=A20.1).contains(&id),
+                        "{name} still rolls the placeholder {id}"
+                    );
+                }
+            }
+        }
     }
 }

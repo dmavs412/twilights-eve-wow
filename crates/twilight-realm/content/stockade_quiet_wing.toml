@@ -167,8 +167,8 @@ wander = 8.0
 
 # ── The scribe's room, a cell halfway along: Sister Quill and two Listeners ──────────────────────
 # Quill on Defias Captive 79102 (148.5, 103.2, -35.19), the Listeners on Defias Inmates 79104
-# (155.7, 99.6) and 79108 (156.3, 109.5), all at the room's Z. Quill drops the placeholder blue
-# half the time, as Cutter does, until #579 gives the wing its own loot.
+# (155.7, 99.6) and 79108 (156.3, 109.5), all at the room's Z. Quill drops one of the Quiet Wing
+# set (#579) half the time, as Cutter does the Riot set.
 [[creature]]
 guid = 973111
 entry = 97209
@@ -176,7 +176,7 @@ level = 38
 position = [148.5, 103.2, -35.1896]
 grounded = false
 orientation = 6.02
-rolls = [{ chance = 50, one_of = [905020, 905021, 905022, 905023, 905024, 905025, 905026, 905027, 905028, 905029, 905030, 905031, 905032, 905033, 905034, 905035, 905036, 905037, 905038, 905039] }]
+rolls = [{ chance = 50, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
 
 [[creature]]
 guid = 973112
@@ -273,8 +273,8 @@ orientation = 4.45
 
 # ── The drain, the round room at the wing's end: the Hush, alone ─────────────────────────────────
 # There from the Run's start, facing the room's mouth, Dextren Ward's old spot (166.8, 134.8). On
-# Defias Inmate 79117 (171.1, 142.0, -33.94) and its Z. He drops the placeholder blue until #579
-# gives the wing its own loot.
+# Defias Inmate 79117 (171.1, 142.0, -33.94) and its Z. He always drops one of the Quiet Wing
+# set (#579).
 [[creature]]
 guid = 973123
 entry = 97210
@@ -282,7 +282,7 @@ level = 40
 position = [171.1, 142.0, -33.9396]
 grounded = false
 orientation = 4.17
-rolls = [{ chance = 100, one_of = [905020, 905021, 905022, 905023, 905024, 905025, 905026, 905027, 905028, 905029, 905030, 905031, 905032, 905033, 905034, 905035, 905036, 905037, 905038, 905039] }]
+rolls = [{ chance = 100, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
 
 # The drain grate in the room's floor, there once Sister Quill is dead: vanilla's `Sewers` grate
 # (GameObjectDisplayInfo 663). #580 makes it give its quest. Z: Defias Inmate 79118 (169.0,
