@@ -8154,6 +8154,140 @@
    }
   },
   {
+   "spell_id": 1900044,
+   "creature": "shiv_cutter",
+   "fields": {
+    "name": "Shiv",
+    "icon": "Interface\\Icons\\Ability_Gouge",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 12,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "aura_description": "Bleeding for $s1 damage every $t1 seconds.",
+    "visual": 381,
+    "range_index": 2,
+    "cast_time_index": 1,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1900045,
+   "creature": "fire_bottle_cutter",
+   "fields": {
+    "name": "Fire Bottle",
+    "icon": "Interface\\Icons\\Spell_Fire_SelfDestruct",
+    "school": 2,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 33,
+    "range_index": 4,
+    "cast_time_index": 4,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1900046,
+   "creature": "shield_wall_rook",
+   "fields": {
+    "name": "Shield Wall",
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldWall",
+    "school": 0,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": -30,
+      "per_level": 0,
+      "aura": 79,
+      "misc_value": 127
+     },
+     {
+      "effect": 6,
+      "aura": 87,
+      "base": -60,
+      "per_level": 0,
+      "misc_value": 127
+     }
+    ],
+    "aura_description": "Damage taken reduced by 60%, damage dealt reduced by 30%.",
+    "visual": 345,
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1900047,
+   "creature": "captains_cut_rook",
+   "fields": {
+    "name": "Captain's Cut",
+    "icon": "Interface\\Icons\\Ability_Rogue_Ambush",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1900048,
+   "creature": "hamstring_rook",
+   "fields": {
+    "name": "Hamstring",
+    "icon": "Interface\\Icons\\Ability_ShockWave",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": -50,
+      "per_level": 0,
+      "aura": 33
+     }
+    ],
+    "aura_description": "Movement slowed by $s1%.",
+    "visual": 3443,
+    "range_index": 2,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
    "spell_id": 1950000,
    "buff": "open_road",
    "fields": {

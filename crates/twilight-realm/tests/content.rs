@@ -662,6 +662,7 @@ fn the_flagged_bosses_in_mobs_toml_are_exactly_the_spec_s() {
         "Acolyte Marren",
         "Geomancer Vurx",
         "Princess",
+        "Captain Ansel Rook",
     ];
     want.sort_unstable();
     assert_eq!(flagged, want);

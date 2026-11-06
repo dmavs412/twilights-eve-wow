@@ -10,8 +10,19 @@
 # `grounded = false`, each naming the stock spawn it came from; ground_check.py leaves the rows
 # alone. The jail's 93 stock spawns span x 67 to 193, y -129 to 148 and z -35 to -25.
 #
-# A shell for now (#581): one friendly Phase Tester stands at the foot of the stairs so a
-# character can see the Phase. #578 fills the file. Guids: creatures 973001 up.
+# The riot (#578): the hall's east wing runs from the foot of the east stairs to the round room
+# at its end, about 15 degrees off the y axis through (131, 0). Down it: a pack at the stairs'
+# foot; row A, the near half of the cells, with Lever A and Portcullis A at its mouth; Varl
+# Cutter where the rows meet; row B, the far half, with its own lever and portcullis; Bertram
+# Ash's cell, the last before the round room; and Captain Rook in the round room, Bazil Thredd's
+# old spot at its mouth. Cutter calls two Rioters out of each row every 20 s of his fight until
+# that row's lever is pulled, which also drops its portcullis. The hall runs on past a dropped
+# portcullis, so it seals nothing the player needs. Places come from the stock spawns of the
+# wing (`creature` rows of map 34), not from map.html's schematic walls; each row names the one
+# it was fitted to.
+#
+# Guids: creatures 973001 and 973003 to 973027 (973002 is the quiet wing's), GameObjects 983001
+# to 983004 (the entry is the guid). Templates 97200 to 97205 in mobs.toml.
 
 id = 16
 name = "The Riot"
@@ -39,12 +50,304 @@ z = [-36.0, -22.0]
 position = [131.0, -7.0, -25.5229]
 orientation = 4.71
 
-# The Phase Tester: friendly, no quests, at the foot of the stairs, facing up them. Z: Defias
-# Insurgent 79038 (129.0, -36.0, -33.86), on the wing's floor beside it.
+# Facings: 1.57 looks up the stairs and 1.30 up the hall toward them; a north-side cell (x above
+# the hall's line) faces the hall at 2.87, a south-side one at 6.01.
+
+# ── The stairs' foot: two Rioters and a Ringleader, facing up the stairs ─────────────────────────
+# Defias Insurgent 79038 (129.0, -36.0, -33.86) stood here; every Z is its.
 [[creature]]
 guid = 973001
-entry = 97100
-level = 30
-position = [121.0, -35.0, -33.8562]
+entry = 97201
+level = 31
+position = [129.0, -36.0, -33.8562]
 grounded = false
 orientation = 1.57
+
+[[creature]]
+guid = 973003
+entry = 97200
+level = 30
+position = [124.5, -35.5, -33.8562]
+grounded = false
+orientation = 1.57
+
+[[creature]]
+guid = 973004
+entry = 97200
+level = 31
+position = [126.0, -39.5, -33.8562]
+grounded = false
+orientation = 1.57
+
+# ── Row A, the near half of the cells, |y| 40 to 85 ──────────────────────────────────────────────
+# Portcullis A across the hall at the row's mouth, on the stairs' side of the lever: down once
+# Lever A is pulled. Vanilla's Doodad_PortcullisActive01 (GameObjectDisplayInfo 411), the west
+# door's. Z: Defias Inmate 79041 (117.7, -45.9, -34.77), on the hall's floor.
+[[gameobject]]
+guid = 983002
+display = 411
+position = [119.5, -40.0, -34.7729]
+grounded = false
+orientation = 1.30
+sides = "inside"
+after_used = 983001
+
+# Lever A on the hall's north wall where the row begins: vanilla's Lever (display 295). It pulls
+# from the Run's start; its guards do not hold it. Z: Defias Convict 79063 (129.7, -47.4, -33.86).
+[[gameobject]]
+guid = 983001
+display = 295
+position = [128.0, -45.0, -33.8562]
+grounded = false
+orientation = 2.87
+sides = "inside"
+use = "lever"
+lever = { used_text = "The portcullis drops. That row is locked." }
+
+# The lever post: a Ringleader and a Rioter. Z: Defias Convict 79063, as the lever's.
+[[creature]]
+guid = 973005
+entry = 97201
+level = 32
+position = [130.0, -47.5, -33.8562]
+grounded = false
+orientation = 2.87
+
+[[creature]]
+guid = 973006
+entry = 97200
+level = 30
+position = [126.5, -49.5, -33.8562]
+grounded = false
+orientation = 2.87
+
+# Cell A1, north side, two deep: two Rioters. Defias Convict 79078 (138.6, -48.1, -34.77) and its Z.
+[[creature]]
+guid = 973007
+entry = 97200
+level = 30
+position = [138.6, -48.1, -34.7729]
+grounded = false
+orientation = 2.87
+
+[[creature]]
+guid = 973008
+entry = 97200
+level = 31
+position = [141.5, -45.5, -34.7729]
+grounded = false
+orientation = 2.87
+
+# Cell A2, south side: two Rioters on Defias Convict 79074 (104.1, -55.8, -34.77) and Defias Inmate
+# 79072 (96.4, -54.8, -34.77).
+[[creature]]
+guid = 973009
+entry = 97200
+level = 30
+position = [104.1, -55.8, -34.7729]
+grounded = false
+orientation = 6.01
+
+[[creature]]
+guid = 973010
+entry = 97200
+level = 31
+position = [96.4, -54.8, -34.7729]
+grounded = false
+orientation = 6.01
+
+# Cell A3, north side: two Rioters on Defias Inmate 79069 (123.4, -61.7, -33.86) and Defias Convict
+# 79075 (124.7, -68.9, -33.86).
+[[creature]]
+guid = 973011
+entry = 97200
+level = 30
+position = [123.4, -61.7, -33.8562]
+grounded = false
+orientation = 2.87
+
+[[creature]]
+guid = 973012
+entry = 97200
+level = 31
+position = [124.7, -68.9, -33.8562]
+grounded = false
+orientation = 2.87
+
+# ── Where the rows meet: Varl Cutter and two Ringleaders, facing up the hall ─────────────────────
+# Z: Defias Inmate 79084 (114.6, -86.4, -33.94), on the hall's floor. Every 20 s of his fight he
+# calls two level-30 Rioters out of each row whose lever is still up: row A's come in past Lever A
+# (Z: Defias Inmate 79041), row B's past Lever B (Z: Defias Inmate 79084).
+[[creature]]
+guid = 973013
+entry = 97202
+level = 32
+position = [108.5, -81.0, -33.9396]
+grounded = false
+orientation = 1.30
+rolls = [{ chance = 50, one_of = [905020, 905021, 905022, 905023, 905024, 905025, 905026, 905027, 905028, 905029, 905030, 905031, 905032, 905033, 905034, 905035, 905036, 905037, 905038, 905039] }]
+
+[[creature.every]]
+every_s = 20
+entry = 97200
+level = 30
+count = 2
+position = [117.5, -48.0, -34.7729]
+until_used = 983001
+
+[[creature.every]]
+every_s = 20
+entry = 97200
+level = 30
+count = 2
+position = [104.5, -94.0, -33.9396]
+until_used = 983003
+
+[[creature]]
+guid = 973014
+entry = 97201
+level = 32
+position = [112.5, -83.5, -33.9396]
+grounded = false
+orientation = 1.30
+
+[[creature]]
+guid = 973015
+entry = 97201
+level = 31
+position = [104.5, -79.0, -33.9396]
+grounded = false
+orientation = 1.30
+
+# ── Row B, the far half, |y| 85 to 125 ───────────────────────────────────────────────────────────
+# Portcullis B across the hall at the row's mouth, on the stairs' side of Lever B. Z: Defias Inmate
+# 79084 (114.6, -86.4, -33.94).
+[[gameobject]]
+guid = 983004
+display = 411
+position = [106.5, -87.0, -33.9396]
+grounded = false
+orientation = 1.30
+sides = "inside"
+after_used = 983003
+
+# Lever B on the hall's south wall where the row begins. Z: Defias Inmate 79076 (82.6, -94.8,
+# -33.86), the nearest stock spawn.
+[[gameobject]]
+guid = 983003
+display = 295
+position = [96.0, -86.0, -33.8562]
+grounded = false
+orientation = 6.01
+sides = "inside"
+use = "lever"
+lever = { used_text = "The portcullis drops. That row is locked." }
+
+# The lever post: a Ringleader and a Rioter. Z: Defias Inmate 79076, as the lever's.
+[[creature]]
+guid = 973016
+entry = 97201
+level = 32
+position = [92.0, -89.0, -33.8562]
+grounded = false
+orientation = 6.01
+
+[[creature]]
+guid = 973017
+entry = 97200
+level = 31
+position = [97.5, -90.5, -33.8562]
+grounded = false
+orientation = 6.01
+
+# Cell B1, south side, down the side passage: two Rioters on Defias Insurgent 79037 (77.8, -88.8,
+# -33.86) and Defias Inmate 79076 (82.6, -94.8, -33.86).
+[[creature]]
+guid = 973018
+entry = 97200
+level = 30
+position = [77.8, -88.8, -33.8562]
+grounded = false
+orientation = 6.01
+
+[[creature]]
+guid = 973019
+entry = 97200
+level = 31
+position = [82.6, -94.8, -33.8562]
+grounded = false
+orientation = 6.01
+
+# Cell B2, north side: two Rioters on Hamhock 79098 (105.5, -105.8, -35.11) and Defias Insurgent
+# 79101 (109.1, -114.2, -35.11).
+[[creature]]
+guid = 973020
+entry = 97200
+level = 30
+position = [105.5, -105.8, -35.1062]
+grounded = false
+orientation = 2.87
+
+[[creature]]
+guid = 973021
+entry = 97200
+level = 31
+position = [109.1, -114.2, -35.1062]
+grounded = false
+orientation = 2.87
+
+# Cell B3, south side: two Rioters on Defias Insurgent 79099 (95.5, -105.9, -35.11) and its Z.
+[[creature]]
+guid = 973022
+entry = 97200
+level = 30
+position = [95.5, -105.9, -35.1062]
+grounded = false
+orientation = 6.01
+
+[[creature]]
+guid = 973023
+entry = 97200
+level = 31
+position = [92.0, -110.0, -35.1062]
+grounded = false
+orientation = 6.01
+
+# ── Ash's cell, the last on the north side before the round room ─────────────────────────────────
+# Bertram Ash, friendly, behind its bars, facing the hall. Z: Bazil Thredd 79124 (94.5, -125.8,
+# -33.94), the nearest stock spawn.
+[[creature]]
+guid = 973024
+entry = 97205
+level = 31
+position = [106.0, -126.0, -33.9396]
+grounded = false
+orientation = 2.87
+
+# ── The round room at the wing's end: Captain Rook and two Bought Watchmen ───────────────────────
+# Facing the hall's mouth, Bazil Thredd's old spot. Z: Bazil Thredd 79124 (94.5, -125.8, -33.94);
+# the stock chest in the room (5767, at (90.6, -145.9)) stands at the same height.
+[[creature]]
+guid = 973025
+entry = 97204
+level = 34
+position = [91.0, -140.0, -33.9396]
+grounded = false
+orientation = 1.30
+rolls = [{ chance = 100, one_of = [905020, 905021, 905022, 905023, 905024, 905025, 905026, 905027, 905028, 905029, 905030, 905031, 905032, 905033, 905034, 905035, 905036, 905037, 905038, 905039] }]
+
+[[creature]]
+guid = 973026
+entry = 97203
+level = 33
+position = [94.8, -141.1, -33.9396]
+grounded = false
+orientation = 1.30
+
+[[creature]]
+guid = 973027
+entry = 97203
+level = 33
+position = [87.2, -138.9, -33.9396]
+grounded = false
+orientation = 1.30

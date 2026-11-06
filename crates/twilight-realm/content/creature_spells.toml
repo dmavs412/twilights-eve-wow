@@ -779,3 +779,88 @@ cooldown_ms = 0
 range_max = 0.0
 chance = 0
 effect = { kind = "marker" }
+
+# The Riot (#578, stockade_riot.toml). Every number is a placeholder in Azora's style (#244),
+# scaled from its level 19 to 22 to the riot's 32 to 34. 1900043 is test_silence's.
+
+# Varl Cutter's Shiv, a bleed on the character he fights. Corruption rank 1's look (visual 172),
+# as corruption_creature, with the creature Rend's icon. Placeholders: 4 ticks of 12, 48 physical
+# damage over 12 s, instant, every 12 s.
+[[spell]]
+key = "shiv_cutter"
+spell_id = 1900044
+name = "Shiv"
+icon = 'Interface\Icons\Ability_Gouge'
+visual = 172
+aura_description = "Bleeding for $s1 damage every $t1 seconds."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 12000
+range_max = 5.0
+chance = 100
+effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 12000, tick = { base = 12 } }
+
+# Varl Cutter's Fire Bottle at a random character, Speaker Thane's Flame Patch in kind: Flamestrike
+# rank 1's look (visual 2120). A patch of 4 yd for 10 s, 8 fire damage a second to each character
+# in it, after a 1 s cast, every 20 s.
+[[spell]]
+key = "fire_bottle_cutter"
+spell_id = 1900045
+name = "Fire Bottle"
+icon = 'Interface\Icons\Spell_Fire_SelfDestruct'
+visual = 2120
+school = "fire"
+cast_time_ms = 1000
+cooldown_ms = 20000
+range_max = 30.0
+chance = 100
+target = "random"
+warning = "Cutter lights a bottle!"
+effect = { kind = "ground_patch", radius = 4.0, duration_ms = 10000, tick_ms = 1000, tick = { base = 8 } }
+
+# Captain Rook's Shield Wall. Looks like vanilla Shield Wall (871): 60% less damage taken and 30%
+# less dealt for 8 s, instant, every 30 s.
+[[spell]]
+key = "shield_wall_rook"
+spell_id = 1900046
+name = "Shield Wall"
+icon = 'Interface\Icons\Ability_Warrior_ShieldWall'
+visual = 871
+aura_description = "Damage taken reduced by 60%, damage dealt reduced by 30%."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 30000
+range_max = 0.0
+chance = 100
+effect = { kind = "stance", damage_dealt_pct = -30, damage_taken_pct = -60, duration_ms = 8000 }
+
+# Captain Rook's Captain's Cut. Looks like vanilla Heroic Strike rank 1 (78): one blow of 200% of
+# his average swing, instant, every 10 s.
+[[spell]]
+key = "captains_cut_rook"
+spell_id = 1900047
+name = "Captain's Cut"
+icon = 'Interface\Icons\Ability_Rogue_Ambush'
+visual = 78
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 10000
+range_max = 5.0
+chance = 100
+effect = { kind = "hit", pct_of_swing = 200 }
+
+# Captain Rook's Hamstring. Looks like Hamstring rank 1 (visual 1715), as hunter_hamstring: 50%
+# slower for 6 s, instant, every 15 s.
+[[spell]]
+key = "hamstring_rook"
+spell_id = 1900048
+name = "Hamstring"
+icon = 'Interface\Icons\Ability_ShockWave'
+visual = 1715
+aura_description = "Movement slowed by $s1%."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 15000
+range_max = 5.0
+chance = 100
+effect = { kind = "snare", pct = 50, duration_ms = 6000 }

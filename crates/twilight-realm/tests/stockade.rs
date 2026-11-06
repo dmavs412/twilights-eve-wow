@@ -30,15 +30,37 @@ const OUTSIDE: [f32; 3] = [-8766.1, 845.5, 88.0];
 const OUTSIDE_FACING: f32 = 3.84;
 
 /// Where the corridor crosses the hall, Thelwater's spot and the sealed door's outside; a step
-/// down each stair.
+/// down each stair. The east step stays out of reach of the pack at the stairs' foot.
 const CROSSING: [f32; 3] = [131.0, 3.0, -25.5229];
-const EAST_STAIRS: [f32; 3] = [131.0, -20.0, -29.0];
+const EAST_STAIRS: [f32; 3] = [131.0, -12.0, -27.0];
 const WEST_STAIRS: [f32; 3] = [131.0, 20.0, -29.0];
 
-/// Each dungeon's one creature, the Phase Tester, and the side of the hall it stands on.
+/// The quiet wing's one creature for now, the Phase Tester, and the side of the hall it stands
+/// on.
 const PHASE_TESTER: u32 = 97100;
-const RIOT_TESTER_Y: f32 = -35.0;
 const QUIET_TESTER_Y: f32 = 35.0;
+
+/// The riot's templates (`content/mobs.toml`): the Defias Rioter, the Defias Ringleader, Varl
+/// Cutter, the Bought Watchman, Captain Ansel Rook and Bertram Ash.
+const RIOTER: u32 = 97200;
+const CUTTER: u32 = 97202;
+const ROOK: u32 = 97204;
+const ASH: u32 = 97205;
+const RIOT_TEMPLATES: std::ops::RangeInclusive<u32> = 97200..=97205;
+
+/// The riot's levers and portcullises, and what a pull says.
+const LEVER_A: u32 = 983001;
+const PORTCULLIS_A: u32 = 983002;
+const LEVER_B: u32 = 983003;
+const LEVER_USED: &str = "The portcullis drops. That row is locked.";
+/// In reach of Lever A, and beside Cutter.
+const BY_LEVER_A: [f32; 3] = [121.0, -46.0, -34.7729];
+const BY_CUTTER: [f32; 3] = [111.0, -78.5, -33.9396];
+/// Where Cutter's calls out of row A and row B come in.
+const ROW_A_CALL: [f32; 3] = [117.5, -48.0, -34.7729];
+const ROW_B_CALL: [f32; 3] = [104.5, -94.0, -33.9396];
+/// The first low guid of a creature a timed call has brought in.
+const TIMED_LIVE_BASE: u64 = 0xC0_0000;
 
 /// The Watch's Hub NPCs on map 34: Warden Thelwater, Quartermaster Mae Tollin, Sergeant Hale,
 /// the Watchmen and the Convicts (`content/hub.toml`).
@@ -62,9 +84,14 @@ fn at_the_door() -> Party {
 
 /// As [`at_the_door`], carrying the west wing's key when `key`.
 fn door_party(key: bool) -> Party {
+    door_party_at(30, key)
+}
+
+/// As [`door_party`], the character at `level`.
+fn door_party_at(level: u8, key: bool) -> Party {
     let mut party = Party::edited(
         Realm::with_seed(1),
-        &[30],
+        &[level],
         START_ELWYNN,
         Box::new(NoGround),
         |_, blob| if key { with_key(blob) } else { blob },
@@ -125,6 +152,14 @@ fn testers(events: &[SessionEvent]) -> Vec<f32> {
 
 fn near_y(ys: &[f32], y: f32) -> bool {
     ys.iter().any(|&t| (t - y).abs() < 0.5)
+}
+
+/// How many of the riot's creatures are created in `events`.
+fn rioters(events: &[SessionEvent]) -> usize {
+    unit_creates(events)
+        .iter()
+        .filter(|u| RIOT_TEMPLATES.contains(&u.1))
+        .count()
 }
 
 /// The worldport in `events`: `(map, position, orientation, needs_ack)`.
@@ -264,9 +299,8 @@ fn the_east_stairs_lead_into_the_riot_s_run_and_back_out() {
 
     let events = walk(&mut party, EAST_STAIRS);
     assert!(in_phase(&party), "the east stairs are the riot's");
-    let ys = testers(&events);
-    assert!(near_y(&ys, RIOT_TESTER_Y), "{ys:?}");
-    assert!(!near_y(&ys, QUIET_TESTER_Y), "{ys:?}");
+    assert!(rioters(&events) > 0, "none of the riot in view");
+    assert!(testers(&events).is_empty(), "the quiet wing's Phase Tester");
     party.run(2.0);
 
     let events = walk(&mut party, CROSSING);
@@ -275,10 +309,7 @@ fn the_east_stairs_lead_into_the_riot_s_run_and_back_out() {
 
     // No one is left in the riot: the next entry starts a fresh Run.
     let events = walk(&mut party, EAST_STAIRS);
-    assert!(
-        near_y(&testers(&events), RIOT_TESTER_Y),
-        "a fresh Phase Tester"
-    );
+    assert!(rioters(&events) > 0, "a fresh riot");
     let second = party.realm.run_elapsed_as(party.sessions[0]);
     assert!(second.is_some_and(|s| s < 1.0), "{second:?}");
 }
@@ -294,7 +325,7 @@ fn the_west_stairs_lead_into_the_quiet_wing_s_run_with_the_key() {
     assert!(in_phase(&party), "the west stairs are the quiet wing's");
     let ys = testers(&events);
     assert!(near_y(&ys, QUIET_TESTER_Y), "{ys:?}");
-    assert!(!near_y(&ys, RIOT_TESTER_Y), "{ys:?}");
+    assert_eq!(rioters(&events), 0, "the riot in the quiet wing");
     party.run(2.0);
 
     walk(&mut party, CROSSING);
@@ -550,4 +581,209 @@ fn the_stock_spawns_fall_in_the_wings_and_the_corridor_in_neither() {
         (33, 37, 22),
         "one more on the west stairs"
     );
+}
+
+// The riot (#578): Varl Cutter, Captain Rook, the two rows and their levers.
+
+fn riot() -> toml::Table {
+    include_str!("../content/stockade_riot.toml")
+        .parse()
+        .unwrap()
+}
+
+fn rows<'a>(file: &'a toml::Table, kind: &str) -> &'a [toml::Value] {
+    file.get(kind)
+        .and_then(|v| v.as_array())
+        .map_or(&[][..], |a| a.as_slice())
+}
+
+fn point(v: &toml::Value) -> [f32; 3] {
+    let a = v.as_array().unwrap();
+    let f = |x: &toml::Value| x.as_float().or(x.as_integer().map(|i| i as f64)).unwrap() as f32;
+    [f(&a[0]), f(&a[1]), f(&a[2])]
+}
+
+fn int(v: &toml::Value, key: &str) -> Option<i64> {
+    v.get(key).and_then(|x| x.as_integer())
+}
+
+#[test]
+fn every_creature_and_gameobject_of_the_riot_stands_in_its_footprint() {
+    let file = riot();
+    let footprint = boxes(include_str!("../content/stockade_riot.toml"));
+    let creatures = rows(&file, "creature");
+    assert!(creatures.len() >= 26, "{} creatures", creatures.len());
+    assert!(
+        creatures
+            .iter()
+            .all(|c| int(c, "entry") != Some(PHASE_TESTER.into())),
+        "the Phase Tester is still in the riot"
+    );
+    for c in creatures {
+        let guid = int(c, "guid").unwrap();
+        let at = point(&c["position"]);
+        assert!(inside(&footprint, at), "creature {guid} at {at:?}");
+        for call in rows(c.as_table().unwrap(), "every") {
+            let at = point(&call["position"]);
+            assert!(inside(&footprint, at), "creature {guid}'s call at {at:?}");
+        }
+    }
+    for o in rows(&file, "gameobject") {
+        let at = point(&o["position"]);
+        assert!(
+            inside(&footprint, at),
+            "GameObject {:?} at {at:?}",
+            o["guid"]
+        );
+    }
+}
+
+#[test]
+fn each_lever_of_the_riot_drops_exactly_one_portcullis() {
+    let file = riot();
+    let objects = rows(&file, "gameobject");
+    let levers: Vec<i64> = objects
+        .iter()
+        .filter(|o| o.get("use").and_then(|u| u.as_str()) == Some("lever"))
+        .map(|o| int(o, "guid").unwrap())
+        .collect();
+    assert_eq!(levers, [i64::from(LEVER_A), i64::from(LEVER_B)]);
+    for lever in levers {
+        let portcullises = objects
+            .iter()
+            .filter(|o| int(o, "after_used") == Some(lever))
+            .count();
+        assert_eq!(portcullises, 1, "lever {lever}");
+    }
+}
+
+#[test]
+fn cutter_calls_rioters_from_row_a_until_lever_a_and_from_row_b_until_lever_b() {
+    let file = riot();
+    let cutters: Vec<&toml::Value> = rows(&file, "creature")
+        .iter()
+        .filter(|c| int(c, "entry") == Some(CUTTER.into()))
+        .collect();
+    assert_eq!(cutters.len(), 1);
+    let calls = rows(cutters[0].as_table().unwrap(), "every");
+    let stops: Vec<Option<i64>> = calls.iter().map(|c| int(c, "until_used")).collect();
+    assert_eq!(stops, [Some(LEVER_A.into()), Some(LEVER_B.into())]);
+    for call in calls {
+        assert_eq!(int(call, "entry"), Some(RIOTER.into()));
+        assert_eq!(int(call, "count"), Some(2));
+    }
+    assert_eq!(point(&calls[0]["position"]), ROW_A_CALL);
+    assert_eq!(point(&calls[1]["position"]), ROW_B_CALL);
+}
+
+#[test]
+fn rook_raises_the_boss_bar_and_ash_is_friendly() {
+    assert_eq!(mob_template(ROOK)["boss"].as_bool(), Some(true));
+    let ash = mob_template(ASH);
+    assert_eq!(ash["hostile"].as_bool(), Some(false));
+    assert_eq!(ash["friendly"].as_bool(), Some(true));
+}
+
+#[test]
+fn every_hostile_creature_of_the_riot_has_an_aggro_line() {
+    let entries: std::collections::BTreeSet<u32> = rows(&riot(), "creature")
+        .iter()
+        .map(|c| int(c, "entry").unwrap() as u32)
+        .collect();
+    assert_eq!(
+        entries.iter().copied().collect::<Vec<_>>(),
+        RIOT_TEMPLATES.collect::<Vec<_>>()
+    );
+    for entry in entries {
+        let t = mob_template(entry);
+        if t.get("hostile").and_then(|h| h.as_bool()) == Some(false) {
+            continue;
+        }
+        let lines = t
+            .get("say")
+            .and_then(|s| s.get("aggro"))
+            .and_then(|a| a.as_array())
+            .map_or(0, |a| a.len());
+        assert!(lines > 0, "{entry} has no aggro line");
+    }
+    let rioter_lines = mob_template(RIOTER)["say"]["aggro"].as_array().unwrap();
+    let distinct: std::collections::BTreeSet<&str> =
+        rioter_lines.iter().map(|l| l.as_str().unwrap()).collect();
+    assert_eq!(distinct.len(), 3, "the Rioters shout three lines");
+}
+
+/// A level-60 character in the riot, at the foot of the east stairs.
+fn in_the_riot() -> Party {
+    let mut party = door_party_at(60, false);
+    enter(&mut party);
+    walk(&mut party, CROSSING);
+    walk(&mut party, EAST_STAIRS);
+    assert!(in_phase(&party));
+    party
+}
+
+/// Pulls Cutter and lets him fight for 21 s, past his first calls; where the Rioters they
+/// brought came in.
+fn cutter_s_calls(party: &mut Party) -> Vec<[f32; 3]> {
+    let (cutter, at) = party.unit(0, CUTTER, BY_CUTTER);
+    party.go_facing(0, BY_CUTTER, at);
+    party.run(0.2);
+    let from = party.seen(0).len();
+    party.cmd(0, RealmCommand::AttackSwing { guid: cutter });
+    party.run(0.2);
+    party.cmd(0, RealmCommand::AttackStop);
+    party.run(21.0);
+    unit_creates(&since(party, from))
+        .into_iter()
+        .filter(|u| u.1 == RIOTER && u.0 & 0xFF_FFFF >= TIMED_LIVE_BASE)
+        .map(|u| u.2)
+        .collect()
+}
+
+fn came_in_at(calls: &[[f32; 3]], at: [f32; 3]) -> usize {
+    calls
+        .iter()
+        .filter(|&&p| flat_distance(p, at) < 1.0)
+        .count()
+}
+
+#[test]
+fn with_both_rows_unbarred_cutter_calls_two_rioters_out_of_each() {
+    let mut party = in_the_riot();
+    let calls = cutter_s_calls(&mut party);
+    assert_eq!(calls.len(), 4, "{calls:?}");
+    assert_eq!(came_in_at(&calls, ROW_A_CALL), 2, "{calls:?}");
+    assert_eq!(came_in_at(&calls, ROW_B_CALL), 2, "{calls:?}");
+}
+
+#[test]
+fn with_lever_a_pulled_cutter_calls_rioters_only_out_of_row_b() {
+    let mut party = in_the_riot();
+    let portcullis = 0xF110 << 48 | u64::from(PORTCULLIS_A);
+    walk(&mut party, BY_LEVER_A);
+    let from = party.seen(0).len();
+    party.cmd(
+        0,
+        RealmCommand::UseGameObject {
+            guid: 0xF110 << 48 | u64::from(LEVER_A),
+        },
+    );
+    party.run(0.5);
+    let events = since(&party, from);
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::Notification { text } if text == LEVER_USED)),
+        "no pull"
+    );
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::ObjectCreate { guid, .. } if *guid == portcullis)),
+        "the portcullis did not drop"
+    );
+
+    let calls = cutter_s_calls(&mut party);
+    assert_eq!(calls.len(), 2, "{calls:?}");
+    assert_eq!(came_in_at(&calls, ROW_B_CALL), 2, "{calls:?}");
 }
