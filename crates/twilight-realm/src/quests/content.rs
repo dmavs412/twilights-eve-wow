@@ -545,8 +545,8 @@ fn friendly_spawn(entry: u32) -> bool {
             .any(|s| s.entry == entry)
 }
 
-/// The shipped quests: `content/quests.toml`, then `content/quests_elwynn.toml`, then the Writs in
-/// `content/writs.toml`.
+/// The shipped quests: `content/quests.toml`, then `content/quests_elwynn.toml`, then
+/// `content/quests_stormwind.toml`, then the Writs in `content/writs.toml`.
 pub(crate) fn shipped() -> &'static [Quest] {
     static FILE: OnceLock<Vec<Quest>> = OnceLock::new();
     FILE.get_or_init(|| {
@@ -557,6 +557,10 @@ pub(crate) fn shipped() -> &'static [Quest] {
             (
                 "quests_elwynn.toml",
                 include_str!("../../content/quests_elwynn.toml"),
+            ),
+            (
+                "quests_stormwind.toml",
+                include_str!("../../content/quests_stormwind.toml"),
             ),
             ("writs.toml", include_str!("../../content/writs.toml")),
         ] {

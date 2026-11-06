@@ -97,20 +97,22 @@ fn quests() -> Vec<Quest> {
         .quest
 }
 
-/// The creature entries that give or take in a quest of `quests_elwynn.toml`, whose quests may
-/// instead name a GameObject or an item as the giver.
+/// The creature entries that give or take in a quest of `quests_elwynn.toml` or
+/// `quests_stormwind.toml`, whose quests may instead name a GameObject or an item as the giver.
 fn elwynn_givers() -> Vec<u32> {
-    let file: toml::Table = include_str!("../content/quests_elwynn.toml")
-        .parse()
-        .expect("quests_elwynn.toml parses");
-    file["quest"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .flat_map(|q| [q.get("giver"), q.get("ender")])
-        .filter_map(|v| v?.as_integer())
-        .map(|g| g as u32)
-        .collect()
+    [
+        include_str!("../content/quests_elwynn.toml"),
+        include_str!("../content/quests_stormwind.toml"),
+    ]
+    .into_iter()
+    .flat_map(|text| {
+        let file: toml::Table = text.parse().expect("the story quests parse");
+        file["quest"].as_array().unwrap().clone()
+    })
+    .flat_map(|q| [q.get("giver").cloned(), q.get("ender").cloned()])
+    .filter_map(|v| v?.as_integer())
+    .map(|g| g as u32)
+    .collect()
 }
 
 /// Every creature spawn in The Barrens, `(entry, x, y)`. A Wailing Caverns creature counts as

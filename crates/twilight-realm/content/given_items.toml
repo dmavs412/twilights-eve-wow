@@ -34,4 +34,8 @@ item = [
   # The writ that opens Stormwind Keep's gate (#559), kept for good: the door never takes it.
   # No quest gives it yet. Its icon is INV_Scroll_03, a sealed scroll no other item shows.
   { entry = 980122, name = "Writ of Audience", quality = 1, item_level = 60, class = 12, display_id = 811, max_count = 1, description = "Admits the bearer to Stormwind Keep." },
+  # Rook's Key (#580): The Quiet Wing (97308) gives it, and it opens the Stockade's west door
+  # (stockade_quiet_wing.toml), which never takes it. Its icon is INV_Misc_Key_01, which no other
+  # item shows.
+  { entry = 980129, name = "Rook's Key", quality = 1, item_level = 37, class = 12, display_id = 3885, max_count = 1, description = "A long iron key with the Keep's mark on the bow. It is not the Warden's." },
 ]

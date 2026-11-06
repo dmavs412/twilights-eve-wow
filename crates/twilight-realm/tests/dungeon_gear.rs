@@ -290,7 +290,12 @@ fn the_stockade_bosses_roll_their_wings_twenty_and_no_epic() {
             vec![(chance, range(set.0, set.1))],
             "boss {entry}"
         );
-        assert!(drop_of(b).is_empty(), "boss {entry}");
+        // Their corpses hold only their quests' items (#580), the 980000s, and no gear.
+        assert!(
+            drop_of(b).iter().all(|i| (980_000..981_000).contains(i)),
+            "boss {entry}: {:?}",
+            drop_of(b)
+        );
     }
     let mobs = parse(MOBS);
     for entry in [97202, 97204, 97209, 97210] {

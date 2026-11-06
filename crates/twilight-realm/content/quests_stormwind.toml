@@ -1,0 +1,224 @@
+# Story Quests in Stormwind City: the same schema as quests.toml, read after
+# content/quests_elwynn.toml and before content/writs.toml.
+
+# ── The Stockade (#575) ──────────────────────────────────────────────────────────────────────────
+#
+# Twelve quests, 97301 to 97312 (#580, docs/specs/stockade/README.md "Quests"); the issue's text is
+# the contract. Marshal Dughan in Goldshire sends the player to Warden Thelwater, a Hub NPC at the
+# Stockade's crossing (hub.toml 9300072). The riot's line runs through Bertram Ash (97205) in the
+# east wing; the quiet wing's through Tobin Marsh (97214) and the drain grate (GameObject 983011),
+# which stands once Sister Quill is dead. The quest items are in quest_items.toml, Rook's Key in
+# given_items.toml. The bosses' corpses hold their quest items through the dungeon files' `drop`
+# lists (stockade_riot.toml, stockade_quiet_wing.toml), so those collect rows name no `from`.
+# `money` is copper and a placeholder. `zone_or_sort` 717 is the Stockade's AreaTable id.
+
+# Dughan's hook: his report, by hand, to the Watch. XP only.
+[[quest]]
+id = 97301
+kind = "story"
+giver = 240
+ender = 1719
+level = 30
+title = "A Report for the Watch"
+objectives = "Carry Marshal Dughan's report to Warden Thelwater at the crossing inside the Stockade in Stormwind."
+details = "Every report I send to the city goes missing between here and the Keep. This one goes by hand. The Stockade is by the canal on the Old Town side; go through the door and down the corridor until you find the Warden. He is Watch, not court, and I have known him twenty years."
+progress = "A report? Not now."
+completion = "Dughan's hand. I'll read it when I have a prison again. The east block rioted an hour ago and my captain has gone down after the turnkey with two men. My reinforcements are 'delayed'. Everything in this city is delayed. If you want this report read, help me get my cells back."
+money = 0
+zone_or_sort = 717
+gives = [[980123, 1]]
+collect = [{ item = 980123, count = 1 }]
+
+[[quest]]
+id = 97302
+kind = "story"
+giver = 1719
+after = 97301
+level = 30
+title = "Quell the Riot"
+objectives = "Kill 12 Defias Rioters in the east wing of the Stockade, then return to Warden Thelwater."
+details = "The Defias in the east block are out of their cells. We hold the stairs. Go down and thin them. Don't stop to wonder how they got out. I'm wondering enough for both of us."
+progress = "Still noise down there."
+completion = "Fewer of them shouting. Good."
+money = 0
+zone_or_sort = 717
+kill = [[97200, 12]]
+
+# Cutter's corpse always holds his purse (stockade_riot.toml).
+[[quest]]
+id = 97303
+kind = "story"
+giver = 1719
+after = 97302
+level = 32
+title = "Varl Cutter"
+objectives = "Kill Varl Cutter in the east wing and bring Warden Thelwater his purse."
+details = "Cutter runs the east block from the inside, and he's running this. Nobody riots for nothing. There are two levers down there, one for each row of cells; pull them and the bars drop, and he loses his friends. Kill him and bring me whatever he's carrying."
+progress = "Is he dead?"
+completion = "Coin. A purse of it, and not the king's. I've seen this coin twice this year, both times in a Defias pocket. Who pays a man to riot?"
+money = 1000
+choices = [905060, 905061, 905062, 905063]
+zone_or_sort = 717
+kill = [[97202, 1]]
+collect = [{ item = 980124, count = 1 }]
+
+# A delivery to Ash, who stands behind Rook: no objective rows, met on accepting.
+[[quest]]
+id = 97304
+kind = "story"
+giver = 1719
+ender = 97205
+after = 97303
+level = 33
+title = "The Turnkey"
+objectives = "Find Bertram Ash, the night turnkey, in the east wing of the Stockade."
+details = "Ash had the night keys. He went down to lock the rows when it started and nobody has seen him since. Captain Rook took two men after him. Find Ash. Rook will have found him first, so follow the Watch."
+progress = "You're not Rook's. Thank the Light. Get me out of here."
+completion = "He was going to kill me. Rook. My own captain. He came down with two of his and told me to open this door, and I didn't, and then you came. Listen, because I'll only say it once more, and that's to the Warden."
+money = 0
+zone_or_sort = 717
+
+# Rook's corpse always holds his keyring and his letters (stockade_riot.toml). The ticket names no
+# prerequisite: Ash offers it to whoever reaches him.
+[[quest]]
+id = 97305
+kind = "story"
+giver = 97205
+ender = 1719
+level = 34
+title = "The Captain's Keys"
+objectives = "Take Rook's Keyring and Rook's Letters from the captain's body and bring them to Warden Thelwater."
+details = "Two nights ago I saw Rook on the canal steps handing a paper to a hooded man and taking a purse back. The paper was the quiet wing's list. I know, because I wrote the fair copy. He saw me see him. The riot is for me. He has the west key on his ring; he took it off the Warden's board himself. Take the ring and whatever he's carrying to Thelwater. Hand to hand, nobody else."
+progress = "Rook? What about Rook?"
+completion = "Rook. Twelve years. He had the west key. He had letters. He had my prison opened to kill a turnkey. I'll not read these here. The key goes in my strongbox and it stays there until I know who was writing to him. Not the Keep's hands. Mine."
+money = 1000
+choices = [905060, 905061, 905062, 905063]
+zone_or_sort = 717
+collect = [{ item = 980126, count = 1 }, { item = 980127, count = 1 }]
+
+[[quest]]
+id = 97306
+kind = "story"
+giver = 1719
+ender = 240
+after = 97305
+level = 34
+title = "Rook's Letters"
+objectives = "Carry Rook's Letters to Marshal Dughan in Goldshire."
+details = "I should send these up to the Keep. That's the rule. Take them to your Marshal instead. He'll know the seal or he won't, and either way they're out of this city. I don't know why I'm saying that. Yes I do. Go, before I change my mind."
+progress = "From Thelwater?"
+completion = "Three letters, one seal, no name. I've seen this seal. It's on every one of my reports that came back to me unread. Someone in that Keep reads what the Watch writes and answers with coin. Thelwater sent these to me and not up the hill; twenty years, and that's the first rule I've seen him break. Leave them with me. When I've matched the seal, I'll send for you."
+money = 1000
+zone_or_sort = 717
+gives = [[980127, 1]]
+collect = [{ item = 980127, count = 1 }]
+
+[[quest]]
+id = 97307
+kind = "story"
+giver = 240
+ender = 1719
+after = 97306
+level = 36
+title = "The Seal"
+objectives = "Carry Marshal Dughan's answer to Warden Thelwater in the Stockade."
+details = "I matched it. The seal is an office in the Keep, one that writes writs, and the four names on Rook's list are four people it sent down to Thelwater's quiet wing. I'm not writing the office's name on anything that leaves this room. Tell Thelwater this: the men who paid his captain are the men who filled his west wing, and whatever they wanted from the riot, they'll try again from inside. He'll know what to do with his key."
+progress = "Dughan's answer?"
+completion = "He matched it. Then it's the same hands, the ones that fill that wing and the ones that bought Rook. There are four people behind that door who have done nothing but see something, and I've been told not to ask what. I said I wouldn't turn that key. I'm not. You are."
+money = 0
+zone_or_sort = 717
+gives = [[980128, 1]]
+collect = [{ item = 980128, count = 1 }]
+
+# Rook's Key opens the west door (stockade_quiet_wing.toml's `[portal.door]`), which never takes
+# it: the character keeps it.
+[[quest]]
+id = 97308
+kind = "story"
+giver = 1719
+after = 97307
+level = 37
+title = "The Quiet Wing"
+objectives = "Open the west wing with Rook's Key and speak with Wender Cogg, Hesper Lowe, Dorrin Vask and Tobin Marsh, then return to Warden Thelwater."
+details = "Sergeant Hale holds the west stairs. Show him nothing; the door knows the key. Go down, find the four and ask them what they did to be sent here. Then come and tell me, because nobody ever has."
+progress = "Have you spoken to them all?"
+completion = "A tunnel, a town, the sea and the Keep's own road. The same grey, four sides of it, and they've locked up everyone who touched it. I run this prison and I didn't know what it was for. I'll not forget being told."
+money = 0
+zone_or_sort = 717
+gives = [[980129, 1]]
+talk = [
+  { npc = 97211, option = "Why are you here?", reply = "I stopped the tram. In the tunnel, halfway to Ironforge, the rails run into grey, a wall of it, and I wasn't driving two hundred people into that. They called it sabotage. The tram's still sitting there, if anyone wants to look." },
+  { npc = 97212, option = "Why are you here?", reply = "I'm the last out of Moonbrook. The day before the grey came, the hooded men packed their crates and left, every one of them, and I said so to a clerk. They knew it was coming. The clerk wrote that down, and here I am." },
+  { npc = 97213, option = "Why are you here?", reply = "I pilot the harbour. A mile out the sea goes grey and the water under it doesn't move. I turned back, and there was a cutter out there flying the Keep's flag, sitting at the edge of it, watching. I told the harbourmaster. He told someone else." },
+  { npc = 97214, option = "Why are you here?", reply = "I was a page in the Keep. I copied an order that closed the Westfall road, and the order was dated three days before the mist came. I asked who signed it. That was my question, and this is my answer. There's a woman who comes down at night and writes what we say. Ask me about her." },
+]
+
+# Marsh gives it with no prerequisite. Quill's corpse always holds the Book (stockade_quiet_wing.toml).
+[[quest]]
+id = 97309
+kind = "story"
+giver = 97214
+ender = 1719
+level = 38
+title = "The Scribe"
+objectives = "Kill Sister Quill in the scribe's room and bring her Book of Takings to Warden Thelwater."
+details = "She calls herself Sister Quill and she's no sister of any church I know. She comes every night with two hooded men, sits outside a cell and writes down what the prisoner knows, every word, and asks until there's nothing left. Then she writes 'taken'. The ones she's finished with don't speak after. They don't do anything. They walk the lower gallery and they don't make a sound. I'm the last one she hasn't finished. Her room is halfway down. Take her book; it's everything we know, in her hand."
+progress = "Did you find her?"
+completion = "A book of what four people saw, in a clerk's hand, and the word 'taken' after each. And the last line. 'All to be hushed on the next tide.' Someone is down there who does the hushing."
+money = 1500
+choices = [905080, 905081, 905082, 905083]
+zone_or_sort = 717
+kill = [[97209, 1]]
+collect = [{ item = 980130, count = 1 }]
+
+# Given by the drain grate, which stands once Quill is dead. The Hush's corpse always holds the
+# Writ (stockade_quiet_wing.toml).
+[[quest]]
+id = 97310
+kind = "story"
+giver_object = 983011
+ender = 1719
+level = 40
+title = "The Drain"
+objectives = "Kill the hooded man in the drain and bring what he carries to Warden Thelwater."
+details = "The grate is up. Someone came in this way, from the canal, and the wet footprints go on toward the lowest room. Past the gallery where the quiet ones walk, nothing moves at all."
+progress = "What was down there?"
+completion = "Hooded. One of them, inside my walls, with the names of four people the Keep sent me, in a clerk's hand, and that mark under them. Rook's buyer, Quill's master, the same hands. I can't open a writ cell. Only the hand that wrote the writ can. But nobody comes through my door for them again, and nobody comes up my drain."
+money = 2000
+choices = [905080, 905081, 905082, 905083]
+zone_or_sort = 717
+kill = [[97210, 1]]
+collect = [{ item = 980131, count = 1 }]
+
+[[quest]]
+id = 97311
+kind = "story"
+giver = 1719
+ender = 240
+after = 97310
+level = 40
+title = "Not Up the Hill"
+objectives = "Carry the Book of Takings and the Writ of Names to Marshal Dughan in Goldshire."
+details = "Rook's letters, Quill's book and this writ: one seal, three hands, and all of it should go up the hill by the rule. Take it to Dughan. He's keeping the letters where nothing goes missing; let him keep the rest. One day someone in this city is going to have to read them all at once."
+progress = "From Thelwater again?"
+completion = "The book and the writ, with the letters. That's the Watch's captain, the Keep's scribe and the cult's own hand, and the one seal on all three. I'll keep them together. Whatever office that is, it has four people in a cellar who saw the grey, and it wanted them quiet enough to pay for it twice. Somebody is going to have to walk into that Keep and ask. Not today."
+money = 1500
+zone_or_sort = 717
+gives = [[980130, 1], [980131, 1]]
+collect = [{ item = 980130, count = 1 }, { item = 980131, count = 1 }]
+
+# The Rioters carry a coin a third of the time while the quest wants more; the Ringleaders, the
+# Bought Watchmen, Cutter and Rook always hold one (stockade_riot.toml).
+[[quest]]
+id = 97312
+kind = "repeatable"
+giver = 1719
+level = 32
+title = "Twilight Coin"
+objectives = "Bring 10 Twilight Coins to Warden Thelwater."
+details = "Every rioter has the same coin in his pocket. I want it off the street and in my strongbox, every piece you find."
+progress = "Coin?"
+completion = "Ten. Into the strongbox with the rest. Keep bringing it."
+money = 800
+zone_or_sort = 717
+collect = [{ item = 980125, count = 10, from = [97200], chance = 35 }]

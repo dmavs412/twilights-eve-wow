@@ -1974,8 +1974,9 @@ greeting = "Stormwind's table, $C. Everything a flask needs, and rumours of the 
 
 # Warden Thelwater: the stock template (stormwind.toml, entry 1719), whose spawn at the city's
 # jail door (89325) zones.toml deletes; he now stands at the crossing, facing the west wing's
-# door. He talks only until #580 gives him his quests, which make him a quest giver (0x3). Z:
-# Defias Prisoner 79056 (131.1, 3.3, -25.52).
+# door. He gives and takes the Stockade's quests (#580, quests_stormwind.toml) and keeps his
+# word of warning, a talker as Goldshire's are (0x3). Z: Defias Prisoner 79056 (131.1, 3.3,
+# -25.52).
 [[npc]]
 guid = 9300072
 entry = 1719
@@ -1983,8 +1984,8 @@ name = "Warden Thelwater"
 level = 30
 display_id = 1865
 faction_template = 35
-role = "ambient"
-npc_flags = 0x1
+role = "talker"
+npc_flags = 0x3
 map = 34
 position = [131.0, 3.0, -25.5229]
 grounded = false

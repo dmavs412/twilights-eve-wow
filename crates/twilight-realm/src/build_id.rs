@@ -46,6 +46,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/quest_items.toml"),
     include_str!("../content/quests.toml"),
     include_str!("../content/quests_elwynn.toml"),
+    include_str!("../content/quests_stormwind.toml"),
     include_str!("../content/redridge.toml"),
     include_str!("../content/retired_items.toml"),
     include_str!("../content/roads.toml"),

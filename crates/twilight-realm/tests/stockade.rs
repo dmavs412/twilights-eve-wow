@@ -81,10 +81,10 @@ const WATCH: [u32; 5] = [THELWATER, 190078, 190079, 190080, 190081];
 /// Sergeant Hale, who speaks the west door's refusal.
 const HALE: u64 = 0xF130 << 48 | 190079 << 24 | 9300074;
 
-/// The west wing's door, the item that opens it (a stand-in until #580 makes Rook's Key) and
+/// The west wing's door, the item that opens it (Rook's Key, which The Quiet Wing gives) and
 /// what Hale says to a character without it.
 const WEST_DOOR: u64 = 0xF110 << 48 | 98004;
-const KEY: u32 = 980122;
+const KEY: u32 = 980129;
 const SEALED: &str =
     "The west wing is closed by order of the Keep. The Warden holds no key to it, and neither do you.";
 const PACK_1: u8 = 23;
@@ -115,14 +115,22 @@ fn door_party_at(level: u8, key: bool) -> Party {
 
 /// `blob` carrying the west wing's key in its backpack and nothing else of its items.
 fn with_key(blob: String) -> String {
+    carrying(blob, &[KEY])
+}
+
+/// `blob` carrying one of each of `items` in its backpack, from its first slot, and nothing else
+/// of its items.
+fn carrying(blob: String, items: &[u32]) -> String {
     let mut blob = blob;
     if let Some(at) = blob.find("[[items]]") {
         blob.truncate(at);
     }
     let mut blob = blob.replace("items = []\n", "");
-    blob.push_str(&format!(
-        "\n[[items]]\nslot = {PACK_1}\nentry = {KEY}\ncount = 1\n"
-    ));
+    for (slot, entry) in (PACK_1..).zip(items) {
+        blob.push_str(&format!(
+            "\n[[items]]\nslot = {slot}\nentry = {entry}\ncount = 1\n"
+        ));
+    }
     blob
 }
 
@@ -1029,4 +1037,411 @@ fn quill_s_ink_roots_every_character_within_8_yd_of_her_for_3_s() {
         );
     }
     assert!(roots[2].is_empty(), "16 yd out: {:?}", roots[2]);
+}
+
+// The quests (#580, `content/quests_stormwind.toml`): Dughan's hook, Thelwater's chain through
+// the riot and the quiet wing, and the quest items.
+
+const A_REPORT_FOR_THE_WATCH: u32 = 97301;
+const THE_TURNKEY: u32 = 97304;
+const THE_CAPTAINS_KEYS: u32 = 97305;
+const ROOKS_LETTERS_QUEST: u32 = 97306;
+const THE_QUIET_WING: u32 = 97308;
+const THE_DRAIN: u32 = 97310;
+const NOT_UP_THE_HILL: u32 = 97311;
+const STOCKADE_QUESTS: std::ops::RangeInclusive<u32> = 97301..=97312;
+
+const REPORT: u32 = 980123;
+const PURSE: u32 = 980124;
+const COIN: u32 = 980125;
+const KEYRING: u32 = 980126;
+const LETTERS: u32 = 980127;
+const WRIT_OF_AUDIENCE: u32 = 980122;
+const BOOK: u32 = 980130;
+const WRIT_OF_NAMES: u32 = 980131;
+
+/// Warden Thelwater at the crossing (`hub.toml` 9300072) and Marshal Dughan in Goldshire (Elwynn
+/// spawn 80334).
+const THELWATER_NPC: u64 = 0xF130 << 48 | 1719 << 24 | 9300072;
+const DUGHAN: u64 = 0xF130 << 48 | 240 << 24 | 80334;
+const BY_DUGHAN: [f32; 3] = [-9463.5, 74.0, 57.0];
+/// Bertram Ash in his cell, and a step out in the hall from him.
+const ASH_AT: [f32; 3] = [106.0, -126.0, -33.9396];
+const BY_ASH: [f32; 3] = [104.5, -126.0, -33.9396];
+/// The four witnesses in their cells: `(entry, where)`.
+const WITNESSES_AT: [(u32, [f32; 3]); 4] = [
+    (97211, [128.6, 49.0, -33.8562]),
+    (97212, [160.1, 45.7, -34.7729]),
+    (97213, [134.1, 71.0, -33.8562]),
+    (97214, [162.7, 59.2, -34.8562]),
+];
+const WHY: &str = "Why are you here?";
+/// Beside the drain grate, out of the Hush's reach.
+const BY_GRATE: [f32; 3] = [166.0, 153.5, -33.9396];
+
+fn stormwind_quests() -> toml::Table {
+    include_str!("../content/quests_stormwind.toml")
+        .parse()
+        .unwrap()
+}
+
+fn quest_row(id: u32) -> toml::Value {
+    rows(&stormwind_quests(), "quest")
+        .iter()
+        .find(|q| int(q, "id") == Some(id.into()))
+        .unwrap_or_else(|| panic!("quest {id}"))
+        .clone()
+}
+
+/// A Zealot (Tier 2, so the level-30 quests are offered) at `level` in the city's jail door,
+/// having handed in `done` and carrying one of each of `items` and nothing else.
+fn questing_party(level: u8, done: &[u32], items: &[u32]) -> Party {
+    let done = done.to_vec();
+    let items = items.to_vec();
+    let mut party = Party::edited(
+        Realm::with_seed(1),
+        &[level],
+        START_ELWYNN,
+        Box::new(NoGround),
+        move |_, blob| {
+            let mut blob = carrying(blob, &items)
+                .replace("calling = \"basic_warrior\"", "calling = \"zealot\"");
+            if !done.is_empty() {
+                blob = blob.replace("xp = 0\n", &format!("xp = 0\ncompleted = {done:?}\n"));
+            }
+            blob
+        },
+    );
+    party.go(0, DOOR, 0.66);
+    party.run(0.5);
+    party
+}
+
+/// Takes `quest` from `npc` where the player stands; the events that came.
+fn accept(party: &mut Party, npc: u64, quest: u32) -> Vec<SessionEvent> {
+    let from = party.seen(0).len();
+    party.cmd(0, RealmCommand::QuestGiverAcceptQuest { npc, quest });
+    party.run(0.2);
+    since(party, from)
+}
+
+/// Hands `quest` in at `npc` the stock way; the events that came.
+fn hand_in(party: &mut Party, npc: u64, quest: u32) -> Vec<SessionEvent> {
+    let from = party.seen(0).len();
+    party.cmd(0, RealmCommand::QuestGiverCompleteQuest { npc, quest });
+    party.cmd(0, RealmCommand::QuestGiverRequestReward { npc, quest });
+    party.cmd(
+        0,
+        RealmCommand::QuestGiverChooseReward {
+            npc,
+            quest,
+            choice: 0,
+        },
+    );
+    party.run(0.2);
+    since(party, from)
+}
+
+fn completed(events: &[SessionEvent], quest: u32) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::QuestComplete(c) if c.quest_id == quest))
+}
+
+fn offered(events: &[SessionEvent], quest: u32) -> bool {
+    events.iter().any(|e| match e {
+        SessionEvent::QuestDetail(d) => d.quest_id == quest,
+        SessionEvent::QuestGreeting(list) => list.quests.iter().any(|q| q.quest_id == quest),
+        _ => false,
+    })
+}
+
+/// How many of item `entry` the character's save carries.
+fn carries(party: &Party, entry: u32) -> u32 {
+    let saved = party.realm.export_character(party.guids[0]).unwrap();
+    let rows: toml::Table = saved.parse().unwrap();
+    rows.get("items")
+        .and_then(|v| v.as_array())
+        .into_iter()
+        .flatten()
+        .filter(|i| int(i, "entry") == Some(entry.into()))
+        .map(|i| int(i, "count").unwrap_or(1) as u32)
+        .sum()
+}
+
+#[test]
+fn the_stockade_s_quests_follow_one_another_as_the_ticket_chains_them() {
+    let quests = stormwind_quests();
+    let ids: Vec<u32> = rows(&quests, "quest")
+        .iter()
+        .map(|q| int(q, "id").unwrap() as u32)
+        .filter(|id| STOCKADE_QUESTS.contains(id))
+        .collect();
+    assert_eq!(ids, STOCKADE_QUESTS.collect::<Vec<_>>());
+    let chained = [
+        (97302, 97301),
+        (97303, 97302),
+        (97304, 97303),
+        (97306, 97305),
+        (97307, 97306),
+        (97308, 97307),
+        (97311, 97310),
+    ];
+    for id in STOCKADE_QUESTS {
+        let after = int(&quest_row(id), "after").map(|a| a as u32);
+        let want = chained.iter().find(|c| c.0 == id).map(|c| c.1);
+        assert_eq!(after, want, "quest {id}'s `after`");
+        let kind = quest_row(id)["kind"].as_str().unwrap().to_string();
+        let want = if id == 97312 { "repeatable" } else { "story" };
+        assert_eq!(kind, want, "quest {id}");
+    }
+}
+
+#[test]
+fn every_stockade_quest_is_loaded_with_its_template() {
+    let mut realm = realm();
+    for id in STOCKADE_QUESTS {
+        realm.handle(RealmCommand::QuestQuery { quest: id });
+        let title = drain(&mut realm).into_iter().find_map(|e| match e {
+            SessionEvent::QuestTemplate(t) => Some(t.title),
+            _ => None,
+        });
+        assert_eq!(
+            title.as_deref(),
+            quest_row(id)["title"].as_str(),
+            "quest {id}"
+        );
+    }
+}
+
+#[test]
+fn a_report_for_the_watch_goes_from_dughan_and_stays_with_thelwater() {
+    let mut party = questing_party(30, &[], &[]);
+    party.go(0, BY_DUGHAN, 3.14);
+    party.run(0.5);
+    accept(&mut party, DUGHAN, A_REPORT_FOR_THE_WATCH);
+    assert_eq!(carries(&party, REPORT), 1, "Dughan hands over his report");
+
+    enter(&mut party);
+    walk(&mut party, CROSSING);
+    let events = hand_in(&mut party, THELWATER_NPC, A_REPORT_FOR_THE_WATCH);
+    assert!(completed(&events, A_REPORT_FOR_THE_WATCH), "{events:?}");
+    assert_eq!(
+        carries(&party, REPORT),
+        0,
+        "the report stays with Thelwater"
+    );
+}
+
+#[test]
+fn the_turnkey_is_handed_in_at_ash_with_nothing_to_collect() {
+    let row = quest_row(THE_TURNKEY);
+    for objective in ["kill", "collect", "talk", "use"] {
+        assert!(
+            row.get(objective).is_none(),
+            "The Turnkey has a {objective}"
+        );
+    }
+    let mut party = questing_party(50, &[97301, 97302, 97303], &[]);
+    enter(&mut party);
+    walk(&mut party, CROSSING);
+    accept(&mut party, THELWATER_NPC, THE_TURNKEY);
+    let events = hand_in(&mut party, THELWATER_NPC, THE_TURNKEY);
+    assert!(!completed(&events, THE_TURNKEY), "Thelwater took it in");
+
+    walk(&mut party, EAST_STAIRS);
+    assert!(in_phase(&party));
+    walk(&mut party, BY_ASH);
+    let (ash, _) = party.unit(0, ASH, ASH_AT);
+    let events = hand_in(&mut party, ash, THE_TURNKEY);
+    assert!(completed(&events, THE_TURNKEY), "{events:?}");
+    // Ash offers The Captain's Keys next.
+    let from = party.seen(0).len();
+    party.cmd(0, RealmCommand::QuestGiverHello { npc: ash });
+    party.run(0.2);
+    assert!(offered(&since(&party, from), THE_CAPTAINS_KEYS));
+}
+
+#[test]
+fn the_quiet_wing_gives_rook_s_key_and_the_west_door_opens_for_its_carrier() {
+    // The Writ of Audience was the door's stand-in; it opens nothing now.
+    let done = [97301, 97302, 97303, 97304, 97305, 97306, 97307];
+    let mut party = questing_party(37, &done, &[WRIT_OF_AUDIENCE]);
+    enter(&mut party);
+    walk(&mut party, CROSSING);
+    let events = click_west_door(&mut party);
+    assert_eq!(door_updates(&events), 0, "the writ opened the door");
+    assert_eq!(hale_lines(&events), 1);
+
+    party.go(0, CROSSING, 1.57);
+    accept(&mut party, THELWATER_NPC, THE_QUIET_WING);
+    assert_eq!(carries(&party, KEY), 1, "Thelwater hands over Rook's Key");
+    let events = click_west_door(&mut party);
+    assert_eq!(hale_lines(&events), 0);
+    assert_eq!(door_updates(&events), 1, "the door shows open");
+    let events = walk(&mut party, WEST_STAIRS);
+    assert!(
+        in_phase(&party),
+        "the key let the character into the quiet wing"
+    );
+    assert!(warders(&events) > 0);
+    assert_eq!(carries(&party, KEY), 1, "the door keeps no key");
+}
+
+#[test]
+fn speaking_with_the_four_witnesses_credits_the_quiet_wing() {
+    let done = [97301, 97302, 97303, 97304, 97305, 97306, 97307];
+    let mut party = questing_party(50, &done, &[]);
+    enter(&mut party);
+    walk(&mut party, CROSSING);
+    accept(&mut party, THELWATER_NPC, THE_QUIET_WING);
+    click_west_door(&mut party);
+    walk(&mut party, WEST_STAIRS);
+    assert!(in_phase(&party));
+
+    for (entry, at) in WITNESSES_AT {
+        walk(&mut party, [at[0] + 1.5, at[1], at[2]]);
+        let (witness, _) = party.unit(0, entry, at);
+        let from = party.seen(0).len();
+        party.cmd(0, RealmCommand::GossipHello { guid: witness });
+        party.run(0.1);
+        let menu = since(&party, from);
+        let option = menu
+            .iter()
+            .find_map(|e| match e {
+                SessionEvent::GossipMenu { options, .. } => {
+                    options.iter().find(|o| o.message == WHY).map(|o| o.index)
+                }
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("{entry} offers no {WHY:?}: {menu:?}"));
+        let from = party.seen(0).len();
+        party.cmd(
+            0,
+            RealmCommand::GossipSelectOption {
+                guid: witness,
+                option,
+            },
+        );
+        party.run(0.1);
+        let credited = since(&party, from).iter().any(|e| {
+            matches!(e, SessionEvent::QuestObjectiveKill { quest_id, entry: e, .. }
+                if *quest_id == THE_QUIET_WING && *e == entry)
+        });
+        assert!(credited, "{entry} gave no credit");
+    }
+
+    walk(&mut party, CROSSING);
+    assert!(!in_phase(&party));
+    let events = hand_in(&mut party, THELWATER_NPC, THE_QUIET_WING);
+    assert!(completed(&events, THE_QUIET_WING), "{events:?}");
+}
+
+#[test]
+fn the_drain_grate_offers_the_drain_only_once_quill_is_dead() {
+    let mut party = questing_party(50, &[], &[KEY]);
+    enter(&mut party);
+    click_west_door(&mut party);
+    walk(&mut party, WEST_STAIRS);
+    assert!(in_phase(&party));
+    let grate = 0xF110 << 48 | u64::from(GRATE);
+
+    walk(&mut party, BY_GRATE);
+    let from = party.seen(0).len();
+    party.cmd(0, RealmCommand::UseGameObject { guid: grate });
+    party.run(0.3);
+    assert!(
+        !offered(&since(&party, from), THE_DRAIN),
+        "offered while Quill lives"
+    );
+
+    walk(&mut party, BY_QUILL);
+    let (quill, at) = party.unit(0, QUILL, QUILL_AT);
+    party.go_facing(0, BY_QUILL, at);
+    party.realm.set_creature_health_pct(quill, 1);
+    party.cmd(0, RealmCommand::AttackSwing { guid: quill });
+    for _ in 0..40 {
+        party.run(0.5);
+        if died(party.seen(0), quill) {
+            break;
+        }
+    }
+    assert!(died(party.seen(0), quill), "Quill did not die");
+
+    walk(&mut party, BY_GRATE);
+    assert!(shows(&party, grate));
+    let from = party.seen(0).len();
+    party.cmd(0, RealmCommand::UseGameObject { guid: grate });
+    party.run(0.3);
+    assert!(
+        offered(&since(&party, from), THE_DRAIN),
+        "the grate did not offer The Drain"
+    );
+}
+
+#[test]
+fn rook_s_letters_and_not_up_the_hill_put_their_papers_back_in_the_bag() {
+    let done = [97301, 97302, 97303, 97304, 97305, 97309, 97310];
+    let mut party = questing_party(50, &done, &[]);
+    enter(&mut party);
+    walk(&mut party, CROSSING);
+    accept(&mut party, THELWATER_NPC, ROOKS_LETTERS_QUEST);
+    assert_eq!(carries(&party, LETTERS), 1, "Rook's Letters");
+    accept(&mut party, THELWATER_NPC, NOT_UP_THE_HILL);
+    assert_eq!(carries(&party, BOOK), 1, "the Book of Takings");
+    assert_eq!(carries(&party, WRIT_OF_NAMES), 1, "the Writ of Names");
+}
+
+/// The `drop` list of the creature row `guid` in `file`.
+fn drop_of(file: &toml::Table, guid: i64) -> Vec<u32> {
+    rows(file, "creature")
+        .iter()
+        .find(|c| int(c, "guid") == Some(guid))
+        .and_then(|c| c.get("drop"))
+        .and_then(|d| d.as_array())
+        .map_or(Vec::new(), |d| {
+            d.iter().map(|i| i.as_integer().unwrap() as u32).collect()
+        })
+}
+
+#[test]
+fn the_bosses_hold_their_quest_items_and_the_riot_s_officers_a_coin() {
+    let riot = riot();
+    for c in rows(&riot, "creature") {
+        let (guid, entry) = (int(c, "guid").unwrap(), int(c, "entry").unwrap() as u32);
+        let mut want = match entry {
+            97201 | 97203 => vec![COIN],
+            CUTTER => vec![PURSE, COIN],
+            ROOK => vec![KEYRING, LETTERS, COIN],
+            _ => Vec::new(),
+        };
+        let mut got = drop_of(&riot, guid);
+        want.sort_unstable();
+        got.sort_unstable();
+        assert_eq!(got, want, "riot creature {guid} ({entry})");
+    }
+    let quiet = quiet_wing();
+    for c in rows(&quiet, "creature") {
+        let (guid, entry) = (int(c, "guid").unwrap(), int(c, "entry").unwrap() as u32);
+        let want = match entry {
+            QUILL => vec![BOOK],
+            HUSH => vec![WRIT_OF_NAMES],
+            _ => Vec::new(),
+        };
+        assert_eq!(
+            drop_of(&quiet, guid),
+            want,
+            "quiet wing creature {guid} ({entry})"
+        );
+    }
+    let grate = rows(&quiet, "gameobject")
+        .iter()
+        .find(|o| int(o, "guid") == Some(GRATE.into()))
+        .unwrap();
+    assert_eq!(grate["gives_quests"].as_bool(), Some(true));
+    assert_eq!(
+        int(&quiet["portal"]["door"], "opens_with"),
+        Some(KEY.into()),
+        "the west door opens with Rook's Key"
+    );
 }

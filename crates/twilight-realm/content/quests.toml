@@ -11,7 +11,8 @@
 # - "once": once per character. Advancement never forgets it. It pays no XP.
 # - "story": a Story Quest, once per character. Advancement never forgets it. It pays XP as a
 #   Hunting Quest does (below); `money` is allowed, though the Story Quests set 0.
-#   They live in content/quests_elwynn.toml, which has this same schema.
+#   They live in content/quests_elwynn.toml and content/quests_stormwind.toml, which have this
+#   same schema.
 # - "writ": a Writ (spec #557), offered by the Writ Board's `giver_object` while its pool shows it,
 #   once per showing. It names `levels`, 1 to 2: the levels a character of the Tier it is offered
 #   from gains from its hand-in; no other kind names `levels`. Its `zone_or_sort` names its pool:
