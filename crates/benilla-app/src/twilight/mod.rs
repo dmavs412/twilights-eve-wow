@@ -321,6 +321,8 @@ fn pump(
         Option<ResMut<crate::talent_rows::TalentRowsOutbox>>,
         Option<ResMut<crate::transport::CartRoutes>>,
         Option<ResMut<crate::player::SeatInbox>>,
+        Option<ResMut<crate::alchemy::AlchemyInbox>>,
+        Option<ResMut<crate::alchemy::AlchemyOutbox>>,
     ),
 ) {
     let LocalRealm {
@@ -381,6 +383,12 @@ fn pump(
     }
     // The Talents panel's clicks and opens (ADR 0028).
     if let Some(outbox) = reel.8.as_deref_mut() {
+        for command in outbox.0.drain(..) {
+            backing.handle(command);
+        }
+    }
+    // The Alchemy window's choices (ADR 0025).
+    if let Some(outbox) = reel.12.as_deref_mut() {
         for command in outbox.0.drain(..) {
             backing.handle(command);
         }
@@ -514,6 +522,20 @@ fn pump(
             }
             continue;
         }
+        // The open alchemy table, its preview, a make's result and its close go to the Alchemy
+        // window (ADR 0025).
+        if matches!(
+            event,
+            SessionEvent::AlchemyBench { .. }
+                | SessionEvent::AlchemyPreview { .. }
+                | SessionEvent::AlchemyMade { .. }
+                | SessionEvent::AlchemyClosed
+        ) {
+            if let Some(inbox) = reel.11.as_deref_mut() {
+                inbox.0.push(event);
+            }
+            continue;
+        }
         // The Calling's Talent Rows go to the Talents panel (ADR 0028).
         if matches!(event, SessionEvent::TalentRows { .. }) {
             if let Some(inbox) = reel.7.as_deref_mut() {
@@ -551,6 +573,9 @@ fn pump(
                 inbox.0.push(SessionEvent::LoggedOut);
             }
             if let Some(inbox) = reel.5.as_deref_mut() {
+                inbox.0.push(SessionEvent::LoggedOut);
+            }
+            if let Some(inbox) = reel.11.as_deref_mut() {
                 inbox.0.push(SessionEvent::LoggedOut);
             }
         }

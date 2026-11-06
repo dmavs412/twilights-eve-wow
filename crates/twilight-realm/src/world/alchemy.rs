@@ -472,7 +472,7 @@ fn bench(c: &Char, npc: u64, table: &Table) -> SessionEvent {
         .collect();
     SessionEvent::AlchemyBench {
         npc,
-        table: table.key.clone(),
+        table: table.name.clone(),
         alchemist: alchemist_name(table),
         line: table.line.clone(),
         tiers: table.tiers.clone(),

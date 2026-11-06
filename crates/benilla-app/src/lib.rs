@@ -20,6 +20,7 @@
 static ALLOC: assert_no_alloc::AllocDisabler = assert_no_alloc::AllocDisabler;
 
 pub mod addon_harness;
+mod alchemy;
 mod area;
 mod area_poi;
 mod area_trigger;

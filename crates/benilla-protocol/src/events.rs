@@ -805,8 +805,9 @@ pub enum SessionEvent {
     /// Twilight's Eve, not 1.12: the kitchen closed. Never wire-decoded.
     KitchenClosed,
     /// Twilight's Eve, not 1.12: the open alchemy table (ADR 0025), sent when an alchemist opens
-    /// it and after every make, Rumour and sale. `line` is the table's first-visit line; `tiers`
-    /// the grades its Rumours come in; `sludge` the Murky Sludge held. Never wire-decoded.
+    /// it and after every make, Rumour and sale. `table` is the table's name ("Goldshire"), the
+    /// window's title; `line` its first-visit line; `tiers` the grades its Rumours come in;
+    /// `sludge` the Murky Sludge held. Never wire-decoded.
     AlchemyBench {
         npc: u64,
         table: String,

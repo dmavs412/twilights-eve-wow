@@ -13,6 +13,7 @@
 use bevy::app::PluginGroupBuilder;
 use bevy::prelude::*;
 
+use crate::alchemy::AlchemyPlugin;
 use crate::blob_shadow::BlobShadowPlugin;
 use crate::bowstring::BowstringPlugin;
 use crate::camera_shake::CameraShakePlugin;
@@ -113,6 +114,7 @@ impl PluginGroup for GamePlugins {
             .add(FishingReelPlugin)
             .add(HerbPatchPlugin)
             .add(KitchenPlugin)
+            .add(AlchemyPlugin)
             .add(crate::talent_rows::TalentRowsPlugin)
             .add(crate::calling_choice::CallingChoicePlugin)
             .add(QuestMarkersPlugin)
