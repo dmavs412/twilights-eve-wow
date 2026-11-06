@@ -93,8 +93,11 @@ BODY_RULES = ("water", "wall", "roof", "doodad")
 
 # Table kinds by what they place. Another kind with a position is a creature when its `entry`
 # names a template, else a GameObject.
-GAMEOBJECT_KINDS = {"gameobject", "locked_door", "portal", "portal.door", "inner_portal", "cover", "entrance", "exit"}
-CREATURE_KINDS = {"creature", "creature.on_health", "creature.every", "spawn", "added", "moved", "npc"}
+# An instance map's `entrance` and `exit` (instance_maps.toml) are AreaTrigger spheres like a
+# dungeon's: they place no model, and a `grounded = false` one keeps its DBC Z.
+GAMEOBJECT_KINDS = {"gameobject", "locked_door", "portal", "portal.door", "inner_portal", "cover", "entrance", "exit",
+                    "instance_map.entrance", "instance_map.exit"}
+CREATURE_KINDS = {"creature", "creature.on_health", "creature.every", "spawn", "added", "zone.added", "moved", "npc"}
 # Table kinds whose rows a player stands on: a stop's arrival and return portal. The water rule
 # always checks them, and they place no model of their own.
 PLAYER_KINDS = {"stop"}
