@@ -15,6 +15,7 @@
 mod action;
 mod action_bar_toggles;
 mod addon_message;
+mod alchemy;
 mod auction;
 mod aura;
 mod backdrop;
@@ -154,6 +155,10 @@ pub use action::{ActionSlot, ActionState, ActionUse};
 pub use addon::AddOnInfo;
 pub use addon_enable::EnableHash;
 pub use addon_message::{AddonDistribution, AddonSend};
+pub use alchemy::{
+    AlchemyBenchView, AlchemyCall, AlchemyGradeView, AlchemyMadeView, AlchemyMakeView,
+    AlchemyMaterialView, AlchemyPreviewView, AlchemyRumourView, AlchemyToxicView, AlchemyVialView,
+};
 pub use auction::{
     AuctionBid, AuctionCategory, AuctionHighBidder, AuctionItemRow, AuctionListState, AuctionQuery,
     AuctionStartRequest, AuctionState, AuctionSubCategory, BIDDER, LIST, OWNER, SORT_KEYS,

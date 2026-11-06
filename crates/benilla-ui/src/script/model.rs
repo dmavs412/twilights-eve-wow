@@ -295,6 +295,13 @@ pub(crate) struct Model {
     pub(crate) herb_grid: Option<super::HerbGridView>,
     /// The `Herb*` calls since the host last drained them.
     pub(crate) herb_calls: Vec<super::HerbCall>,
+    /// The open alchemy table the `GetAlchemy*` getters read, pushed by the host.
+    pub(crate) alchemy: Option<super::AlchemyBenchView>,
+    /// What the list would come out as, and the last make's result, pushed by the host.
+    pub(crate) alchemy_preview: Option<super::AlchemyPreviewView>,
+    pub(crate) alchemy_made: Option<super::AlchemyMadeView>,
+    /// The `Alchemy*` calls since the host last drained them.
+    pub(crate) alchemy_calls: Vec<super::AlchemyCall>,
     /// The open kitchen the `GetKitchen*` getters read, pushed by the host.
     pub(crate) kitchen: Option<super::KitchenView>,
     /// What the filled pot would cook, and the last cook's result, pushed by the host.
@@ -1178,6 +1185,10 @@ impl Model {
             deposit_requests: Vec::new(),
             herb_grid: None,
             herb_calls: Vec::new(),
+            alchemy: None,
+            alchemy_preview: None,
+            alchemy_made: None,
+            alchemy_calls: Vec::new(),
             kitchen: None,
             kitchen_prediction: None,
             kitchen_cooked: None,

@@ -98,6 +98,7 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
     super::fishing::install(lua)?;
     super::phase_meter::install(lua)?;
     super::herbalism::install(lua)?;
+    super::alchemy::install(lua)?;
     super::cooking::install(lua)?;
     super::calling_choice::install(lua)?;
     super::zone_text::install(lua)?;
