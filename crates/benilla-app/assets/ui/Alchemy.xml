@@ -1,0 +1,1542 @@
+<Ui>
+    <!--
+        The Alchemy window (ADR 0025, spec #522, laid out to the prototype's Bench tab in
+        docs/specs/alchemy/alchemy-prototype.html). The app pushes the realm's open table; the frame
+        reads GetAlchemyBench(), GetAlchemyTier(i), GetAlchemyMake(i), GetAlchemyTrayItem(i),
+        GetAlchemyTrayValue(i, j), GetAlchemyTarget(i), GetAlchemyRumour(i), GetAlchemyPreview(),
+        GetAlchemyPreviewVial(i), GetAlchemyPreviewToxic(), GetAlchemyMade(), GetAlchemyMadeVial(i),
+        GetAlchemyMadeToxic(), GetAlchemyMadeLine(i) and GetAlchemyItemStep(item), and sends the
+        player's choices through AlchemyPreview, AlchemyMake, AlchemyBuyRumour, AlchemySellSludge and
+        AlchemyClose. It computes no result: every change to the list, the target or the make asks
+        the realm with AlchemyPreview, and the make button is enabled only by a `ready` answer.
+        ALCHEMY_UPDATE repaints, ALCHEMY_PREVIEW fills the vials, ALCHEMY_MADE shows the result on
+        the vials and ALCHEMY_CLOSED hides the window. Escape and the close button call
+        AlchemyClose().
+
+        One 860 x 640 frame in the Journal's art, fitted to the viewport. Across the top the make
+        picker: "Making · materials" (Tincture, Essence) and "Making · consumables" (Potion, Weapon
+        Oil, Flask). On the left the picked make's workspace: its station and rule, six vials (the
+        five properties, then Toxic) with the family's four rings, the target's gold ring and a note
+        under each, then the target dropdown, the make button, Same again and Clear, and the tray of
+        materials the make takes (scrolling, grouped Herbs, Tinctures, Essences, Fish). On the right
+        the alchemist's line, the Rumours for sale with Buy rumour, Sell Murky Sludge, and the log's
+        last eight lines. BenillaAlchemy_SetTarget(family, key, grade) is the dropdown's entry point,
+        and the Alchemy Journal's "Make this" calls it too.
+    -->
+    <Script><![CDATA[
+        BENILLA_ALCHEMY_ART = "Interface\\Benilla\\alchemy\\"
+        BENILLA_ALCHEMY_JOURNAL = "Interface\\Benilla\\journal\\"
+        BENILLA_ALCHEMY_LOG_LINES = 8
+        BENILLA_ALCHEMY_COLUMN = 86
+        -- vial_glass.tga at 40 x 160: the inside the liquid fills, from the glass's bottom-left.
+        BENILLA_ALCHEMY_GLASS = { w = 40, h = 160, left = 8, inner = 24, bottom = 8, height = 120 }
+        -- The realm's grade names by its 0-based index (alchemy.toml [grades] names): a target
+        -- names its grade, where AlchemyGrade carries only the index.
+        BENILLA_ALCHEMY_GRADES = { [0] = "Minor", [1] = "Lesser", [2] = "Standard", [3] = "Greater" }
+        BENILLA_ALCHEMY_PROPS = { "Restorative", "Fortifying", "Volatile", "Arcane", "Calming" }
+        BENILLA_ALCHEMY_COLOURS = {
+            Restorative = { 0.910, 0.314, 0.314 }, Fortifying = { 0.941, 0.659, 0.188 },
+            Volatile = { 1.000, 0.478, 0.102 }, Arcane = { 0.710, 0.424, 1.000 },
+            Calming = { 0.247, 0.827, 0.878 }, Toxic = { 0.361, 0.839, 0.361 },
+            Purifying = { 0.788, 0.839, 0.871 },
+        }
+        BENILLA_ALCHEMY_PURIFIED = { 0.788, 0.839, 0.871 }
+        BENILLA_ALCHEMY_GOLD = { 1.000, 0.820, 0.000 }
+        BENILLA_ALCHEMY_GREEN = { 0.118, 1.000, 0.000 }
+        BENILLA_ALCHEMY_RED = { 1.000, 0.300, 0.300 }
+        BENILLA_ALCHEMY_GREY = { 0.600, 0.600, 0.600 }
+        BENILLA_ALCHEMY_EDGE = { 0.431, 0.337, 0.161 }
+        BENILLA_ALCHEMY_PICKER = {
+            { label = "Making · materials", x = 28, keys = { "tincture", "essence" } },
+            { label = "Making · consumables", x = 286, keys = { "potion", "oil", "flask" } },
+        }
+        -- A dark make's tooltip: how it opens.
+        BENILLA_ALCHEMY_OPENS = {
+            potion = "Open from the start.",
+            tincture = "Brew any potion to open the Still.",
+            essence = "Distill a Tincture to condense Essences.",
+            oil = "Distill a Tincture to open the Oil Tin.",
+            flask = "Make an Essence to open the Flask Rack.",
+        }
+        -- The family a make's target comes from; the Flask has none.
+        BENILLA_ALCHEMY_FAMILY = { potion = "potion", tincture = "tincture", essence = "essence", oil = "oil" }
+        BENILLA_ALCHEMY_KINDS = { [0] = "Herbs", [1] = "Fish", [2] = "Tinctures", [3] = "Essences" }
+        -- The log's colours by a made line's kind: 0 info, 1 learn, 2 say, 3 product, 4 error.
+        BENILLA_ALCHEMY_LOG_COLOURS = {
+            [0] = { 0.900, 0.900, 0.900 }, [1] = BENILLA_ALCHEMY_GOLD, [2] = BENILLA_ALCHEMY_GREY,
+            [3] = BENILLA_ALCHEMY_GREEN, [4] = BENILLA_ALCHEMY_RED,
+        }
+        BENILLA_ALCHEMY_ERROR = 4
+
+        -- slots holds each make's list of item entries; target each make's "family|key|Grade".
+        BenillaAlchemyState = {
+            open = false, making = "potion", makes = {}, tray = {}, targets = {}, rumours = {},
+            tiers = {}, slots = {}, target = {}, last = {}, log = {}, rumour = 1, sludge = 0,
+            cards = 0, groups = 0,
+        }
+
+        function BenillaAlchemy_Text(parent, name, font, layer)
+            return parent:CreateFontString(name, layer or "OVERLAY", getglobal(font) and font or nil)
+        end
+
+        function BenillaAlchemy_Place(region, parent, x, y, w, h)
+            region:ClearAllPoints()
+            region:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -y)
+            if w then region:SetWidth(w) end
+            if h then region:SetHeight(h) end
+        end
+
+        -- A 1 px line on each edge of `frame`, in r, g, b.
+        function BenillaAlchemy_Lines(frame, r, g, b)
+            local points = {
+                { "TOPLEFT", "TOPRIGHT", "height" }, { "BOTTOMLEFT", "BOTTOMRIGHT", "height" },
+                { "TOPLEFT", "BOTTOMLEFT", "width" }, { "TOPRIGHT", "BOTTOMRIGHT", "width" },
+            }
+            local lines = {}
+            for n, p in ipairs(points) do
+                local line = frame:CreateTexture(nil, "BORDER")
+                line:SetTexture(r, g, b, 1)
+                line:SetPoint(p[1], frame, p[1], 0, 0)
+                line:SetPoint(p[2], frame, p[2], 0, 0)
+                if p[3] == "height" then line:SetHeight(1) else line:SetWidth(1) end
+                lines[n] = line
+            end
+            return lines
+        end
+
+        function BenillaAlchemy_Colour(lines, c, a)
+            for _, line in ipairs(lines) do
+                line:SetTexture(c[1], c[2], c[3], a or 1)
+            end
+        end
+
+        -- A dark fill and a gold-dim border, as the Kitchen's chips.
+        function BenillaAlchemy_ChipBack(frame)
+            local bg = frame:CreateTexture(nil, "BACKGROUND")
+            bg:SetTexture(0, 0, 0, 0.3)
+            bg:SetAllPoints(frame)
+            local e = BENILLA_ALCHEMY_EDGE
+            return BenillaAlchemy_Lines(frame, e[1], e[2], e[3])
+        end
+
+        function BenillaAlchemy_Inset(parent, x, y, w, h)
+            local fill = parent:CreateTexture(nil, "ARTWORK")
+            fill:SetTexture(0.055, 0.035, 0.018, 0.65)
+            BenillaAlchemy_Place(fill, parent, x, y, w, h)
+        end
+
+        function BenillaAlchemy_Hex(c)
+            return string.format("|cff%02x%02x%02x", math.floor(c[1] * 255), math.floor(c[2] * 255),
+                math.floor(c[3] * 255))
+        end
+
+        function BenillaAlchemy_Paint_Text(c, text)
+            return BenillaAlchemy_Hex(c) .. text .. "|r"
+        end
+
+        function BenillaAlchemy_Grey(text)
+            return BenillaAlchemy_Paint_Text(BENILLA_ALCHEMY_GREY, text)
+        end
+
+        function BenillaAlchemy_ItemInfo(item)
+            if not item or item == 0 then
+                return nil
+            end
+            local name, _, quality, _, _, _, _, _, texture = GetItemInfo(item)
+            return name, quality, texture
+        end
+
+        function BenillaAlchemy_Name(item)
+            return (BenillaAlchemy_ItemInfo(item)) or "Unknown item"
+        end
+
+        -- An item's name and `suffix` in its quality colour.
+        function BenillaAlchemy_Coloured(item, suffix)
+            local name, quality = BenillaAlchemy_ItemInfo(item)
+            local colour = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality or 1]
+            local c = colour and { colour.r, colour.g, colour.b } or { 1, 1, 1 }
+            return BenillaAlchemy_Paint_Text(c, (name or "Unknown item") .. (suffix or ""))
+        end
+
+        -- Points as the prototype prints them: "4", "6.25".
+        function BenillaAlchemy_Points(v)
+            v = v or 0
+            if math.floor(v) == v then
+                return string.format("%d", v)
+            end
+            local s = string.format("%.2f", v)
+            s = string.gsub(s, "0+$", "")
+            s = string.gsub(s, "%.$", "")
+            return s
+        end
+
+        -- "Restorative" -> "Rest", "Toxic" -> "Tox", "Purifying" -> "Pure".
+        function BenillaAlchemy_Short(prop)
+            if prop == "Toxic" then return "Tox" end
+            if prop == "Purifying" then return "Pure" end
+            return string.sub(prop, 1, 4)
+        end
+
+        -- "Standard" is the plain grade.
+        function BenillaAlchemy_Plain(grade)
+            if grade == "Standard" then return "plain" end
+            return grade
+        end
+
+        function BenillaAlchemy_Money(copper)
+            local g, s = math.floor(copper / 10000), math.mod(math.floor(copper / 100), 100)
+            return (g > 0 and (g .. "g ") or "") .. s .. "s"
+        end
+
+        -- ---------- state ----------
+
+        -- The open table's makes, tray, targets, Rumours and tiers, read into Lua tables.
+        function BenillaAlchemy_Load()
+            local st = BenillaAlchemyState
+            local _, _, _, numMakes, numTray, numTargets, numRumours, sludge = GetAlchemyBench()
+            st.makes, st.tray, st.targets, st.rumours, st.tiers = {}, {}, {}, {}, {}
+            for i = 1, numMakes or 0 do
+                local key, name, station, verb, rule, open, herbsMin, herbsMax, tinctures, essences, fish, wash = GetAlchemyMake(i)
+                st.makes[i] = { key = key, name = name, station = station, verb = verb, rule = rule,
+                    open = open, herbsMin = herbsMin, herbsMax = herbsMax, tinctures = tinctures,
+                    essences = essences, fish = fish, wash = wash }
+            end
+            for i = 1, numTray or 0 do
+                local item, count, kind, level, numValues, prop, points, toxic, step = GetAlchemyTrayItem(i)
+                local values = {}
+                for j = 1, numValues do
+                    local name, pts = GetAlchemyTrayValue(i, j)
+                    values[j] = { name = name, points = pts }
+                end
+                st.tray[i] = { item = item, count = count, kind = kind, level = level, values = values,
+                    prop = prop, points = points, toxic = toxic, step = step }
+            end
+            for i = 1, numTargets or 0 do
+                local family, key, grade, name, learned, rumoured, threshold = GetAlchemyTarget(i)
+                st.targets[i] = { family = family, key = key, grade = grade, name = name,
+                    learned = learned, rumoured = rumoured, threshold = threshold }
+            end
+            for i = 1, numRumours or 0 do
+                local family, key, grade, name, price = GetAlchemyRumour(i)
+                st.rumours[i] = { family = family, key = key, grade = grade, name = name, price = price }
+            end
+            local i = 1
+            while GetAlchemyTier(i) do
+                st.tiers[i] = GetAlchemyTier(i)
+                i = i + 1
+            end
+            st.sludge = sludge or 0
+            if st.rumour > table.getn(st.rumours) then
+                st.rumour = 1
+            end
+        end
+
+        function BenillaAlchemy_MakeOf(key)
+            for _, m in ipairs(BenillaAlchemyState.makes) do
+                if m.key == key then
+                    return m
+                end
+            end
+            return nil
+        end
+
+        function BenillaAlchemy_TrayOf(item)
+            for _, t in ipairs(BenillaAlchemyState.tray) do
+                if t.item == item then
+                    return t
+                end
+            end
+            return nil
+        end
+
+        -- The picked make's list.
+        function BenillaAlchemy_List()
+            local st = BenillaAlchemyState
+            if not st.slots[st.making] then
+                st.slots[st.making] = {}
+            end
+            return st.slots[st.making]
+        end
+
+        function BenillaAlchemy_Used(list, item)
+            local used = 0
+            for _, s in ipairs(list) do
+                if s == item then used = used + 1 end
+            end
+            return used
+        end
+
+        -- How many of a kind the make takes (the prototype's `accepts`).
+        function BenillaAlchemy_Accepts(m, kind)
+            if kind == 0 then return math.max(m.herbsMax, m.wash) end
+            if kind == 1 then return m.fish end
+            if kind == 2 then return m.tinctures end
+            if kind == 3 then return m.essences end
+            return 0
+        end
+
+        -- How many more of `item` the picked make has room for (the prototype's `room`).
+        function BenillaAlchemy_Room(item)
+            local st = BenillaAlchemyState
+            local m, t = BenillaAlchemy_MakeOf(st.making), BenillaAlchemy_TrayOf(item)
+            if not m or not t or not m.open then
+                return 0
+            end
+            local list = BenillaAlchemy_List()
+            local ofKind = 0
+            for _, s in ipairs(list) do
+                local o = BenillaAlchemy_TrayOf(s)
+                if o and o.kind == t.kind then ofKind = ofKind + 1 end
+            end
+            local cap = BenillaAlchemy_Accepts(m, t.kind) - ofKind
+            return math.max(0, math.min(cap, t.count - BenillaAlchemy_Used(list, item)))
+        end
+
+        function BenillaAlchemy_TargetKey(t)
+            return t.family .. "|" .. t.key .. "|" .. (BENILLA_ALCHEMY_GRADES[t.grade] or "")
+        end
+
+        function BenillaAlchemy_TargetOf(key)
+            for i, t in ipairs(BenillaAlchemyState.targets) do
+                if BenillaAlchemy_TargetKey(t) == key then
+                    return t, i
+                end
+            end
+            return nil
+        end
+
+        function BenillaAlchemy_Preview()
+            local st = BenillaAlchemyState
+            st.waiting = true
+            AlchemyPreview(st.making, st.target[st.making] or "", unpack(BenillaAlchemy_List()))
+        end
+
+        -- The list, the target or the make changed: the result goes, the realm is asked again.
+        function BenillaAlchemy_Changed()
+            local st = BenillaAlchemyState
+            if st.result == st.making then
+                st.result = nil
+            end
+            BenillaAlchemy_Preview()
+            BenillaAlchemy_Paint()
+        end
+
+        function BenillaAlchemy_Log(kind, text)
+            local log = BenillaAlchemyState.log
+            table.insert(log, { kind = kind, text = text })
+            while table.getn(log) > BENILLA_ALCHEMY_LOG_LINES do
+                table.remove(log, 1)
+            end
+        end
+
+        -- Drops what the player no longer holds from every list; true when the picked one changed.
+        function BenillaAlchemy_DropMissing()
+            local st = BenillaAlchemyState
+            local changed = false
+            for make, list in pairs(st.slots) do
+                local kept, used = {}, {}
+                for _, item in ipairs(list) do
+                    used[item] = (used[item] or 0) + 1
+                    local t = BenillaAlchemy_TrayOf(item)
+                    if t and t.count >= used[item] then
+                        table.insert(kept, item)
+                    elseif make == st.making then
+                        changed = true
+                    end
+                end
+                st.slots[make] = kept
+            end
+            return changed
+        end
+
+        -- ---------- actions ----------
+
+        function BenillaAlchemy_Pick(key)
+            local m = BenillaAlchemy_MakeOf(key)
+            if not m or not m.open then
+                return
+            end
+            BenillaAlchemyState.making = key
+            BenillaAlchemy_Preview()
+            BenillaAlchemy_Paint()
+        end
+
+        -- Adds up to `n` of `item` to the picked make's list, or says why none fit.
+        function BenillaAlchemy_Add(item, n)
+            local st = BenillaAlchemyState
+            local m, t = BenillaAlchemy_MakeOf(st.making), BenillaAlchemy_TrayOf(item)
+            if not m or not t then
+                return
+            end
+            local list = BenillaAlchemy_List()
+            local add = math.min(BenillaAlchemy_Room(item), n)
+            if add > 0 then
+                for _ = 1, add do
+                    table.insert(list, item)
+                end
+                BenillaAlchemy_Changed()
+                return
+            end
+            local text
+            if BenillaAlchemy_Accepts(m, t.kind) == 0 then
+                text = "A " .. m.name .. " does not take " .. string.lower(BENILLA_ALCHEMY_KINDS[t.kind] or "that") .. "."
+            elseif t.count <= BenillaAlchemy_Used(list, item) then
+                text = "No " .. BenillaAlchemy_Name(item) .. " left to add."
+            else
+                text = "The " .. m.station .. " is full."
+            end
+            BenillaAlchemy_Log(BENILLA_ALCHEMY_ERROR, text)
+            BenillaAlchemy_PaintLog()
+        end
+
+        -- Takes one `item` out of the picked make's list.
+        function BenillaAlchemy_Less(item)
+            local list = BenillaAlchemy_List()
+            for j = table.getn(list), 1, -1 do
+                if list[j] == item then
+                    table.remove(list, j)
+                    BenillaAlchemy_Changed()
+                    return
+                end
+            end
+        end
+
+        function BenillaAlchemy_Clear()
+            local st = BenillaAlchemyState
+            st.slots[st.making] = {}
+            BenillaAlchemy_Changed()
+        end
+
+        -- The last list made at this make again, or why it cannot be.
+        function BenillaAlchemy_Again()
+            local st = BenillaAlchemyState
+            local last = st.last[st.making]
+            if not last then
+                return
+            end
+            local need, order = {}, {}
+            for _, item in ipairs(last) do
+                if not need[item] then table.insert(order, item) end
+                need[item] = (need[item] or 0) + 1
+            end
+            for _, item in ipairs(order) do
+                local t = BenillaAlchemy_TrayOf(item)
+                local have = t and t.count or 0
+                if have < need[item] then
+                    BenillaAlchemy_Log(BENILLA_ALCHEMY_ERROR, "Not enough " .. BenillaAlchemy_Name(item)
+                        .. " for that again (" .. have .. " of " .. need[item] .. ").")
+                    BenillaAlchemy_PaintLog()
+                    return
+                end
+            end
+            local list = {}
+            for j, item in ipairs(last) do
+                list[j] = item
+            end
+            st.slots[st.making] = list
+            BenillaAlchemy_Changed()
+        end
+
+        -- The target of `family`'s `key` at the 0-based `grade`, which also picks its make; nil
+        -- family for none. The target dropdown's entries call this, and so does the Alchemy
+        -- Journal's "Make this".
+        function BenillaAlchemy_SetTarget(family, key, grade)
+            local st = BenillaAlchemyState
+            if not family or family == "" then
+                st.target[st.making] = nil
+            else
+                local make = family == "hybrid" and "potion" or family
+                local m = BenillaAlchemy_MakeOf(make)
+                if not m or not m.open or not BENILLA_ALCHEMY_FAMILY[make] then
+                    return
+                end
+                st.target[make] = family .. "|" .. key .. "|" .. (BENILLA_ALCHEMY_GRADES[grade] or "")
+                st.making = make
+            end
+            BenillaAlchemy_Changed()
+        end
+
+        function BenillaAlchemy_SetRumour(i)
+            BenillaAlchemyState.rumour = i
+            BenillaAlchemy_PaintShop()
+        end
+
+        function BenillaAlchemyGo_OnClick()
+            local st = BenillaAlchemyState
+            local ready = GetAlchemyPreview()
+            if not ready or st.waiting then
+                return
+            end
+            local list = BenillaAlchemy_List()
+            local items = {}
+            for j, item in ipairs(list) do
+                items[j] = item
+            end
+            st.pending = { make = st.making, items = items }
+            st.waiting = true
+            AlchemyMake(st.making, st.target[st.making] or "", unpack(items))
+            BenillaAlchemy_PaintControls()
+        end
+
+        function BenillaAlchemyBuy_OnClick()
+            local r = BenillaAlchemyState.rumours[BenillaAlchemyState.rumour]
+            if r then
+                AlchemyBuyRumour(r.family, r.key, r.grade)
+            end
+        end
+
+        function BenillaAlchemyPick_OnClick()
+            BenillaAlchemy_Pick(this.key)
+        end
+
+        function BenillaAlchemyPick_OnEnter()
+            local m = BenillaAlchemy_MakeOf(this.key)
+            if not m or not GameTooltip then
+                return
+            end
+            GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
+            if m.open then
+                GameTooltip:SetText(m.rule .. " at the " .. m.station)
+            else
+                GameTooltip:SetText(BENILLA_ALCHEMY_OPENS[m.key] or "")
+            end
+            GameTooltip:Show()
+        end
+
+        function BenillaAlchemyCard_OnClick()
+            BenillaAlchemy_Add(this.item, 1)
+        end
+
+        function BenillaAlchemy_ItemTip(item)
+            if item and item ~= 0 and GameTooltip then
+                GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink("item:" .. item .. ":0:0:0")
+                GameTooltip:Show()
+            end
+        end
+
+        function BenillaAlchemy_HideTip()
+            if GameTooltip then GameTooltip:Hide() end
+        end
+
+        -- ---------- the dropdowns (the 1.12 UIDropDownMenu kit) ----------
+
+        function BenillaAlchemy_NoTarget(make)
+            return "Target: none (most points wins"
+                .. (make == "potion" and "; a hybrid forms when two properties clear its ladder" or "") .. ")"
+        end
+
+        function BenillaAlchemy_TargetText(t)
+            local tail = ""
+            if not t.learned then
+                tail = t.rumoured and " (rumour)" or " (?)"
+            end
+            return "Target: " .. t.name .. tail
+        end
+
+        function BenillaAlchemy_RumourText(r)
+            return r.name .. " — " .. BenillaAlchemy_Money(r.price)
+        end
+
+        function BenillaAlchemy_MenuArrow(text, value, level)
+            local info = {}
+            info.text = text
+            info.value = value
+            info.hasArrow = 1
+            UIDropDownMenu_AddButton(info, level)
+        end
+
+        -- Level 1: none, then the family's grades; the Potion's go under "Single potions" and
+        -- "Hybrid potions", and the hybrids under their grade, since a list holds 32 buttons.
+        function BenillaAlchemyTarget_Init()
+            local st = BenillaAlchemyState
+            local level = UIDROPDOWNMENU_MENU_LEVEL or 1
+            local make = st.making
+            local family = BENILLA_ALCHEMY_FAMILY[make]
+            if not family then
+                return
+            end
+            local function entry(i, t)
+                local info = {}
+                info.text = BenillaAlchemy_TargetText(t)
+                info.value = i
+                info.func = BenillaAlchemyTarget_OnClick
+                if st.target[make] == BenillaAlchemy_TargetKey(t) then info.checked = 1 end
+                UIDropDownMenu_AddButton(info, level)
+            end
+            local value = UIDROPDOWNMENU_MENU_VALUE
+            if level == 1 then
+                local info = {}
+                info.text = BenillaAlchemy_NoTarget(make)
+                info.value = 0
+                info.func = BenillaAlchemyTarget_OnClick
+                if not st.target[make] then info.checked = 1 end
+                UIDropDownMenu_AddButton(info, level)
+                if make == "potion" then
+                    BenillaAlchemy_MenuArrow("Single potions", "single", level)
+                    BenillaAlchemy_MenuArrow("Hybrid potions", "hybrid", level)
+                    return
+                end
+                for i, t in ipairs(st.targets) do
+                    if t.family == family then entry(i, t) end
+                end
+            elseif level == 2 and value == "single" then
+                for i, t in ipairs(st.targets) do
+                    if t.family == "potion" then entry(i, t) end
+                end
+            elseif level == 2 and value == "hybrid" then
+                for g = 0, 3 do
+                    BenillaAlchemy_MenuArrow(BENILLA_ALCHEMY_GRADES[g], g, level)
+                end
+            elseif level == 3 then
+                for i, t in ipairs(st.targets) do
+                    if t.family == "hybrid" and t.grade == value then entry(i, t) end
+                end
+            end
+        end
+
+        function BenillaAlchemyTarget_OnClick()
+            local t = BenillaAlchemyState.targets[this.value]
+            if t then
+                BenillaAlchemy_SetTarget(t.family, t.key, t.grade)
+            else
+                BenillaAlchemy_SetTarget(nil)
+            end
+            if CloseDropDownMenus then CloseDropDownMenus() end
+        end
+
+        -- Every Rumour in one list, or under its grade when they pass a list's 32 buttons.
+        function BenillaAlchemyRumour_Init()
+            local st = BenillaAlchemyState
+            local level = UIDROPDOWNMENU_MENU_LEVEL or 1
+            local grouped = table.getn(st.rumours) > 30
+            local function entry(i, r)
+                local info = {}
+                info.text = BenillaAlchemy_RumourText(r)
+                info.value = i
+                info.func = BenillaAlchemyRumour_OnClick
+                if st.rumour == i then info.checked = 1 end
+                UIDropDownMenu_AddButton(info, level)
+            end
+            if level == 1 and not grouped then
+                for i, r in ipairs(st.rumours) do entry(i, r) end
+            elseif level == 1 then
+                for g = 0, 3 do
+                    for _, r in ipairs(st.rumours) do
+                        if r.grade == g then
+                            BenillaAlchemy_MenuArrow(BENILLA_ALCHEMY_GRADES[g], g, level)
+                            break
+                        end
+                    end
+                end
+            elseif level == 2 then
+                for i, r in ipairs(st.rumours) do
+                    if r.grade == UIDROPDOWNMENU_MENU_VALUE then entry(i, r) end
+                end
+            end
+        end
+
+        function BenillaAlchemyRumour_OnClick()
+            BenillaAlchemy_SetRumour(this.value)
+            if CloseDropDownMenus then CloseDropDownMenus() end
+        end
+
+        -- ---------- painting ----------
+
+        function BenillaAlchemy_PaintPicker()
+            local st = BenillaAlchemyState
+            for i = 1, 5 do
+                local b = getglobal("BenillaAlchemyMake" .. i)
+                local m = st.makes[i]
+                if m then
+                    b.key = m.key
+                    local name, station = getglobal(b:GetName() .. "Name"), getglobal(b:GetName() .. "Station")
+                    name:SetText(m.name)
+                    if m.open then
+                        station:SetText(m.station)
+                        name:SetTextColor(BENILLA_ALCHEMY_GOLD[1], BENILLA_ALCHEMY_GOLD[2], BENILLA_ALCHEMY_GOLD[3])
+                        b:Enable()
+                        b:SetAlpha(1)
+                    else
+                        station:SetText("Dark")
+                        local g = BENILLA_ALCHEMY_GREY
+                        name:SetTextColor(g[1], g[2], g[3])
+                        b:Disable()
+                        b:SetAlpha(0.6)
+                    end
+                    BenillaAlchemy_Colour(b.edge, m.key == st.making and BENILLA_ALCHEMY_GOLD or BENILLA_ALCHEMY_EDGE)
+                    b:Show()
+                else
+                    b:Hide()
+                end
+            end
+            -- Each group's buttons from its left edge, in the group's own order.
+            for _, group in ipairs(BENILLA_ALCHEMY_PICKER) do
+                local x = group.x
+                for _, key in ipairs(group.keys) do
+                    for i = 1, 5 do
+                        local m = st.makes[i]
+                        if m and m.key == key then
+                            BenillaAlchemy_Place(getglobal("BenillaAlchemyMake" .. i), BenillaAlchemy, x, 72)
+                            x = x + 118
+                        end
+                    end
+                end
+            end
+        end
+
+        function BenillaAlchemy_PaintWork()
+            local st = BenillaAlchemyState
+            local m = BenillaAlchemy_MakeOf(st.making)
+            if not m then
+                BenillaAlchemyStation:SetText("")
+                BenillaAlchemyRule:SetText("")
+                return
+            end
+            BenillaAlchemyStation:SetText(m.station)
+            if m.open then
+                BenillaAlchemyRule:SetText(m.name .. " · " .. m.rule)
+            else
+                BenillaAlchemyRule:SetText(m.name .. "s are dark. " .. (BENILLA_ALCHEMY_OPENS[m.key] or ""))
+            end
+        end
+
+        -- One vial's height on the glass for `v` points.
+        function BenillaAlchemy_Height(v, scale)
+            if not scale or scale <= 0 or not v or v <= 0 then
+                return 0
+            end
+            return BENILLA_ALCHEMY_GLASS.height * math.min(1, v / scale)
+        end
+
+        -- A layer on vial `col` from `bottom` up `h`, tinted `c` at alpha `a`; hidden when empty.
+        function BenillaAlchemy_Layer(tex, col, bottom, h, c, a)
+            local g = BENILLA_ALCHEMY_GLASS
+            h = math.min(h, g.height - bottom)
+            if h < 0.5 then
+                tex:Hide()
+                return 0
+            end
+            tex:ClearAllPoints()
+            tex:SetPoint("BOTTOMLEFT", col.glass, "BOTTOMLEFT", g.left, g.bottom + bottom)
+            tex:SetWidth(g.inner)
+            tex:SetHeight(h)
+            tex:SetVertexColor(c[1], c[2], c[3], a)
+            tex:Show()
+            return h
+        end
+
+        -- Paints vial `n`: `v` holds prop, value, unknown, main, target, bonus, tick and, on the
+        -- Toxic vial, purified; `rings` the ladder; `note` the line under it.
+        function BenillaAlchemy_PaintVial(n, v, scale, rings, note)
+            local col = getglobal("BenillaAlchemyVial" .. n)
+            local g = BENILLA_ALCHEMY_GLASS
+            local c = BENILLA_ALCHEMY_COLOURS[v.prop] or { 1, 1, 1 }
+            local up = BenillaAlchemy_Layer(col.liquid, col, 0, BenillaAlchemy_Height(v.value, scale), c, 1)
+            up = up + BenillaAlchemy_Layer(col.bonus, col, up, BenillaAlchemy_Height(v.bonus, scale), c, 0.5)
+            up = up + BenillaAlchemy_Layer(col.purified, col, up, BenillaAlchemy_Height(v.purified, scale), BENILLA_ALCHEMY_PURIFIED, 0.85)
+            local tickOnRing = false
+            for r = 1, 4 do
+                local ring, label = col.rings[r], col.labels[r]
+                local value = rings[r] or 0
+                if value > 0 and scale and scale > 0 and value <= scale then
+                    local gold = v.tick and v.tick > 0 and v.tick == value
+                    tickOnRing = tickOnRing or gold
+                    local rc = gold and BENILLA_ALCHEMY_GOLD or { 1, 1, 1 }
+                    ring:SetTexture(rc[1], rc[2], rc[3], gold and 1 or 0.45)
+                    ring:ClearAllPoints()
+                    ring:SetPoint("BOTTOMLEFT", col.glass, "BOTTOMLEFT", g.left - 4, g.bottom + BenillaAlchemy_Height(value, scale))
+                    ring:SetWidth(g.inner + 8)
+                    ring:SetHeight(1)
+                    ring:Show()
+                    label:SetText(tostring(value))
+                    label:Show()
+                else
+                    ring:Hide()
+                    label:Hide()
+                end
+            end
+            if v.tick and v.tick > 0 and not tickOnRing and scale and scale > 0 then
+                col.tick:ClearAllPoints()
+                col.tick:SetPoint("BOTTOMLEFT", col.glass, "BOTTOMLEFT", g.left - 4, g.bottom + BenillaAlchemy_Height(v.tick, scale))
+                col.tick:SetWidth(g.inner + 8)
+                col.tick:SetHeight(2)
+                col.tick:Show()
+                col.tickLabel:SetText(tostring(v.tick))
+                col.tickLabel:Show()
+            else
+                col.tick:Hide()
+                col.tickLabel:Hide()
+            end
+            if v.unknown then
+                col.q:ClearAllPoints()
+                col.q:SetPoint("BOTTOM", col.glass, "BOTTOMLEFT", g.left + g.inner / 2, g.bottom + math.min(up, g.height - 12) + 2)
+                col.q:Show()
+            else
+                col.q:Hide()
+            end
+            if v.main then
+                col.glow:SetTexture(c[1], c[2], c[3], 0.28)
+                col.glow:Show()
+            else
+                col.glow:Hide()
+            end
+            col.name:SetText(v.prop)
+            col.name:SetTextColor(c[1], c[2], c[3])
+            local text
+            if v.value and v.value > 0 then
+                text = BenillaAlchemy_Paint_Text(c, BenillaAlchemy_Points(v.value))
+            elseif v.unknown then
+                text = "?"
+            else
+                text = BenillaAlchemy_Grey("–")
+            end
+            if v.bonus and v.bonus > 0 then
+                text = text .. " " .. BenillaAlchemy_Paint_Text(c, "+" .. BenillaAlchemy_Points(v.bonus))
+            end
+            col.value:SetText(text)
+            col.note:SetText(note or "")
+        end
+
+        -- The result's name from its product line ("Minor Healing Potion x1, into your bags."),
+        -- else the made item's name.
+        function BenillaAlchemy_ResultName(product, numLines)
+            for i = 1, numLines do
+                local kind, text = GetAlchemyMadeLine(i)
+                if kind == 3 then
+                    local _, _, name = string.find(text, "^(.-), into your bags")
+                    if name then
+                        name = string.gsub(name, " carrying Toxic ", " · Toxic ")
+                        return name
+                    end
+                end
+            end
+            local name = BenillaAlchemy_ItemInfo(product)
+            if name then
+                return name
+            end
+            for i = 1, numLines do
+                local kind, text = GetAlchemyMadeLine(i)
+                if kind == 2 then
+                    local _, _, first = string.find(text, "^(.-)%.")
+                    if first then return first end
+                end
+            end
+            return ""
+        end
+
+        -- The line under the first main vial: the product and its step in its quality colour,
+        -- "Something new", Murky Sludge, or why the list is not ready.
+        function BenillaAlchemy_ProductLine()
+            local ready, note, _, _, _, _, _, _, _, known, product, sludge, carried = GetAlchemyPreview()
+            if ready == nil then
+                return ""
+            end
+            if not ready then
+                return BenillaAlchemy_Grey(note)
+            end
+            if sludge then
+                return BenillaAlchemy_Grey("Murky Sludge")
+            end
+            if known and product ~= 0 then
+                local step = GetAlchemyItemStep(product)
+                local line = BenillaAlchemy_Coloured(product, step and (" " .. step) or "")
+                if carried and carried > 0 then
+                    line = line .. BenillaAlchemy_Grey(" · carries Toxic " .. carried)
+                end
+                return line
+            end
+            return BenillaAlchemy_Grey("Something new")
+        end
+
+        function BenillaAlchemy_PaintVials()
+            local st = BenillaAlchemyState
+            local made = st.result ~= nil and st.result == st.making
+            local scale, rings, getVial, getToxic, footer, resultName
+            local ready, note, unnoted, failed, failPct
+            if made then
+                local product, f, pct, numLines, s, r1, r2, r3, r4 = GetAlchemyMade()
+                scale, rings, failed, failPct = s, { r1, r2, r3, r4 }, f, pct
+                getVial, getToxic = GetAlchemyMadeVial, GetAlchemyMadeToxic
+                resultName = BenillaAlchemy_ResultName(product or 0, numLines or 0)
+                footer = "Result · " .. resultName
+                BenillaAlchemy_Colour(BenillaAlchemyVials.edge, failed and BENILLA_ALCHEMY_RED or BENILLA_ALCHEMY_GREEN)
+                for _, line in ipairs(BenillaAlchemyVials.edge) do line:Show() end
+            else
+                local s, r1, r2, r3, r4
+                ready, note, unnoted, s, r1, r2, r3, r4 = GetAlchemyPreview()
+                scale, rings = s, { r1, r2, r3, r4 }
+                getVial, getToxic = GetAlchemyPreviewVial, GetAlchemyPreviewToxic
+                for _, line in ipairs(BenillaAlchemyVials.edge) do line:Hide() end
+                if unnoted and unnoted > 0 then
+                    footer = BenillaAlchemy_Grey(unnoted .. (unnoted == 1 and " unnoted herb" or " unnoted herbs") .. " not shown")
+                end
+            end
+            local vials, firstMain = {}, nil
+            for i = 1, 5 do
+                local prop, value, unknown, main, isTarget, bonus, tick = getVial(i)
+                vials[i] = { prop = prop or BENILLA_ALCHEMY_PROPS[i], value = value or 0,
+                    unknown = unknown and unknown > 0, main = main, target = isTarget, bonus = bonus or 0,
+                    tick = tick or 0 }
+                if main and not firstMain then firstMain = i end
+            end
+            for i = 1, 5 do
+                local v, line = vials[i], nil
+                if i == firstMain then
+                    if made then
+                        line = failed and BenillaAlchemy_Paint_Text(BENILLA_ALCHEMY_RED, "Murky Sludge")
+                            or BenillaAlchemy_Paint_Text(BENILLA_ALCHEMY_GREEN, resultName)
+                    else
+                        line = BenillaAlchemy_ProductLine()
+                    end
+                elseif v.target and v.tick > 0 and not v.main then
+                    line = BenillaAlchemy_Grey("target ≥ " .. v.tick)
+                elseif not firstMain and i == 1 and not made and ready == false then
+                    line = BenillaAlchemy_Grey(note)
+                end
+                BenillaAlchemy_PaintVial(i, v, scale, rings, line)
+            end
+            local raw, purify, net, unknown, pct = getToxic()
+            raw, purify, net = raw or 0, purify or 0, net or 0
+            local toxNote
+            if made and failed then
+                toxNote = BenillaAlchemy_Paint_Text(BENILLA_ALCHEMY_RED, "failed")
+            elseif net > 0 then
+                toxNote = BenillaAlchemy_Paint_Text(BENILLA_ALCHEMY_RED, (pct or failPct or 0) .. "% fail")
+            elseif raw > 0 then
+                toxNote = BenillaAlchemy_Paint_Text(BENILLA_ALCHEMY_PURIFIED, "purified")
+            elseif unknown then
+                toxNote = BenillaAlchemy_Grey("unknown")
+            else
+                toxNote = BenillaAlchemy_Grey("no roll")
+            end
+            BenillaAlchemy_PaintVial(6, { prop = "Toxic", value = net, unknown = unknown,
+                purified = math.min(raw, purify), bonus = 0, tick = 0 }, scale, rings, toxNote)
+            BenillaAlchemyFooter:SetText(footer or "")
+        end
+
+        function BenillaAlchemy_PaintControls()
+            local st = BenillaAlchemyState
+            local m = BenillaAlchemy_MakeOf(st.making)
+            local list = BenillaAlchemy_List()
+            local ready = GetAlchemyPreview()
+            BenillaAlchemyGo:SetText(m and m.verb or "")
+            if m and m.open and ready and not st.waiting and st.result ~= st.making then
+                BenillaAlchemyGo:Enable()
+            else
+                BenillaAlchemyGo:Disable()
+            end
+            if st.last[st.making] then BenillaAlchemyAgain:Show() else BenillaAlchemyAgain:Hide() end
+            if table.getn(list) > 0 then BenillaAlchemyClear:Show() else BenillaAlchemyClear:Hide() end
+            local family = BENILLA_ALCHEMY_FAMILY[st.making]
+            if not family then
+                BenillaAlchemyTarget:Hide()
+                return
+            end
+            BenillaAlchemyTarget:Show()
+            if UIDropDownMenu_SetText then
+                local t = st.target[st.making] and BenillaAlchemy_TargetOf(st.target[st.making])
+                UIDropDownMenu_SetText(t and BenillaAlchemy_TargetText(t) or BenillaAlchemy_NoTarget(st.making), BenillaAlchemyTarget)
+            end
+        end
+
+        -- A herb's known values as chips ("Rest 2 Tox 1", "Rest ?"), or a Tincture's or Essence's
+        -- Toxic.
+        function BenillaAlchemy_Chips(t)
+            if t.kind == 0 then
+                if table.getn(t.values) == 0 then
+                    return BenillaAlchemy_Grey("unknown")
+                end
+                local out = {}
+                for _, v in ipairs(t.values) do
+                    local c = BENILLA_ALCHEMY_COLOURS[v.name] or { 1, 1, 1 }
+                    local pts = v.points and BenillaAlchemy_Points(v.points) or "?"
+                    table.insert(out, BenillaAlchemy_Paint_Text(c, BenillaAlchemy_Short(v.name) .. " " .. pts))
+                end
+                return table.concat(out, "  ")
+            end
+            if t.kind == 2 or t.kind == 3 then
+                if t.toxic > 0 then
+                    return BenillaAlchemy_Paint_Text(BENILLA_ALCHEMY_COLOURS.Toxic, "Tox " .. t.toxic)
+                end
+                return BenillaAlchemy_Paint_Text(BENILLA_ALCHEMY_PURIFIED, "clean")
+            end
+            return ""
+        end
+
+        function BenillaAlchemy_Pooled(kind, prefix, n, parent, template)
+            local frame = getglobal(prefix .. n)
+            if not frame then
+                frame = CreateFrame(kind, prefix .. n, parent, template)
+                BenillaAlchemy_ChipBack(frame)
+                getglobal(frame:GetName() .. "Slot"):SetTexture(BENILLA_ALCHEMY_JOURNAL .. "slot")
+            end
+            return frame
+        end
+
+        -- The tray: the materials the picked make takes, in groups; a herb body lists Herbs first.
+        function BenillaAlchemy_PaintTray()
+            local st = BenillaAlchemyState
+            local m = BenillaAlchemy_MakeOf(st.making)
+            local child = BenillaAlchemyTrayChild
+            local list = BenillaAlchemy_List()
+            local y, cards, groups = 0, 0, 0
+            if m and m.open then
+                local herbBody = m.herbsMax > 0
+                local kinds = herbBody and { 0, 2, 3, 1 } or { 2, 3, 1, 0 }
+                for _, kind in ipairs(kinds) do
+                    local items = {}
+                    if BenillaAlchemy_Accepts(m, kind) > 0 then
+                        for _, t in ipairs(st.tray) do
+                            if t.kind == kind then table.insert(items, t) end
+                        end
+                    end
+                    if table.getn(items) > 0 then
+                        groups = groups + 1
+                        local label = getglobal("BenillaAlchemyTrayGroup" .. groups)
+                        if not label then
+                            label = BenillaAlchemy_Text(child, "BenillaAlchemyTrayGroup" .. groups, "GameFontNormalSmall")
+                            label:SetJustifyH("LEFT")
+                            label:SetWidth(500)
+                        end
+                        label:ClearAllPoints()
+                        label:SetPoint("TOPLEFT", child, "TOPLEFT", 2, -y)
+                        local text = BENILLA_ALCHEMY_KINDS[kind]
+                        if kind == 0 and not herbBody then
+                            text = text .. " " .. BenillaAlchemy_Grey("as a wash: only Toxic and Purifying count")
+                        elseif kind == 1 then
+                            text = text .. " " .. BenillaAlchemy_Grey("two, any kind")
+                        end
+                        label:SetText(text)
+                        label:Show()
+                        y = y + 16
+                        for n, t in ipairs(items) do
+                            cards = cards + 1
+                            local b = BenillaAlchemy_Pooled("Button", "BenillaAlchemyTray", cards, child, "BenillaAlchemyCardTemplate")
+                            local colIndex = math.mod(n - 1, 2)
+                            b:ClearAllPoints()
+                            b:SetPoint("TOPLEFT", child, "TOPLEFT", colIndex * 256, -y)
+                            if colIndex == 1 or n == table.getn(items) then
+                                y = y + 44
+                            end
+                            b.item = t.item
+                            local name = b:GetName()
+                            local _, _, texture = BenillaAlchemy_ItemInfo(t.item)
+                            getglobal(name .. "Icon"):SetTexture(texture)
+                            local step = ""
+                            if (t.kind == 2 or t.kind == 3) and t.step > 0 then
+                                step = " x" .. BenillaAlchemy_Points(t.step)
+                            end
+                            getglobal(name .. "Name"):SetText(BenillaAlchemy_Coloured(t.item, step))
+                            local used = BenillaAlchemy_Used(list, t.item)
+                            getglobal(name .. "Count"):SetText("× " .. (t.count - used))
+                            getglobal(name .. "Chips"):SetText(BenillaAlchemy_Chips(t))
+                            local room = BenillaAlchemy_Room(t.item)
+                            local inText, less, fill = getglobal(name .. "In"), getglobal(name .. "Less"), getglobal(name .. "Fill")
+                            less.item, fill.item = t.item, t.item
+                            if used > 0 then
+                                inText:SetText(used .. " in")
+                                inText:Show()
+                                less:Show()
+                                fill:Hide()
+                            else
+                                inText:Hide()
+                                less:Hide()
+                                if room > 1 then
+                                    fill:SetText("+" .. room)
+                                    fill:Show()
+                                else
+                                    fill:Hide()
+                                end
+                            end
+                            if room > 0 then
+                                b:Enable()
+                                getglobal(name .. "Icon"):SetAlpha(1)
+                            else
+                                b:Disable()
+                                getglobal(name .. "Icon"):SetAlpha(0.5)
+                            end
+                            b:Show()
+                        end
+                        y = y + 4
+                    end
+                end
+            end
+            for n = cards + 1, st.cards do
+                getglobal("BenillaAlchemyTray" .. n):Hide()
+            end
+            for n = groups + 1, st.groups do
+                getglobal("BenillaAlchemyTrayGroup" .. n):Hide()
+            end
+            st.cards = math.max(cards, st.cards)
+            st.groups = math.max(groups, st.groups)
+            if cards == 0 and m then
+                BenillaAlchemyTrayEmpty:SetText("Nothing in your bags that a " .. m.name .. " takes.")
+                BenillaAlchemyTrayEmpty:Show()
+            else
+                BenillaAlchemyTrayEmpty:Hide()
+            end
+            child:SetHeight(math.max(y, 1))
+            BenillaAlchemyTrayScroll:UpdateScrollChildRect()
+        end
+
+        function BenillaAlchemy_PaintShop()
+            local st = BenillaAlchemyState
+            local _, alchemist, line = GetAlchemyBench()
+            alchemist = alchemist or ""
+            BenillaAlchemySay:SetText(alchemist .. ": " .. BenillaAlchemy_Grey(line or ""))
+            local r = st.rumours[st.rumour]
+            if r then
+                BenillaAlchemyRumour:Show()
+                BenillaAlchemyBuy:Show()
+                BenillaAlchemyNoRumours:Hide()
+                if UIDropDownMenu_SetText then
+                    UIDropDownMenu_SetText(BenillaAlchemy_RumourText(r), BenillaAlchemyRumour)
+                end
+            else
+                BenillaAlchemyRumour:Hide()
+                BenillaAlchemyBuy:Hide()
+                BenillaAlchemyNoRumours:Show()
+            end
+            local tiers = {}
+            for i, t in ipairs(st.tiers) do
+                tiers[i] = BenillaAlchemy_Plain(t)
+            end
+            BenillaAlchemyRumourHint:SetText("A Rumour gives one grade's exact threshold. " .. alchemist
+                .. " knows the " .. table.concat(tiers, ", ") .. " grades.")
+            if st.sludge > 0 then
+                BenillaAlchemySell:SetText("Sell Murky Sludge (" .. st.sludge .. ")")
+                BenillaAlchemySell:Show()
+            else
+                BenillaAlchemySell:Hide()
+            end
+        end
+
+        function BenillaAlchemy_PaintLog()
+            local log = BenillaAlchemyState.log
+            local n = table.getn(log)
+            for i = 1, BENILLA_ALCHEMY_LOG_LINES do
+                local text = getglobal("BenillaAlchemyLog" .. i)
+                local entry = log[i]
+                if entry then
+                    local c = BENILLA_ALCHEMY_LOG_COLOURS[entry.kind] or BENILLA_ALCHEMY_LOG_COLOURS[0]
+                    text:SetText(entry.text)
+                    text:SetTextColor(c[1], c[2], c[3])
+                elseif i == 1 and n == 0 then
+                    local g = BENILLA_ALCHEMY_GREY
+                    text:SetText("Pick what to make, then click materials in the tray.")
+                    text:SetTextColor(g[1], g[2], g[3])
+                else
+                    text:SetText("")
+                end
+            end
+        end
+
+        function BenillaAlchemy_Paint()
+            BenillaAlchemy_PaintPicker()
+            BenillaAlchemy_PaintWork()
+            BenillaAlchemy_PaintVials()
+            BenillaAlchemy_PaintControls()
+            BenillaAlchemy_PaintTray()
+            BenillaAlchemy_PaintShop()
+            BenillaAlchemy_PaintLog()
+        end
+
+        -- ---------- events ----------
+
+        function BenillaAlchemy_Update()
+            local name, alchemist = GetAlchemyBench()
+            if not name then
+                return
+            end
+            BenillaAlchemy_Fit()
+            local st = BenillaAlchemyState
+            BenillaAlchemy_Load()
+            BenillaAlchemyTitle:SetText(name)
+            BenillaAlchemySub:SetText(alchemist .. "'s table")
+            if not st.open then
+                st.open = true
+                st.making = "potion"
+                st.slots, st.target, st.last, st.log = {}, {}, {}, {}
+                st.result, st.pending, st.rumour = nil, nil, 1
+                BenillaAlchemy:Show()
+                BenillaAlchemy_Preview()
+            elseif BenillaAlchemy_DropMissing() then
+                BenillaAlchemy_Preview()
+            end
+            BenillaAlchemy_Paint()
+        end
+
+        function BenillaAlchemy_PreviewArrived()
+            BenillaAlchemyState.waiting = false
+            BenillaAlchemy_PaintVials()
+            BenillaAlchemy_PaintControls()
+        end
+
+        -- A make's result: its lines go to the log; a made product clears the list and shows on
+        -- the vials until the list, the target or the make changes.
+        function BenillaAlchemy_Made()
+            local st = BenillaAlchemyState
+            local product, _, _, numLines = GetAlchemyMade()
+            if not product then
+                return
+            end
+            for i = 1, numLines do
+                local kind, text = GetAlchemyMadeLine(i)
+                BenillaAlchemy_Log(kind, text)
+            end
+            local pending = st.pending
+            st.pending = nil
+            st.waiting = false
+            if product ~= 0 then
+                local make = pending and pending.make or st.making
+                if pending then
+                    st.last[make] = pending.items
+                end
+                st.slots[make] = {}
+                st.result = make
+                if make == st.making then
+                    BenillaAlchemy_Preview()
+                end
+            end
+            BenillaAlchemy_Paint()
+        end
+
+        function BenillaAlchemy_Closed()
+            BenillaAlchemyState.open = false
+            BenillaAlchemy:Hide()
+        end
+
+        -- The window hidden by Escape or the close button: the realm closes the table.
+        function BenillaAlchemy_OnHide()
+            if BenillaAlchemyState.open then
+                BenillaAlchemyState.open = false
+                AlchemyClose()
+            end
+        end
+
+        function BenillaAlchemy_Wheel(scroll, delta)
+            local v = scroll:GetVerticalScroll() - delta * 40
+            local range = scroll:GetVerticalScrollRange()
+            if v > range then v = range end
+            if v < 0 then v = 0 end
+            scroll:SetVerticalScroll(v)
+        end
+
+        -- ---------- building ----------
+
+        function BenillaAlchemy_Fit()
+            BenillaAlchemy:SetScale(math.min(1, (GetScreenWidth() - 24) / 860,
+                (GetScreenHeight() - 24) / 640))
+        end
+
+        function BenillaAlchemy_BuildVial(n)
+            local place = BenillaAlchemy_Place
+            local g = BENILLA_ALCHEMY_GLASS
+            local col = CreateFrame("Frame", "BenillaAlchemyVial" .. n, BenillaAlchemyVials)
+            local name = col:GetName()
+            place(col, BenillaAlchemyVials, 2 + (n - 1) * BENILLA_ALCHEMY_COLUMN, 2, BENILLA_ALCHEMY_COLUMN, 244)
+            local gx = 14
+            col.glow = col:CreateTexture(name .. "Glow", "BACKGROUND")
+            place(col.glow, col, gx + 2, 26, g.w - 4, g.h - 26)
+            col.glow:Hide()
+            col.glass = col:CreateTexture(name .. "Glass", "BORDER")
+            col.glass:SetTexture(BENILLA_ALCHEMY_ART .. "vial_glass")
+            place(col.glass, col, gx, 4, g.w, g.h)
+            col.liquid = col:CreateTexture(name .. "Liquid", "ARTWORK")
+            col.liquid:SetTexture(BENILLA_ALCHEMY_ART .. "vial_liquid")
+            col.bonus = col:CreateTexture(name .. "Bonus", "ARTWORK")
+            col.bonus:SetTexture(BENILLA_ALCHEMY_ART .. "vial_liquid")
+            col.purified = col:CreateTexture(name .. "Purified", "ARTWORK")
+            col.purified:SetTexture(BENILLA_ALCHEMY_ART .. "vial_liquid")
+            col.rings, col.labels = {}, {}
+            for r = 1, 4 do
+                col.rings[r] = col:CreateTexture(name .. "Ring" .. r, "OVERLAY")
+                local label = BenillaAlchemy_Text(col, name .. "Ring" .. r .. "Label", "GameFontHighlightSmall", "OVERLAY")
+                label:SetPoint("LEFT", col.rings[r], "RIGHT", 2, 0)
+                col.labels[r] = label
+            end
+            col.tick = col:CreateTexture(name .. "Tick", "OVERLAY")
+            local gold = BENILLA_ALCHEMY_GOLD
+            col.tick:SetTexture(gold[1], gold[2], gold[3], 1)
+            col.tickLabel = BenillaAlchemy_Text(col, name .. "TickLabel", "GameFontNormalSmall", "OVERLAY")
+            col.tickLabel:SetPoint("LEFT", col.tick, "RIGHT", 2, 0)
+            col.q = BenillaAlchemy_Text(col, name .. "Unknown", "GameFontNormal", "OVERLAY")
+            col.q:SetText("?")
+            col.name = BenillaAlchemy_Text(col, name .. "Name", "GameFontNormalSmall")
+            place(col.name, col, 0, g.h + 10, BENILLA_ALCHEMY_COLUMN - 2, 12)
+            col.value = BenillaAlchemy_Text(col, name .. "Value", "GameFontHighlight")
+            place(col.value, col, 0, g.h + 26, BENILLA_ALCHEMY_COLUMN - 2, 14)
+            col.note = BenillaAlchemy_Text(col, name .. "Note", "GameFontHighlightSmall")
+            place(col.note, col, 0, g.h + 44, BENILLA_ALCHEMY_COLUMN - 2, 36)
+            col.note:SetJustifyV("TOP")
+        end
+
+        -- The Journal's frame art, set here rather than in file= attributes, as the vials are.
+        function BenillaAlchemy_Art()
+            local art = BENILLA_ALCHEMY_JOURNAL
+            for _, part in ipairs({ "TopLeft", "TopRight", "BottomLeft", "BottomRight", "Top", "Bottom",
+                "Left", "Right", "Middle" }) do
+                getglobal("BenillaAlchemy" .. part):SetTexture(art .. "window_bg")
+            end
+            BenillaAlchemyPlaque:SetTexture(art .. "title_plaque")
+            BenillaAlchemyClose:SetNormalTexture(art .. "close_normal")
+            BenillaAlchemyClose:SetPushedTexture(art .. "close_pushed")
+            -- A new highlight blends ADD, SetHighlightTexture's default.
+            BenillaAlchemyClose:SetHighlightTexture(art .. "close_hover")
+        end
+
+        function BenillaAlchemy_Build()
+            local place = BenillaAlchemy_Place
+            local frame = BenillaAlchemy
+            BenillaAlchemy_Art()
+            -- The picker's two groups and five buttons, placed by BenillaAlchemy_PaintPicker.
+            for _, group in ipairs(BENILLA_ALCHEMY_PICKER) do
+                local label = BenillaAlchemy_Text(frame, nil, "GameFontNormalSmall")
+                label:SetJustifyH("LEFT")
+                label:SetText(group.label)
+                place(label, frame, group.x, 56, 240, 14)
+            end
+            for i = 1, 5 do
+                local b = CreateFrame("Button", "BenillaAlchemyMake" .. i, frame, "BenillaAlchemyPickTemplate")
+                b:SetID(i)
+                b.edge = BenillaAlchemy_ChipBack(b)
+            end
+            local divider = frame:CreateTexture(nil, "ARTWORK")
+            divider:SetTexture(BENILLA_ALCHEMY_JOURNAL .. "divider")
+            place(divider, frame, 24, 114, 812, 8)
+            BenillaAlchemy_Inset(frame, 22, 124, 530, 498)
+            BenillaAlchemy_Inset(frame, 560, 124, 278, 498)
+            BenillaAlchemyStation = BenillaAlchemy_Text(frame, "BenillaAlchemyStation", "GameFontNormalLarge")
+            BenillaAlchemyStation:SetJustifyH("LEFT")
+            place(BenillaAlchemyStation, frame, 30, 130, 200, 20)
+            BenillaAlchemyRule = BenillaAlchemy_Text(frame, "BenillaAlchemyRule", "GameFontHighlightSmall")
+            BenillaAlchemyRule:SetJustifyH("LEFT")
+            place(BenillaAlchemyRule, frame, 30, 152, 516, 14)
+            local vials = CreateFrame("Frame", "BenillaAlchemyVials", frame)
+            place(vials, frame, 28, 168, 520, 248)
+            vials.edge = BenillaAlchemy_Lines(vials, 1, 1, 1)
+            for n = 1, 6 do
+                BenillaAlchemy_BuildVial(n)
+            end
+            BenillaAlchemyFooter = BenillaAlchemy_Text(frame, "BenillaAlchemyFooter", "GameFontNormal")
+            BenillaAlchemyFooter:SetJustifyH("LEFT")
+            place(BenillaAlchemyFooter, frame, 30, 420, 516, 14)
+            place(BenillaAlchemyTarget, frame, 12, 440)
+            if UIDropDownMenu_Initialize then
+                UIDropDownMenu_SetWidth(200, BenillaAlchemyTarget)
+                UIDropDownMenu_Initialize(BenillaAlchemyTarget, BenillaAlchemyTarget_Init)
+                UIDropDownMenu_SetWidth(180, BenillaAlchemyRumour)
+                UIDropDownMenu_Initialize(BenillaAlchemyRumour, BenillaAlchemyRumour_Init)
+            end
+            place(BenillaAlchemyGo, frame, 270, 442, 96, 24)
+            place(BenillaAlchemyAgain, frame, 372, 443, 92, 22)
+            place(BenillaAlchemyClear, frame, 470, 443, 72, 22)
+            place(BenillaAlchemyTrayScroll, frame, 30, 474, 516, 144)
+            BenillaAlchemyTrayScroll:EnableMouseWheel(true)
+            BenillaAlchemyTrayChild:SetWidth(516)
+            BenillaAlchemyTrayEmpty = BenillaAlchemy_Text(frame, "BenillaAlchemyTrayEmpty", "GameFontDisableSmall")
+            BenillaAlchemyTrayEmpty:SetJustifyH("LEFT")
+            place(BenillaAlchemyTrayEmpty, frame, 30, 478, 516, 14)
+            BenillaAlchemySay = BenillaAlchemy_Text(frame, "BenillaAlchemySay", "GameFontNormalSmall")
+            BenillaAlchemySay:SetJustifyH("LEFT")
+            BenillaAlchemySay:SetJustifyV("TOP")
+            place(BenillaAlchemySay, frame, 568, 132, 262, 84)
+            local shop = BenillaAlchemy_Text(frame, nil, "GameFontNormal")
+            shop:SetJustifyH("LEFT")
+            shop:SetText("Rumours for sale")
+            place(shop, frame, 568, 222, 262, 16)
+            place(BenillaAlchemyRumour, frame, 552, 240)
+            BenillaAlchemyNoRumours = BenillaAlchemy_Text(frame, "BenillaAlchemyNoRumours", "GameFontDisableSmall")
+            BenillaAlchemyNoRumours:SetJustifyH("LEFT")
+            BenillaAlchemyNoRumours:SetText("Nothing left to tell at this table.")
+            place(BenillaAlchemyNoRumours, frame, 568, 246, 262, 14)
+            place(BenillaAlchemyBuy, frame, 568, 274, 110, 22)
+            BenillaAlchemyRumourHint = BenillaAlchemy_Text(frame, "BenillaAlchemyRumourHint", "GameFontHighlightSmall")
+            BenillaAlchemyRumourHint:SetJustifyH("LEFT")
+            BenillaAlchemyRumourHint:SetJustifyV("TOP")
+            place(BenillaAlchemyRumourHint, frame, 568, 304, 262, 40)
+            place(BenillaAlchemySell, frame, 568, 350, 180, 22)
+            for n = 1, BENILLA_ALCHEMY_LOG_LINES do
+                local line = BenillaAlchemy_Text(frame, "BenillaAlchemyLog" .. n, "GameFontHighlightSmall")
+                line:SetJustifyH("LEFT")
+                line:SetJustifyV("TOP")
+                place(line, frame, 568, 388 + (n - 1) * 29, 262, 28)
+            end
+            if UISpecialFrames then
+                tinsert(UISpecialFrames, "BenillaAlchemy")
+            end
+            frame:SetWidth(860)
+            frame:SetHeight(640)
+            BenillaAlchemy_Fit()
+        end
+    ]]></Script>
+
+    <!-- One make in the picker: its name, and its station or "Dark". -->
+    <Button name="BenillaAlchemyPickTemplate" virtual="true">
+        <Size><AbsDimension x="112" y="38"/></Size>
+        <Layers>
+            <Layer level="ARTWORK">
+                <FontString name="$parentName" inherits="GameFontNormal">
+                    <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-5"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentStation" inherits="GameFontHighlightSmall">
+                    <Anchors><Anchor point="BOTTOM"><Offset><AbsDimension x="0" y="5"/></Offset></Anchor></Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <HighlightTexture file="Interface\Buttons\CheckButtonHilight" alphaMode="ADD"/>
+        <Scripts>
+            <OnClick>BenillaAlchemyPick_OnClick()</OnClick>
+            <OnEnter>BenillaAlchemyPick_OnEnter()</OnEnter>
+            <OnLeave>BenillaAlchemy_HideTip()</OnLeave>
+        </Scripts>
+    </Button>
+
+    <Button name="BenillaAlchemySmallButtonTemplate" inherits="UIPanelButtonTemplate" virtual="true">
+        <Size><AbsDimension x="34" y="18"/></Size>
+    </Button>
+
+    <!-- One material in the tray: icon, name and step, how many are left, its chips, and how many
+         are in the list with a "−", or "+3" to add as many as fit. -->
+    <Button name="BenillaAlchemyCardTemplate" virtual="true">
+        <Size><AbsDimension x="250" y="40"/></Size>
+        <Layers>
+            <Layer level="BORDER">
+                <Texture name="$parentSlot">
+                    <Size><AbsDimension x="34" y="34"/></Size>
+                    <Anchors><Anchor point="LEFT"><Offset><AbsDimension x="3" y="0"/></Offset></Anchor></Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <Texture name="$parentIcon">
+                    <Size><AbsDimension x="28" y="28"/></Size>
+                    <Anchors><Anchor point="LEFT"><Offset><AbsDimension x="6" y="0"/></Offset></Anchor></Anchors>
+                </Texture>
+                <FontString name="$parentName" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size><AbsDimension x="160" y="12"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="42" y="-5"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentCount" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                    <Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-6" y="-5"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentChips" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size><AbsDimension x="150" y="12"/></Size>
+                    <Anchors><Anchor point="BOTTOMLEFT"><Offset><AbsDimension x="42" y="5"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentIn" inherits="GameFontNormalSmall" justifyH="RIGHT" hidden="true">
+                    <Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-44" y="6"/></Offset></Anchor></Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button name="$parentLess" inherits="BenillaAlchemySmallButtonTemplate" text="−" hidden="true">
+                <Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-4" y="3"/></Offset></Anchor></Anchors>
+                <Scripts><OnClick>BenillaAlchemy_Less(this.item)</OnClick></Scripts>
+            </Button>
+            <Button name="$parentFill" inherits="BenillaAlchemySmallButtonTemplate" hidden="true">
+                <Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-4" y="3"/></Offset></Anchor></Anchors>
+                <Scripts><OnClick>BenillaAlchemy_Add(this.item, 99)</OnClick></Scripts>
+            </Button>
+        </Frames>
+        <HighlightTexture file="Interface\Buttons\CheckButtonHilight" alphaMode="ADD"/>
+        <Scripts>
+            <OnClick>BenillaAlchemyCard_OnClick()</OnClick>
+            <OnEnter>BenillaAlchemy_ItemTip(this.item)</OnEnter>
+            <OnLeave>BenillaAlchemy_HideTip()</OnLeave>
+        </Scripts>
+    </Button>
+
+    <Frame name="BenillaAlchemy" parent="UIParent" frameStrata="HIGH" movable="true" enableMouse="true" hidden="true">
+        <Size><AbsDimension x="860" y="640"/></Size>
+        <Anchors><Anchor point="CENTER"><Offset><AbsDimension x="0" y="16"/></Offset></Anchor></Anchors>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <!-- Dark wood behind window_bg, whose border has see-through gaps between its rails. -->
+                <Texture name="$parentBacking"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="8" y="-8"/></Offset></Anchor><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-8" y="8"/></Offset></Anchor></Anchors><Color r="0.09" g="0.06" b="0.035" a="1"/></Texture>
+            </Layer>
+            <Layer level="BORDER">
+                <!-- window_bg in nine pieces, so the border keeps its painted width at any frame size. -->
+                <Texture name="$parentTopLeft"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="TOPLEFT"/></Anchors><TexCoords left="0.000000" right="0.156250" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentTopRight"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="TOPRIGHT"/></Anchors><TexCoords left="0.843750" right="1.000000" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentBottomLeft"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="BOTTOMLEFT"/></Anchors><TexCoords left="0.000000" right="0.156250" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentBottomRight"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="BOTTOMRIGHT"/></Anchors><TexCoords left="0.843750" right="1.000000" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentTop"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="50" y="0"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-50" y="-50"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentBottom"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="50" y="50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="-50" y="0"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentLeft"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="0" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="50" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.000000" right="0.156250" top="0.078125" bottom="0.921875"/></Texture>
+                <Texture name="$parentRight"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-50" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="0" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.843750" right="1.000000" top="0.078125" bottom="0.921875"/></Texture>
+                <Texture name="$parentMiddle"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="50" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="-50" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.078125" bottom="0.921875"/></Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <Texture name="$parentPlaque"><Size><AbsDimension x="300" y="48"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="2"/></Offset></Anchor></Anchors></Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <FontString name="BenillaAlchemyTitle" inherits="GameFontNormalLarge"><Anchors><Anchor point="CENTER" relativeTo="$parentPlaque"><Offset><AbsDimension x="0" y="1"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaAlchemySub" inherits="GameFontHighlightSmall" justifyH="LEFT"><Anchors><Anchor point="LEFT" relativeTo="$parentPlaque" relativePoint="RIGHT"><Offset><AbsDimension x="8" y="0"/></Offset></Anchor></Anchors></FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button name="BenillaAlchemyClose"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-12" y="-12"/></Offset></Anchor></Anchors><Scripts><OnClick>BenillaAlchemy:Hide()</OnClick></Scripts></Button>
+            <!-- The target dropdown; BenillaAlchemy_Build places and fills it. -->
+            <Frame name="BenillaAlchemyTarget" inherits="UIDropDownMenuTemplate"/>
+            <Button name="BenillaAlchemyGo" inherits="UIPanelButtonTemplate" text="Brew">
+                <Size><AbsDimension x="96" y="24"/></Size>
+                <Anchors><Anchor point="TOPLEFT"/></Anchors>
+                <Scripts><OnClick>BenillaAlchemyGo_OnClick()</OnClick></Scripts>
+            </Button>
+            <Button name="BenillaAlchemyAgain" inherits="UIPanelButtonTemplate" text="Same again" hidden="true">
+                <Size><AbsDimension x="92" y="22"/></Size>
+                <Anchors><Anchor point="TOPLEFT"/></Anchors>
+                <Scripts><OnClick>BenillaAlchemy_Again()</OnClick></Scripts>
+            </Button>
+            <Button name="BenillaAlchemyClear" inherits="UIPanelButtonTemplate" text="Clear" hidden="true">
+                <Size><AbsDimension x="72" y="22"/></Size>
+                <Anchors><Anchor point="TOPLEFT"/></Anchors>
+                <Scripts><OnClick>BenillaAlchemy_Clear()</OnClick></Scripts>
+            </Button>
+            <ScrollFrame name="BenillaAlchemyTrayScroll">
+                <Size><AbsDimension x="516" y="144"/></Size>
+                <Anchors><Anchor point="TOPLEFT"/></Anchors>
+                <ScrollChild>
+                    <Frame name="BenillaAlchemyTrayChild">
+                        <Size><AbsDimension x="516" y="1"/></Size>
+                    </Frame>
+                </ScrollChild>
+                <Scripts><OnMouseWheel>BenillaAlchemy_Wheel(this, arg1)</OnMouseWheel></Scripts>
+            </ScrollFrame>
+            <!-- The Rumours for sale; BenillaAlchemy_Build places and fills it. -->
+            <Frame name="BenillaAlchemyRumour" inherits="UIDropDownMenuTemplate"/>
+            <Button name="BenillaAlchemyBuy" inherits="UIPanelButtonTemplate" text="Buy rumour">
+                <Size><AbsDimension x="110" y="22"/></Size>
+                <Anchors><Anchor point="TOPLEFT"/></Anchors>
+                <Scripts><OnClick>BenillaAlchemyBuy_OnClick()</OnClick></Scripts>
+            </Button>
+            <Button name="BenillaAlchemySell" inherits="UIPanelButtonTemplate" hidden="true">
+                <Size><AbsDimension x="180" y="22"/></Size>
+                <Anchors><Anchor point="TOPLEFT"/></Anchors>
+                <Scripts><OnClick>AlchemySellSludge()</OnClick></Scripts>
+            </Button>
+        </Frames>
+        <Scripts>
+            <OnLoad>
+                BenillaAlchemy_Build()
+                this:RegisterEvent("ALCHEMY_UPDATE")
+                this:RegisterEvent("ALCHEMY_PREVIEW")
+                this:RegisterEvent("ALCHEMY_MADE")
+                this:RegisterEvent("ALCHEMY_CLOSED")
+            </OnLoad>
+            <OnEvent>
+                if event == "ALCHEMY_UPDATE" then
+                    BenillaAlchemy_Update()
+                elseif event == "ALCHEMY_PREVIEW" then
+                    BenillaAlchemy_PreviewArrived()
+                elseif event == "ALCHEMY_MADE" then
+                    BenillaAlchemy_Made()
+                elseif event == "ALCHEMY_CLOSED" then
+                    BenillaAlchemy_Closed()
+                end
+            </OnEvent>
+            <OnHide>BenillaAlchemy_OnHide()</OnHide>
+        </Scripts>
+    </Frame>
+</Ui>

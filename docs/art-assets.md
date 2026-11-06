@@ -237,8 +237,16 @@ The Kitchen window reuses the Journal's frame art (`journal\window_bg`, `slot`, 
 reuses the same frame art. Its six property vials are drawn from two placeholder files in
 `crates/benilla-app/assets/ui/alchemy/`: `vial_glass.tga` (64 x 256 RGBA, the empty glass
 with its neck and cork, transparent inside) and `vial_liquid.tga` (64 x 256 RGBA, a white
-liquid column the window tints with the Property's colour and crops to the fill). The window
-ticket paints both.
+liquid column the window tints with the Property's colour and crops to the fill). #545 painted
+both as placeholders with `tools/twilights-eve/placeholder_alchemy_vials.py`: a pale-rimmed glass
+with a brown cork, its inside from x 13 to 50 and y 51 to 242 (the window's
+`BENILLA_ALCHEMY_GLASS` reads that inside at 40 x 160), and a grey column with a white top edge.
+Real art keeps the same inside.
+
+| Asset | Where | Notes |
+|---|---|---|
+| Vial glass | `crates/benilla-app/assets/ui/alchemy/vial_glass.tga`, loaded as `Interface\Benilla\alchemy\vial_glass` | 64 x 256 RGBA. Placeholder. |
+| Vial liquid | `crates/benilla-app/assets/ui/alchemy/vial_liquid.tga`, loaded as `Interface\Benilla\alchemy\vial_liquid` | 64 x 256 RGBA, white or pale grey so the tint reads. Placeholder. |
 
 ## Talent Rows (spec #498)
 

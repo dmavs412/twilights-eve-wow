@@ -1966,6 +1966,9 @@ fn the_layer_does_not_grow() {
         // The Kitchen window (spec #447): the realm's book, pantry, prediction and orders, and
         // the player's choices.
         "Kitchen.xml",
+        // The Alchemy window (spec #522): the realm's bench, tray, preview and result, and the
+        // player's choices.
+        "Alchemy.xml",
         // The Calling Choice popup (spec #414): the realm's Tier 1 options and the pick.
         "CallingChoice.xml",
         // The Talents panel (ADR 0028): the realm's Talent Rows and the player's picks, which
@@ -1990,12 +1993,14 @@ fn the_layer_does_not_grow() {
     // `fishing/` the Reeling Bar's (`Interface\Benilla\fishing\*`) and `journal/` the Journal's
     // (`Interface\Benilla\journal\*`) and `herbalism/` the Forager's Grid's
     // (`Interface\Benilla\herbalism\*`). `map/` holds the painted world map's canvas tiles (#424),
-    // and `noise/` the Noise Bar's end icons (`Interface\Benilla\noise\*`).
+    // and `noise/` the Noise Bar's end icons (`Interface\Benilla\noise\*`), and `alchemy/` the
+    // Alchemy window's vials (`Interface\Benilla\alchemy\*`).
     let mut shipped: Vec<String> = LAYER
         .iter()
         .chain(&[
             "layer.toc",
             "paperdoll.tga",
+            "alchemy",
             "fishing",
             "herbalism",
             "journal",

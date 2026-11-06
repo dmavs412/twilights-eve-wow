@@ -49,6 +49,8 @@ FishingJournal.xml
 HerbPatch.xml
 # The Kitchen window (spec #447): the realm's book, pantry, prediction and orders, and the player's choices.
 Kitchen.xml
+# The Alchemy window (spec #522): the realm's bench, tray, preview and result, and the player's choices.
+Alchemy.xml
 # The Calling Choice popup (spec #414): the realm's Tier 1 options and the pick.
 CallingChoice.xml
 # The Talents panel (ADR 0028): the realm's Talent Rows and the player's picks, in place of the stock talent frame.
