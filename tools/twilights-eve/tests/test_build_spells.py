@@ -189,9 +189,15 @@ class BuildSpells(unittest.TestCase):
         self.content = {"items.toml": self.item(24701)}
         self.assert_fails([STRIKE], "items.toml item[0] display_id: 24701 is not its own (995000 up)")
 
-    def test_two_items_on_one_display_id_fail(self):
-        self.content = {"items.toml": self.item() + self.item()}
+    def test_two_items_on_one_display_id_with_different_icons_fail(self):
+        self.content = {"items.toml": self.item() + self.item(icon="other_icon")}
         self.assert_fails([STRIKE], "items.toml item[1] display_id: 995001 is already claimed by items.toml item[0]")
+
+    def test_two_items_on_one_display_id_with_one_model_and_icon_write_it_once(self):
+        self.content = {"items.toml": self.item() + self.item()}
+        done, _ = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual([row["id"] for row in self.patch["item_displays"]], [995001])
 
     def test_an_item_icon_without_a_png_fails(self):
         self.content = {"items.toml": self.item(icon="missing")}

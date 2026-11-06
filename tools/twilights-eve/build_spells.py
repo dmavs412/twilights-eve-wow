@@ -334,8 +334,12 @@ def item_displays(content_dir: str, art: list[str], art_dir: str) -> list[dict]:
     """The synthetic ItemDisplayInfo rows for the content items with an icon of their own, by id.
 
     An `icon` that starts with `Interface\\` is a stock icon path, written as it is (ADR 0030);
-    any other is the stem of a painted PNG, checked and embedded."""
+    any other is the stem of a painted PNG, checked and embedded. Two items may share a display
+    only when both name the same `icon_base` and `icon`: build_gear.py gives one synthetic display
+    to each pair, so a Line's rows that repeat a model and icon (the Stockade sets, #579) share
+    it, and the patch writes the row once."""
     found: dict[int, str] = {}
+    pairs: dict[int, tuple] = {}
     rows: list[dict] = []
     for name in sorted(os.listdir(content_dir)):
         if not name.endswith(".toml"):
@@ -350,12 +354,15 @@ def item_displays(content_dir: str, art: list[str], art_dir: str) -> list[dict]:
             display_id = item.get("display_id", 0)
             if not isinstance(display_id, int) or display_id < ITEM_DISPLAY_MIN:
                 raise BuildError(f"{where} display_id: {display_id!r} is not its own ({ITEM_DISPLAY_MIN} up)")
-            if display_id in found:
-                raise BuildError(f"{where} display_id: {display_id} is already claimed by {found[display_id]}")
             base = item.get("icon_base", 0)
+            if display_id in found:
+                if pairs[display_id] == (base, item.get("icon")):
+                    continue
+                raise BuildError(f"{where} display_id: {display_id} is already claimed by {found[display_id]}")
             if not isinstance(base, int) or base <= 0:
                 raise BuildError(f"{where} icon_base: {base!r} must be a stock display id above 0")
             found[display_id] = where
+            pairs[display_id] = (base, item.get("icon"))
             icon = item["icon"]
             if not icon.startswith(STOCK_ICON_PREFIX):
                 icon = icon_path(f"{icon}.png", art, art_dir, where)
