@@ -1937,6 +1937,192 @@ speed_walk = 1.0
 speed_run = 1.143
 detection_range = 10.0
 
+# The Quiet Wing (#582, stockade_quiet_wing.toml), the Stockade's west wing, levels 36 to 40.
+# Displays and factions are vanilla's (`creature_template` in the vmangos dump): the Writ Warder
+# wears the Stockade Guard's (2989), the Twilight Listener and the Hush the Twilight Acolyte's
+# (2882), the Hushed the Defias Prisoner's (2148), Sister Quill High Priestess Laurena's of the
+# Cathedral of Light (1495), and the four witnesses Tinkmaster Overspark's (7028), Catherine
+# Leland's (3290), Lee Brown's (3272) and Mikhail's (2964). Every multiplier is 1.0, a
+# placeholder, unless a row says otherwise. The quiet wing is quiet: no template here has an
+# aggro line.
+
+# The Keep's own warders, who turned with the coin: two at the foot of the stairs, one in each
+# patrol pair.
+[[template]]
+entry = 97206
+name = "Writ Warder"
+creature_type = 7
+rank = 1
+display_id = 2989
+faction_template = 17
+unit_class = "warrior"
+level_min = 36
+level_max = 37
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# Cultists who came up the drain: Shadow Bolt and Cold Word, a short snare.
+[[template]]
+entry = 97207
+name = "Twilight Listener"
+creature_type = 7
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 37
+level_max = 38
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["cold_word_listener", "shadow_bolt_creature"]
+
+# Prisoners whose voices the Hush took: slow, hit hard, no spell.
+[[template]]
+entry = 97208
+name = "The Hushed"
+creature_type = 7
+display_id = 2148
+faction_template = 14
+unit_class = "warrior"
+level_min = 38
+level_max = 39
+health_multiplier = 1.0
+damage_multiplier = 1.4
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.95
+detection_range = 18.0
+
+# The Keep's scribe, in the scribe's room with two Listeners: Take Down, Ink and Shadow Bolt.
+[[template]]
+entry = 97209
+name = "Sister Quill"
+creature_type = 7
+rank = 1
+display_id = 1495
+faction_template = 14
+unit_class = "mage"
+level_min = 38
+level_max = 38
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["take_down_quill", "ink_quill", "shadow_bolt_creature"]
+
+# The quiet wing's last boss and its Boss Bar, a Twilight Silencer in the drain from the Run's
+# start: Hush, Fear, Stillness and Shadow Bolt.
+[[template]]
+entry = 97210
+name = "The Hush"
+creature_type = 7
+rank = 1
+boss = true
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 40
+level_max = 40
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["hush_the_hush", "terrify_creature", "stillness_the_hush", "shadow_bolt_creature"]
+
+# The four witnesses, friendly, each behind the bars of a writ cell. Tobin Marsh gives the quest
+# for Quill (#580).
+[[template]]
+entry = 97211
+name = "Wender Cogg"
+creature_type = 7
+display_id = 7028
+faction_template = 12
+hostile = false
+friendly = true
+unit_class = "warrior"
+level_min = 36
+level_max = 36
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 10.0
+
+[[template]]
+entry = 97212
+name = "Hesper Lowe"
+creature_type = 7
+display_id = 3290
+faction_template = 12
+hostile = false
+friendly = true
+unit_class = "warrior"
+level_min = 36
+level_max = 36
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 10.0
+
+[[template]]
+entry = 97213
+name = "Dorrin Vask"
+creature_type = 7
+display_id = 3272
+faction_template = 12
+hostile = false
+friendly = true
+unit_class = "warrior"
+level_min = 36
+level_max = 36
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 10.0
+
+[[template]]
+entry = 97214
+name = "Tobin Marsh"
+creature_type = 7
+display_id = 2964
+faction_template = 12
+hostile = false
+friendly = true
+unit_class = "warrior"
+level_min = 36
+level_max = 36
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 10.0
+
 # The Northshire Rumours' creatures (#289, rumours.toml). None has a spawn row; the realm makes
 # each at run time. The three givers are friendly level 10s. Their displays come from vmangos's
 # creature_template: Hermit Oswin wears Farmer Saldean's (entry 233, display 1943, a human man),

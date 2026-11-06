@@ -8,9 +8,18 @@
 # terrain, so every Z here is written from the vmangos dump with `grounded = false`, each naming
 # the stock spawn it came from; ground_check.py leaves the rows alone.
 #
-# A shell for now (#581): one friendly Phase Tester stands at the foot of the stairs so a
-# character can see the Phase. #582 fills the file. Guids: creatures 973001 up, shared with the
-# riot, since both stand on map 34.
+# The quiet wing (#582): the hall's west wing runs from the foot of the west stairs to the round
+# room at its end, about 15 degrees off the y axis through (131, 0). Down it: two Writ Warders at
+# the stairs' foot; the four writ cells, the first past the stairs on alternating sides, each
+# holding a witness behind its bars, with two patrol pairs in the hall between them; Sister Quill
+# in the scribe's room, a cell halfway along; three packs of the Hushed in the lower gallery, the
+# wing's far half; and the Hush alone in the drain, the round room at the wing's end, Dextren
+# Ward's old spot at its mouth and the grate in its floor. The grate appears once Quill is dead.
+# Nothing here has an aggro line. Places come from the stock spawns of the wing (`creature` rows
+# of map 34), not from map.html's schematic walls; each row names the one it was fitted to.
+#
+# Guids: creatures 973101 to 973123 (973001 to 973027 are the riot's), the GameObject 983011 (the
+# entry is the guid). Templates 97206 to 97214 in mobs.toml.
 
 id = 17
 name = "The Quiet Wing"
@@ -54,12 +63,235 @@ opens_with = 980122
 sealed_text = "The west wing is closed by order of the Keep. The Warden holds no key to it, and neither do you."
 speaker = 9300074
 
-# The Phase Tester: friendly, no quests, at the foot of the stairs, facing up them. Z: Defias
-# Inmate 79082 (145.5, 43.4, -34.77), on the wing's floor beside it.
+# Facings: 4.45 looks up the hall toward the stairs; a north-side cell (x above the hall's line)
+# faces the hall at 2.88, a south-side one at 6.02.
+
+# ── The stairs' foot: two Writ Warders, facing up the stairs ─────────────────────────────────────
+# Z: Defias Inmate 79082 (145.5, 43.4, -34.77), on the wing's floor beside them.
 [[creature]]
-guid = 973002
-entry = 97100
+guid = 973101
+entry = 97206
 level = 36
-position = [140.0, 35.0, -34.7729]
+position = [139.0, 38.5, -34.7729]
 grounded = false
-orientation = 4.71
+orientation = 4.45
+
+[[creature]]
+guid = 973102
+entry = 97206
+level = 37
+position = [143.5, 37.0, -34.7729]
+grounded = false
+orientation = 4.45
+
+# ── The writ cells, the first four past the stairs, and the hall between them ────────────────────
+# Cell 1, south side: Wender Cogg on Defias Inmate 79058 (128.6, 49.0, -33.86) and its Z.
+[[creature]]
+guid = 973103
+entry = 97211
+level = 36
+position = [128.6, 49.0, -33.8562]
+grounded = false
+orientation = 6.02
+
+# Cell 2, north side: Hesper Lowe on Bruegal Ironknuckle 79090 (160.1, 45.7, -34.77) and its Z.
+[[creature]]
+guid = 973104
+entry = 97212
+level = 36
+position = [160.1, 45.7, -34.7729]
+grounded = false
+orientation = 2.88
+
+# Cell 3, south side: Dorrin Vask on Defias Captive 79087 (134.1, 71.0, -33.86) and its Z.
+[[creature]]
+guid = 973105
+entry = 97213
+level = 36
+position = [134.1, 71.0, -33.8562]
+grounded = false
+orientation = 6.02
+
+# Cell 4, north side: Tobin Marsh on Defias Prisoner 79096 (162.7, 59.2, -34.86) and its Z, the
+# nearest north-side cell to the cut at (162, 74).
+[[creature]]
+guid = 973106
+entry = 97214
+level = 36
+position = [162.7, 59.2, -34.8562]
+grounded = false
+orientation = 2.88
+
+# The first patrol pair, a Writ Warder and a Twilight Listener, one camp, strolling the hall
+# between cells 1 and 2. Z: Defias Inmate 79082 (145.5, 43.4, -34.77).
+[[creature]]
+guid = 973107
+entry = 97206
+level = 37
+position = [144.0, 50.0, -34.7729]
+grounded = false
+orientation = 4.45
+camp = 1
+wander = 8.0
+
+[[creature]]
+guid = 973108
+entry = 97207
+level = 37
+position = [146.5, 52.0, -34.7729]
+grounded = false
+orientation = 4.45
+camp = 1
+wander = 8.0
+
+# The second patrol pair, between cells 3 and 4. Z: Defias Captive 79093 (148.4, 65.1, -34.77).
+[[creature]]
+guid = 973109
+entry = 97206
+level = 36
+position = [150.0, 70.0, -34.7729]
+grounded = false
+orientation = 4.45
+camp = 2
+wander = 8.0
+
+[[creature]]
+guid = 973110
+entry = 97207
+level = 38
+position = [152.5, 72.5, -34.7729]
+grounded = false
+orientation = 4.45
+camp = 2
+wander = 8.0
+
+# ── The scribe's room, a cell halfway along: Sister Quill and two Listeners ──────────────────────
+# Quill on Defias Captive 79102 (148.5, 103.2, -35.19), the Listeners on Defias Inmates 79104
+# (155.7, 99.6) and 79108 (156.3, 109.5), all at the room's Z. Quill drops the placeholder blue
+# half the time, as Cutter does, until #579 gives the wing its own loot.
+[[creature]]
+guid = 973111
+entry = 97209
+level = 38
+position = [148.5, 103.2, -35.1896]
+grounded = false
+orientation = 6.02
+rolls = [{ chance = 50, one_of = [905020, 905021, 905022, 905023, 905024, 905025, 905026, 905027, 905028, 905029, 905030, 905031, 905032, 905033, 905034, 905035, 905036, 905037, 905038, 905039] }]
+
+[[creature]]
+guid = 973112
+entry = 97207
+level = 37
+position = [155.7, 99.6, -35.1896]
+grounded = false
+orientation = 6.02
+
+[[creature]]
+guid = 973113
+entry = 97207
+level = 38
+position = [156.3, 109.5, -35.1896]
+grounded = false
+orientation = 6.02
+
+# ── The lower gallery, the wing's far half: three packs of three Hushed ──────────────────────────
+# On alternating sides of the hall, north, south, north, facing up it. Z: Defias Prisoner 79115
+# (167.4, 127.9, -33.86), on the hall's floor at the gallery's end; the scribe's room is a cell
+# below the hall's floor.
+[[creature]]
+guid = 973114
+entry = 97208
+level = 38
+position = [164.0, 106.0, -33.8562]
+grounded = false
+orientation = 4.45
+
+[[creature]]
+guid = 973115
+entry = 97208
+level = 39
+position = [166.5, 108.5, -33.8562]
+grounded = false
+orientation = 4.45
+
+[[creature]]
+guid = 973116
+entry = 97208
+level = 38
+position = [163.5, 110.0, -33.8562]
+grounded = false
+orientation = 4.45
+
+[[creature]]
+guid = 973117
+entry = 97208
+level = 38
+position = [158.0, 117.0, -33.8562]
+grounded = false
+orientation = 4.45
+
+[[creature]]
+guid = 973118
+entry = 97208
+level = 39
+position = [160.0, 120.5, -33.8562]
+grounded = false
+orientation = 4.45
+
+[[creature]]
+guid = 973119
+entry = 97208
+level = 38
+position = [156.5, 121.0, -33.8562]
+grounded = false
+orientation = 4.45
+
+# The third pack, on Defias Prisoner 79115 (167.4, 127.9, -33.86) and beside it.
+[[creature]]
+guid = 973120
+entry = 97208
+level = 39
+position = [167.4, 127.9, -33.8562]
+grounded = false
+orientation = 4.45
+
+[[creature]]
+guid = 973121
+entry = 97208
+level = 38
+position = [169.5, 125.0, -33.8562]
+grounded = false
+orientation = 4.45
+
+[[creature]]
+guid = 973122
+entry = 97208
+level = 39
+position = [170.5, 129.0, -33.8562]
+grounded = false
+orientation = 4.45
+
+# ── The drain, the round room at the wing's end: the Hush, alone ─────────────────────────────────
+# There from the Run's start, facing the room's mouth, Dextren Ward's old spot (166.8, 134.8). On
+# Defias Inmate 79117 (171.1, 142.0, -33.94) and its Z. He drops the placeholder blue until #579
+# gives the wing its own loot.
+[[creature]]
+guid = 973123
+entry = 97210
+level = 40
+position = [171.1, 142.0, -33.9396]
+grounded = false
+orientation = 4.17
+rolls = [{ chance = 100, one_of = [905020, 905021, 905022, 905023, 905024, 905025, 905026, 905027, 905028, 905029, 905030, 905031, 905032, 905033, 905034, 905035, 905036, 905037, 905038, 905039] }]
+
+# The drain grate in the room's floor, there once Sister Quill is dead: vanilla's `Sewers` grate
+# (GameObjectDisplayInfo 663). #580 makes it give its quest. Z: Defias Inmate 79118 (169.0,
+# 147.9, -33.94), the nearest stock spawn.
+[[gameobject]]
+guid = 983011
+display = 663
+position = [167.0, 152.0, -33.9396]
+grounded = false
+orientation = 0.0
+sides = "inside"
+after_dead = 973111

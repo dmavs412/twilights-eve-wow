@@ -30,15 +30,27 @@ const OUTSIDE: [f32; 3] = [-8766.1, 845.5, 88.0];
 const OUTSIDE_FACING: f32 = 3.84;
 
 /// Where the corridor crosses the hall, Thelwater's spot and the sealed door's outside; a step
-/// down each stair. The east step stays out of reach of the pack at the stairs' foot.
+/// down each stair. Each step stays out of reach of the pack at its stairs' foot.
 const CROSSING: [f32; 3] = [131.0, 3.0, -25.5229];
 const EAST_STAIRS: [f32; 3] = [131.0, -12.0, -27.0];
-const WEST_STAIRS: [f32; 3] = [131.0, 20.0, -29.0];
+const WEST_STAIRS: [f32; 3] = [131.0, 12.0, -27.0];
 
-/// The quiet wing's one creature for now, the Phase Tester, and the side of the hall it stands
-/// on.
+/// The Phase Tester, which neither wing holds any more.
 const PHASE_TESTER: u32 = 97100;
-const QUIET_TESTER_Y: f32 = 35.0;
+
+/// The quiet wing's templates (`content/mobs.toml`): the Writ Warder, the Twilight Listener, the
+/// Hushed, Sister Quill, the Hush and the four witnesses.
+const WARDER: u32 = 97206;
+const QUILL: u32 = 97209;
+const HUSH: u32 = 97210;
+const WITNESSES: [u32; 4] = [97211, 97212, 97213, 97214];
+const QUIET_TEMPLATES: std::ops::RangeInclusive<u32> = 97206..=97214;
+/// The drain grate, there once Quill is dead, and her creature row.
+const GRATE: u32 = 983011;
+const QUILL_GUID: i64 = 973111;
+/// Where Quill stands in the scribe's room, and a spot in her reach.
+const QUILL_AT: [f32; 3] = [148.5, 103.2, -35.1896];
+const BY_QUILL: [f32; 3] = [147.0, 103.0, -35.1896];
 
 /// The riot's templates (`content/mobs.toml`): the Defias Rioter, the Defias Ringleader, Varl
 /// Cutter, the Bought Watchman, Captain Ansel Rook and Bertram Ash.
@@ -141,17 +153,20 @@ fn in_phase(party: &Party) -> bool {
     party.realm.run_elapsed_as(party.sessions[0]).is_some()
 }
 
-/// The Phase Testers created in `events`, by the y they stand at.
-fn testers(events: &[SessionEvent]) -> Vec<f32> {
+/// How many of the quiet wing's creatures are created in `events`.
+fn quiet_ones(events: &[SessionEvent]) -> usize {
     unit_creates(events)
-        .into_iter()
-        .filter(|u| u.1 == PHASE_TESTER)
-        .map(|u| u.2[1])
-        .collect()
+        .iter()
+        .filter(|u| QUIET_TEMPLATES.contains(&u.1))
+        .count()
 }
 
-fn near_y(ys: &[f32], y: f32) -> bool {
-    ys.iter().any(|&t| (t - y).abs() < 0.5)
+/// The Writ Warders created in `events`.
+fn warders(events: &[SessionEvent]) -> usize {
+    unit_creates(events)
+        .iter()
+        .filter(|u| u.1 == WARDER)
+        .count()
 }
 
 /// How many of the riot's creatures are created in `events`.
@@ -300,7 +315,7 @@ fn the_east_stairs_lead_into_the_riot_s_run_and_back_out() {
     let events = walk(&mut party, EAST_STAIRS);
     assert!(in_phase(&party), "the east stairs are the riot's");
     assert!(rioters(&events) > 0, "none of the riot in view");
-    assert!(testers(&events).is_empty(), "the quiet wing's Phase Tester");
+    assert_eq!(quiet_ones(&events), 0, "the quiet wing in the riot");
     party.run(2.0);
 
     let events = walk(&mut party, CROSSING);
@@ -323,8 +338,7 @@ fn the_west_stairs_lead_into_the_quiet_wing_s_run_with_the_key() {
 
     let events = walk(&mut party, WEST_STAIRS);
     assert!(in_phase(&party), "the west stairs are the quiet wing's");
-    let ys = testers(&events);
-    assert!(near_y(&ys, QUIET_TESTER_Y), "{ys:?}");
+    assert!(warders(&events) > 0, "none of the quiet wing in view");
     assert_eq!(rioters(&events), 0, "the riot in the quiet wing");
     party.run(2.0);
 
@@ -335,10 +349,7 @@ fn the_west_stairs_lead_into_the_quiet_wing_s_run_with_the_key() {
     // Run is fresh.
     click_west_door(&mut party);
     let events = walk(&mut party, WEST_STAIRS);
-    assert!(
-        near_y(&testers(&events), QUIET_TESTER_Y),
-        "a fresh Phase Tester"
-    );
+    assert!(warders(&events) > 0, "a fresh quiet wing");
     let second = party.realm.run_elapsed_as(party.sessions[0]);
     assert!(second.is_some_and(|s| s < 1.0), "{second:?}");
 }
@@ -786,4 +797,236 @@ fn with_lever_a_pulled_cutter_calls_rioters_only_out_of_row_b() {
     let calls = cutter_s_calls(&mut party);
     assert_eq!(calls.len(), 2, "{calls:?}");
     assert_eq!(came_in_at(&calls, ROW_B_CALL), 2, "{calls:?}");
+}
+
+// The quiet wing (#582): the witnesses, Sister Quill, the Hush and the drain grate.
+
+fn quiet_wing() -> toml::Table {
+    include_str!("../content/stockade_quiet_wing.toml")
+        .parse()
+        .unwrap()
+}
+
+#[test]
+fn every_creature_and_gameobject_of_the_quiet_wing_stands_in_its_footprint() {
+    let file = quiet_wing();
+    let footprint = boxes(include_str!("../content/stockade_quiet_wing.toml"));
+    let creatures = rows(&file, "creature");
+    assert!(creatures.len() >= 23, "{} creatures", creatures.len());
+    for c in creatures {
+        let guid = int(c, "guid").unwrap();
+        assert_ne!(
+            int(c, "entry"),
+            Some(PHASE_TESTER.into()),
+            "the Phase Tester is still in the quiet wing"
+        );
+        assert!((973101..=973199).contains(&guid), "guid {guid}");
+        let at = point(&c["position"]);
+        assert!(inside(&footprint, at), "creature {guid} at {at:?}");
+    }
+    let objects = rows(&file, "gameobject");
+    assert!(!objects.is_empty(), "no grate");
+    for o in objects {
+        let at = point(&o["position"]);
+        assert!(
+            inside(&footprint, at),
+            "GameObject {:?} at {at:?}",
+            o["guid"]
+        );
+    }
+}
+
+#[test]
+fn no_creature_guid_repeats_across_the_two_wings() {
+    let mut seen = std::collections::BTreeSet::new();
+    for file in [riot(), quiet_wing()] {
+        for c in rows(&file, "creature") {
+            let guid = int(c, "guid").unwrap();
+            assert!(seen.insert(guid), "guid {guid} in both");
+        }
+    }
+}
+
+#[test]
+fn no_template_of_the_quiet_wing_has_an_aggro_line() {
+    let entries: std::collections::BTreeSet<u32> = rows(&quiet_wing(), "creature")
+        .iter()
+        .map(|c| int(c, "entry").unwrap() as u32)
+        .collect();
+    assert_eq!(
+        entries.iter().copied().collect::<Vec<_>>(),
+        QUIET_TEMPLATES.collect::<Vec<_>>()
+    );
+    for entry in entries {
+        let aggro = mob_template(entry).get("say").and_then(|s| s.get("aggro"));
+        assert!(aggro.is_none(), "{entry} has an aggro line: {aggro:?}");
+    }
+}
+
+#[test]
+fn the_hush_raises_the_boss_bar_and_the_four_witnesses_are_friendly() {
+    assert_eq!(mob_template(HUSH)["boss"].as_bool(), Some(true));
+    let file = quiet_wing();
+    for w in WITNESSES {
+        let t = mob_template(w);
+        assert_eq!(t["hostile"].as_bool(), Some(false), "{w}");
+        assert_eq!(t["friendly"].as_bool(), Some(true), "{w}");
+        let cells = rows(&file, "creature")
+            .iter()
+            .filter(|c| int(c, "entry") == Some(w.into()))
+            .count();
+        assert_eq!(cells, 1, "{w} stands in one cell");
+    }
+}
+
+/// Whether player 0's client holds the GameObject `guid`, by what it has been sent.
+fn shows(p: &Party, guid: u64) -> bool {
+    let mut shown = false;
+    for e in p.seen(0) {
+        match e {
+            SessionEvent::ObjectCreate { guid: g, .. } if *g == guid => shown = true,
+            SessionEvent::ObjectsRemoved(gone) if gone.contains(&guid) => shown = false,
+            SessionEvent::ObjectDestroyed(g) if *g == guid => shown = false,
+            _ => {}
+        }
+    }
+    shown
+}
+
+#[test]
+fn the_drain_grate_is_there_only_once_quill_is_dead() {
+    let file = quiet_wing();
+    let grate = rows(&file, "gameobject")
+        .iter()
+        .find(|o| int(o, "guid") == Some(GRATE.into()))
+        .expect("the grate");
+    assert_eq!(int(grate, "after_dead"), Some(QUILL_GUID));
+    let quill_row = rows(&file, "creature")
+        .iter()
+        .find(|c| int(c, "guid") == Some(QUILL_GUID))
+        .expect("Quill's row");
+    assert_eq!(int(quill_row, "entry"), Some(QUILL.into()));
+
+    let mut party = door_party_at(60, true);
+    enter(&mut party);
+    click_west_door(&mut party);
+    walk(&mut party, WEST_STAIRS);
+    assert!(in_phase(&party));
+    let grate = 0xF110 << 48 | u64::from(GRATE);
+    let (quill, at) = party.unit(0, QUILL, QUILL_AT);
+    party.go_facing(0, BY_QUILL, at);
+    party.run(0.5);
+    assert!(!shows(&party, grate), "the grate while Quill lives");
+
+    party.realm.set_creature_health_pct(quill, 1);
+    party.cmd(0, RealmCommand::AttackSwing { guid: quill });
+    for _ in 0..40 {
+        party.run(0.5);
+        if died(party.seen(0), quill) {
+            break;
+        }
+    }
+    assert!(died(party.seen(0), quill), "Quill did not die");
+    party.run(0.5);
+    assert!(shows(&party, grate), "the grate once Quill is dead");
+}
+
+// Quill's spells, tried on the Gaze Hall's Vile Familiar (`content/gaze_hall.toml`), as
+// `tests/creature_nova_fear.rs` tries the test spells.
+
+const FAMILIAR: u32 = 3101;
+const CASTER: [f32; 3] = [-9650.0, 20.0, 47.2];
+/// In melee reach of the familiar, so it never leaves its spot.
+const EXPOSED: [f32; 3] = [-9650.0, 21.5, 47.2];
+/// 6 yd south of the familiar, inside Ink's 8.
+const SIX_YD: [f32; 3] = [-9650.0, 14.0, 47.2];
+/// In the Phase but 16 yd north, outside Ink's 8.
+const SIXTEEN_YD: [f32; 3] = [-9650.0, 36.0, 47.2];
+const SPELL_FAILED_SILENCED: u8 = 0x60;
+const INK_WARNING: &str = "Quill's ink runs across the floor!";
+
+#[test]
+fn quill_s_take_down_silences_a_character_for_4_s() {
+    let realm = realm().with_creature_spells(FAMILIAR, &["take_down_quill"]);
+    let mut p = Party::starting(realm, &[20], START_ELWYNN, Box::new(NoGround));
+    p.go_facing(0, EXPOSED, CASTER);
+    p.run(0.5);
+    // A cast tried every 0.1 s for 10 s: when each was refused for the silence.
+    let mut refused = Vec::new();
+    for tick in 0..100 {
+        let before = p.seen(0).len();
+        p.cmd(
+            0,
+            RealmCommand::CastSpell {
+                spell_id: 1,
+                target: None,
+            },
+        );
+        let silenced = p.seen(0)[before..].iter().any(|e| {
+            matches!(e, SessionEvent::CastResult { spell_id: 1, reason: Some(r), .. }
+                if *r == SPELL_FAILED_SILENCED)
+        });
+        if silenced {
+            refused.push(tick as f32 * 0.1);
+        }
+        p.run(0.1);
+    }
+    let (Some(&first), Some(&last)) = (refused.first(), refused.last()) else {
+        panic!("no cast was refused for the silence");
+    };
+    let secs = last - first + 0.1;
+    assert!((secs - 4.0).abs() < 0.3, "4 s of silence: {secs} s");
+    assert!(
+        (refused.len() as f32 * 0.1 - secs).abs() < 0.05,
+        "a cast went through mid-silence: {refused:?}"
+    );
+}
+
+#[test]
+fn quill_s_ink_roots_every_character_within_8_yd_of_her_for_3_s() {
+    use benilla_protocol::messages::{MoveMode, CHAT_MSG_RAID_WARNING};
+    let realm = realm().with_creature_spells(FAMILIAR, &["ink_quill"]);
+    let places = [EXPOSED, SIX_YD, SIXTEEN_YD];
+    let mut p = Party::starting(realm, &[20; 3], START_ELWYNN, Box::new(NoGround));
+    p.go(0, EXPOSED, 0.0);
+    p.run(0.2);
+    for (i, &at) in places.iter().enumerate().skip(1) {
+        p.go(i, at, 0.0);
+    }
+    let guids = p.guids.clone();
+    // When each character was rooted (`true`) or let go (`false`).
+    let mut roots = vec![Vec::new(); places.len()];
+    for tick in 0..120 {
+        let at = tick as f32 * 0.1;
+        for (i, events) in p.run(0.1).into_iter().enumerate() {
+            for e in events {
+                if let SessionEvent::MoveMode {
+                    guid,
+                    mode: MoveMode::Root,
+                    apply,
+                    ..
+                } = e
+                {
+                    if guid == guids[i] {
+                        roots[i].push((at, apply));
+                    }
+                }
+            }
+        }
+    }
+    let warned = p.seen(0).iter().any(|e| {
+        matches!(e, SessionEvent::Chat(c)
+            if c.chat_type == CHAT_MSG_RAID_WARNING && c.text == INK_WARNING)
+    });
+    assert!(warned, "no warning");
+    for (i, what) in [(0, "in reach"), (1, "6 yd out")] {
+        let [(rooted, true), (freed, false)] = roots[i][..] else {
+            panic!("{what}: rooted once and let go once: {:?}", roots[i]);
+        };
+        assert!(
+            (freed - rooted - 3.0).abs() < 0.3,
+            "{what}: 3 s of root, {rooted} to {freed}"
+        );
+    }
+    assert!(roots[2].is_empty(), "16 yd out: {:?}", roots[2]);
 }
