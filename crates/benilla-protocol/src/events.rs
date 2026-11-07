@@ -594,6 +594,9 @@ pub enum SessionEvent {
         dwell_ms: u32,
         period_ms: u32,
         stops: Vec<CartStop>,
+        /// It never turns round: standing at the last stop and rolling back, it keeps facing the
+        /// way it arrived (a Deeprun Tram car, ADR 0033). A cart's wagon turns.
+        backs_out: bool,
     },
     /// Twilight's Eve, not 1.12: the player sat in the wagon `wagon_guid`; `pose` is their seat in
     /// its frame. Never wire-decoded.

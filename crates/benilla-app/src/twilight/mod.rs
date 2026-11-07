@@ -466,12 +466,13 @@ fn pump(
             dwell_ms,
             period_ms,
             stops,
+            backs_out,
             ..
         } = event
         {
             if let Some(routes) = reel.9.as_deref_mut() {
                 let route = crate::transport::RoadRoute::new(
-                    name, map, points, speed_yd_s, dwell_ms, period_ms, stops,
+                    name, map, points, speed_yd_s, dwell_ms, period_ms, stops, backs_out,
                 );
                 routes.0.insert(wagon_guid, std::sync::Arc::new(route));
             }

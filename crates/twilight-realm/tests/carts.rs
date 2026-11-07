@@ -322,3 +322,32 @@ fn a_locked_server_parks_the_wagon_and_greys_the_stops() {
     assert!(!seated(&events));
     assert!(lines(&events).contains(&carts::cart().locked_line));
 }
+
+#[test]
+fn a_sample_that_backs_out_keeps_its_arriving_heading_standing_and_rolling_back() {
+    let path = [[0.0, 0.0, 0.0], [0.0, 30.0, 0.0]];
+    let along = carts::along(&path);
+    let (dwell, leg) = (1_000, 3_000);
+    let north = std::f32::consts::FRAC_PI_2;
+    let yaw =
+        |t: u64, backs_out: bool| carts::sample(&path, &along, dwell, leg, 1, t, backs_out).yaw;
+    // Rolling in it faces the way it goes, either way.
+    assert!((yaw(dwell + leg / 2, true) - north).abs() < 1e-4);
+    assert!((yaw(dwell + leg / 2, false) - north).abs() < 1e-4);
+    let at_the_end = dwell + leg + dwell / 2;
+    let rolling_back = 2 * dwell + leg + leg / 2;
+    for t in [at_the_end, rolling_back] {
+        assert!((yaw(t, true) - north).abs() < 1e-4, "backing out at {t}");
+        let turned = yaw(t, false);
+        assert!(
+            (turned - 3.0 * north).abs() < 1e-4,
+            "a cart turns at {t}: {turned}"
+        );
+    }
+    let back = carts::sample(&path, &along, dwell, leg, 1, rolling_back, true);
+    assert_eq!(back.state, CartState::Rolling);
+    assert!(
+        (back.point[1] - 15.0).abs() < 1e-3,
+        "half way back: {back:?}"
+    );
+}

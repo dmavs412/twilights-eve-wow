@@ -130,6 +130,8 @@ pub(crate) struct RoadRoute {
     pub(crate) dwell_ms: u32,
     pub(crate) period_ms: u32,
     pub(crate) stops: Vec<benilla_protocol::CartStop>,
+    /// It never turns round: a Deeprun Tram car backs out facing the way it arrived (ADR 0033).
+    pub(crate) backs_out: bool,
     /// The yards along `points` to each point ([`twilight_realm::carts::along`]).
     along: Vec<f32>,
 }
@@ -143,6 +145,7 @@ impl RoadRoute {
         dwell_ms: u32,
         period_ms: u32,
         stops: Vec<benilla_protocol::CartStop>,
+        backs_out: bool,
     ) -> Self {
         let along = twilight_realm::carts::along(&points);
         Self {
@@ -153,6 +156,7 @@ impl RoadRoute {
             dwell_ms,
             period_ms,
             stops,
+            backs_out,
             along,
         }
     }
@@ -169,6 +173,7 @@ impl RoadRoute {
             u64::from(leg_ms),
             self.stops.len().saturating_sub(1),
             u64::from(cycle_ms),
+            self.backs_out,
         );
         TransportSample {
             map: here,
@@ -210,6 +215,7 @@ pub(crate) fn test_road_transport() -> Transport {
             1000,
             4000,
             Vec::new(),
+            false,
         ))),
         was_moving: false,
     }
@@ -967,6 +973,7 @@ mod tests {
                 dwell_ms,
                 2 * (leg_ms + dwell_ms),
                 stops,
+                false,
             ))),
             was_moving: false,
         }
@@ -1003,6 +1010,43 @@ mod tests {
         let back = at(dwell + leg + dwell + leg / 2);
         assert_near(back.pos, [15.0, 0.0, 0.0]);
         assert!((back.heading - std::f32::consts::PI).abs() < 1e-4);
+    }
+
+    /// A Deeprun Tram car's road (ADR 0033): standing at the far end and rolling back it keeps the
+    /// heading it arrived with, where a cart's wagon turns round.
+    #[test]
+    fn a_road_that_backs_out_keeps_its_heading_on_the_return_leg() {
+        let points = vec![[0.0, 0.0, 0.0], [30.0, 0.0, 0.0]];
+        let (dwell, leg) = (1000, 3000);
+        let road = |backs_out| {
+            RoadRoute::new(
+                String::new(),
+                0,
+                points.clone(),
+                10.0,
+                dwell,
+                2 * (leg + dwell),
+                Vec::new(),
+                backs_out,
+            )
+        };
+        let (tram, cart) = (road(true), road(false));
+        let standing = dwell + leg + dwell / 2;
+        let back = dwell + leg + dwell + leg / 2;
+        for ms in [standing, back] {
+            assert!(
+                tram.sample(ms, 0).heading.abs() < 1e-4,
+                "the tram car at {ms}"
+            );
+            let turned = cart.sample(ms, 0).heading;
+            assert!(
+                (turned - std::f32::consts::PI).abs() < 1e-4,
+                "the cart at {ms}"
+            );
+        }
+        let rolling = tram.sample(back, 0);
+        assert!(rolling.moving);
+        assert_near(rolling.pos, [15.0, 0.0, 0.0]);
     }
 
     /// A bent road: 15 yd along it is half way up its second segment, Z included.
@@ -1044,6 +1088,7 @@ mod tests {
                 1000,
                 4000,
                 Vec::new(),
+                false,
             )),
         );
         app.insert_resource(routes)

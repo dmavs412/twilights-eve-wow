@@ -17,7 +17,7 @@ use crate::fields::*;
 use crate::phased::{gameobject_create, GameObject};
 
 /// `GAMEOBJECT_TYPE_TRANSPORT`: the wagon is a transport its riders' poses are local to.
-const TRANSPORT: u32 = 11;
+pub(crate) const TRANSPORT: u32 = 11;
 /// `MOVEFLAG_FORWARD`.
 const MOVE_FORWARD: u32 = 0x1;
 /// `MOVEFLAG_ONTRANSPORT`: the unit's pose is local to the transport it rides.
@@ -257,13 +257,16 @@ pub fn pose(route: &Route, wall_ms: u64) -> Pose {
         route.leg_ms,
         route.last_stop(),
         wall_ms % route.period_ms.max(1),
+        false,
     )
 }
 
 /// A wagon's pose `t` ms into its period, `t < 2 * (leg_ms + dwell_ms)`: standing `dwell_ms` at
 /// the first stop, rolling `path` in `leg_ms`, standing at the last stop (`last_stop`, its index)
 /// and rolling back. `along` is [`along`] of `path`. The realm's [`pose`] and the client's road
-/// drive (#565) both sample it, so a rider and a bystander agree where the wagon is.
+/// drive (#565) both sample it, so a rider and a bystander agree where the wagon is. With
+/// `backs_out` (a Deeprun Tram car, ADR 0033) it never turns round: standing at the last stop and
+/// rolling back, it keeps facing the way it arrived.
 pub fn sample(
     path: &[[f32; 3]],
     along: &[f32],
@@ -271,12 +274,17 @@ pub fn sample(
     leg_ms: u64,
     last_stop: usize,
     t: u64,
+    backs_out: bool,
 ) -> Pose {
     let (dwell, leg) = (dwell_ms, leg_ms.max(1));
     let length_yd = along[along.len() - 1];
     let at = |d: f32| at(path, along, d);
     let back = |(point, yaw): ([f32; 3], f32)| {
-        (point, (yaw + std::f32::consts::PI) % std::f32::consts::TAU)
+        if backs_out {
+            (point, yaw)
+        } else {
+            (point, (yaw + std::f32::consts::PI) % std::f32::consts::TAU)
+        }
     };
     let (state, (point, yaw)) = if t < dwell {
         (CartState::Standing(0), at(0.0))
@@ -352,6 +360,7 @@ pub(crate) fn route_event(route: &Route) -> SessionEvent {
         dwell_ms: route.dwell_ms as u32,
         period_ms: route.period_ms as u32,
         stops: route.stops.clone(),
+        backs_out: false,
     }
 }
 

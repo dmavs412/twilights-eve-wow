@@ -1829,6 +1829,7 @@ mod direct_area_tests {
             1000,
             22_000,
             Vec::new(),
+            false,
         );
         let mut routes = crate::transport::CartRoutes::default();
         routes
