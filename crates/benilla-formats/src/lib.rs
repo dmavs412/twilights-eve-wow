@@ -269,6 +269,7 @@ pub use models::{
 };
 pub mod closed_zones;
 pub mod map_canvas;
+pub mod mist_walls;
 mod terrain;
 pub use terrain::{
     adt_to_tile_mesh, area_id_at, find_tile_near, ground_effect_at, impassable_at, load_tile_mesh,

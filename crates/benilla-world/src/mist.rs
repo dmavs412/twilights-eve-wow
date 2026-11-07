@@ -2,10 +2,14 @@
 //! map chunk and a closed one (`benilla_formats::closed_zones`), so the player never sees the
 //! cut. Each loaded ADT tile builds the segments of its open chunks into one mesh, a child of the
 //! tile's terrain root that despawns with it. `shaders/mist.wgsl` colours it with the scene fog.
+//! A placed mist wall (`benilla_formats::mist_walls`, ADR 0033) stands where there is no closed
+//! chunk, as in the Deeprun Tram's tunnel: the same curtain on a straight line, and a solid box.
 
+use avian3d::prelude::{Collider, RigidBody};
 use benilla_assets::coords::wow_to_bevy;
 use benilla_assets::AdtTile;
 use benilla_formats::closed_zones::chunk_closed;
+use benilla_formats::mist_walls::{mist_walls, MistWall};
 use benilla_formats::{ChunkMesh, CHUNK_SIZE, TILE_SIZE};
 use bevy::asset::RenderAssetUsages;
 use bevy::camera::primitives::MeshAabb;
@@ -20,9 +24,11 @@ use bevy::render::render_resource::{
 };
 use bevy::shader::ShaderRef;
 
+use crate::collision::walk_layers;
 use crate::lighting::WowLighting;
 use crate::schedule::WorldStage;
 use crate::terrain_stream::TerrainTileRoot;
+use crate::world_map::CurrentMap;
 
 /// Yards the curtain reaches below the lowest terrain vertex on its side.
 pub const BELOW_YD: f32 = 10.0;
@@ -208,6 +214,95 @@ pub(crate) fn segments(chunks: &[ChunkMesh], closed: impl Fn(u32, u32) -> bool) 
     out
 }
 
+/// Yards a placed wall's solid box is thick.
+const WALL_THICK_YD: f32 = 0.5;
+
+/// A placed wall's curtain segment: from `from` to `to`, from `bottom` to `top`, with row 0 nine
+/// points evenly along the wall at Z `floor` and rows 1 and 2 the same points moved 1 and 2 yards
+/// along the wall's normal toward `open_side`.
+pub(crate) fn wall_segment(wall: &MistWall) -> Segment {
+    let (from, to) = (Vec2::from(wall.from), Vec2::from(wall.to));
+    let along = (to - from).normalize_or_zero();
+    let mut normal = along.perp();
+    if normal.dot(Vec2::from(wall.open_side) - from) < 0.0 {
+        normal = -normal;
+    }
+    let rows = std::array::from_fn(|j| {
+        std::array::from_fn(|k| {
+            let p = from.lerp(to, k as f32 / 8.0) + normal * j as f32;
+            [p.x, p.y, wall.floor]
+        })
+    });
+    Segment {
+        from: wall.from,
+        to: wall.to,
+        bottom: wall.bottom,
+        top: wall.top,
+        rows,
+    }
+}
+
+/// A placed wall's solid box in Bevy space: its centre, its turn about the vertical, and its
+/// length, thickness and height.
+fn wall_box(wall: &MistWall) -> (Vec3, Quat, Vec3) {
+    let (from, to) = (Vec2::from(wall.from), Vec2::from(wall.to));
+    let mid = (from + to) / 2.0;
+    let centre = wow_to_bevy([mid.x, mid.y, (wall.bottom + wall.top) / 2.0]);
+    let d = to - from;
+    let line = wow_to_bevy([d.x, d.y, 0.0]).normalize_or_zero();
+    let turn = Quat::from_rotation_arc(Vec3::X, line);
+    let size = Vec3::new(d.length(), wall.top - wall.bottom, WALL_THICK_YD);
+    (centre, turn, size)
+}
+
+/// A placed wall's curtain or its solid box; both despawn when the map changes.
+#[derive(Component)]
+struct PlacedMistWall;
+
+/// Spawns the placed walls of the current map, each a curtain and a box on the walk layers, and
+/// despawns the last map's when it changes.
+fn build_placed_walls(
+    mut commands: Commands,
+    map: Option<Res<CurrentMap>>,
+    mut built_for: Local<Option<u32>>,
+    placed: Query<Entity, With<PlacedMistWall>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mist: Res<Mist>,
+) {
+    let Some(map) = map.map(|m| m.0) else {
+        return;
+    };
+    if *built_for == Some(map) {
+        return;
+    }
+    *built_for = Some(map);
+    for e in &placed {
+        commands.entity(e).despawn();
+    }
+    for wall in mist_walls().iter().filter(|w| w.map == map) {
+        let mesh = curtain_mesh(&[wall_segment(wall)]);
+        let aabb = mesh.compute_aabb();
+        // No `ExteriorScene`: the wall stands inside a WMO, whose sealed rooms would hide it.
+        let mut curtain = commands.spawn((
+            PlacedMistWall,
+            Mesh3d(meshes.add(mesh)),
+            MeshMaterial3d(mist.material.clone()),
+            Transform::IDENTITY, // the mesh is in absolute world coords
+        ));
+        if let Some(aabb) = aabb {
+            curtain.insert(aabb);
+        }
+        let (centre, turn, size) = wall_box(wall);
+        commands.spawn((
+            PlacedMistWall,
+            RigidBody::Static,
+            Collider::cuboid(size.x, size.y, size.z),
+            walk_layers(),
+            Transform::from_translation(centre).with_rotation(turn),
+        ));
+    }
+}
+
 /// The curtain mesh's vertices and indices as they are built, positions already in Bevy space.
 #[derive(Default)]
 struct CurtainBuilder {
@@ -370,6 +465,7 @@ impl Plugin for MistPlugin {
                 Update,
                 (
                     build_mist_curtains.in_set(WorldStage::Stream),
+                    build_placed_walls.in_set(WorldStage::Stream),
                     tint_mist.in_set(crate::lighting::LightingConsumeSet),
                 ),
             );
@@ -529,5 +625,43 @@ mod tests {
                 assert_eq!(uv1[i], [SKIRT_CAP, ramp], "skirt {j}, {k}");
             }
         }
+    }
+
+    fn test_wall() -> MistWall {
+        MistWall {
+            key: "test".to_string(),
+            map: 369,
+            from: [0.0, 0.0],
+            to: [8.0, 0.0],
+            bottom: -20.0,
+            top: 30.0,
+            floor: -4.3,
+            open_side: [4.0, 5.0],
+        }
+    }
+
+    #[test]
+    fn a_placed_walls_segment_steps_its_rows_toward_the_open_side() {
+        let wall = test_wall();
+        let s = wall_segment(&wall);
+        assert_eq!((s.from, s.to), (wall.from, wall.to));
+        assert_eq!((s.bottom, s.top), (wall.bottom, wall.top));
+        for (j, row) in s.rows.iter().enumerate() {
+            for (k, p) in row.iter().enumerate() {
+                assert_eq!(*p, [k as f32, j as f32, wall.floor], "row {j}, point {k}");
+            }
+        }
+        let mesh = curtain_mesh(&[s]);
+        assert_eq!(mesh.indices().map(|i| i.len()), Some(240));
+    }
+
+    #[test]
+    fn a_placed_walls_box_spans_the_wall_at_its_middle() {
+        let wall = test_wall();
+        let (centre, turn, size) = wall_box(&wall);
+        assert!(centre.abs_diff_eq(wow_to_bevy([4.0, 0.0, 5.0]), 1e-4));
+        assert_eq!(size, Vec3::new(8.0, 50.0, WALL_THICK_YD));
+        let along = turn * Vec3::X;
+        assert!(along.abs_diff_eq(wow_to_bevy([1.0, 0.0, 0.0]), 1e-4));
     }
 }
