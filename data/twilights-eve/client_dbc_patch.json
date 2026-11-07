@@ -4801,7 +4801,7 @@
       "per_level": 0
      }
     ],
-    "visual": 7273,
+    "visual": 9000,
     "speed": 30.0,
     "range_index": 4,
     "cast_time_index": 16
@@ -5065,7 +5065,7 @@
       "per_level": 0
      }
     ],
-    "visual": 7273,
+    "visual": 9000,
     "speed": 30.0,
     "range_index": 4,
     "cast_time_index": 16
@@ -5111,7 +5111,7 @@
       "per_level": 0
      }
     ],
-    "visual": 7273,
+    "visual": 9000,
     "speed": 30.0,
     "range_index": 4,
     "cast_time_index": 16
@@ -5163,7 +5163,7 @@
       "per_level": 0
      }
     ],
-    "visual": 7273,
+    "visual": 9000,
     "speed": 30.0,
     "range_index": 4,
     "cast_time_index": 16
@@ -10165,6 +10165,13 @@
    "id": 998081,
    "base": 27683,
    "icon": "Interface\\Icons\\INV_Chest_Leather_03"
+  }
+ ],
+ "spell_visuals": [
+  {
+   "id": 9000,
+   "base": 7273,
+   "cast_from": 64
   }
  ]
 }

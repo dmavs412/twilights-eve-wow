@@ -17,6 +17,10 @@ riding a vanilla Class.
 - **Look.** `visual=<stock spell id>` borrows only that spell's look: the generator resolves its
   SpellVisual from Spell.dbc. `icon` names a PNG in `data/twilights-eve/art/` (embedded in the exe,
   checked at build) or a stock icon path. Nothing else is read from the visual's row.
+  Amended 2026-11-06 (#550): a row may take its casting animation from a second stock spell
+  (`cast_visual`). The patch then carries a combined SpellVisual row, from 9000 up: the visual's
+  SpellVisual with the second spell's precast and cast kits, which the client merges in at load as
+  it does `item_displays`.
 - **Behaviour.** Explicit columns (school, cast_style = instant/cast/channel/next_swing/auto_repeat,
   needs_facing, dispel, mechanic) with defaults for the rest. No effect cap: the client row carries
   every sheet effect's numbers, so `$sN` and spell mods reach any effect. The realm still decides

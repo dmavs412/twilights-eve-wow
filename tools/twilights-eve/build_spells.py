@@ -69,7 +69,7 @@ TREE_COLUMNS = ("talent_id", "source_tab_id", "tab", "tab_row", "tab_column", "p
                 "max_rank", "tab_id", "background", "tab_order", "exceptional")
 # The cells a Skill Choice never inherits from its skill: they are the choice's own, empty or not.
 # Its `icon` is not one of them: a Skill Choice shows its skill's icon and leaves its own empty.
-CHOICE_OWN_COLUMNS = ("kind", "key", "name", "rank", "spell_id", "visual", "status", "description",
+CHOICE_OWN_COLUMNS = ("kind", "key", "name", "rank", "spell_id", "visual", "cast_visual", "status", "description",
                       "assumptions", "notes", "modelled", "variant_of", CHANGE_COLUMN)
 # A choice cell of this blanks the inherited cell.
 BLANK = "-"
@@ -288,6 +288,10 @@ def check_dbc_ids(rows: list[dict], data_dir: str | None) -> None:
 
 # Spell.dbc columns `read_row_tables` reads for a row's look.
 SPELL_VISUAL, SPELL_SPEED = 115, 37
+# SpellVisual.dbc columns: the precast and cast kits a `cast_visual` lends (#585).
+VISUAL_PRECAST_KIT, VISUAL_CAST_KIT = 1, 2
+# The first id of the patch's combined SpellVisual rows (`spell_visuals`), above every stock one.
+COMBINED_VISUAL_MIN_ID = 9000
 
 
 def check_seam(server: list[dict]) -> None:
@@ -617,8 +621,9 @@ def check_visuals(rows: list[dict]) -> None:
 
 
 def read_row_tables(data_dir: str | None) -> dict:
-    """SpellRange, SpellCastTimes, SpellDuration and SpellRadius as plain tuples, and each stock
-    spell's SpellVisual and missile speed, for `resolve_dbc_rows`."""
+    """SpellRange, SpellCastTimes, SpellDuration and SpellRadius as plain tuples, each stock
+    spell's SpellVisual and missile speed, and each SpellVisual's precast and cast kits, for
+    `resolve_dbc_rows`."""
     if not data_dir:
         raise BuildError("resolving range, cast time and duration needs --data or WOW_DATA; "
                          "pass --no-dbc-check to leave them as values")
@@ -627,8 +632,9 @@ def read_row_tables(data_dir: str | None) -> dict:
 
     try:
         chain = Chain(data_dir)
-        ranges, times, durations, spells, radii = (load_dbc(chain, n) for n in (
-            "SpellRange.dbc", "SpellCastTimes.dbc", "SpellDuration.dbc", "Spell.dbc", "SpellRadius.dbc"))
+        ranges, times, durations, spells, radii, visuals = (load_dbc(chain, n) for n in (
+            "SpellRange.dbc", "SpellCastTimes.dbc", "SpellDuration.dbc", "Spell.dbc", "SpellRadius.dbc",
+            "SpellVisual.dbc"))
     except (OSError, KeyError, ValueError) as error:
         raise BuildError(f"cannot read the DBCs in {data_dir}: {error}") from error
     return {
@@ -638,17 +644,26 @@ def read_row_tables(data_dir: str | None) -> dict:
         "spell_looks": {spells.u32(i, 0): (spells.u32(i, SPELL_VISUAL), spells.f32(i, SPELL_SPEED))
                         for i in range(spells.nrec)},
         "radii": [(radii.u32(i, 0), radii.f32(i, 1)) for i in range(radii.nrec)],
+        "visual_kits": {visuals.u32(i, 0): (visuals.u32(i, VISUAL_PRECAST_KIT), visuals.u32(i, VISUAL_CAST_KIT))
+                        for i in range(visuals.nrec)},
     }
 
 
 def resolve_dbc_rows(patch: dict, ranges: list, cast_times: list, durations: list,
                      spell_looks: dict[int, tuple[int, float]] | None = None,
-                     radii: list | None = None) -> None:
+                     radii: list | None = None,
+                     visual_kits: dict[int, tuple[int, int]] | None = None) -> None:
     """Replace each override's range, cast time and duration values with the index of the stock
     row that holds them (the lowest id on a tie). The client overwrites the index. A value no
     stock row holds fails the build. A row's `visual_spell` becomes the stock spell's SpellVisual
-    id and, for a missile, its speed: both are that spell's look. An effect's SpellRadius index
-    must be a row whose yards are the realm's `radius_yd`."""
+    id and, for a missile, its speed: both are that spell's look. A row's `cast_visual_spell`
+    lends its SpellVisual's precast and cast kits: each distinct (visual, cast_visual) pair of
+    SpellVisuals becomes one combined row of `patch["spell_visuals"]`, ids from 9000 up in sorted
+    pair order, and the row's `visual` is that id (#585). An effect's SpellRadius index must be a
+    row whose yards are the realm's `radius_yd`."""
+    kits = visual_kits or {}
+    # (fields, (base SpellVisual, cast_from SpellVisual), where) for each row with a cast_visual.
+    combined: list[tuple[dict, tuple[int, int], str]] = []
     for entry in patch["spells"]:
         fields = entry["fields"]
         where = (f"{entry['calling']}/{entry['key']}" if "key" in entry
@@ -663,6 +678,7 @@ def resolve_dbc_rows(patch: dict, ranges: list, cast_times: list, durations: lis
             if yards is not None and abs(found - float(yards)) > 1e-3:
                 raise BuildError(f"{where}: radius index {index} is {round(found, 3)} yd, "
                                  f"the realm's radius is {yards}")
+        stock = None
         if "visual_spell" in fields:
             stock = fields.pop("visual_spell")
             if stock not in (spell_looks or {}):
@@ -670,6 +686,20 @@ def resolve_dbc_rows(patch: dict, ranges: list, cast_times: list, durations: lis
             fields["visual"], speed = spell_looks[stock]
             if speed > 0:
                 fields["speed"] = round(speed, 3)
+        if "cast_visual_spell" in fields:
+            lender = fields.pop("cast_visual_spell")
+            if "visual" not in fields:
+                raise BuildError(f"{where}: cast_visual needs a visual to take the casting animation onto")
+            if lender not in (spell_looks or {}):
+                raise BuildError(f"{where}: cast_visual {lender} is not a spell in Spell.dbc")
+            cast_from = spell_looks[lender][0]
+            if kits.get(cast_from, (0, 0)) == (0, 0):
+                raise BuildError(f"{where}: cast_visual {lender}'s SpellVisual {cast_from} has no precast or "
+                                 f"cast kit, so it lends no casting animation")
+            if fields["visual"] not in kits:
+                raise BuildError(f"{where}: visual {stock} has SpellVisual {fields['visual']}, which is not a "
+                                 f"SpellVisual.dbc row to add a casting animation to")
+            combined.append((fields, (fields["visual"], cast_from), where))
         if "range_min" in fields or "range_max" in fields:
             low, high = float(fields.pop("range_min", 0)), float(fields.pop("range_max", 0))
             fields["range_index"] = _lowest(
@@ -685,6 +715,16 @@ def resolve_dbc_rows(patch: dict, ranges: list, cast_times: list, durations: lis
             fields["duration_index"] = _lowest(
                 (i for i, base in durations if base == ms),
                 f"{where}: no SpellDuration.dbc row for duration {ms} ms")
+    ids = {pair: COMBINED_VISUAL_MIN_ID + n for n, pair in enumerate(sorted({pair for _, pair, _ in combined}))}
+    highest = max(kits, default=0)
+    for fields, pair, where in combined:
+        if ids[pair] <= highest:
+            raise BuildError(f"{where}: combined SpellVisual {ids[pair]} would shadow a stock SpellVisual "
+                             f"(the highest is {highest})")
+        fields["visual"] = ids[pair]
+    if ids:
+        patch["spell_visuals"] = [{"id": i, "base": base, "cast_from": cast_from}
+                                  for (base, cast_from), i in ids.items()]
 
 
 def _lowest(ids, message: str) -> int:
@@ -1233,8 +1273,8 @@ def client_visible(row: dict, where: str) -> bool:
         return True
     if not row["spell_id"]:
         raise BuildError(f"{where}: a client_visible=no row needs spell_id")
-    for column in ("visual", "icon", "needs_facing"):
-        if row[column]:
+    for column in ("visual", "cast_visual", "icon", "needs_facing"):
+        if row.get(column):
             raise BuildError(f"{where}: a client_visible=no row sets {column}")
     for column in row:
         if column.startswith("client_") and column != "client_visible" and row[column]:
@@ -1668,6 +1708,8 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             raise BuildError(f"{where} spell_id: {out['spell_id']} is below {FROM_SCRATCH_MIN_ID}")
     elif row["visual"] or row["icon"] or row["needs_facing"]:
         raise BuildError(f"{where}: visual, icon and needs_facing belong to a row with a spell_id")
+    elif row.get("cast_visual"):
+        raise BuildError(f"{where}: cast_visual belongs to a row with a spell_id and a visual")
     if hidden:
         out["client_visible"] = False
     if spellbook(row, hidden, where) is False:
@@ -2037,6 +2079,11 @@ def from_scratch_fields(row: dict, built: dict, art: list[str], art_dir: str, wh
         fields["icon"] = icon_path(row["icon"], art, art_dir, where)
     if row["visual"] and row["visual"] != NO_VISUAL:
         fields["visual_spell"] = whole(row["visual"], f"{where} visual")
+    if row.get("cast_visual"):
+        if "visual_spell" not in fields:
+            raise BuildError(f"{where}: cast_visual takes a casting animation onto the row's visual, "
+                             f"and the row's visual is {row['visual'] or 'empty'}; set a Spell.dbc visual")
+        fields["cast_visual_spell"] = whole(row["cast_visual"], f"{where} cast_visual")
     if row["needs_facing"]:
         fields["needs_facing"] = yes_no(row["needs_facing"], where, "needs_facing")
     if row["dispel_type"]:
@@ -2437,8 +2484,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 # The patch fields `resolve_dbc_rows` rewrites from the DBCs: a run without the DBCs cannot
-# reproduce them, so `--check --no-dbc-check` compares the patch with these dropped on both sides.
-DBC_RESOLVED_FIELDS = frozenset({"visual_spell", "visual", "speed", "range_min", "range_max", "range_index",
+# reproduce them, so `--check --no-dbc-check` compares the patch with these, and its
+# `spell_visuals` table, dropped on both sides.
+DBC_RESOLVED_FIELDS = frozenset({"visual_spell", "cast_visual_spell", "visual", "speed", "range_min", "range_max", "range_index",
                                  "cast_time_ms", "cast_time_index", "duration_ms", "duration_index",
                                  "radius_yd"})
 
@@ -2464,7 +2512,8 @@ def check_outputs(out_dir: str, outputs: tuple, resolved: bool) -> list[str]:
 def _without_resolved(patch: dict) -> dict:
     spells = [{**entry, "fields": {k: v for k, v in entry["fields"].items() if k not in DBC_RESOLVED_FIELDS}}
               for entry in patch.get("spells", [])]
-    return {**patch, "spells": spells}
+    # The combined looks are built from the DBCs too.
+    return {**{k: v for k, v in patch.items() if k != "spell_visuals"}, "spells": spells}
 
 
 if __name__ == "__main__":

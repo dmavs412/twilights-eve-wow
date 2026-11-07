@@ -738,6 +738,24 @@ effects = []
         active = row_talent("rush", spell_id="1012320", target="enemy", cast_kind="instant", visual="")
         self.assert_fails(talent_row(active), "rush): a castable row needs a visual")
 
+    def test_cast_visual_rides_beside_visual_until_the_dbcs_resolve_it(self):
+        done, _ = self.run_build([{**STRIKE, "visual": "133", "cast_visual": "686"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        fields = self.patch["spells"][0]["fields"]
+        self.assertEqual((fields["visual_spell"], fields["cast_visual_spell"]), (133, 686))
+        # Without the DBCs nothing resolves the pair, so the patch has no combined looks.
+        self.assertNotIn("spell_visuals", self.patch)
+        done, _ = self.run_build([{**STRIKE, "visual": "133"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertNotIn("cast_visual_spell", self.patch["spells"][0]["fields"])
+
+    def test_cast_visual_needs_a_visual_to_add_to(self):
+        self.assert_fails([{**STRIKE, "visual": "none", "cast_visual": "686"}],
+                          "strike): cast_visual takes a casting animation onto the row's visual")
+        self.assert_fails([{**AURA, "cast_visual": "686"}],
+                          "buff): cast_visual takes a casting animation onto the row's visual")
+        self.assert_fails([{**STRIKE, "visual": "133", "cast_visual": "shadow"}], "cast_visual")
+
     def test_a_ground_patch_needs_a_row_with_a_real_visual(self):
         area = {**STRIKE, "target": "dest", "realm_radius_yd": "8", "client_radius_index": "14",
                 "effect1_kind": "ground_area", "effect1_params": "radius_yd=8;duration_ms=1000",
@@ -768,8 +786,12 @@ effects = []
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
                   encoding="utf-8") as f:
             patch = json.load(f)
-        lance = next(s for s in patch["spells"] if s["spell_id"] == 1000350)
-        self.assertEqual(lance["fields"]["visual"], 7273, "Corrupted Blood's red bolt")
+        # Corrupted Blood's red bolt (SpellVisual 7273) with Shadow Bolt's casting kits (64), #585.
+        self.assertEqual(patch["spell_visuals"], [{"id": 9000, "base": 7273, "cast_from": 64}])
+        for spell_id in (1000350, 1000553, 1000554, 1000555):
+            lance = next(s for s in patch["spells"] if s["spell_id"] == spell_id)
+            self.assertEqual((lance["fields"]["visual"], lance["fields"]["speed"]), (9000, 30.0), spell_id)
+        self.assertEqual(sum(1 for s in patch["spells"] if s["fields"].get("visual") == 9000), 4)
 
     def test_per_combo_is_a_formula_block(self):
         row = {**STRIKE, "effect1_kind": "school_damage",
@@ -1537,6 +1559,50 @@ class ResolveRows(unittest.TestCase):
         with self.assertRaisesRegex(self.module.BuildError, "radius index 99 is not a SpellRadius.dbc row"):
             self.module.resolve_dbc_rows(unknown, **self.tables, radii=radii)
 
+    # Stock spell -> (SpellVisual, missile speed), and SpellVisual -> (precast kit, cast kit):
+    # Corrupted Blood 24328 (no casting kits, a missile), Shadow Bolt 686, Frostbolt 116 and a
+    # spell 1 with SpellVisual 0. The highest stock SpellVisual id is 7891.
+    LOOKS = {24328: (7273, 30.0), 686: (64, 20.0), 116: (13, 28.0), 133: (11, 24.0), 1: (0, 0.0)}
+    KITS = {7273: (0, 0), 64: (114, 118), 13: (114, 116), 11: (0, 0), 7891: (0, 0)}
+
+    def looks(self, *entries, kits=None):
+        patch = {"spells": [{"spell_id": 1000000 + i, "fields": dict(f)} for i, f in enumerate(entries)]}
+        self.module.resolve_dbc_rows(patch, **self.tables, spell_looks=self.LOOKS,
+                                     visual_kits=self.KITS if kits is None else kits)
+        return patch
+
+    def test_a_cast_visual_makes_one_combined_look_per_pair(self):
+        patch = self.looks({"visual_spell": 24328, "cast_visual_spell": 686},
+                           {"visual_spell": 24328, "cast_visual_spell": 686},
+                           {"visual_spell": 133, "cast_visual_spell": 686},
+                           {"visual_spell": 24328})
+        fields = [e["fields"] for e in patch["spells"]]
+        # Pairs sorted: (11, 64) is 9000, (7273, 64) is 9001; the speed is still the visual's.
+        self.assertEqual(fields[0], {"visual": 9001, "speed": 30.0})
+        self.assertEqual(fields[1], {"visual": 9001, "speed": 30.0})
+        self.assertEqual(fields[2], {"visual": 9000, "speed": 24.0})
+        self.assertEqual(fields[3], {"visual": 7273, "speed": 30.0})
+        self.assertEqual(patch["spell_visuals"], [{"id": 9000, "base": 11, "cast_from": 64},
+                                                  {"id": 9001, "base": 7273, "cast_from": 64}])
+
+    def test_no_cast_visual_writes_no_combined_looks(self):
+        patch = self.looks({"visual_spell": 24328})
+        self.assertNotIn("spell_visuals", patch)
+
+    def test_a_bad_cast_visual_fails_naming_the_row(self):
+        BuildError = self.module.BuildError
+        with self.assertRaisesRegex(BuildError, "1000000: cast_visual 999 is not a spell in Spell.dbc"):
+            self.looks({"visual_spell": 24328, "cast_visual_spell": 999})
+        with self.assertRaisesRegex(BuildError, "1000000: cast_visual 133's SpellVisual 11 has no precast or cast kit"):
+            self.looks({"visual_spell": 24328, "cast_visual_spell": 133})
+        with self.assertRaisesRegex(BuildError, "1000000: cast_visual needs a visual"):
+            self.looks({"cast_visual_spell": 686})
+        with self.assertRaisesRegex(BuildError, "1000000: visual 1 has SpellVisual 0"):
+            self.looks({"visual_spell": 1, "cast_visual_spell": 686})
+        with self.assertRaisesRegex(BuildError, "1000000: combined SpellVisual 9000 would shadow a stock "
+                                                "SpellVisual \\(the highest is 9500\\)"):
+            self.looks({"visual_spell": 24328, "cast_visual_spell": 686}, kits={**self.KITS, 9500: (0, 0)})
+
     def test_no_matching_row_fails_naming_the_value(self):
         with self.assertRaisesRegex(self.module.BuildError, "range 3.0-7.0"):
             self.resolved(range_min=3.0, range_max=7.0)
@@ -1635,6 +1701,17 @@ class TalentRows(BuildSpells):
         self.assertEqual(done.returncode, 0, done.stderr)
         patch = {o["spell_id"]: o["fields"] for o in self.patch["spells"]}
         self.assertEqual([patch[i]["icon"] for i in (1000501, 1000502, 1000503)], [icon] * 3)
+
+    def test_a_skill_choice_does_not_inherit_its_skills_cast_visual(self):
+        rows = [{**CALLING, "row_levels": "3"}, {**STRIKE, "row_level": "3", "visual": "133", "cast_visual": "686"},
+                choice("a", 1000501, cast_visual="116"), choice("b", 1000502), choice("c", 1000503)]
+        done, _ = self.run_build(rows)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        patch = {o["spell_id"]: o["fields"] for o in self.patch["spells"]}
+        self.assertEqual(patch[1000078]["cast_visual_spell"], 686)
+        self.assertEqual(patch[1000501]["cast_visual_spell"], 116)
+        self.assertNotIn("cast_visual_spell", patch[1000502])
+        self.assertNotIn("cast_visual_spell", patch[1000503])
 
     def test_a_skill_choice_with_an_icon_of_its_own_fails(self):
         rows = [{**CALLING, "row_levels": "3"}, {**STRIKE, "row_level": "3"},
