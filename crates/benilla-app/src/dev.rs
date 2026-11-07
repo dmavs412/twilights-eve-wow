@@ -284,6 +284,10 @@ impl Plugin for DevProbesPlugin {
             if std::env::var("WOW_PROBE_CHEST").is_ok() {
                 app.add_plugins(crate::capture::ProbeChestPlugin);
             }
+            // `WOW_PROBE_USE=<x>,<y>,<z>[,<map>]`: uses the GOOBER at a point (the tram bell).
+            if std::env::var("WOW_PROBE_USE").is_ok() {
+                app.add_plugins(crate::capture::ProbeUsePlugin);
+            }
             // `WOW_PROBE_GOQUEST=1`: a quest poster's status below and above its MinLevel.
             if std::env::var("WOW_PROBE_GOQUEST").is_ok() {
                 app.add_plugins(crate::capture::ProbeGoQuestPlugin);

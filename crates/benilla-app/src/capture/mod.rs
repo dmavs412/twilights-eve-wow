@@ -75,6 +75,7 @@ mod probe_rig;
 mod probe_service;
 mod probe_stone;
 mod probe_taxi;
+mod probe_use;
 mod probe_vendor_swap;
 mod probes;
 mod realm_list;
@@ -108,6 +109,7 @@ pub(crate) use probe_rig::ProbeRigPlugin;
 pub(crate) use probe_service::ProbeServicePlugin;
 pub(crate) use probe_stone::ProbeStonePlugin;
 pub(crate) use probe_taxi::ProbeTaxiPlugin;
+pub(crate) use probe_use::ProbeUsePlugin;
 pub(crate) use probe_vendor_swap::ProbeVendorSwapPlugin;
 pub(crate) use probes::{
     fx_draw_census_plugin, DressCensusPlugin, EntityCensusPlugin, GroundCensusPlugin,

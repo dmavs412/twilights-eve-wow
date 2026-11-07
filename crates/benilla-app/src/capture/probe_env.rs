@@ -293,6 +293,11 @@ pub(crate) const PROBE_VARS: &[ProbeVar] = &[
         wall_clock: true,
     },
     ProbeVar {
+        name: "WOW_PROBE_USE",
+        purpose: "<x>,<y>,<z>[,<map>] — go to the point, use the nearest GOOBER within 5 yd on the click's own route and stay; -18.5,2484.0,-4.29,369 rings the Deeprun Tram bell",
+        wall_clock: true,
+    },
+    ProbeVar {
         name: "WOW_PROBE_GOQUEST",
         purpose: "1 or <x>,<y>,<z>[,<map>] — park at a GameObject questgiver and report the dialog status below and above MinLevel",
         wall_clock: true,
