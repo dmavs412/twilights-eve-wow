@@ -91,6 +91,7 @@ mod tables;
 mod talents;
 mod trade;
 mod trainer;
+pub mod tram;
 mod trinket_spells;
 mod unlocks;
 mod vendor;
@@ -1475,6 +1476,10 @@ impl Realm {
                         if let Some(r) = carts::by_wagon(guid).filter(|_| carts_on) {
                             events.push(carts::route_event(r));
                         }
+                        // So does a tram car's (ADR 0033).
+                        if let Some(route) = shard.route_of(guid) {
+                            events.push(route);
+                        }
                         events.push(create);
                     }
                 }
@@ -1661,6 +1666,56 @@ impl Realm {
                     .filter(|(g, _)| *g == w.guid)
                     .map(|(_, e)| e.clone()),
             );
+        }
+    }
+
+    /// The tram lines' tick (ADR 0033), after the shards ran them and sent their cars and lamps:
+    /// every character in a line's Phase hears its warnings on the lamps, and each moving car's
+    /// lane hit lands on the character it hit.
+    fn tick_trams(&mut self) {
+        let places: Vec<shard::Place> = self
+            .shards
+            .iter()
+            .filter(|(_, s)| s.tram().is_some())
+            .map(|(place, _)| *place)
+            .collect();
+        for place in places {
+            let mut players = Vec::new();
+            let worlds = std::iter::once(&self.world).chain(self.parked.values().map(|s| &s.world));
+            for w in worlds.flatten() {
+                let (true, Some(c)) = (w.shard_place() == Some(place), self.characters.get(w.guid))
+                else {
+                    continue;
+                };
+                players.push(tram::Standing {
+                    guid: w.guid,
+                    position: c.position,
+                    alive: w.alive(),
+                });
+            }
+            let Some(line) = self.shards.get_mut(&place).and_then(|s| s.tram_mut()) else {
+                continue;
+            };
+            let hits = line.hits(&players);
+            let sounds = line.take_sounds();
+            let t = line.tram();
+            let sessions = std::iter::once((&mut self.world, &mut self.events)).chain(
+                self.parked
+                    .values_mut()
+                    .map(|s| (&mut s.world, &mut s.events)),
+            );
+            for (w, events) in sessions {
+                let Some(w) = w.as_mut().filter(|w| w.shard_place() == Some(place)) else {
+                    continue;
+                };
+                for &(sound_id, guid) in &sounds {
+                    events.push(SessionEvent::PlayObjectSound { sound_id, guid });
+                }
+                let me = w.guid;
+                for hit in hits.iter().filter(|h| h.player == me) {
+                    w.tram_hit(hit.car, t.hit_spell, t.hit_pct, t.hit_root_ms, events);
+                }
+            }
         }
     }
 
@@ -2189,6 +2244,7 @@ impl Realm {
         self.tick_noise();
         self.tick_gazes();
         self.tick_encounters(dt, host);
+        self.tick_trams();
         self.party_tick(dt);
         self.tick_trades();
         self.tick_duels(dt);

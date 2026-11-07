@@ -12,9 +12,9 @@
 # `grounded = false`, each naming the stock spawn it came from; ground_check.py leaves the rows
 # alone. The platform floor is z -4.2965, the arrival point's and the vanilla benches'.
 #
-# The shell (#587): the station bell and nothing else. The trams, their creatures, the Tribute
-# Pile and the Conductor come with the next tickets. Ringing the bell is the lever's pull, Run
-# state; the tram line starts from it.
+# The shell (#587): the station bell. The tram line (#589): the `[tram]` table below, empty cars
+# on the timetable. The trams' creatures, the Tribute Pile and the Conductor come with the next
+# tickets. Ringing the bell is the lever's pull, Run state; the tram line starts from it.
 #
 # Guids: creatures 973201 up (973101 to 973123 are the quiet wing's), GameObjects 983012 up (the
 # entry is the guid). Templates 97215 up in mobs.toml.
@@ -54,3 +54,52 @@ orientation = 1.5708
 sides = "inside"
 use = "lever"
 lever = { used_text = "The bell rings down the tunnel. Something far off answers it." }
+
+# The tram line (#589, spec "The trams", ADR 0033): Run state that starts on the tick after the
+# bell is rung. Each tram's cars roll in on one track, stand at the platform and back out, and the
+# timetable follows the group's pace (Headway, GLOSSARY.md). Read by src/tram.rs. The cars carry
+# nothing yet; #590 loads them.
+[tram]
+bell = 983012              # the lever whose use starts the line
+car_entry = 176080         # vanilla's Subway, GameObject type 11
+car_display = 3831         # its GameObjectDisplayInfo
+car_z = 6.90526            # the vanilla cars' Z
+stops = [2512.2, 2492.8, 2472.9]   # car stops along y, lead first (vanilla 176083, 176082, 176080)
+run_in_yd = 150.0          # each car starts this far before its stop, behind the mist wall
+speed_yd_s = 30.0          # rolling in and backing out
+dwell_s = 20.0             # standing at the platform
+whistle_s = 3.0            # the departure warning, before dwell_s ends
+first_s = 10.0             # bell to tram 1's arrival
+gap_s = 40.0               # arrival to the next tram's arrival, after tram 1 and after a slow tram
+fast_gap_s = 25.0          # the gap after a tram whose warning found nothing a tram brought alive
+max_cars = 3               # the most cars a tram has
+wave_trams = 6             # then one boss tram, one car, track a
+lane_half_yd = 3.0         # a lane's half width either side of its track's x
+lane_reach_yd = 10.0       # along y from a car's centre
+lane_z_yd = 5.0            # above or below floor_z
+floor_z = -4.2965          # the platform floor
+wall_y = 2400.0            # a lane's south end: the mist wall
+lane_north_y = 2525.0      # a lane's north end: the station's
+hit_pct = 40               # of maximum health, unaffected by armour
+hit_root_ms = 2000         # how long a hit player is rooted
+hit_spell = 1900054        # the root's aura, in creature_spells.toml
+hit_spell_name = "Tram Strike"
+bell_sound = 7234          # SoundEntries BellTollDwarfGnome, an arrival's warning
+whistle_sound = 6757       # SoundEntries SubwayStart, a departure's warning
+lamp_display = 6038        # General Lantern 01, lit while a warning lasts
+
+# Each track: its x, the x of its cars' doors on the centre strip side (#590), and its lamp at the
+# platform's south end. The lamp's guid follows the bell's (983012 up; the entry is the guid).
+[[tram.track]]
+key = "a"
+x = -45.4
+door_x = -40.0
+lamp = [-45.4, 2458.0, -4.2965]
+lamp_guid = 983027
+
+[[tram.track]]
+key = "b"
+x = 4.53
+door_x = 0.0
+lamp = [4.53, 2458.0, -4.2965]
+lamp_guid = 983028

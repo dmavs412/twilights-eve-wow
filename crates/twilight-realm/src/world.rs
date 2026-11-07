@@ -1514,6 +1514,40 @@ impl InWorld {
         self.player_takes_at(gaze.caster, gaze.level, gaze.damage, gaze.school, events);
     }
 
+    /// A tram car `car` hit the player in its lane (ADR 0033): `pct` of their maximum health as
+    /// physical damage that armour does not reduce, then rooted `root_ms` under `spell_id`.
+    pub(crate) fn tram_hit(
+        &mut self,
+        car: u64,
+        spell_id: u32,
+        pct: u32,
+        root_ms: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        if !self.player.alive() {
+            return;
+        }
+        let max = cast::buffed(&self.player.stats, &self.skills).max_health;
+        let damage = (u64::from(max) * u64::from(pct) / 100) as u32;
+        let school = crate::rules::school::School::Physical;
+        events.push(SessionEvent::SpellDamageLog(
+            benilla_protocol::messages::SpellDamageLog {
+                target: self.guid,
+                attacker: car,
+                spell_id,
+                damage,
+                school: school.index(),
+                absorb: 0,
+                resist: 0,
+                periodic: false,
+                blocked: 0,
+                hit_info: 0,
+            },
+        ));
+        self.player_takes(car, damage, school, events);
+        self.start_root(spell_id, root_ms, events);
+    }
+
     /// The player loses `damage` to a creature's blow or spell: rage from it, and a timed cast
     /// broken (the Hearthstone's interrupts on damage).
     fn player_takes(

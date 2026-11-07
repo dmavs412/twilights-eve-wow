@@ -663,6 +663,9 @@ pub(crate) struct Dungeon {
     /// The key its locked doors take, and the creatures that may carry it.
     #[serde(default)]
     pub(crate) key: Option<Key>,
+    /// The Deeprun Tram's line (ADR 0033): trams that come once its bell is rung.
+    #[serde(default)]
+    pub(crate) tram: Option<crate::tram::Tram>,
 }
 
 /// A door inside a Phased Dungeon, locked at the start of every Run until a character with the
@@ -1254,6 +1257,8 @@ pub(crate) struct Run {
     /// The Head Count last counted (ADR 0029); 0 before the first count, when none has been
     /// announced.
     pub(crate) head_count: u32,
+    /// The dungeon's tram line (ADR 0033), from the tick after its bell is rung.
+    pub(crate) tram: Option<crate::tram::Line>,
 }
 
 impl Run {
@@ -1275,6 +1280,7 @@ impl Run {
                 .map(|k| k.holders[((seed >> 32) * k.holders.len() as u64 >> 32) as usize].guid),
             unlocked: Vec::new(),
             head_count: 0,
+            tram: None,
         }
     }
 

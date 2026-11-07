@@ -356,6 +356,7 @@ impl Shard {
             run.elapsed += dt;
             self.ground_run(host);
             self.run_changes(host);
+            self.tick_tram(dt);
             return events;
         }
         let map = self.place.map;
@@ -366,6 +367,45 @@ impl Shard {
         events.extend(self.carts.update(wall_ms, carts_on));
         events.retain(|e| !matches!(e, SessionEvent::ObjectCreate { .. }));
         events
+    }
+
+    /// The Run's tram line (ADR 0033): it starts on the tick after the dungeon's bell is pulled,
+    /// and from then on runs `dt` on, told whether any creature a tram brought is alive.
+    fn tick_tram(&mut self, dt: f32) {
+        let Phase::Dungeon(id) = self.place.phase else {
+            return;
+        };
+        let Some(run) = &mut self.run else {
+            return;
+        };
+        match &mut run.tram {
+            Some(line) => {
+                let alive = self.mobs.iter().any(|m| m.alive() && line.brought(m.guid));
+                line.tick(dt, alive);
+            }
+            None => {
+                let rung = crate::phased::dungeon(id)
+                    .and_then(|d| d.tram.as_ref())
+                    .filter(|t| run.used.contains(&t.bell));
+                if let Some(tram) = rung {
+                    run.tram = Some(crate::tram::Line::new(tram, self.place.map));
+                }
+            }
+        }
+    }
+
+    /// The Run's tram line, once its bell is rung.
+    pub(crate) fn tram(&self) -> Option<&crate::tram::Line> {
+        self.run.as_ref().and_then(|r| r.tram.as_ref())
+    }
+
+    pub(crate) fn tram_mut(&mut self) -> Option<&mut crate::tram::Line> {
+        self.run.as_mut().and_then(|r| r.tram.as_mut())
+    }
+
+    /// The route of the tram car `guid`, which its create follows; `None` for anything else.
+    pub(crate) fn route_of(&self, guid: u64) -> Option<SessionEvent> {
+        self.tram().and_then(|l| l.route_of(guid))
     }
 
     /// An Audience's creature made before the host had its ground stood at the point's own
@@ -441,6 +481,8 @@ impl Shard {
             .collect();
         seen.extend(self.hub.in_view(me));
         seen.extend(self.carts.in_view());
+        // The tram's cars and lit lamps, which the whole Phase sees.
+        seen.extend(self.tram().map_or(Vec::new(), |l| l.in_view()));
         seen
     }
 

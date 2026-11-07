@@ -298,6 +298,29 @@ effect = { kind = "marker" }
         self.assertEqual(fields["duration_ms"], -1)
         self.assertEqual(fields["dbc_effects"], [{"effect": 6, "aura": 4, "base": 0, "per_level": 0}])
 
+    def test_a_creature_spell_of_visual_0_has_no_look_and_one_with_none_fails(self):
+        marker = """
+[[spell]]
+key = "tram_strike"
+spell_id = 1900001
+name = "Tram Strike"
+icon = 'Interface\\Icons\\Ability_Warrior_Charge'
+{visual}
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 0
+effect = {{ kind = "marker" }}
+"""
+        self.creature_spells = marker.format(visual="visual = 0")
+        done, _ = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        fields = next(e for e in self.patch["spells"] if e["spell_id"] == 1900001)["fields"]
+        self.assertNotIn("visual_spell", fields)
+        self.creature_spells = marker.format(visual="")
+        self.assert_fails([STRIKE], "tram_strike: visual is required (0 for none)")
+
     def test_a_creature_spell_on_a_sheet_id_fails(self):
         self.creature_spells = self.creature(spell_id=1000078)
         self.assert_fails([STRIKE], "curse: spell_id 1000078 is already claimed by line 2 (vanguard/strike)")

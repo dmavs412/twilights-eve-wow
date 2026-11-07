@@ -410,9 +410,11 @@ def build_creature_spells(spells: list[dict], rows: list[dict], art: list[str], 
             bad.append(f"{where}: spell_id {sid} is already claimed by {taken[sid]}")
             continue
         taken[sid] = where
-        for column in ("name", "icon", "visual", "school"):
+        for column in ("name", "icon", "school"):
             if not spell.get(column):
                 raise BuildError(f"{where}: {column} is required")
+        if not isinstance(spell.get("visual"), int):
+            raise BuildError(f"{where}: visual is required (0 for none)")
         effect = spell["effect"]
         if effect.get("kind") not in CREATURE_EFFECTS_OF:
             raise BuildError(f"{where}: effect kind {effect.get('kind')!r}, want one of "
@@ -444,11 +446,13 @@ def build_creature_spells(spells: list[dict], rows: list[dict], art: list[str], 
                                 "misc_value": ALL_SCHOOLS_MASK})
         fields = {"name": spell["name"], "icon": icon_path(spell["icon"], art, art_dir, where),
                   "school": SCHOOLS.index(one_of(spell["school"], SCHOOLS, where, "school")),
-                  "visual_spell": spell["visual"],
                   # A heal, a shield, a stance or a marker is the caster's own; a curse or snare lands on the player it fights.
                   "implicit_targets": list(IMPLICIT_TARGETS["self" if effect["kind"] in ("heal", "absorb", "stance", "marker") else "enemy"]),
                   "cast_time_ms": spell["cast_time_ms"], "range_min": spell.get("range_min", 0), "range_max": spell["range_max"],
                   "dbc_effects": dbc_effects}
+        # Visual 0 is no look: the row keeps the from-scratch default.
+        if spell["visual"]:
+            fields["visual_spell"] = spell["visual"]
         if "duration_ms" in effect:
             fields["duration_ms"] = effect["duration_ms"]
             # A stance of duration 0 holds for the fight: no end on the client's buff.
