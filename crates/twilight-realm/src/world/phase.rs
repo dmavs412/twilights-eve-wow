@@ -256,10 +256,10 @@ impl InWorld {
     }
 
     /// The player's report of a step from `from` to `to`: if it ends on a Closed Zone's chunk
-    /// (ADR 0015), the client is snapped back to `from`, told so at most once every
-    /// [`CLOSED_HUSH_SECS`], and the step is refused. Unlike [`Self::walled_off`], it holds the
-    /// dead too and any step length; only the realm's own teleports pass. Whether the step was
-    /// refused.
+    /// (ADR 0015) or goes through a placed mist wall (ADR 0033), the client is snapped back to
+    /// `from`, told so at most once every [`CLOSED_HUSH_SECS`], and the step is refused. Unlike
+    /// [`Self::walled_off`], it holds the dead too and any step length; only the realm's own
+    /// teleports pass. Whether the step was refused.
     pub(crate) fn closed_off(
         &mut self,
         from: [f32; 3],
@@ -269,7 +269,8 @@ impl InWorld {
     ) -> bool {
         if self.teleport_pending()
             || self.transferring()
-            || !super::closed::closed_at(self.map, to[0], to[1])
+            || !(super::closed::closed_at(self.map, to[0], to[1])
+                || super::closed::crosses_mist_wall(self.map, from, to))
         {
             return false;
         }

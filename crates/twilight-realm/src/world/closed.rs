@@ -1,7 +1,8 @@
 //! Closed Zones (ADR 0015): the map chunks no one may stand on, read from
 //! `data/twilights-eve/closed_chunks.json`. The wall that keeps characters off them is
 //! [`InWorld::closed_off`](super::InWorld::closed_off); content placed on one is a bug the
-//! `closed_zones` test names.
+//! `closed_zones` test names. The placed mist walls (ADR 0033), read from
+//! `data/twilights-eve/mist_walls.json`, are refused by the same wall.
 
 use std::collections::HashSet;
 use std::sync::OnceLock;
@@ -52,6 +53,66 @@ pub fn closed_at(map: u32, x: f32, y: f32) -> bool {
     (0..CHUNKS).contains(&gx)
         && (0..CHUNKS).contains(&gy)
         && c.chunks.contains(&(gx as u32, gy as u32))
+}
+
+/// One placed mist wall (ADR 0033): a vertical wall over the x, y segment `from` to `to` on
+/// `map`, from Z `bottom` to Z `top`. The file's `key`, `floor` and `open_side` are the
+/// client's, for drawing it.
+#[derive(Deserialize)]
+struct MistWall {
+    map: u32,
+    from: [f32; 2],
+    to: [f32; 2],
+    bottom: f32,
+    top: f32,
+}
+
+#[derive(Deserialize)]
+struct MistWalls {
+    walls: Vec<MistWall>,
+}
+
+fn mist_walls() -> &'static [MistWall] {
+    static WALLS: OnceLock<Vec<MistWall>> = OnceLock::new();
+    WALLS.get_or_init(|| {
+        let file: MistWalls = serde_json::from_str(include_str!(
+            "../../../../data/twilights-eve/mist_walls.json"
+        ))
+        .expect("data/twilights-eve/mist_walls.json parses");
+        file.walls
+    })
+}
+
+/// Whether a step from `from` to `to` on `map` goes through a placed mist wall (ADR 0033): its
+/// x, y segment meets a wall's on the same map, endpoints included, and it ends within the
+/// wall's Z band.
+pub fn crosses_mist_wall(map: u32, from: [f32; 3], to: [f32; 3]) -> bool {
+    let (a, b) = ([from[0], from[1]], [to[0], to[1]]);
+    mist_walls().iter().any(|w| {
+        w.map == map && (w.bottom..=w.top).contains(&to[2]) && segments_meet(a, b, w.from, w.to)
+    })
+}
+
+/// Whether the segments `a` to `b` and `c` to `d` share a point, endpoints included.
+fn segments_meet(a: [f32; 2], b: [f32; 2], c: [f32; 2], d: [f32; 2]) -> bool {
+    // Which side of the line `o` to `p` the point `q` is on: positive left, zero on it.
+    let side = |o: [f32; 2], p: [f32; 2], q: [f32; 2]| {
+        (p[0] - o[0]) * (q[1] - o[1]) - (p[1] - o[1]) * (q[0] - o[0])
+    };
+    // Whether `q`, on the line through `o` and `p`, lies between them.
+    let between = |o: [f32; 2], p: [f32; 2], q: [f32; 2]| {
+        (o[0].min(p[0])..=o[0].max(p[0])).contains(&q[0])
+            && (o[1].min(p[1])..=o[1].max(p[1])).contains(&q[1])
+    };
+    let (d1, d2) = (side(c, d, a), side(c, d, b));
+    let (d3, d4) = (side(a, b, c), side(a, b, d));
+    if d1 * d2 < 0.0 && d3 * d4 < 0.0 {
+        return true;
+    }
+    (d1 == 0.0 && between(c, d, a))
+        || (d2 == 0.0 && between(c, d, b))
+        || (d3 == 0.0 && between(a, b, c))
+        || (d4 == 0.0 && between(a, b, d))
 }
 
 /// A point the realm's content puts something on, named for a test's failure message.
@@ -419,5 +480,49 @@ mod tests {
         let s = steps([10.0, -7.0], 8.0);
         assert_eq!((s[0], *s.last().unwrap()), (-7.0, 10.0));
         assert!(s.windows(2).all(|w| w[1] - w[0] <= 8.0));
+    }
+
+    /// The Deeprun Tram's wall (`mist_walls.json`): map 369, y 2400 from x -75 to 35, Z -20 to 30.
+    const TRAM: u32 = 369;
+
+    #[test]
+    fn a_step_across_the_tram_s_mist_wall_within_its_band_crosses_it() {
+        assert!(crosses_mist_wall(
+            TRAM,
+            [-45.4, 2405.0, -4.3],
+            [-45.4, 2395.0, -4.3]
+        ));
+        assert!(
+            crosses_mist_wall(TRAM, [0.0, 2410.0, -4.3], [0.0, 2400.0, -4.3]),
+            "a step ending on the wall's line"
+        );
+        assert!(
+            crosses_mist_wall(TRAM, [35.0, 2405.0, -4.3], [35.0, 2395.0, -4.3]),
+            "a step through the wall's end"
+        );
+    }
+
+    #[test]
+    fn a_step_short_of_the_wall_above_it_or_on_another_map_does_not() {
+        assert!(
+            !crosses_mist_wall(TRAM, [-45.4, 2410.0, -4.3], [-45.4, 2405.0, -4.3]),
+            "a step toward it, short of it"
+        );
+        assert!(
+            !crosses_mist_wall(TRAM, [-90.0, 2400.0, -4.3], [-80.0, 2400.0, -4.3]),
+            "a step along its line, short of its end"
+        );
+        assert!(
+            !crosses_mist_wall(TRAM, [40.0, 2405.0, -4.3], [40.0, 2395.0, -4.3]),
+            "a step past its end"
+        );
+        assert!(
+            !crosses_mist_wall(TRAM, [-45.4, 2405.0, 31.0], [-45.4, 2395.0, 31.0]),
+            "a step above its top"
+        );
+        assert!(
+            !crosses_mist_wall(0, [-45.4, 2405.0, -4.3], [-45.4, 2395.0, -4.3]),
+            "a step on map 0"
+        );
     }
 }
