@@ -90,4 +90,13 @@ mod tests {
         assert_eq!(with_trigger(503).map(|t| t.to.map), Some(0));
         assert!(of_map(0).is_none() && with_trigger(102).is_none());
     }
+
+    #[test]
+    fn the_deeprun_tram_is_map_369_with_triggers_2173_and_2171() {
+        let m = of_map(369).expect("the Deeprun Tram");
+        assert_eq!(m.name, "The Deeprun Tram");
+        assert_eq!((m.zone, m.levels), (2257, [38, 42]));
+        assert_eq!(with_trigger(2173).map(|t| t.to.map), Some(369));
+        assert_eq!(with_trigger(2171).map(|t| t.to.map), Some(0));
+    }
 }

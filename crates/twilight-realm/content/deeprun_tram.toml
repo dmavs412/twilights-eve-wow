@@ -1,0 +1,56 @@
+# The Deeprun Tram: a wave dungeon for levels 38 to 42 under Stormwind City (spec #586,
+# docs/specs/deeprun-tram/README.md, ADR 0033). Hand-written, from the game data.
+#
+# On the tram's instance map, 369 (instance_maps.toml, ADR 0032 amended 2026-11-04). The
+# footprint is the Stormwind station and the tunnel up to the mist wall: three platform strips
+# along y (the west strip, benches at x -80 to -61; the centre strip, benches at x -20 to -17; the
+# east strip, benches at x 20 to 40), track A at x -45.4 between the west and centre strips and
+# track B at x 4.53 between the centre and east strips. The tunnel leaves the station toward lower
+# y; the mist wall stands across both tracks at y 2400 (data/twilights-eve/mist_walls.json). The
+# arrival point (x 67.8) and the exit trigger (x 80.2) stand east of the footprint, open world.
+# Map 369 has no terrain, so every Z here is written from the vmangos dump with
+# `grounded = false`, each naming the stock spawn it came from; ground_check.py leaves the rows
+# alone. The platform floor is z -4.2965, the arrival point's and the vanilla benches'.
+#
+# The shell (#587): the station bell and nothing else. The trams, their creatures, the Tribute
+# Pile and the Conductor come with the next tickets. Ringing the bell is the lever's pull, Run
+# state; the tram line starts from it.
+#
+# Guids: creatures 973201 up (973101 to 973123 are the quiet wing's), GameObjects 983012 up (the
+# entry is the guid). Templates 97215 up in mobs.toml.
+
+id = 18
+name = "The Deeprun Tram"
+levels = [38, 42]
+map = 369
+zone = 2257
+origin = [0.0, 0.0, 0.0]
+yaw = 0.0
+# Where a probe drops a character: on the platform inside the Phase, facing west.
+start = [30.0, 2491.0, 3.14159]
+
+# The three platform strips, both tracks and the tunnel up to the mist wall.
+[[footprint]]
+x = [-90.0, 50.0]
+y = [2400.0, 2530.0]
+z = [-25.0, 20.0]
+
+# At the footprint's east edge, facing west onto the platform. Z: the arrival point's
+# (areatrigger_teleport 2173), the platform floor.
+[portal]
+position = [50.0, 2491.0, -4.29649]
+orientation = 3.14159
+
+# The station bell on the centre strip, beside where the Tribute Pile will stand: vanilla's Horde
+# Bell (display 3972), a placeholder in docs/art-assets.md. Ringing it is the lever's pull, from
+# the Run's start; nothing holds it. Z: the Subway Benches on the centre strip, e.g. 176102
+# (-20.6, 2480.5, -4.29).
+[[gameobject]]
+guid = 983012
+display = 3972
+position = [-18.5, 2484.0, -4.29]
+grounded = false
+orientation = 1.5708
+sides = "inside"
+use = "lever"
+lever = { used_text = "The bell rings down the tunnel. Something far off answers it." }

@@ -36,3 +36,33 @@ map = 34
 position = [39.374, 0.803, -12.788]
 radius = 8.0
 to = { map = 0, position = [-8766.1, 845.5, 88.0], orientation = 3.84 }
+
+# The Deeprun Tram (spec #586, docs/specs/deeprun-tram/README.md): vanilla's subway under
+# Stormwind City, one WMO with no terrain. Its one dungeon is deeprun_tram.toml (18), the
+# Stormwind station and the tunnel up to the mist wall; the arrival point and the exit, by the
+# stairs up to the station hall, are open world.
+[[instance_map]]
+map = 369
+name = "The Deeprun Tram"
+zone = 2257
+levels = [38, 42]
+
+# `AreaTrigger.dbc` 2173, "Deeprun Tram Stormwind - Entrance", in the Dwarven District's station
+# hall: the DBC's own sphere and centre. `to` is where vmangos' `areatrigger_teleport` sends the
+# player.
+[instance_map.entrance]
+trigger = 2173
+map = 0
+position = [-8346.46, 514.031, 96.5989]
+grounded = false
+radius = 10.0
+to = { map = 369, position = [67.7607, 2490.98, -4.29649], orientation = 3.14159 }
+
+# `AreaTrigger.dbc` 2171, "Deeprun Tram Stormwind - Exit", at the foot of the stairs inside,
+# back out to the station hall (vmangos' destination for 2171).
+[instance_map.exit]
+trigger = 2171
+map = 369
+position = [80.1633, 2490.88, -1.85693]
+radius = 10.0
+to = { map = 0, position = [-8354.23, 524.068, 91.7971], orientation = 2.35619 }

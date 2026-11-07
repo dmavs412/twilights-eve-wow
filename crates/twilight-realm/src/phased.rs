@@ -1125,6 +1125,7 @@ pub(crate) fn content() -> &'static [Dungeon] {
             include_str!("../content/dreadmaul_rock.toml"),
             include_str!("../content/stockade_riot.toml"),
             include_str!("../content/stockade_quiet_wing.toml"),
+            include_str!("../content/deeprun_tram.toml"),
         ]
         .into_iter()
         .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
