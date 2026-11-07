@@ -206,9 +206,15 @@ pub(super) fn load_spell_visuals(mut commands: Commands, assets: Option<Res<Worl
         benilla_formats::load_spell_visual_catalog(&mut chain)
     };
     match loaded {
-        Ok(cat) => {
+        Ok(mut cat) => {
+            let merged = cat
+                .apply_spell_visuals(benilla_formats::CLIENT_DBC_PATCH)
+                .unwrap_or_else(|e| {
+                    warn!("patch spell_visuals unreadable, merged spell looks stay missing: {e:#}");
+                    0
+                });
             info!(
-                "anim: {} SpellVisual / {} SpellVisualKit rows",
+                "anim: {} SpellVisual / {} SpellVisualKit rows, {merged} from the patch",
                 cat.len(),
                 cat.kit_len()
             );

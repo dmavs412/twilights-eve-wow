@@ -336,6 +336,48 @@ impl SpellVisualCatalog {
         self.visuals.get(&visual_id)
     }
 
+    /// Merge the client DBC patch's `spell_visuals` rows: each copies its `base` row whole, takes
+    /// only the `precast` and `cast` kits from its `cast_from` row, and lands under `id`. A row
+    /// missing a key, naming a row the catalog lacks, or reusing an id the catalog holds is
+    /// skipped with a warning. Returns the number inserted; a patch without the key returns 0.
+    pub fn apply_spell_visuals(&mut self, json: &str) -> Result<usize, serde_json::Error> {
+        let patch: serde_json::Value = serde_json::from_str(json)?;
+        let Some(rows) = patch.get("spell_visuals").and_then(|v| v.as_array()) else {
+            return Ok(0);
+        };
+        let mut inserted = 0;
+        for row in rows {
+            let field = |k: &str| row.get(k).and_then(|v| v.as_u64()).map(|v| v as u32);
+            let (Some(id), Some(base), Some(cast_from)) =
+                (field("id"), field("base"), field("cast_from"))
+            else {
+                tracing::warn!("spell_visuals row skipped, it needs id, base and cast_from: {row}");
+                continue;
+            };
+            if self.visuals.contains_key(&id) {
+                tracing::warn!("spell visual {id} skipped, the catalog already holds that id");
+                continue;
+            }
+            let Some(mut stages) = self.visuals.get(&base).copied() else {
+                tracing::warn!(
+                    "spell visual {id} skipped, base visual {base} is not in the catalog"
+                );
+                continue;
+            };
+            let Some(caster) = self.visuals.get(&cast_from) else {
+                tracing::warn!(
+                    "spell visual {id} skipped, cast_from visual {cast_from} is not in the catalog"
+                );
+                continue;
+            };
+            stages.precast = caster.precast;
+            stages.cast = caster.cast;
+            self.visuals.insert(id, stages);
+            inserted += 1;
+        }
+        Ok(inserted)
+    }
+
     pub fn kit(&self, kit_id: u32) -> Option<&VisualKit> {
         self.kits.get(&kit_id)
     }

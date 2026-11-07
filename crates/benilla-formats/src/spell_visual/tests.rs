@@ -342,6 +342,115 @@ fn real_spell_visual_chain_resolves_fireball() {
     );
 }
 
+/// A missile row with no precast or cast kit (Corrupted Blood's shape) and a caster row with both
+/// (Shadow Bolt's), for the patch merge.
+fn catalog_for_patch_merge() -> SpellVisualCatalog {
+    let base = VisualStages {
+        precast: 0,
+        cast: 0,
+        impact: 220,
+        state: 5,
+        channel: 6,
+        missile_model: 2972,
+        missile_attach: 1,
+        missile_sound: None,
+        strike_sound: Some(1143),
+        missile_gate: 1,
+        area_gate: 2,
+        area_effect: 3,
+        area_kit: 4,
+    };
+    let caster = VisualStages {
+        precast: 114,
+        cast: 118,
+        impact: 999,
+        missile_model: 77,
+        missile_sound: Some(3011),
+        ..Default::default()
+    };
+    SpellVisualCatalog::from_tables(HashMap::from([(7273, base), (64, caster)]), HashMap::new())
+}
+
+#[test]
+fn a_patch_visual_copies_base_and_takes_only_the_cast_kits() {
+    let mut cat = catalog_for_patch_merge();
+    let n = cat
+        .apply_spell_visuals(r#"{"spell_visuals": [{"id": 9000, "base": 7273, "cast_from": 64}]}"#)
+        .unwrap();
+    assert_eq!(n, 1);
+    let expected = VisualStages {
+        precast: 114,
+        cast: 118,
+        ..*cat.stages(7273).unwrap()
+    };
+    assert_eq!(cat.stages(9000), Some(&expected));
+    assert_eq!(cat.len(), 3);
+}
+
+#[test]
+fn a_patch_visual_naming_an_unknown_row_is_skipped() {
+    let mut cat = catalog_for_patch_merge();
+    let n = cat
+        .apply_spell_visuals(
+            r#"{"spell_visuals": [
+                {"id": 9000, "base": 1, "cast_from": 64},
+                {"id": 9001, "base": 7273, "cast_from": 2},
+                {"id": 9002, "base": 7273}
+            ]}"#,
+        )
+        .unwrap();
+    assert_eq!(n, 0);
+    assert!(cat.stages(9000).is_none());
+    assert!(cat.stages(9001).is_none());
+    assert!(cat.stages(9002).is_none());
+    assert_eq!(cat.len(), 2);
+}
+
+#[test]
+fn a_patch_visual_never_overwrites_an_existing_row() {
+    let mut cat = catalog_for_patch_merge();
+    let before = *cat.stages(64).unwrap();
+    let n = cat
+        .apply_spell_visuals(r#"{"spell_visuals": [{"id": 64, "base": 7273, "cast_from": 64}]}"#)
+        .unwrap();
+    assert_eq!(n, 0);
+    assert_eq!(cat.stages(64), Some(&before));
+}
+
+#[test]
+fn a_patch_without_spell_visuals_adds_nothing() {
+    let mut cat = catalog_for_patch_merge();
+    assert_eq!(cat.apply_spell_visuals(r#"{"spells": []}"#).unwrap(), 0);
+    assert_eq!(cat.len(), 2);
+}
+
+/// Blood Lance's look: Corrupted Blood's missile (7273) with Shadow Bolt's cast kits (64).
+#[test]
+fn real_patch_visual_merges_corrupted_blood_with_shadow_bolt() {
+    let data = crate::wow_data_or_skip!();
+    let mut chain = crate::open_chain(&data).expect("open chain");
+    let mut cat = load_spell_visual_catalog(&mut chain).expect("load SpellVisual/SpellVisualKit");
+    let n = cat
+        .apply_spell_visuals(r#"{"spell_visuals": [{"id": 9000, "base": 7273, "cast_from": 64}]}"#)
+        .unwrap();
+    assert_eq!(n, 1);
+    let merged = cat.stages(9000).expect("the merged row");
+    assert_eq!(merged.precast, 114);
+    assert_eq!(merged.cast, 118);
+    assert_eq!(merged.impact, 220);
+    assert_eq!(merged.missile_model, 2972);
+    assert_eq!(
+        merged.missile_sound,
+        cat.stages(7273).unwrap().missile_sound,
+        "the missile sound stays Corrupted Blood's"
+    );
+    assert_eq!(
+        cat.kit(118).and_then(|k| k.anim_id),
+        Some(53),
+        "Shadow Bolt's cast kit plays SpellCastDirected"
+    );
+}
+
 /// The lootable-corpse sparkle's row (`0x6005d0`) names a model that ships.
 #[test]
 fn real_effect_name_table_resolves_the_loot_art_row() {
