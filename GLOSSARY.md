@@ -135,6 +135,14 @@ _Avoid_: area trigger (the client's mechanism for a real instance's entrance)
 A Run's meter in Forest's Edge, 0 to 40, shared by everyone inside. Fights, deaths and the Run's clock raise it, and Cover lowers it. The louder it is, the farther a Sleeper hears a character, and at full Hogger wakes and hunts. It shows as the Noise Bar at the top of the screen.
 _Avoid_: aggro, threat
 
+**Headway**:
+How the Deeprun Tram's trams follow the group's pace. A tram whose warning finds every tram creature dead gets one car more and brings the next tram after 25 seconds; one that finds any alive gets one car fewer and the next comes after 40. ADR 0033.
+_Avoid_: difficulty, scaling
+
+**Tribute Pile**:
+The 12 crates on the Deeprun Tram's platform that the porters carry onto the trams. The crates left when the Conductor dies are the run's chest, and each that escaped is a stack of the Conductor's Tribute.
+_Avoid_: loot pile, score
+
 **Sleeper**:
 A dungeon creature that starts asleep, lying down, and ignores characters until one comes near, its Camp is hurt, or a waker passes. Once woken it is an ordinary creature for the rest of the Run.
 
