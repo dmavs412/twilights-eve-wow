@@ -430,3 +430,270 @@ The order is the Advancement first, then one kit per Line, as Tier 1 went one Ca
 - `docs/balance/rules.md` extended to Tier 2: the same P-2, P-3, DPS, E-dmg, E-tank, B-2E and
   B-boss rules by role, and the named bosses of the 30 to 50 dungeons.
 - Assumed: the Bloodmender and the Frostbinder are judged on solo survival, not damage.
+
+## 2b. Roster, same role (after Davis's answer 2)
+
+Davis answered decision 1 (two branches per Line, all ten now) and decision 2: both branches of
+a Line keep their Tier 1 Calling's role and differ by mechanics, "same role, new tricks". He
+also answered decision 3: a Tier 2 Calling carries about a quarter of its Tier 1 kit, about two
+skills, and its new skills dig deeper into the themes that mattered in Tier 1. This section
+replaces the roster in section 2 and decisions 3 and 10 to 13. The balance rules follow the
+Tier 1 split: Cutthroat, Initiate and Ranger branches are judged as damage, Vanguard and
+Acolyte branches as the sturdy pair (E-tank in `docs/balance/rules.md`).
+
+"Carries" means the Tier 1 skill keeps its data. "New kind" marks an idea the realm cannot run
+today. Each kit is 8 skills: two carried, the Kick, and five new.
+
+Assumed: the Line's Kick carries too, outside the quarter, because its bonus already ties to
+the Line's theme (Conviction, a combo point, mana, Vault, Blight). The Ranger's Auto Shot
+carries the same way, since it is the bow itself. The level 20 utility does not carry; each
+Tier 2 Calling gets a new one on its own theme.
+
+### Vanguard line
+
+Tier 1 role: tank. It wears plate and a shield, blocks, taunts, and holds the pack on itself
+with holy damage. Its themes are blocks, Conviction (built by Righteous Smash, spent by
+Zealous Cleave), Consecration and Seals.
+
+**Ironclad.** A wall of steel that the pack breaks against. Ironclad stays: it is already a
+tank name in the game.
+- What sets it apart: blocks and Conviction. Every block builds Conviction, and the Ironclad
+  spends it on shield blows.
+- Carries: Righteous Smash, Shield of the Penitent, and the Kick Rebuke.
+- New ideas:
+  - Shield Slam: weapon damage plus 200% of Block Value, and more for each Conviction stack it
+    spends (weapon strike, block value percent, consume aura stacks).
+  - Retort: usable for 5 sec after a block, a holy strike that adds 2 Conviction (the
+    `caster_state=after_block` gate, add aura stacks).
+  - Iron Wall: 8 sec of 40% less damage taken, long cooldown (the damage-taken aura on
+    Consecrated Ground).
+  - Steel Resolve: 15 sec in which every block also heals 2% of max health. New kind, unless
+    the on-block trigger that Ceaseless Zeal uses can carry a heal.
+  - Hold the Line (utility): taunts every enemy within 10 yd, with one stack of block chance
+    per enemy taunted (taunt, add aura stacks, block percent).
+
+**Zealot.** A holy fury that stands in its own Consecration and heals by hitting the pack.
+Zealot stays only if it becomes a tank. The built Zealot is a two-handed damage dealer (Mortal
+Strike, Seal of Command), so its kit is rebuilt. Wray's 64003 text ("strike with holy fury")
+still fits a Zealot that tanks.
+- What sets it apart: Consecration and Seals. It does not lean on blocks; its holy damage
+  heals it and holds every enemy around it.
+- Carries: Bulwark Charge (which leaves Consecration), Seal of Iron, and the Kick Rebuke.
+  Drops all of the built Zealot's kit except Judgement and Hammer of Justice, which count as
+  new here.
+- New ideas:
+  - Judgement: judging Seal of Iron heals for 10% of max health and deals holy damage. New
+    kind: a judgement for Seal of Iron, since only Command and Crusader have one.
+  - Hallowed Ground: lays Consecration at your feet, and while you stand in it you heal 1% of
+    max health a second (ground area, periodic heal on the caster inside it).
+  - Righteous Fury: 30 sec of 50% more threat from holy damage. New kind: a threat percent
+    aura.
+  - Holy Wrath: holy damage to every enemy within 8 yd, and undead are stunned 2 sec (school
+    damage, self area, stun). New kind: a gate by creature type.
+  - Hammer of Justice (utility): a 6 sec stun, as the built Zealot has it.
+
+### Cutthroat line
+
+Tier 1 role: melee damage. It fights from the front, builds combo points and spends them on
+finishers. Its themes are bleeds, the Blood Droplets they spill, Bloodlust, Stealth and
+Evasion.
+
+**Bloodletter.** Keeps every wound open and grows wilder with every drop it walks through.
+- What sets it apart: blood on the ground. Its bleeds spill more droplets and Bloodlust
+  stacks higher, so a long fight keeps getting faster.
+- Carries: Rupture, Garrote, and the Kick.
+- New ideas:
+  - Hemorrhage (builder): a strike for 1 combo point that makes the target take 20% more from
+    your bleeds for 15 sec (weapon strike, add combo points). New kind: a bleed damage taken
+    debuff.
+  - Open Veins: a finisher that makes every bleed on the target tick at once, more per combo
+    point. New kind: tick now.
+  - Blood Fan: a cone that makes up to five enemies bleed for 8 sec, and each tick may spill a
+    droplet (periodic damage, self area cone, the droplet proc).
+  - Red Frenzy: spends all Bloodlust for a burst of 10 sec of attack speed, more per stack
+    spent. New kind: spend stacks of an aura on yourself (`consume_aura_stacks` works on the
+    target).
+  - Blood Pool (utility): spills three droplets at your feet at once. New kind: spawn droplets
+    on demand.
+
+**Nightblade.** Strikes from the dark, slips back into it, and strikes again.
+- What sets it apart: Stealth in the middle of a fight. It drops back into Stealth and opens
+  again with a crit, while the Bloodletter never stops.
+- Carries: Stealth, Eviscerate, and the Kick.
+- New ideas:
+  - Backstab (builder): from behind, 150% weapon damage and 1 combo point (weapon strike, the
+    `position` gate, add combo points).
+  - Ambush: from Stealth and from behind, 250% weapon damage and 2 combo points (weapon strike,
+    the `stealth` and `position` gates).
+  - Vanish: enter Stealth in combat and drop all threat. New kind: drop threat, and Stealth
+    while in combat.
+  - Cold Blood: your next skill is a sure crit (an aura with crit chance, spent on the next
+    skill).
+  - Kidney Shot (utility): a finisher that stuns 1 sec per combo point (stun with a
+    `per_combo` duration).
+
+### Initiate line
+
+Tier 1 role: ranged spell damage, fragile up close. Its themes are Searing Ember's stacking
+burn, Biting Cold's slow, Catalyst cashing both in, and mana (Ley-Spark crits more on a full
+bar, Ley Ward absorbs from it).
+
+**Pyromancer.** Sets one fire and lets it spread through the pack.
+- What sets it apart: Embers. They stack higher, last longer and jump to nearby foes, so a
+  pack melts over time.
+- Carries: Searing Ember, Catalyst, and the Kick Counterspell.
+- New ideas:
+  - Fireball (filler): a cast for Fire damage that adds an Ember stack (school damage, grow
+    aura).
+  - Pyroblast: a 4 sec cast for a large Fire hit and a 12 sec burn (school damage, periodic
+    damage).
+  - Kindle: copies the Embers on the target to two foes near it. New kind: copy an aura to
+    nearby enemies.
+  - Flamestrike: a ground area of Fire damage that leaves an Ember on everything inside
+    (ground area, periodic damage).
+  - Blast Wave (utility): Fire damage within 8 yd, knocks back and slows (school damage,
+    knockback, movement slow).
+
+**Frostbinder.** Chills one foe until it freezes, then shatters it.
+- What sets it apart: Cold and the shatter. It builds Chill on one target and Catalyst
+  shatters it for the biggest single hit in the game, while the Pyromancer spreads damage wide.
+- Carries: Biting Cold, Catalyst, and the Kick Counterspell.
+- New ideas:
+  - Frostbolt (filler): a cast that deals Frost damage, slows, and adds a Chill stack to the
+    target. New kind: a stack on the target from a hit (`grow_aura` needs an aura with periodic
+    damage).
+  - Shatter Shard: an instant that deals double to a rooted or frozen target. New kind: a bonus
+    against a target state (`requires_target_state` gates, it does not add damage).
+  - Ice Barrier: absorbs damage equal to 15% of max mana, and a broken barrier chills every foe
+    nearby (absorb, movement slow).
+  - Cold Snap: resets the cooldowns of your Frost spells (reset cooldowns).
+  - Frost Nova (utility): roots every enemy within 10 yd for 8 sec (root, self area).
+
+### Ranger line
+
+Tier 1 role: ranged physical damage. Its themes are distance, a quick shot on the move against
+a heavy shot standing still (Snapshot and Puncturing Shaft), Vault, and armour shred
+(Sundered, from a Puncturing Shaft choice).
+
+**Sharpshooter.** Plants its feet and drops the target before it arrives.
+- What sets it apart: standing still and breaking armour. Every second planted makes the next
+  heavy shot hit harder, and each heavy shot strips more armour.
+- Carries: Puncturing Shaft, Rapid Fire, Auto Shot and the Kick Silencing Shot.
+- New ideas:
+  - Arcane Shot (filler): an instant Arcane shot that ignores armour (school damage).
+  - Aimed Shot: a 3 sec cast for heavy damage that halves healing on the target (weapon
+    strike, healing reduction).
+  - Sunder Arrow: a shot that adds a stack of Sundered, 250 armour a stack, up to 5 (weapon
+    strike, add aura stacks on the target). New kind, unless Sundered's choice already stacks
+    on the target.
+  - Take Aim: while you stand still, each second adds 5% to the next shot, up to 5 stacks. New
+    kind: a standing-still trigger.
+  - Hunter's Mark (utility): the target takes 10% more ranged damage for 2 min. New kind: a
+    ranged damage taken debuff.
+
+**Outrider.** Never stops moving, and shoots the whole way.
+- What sets it apart: movement. Auto Shot fires on the run and every Vault loads the next
+  Snapshot, so it kites and never stands.
+- Carries: Snapshot, Vault, Auto Shot and the Kick Silencing Shot.
+- New ideas:
+  - Running Shots: 20 sec in which Auto Shot fires while moving (the effect the Running Fire
+    choice already has).
+  - Parting Shot: a backward leap that fires a Snapshot at the target (blink, cast skill).
+  - Multi-Shot: weapon damage to the target and up to two foes near it (weapon strike,
+    `max_targets`).
+  - Fleet Foot: 30% faster run speed for 6 sec, and your next Snapshot deals 50% more (run
+    speed aura, the Guerilla Tactics stack).
+  - Wing Clip (utility): a melee strike that slows 50% for 10 sec (weapon strike, movement
+    slow).
+
+### Acolyte line
+
+Tier 1 role: dark mender, the sturdy caster. Shadow damage over time heals the Acolyte and the
+allies near it. Its themes are Creeping Blight's growing stacks, health spent as a cost,
+drains, and Miasma's ground cloud.
+
+**Blightcaller.** Lets the rot spread and lives on what it eats.
+- What sets it apart: the Blight. It grows faster, jumps from foe to foe, and every tick on
+  any foe mends the Blightcaller.
+- Carries: Creeping Blight, Miasma, and the Kick Hush.
+- New ideas:
+  - Mind Flay (filler): a channel of Shadow damage that slows and adds a Blight stack each tick
+    (channel, school damage, movement slow, grow aura).
+  - Contagion: when a foe with your Blight dies, its stacks jump to the nearest foe. New kind:
+    a proc on the death of a debuffed target.
+  - Plague Burst: spends the Blight's stacks for Shadow damage to every foe within 8 yd of the
+    target (consume aura stacks).
+  - Devouring Plague: a second DoT that heals you for everything it deals (periodic damage that
+    heals, as Creeping Blight's ticks do).
+  - Wasting Fog (utility): a cloud that slows foes inside 50% and adds a Blight stack each
+    second (ground area, movement slow, grow aura).
+
+**Bloodmender.** Spends its own blood for bigger blows and bigger mends, then drinks it back.
+- What sets it apart: health is the resource. It spends health on purpose for stronger
+  lances and heals, then refills it, while the Blightcaller waits on ticks.
+- Carries: Blood Lance, Dark Mending, and the Kick Hush.
+- New ideas:
+  - Sanguine Surge: spend 20% of your health, and your next Blood Lance is instant and deals
+    double (health cost, the Sanguine Flow aura).
+  - Blood Feast: a drain that heals you for twice the damage it deals (drain).
+  - Blood Ward: an absorb on an ally, paid in your health (absorb, health cost).
+  - Circle of Blood: a ground area that heals allies inside every 2 sec (ground area, periodic
+    heal).
+  - Transfusion (utility): a channel that moves your health to an ally at 150%. New kind: a
+    heal on an ally fed by your own health.
+
+### Grill questions, one per Line
+
+**Are Ironclad and Zealot the Vanguard's two branches?**
+- a. Yes. Ironclad tanks with blocks and Conviction, and Zealot is rebuilt to tank with
+  Consecration and Seals.
+- b. Ironclad and Penitent, a new holy tank. The built Zealot is retired.
+- c. Ironclad and Zealot, with Zealot left as a damage dealer, an exception to answer 2.
+- Recommend a: both names stay, Wray's quests stay, and the Line stays all tanks.
+
+**Are Bloodletter and Nightblade the Cutthroat's two branches?**
+- a. Yes. Bloodletter lives on droplets and Bloodlust, and Nightblade fights in bursts from
+  Stealth.
+- b. Bloodletter and Duelist. The Duelist fights face to face, and every dodge powers a
+  counter (the Cutthroat's sheet row already says "front-facing, evasion-based").
+- c. Nightblade and Duelist.
+- Recommend a: blood and Stealth are the two themes the Tier 1 kit is built on.
+
+**Are Pyromancer and Frostbinder the Initiate's two branches?**
+- a. Yes. Pyromancer spreads Embers, and Frostbinder builds to one shatter.
+- b. Pyromancer and Leyweaver. The Leyweaver is arcane: it hits hardest on a full mana bar
+  (Ley-Spark's crit) and spends mana for burst.
+- c. Frostbinder and Leyweaver.
+- Recommend a: Tier 1 is fire and frost with Catalyst between, so each branch keeps one half.
+
+**Are Sharpshooter and Outrider the Ranger's two branches?**
+- a. Yes. Sharpshooter is rewarded for standing still, and Outrider for moving.
+- b. Sharpshooter and Trapper. The Trapper does its damage with traps and ground areas.
+- c. Outrider and Firebrand. The Firebrand shoots fire arrows that explode (Explosive Shot).
+- Recommend a: the Tier 1 kit already splits into the moving filler and the planted heavy
+  shot.
+
+**Are Blightcaller and Bloodmender the Acolyte's two branches?**
+- a. Yes. Blightcaller lives on the rot, and Bloodmender spends and drinks its own health.
+- b. Blightcaller and Shroudweaver. The Shroudweaver works through ground areas, Miasma and
+  Grasping Shadows.
+- c. Bloodmender and Shroudweaver.
+- Recommend a: the Blight and health costs are the Acolyte's two marks, and each branch takes
+  one.
+
+## Grill answers (Davis, 2026-11-08)
+
+1. Branches: (a) two per Line, all ten built now.
+2. Split: (b) SAME ROLE, NEW TRICKS. Both branches keep their Tier 1 Calling's role and differ by mechanics. Section 2b is the roster this answer asks for.
+3. Carry-over: no hard rule, but about a QUARTER of the Tier 1 kit (about two skills); the new skills explore the Tier 1 themes more deeply.
+4. Carried skills' Talent Rows: (b) THREE NEW CHOICES for every skill, carried or new.
+5. Row levels: TEN rows, one every 5 levels into the Tier (5 to 50). Also: a skill carried from the Tier 1 Calling starts STRONGER than that Calling's version of it.
+6. Vanguard (tank): (a) Ironclad (blocks build Conviction, Shield Slam) and Zealot rebuilt as a holy tank (Consecration, Seal of Iron). The built two-handed Zealot kit goes except Judgement and Hammer of Justice. This settles old decision 7.
+7. Cutthroat (melee damage): (a) Bloodletter and Nightblade, as in 2b.
+8. Initiate (ranged spell damage): (b) PYROMANCER and LEYWEAVER (arcane: hits hardest on a full mana bar, spends mana for burst). No Frostbinder.
+9. Ranger (ranged weapon damage): SHARPSHOOTER and TRAPPER. Sharpshooter gets ways to stay still (rewarded for planting, tools that let it hold its ground). The Trapper is the MOBILE one: traps and ground areas laid on the move. No Outrider.
+10. Acolyte: (a) Blightcaller and Bloodmender, and BOTH ARE THE GAME'S MAIN HEALERS (not off-healers). Each heals through its theme: Blightcaller through the Blight it spreads, Bloodmender by spending and drinking its own health.
+11. Level 30 flow: (b) the popup pick puts the branch's Advancement Quest straight in the log, as at level 10. No Calling Rumour.
+12. The Advancement Quest: "find the trainer". The ten trainers are HIDDEN through the world, not in Stormwind districts: anywhere in the open zones (Elwynn, Stormwind, Redridge, Duskwood), even inside dungeons if needed. Some are obvious and easy to find, some are hard. Hints come both from the quest text (a riddle, plainer for the easy ones) and from NPCs who know (the quest names someone; harder trainers take a chain of people asking). Once found, the trainer gives a TRIAL questline before advancing the character. The trial's difficulty runs the other way from the search: an easy-to-find trainer sets a hard trial, a well-hidden one sets an easier trial, so the total effort evens out. After advancing, the trainer sends the character on to Redridge and Duskwood (the quest arc's way in).
+13. Tier Bonus (Claude): fit by the balance model at Power Levels 30, 40 and 50, together with the Tier Step.
+14. Armour (per Calling): Ironclad and Zealot up to plate + shield; Bloodletter and Nightblade leather; Pyromancer and Leyweaver cloth; Sharpshooter mail; TRAPPER LEATHER; Blightcaller and Bloodmender CLOTH (both Acolytes stay cloth).

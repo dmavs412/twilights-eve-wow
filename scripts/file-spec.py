@@ -29,6 +29,17 @@ def gh(*args, input_text=None):
     return r.stdout.strip()
 
 
+def ext_key(ext, name):
+    """The other spec's file stem that "PREFIX:name" means: the stem itself, its two-digit
+    number ("02"), or its name without the number ("mistmantle-loot")."""
+    if name in ext:
+        return name
+    for k in ext:
+        if k[3:] == name or (len(name) == 2 and name.isdigit() and k.startswith(name + "-")):
+            return k
+    return None
+
+
 def parse(path):
     lines = path.read_text(encoding="utf-8").split("\n")
     title = lines[0].removeprefix("Title:").strip()
@@ -87,7 +98,7 @@ def main():
             for m in re.finditer(r"([A-Z]+):(" + NAME + r"|[a-z0-9][a-z0-9-]*)", text):
                 pre, name = m.group(1), m.group(2)
                 ext = external.get(pre, {})
-                key = name if name in ext else next((k for k in ext if k.endswith("-" + name) or k[3:] == name), None)
+                key = ext_key(ext, name)
                 if key:
                     blockers.append(ext[key])
                 else:
@@ -99,7 +110,7 @@ def main():
         out = re.sub(r"(?<![\w/.-])" + NAME + r"(?![\w.])", sub_name, body)
         for pre, ext in external.items():
             def sub_ext(m, ext=ext):
-                key = m.group(1) if m.group(1) in ext else next((k for k in ext if k[3:] == m.group(1)), None)
+                key = ext_key(ext, m.group(1))
                 return f"#{ext[key]}" if key else m.group(0)
             out = re.sub(pre + r":(" + NAME + r"|[a-z0-9][a-z0-9-]*)", sub_ext, out)
         out = out.replace("#PARENT", f"#{parent}")
