@@ -546,7 +546,9 @@ fn friendly_spawn(entry: u32) -> bool {
 }
 
 /// The shipped quests: `content/quests.toml`, then `content/quests_elwynn.toml`, then
-/// `content/quests_stormwind.toml`, then the Writs in `content/writs.toml`.
+/// `content/quests_stormwind.toml`, then Redridge's and Duskwood's (`quests_redridge.toml`,
+/// `quests_duskwood.toml`, `quests_redridge_dungeons.toml`, `quests_duskwood_dungeons.toml`),
+/// then the Writs in `content/writs.toml`.
 pub(crate) fn shipped() -> &'static [Quest] {
     static FILE: OnceLock<Vec<Quest>> = OnceLock::new();
     FILE.get_or_init(|| {
@@ -561,6 +563,22 @@ pub(crate) fn shipped() -> &'static [Quest] {
             (
                 "quests_stormwind.toml",
                 include_str!("../../content/quests_stormwind.toml"),
+            ),
+            (
+                "quests_redridge.toml",
+                include_str!("../../content/quests_redridge.toml"),
+            ),
+            (
+                "quests_duskwood.toml",
+                include_str!("../../content/quests_duskwood.toml"),
+            ),
+            (
+                "quests_redridge_dungeons.toml",
+                include_str!("../../content/quests_redridge_dungeons.toml"),
+            ),
+            (
+                "quests_duskwood_dungeons.toml",
+                include_str!("../../content/quests_duskwood_dungeons.toml"),
             ),
             ("writs.toml", include_str!("../../content/writs.toml")),
         ] {
@@ -945,11 +963,49 @@ struct ItemTable {
     starter_drop: Vec<StarterDrop>,
 }
 
+/// The item files `(name, text)` as one table, in order: their `item` and `starter_drop` rows
+/// concatenated. Panics with the file's name if one does not parse, and if an item entry is in
+/// two files.
+fn merge_items(files: &[(&str, &str)]) -> ItemTable {
+    let mut table = ItemTable {
+        item: Vec::new(),
+        starter_drop: Vec::new(),
+    };
+    let mut from: HashMap<u32, &str> = HashMap::new();
+    for &(name, text) in files {
+        let file: ItemTable =
+            toml::from_str(text).unwrap_or_else(|e| panic!("content/{name} parses: {e}"));
+        for t in &file.item {
+            if let Some(first) = from.get(&t.entry).filter(|first| **first != name) {
+                panic!("quest item {} is in both {first} and {name}", t.entry);
+            }
+            from.insert(t.entry, name);
+        }
+        table.item.extend(file.item);
+        table.starter_drop.extend(file.starter_drop);
+    }
+    table
+}
+
+/// The shipped quest items: `content/quest_items.toml`, then `content/quest_items_redridge.toml`,
+/// then `content/quest_items_duskwood.toml`.
 fn shipped_items() -> &'static ItemTable {
     static ITEMS: OnceLock<ItemTable> = OnceLock::new();
     ITEMS.get_or_init(|| {
-        let table: ItemTable = toml::from_str(include_str!("../../content/quest_items.toml"))
-            .expect("content/quest_items.toml parses");
+        let table = merge_items(&[
+            (
+                "quest_items.toml",
+                include_str!("../../content/quest_items.toml"),
+            ),
+            (
+                "quest_items_redridge.toml",
+                include_str!("../../content/quest_items_redridge.toml"),
+            ),
+            (
+                "quest_items_duskwood.toml",
+                include_str!("../../content/quest_items_duskwood.toml"),
+            ),
+        ]);
         table.item.iter().for_each(items::Template::check_pages);
         table
     })
@@ -1004,6 +1060,39 @@ pub(crate) fn starter_drops() -> Vec<&'static StarterDrop> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A copy of the shipped quest item `entry`, as one `[[item]]` row of its own file.
+    fn item_file(entry: u32) -> String {
+        let shipped: toml::Table = include_str!("../../content/quest_items.toml")
+            .parse()
+            .unwrap();
+        let row = shipped["item"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|i| i["entry"].as_integer() == Some(i64::from(entry)))
+            .unwrap()
+            .clone();
+        let mut file = toml::Table::new();
+        file.insert("item".into(), toml::Value::Array(vec![row]));
+        toml::to_string(&file).unwrap()
+    }
+
+    #[test]
+    fn the_item_files_concatenate_in_order() {
+        let a = item_file(980002);
+        let b = item_file(980003);
+        let table = merge_items(&[("a.toml", &a), ("b.toml", &b), ("c.toml", "item = []")]);
+        let entries: Vec<u32> = table.item.iter().map(|t| t.entry).collect();
+        assert_eq!(entries, [980002, 980003]);
+    }
+
+    #[test]
+    #[should_panic(expected = "quest item 980002 is in both a.toml and b.toml")]
+    fn an_item_in_two_item_files_fails_the_load() {
+        let row = item_file(980002);
+        merge_items(&[("a.toml", &row), ("b.toml", &row)]);
+    }
 
     #[test]
     fn northshires_bounties_and_the_abbey_relics_have_their_range_giver_and_objective() {

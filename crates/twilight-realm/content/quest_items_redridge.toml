@@ -1,0 +1,4 @@
+# Redridge's quest items, 980301 to 980399 (spec #595): the same schema as quest_items.toml, read
+# after it and before content/quest_items_duskwood.toml. An entry in two item files fails the load.
+
+item = []

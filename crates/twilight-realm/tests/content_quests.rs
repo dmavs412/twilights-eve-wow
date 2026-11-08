@@ -761,3 +761,15 @@ fn the_writ_officer_is_a_friendly_creature_with_one_spawn_in_stormwind() {
     }
     assert!(creature_named(&mut realm, WRIT_OFFICER));
 }
+
+/// Redridge's and Duskwood's six quest and quest-item files (#598) load with the rest: a quest
+/// and a quest item from the older files still answer once the realm has read them all.
+#[test]
+fn the_realm_loads_with_redridge_and_duskwoods_quest_files() {
+    let mut realm = realm();
+    realm.handle(RealmCommand::QuestQuery { quest: 94005 });
+    assert!(drain(&mut realm)
+        .into_iter()
+        .any(|e| matches!(e, SessionEvent::QuestTemplate(t) if t.quest_id == 94005)));
+    assert!(item_known(&mut realm, 980002));
+}

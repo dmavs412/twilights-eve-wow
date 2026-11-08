@@ -97,17 +97,25 @@ fn quests() -> Vec<Quest> {
         .quest
 }
 
-/// The creature entries that give or take in a quest of `quests_elwynn.toml` or
-/// `quests_stormwind.toml`, whose quests may instead name a GameObject or an item as the giver.
+/// The creature entries that give or take in a quest of the story quest files
+/// (`quests_elwynn.toml`, `quests_stormwind.toml` and Redridge's and Duskwood's), whose quests may
+/// instead name a GameObject or an item as the giver.
 fn elwynn_givers() -> Vec<u32> {
     [
         include_str!("../content/quests_elwynn.toml"),
         include_str!("../content/quests_stormwind.toml"),
+        include_str!("../content/quests_redridge.toml"),
+        include_str!("../content/quests_duskwood.toml"),
+        include_str!("../content/quests_redridge_dungeons.toml"),
+        include_str!("../content/quests_duskwood_dungeons.toml"),
     ]
     .into_iter()
     .flat_map(|text| {
         let file: toml::Table = text.parse().expect("the story quests parse");
-        file["quest"].as_array().unwrap().clone()
+        file.get("quest")
+            .and_then(toml::Value::as_array)
+            .cloned()
+            .unwrap_or_default()
     })
     .flat_map(|q| [q.get("giver").cloned(), q.get("ender").cloned()])
     .filter_map(|v| v?.as_integer())

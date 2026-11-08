@@ -378,16 +378,18 @@ fn check_quest_creatures(quests: &[toml::Value], c: &Creatures) -> Vec<String> {
 }
 
 fn shipped_quests() -> Vec<toml::Value> {
-    let mut quests = entries(&toml_file(include_str!("../content/quests.toml")), "quest");
-    quests.extend(entries(
-        &toml_file(include_str!("../content/quests_elwynn.toml")),
-        "quest",
-    ));
-    quests.extend(entries(
-        &toml_file(include_str!("../content/quests_stormwind.toml")),
-        "quest",
-    ));
-    quests
+    [
+        include_str!("../content/quests.toml"),
+        include_str!("../content/quests_elwynn.toml"),
+        include_str!("../content/quests_stormwind.toml"),
+        include_str!("../content/quests_redridge.toml"),
+        include_str!("../content/quests_duskwood.toml"),
+        include_str!("../content/quests_redridge_dungeons.toml"),
+        include_str!("../content/quests_duskwood_dungeons.toml"),
+    ]
+    .into_iter()
+    .flat_map(|text| entries(&toml_file(text), "quest"))
+    .collect()
 }
 
 fn assert_clean(what: &str, bad: Vec<String>) {

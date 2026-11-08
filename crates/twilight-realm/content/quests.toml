@@ -11,8 +11,11 @@
 # - "once": once per character. Advancement never forgets it. It pays no XP.
 # - "story": a Story Quest, once per character. Advancement never forgets it. It pays XP as a
 #   Hunting Quest does (below); `money` is allowed, though the Story Quests set 0.
-#   They live in content/quests_elwynn.toml and content/quests_stormwind.toml, which have this
-#   same schema.
+#   They live in content/quests_elwynn.toml, content/quests_stormwind.toml,
+#   content/quests_redridge.toml, content/quests_duskwood.toml,
+#   content/quests_redridge_dungeons.toml and content/quests_duskwood_dungeons.toml, which have
+#   this same schema. Their items are in content/quest_items.toml,
+#   content/quest_items_redridge.toml and content/quest_items_duskwood.toml.
 # - "writ": a Writ (spec #557), offered by the Writ Board's `giver_object` while its pool shows it,
 #   once per showing. It names `levels`, 1 to 2: the levels a character of the Tier it is offered
 #   from gains from its hand-in; no other kind names `levels`. Its `zone_or_sort` names its pool:

@@ -1,0 +1,3 @@
+# Story Quests and bounties in Duskwood, 98601 to 98999 (spec #595): the same schema as
+# quests.toml, read after content/quests_redridge.toml and before
+# content/quests_redridge_dungeons.toml.

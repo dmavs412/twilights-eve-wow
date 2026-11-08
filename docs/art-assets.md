@@ -316,3 +316,16 @@ is vanilla's map 34.
 Every creature (Haulers, Listeners, Lampmen, porters, the Conductor and the passengers), the
 tram cars, the crates, the lamps and the frozen passengers' ice are stock displays and need no
 art. The station is vanilla's map 369. The mist wall uses the Closed Zones' mist shader.
+
+## Redridge and Duskwood 30-50 (spec #595)
+
+| Asset | Where | Notes |
+|---|---|---|
+| Grey Robe look | creature display, stock until painted | Stands in as display 2492 (vmangos's Scarlet Abbot, a robed human). Wanted: a grey hooded robe with a small crowned mark on the breast, for the Grey Robe Diggers, Lantern-bearers, Surveyors, Agents, Wardens and the Grey Captain. |
+| Crowned mark | quest item icons and the agents' camp banners | Stock icons stand in. Wanted: a plain crown over a closed eye, in the same hand on every item, so a player tells it from the cult's hammer and black sun. |
+| Lakeshire Watch camp | GameObject displays, stock | Tents (6738) and a campfire (192), as Sergeant Keane's outpost. No new art needed. |
+| Writ Board poster | GameObject display, stock | Stands in as vanilla's Wanted Poster (display 17). Wanted: a smaller notice pinned beside the board, "Hands wanted east". |
+
+Every creature (the Blackrock, the gnolls, the worgen, the dead, the ogres, the Defias, the
+Twilight courier and outriders) and every quest item but the crowned ones use stock displays and
+need no art.
