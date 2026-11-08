@@ -8,7 +8,8 @@
 //! lever whose pull is Run state. Ringing it starts the tram line (#589): cars roll in on the
 //! timetable, the lamps and sounds warn of them, and a moving car hits a player in its lane. Each
 //! wave car carries two fighters and a porter (#590), and the porters carry the Tribute Pile's
-//! crates onto the cars. The boss car brings the Conductor and his frozen passengers (#591).
+//! crates onto the cars. The boss car brings the Conductor and his frozen passengers (#591). His
+//! death leaves the Tribute Pile chest, the gold chest and a blue on his corpse (#592).
 
 mod common;
 
@@ -1626,4 +1627,204 @@ fn twenty_seconds_after_his_engage_he_tosses_a_crate_at_the_farther_player_who_c
         bars.iter().any(|g| g.contains(&conductor)),
         "the Boss Bar lists him: {bars:?}"
     );
+}
+
+// The loot (#592, spec "Loot"): the Tribute Pile chest, the gold chest and the Conductor's roll,
+// every number the `[tram]` table's.
+
+/// The Tribute Pile chest and the gold chest: run-time GameObjects of these entries.
+const PILE_CHEST: u32 = 980197;
+const GOLD_CHEST: u32 = 980198;
+/// The Conductor's set, blues, and the Platform set, greens (`gear.csv`).
+const BLUES: std::ops::RangeInclusive<u32> = 905100..=905119;
+const GREENS: std::ops::RangeInclusive<u32> = 905120..=905139;
+/// The middle of the Tribute Pile.
+const PILE_CENTRE: [f32; 3] = [-18.5, 2490.5, -4.29];
+
+/// Player 0 kills the Conductor from beside the boss car's door, his health first set to its
+/// least, then ticks a second more: what player 0's client got from the blow on, timed from it,
+/// and where his corpse lies (his last move's end, or the door he stepped off at).
+fn killing_the_conductor(
+    party: &mut Party,
+    conductor: u64,
+) -> (Vec<(f32, SessionEvent)>, [f32; 3]) {
+    let door = [DOOR_A, LEAD_STOP, -4.2965];
+    party.go_facing(0, [door[0] + 1.5, door[1], door[2]], door);
+    party.realm.set_creature_health_pct(conductor, 0);
+    party.cmd(0, RealmCommand::AttackSwing { guid: conductor });
+    let mut timed = Vec::new();
+    let mut t = 0.0;
+    while !died(&untimed(&timed), conductor) {
+        assert!(t < 20.0, "the Conductor never died");
+        t += 0.1;
+        timed.extend(party.run(0.1).swap_remove(0).into_iter().map(|e| (t, e)));
+    }
+    party.cmd(0, RealmCommand::AttackStop);
+    timed.extend(later(ticks(party, 1.0).swap_remove(0), t));
+    let corpse = moves(&timed, conductor)
+        .last()
+        .and_then(|m| m.1.last().copied())
+        .unwrap_or(door);
+    (timed, corpse)
+}
+
+/// The chests of `entry` created in `timed`: `(guid, position)`.
+fn chests_made(timed: &[(f32, SessionEvent)], entry: u32) -> Vec<(u64, [f32; 3])> {
+    timed
+        .iter()
+        .filter_map(|(_, e)| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                kind: benilla_protocol::EntityKind::GameObject,
+                position,
+                fields,
+                ..
+            } if fields.object_entry() == Some(entry) => Some((*guid, *position)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Player 0 steps beside `at` and sends `open` on `guid`: the loot window's copper and items.
+fn opened(party: &mut Party, guid: u64, at: [f32; 3], open: RealmCommand) -> (u32, Vec<u32>) {
+    party.go(0, [at[0] + 1.0, at[1], at[2]], std::f32::consts::PI);
+    party.run(0.3);
+    let before = party.seen(0).len();
+    party.cmd(0, open);
+    let window = party.seen(0)[before..]
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::LootResponse { gold, items, .. } => {
+                Some((*gold, items.iter().map(|i| i.item_id).collect()))
+            }
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("a loot window on {guid:x}"));
+    party.cmd(0, RealmCommand::LootRelease { guid });
+    window
+}
+
+/// The pile chest's copper and items, with every crate shown on the pile gone from it.
+fn the_pile_chest(party: &mut Party, timed: &[(f32, SessionEvent)]) -> (u32, Vec<u32>) {
+    let made = chests_made(timed, PILE_CHEST);
+    assert_eq!(made.len(), 1, "one pile chest: {made:?}");
+    let (chest, at) = made[0];
+    assert!(
+        flat_distance(at, PILE_CENTRE) < 0.01,
+        "at the pile's centre: {at:?}"
+    );
+    assert!(
+        (0..12).all(|k| !shows(party, crate_guid(k))),
+        "the crates left the pile"
+    );
+    opened(
+        party,
+        chest,
+        at,
+        RealmCommand::UseGameObject { guid: chest },
+    )
+}
+
+/// `items` are `n` distinct entries of `set`.
+fn of_set(items: &[u32], n: usize, set: std::ops::RangeInclusive<u32>) {
+    let mut distinct = items.to_vec();
+    distinct.sort_unstable();
+    distinct.dedup();
+    assert_eq!(distinct.len(), n, "{items:?}");
+    assert_eq!(items.len(), n, "{items:?}");
+    assert!(items.iter().all(|i| set.contains(i)), "{items:?}");
+}
+
+#[test]
+fn with_every_crate_saved_and_every_porter_killed_the_pile_chest_pays_12_silver_and_4_greens_and_a_gold_chest_holds_a_blue(
+) {
+    let mut party = sturdy_by_the_bell(1);
+    let (_, conductor) = to_the_conductor(&mut party, 0);
+    let report = party.realm.tram_report_as(party.sessions[0]).unwrap();
+    assert_eq!((report.on_pile, report.escaped), (12, 0), "{report:?}");
+    assert_eq!(report.porters_made, report.porters_dead, "{report:?}");
+    let (timed, corpse) = killing_the_conductor(&mut party, conductor);
+
+    let (copper, greens) = the_pile_chest(&mut party, &timed);
+    assert_eq!(copper, 1200);
+    of_set(&greens, 4, GREENS);
+
+    let gold = chests_made(&timed, GOLD_CHEST);
+    assert_eq!(gold.len(), 1, "{gold:?}");
+    let (chest, at) = gold[0];
+    let east = [corpse[0] + 2.0, corpse[1], corpse[2]];
+    assert!(
+        flat_distance(at, east) < 0.05,
+        "2 yd east of {corpse:?}: {at:?}"
+    );
+    let (copper, blue) = opened(
+        &mut party,
+        chest,
+        at,
+        RealmCommand::UseGameObject { guid: chest },
+    );
+    assert_eq!(copper, 0);
+    of_set(&blue, 1, BLUES);
+
+    // His corpse holds one blue of the set, as Captain Rook's does.
+    let (_, items) = opened(
+        &mut party,
+        conductor,
+        corpse,
+        RealmCommand::Loot { guid: conductor },
+    );
+    let blues: Vec<u32> = items.into_iter().filter(|i| BLUES.contains(i)).collect();
+    of_set(&blues, 1, BLUES);
+
+    // The last living player leaves the footprint: the Run resets and the chests go with it.
+    walk(&mut party, ARRIVAL);
+    assert!(!in_phase(&party));
+    party.run(1.0);
+    let from = party.seen(0).len();
+    walk(&mut party, BY_THE_BELL);
+    party.run(1.0);
+    let back: Vec<(f32, SessionEvent)> =
+        since(&party, from).into_iter().map(|e| (0.0, e)).collect();
+    assert!(
+        chests_made(&back, PILE_CHEST).is_empty(),
+        "the pile chest went"
+    );
+    assert!(
+        chests_made(&back, GOLD_CHEST).is_empty(),
+        "the gold chest went"
+    );
+}
+
+#[test]
+fn with_7_crates_on_the_pile_the_chest_pays_700_copper_and_2_greens_and_boarded_porters_leave_no_gold_chest(
+) {
+    let mut party = sturdy_by_the_bell(1);
+    let (_, conductor) = to_the_conductor(&mut party, 5);
+    let report = party.realm.tram_report_as(party.sessions[0]).unwrap();
+    assert_eq!((report.on_pile, report.escaped), (7, 5), "{report:?}");
+    let (timed, _) = killing_the_conductor(&mut party, conductor);
+    let (copper, greens) = the_pile_chest(&mut party, &timed);
+    assert_eq!(copper, 700);
+    of_set(&greens, 2, GREENS);
+    assert!(
+        chests_made(&timed, GOLD_CHEST).is_empty(),
+        "porters boarded"
+    );
+}
+
+#[test]
+fn with_one_porter_boarded_no_gold_chest_stands_by_his_corpse() {
+    let mut party = sturdy_by_the_bell(1);
+    let (_, conductor) = to_the_conductor(&mut party, 1);
+    let report = party.realm.tram_report_as(party.sessions[0]).unwrap();
+    assert_eq!(report.escaped, 1, "{report:?}");
+    assert_eq!(report.porters_made, report.porters_dead + 1, "{report:?}");
+    let (timed, _) = killing_the_conductor(&mut party, conductor);
+    assert!(
+        chests_made(&timed, GOLD_CHEST).is_empty(),
+        "one porter boarded"
+    );
+    let (copper, greens) = the_pile_chest(&mut party, &timed);
+    assert_eq!(copper, 1100);
+    of_set(&greens, 3, GREENS);
 }

@@ -63,7 +63,7 @@ fn scene() -> (Party, u32, Audience) {
 fn spec(entry: u32, kind: ObjectKind, map: u32) -> ObjectSpec {
     ObjectSpec {
         entry,
-        display: if matches!(kind, ObjectKind::Chest(_)) {
+        display: if matches!(kind, ObjectKind::Chest { .. }) {
             CHEST_DISPLAY
         } else {
             1
@@ -134,7 +134,14 @@ fn a_chest_opens_the_loot_window_for_its_audience_and_goes_when_emptied() {
         .realm
         .spawn_object(
             host,
-            spec(CHEST, ObjectKind::Chest(vec![TRINKET]), map),
+            spec(
+                CHEST,
+                ObjectKind::Chest {
+                    items: vec![TRINKET],
+                    money: 0,
+                },
+                map,
+            ),
             audience,
         )
         .expect("a spot");
@@ -163,7 +170,14 @@ fn despawning_the_audience_removes_a_chest_nobody_opened() {
         .realm
         .spawn_object(
             host,
-            spec(CHEST, ObjectKind::Chest(vec![TRINKET]), map),
+            spec(
+                CHEST,
+                ObjectKind::Chest {
+                    items: vec![TRINKET],
+                    money: 0,
+                },
+                map,
+            ),
             audience.clone(),
         )
         .expect("a spot");

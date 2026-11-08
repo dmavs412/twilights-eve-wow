@@ -5,7 +5,7 @@
 use crate::audience::Audience;
 use crate::looting::Loot;
 use crate::phased::{
-    gameobject_create, GameObject, CHEST, FISHINGNODE, GOOBER, HIGHGUID_GAMEOBJECT,
+    gameobject_create, GameObject, Phase, CHEST, FISHINGNODE, GOOBER, HIGHGUID_GAMEOBJECT,
 };
 use benilla_protocol::SessionEvent;
 
@@ -22,9 +22,9 @@ pub enum ObjectKind {
     /// A click counts for a quest's `use_object` objective by `entry`, then it is gone for
     /// everyone.
     Use,
-    /// A chest filled with these item entries, one of each, and no money. A click opens the
-    /// stock loot window; taking the last item removes it.
-    Chest(Vec<u32>),
+    /// A chest filled with these item entries, one of each, and `money` copper. A click opens
+    /// the stock loot window; taking the last of it removes it.
+    Chest { items: Vec<u32>, money: u32 },
     /// A Fishing cast's bobber (ADR 0018), floating on the water: the client draws the line to
     /// it. A click does nothing; the Reeling Bar is the catch.
     Bobber,
@@ -49,6 +49,8 @@ pub(crate) struct Object {
     pub(crate) guid: u64,
     pub(crate) spec: ObjectSpec,
     pub(crate) audience: Audience,
+    /// The Phase it stands in: the open world's, or a Phased Dungeon's (#592).
+    pub(crate) phase: Phase,
     /// What is left in a chest.
     pub(crate) loot: Option<Loot>,
 }
@@ -62,7 +64,7 @@ impl Object {
             display_id: self.spec.display,
             type_id: match self.spec.kind {
                 ObjectKind::Use | ObjectKind::HerbPatch { .. } => GOOBER,
-                ObjectKind::Chest(_) => CHEST,
+                ObjectKind::Chest { .. } => CHEST,
                 ObjectKind::Bobber => FISHINGNODE,
             },
             flags: 0,
@@ -81,21 +83,27 @@ pub(crate) struct Objects {
 }
 
 impl Objects {
-    /// Adds an object standing at `spec.position` (already grounded); its guid.
+    /// Adds an object standing at `spec.position` (already grounded) in the open world; its guid.
     pub(crate) fn spawn(&mut self, spec: ObjectSpec, audience: Audience) -> u64 {
+        self.spawn_in(spec, audience, Phase::OpenWorld)
+    }
+
+    /// Adds an object standing at `spec.position` in `phase`; its guid.
+    pub(crate) fn spawn_in(&mut self, spec: ObjectSpec, audience: Audience, phase: Phase) -> u64 {
         let guid = HIGHGUID_GAMEOBJECT << 48 | (FIRST_GUID + self.made);
         self.made += 1;
         let loot = match &spec.kind {
             ObjectKind::Use | ObjectKind::Bobber | ObjectKind::HerbPatch { .. } => None,
-            ObjectKind::Chest(entries) => Some(Loot {
-                money: 0,
-                items: entries.iter().map(|&e| Some((e, 1))).collect(),
+            ObjectKind::Chest { items, money } => Some(Loot {
+                money: *money,
+                items: items.iter().map(|&e| Some((e, 1))).collect(),
             }),
         };
         self.list.push(Object {
             guid,
             spec,
             audience,
+            phase,
             loot,
         });
         guid

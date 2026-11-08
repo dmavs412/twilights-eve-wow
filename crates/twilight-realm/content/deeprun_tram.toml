@@ -15,6 +15,7 @@
 # The shell (#587): the station bell. The tram line (#589): the `[tram]` table below, cars on the
 # timetable. What a car carries (#590): fighters, porters and the Tribute Pile, also in `[tram]`.
 # The Conductor (#591): the boss tram's passengers, Tribute and his two moves, also in `[tram]`.
+# The loot (#592): his roll, the Tribute Pile chest and the gold chest, also in `[tram]`.
 # Ringing the bell is the lever's pull, Run state; the tram line starts from it.
 #
 # Guids: creatures 973201 up (973101 to 973123 are the quiet wing's), GameObjects 983012 up (the
@@ -140,6 +141,32 @@ toss_spell_name = "Crate Toss"
 toss_radius_yd = 3.0
 toss_warn_s = 3.0              # the circle shows this long before the crate lands
 toss_catch_pct = 15            # of each catcher's maximum health
+# His roll (#592): his template row is no dungeon creature row, so it lives here. One of the
+# Conductor's set (gear.csv 905100 to 905119), always, as Captain Rook's.
+conductor_rolls = [{ chance = 100, one_of = [
+  905100, 905101, 905102, 905103, 905104, 905105, 905106, 905107, 905108, 905109,
+  905110, 905111, 905112, 905113, 905114, 905115, 905116, 905117, 905118, 905119,
+] }]
+# The loot (#592, spec "Loot"): when he dies the crates still on the Tribute Pile become one chest
+# at the pile's centre, `copper_per_crate` a crate and one green drawn without repeats from
+# `greens` per `crates_per_green` crates, rounded down; none with the pile bare. If every porter
+# that stepped off died, a gold chest stands `gold_chest_east_yd` east of his corpse holding one of
+# `blues` (east is +x, as the east strip is). Run-time GameObjects with no template, as the Rumours' chest 980199; they go when the
+# Run resets.
+pile_chest_entry = 980197
+gold_chest_entry = 980198
+chest_display = 259            # vanilla's small wooden chest; the gold look is a placeholder in docs/art-assets.md
+gold_chest_east_yd = 2.0
+copper_per_crate = 100
+crates_per_green = 3
+greens = [                     # the Platform set, gear.csv 905120 to 905139
+  905120, 905121, 905122, 905123, 905124, 905125, 905126, 905127, 905128, 905129,
+  905130, 905131, 905132, 905133, 905134, 905135, 905136, 905137, 905138, 905139,
+]
+blues = [                      # the Conductor's set, gear.csv 905100 to 905119
+  905100, 905101, 905102, 905103, 905104, 905105, 905106, 905107, 905108, 905109,
+  905110, 905111, 905112, 905113, 905114, 905115, 905116, 905117, 905118, 905119,
+]
 
 # Each track: its x, the x of its cars' doors on the centre strip side (#590), and its lamp at the
 # platform's south end. The lamp's guid follows the bell's (983012 up; the entry is the guid).

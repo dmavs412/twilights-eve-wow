@@ -831,7 +831,7 @@ impl InWorld {
             .filter(|&g| objects.get(g).is_none_or(|o| !o.audience.admits(self.guid)))
             .collect();
         for o in objects.iter().filter(|o| o.audience.admits(self.guid)) {
-            let d_yd = if o.spec.map == c.map && self.phase == Phase::OpenWorld {
+            let d_yd = if o.spec.map == c.map && self.phase == o.phase {
                 flat_distance(o.spec.position, c.position)
             } else {
                 f32::INFINITY

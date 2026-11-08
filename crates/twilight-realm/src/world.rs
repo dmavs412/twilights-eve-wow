@@ -1718,7 +1718,10 @@ impl InWorld {
         let (drops, rolls) = match mob.spawn_row() {
             Some(spawn) if matches!(spawn.phase, crate::phased::Phase::Dungeon(_)) => (
                 crate::phased::drops(spawn.map, spawn.guid),
-                crate::phased::rolls(spawn.map, spawn.guid),
+                match spawn.tram_of {
+                    Some(dungeon) => crate::phased::tram_rolls(dungeon, spawn.entry),
+                    None => crate::phased::rolls(spawn.map, spawn.guid),
+                },
             ),
             _ => (&[][..], &mob.template.rolls[..]),
         };

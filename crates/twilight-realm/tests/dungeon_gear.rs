@@ -1,8 +1,10 @@
 //! The Dungeon pools and their bosses' rolls (#455): Jasperlode (entries 905000 to 905019), Azora
 //! (905020 to 905039) and Hogger's camp (905040 to 905059 and the four Capstone Chests), and the
 //! nine epics 905900 to 905908; then the Stockade's two sets (#579): the riot (905060 to 905079)
-//! and the quiet wing (905080 to 905099). The phased harness of `northshire_abbey.rs` cannot kill
-//! a boss in a dungeon cheaply, so these assert the `rolls` data: chances, lists, no stand-in.
+//! and the quiet wing (905080 to 905099); then the Deeprun Tram's two (#592): the Conductor's blues
+//! (905100 to 905119) and the Platform greens (905120 to 905139). The phased harness of
+//! `northshire_abbey.rs` cannot kill a boss in a dungeon cheaply, so these assert the `rolls` data:
+//! chances, lists, no stand-in.
 
 use std::collections::HashMap;
 
@@ -13,6 +15,7 @@ const AZORA: &str = include_str!("../content/azora.toml");
 const FOREST_EDGE: &str = include_str!("../content/forest_edge.toml");
 const STOCKADE_RIOT: &str = include_str!("../content/stockade_riot.toml");
 const STOCKADE_QUIET_WING: &str = include_str!("../content/stockade_quiet_wing.toml");
+const DEEPRUN_TRAM: &str = include_str!("../content/deeprun_tram.toml");
 const MOBS: &str = include_str!("../content/mobs.toml");
 const GEAR: &str = include_str!("../content/gear.toml");
 
@@ -99,6 +102,8 @@ const J20: (i64, i64) = (905000, 905019);
 const A20: (i64, i64) = (905020, 905039);
 const RIOT20: (i64, i64) = (905060, 905079);
 const QUIET20: (i64, i64) = (905080, 905099);
+const CONDUCTOR20: (i64, i64) = (905100, 905119);
+const PLATFORM20: (i64, i64) = (905120, 905139);
 
 fn hogger_pool() -> Vec<i64> {
     let mut v = range(905040, 905059);
@@ -330,4 +335,46 @@ fn no_stockade_file_names_the_abbots_placeholder_blues() {
             }
         }
     }
+}
+
+/// The integers of `list`.
+fn integers(list: &Value) -> Vec<i64> {
+    list.as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i.as_integer().unwrap())
+        .collect()
+}
+
+#[test]
+fn the_deeprun_sets_are_twenty_blues_and_twenty_greens_at_their_item_levels() {
+    let rows = rows();
+    for (set, quality, level) in [(CONDUCTOR20, 3, 42), (PLATFORM20, 2, 40)] {
+        for id in range(set.0, set.1) {
+            assert_eq!(rows.get(&id), Some(&(quality, level)), "row {id}");
+        }
+    }
+}
+
+#[test]
+fn the_conductor_rolls_the_twenty_blues_and_the_chests_hold_their_sets() {
+    let tram = &parse(DEEPRUN_TRAM)["tram"];
+    let rolls = tram["conductor_rolls"].as_array().unwrap();
+    assert_eq!(rolls.len(), 1, "one roll");
+    assert_eq!(rolls[0]["chance"].as_integer(), Some(100));
+    assert_eq!(
+        integers(&rolls[0]["one_of"]),
+        range(CONDUCTOR20.0, CONDUCTOR20.1)
+    );
+    assert_eq!(
+        integers(&tram["blues"]),
+        range(CONDUCTOR20.0, CONDUCTOR20.1)
+    );
+    assert_eq!(integers(&tram["greens"]), range(PLATFORM20.0, PLATFORM20.1));
+    // His template rolls nothing of its own.
+    assert!(rolls_of_template(97218).is_empty());
+}
+
+fn rolls_of_template(entry: i64) -> Vec<(i64, Vec<i64>)> {
+    rolls(template(&parse(MOBS), entry))
 }

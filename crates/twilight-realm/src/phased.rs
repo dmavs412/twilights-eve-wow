@@ -1205,6 +1205,15 @@ pub(crate) fn rolls(map: u32, guid: u32) -> &'static [crate::rules::loot::Roll] 
         .map_or(&[], |c| &c.rolls)
 }
 
+/// The loot rolls a tram line's creature of `entry` makes in Phased Dungeon `dungeon`: the
+/// Conductor's `conductor_rolls` (#592); none for any other.
+pub(crate) fn tram_rolls(dungeon: u32, entry: u32) -> &'static [crate::rules::loot::Roll] {
+    self::dungeon(dungeon)
+        .and_then(|d| d.tram.as_ref())
+        .filter(|t| t.conductor == entry)
+        .map_or(&[], |t| &t.conductor_rolls)
+}
+
 /// The Phase of a character standing at `position` on `map`.
 pub(crate) fn at(map: u32, position: [f32; 3]) -> Phase {
     content()

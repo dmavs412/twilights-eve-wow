@@ -1401,6 +1401,14 @@ impl Realm {
                 patches: w.patches(),
             });
         }
+        // A shard no one stands on resets its Run, and the chests its tram line left go with it.
+        for (place, shard) in &self.shards {
+            if !on.contains_key(place) {
+                for &chest in shard.tram().map_or(&[][..], |l| l.chests()) {
+                    self.objects.remove(chest);
+                }
+            }
+        }
         self.shards.retain(|map, _| on.contains_key(map));
         let (wall_ms, carts_on) = (self.wall_ms(), self.unlock_on("carts"));
         for (map, players) in &on {
@@ -1696,7 +1704,8 @@ impl Realm {
     /// The tram lines' tick (ADR 0033), after the shards ran them and sent their cars and lamps:
     /// every character in a line's Phase hears its warnings on the lamps, each moving car's lane
     /// hit lands on the character it hit, the Conductor's tossed crate lands on whoever stands in
-    /// its circle (#591), each fighter awake turns on the closest character, and
+    /// its circle (#591), the Conductor's death leaves its chests (#592), each fighter awake turns
+    /// on the closest character, and
     /// a character near a Lampman's lamp is slowed (and one away from every lamp, or outside
     /// the Phase, is not).
     fn tick_trams(&mut self) {
@@ -1731,6 +1740,24 @@ impl Realm {
             let hits = line.hits(&players);
             let caught = line.toss(&players);
             let sounds = line.take_sounds();
+            // The Conductor's chests (#592), for every character in the Phase when he died, at
+            // their written Z: map 369's floorless grid gives no ground spot.
+            let audience = Audience::of(&players.iter().map(|p| p.guid).collect::<Vec<_>>());
+            for chest in line.take_chests() {
+                let spec = ObjectSpec {
+                    entry: chest.entry,
+                    display: chest.display,
+                    kind: ObjectKind::Chest {
+                        items: chest.items,
+                        money: chest.money,
+                    },
+                    map: place.map,
+                    position: chest.at,
+                    orientation: 0.0,
+                };
+                let guid = self.objects.spawn_in(spec, audience.clone(), place.phase);
+                line.keep_chest(guid);
+            }
             let t = line.tram();
             let sessions = std::iter::once((&mut self.world, &mut self.events)).chain(
                 self.parked
@@ -2456,7 +2483,7 @@ impl Realm {
                 let spec = ObjectSpec {
                     entry: rumours::CHEST_ENTRY,
                     display: CHEST_DISPLAY,
-                    kind: ObjectKind::Chest(items),
+                    kind: ObjectKind::Chest { items, money: 0 },
                     map: d.map,
                     position: [p.x + 2.0, p.y, 0.0],
                     orientation: 0.0,

@@ -14,6 +14,10 @@
 //! The Conductor (#591): the boss tram's car brings him, with a Tribute stack per escaped crate,
 //! and his passengers frozen beside him. His health's wake marks thaw them group by group, and
 //! from his engage he sends a runaway car down a track and tosses a crate from the pile in turn.
+//!
+//! The loot (#592): once he has died, the crates still on the pile become the Tribute Pile chest,
+//! and the gold chest stands by his corpse if every porter that stepped off died
+//! ([`Line::take_chests`]). The realm makes them for the Phase and removes them with the Run.
 
 use benilla_protocol::guid::HIGH_TRANSPORT;
 use benilla_protocol::SessionEvent;
@@ -152,6 +156,22 @@ pub struct Tram {
     pub toss_radius_yd: f32,
     pub toss_warn_s: f32,
     pub toss_catch_pct: u32,
+    /// His loot rolls (#592), made on his corpse as a dungeon creature row's are: his template
+    /// row is no dungeon creature row.
+    pub conductor_rolls: Vec<crate::rules::loot::Roll>,
+    /// The chests his death leaves (#592): run-time GameObjects of these entries and display.
+    pub pile_chest_entry: u32,
+    pub gold_chest_entry: u32,
+    pub chest_display: u32,
+    /// The gold chest stands this far east (+x) of his corpse.
+    pub gold_chest_east_yd: f32,
+    /// The Tribute Pile chest holds this much copper per crate on the pile, and one of `greens`,
+    /// drawn without repeats, per `crates_per_green` crates, rounded down.
+    pub copper_per_crate: u32,
+    pub crates_per_green: usize,
+    pub greens: Vec<u32>,
+    /// The gold chest holds one of these.
+    pub blues: Vec<u32>,
     /// Track a, then track b.
     pub track: Vec<Track>,
 }
@@ -191,6 +211,22 @@ impl Tram {
             !self.passengers.is_empty() && !self.wake_at_pct.is_empty(),
             "{dungeon}: the Conductor's passengers and their wake marks"
         );
+        for roll in &self.conductor_rolls {
+            roll.check(&format!("{dungeon}: the Conductor"));
+        }
+        assert!(
+            self.crates_per_green > 0
+                && self.greens.len() >= PILE_CRATES / self.crates_per_green
+                && !self.blues.is_empty(),
+            "{dungeon}: the chests need a green for every {} crates and a blue",
+            self.crates_per_green
+        );
+        for &item in self.greens.iter().chain(&self.blues) {
+            assert!(
+                crate::items::template(item).is_some(),
+                "{dungeon}: a chest names item {item}, which the content does not have"
+            );
+        }
     }
 
     /// The creatures the line brings in, each entry once, with its level range: the fighters
@@ -386,6 +422,8 @@ enum Crate {
     Tossed,
     /// Tossed and not caught: gone for the Run.
     Lost,
+    /// On the pile when the Conductor died: in the Tribute Pile chest now (#592).
+    Chested,
 }
 
 /// A creature a tram brought.
@@ -425,6 +463,16 @@ pub struct Report {
     pub lost: usize,
     pub porters_made: u32,
     pub porters_dead: u32,
+}
+
+/// A chest the Conductor's death leaves (#592), for the realm to make in the line's Phase.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Chest {
+    pub entry: u32,
+    pub display: u32,
+    pub at: [f32; 3],
+    pub items: Vec<u32>,
+    pub money: u32,
 }
 
 /// The Conductor's fight (#591), from the boss car's stop.
@@ -523,6 +571,10 @@ pub struct Line {
     porters_dead: u32,
     /// The Conductor's fight, once the boss car has stopped.
     boss: Option<Boss>,
+    /// His death's chests are made (#592)...
+    chested: bool,
+    /// ...as these run-time GameObjects, which go with the Run.
+    chests: Vec<u64>,
 }
 
 impl Line {
@@ -551,6 +603,8 @@ impl Line {
             porters_made: 0,
             porters_dead: 0,
             boss: None,
+            chested: false,
+            chests: Vec::new(),
         }
     }
 
@@ -619,6 +673,61 @@ impl Line {
     /// Where the Conductor's corpse lies, once he has died (for #592's chests).
     pub fn conductor_corpse(&self) -> Option<[f32; 3]> {
         self.boss.as_ref().filter(|b| b.dead).map(|b| b.at)
+    }
+
+    /// The chests the Conductor's death leaves (#592), once, on the first ask after he died. The
+    /// crates still on the pile leave it for the Tribute Pile chest at its centre:
+    /// `copper_per_crate` each, and one of `greens` drawn without repeats per `crates_per_green`
+    /// crates, rounded down; with the pile bare, no chest. If every porter that stepped off died,
+    /// the gold chest stands `gold_chest_east_yd` east of his corpse with one of `blues`.
+    pub(crate) fn take_chests(&mut self) -> Vec<Chest> {
+        let Some(corpse) = self.conductor_corpse().filter(|_| !self.chested) else {
+            return Vec::new();
+        };
+        self.chested = true;
+        let tram = self.tram;
+        let mut out = Vec::new();
+        let mut crates = 0;
+        for c in self.pile.iter_mut().filter(|c| **c == Crate::OnPile) {
+            *c = Crate::Chested;
+            crates += 1;
+        }
+        if crates > 0 {
+            let mut left = tram.greens.clone();
+            let mut items = Vec::new();
+            for _ in 0..(crates / tram.crates_per_green).min(left.len()) {
+                let i = self.rng.below(left.len() as u32) as usize;
+                items.push(left.swap_remove(i));
+            }
+            out.push(Chest {
+                entry: tram.pile_chest_entry,
+                display: tram.chest_display,
+                at: tram.pile_centre(),
+                items,
+                money: crates as u32 * tram.copper_per_crate,
+            });
+        }
+        if self.porters_made == self.porters_dead {
+            let blue = tram.blues[self.rng.below(tram.blues.len() as u32) as usize];
+            out.push(Chest {
+                entry: tram.gold_chest_entry,
+                display: tram.chest_display,
+                at: [corpse[0] + tram.gold_chest_east_yd, corpse[1], corpse[2]],
+                items: vec![blue],
+                money: 0,
+            });
+        }
+        out
+    }
+
+    /// The run-time GameObject `guid` holds one of [`Self::take_chests`]'s chests.
+    pub(crate) fn keep_chest(&mut self, guid: u64) {
+        self.chests.push(guid);
+    }
+
+    /// The run-time GameObjects made from [`Self::take_chests`], which go with the Run.
+    pub(crate) fn chests(&self) -> &[u64] {
+        &self.chests
     }
 
     /// The creature `guid` turned on a player: if it is the Conductor, his moves start counting
@@ -1553,6 +1662,69 @@ mod tests {
         assert_eq!(toss.centre, at(30.0), "the farthest living player");
         assert_eq!(line.pile[toss.k], Crate::Tossed);
         assert_eq!(line.report().on_pile, 11);
+    }
+
+    /// A line whose Conductor died at `corpse`, `on_pile` crates still on the pile (the rest
+    /// escaped), with `made` porters stepped off and `dead` of them killed.
+    fn conductor_dead(on_pile: usize, made: u32, dead: u32, corpse: [f32; 3]) -> Line {
+        let mut line = Line::new(tram(), 369, 3);
+        line.bring(7, Kind::Conductor, corpse);
+        for (k, c) in line.pile.iter_mut().enumerate() {
+            if k >= on_pile {
+                *c = Crate::Escaped;
+            }
+        }
+        line.porters_made = made;
+        line.porters_dead = dead;
+        line.boss.as_mut().unwrap().dead = true;
+        line
+    }
+
+    #[test]
+    fn the_pile_chest_pays_a_hundred_copper_a_crate_and_a_green_per_three_and_none_bare() {
+        let corpse = [-38.0, 2512.2, -4.3];
+        for (on_pile, money, greens) in [(12, 1200, 4), (7, 700, 2), (2, 200, 0)] {
+            let mut line = conductor_dead(on_pile, 13 - on_pile as u32, 0, corpse);
+            let chests = line.take_chests();
+            assert_eq!(chests.len(), 1, "no gold chest: a porter boarded");
+            let pile = &chests[0];
+            assert_eq!(pile.entry, tram().pile_chest_entry);
+            let centre = [-18.5, 2490.5, -4.29];
+            assert!(
+                (0..3).all(|i| (pile.at[i] - centre[i]).abs() < 1e-3),
+                "the pile's centre: {:?}",
+                pile.at
+            );
+            assert_eq!(pile.money, money, "{on_pile} crates");
+            assert_eq!(pile.items.len(), greens, "{on_pile} crates");
+            let mut distinct = pile.items.clone();
+            distinct.sort_unstable();
+            distinct.dedup();
+            assert_eq!(distinct.len(), greens, "no repeats: {:?}", pile.items);
+            assert!(pile.items.iter().all(|i| tram().greens.contains(i)));
+            assert_eq!(line.report().on_pile, 0, "the crates left the pile");
+            assert!(line.take_chests().is_empty(), "made once");
+        }
+        let mut bare = conductor_dead(0, 12, 0, corpse);
+        assert!(bare.take_chests().is_empty(), "no crates left, no chest");
+    }
+
+    #[test]
+    fn with_every_porter_dead_a_gold_chest_stands_two_yards_east_of_his_corpse_with_one_blue() {
+        let corpse = [-38.0, 2512.2, -4.3];
+        let mut line = conductor_dead(12, 6, 6, corpse);
+        let chests = line.take_chests();
+        assert_eq!(chests.len(), 2);
+        let gold = &chests[1];
+        assert_eq!(gold.entry, tram().gold_chest_entry);
+        assert_eq!(gold.at, [-36.0, 2512.2, -4.3]);
+        assert_eq!((gold.items.len(), gold.money), (1, 0));
+        assert!(tram().blues.contains(&gold.items[0]));
+        let mut alive = conductor_dead(12, 6, 5, corpse);
+        assert_eq!(alive.take_chests().len(), 1, "a porter boarded");
+        let mut living = Line::new(tram(), 369, 3);
+        living.bring(7, Kind::Conductor, corpse);
+        assert!(living.take_chests().is_empty(), "he lives");
     }
 
     #[test]
