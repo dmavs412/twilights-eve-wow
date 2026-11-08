@@ -132,6 +132,59 @@ level_max = 38
 position = [-10460.0, 186.0, 32.23]
 orientation = 1.57
 
+# The Grey Robe Surveyors' two camps on the cemetery's far side (#611), three Surveyors (96050)
+# each within 6 yd of its centre, west of x -10430 and clear of Raven Hill Deeps' crypt.
+
+# The survey stakes, centred on -10560, 230.
+[[zone.added]]
+guid = 961513
+entry = 96050
+level_min = 41
+level_max = 42
+position = [-10556.0, 232.0, 30.05]
+orientation = 3.61
+
+[[zone.added]]
+guid = 961514
+entry = 96050
+level_min = 41
+level_max = 42
+position = [-10563.0, 234.0, 28.87]
+orientation = 5.36
+
+[[zone.added]]
+guid = 961515
+entry = 96050
+level_min = 41
+level_max = 42
+position = [-10560.0, 225.0, 29.48]
+orientation = 1.57
+
+# The far wall, centred on -10530, 400.
+[[zone.added]]
+guid = 961516
+entry = 96050
+level_min = 41
+level_max = 42
+position = [-10526.0, 402.0, 32.46]
+orientation = 3.61
+
+[[zone.added]]
+guid = 961517
+entry = 96050
+level_min = 41
+level_max = 42
+position = [-10533.0, 404.0, 32.43]
+orientation = 5.36
+
+[[zone.added]]
+guid = 961518
+entry = 96050
+level_min = 41
+level_max = 42
+position = [-10530.0, 395.0, 31.79]
+orientation = 1.57
+
 [[zone]]
 file = "redridge"
 # Black Dragon Whelp (441): 35 spawns on Lake Everstill's shore, removed (#595 decision 8); the

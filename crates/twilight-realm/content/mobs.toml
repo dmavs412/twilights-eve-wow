@@ -2510,6 +2510,27 @@ speed_run = 1.143
 detection_range = 18.0
 spells = ["shadow_bolt_creature"]
 
+# The Surveyor (#611), who stakes out the far side of Raven Hill Cemetery: a caster. His two camps
+# are in zones.toml.
+[[template]]
+entry = 96050
+name = "Grey Robe Surveyor"
+creature_type = 7
+rank = 0
+display_id = 2492
+faction_template = 14
+unit_class = "mage"
+level_min = 41
+level_max = 42
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["shadow_bolt_creature"]
+
 # The Writs' named creatures, made elite. Each row shadows its generated one (elwynn.toml,
 # redridge.toml, duskwood.toml), as Garrick Padfoot's does: a copy with only `rank` changed. A rare
 # (4) becomes a rare elite (2), and Dead-Tooth Jack, a normal creature, an elite (1). Tharil'zun,

@@ -20,13 +20,20 @@ bounds = [
   [-9050.0, -2060.0, -8981.0, -2018.0],
   [-9050.0, -2460.0, -8835.0, -2061.0],
   [-9216.0, -2850.0, -9017.0, -2470.0],
+  [-8834.0, -2540.0, -8583.0, -2120.0],
+  [-9917.0, -3510.0, -9500.0, -3118.0],
+  [-9917.0, -3117.0, -9551.0, -3050.0],
+  [-9550.0, -3117.0, -9050.0, -2918.0],
+  [-9216.0, -2917.0, -9083.0, -2851.0],
 ]
 
-# No box reaches Stonewatch Keep's footprint (-9388,-3029). Ilgalar's Approach holds the Tower of
-# Ilgalar (-9282,-3330) but excludes none of it: zones.toml already removed every creature inside
-# the tower's footprint, and the one left in its flat box, a Shadowhide Warrior at the tower's foot
-# (-9261,-3283), takes the approach's band like the gnolls round it.
-exclude = []
+# Stonewatch Keep's footprint: stonewatch_keep.toml's boxes turned by its yaw of 95 about
+# -9387.8,-3029.3, so the keep's halls keep the Phased Dungeon's levels and the band takes only the
+# yard round them. Ilgalar's Approach holds the Tower of Ilgalar (-9282,-3330) but excludes none of
+# it: zones.toml already removed every creature inside the tower's footprint, and the one left in
+# its flat box, a Shadowhide Warrior at the tower's foot (-9261,-3283), takes the approach's band
+# like the gnolls round it.
+exclude = [[-9415.0, -3098.0, -9352.0, -3045.0]]
 
 # Three Corners: Guard Parker -9610,-1902; Redridge Thrasher -9534,-1934; Tarantula -9702,-1915.
 # The Mongrels and Poachers south of y -2083 (-9631,-2124; -9722,-2342) stand in the Lakeridge
@@ -113,3 +120,47 @@ name = "Alther's Mill"
 level_min = 35
 level_max = 37
 boxes = [[-9216.0, -2850.0, -9017.0, -2470.0]]
+
+# Render's Camp and Render's Rock, the Blackrock camp where Corporal Keeshan is held (Blackrock
+# Champion -8829..-8657, -2346..-2148; Blackrock Tracker -8790..-8689, -2422..-2138; Blackrock
+# Summoner -8814..-8668; Kazon -8690,-2350; Corporal Keeshan -8757,-2187, friendly, keeps 25).
+# Render's Rock (x -8717..-8617, y -2317..-2250) lies inside the camp's box. The box starts at x
+# -8834, past Redridge Canyons, and runs north to y -2120 and south to y -2540 past the chunks so
+# the camp's north tents (Blackrock Summoner -8790,-2133) and its south fire (Blackrock Summoner
+# -8759,-2529; Blackrock Renegade -8755,-2534) are not split off.
+[[band]]
+name = "Render's Camp"
+level_min = 41
+level_max = 44
+boxes = [[-8834.0, -2540.0, -8583.0, -2120.0]]
+
+# Render's Valley, the Blackrock camps in the south-east (Blackrock Grunt -9822..-9652; Blackrock
+# Outrunner -9816..-9538; Blackrock Renegade -9576..-9509, -3301..-3223; Blackrock Summoner
+# -9723,-3178), down to Boulderheart (-9543,-3500) by the Ranthals' farm (Clyde Ranthal
+# -9601,-3503, friendly). The chunks (x -9917..-9617, y -3383..-3050) are widened east to x -9500
+# and south to y -3510 for the camps' east end and Boulderheart; north of y -3118 the box stops at
+# x -9551, short of Stonewatch.
+[[band]]
+name = "Render's Valley"
+level_min = 40
+level_max = 43
+boxes = [
+  [-9917.0, -3510.0, -9500.0, -3118.0],
+  [-9917.0, -3117.0, -9551.0, -3050.0],
+]
+
+# Stonewatch and Stonewatch Tower: the keep's yard (Blackrock Sentry, Scout, Shadowcaster, Hunter
+# and Gladiator, rank 1 elites as in vanilla: group ground; Tharil'zun -9439,-3081, held at 44 by
+# level_overrides.toml) and the Blackrock camp at the tower (Blackrock Grunt and Outrunner
+# -9236..-9174, -2932..-2852). The keep's box runs north to y -2918, Lake Everstill's edge, for the
+# Scouts and Sentry at its north gate (-9534..-9501, -2923..-2918). The tower's chunks west of x
+# -9217 lie in the keep's box; east of it a box runs north to y -2851, short of Alther's Mill, for
+# the camp's north Grunts (-9208,-2852). Seeker Aqualon (-9389,-2875) stands in Lake Everstill's box.
+[[band]]
+name = "Stonewatch"
+level_min = 43
+level_max = 46
+boxes = [
+  [-9550.0, -3117.0, -9050.0, -2918.0],
+  [-9216.0, -2917.0, -9083.0, -2851.0],
+]

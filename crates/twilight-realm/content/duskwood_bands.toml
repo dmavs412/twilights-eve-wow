@@ -22,6 +22,8 @@ bounds = [
   [-11183.0, 17.0, -10817.0, 483.0],
   [-11240.0, -317.0, -10917.0, 16.0],
   [-10583.0, 101.0, -10250.0, 483.0],
+  [-10790.0, -1049.0, -10176.0, -651.0],
+  [-10417.0, -1117.0, -10176.0, -1050.0],
 ]
 
 # The two Phased Dungeon footprints the boxes reach: Mistmantle Manor (mistmantle_manor.toml's
@@ -137,3 +139,19 @@ name = "Raven Hill Cemetery"
 level_min = 38
 level_max = 42
 boxes = [[-10583.0, 101.0, -10250.0, 483.0]]
+
+# Brightwood Grove (Nightbane Worgen -10706..-10178, -982..-716; Nightbane Shadow Weaver
+# -10667..-10244; Nightbane Dark Runner -10650..-10416; Black Ravager -10776..-10178; Black Ravager
+# Mastiff -10405..-10216; Fenros -10380,-833). The chunks (x -10750..-10117, y -1117..-617) are
+# trimmed to y -651 under the Twilight Grove, to x -10176 short of the Darkened Bank, and to y
+# -1049 over Darkshire; the second box is the strip south of y -1049 between Darkshire and the
+# Darkened Bank. The west edge runs to x -10790, the Twilight Grove's, for the Black Ravagers at
+# -10776,-769 and -10757,-779; the Unseen west of it keep their stretch.
+[[band]]
+name = "Brightwood Grove"
+level_min = 40
+level_max = 43
+boxes = [
+  [-10790.0, -1049.0, -10176.0, -651.0],
+  [-10417.0, -1117.0, -10176.0, -1050.0],
+]

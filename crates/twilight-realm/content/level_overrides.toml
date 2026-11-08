@@ -96,3 +96,15 @@ y = [367.0, 387.0]
 creature = [
   { entry = 1200, levels = [40, 40] }, # Morbent Fel, spawn at -10317.9, 377.0
 ]
+
+# Tharil'zun (#611) in Stonewatch's yard, over its 43-46 band, for his quest 98304. The box is
+# centred on the spawn; the yard's other Blackrock in it keep the band.
+[[area]]
+name = "Tharil'zun's post"
+band = [44, 44]
+map = 0
+x = [-9449.3, -9429.3]
+y = [-3090.8, -3070.8]
+creature = [
+  { entry = 486, levels = [44, 44] },  # Tharil'zun, spawn at -9439.3, -3080.8
+]

@@ -409,6 +409,9 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
             ("redridge", "Rethban Caverns", [38, 40]),
             ("redridge", "Redridge Canyons", [36, 39]),
             ("redridge", "Alther's Mill", [35, 37]),
+            ("redridge", "Render's Camp", [41, 44]),
+            ("redridge", "Render's Valley", [40, 43]),
+            ("redridge", "Stonewatch", [43, 46]),
             ("duskwood", "The Darkened Bank", [30, 32]),
             ("duskwood", "Darkshire and Beggar's Haunt", [31, 33]),
             ("duskwood", "Manor Mistmantle", [32, 35]),
@@ -419,6 +422,7 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
             ("duskwood", "Addle's Stead", [37, 40]),
             ("duskwood", "Vul'Gol Ogre Mound", [38, 41]),
             ("duskwood", "Raven Hill Cemetery", [38, 42]),
+            ("duskwood", "Brightwood Grove", [40, 43]),
         ];
         for (zone, text) in ZONES {
             let f = zone_file(zone).unwrap();
@@ -571,6 +575,38 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
     }
 
     #[test]
+    fn tharilzun_is_44_and_corporal_keeshan_keeps_25() {
+        for (entry, level) in [(486, 44), (349, 25)] {
+            let s: Vec<_> = mobs::content()
+                .spawn
+                .iter()
+                .filter(|s| s.map == EASTERN_KINGDOMS && s.entry == entry)
+                .collect();
+            assert_eq!(s.len(), 1, "{entry}");
+            assert_eq!((s[0].level_min, s[0].level_max), (level, level), "{entry}");
+        }
+    }
+
+    #[test]
+    fn a_shadowhide_brute_in_galardell_valley_away_from_the_tower_keeps_its_stretch() {
+        let p = [-9083.0, -3166.0, 0.0];
+        assert_eq!(range_in("redridge", p[0], p[1]), None);
+        assert_eq!(mobs::banded(432, EASTERN_KINGDOMS, p), None);
+        let (rows, from, to) = zone_rows("redridge", include_str!("../content/redridge.toml"));
+        let near: Vec<_> = rows
+            .iter()
+            .filter(|r| r[1] as u32 == 432)
+            .filter(|r| (r[4] as f32 - p[0]).hypot(r[5] as f32 - p[1]) <= 80.0)
+            .collect();
+        assert!(near.len() >= 2, "only {} brutes near {p:?}", near.len());
+        for [guid, _, lmin, lmax, _, _] in near {
+            let s = hostile_spawn(*guid as u32, 432).unwrap();
+            let want = [*lmin as u8, *lmax as u8].map(|l| stretch(l, from, to));
+            assert_eq!([s.level_min, s.level_max], want, "brute {guid}");
+        }
+    }
+
+    #[test]
     fn the_grey_robes_dig_in_raven_hill_cemetery_outside_the_deeps() {
         let f = zone_file("duskwood").unwrap();
         let cemetery = f
@@ -580,8 +616,9 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
             .unwrap();
         let deeps = crate::phased::dungeon(11).expect("Raven Hill Deeps");
         let mut count = 0;
+        // The Diggers and Lantern-bearers (#606), and the Surveyors (#611).
         for s in &mobs::content().spawn {
-            if ![96048, 96049].contains(&s.entry) {
+            if ![96048, 96049, 96050].contains(&s.entry) {
                 continue;
             }
             count += 1;
@@ -590,7 +627,7 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
             assert!(cemetery.boxes.iter().any(|r| holds(r, x, y)), "{}", s.guid);
             assert!(!deeps.holds(s.map, s.position), "{} in the Deeps", s.guid);
         }
-        assert_eq!(count, 12);
+        assert_eq!(count, 18);
     }
 
     #[test]
