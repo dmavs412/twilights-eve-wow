@@ -13,9 +13,19 @@ bounds = [
   [-9583.0, -2917.0, -9217.0, -2384.0],
   [-9583.0, -2383.0, -9450.0, -2084.0],
   [-9883.0, -2817.0, -9584.0, -2084.0],
+  [-9420.0, -3440.0, -9150.0, -3170.0],
+  [-9050.0, -2017.0, -8981.0, -1950.0],
+  [-8980.0, -2060.0, -8750.0, -1910.0],
+  [-9159.0, -2460.0, -9051.0, -1950.0],
+  [-9050.0, -2060.0, -8981.0, -2018.0],
+  [-9050.0, -2460.0, -8835.0, -2061.0],
+  [-9216.0, -2850.0, -9017.0, -2470.0],
 ]
 
-# No box reaches a Phased Dungeon footprint (Stonewatch Keep -9388,-3029; Ilgalar -9282,-3330).
+# No box reaches Stonewatch Keep's footprint (-9388,-3029). Ilgalar's Approach holds the Tower of
+# Ilgalar (-9282,-3330) but excludes none of it: zones.toml already removed every creature inside
+# the tower's footprint, and the one left in its flat box, a Shadowhide Warrior at the tower's foot
+# (-9261,-3283), takes the approach's band like the gnolls round it.
 exclude = []
 
 # Three Corners: Guard Parker -9610,-1902; Redridge Thrasher -9534,-1934; Tarantula -9702,-1915.
@@ -57,3 +67,49 @@ name = "Lakeridge Highway"
 level_min = 33
 level_max = 36
 boxes = [[-9883.0, -2817.0, -9584.0, -2084.0]]
+
+# Ilgalar's Approach: the tower's hill and the paths up it, so a level 35 character reaches
+# Ilgalar's door through gnolls of their level (Shadowhide Gnoll -9365..-9160, -3250..-3181;
+# Rabid Shadowhide Gnoll -9299..-9253, -3240..-3199; Shadowhide Darkweaver and Slayer on the hill
+# round -9280,-3310). Listed before any band that later covers Galardell Valley round it; Rohh the
+# Silent (-9010,-3209) and Lieutenant Fangore (-9112,-3311) stand outside the box.
+[[band]]
+name = "Ilgalar's Approach"
+level_min = 35
+level_max = 38
+boxes = [[-9420.0, -3440.0, -9150.0, -3170.0]]
+
+# Rethban Caverns: the cave mouth's chunks and the Drudgers' ground before it (Redridge Drudger
+# -8973..-8767, -2056..-1916; Ardo Dirtpaw -8827,-1941).
+[[band]]
+name = "Rethban Caverns"
+level_min = 38
+level_max = 40
+boxes = [
+  [-9050.0, -2017.0, -8981.0, -1950.0],
+  [-8980.0, -2060.0, -8750.0, -1910.0],
+]
+
+# Redridge Canyons: the gnoll canyons north of Lakeshire, less Rethban's boxes (Redridge Brute
+# -9153..-9030; Redridge Mystic -9119..-8893; Redridge Basher -9031..-8840; Redridge Alpha
+# -8914..-8883, -2175..-2129; Yowler -8885,-2171). The west box starts at x -9159, beside
+# Lakeshire's edge, to take the Brute at -9153,-2020. South of Rethban the box stops at x -8835,
+# so the Blackrock camp where Corporal Keeshan is held (Blackrock Champion, Summoner and Tracker,
+# -8829..-8657, -2472..-2132) stays whole outside it.
+[[band]]
+name = "Redridge Canyons"
+level_min = 36
+level_max = 39
+boxes = [
+  [-9159.0, -2460.0, -9051.0, -1950.0],
+  [-9050.0, -2060.0, -8981.0, -2018.0],
+  [-9050.0, -2460.0, -8835.0, -2061.0],
+]
+
+# Alther's Mill: its chunks east of Lake Everstill's box (Greater Tarantula -9202..-9102,
+# -2793..-2609; Chatter -9112,-2724), and north to y -2470 for Snarlflare (-9024,-2493).
+[[band]]
+name = "Alther's Mill"
+level_min = 35
+level_max = 37
+boxes = [[-9216.0, -2850.0, -9017.0, -2470.0]]

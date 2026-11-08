@@ -28,6 +28,110 @@ removed_guids = [
 # bible's 30-50 (docs/lore-bible.md, "Zone arcs and dungeons"); spec #466 decision 2.
 levels = { from = [18, 35], to = [30, 50] }
 
+# The Grey Robes' four dig camps in Raven Hill Cemetery (#606, spec #595 decision 14), each two
+# Diggers (96048) and a Lantern-bearer (96049) within 6 yd of its centre. All lie west of x -10430,
+# clear of Raven Hill Deeps' crypt; bands.rs tests that none stands in its footprint.
+
+# The west graves, centred on -10470, 250.
+[[zone.added]]
+guid = 961501
+entry = 96048
+level_min = 37
+level_max = 38
+position = [-10466.0, 252.0, 31.02]
+orientation = 3.61
+
+[[zone.added]]
+guid = 961502
+entry = 96048
+level_min = 37
+level_max = 38
+position = [-10474.0, 249.0, 30.56]
+orientation = 0.25
+
+[[zone.added]]
+guid = 961503
+entry = 96049
+level_min = 38
+level_max = 38
+position = [-10470.0, 246.0, 30.47]
+orientation = 1.57
+
+# The north wall, centred on -10500, 320.
+[[zone.added]]
+guid = 961504
+entry = 96048
+level_min = 37
+level_max = 38
+position = [-10496.0, 322.0, 30.21]
+orientation = 3.61
+
+[[zone.added]]
+guid = 961505
+entry = 96048
+level_min = 37
+level_max = 38
+position = [-10503.0, 324.0, 29.85]
+orientation = 5.36
+
+[[zone.added]]
+guid = 961506
+entry = 96049
+level_min = 38
+level_max = 38
+position = [-10500.0, 316.0, 30.42]
+orientation = 1.57
+
+# The old plots, centred on -10540, 280.
+[[zone.added]]
+guid = 961507
+entry = 96048
+level_min = 37
+level_max = 38
+position = [-10536.0, 282.0, 30.03]
+orientation = 3.61
+
+[[zone.added]]
+guid = 961508
+entry = 96048
+level_min = 37
+level_max = 38
+position = [-10543.0, 284.0, 28.98]
+orientation = 5.36
+
+[[zone.added]]
+guid = 961509
+entry = 96049
+level_min = 38
+level_max = 38
+position = [-10540.0, 276.0, 29.38]
+orientation = 1.57
+
+# The south gate, centred on -10460, 190.
+[[zone.added]]
+guid = 961510
+entry = 96048
+level_min = 37
+level_max = 38
+position = [-10456.0, 192.0, 32.67]
+orientation = 3.61
+
+[[zone.added]]
+guid = 961511
+entry = 96048
+level_min = 37
+level_max = 38
+position = [-10463.0, 194.0, 32.55]
+orientation = 5.36
+
+[[zone.added]]
+guid = 961512
+entry = 96049
+level_min = 38
+level_max = 38
+position = [-10460.0, 186.0, 32.23]
+orientation = 1.57
+
 [[zone]]
 file = "redridge"
 # Black Dragon Whelp (441): 35 spawns on Lake Everstill's shore, removed (#595 decision 8); the

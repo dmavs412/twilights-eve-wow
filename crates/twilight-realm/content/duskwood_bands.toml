@@ -15,11 +15,20 @@ bounds = [
   [-10600.0, -1530.0, -10418.0, -1351.0],
   [-10416.0, -1417.0, -10217.0, -1183.0],
   [-11150.0, -1417.0, -10850.0, -1217.0],
+  [-10790.0, -650.0, -10261.0, 100.0],
+  [-10783.0, 183.0, -10617.0, 450.0],
+  [-10817.0, 484.0, -10283.0, 750.0],
+  [-11183.0, -750.0, -10950.0, -417.0],
+  [-11183.0, 17.0, -10817.0, 483.0],
+  [-11240.0, -317.0, -10917.0, 16.0],
+  [-10583.0, 101.0, -10250.0, 483.0],
 ]
 
 # The two Phased Dungeon footprints the boxes reach: Mistmantle Manor (mistmantle_manor.toml's
 # footprint turned by its yaw of 90.5 about -10368.6,-1255.5) and Forest's Edge (forest_edge.toml,
-# x -10080..-9910, y 530..680), which the Darkened Bank box reaches at its western end.
+# x -10080..-9910, y 530..680), which the Darkened Bank box reaches at its western end. Raven Hill
+# Deeps lies under Raven Hill Cemetery's box and is not excluded: its footprint is the crypt below
+# the graves, and zones.toml already removed every creature inside it.
 exclude = [
   [-10378.0, -1263.0, -10361.0, -1248.0],
   [-10080.0, 530.0, -9910.0, 680.0],
@@ -68,3 +77,63 @@ name = "Tranquil Gardens Cemetery"
 level_min = 33
 level_max = 36
 boxes = [[-11150.0, -1417.0, -10850.0, -1217.0]]
+
+# The Twilight Grove: its chunks (x -10650..-10250, y -650..-250) hold no hostile spawn, so the box
+# runs west over the Black Widow Hatchlings round the grove (-10788..-10299, -174..93) to y 100,
+# where Raven Hill Cemetery's box begins, and stops at x -10261, short of the Darkened Bank's
+# second box.
+[[band]]
+name = "Twilight Grove"
+level_min = 35
+level_max = 38
+boxes = [[-10790.0, -650.0, -10261.0, 100.0]]
+
+# Raven Hill (Jitters -10732,337; Bliztik -10695,346) and the Hushed Bank north of the cemetery
+# (Sven Yorgen -10330,623; Pygmy Venom Web Spider -10811..-10452, 509..620; Venom Web Spider and
+# Green Recluse -10715..-10400; Rabid Dire Wolf -10814..-10298). The bank starts at y 484, past
+# the cemetery's box.
+[[band]]
+name = "Raven Hill and the Hushed Bank"
+level_min = 36
+level_max = 38
+boxes = [
+  [-10783.0, 183.0, -10617.0, 450.0],
+  [-10817.0, 484.0, -10283.0, 750.0],
+]
+
+# The Yorgen Farmstead (Defias Night Runner, Night Blade and Enchanter -11112..-10980, -689..-458;
+# Young Black Ravager -11088..-10961).
+[[band]]
+name = "The Yorgen Farmstead"
+level_min = 36
+level_max = 39
+boxes = [[-11183.0, -750.0, -10950.0, -417.0]]
+
+# Addle's Stead (Defias Night Blade -11046..-10991, 184..298; Defias Enchanter -11037..-11012;
+# Defias Night Runner -10989..-10875; Young Black Ravager -11126..-10848, 65..354).
+[[band]]
+name = "Addle's Stead"
+level_min = 37
+level_max = 40
+boxes = [[-11183.0, 17.0, -10817.0, 483.0]]
+
+# Vul'Gol Ogre Mound (Splinter Fist Ogre, Warrior, Fire Weaver and Taskmaster -11157..-10944,
+# -259..-37). The box runs west to x -11240 past the chunks' -11150 for the mound's back, where
+# the Firemongers, Enslavers and Zzarc' Vul stand (-11234..-11171, -196..-113); it stops at y 16,
+# short of Addle's Stead.
+[[band]]
+name = "Vul'Gol Ogre Mound"
+level_min = 38
+level_max = 41
+boxes = [[-11240.0, -317.0, -10917.0, 16.0]]
+
+# Raven Hill Cemetery over Forlorn Rowe (Flesh Eater -10423..-10311, 136..256; Bone Chewer; Brain
+# Eater -10366..-10251, 108..372; Plague Spreader; Skeletal Healer, Raider and Warder; Skeletal
+# Fiend -10570..-10476; Carrion Recluse; Morbent Fel -10318,377; Mor'Ladim -10389,383). It starts at
+# y 101, past the Twilight Grove's box and the Darkened Bank's second box. level_overrides.toml
+# holds Mor'Ladim at 48 and Morbent Fel at 40.
+[[band]]
+name = "Raven Hill Cemetery"
+level_min = 38
+level_max = 42
+boxes = [[-10583.0, 101.0, -10250.0, 483.0]]

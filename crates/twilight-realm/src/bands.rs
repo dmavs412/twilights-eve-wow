@@ -378,7 +378,8 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
             .into_iter()
             .find(|r| {
                 let e = r[1] as u32;
-                !mobs::is_vanilla(e) && mobs::template(e).is_some_and(|t| t.hostile)
+                let outside = range_in("redridge", r[4] as f32, r[5] as f32).is_none();
+                outside && !mobs::is_vanilla(e) && mobs::template(e).is_some_and(|t| t.hostile)
             })
             .unwrap();
         let (entry, x, y) = (entry as u32, x as f32, y as f32);
@@ -404,10 +405,20 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
             ("redridge", "Lakeshire", [31, 33]),
             ("redridge", "Lake Everstill", [32, 35]),
             ("redridge", "Lakeridge Highway", [33, 36]),
+            ("redridge", "Ilgalar's Approach", [35, 38]),
+            ("redridge", "Rethban Caverns", [38, 40]),
+            ("redridge", "Redridge Canyons", [36, 39]),
+            ("redridge", "Alther's Mill", [35, 37]),
             ("duskwood", "The Darkened Bank", [30, 32]),
             ("duskwood", "Darkshire and Beggar's Haunt", [31, 33]),
             ("duskwood", "Manor Mistmantle", [32, 35]),
             ("duskwood", "Tranquil Gardens Cemetery", [33, 36]),
+            ("duskwood", "Twilight Grove", [35, 38]),
+            ("duskwood", "Raven Hill and the Hushed Bank", [36, 38]),
+            ("duskwood", "The Yorgen Farmstead", [36, 39]),
+            ("duskwood", "Addle's Stead", [37, 40]),
+            ("duskwood", "Vul'Gol Ogre Mound", [38, 41]),
+            ("duskwood", "Raven Hill Cemetery", [38, 42]),
         ];
         for (zone, text) in ZONES {
             let f = zone_file(zone).unwrap();
@@ -427,6 +438,10 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
                     let Some(s) = hostile_spawn(*guid as u32, *entry as u32) else {
                         continue;
                     };
+                    // A level_overrides.toml area beats the band (Mor'Ladim, Morbent Fel).
+                    if mobs::level_area(EASTERN_KINGDOMS, x, y) != Some(band.name.as_str()) {
+                        continue;
+                    }
                     let levels = s.level_min..=s.level_max;
                     assert!(
                         (lo..=hi).contains(levels.start()) && (lo..=hi).contains(levels.end()),
@@ -490,20 +505,92 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
     }
 
     #[test]
-    fn a_shadowhide_gnoll_far_east_keeps_its_stretch() {
+    fn no_two_bands_of_a_zone_share_a_point() {
+        let overlap =
+            |a: &Rect, b: &Rect| a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3];
+        // Elwynn's bands overlap on purpose, the band listed first winning.
+        for (zone, _) in ZONES {
+            let f = zone_file(zone).unwrap();
+            for (i, a) in f.band.iter().enumerate() {
+                for b in &f.band[i + 1..] {
+                    for ra in &a.boxes {
+                        for rb in &b.boxes {
+                            assert!(!overlap(ra, rb), "{zone}: {} and {}", a.name, b.name);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Ilgalar's door, the Tower of Ilgalar's portal (ilgalar.toml).
+    const ILGALAR_DOOR: [f32; 2] = [-9282.0, -3328.0];
+
+    #[test]
+    fn a_shadowhide_gnoll_near_ilgalars_door_takes_the_approach() {
+        // No generated Shadowhide Gnoll stands within 60 yd of the door, so a runtime one does,
+        // on a ring round it; and the generated ones nearest the door, all within 120 yd.
+        let [dx, dy] = ILGALAR_DOOR;
+        for k in 0..16 {
+            let a = k as f32 * std::f32::consts::TAU / 16.0;
+            for r in [10.0, 30.0, 60.0] {
+                let p = [dx + r * a.cos(), dy + r * a.sin(), 0.0];
+                let [lo, hi] = mobs::banded(433, EASTERN_KINGDOMS, p).unwrap();
+                assert!(lo >= 35 && hi <= 38, "at {p:?}: {lo}-{hi}");
+            }
+        }
+        let near = spawns_of(433, [dx - 120.0, dy - 120.0, dx + 120.0, dy + 120.0]);
+        let near: Vec<_> = near
+            .into_iter()
+            .filter(|s| (s.position[0] - dx).hypot(s.position[1] - dy) <= 120.0)
+            .collect();
+        assert!(near.len() >= 5, "only {} gnolls near the door", near.len());
+        for s in near {
+            assert!(s.level_min >= 35 && s.level_max <= 38, "gnoll {}", s.guid);
+        }
+    }
+
+    #[test]
+    fn rohh_the_silent_in_galardell_valley_keeps_his_stretch() {
         let (rows, from, to) = zone_rows("redridge", include_str!("../content/redridge.toml"));
-        let near = |r: &[f64; 6]| (r[4] + 9293.0).powi(2) + (r[5] + 3178.0).powi(2);
-        let row = rows
-            .iter()
-            .filter(|r| r[1] as u32 == 433)
-            .min_by(|a, b| near(a).total_cmp(&near(b)))
-            .unwrap();
-        let [guid, _, lmin, lmax, x, y] = *row;
-        assert!(near(row) < 100.0 * 100.0);
+        let [guid, _, lmin, lmax, x, y] = *rows.iter().find(|r| r[1] as u32 == 947).unwrap();
+        assert!((x + 9010.0).abs() < 5.0 && (y + 3209.0).abs() < 5.0);
         assert_eq!(range_in("redridge", x as f32, y as f32), None);
-        let s = hostile_spawn(guid as u32, 433).unwrap();
+        let s = hostile_spawn(guid as u32, 947).unwrap();
         let want = [lmin as u8, lmax as u8].map(|l| stretch(l, from, to));
         assert_eq!([s.level_min, s.level_max], want);
+    }
+
+    #[test]
+    fn morladim_is_48_and_morbent_fel_40() {
+        for (entry, level) in [(522, 48), (1200, 40)] {
+            let s = spawns_of(entry, [-10583.0, 101.0, -10250.0, 483.0]);
+            assert_eq!(s.len(), 1, "{entry}");
+            assert_eq!((s[0].level_min, s[0].level_max), (level, level), "{entry}");
+        }
+    }
+
+    #[test]
+    fn the_grey_robes_dig_in_raven_hill_cemetery_outside_the_deeps() {
+        let f = zone_file("duskwood").unwrap();
+        let cemetery = f
+            .band
+            .iter()
+            .find(|b| b.name == "Raven Hill Cemetery")
+            .unwrap();
+        let deeps = crate::phased::dungeon(11).expect("Raven Hill Deeps");
+        let mut count = 0;
+        for s in &mobs::content().spawn {
+            if ![96048, 96049].contains(&s.entry) {
+                continue;
+            }
+            count += 1;
+            let [x, y, _] = s.position;
+            assert_eq!(s.map, EASTERN_KINGDOMS);
+            assert!(cemetery.boxes.iter().any(|r| holds(r, x, y)), "{}", s.guid);
+            assert!(!deeps.holds(s.map, s.position), "{} in the Deeps", s.guid);
+        }
+        assert_eq!(count, 12);
     }
 
     #[test]

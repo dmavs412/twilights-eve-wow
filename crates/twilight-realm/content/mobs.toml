@@ -2467,6 +2467,49 @@ speed_run = 1.143
 detection_range = 18.0
 friendly = true
 
+# The Grey Robes (#606, spec #595 decision 14): men in grey robes with a crowned mark, digging at
+# Raven Hill Cemetery at night; nobody names their master. A Twilight Cultist's form (96024) with a
+# robed body of their own so players can tell them from the Twilight's Hammer. Display 2492 is
+# vmangos's Scarlet Abbot, a placeholder docs/art-assets.md lists. Their camps are in zones.toml.
+# The Digger fights with his shovel.
+[[template]]
+entry = 96048
+name = "Grey Robe Digger"
+creature_type = 7
+rank = 0
+display_id = 2492
+faction_template = 14
+unit_class = "warrior"
+level_min = 37
+level_max = 38
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The Lantern-bearer who keeps watch over each dig (#606): a caster.
+[[template]]
+entry = 96049
+name = "Grey Robe Lantern-bearer"
+creature_type = 7
+rank = 0
+display_id = 2492
+faction_template = 14
+unit_class = "mage"
+level_min = 38
+level_max = 38
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["shadow_bolt_creature"]
+
 # The Writs' named creatures, made elite. Each row shadows its generated one (elwynn.toml,
 # redridge.toml, duskwood.toml), as Garrick Padfoot's does: a copy with only `rank` changed. A rare
 # (4) becomes a rare elite (2), and Dead-Tooth Jack, a normal creature, an elite (1). Tharil'zun,

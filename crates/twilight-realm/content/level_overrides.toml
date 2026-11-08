@@ -74,3 +74,25 @@ creature = [
   { entry = 61, levels = [20, 24] },   # Thuros Lightfingers, spawn 83187
   { entry = 6093, levels = [20, 24] }, # Dead-Tooth Jack, spawn 81411
 ]
+
+# Raven Hill Cemetery's two named undead (#606), over its 38-42 band: Mor'Ladim for his quest
+# 98903, and Morbent Fel for his quest 98706. Each box is centred on the spawn.
+[[area]]
+name = "Mor'Ladim's walk"
+band = [48, 48]
+map = 0
+x = [-10409.0, -10369.0]
+y = [363.1, 403.1]
+creature = [
+  { entry = 522, levels = [48, 48] },  # Mor'Ladim, spawn at -10389.0, 383.1
+]
+
+[[area]]
+name = "Morbent Fel's house"
+band = [40, 40]
+map = 0
+x = [-10327.9, -10307.9]
+y = [367.0, 387.0]
+creature = [
+  { entry = 1200, levels = [40, 40] }, # Morbent Fel, spawn at -10317.9, 377.0
+]

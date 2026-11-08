@@ -2180,10 +2180,11 @@ mod tests {
     #[test]
     fn duskwood_and_redridge_stretch_onto_30_to_50() {
         let want = [
-            (5086, (50, 50)),  // Mor'Ladim, Duskwood
-            (4183, (50, 50)),  // Bliztik, Duskwood, neutral
+            (5086, (48, 48)),  // Mor'Ladim, Duskwood, held by level_overrides.toml
+            (4183, (36, 38)),  // Bliztik, Duskwood, neutral, in the Raven Hill band
             (8747, (33, 36)),  // Redridge Thrasher, in the Lakeridge Highway band
-            (6214, (45, 47)),  // Shadowhide Warrior
+            (7525, (45, 47)),  // Shadowhide Warrior, Galardell Valley
+            (6214, (35, 38)),  // Shadowhide Warrior, in the Ilgalar's Approach band
             (10128, (33, 35)), // Great Goretusk, neutral
             (6140, (31, 33)),  // Narnie, neutral beast, in the Lakeshire band
             (4061, (40, 40)),  // Role Dreuger, Duskwood, friendly
