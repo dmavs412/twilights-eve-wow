@@ -39,7 +39,12 @@ function Test-ClientLockHeld($h) {
     if (-not $h) { return $false }
     $age = [DateTimeOffset]::UtcNow - [DateTimeOffset]::Parse($h.started)
     if ($age.TotalHours -ge $ClientLockStaleHours) { return $false }
-    if ($h.pid -and $h.pid -gt 0 -and -not (Get-Process -Id $h.pid -ErrorAction SilentlyContinue)) { return $false }
+    if ($h.pid -and $h.pid -gt 0) {
+        # A pid outlives a reboot as some other program, so the holder counts only while that pid
+        # is still a PowerShell that started before the lock was taken.
+        $p = Get-Process -Id $h.pid -ErrorAction SilentlyContinue
+        if (-not $p -or $p.ProcessName -notmatch 'powershell|pwsh' -or $p.StartTime.ToUniversalTime() -gt [DateTimeOffset]::Parse($h.started).UtcDateTime) { return $false }
+    }
     if ($h.background) {
         $procs = @(Get-CimInstance Win32_Process -Filter "Name='cargo.exe'" -ErrorAction SilentlyContinue |
             Where-Object { $_.CommandLine -match 'benilla|twilights-eve\b|--workspace' -or $_.CommandLine -notmatch '\s-p\s' })

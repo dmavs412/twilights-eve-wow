@@ -56,7 +56,10 @@ $fleetLock = Join-Path $env:LOCALAPPDATA 'twilights-eve\fleet.lock'
 New-Item -ItemType Directory -Force (Split-Path $fleetLock) | Out-Null
 if (Test-Path $fleetLock) {
     $other = [int](Get-Content $fleetLock -Raw)
-    if ($other -ne $PID -and (Get-Process -Id $other -ErrorAction SilentlyContinue)) { throw "another overnight.ps1 runs (pid $other)" }
+    # After a reboot Windows hands old pids to other programs, so the pid must still be an
+    # overnight.ps1, not merely alive.
+    $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$other" -ErrorAction SilentlyContinue
+    if ($other -ne $PID -and $proc -and $proc.CommandLine -match 'overnight\.ps1') { throw "another overnight.ps1 runs (pid $other)" }
 }
 "$PID" | Set-Content $fleetLock -Encoding ascii
 
