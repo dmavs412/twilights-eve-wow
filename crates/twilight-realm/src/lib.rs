@@ -114,7 +114,7 @@ pub use content::{CROSSROADS, KALIMDOR, THE_BARRENS};
 pub use dev::DevMultipliers;
 pub use ground::SETTLE_WINDOW_SECS;
 pub use objects::{ObjectKind, ObjectSpec, CHEST_DISPLAY};
-pub use phased::{test_grounds_start, GameObjectUse, UseKind};
+pub use phased::{sources as phased_dungeon_sources, test_grounds_start, GameObjectUse, UseKind};
 pub use save::{SaveError, Storage, SAVE_VERSION};
 pub use world::closed::{
     audit_rows, closed_at, closed_for_good, placed, AuditKind, AuditRow, Placed,

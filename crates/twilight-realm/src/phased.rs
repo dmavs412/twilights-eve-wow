@@ -1124,70 +1124,83 @@ pub(crate) fn zone(phase: Phase) -> Option<u32> {
     }
 }
 
+/// Every Phased Dungeon's content file: (file name, text). A file may also hold `[[template]]`
+/// rows, which `mobs::content` reads; [`Dungeon`] ignores them.
+pub fn sources() -> &'static [(&'static str, &'static str)] {
+    macro_rules! file {
+        ($name:literal) => {
+            ($name, include_str!(concat!("../content/", $name)))
+        };
+    }
+    &[
+        file!("northshire_abbey.toml"),
+        file!("test_grounds.toml"),
+        file!("forest_edge.toml"),
+        file!("sealed_yard.toml"),
+        file!("gaze_hall.toml"),
+        file!("jasperlode.toml"),
+        file!("ward_test.toml"),
+        file!("azora.toml"),
+        file!("ilgalar.toml"),
+        file!("stonewatch_keep.toml"),
+        file!("mistmantle_manor.toml"),
+        file!("raven_hill_deeps.toml"),
+        file!("cathedral_of_light.toml"),
+        file!("stormwind_keep.toml"),
+        file!("blackrock_stronghold.toml"),
+        file!("dreadmaul_rock.toml"),
+        file!("stockade_riot.toml"),
+        file!("stockade_quiet_wing.toml"),
+        file!("deeprun_tram.toml"),
+    ]
+}
+
 /// Every Phased Dungeon: one content file each.
 pub(crate) fn content() -> &'static [Dungeon] {
     static DUNGEONS: OnceLock<Vec<Dungeon>> = OnceLock::new();
     DUNGEONS.get_or_init(|| {
-        [
-            include_str!("../content/northshire_abbey.toml"),
-            include_str!("../content/test_grounds.toml"),
-            include_str!("../content/forest_edge.toml"),
-            include_str!("../content/sealed_yard.toml"),
-            include_str!("../content/gaze_hall.toml"),
-            include_str!("../content/jasperlode.toml"),
-            include_str!("../content/ward_test.toml"),
-            include_str!("../content/azora.toml"),
-            include_str!("../content/ilgalar.toml"),
-            include_str!("../content/stonewatch_keep.toml"),
-            include_str!("../content/mistmantle_manor.toml"),
-            include_str!("../content/raven_hill_deeps.toml"),
-            include_str!("../content/cathedral_of_light.toml"),
-            include_str!("../content/stormwind_keep.toml"),
-            include_str!("../content/blackrock_stronghold.toml"),
-            include_str!("../content/dreadmaul_rock.toml"),
-            include_str!("../content/stockade_riot.toml"),
-            include_str!("../content/stockade_quiet_wing.toml"),
-            include_str!("../content/deeprun_tram.toml"),
-        ]
-        .into_iter()
-        .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
-        .inspect(|d: &Dungeon| {
-            // A dungeon stands on Eastern Kingdoms, walked into, or on an instance map, whose
-            // own doors worldport a character in and out (ADR 0032).
-            assert!(
-                d.map == crate::content::EASTERN_KINGDOMS
-                    || crate::instance_map::of_map(d.map).is_some(),
-                "{}: map {} is not Eastern Kingdoms and no instance map",
-                d.name,
-                d.map
-            );
-            for c in &d.creature {
-                for roll in &c.rolls {
-                    roll.check(&format!("creature {}", c.guid));
+        sources()
+            .iter()
+            .map(|(name, file)| {
+                toml::from_str(file).unwrap_or_else(|e| panic!("content/{name} parses: {e}"))
+            })
+            .inspect(|d: &Dungeon| {
+                // A dungeon stands on Eastern Kingdoms, walked into, or on an instance map, whose
+                // own doors worldport a character in and out (ADR 0032).
+                assert!(
+                    d.map == crate::content::EASTERN_KINGDOMS
+                        || crate::instance_map::of_map(d.map).is_some(),
+                    "{}: map {} is not Eastern Kingdoms and no instance map",
+                    d.name,
+                    d.map
+                );
+                for c in &d.creature {
+                    for roll in &c.rolls {
+                        roll.check(&format!("creature {}", c.guid));
+                    }
                 }
-            }
-            if let Some(key) = &d.key {
-                let has = |guid: u32| d.creature.iter().any(|c| c.guid == guid);
-                assert!(has(key.hint_npc), "{}: key hint_npc is no creature", d.name);
-                assert!(!key.holders.is_empty(), "{}: a key with no holders", d.name);
-                for h in &key.holders {
-                    assert!(
-                        has(h.guid),
-                        "{}: key holder {} is no creature",
-                        d.name,
-                        h.guid
-                    );
+                if let Some(key) = &d.key {
+                    let has = |guid: u32| d.creature.iter().any(|c| c.guid == guid);
+                    assert!(has(key.hint_npc), "{}: key hint_npc is no creature", d.name);
+                    assert!(!key.holders.is_empty(), "{}: a key with no holders", d.name);
+                    for h in &key.holders {
+                        assert!(
+                            has(h.guid),
+                            "{}: key holder {} is no creature",
+                            d.name,
+                            h.guid
+                        );
+                    }
+                    for door in &d.locked_door {
+                        assert_eq!(door.opens_with, key.item, "{}: door {}", d.name, door.guid);
+                    }
                 }
-                for door in &d.locked_door {
-                    assert_eq!(door.opens_with, key.item, "{}: door {}", d.name, door.guid);
+                d.check_levers();
+                if let Some(tram) = &d.tram {
+                    tram.check(&d.name);
                 }
-            }
-            d.check_levers();
-            if let Some(tram) = &d.tram {
-                tram.check(&d.name);
-            }
-        })
-        .collect()
+            })
+            .collect()
     })
 }
 
@@ -1969,20 +1982,38 @@ mod lore_bible_dungeons {
     /// Stormwind Keep, whose Prestor and Anduin stand beside its Phase Tester (#559).
     const STORMWIND_KEEP: u32 = 13;
 
+    /// The Phase Tester, the one creature of a shell.
+    const PHASE_TESTER: u32 = 97100;
+
+    /// Why `d` is neither a shell (every creature friendly, one of them, three in Stormwind Keep)
+    /// nor a filled dungeon (no Phase Tester, a Boss Bar creature, every creature inside its
+    /// footprint); `None` when it is one of them.
+    fn not_shell_or_filled(d: &Dungeon) -> Option<String> {
+        if let Some(c) = d.creature.iter().find(|c| !d.holds(d.map, c.position)) {
+            return Some(format!("{}: creature {} stands outside", d.name, c.guid));
+        }
+        let template = |c: &Creature| crate::mobs::template(c.entry);
+        let want = if d.id == STORMWIND_KEEP { 3 } else { 1 };
+        let friendly = |c: &Creature| template(c).is_some_and(|t| t.friendly);
+        if d.creature.len() == want && d.creature.iter().all(friendly) {
+            return None;
+        }
+        if let Some(c) = d.creature.iter().find(|c| c.entry == PHASE_TESTER) {
+            return Some(format!(
+                "{}: a Phase Tester ({}) beside creatures a shell has not",
+                d.name, c.guid
+            ));
+        }
+        let boss = |c: &Creature| template(c).is_some_and(|t| t.boss);
+        (!d.creature.iter().any(boss)).then(|| format!("{}: no Boss Bar creature", d.name))
+    }
+
     #[test]
-    fn each_holds_only_friendly_creatures_and_its_portal_stands_at_the_door() {
+    fn each_is_a_shell_or_filled_and_its_portal_stands_at_the_door() {
         for id in IDS {
             let d = dungeon(id).expect("a dungeon");
-            let want = if id == STORMWIND_KEEP { 3 } else { 1 };
-            assert_eq!(d.creature.len(), want, "{}", d.name);
-            for c in &d.creature {
-                assert!(crate::mobs::template(c.entry).is_some_and(|t| t.friendly));
-                assert!(
-                    d.holds(d.map, c.position),
-                    "{}: creature {} stands outside",
-                    d.name,
-                    c.guid
-                );
+            if let Some(why) = not_shell_or_filled(d) {
+                panic!("{why}");
             }
             // A dungeon makes a mark when it has levels and stands on no instance map, whose
             // own mark stands at its door (ADR 0032).
@@ -1997,6 +2028,41 @@ mod lore_bible_dungeons {
                 .any(|[x, y]| flat_distance(d.portal.position, [x, y, 0.0]) <= 5.0);
             assert!(near, "{}: its portal is off the footprint", d.name);
         }
+    }
+
+    /// Mistmantle Manor's shell with a creature of `entry` beside its Phase Tester, or in its
+    /// place when `tester` is false.
+    fn mistmantle_with(entry: u32, tester: bool) -> Dungeon {
+        let text = include_str!("../content/mistmantle_manor.toml");
+        let text = if tester {
+            text.to_string()
+        } else {
+            text.replacen("entry = 97100", "entry = 3122", 1)
+        };
+        let row = format!(
+            "\n[[creature]]\nguid = 971004\nentry = {entry}\nlevel = 32\n\
+             position = [-10370.6, -1254.0, 35.91]\norientation = 3.15\n"
+        );
+        toml::from_str(&(text + &row)).unwrap()
+    }
+
+    #[test]
+    fn a_phase_tester_beside_a_hostile_creature_is_neither() {
+        // Bloodtalon Taillasher: hostile, no Boss Bar.
+        let why = not_shell_or_filled(&mistmantle_with(3122, true));
+        assert!(why.is_some_and(|w| w.contains("Phase Tester")));
+    }
+
+    #[test]
+    fn a_filled_dungeon_with_no_boss_bar_creature_is_neither() {
+        let why = not_shell_or_filled(&mistmantle_with(3122, false));
+        assert!(why.is_some_and(|w| w.contains("no Boss Bar creature")));
+    }
+
+    #[test]
+    fn a_filled_dungeon_with_a_boss_bar_creature_passes() {
+        // Bloodtalon Scythemaw has the Boss Bar.
+        assert_eq!(not_shell_or_filled(&mistmantle_with(3123, false)), None);
     }
 
     /// Raven Hill Deeps and Stonewatch Keep take the lore bible's bands, Raven Hill 40-44 and

@@ -1,6 +1,8 @@
 # The hand-written mobs: creature templates (vmangos `creature_template`) and where they stand.
 # The Barrens' own spawns and templates, and the low camps' spawns, are generated into
 # barrens.toml; the low camps borrow Mulgore's and Durotar's creatures, whose templates are here.
+# A Phased Dungeon's own creatures may live in its file instead, as `[[template]]` rows in this
+# schema with entries from the block its spec gave it. Such an entry defined twice fails to load.
 #
 # A template's `hostile` (default true) says whether it attacks a player who comes too close; a
 # neutral creature only fights back. `rank` (default 0) is `CreatureEliteType`.

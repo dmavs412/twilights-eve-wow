@@ -1059,3 +1059,85 @@ cooldown_ms = 0
 range_max = 0.0
 chance = 0
 effect = { kind = "marker" }
+
+# ── Mistmantle Manor (#637): spell ids 1900060 to 1900069 ─────────────────────────────────────
+# A dungeon's rows go here, after this section's first row and before the next section's header.
+
+# Stalvan Mistmantle's gaze (04). Baleful Gaze's look (visual 686). Placeholders: 900 fire damage
+# to every character within 30 yd not behind a [[cover]] pillar of the dungeon file, after a 2 s
+# warning cast, every 20 s.
+[[spell]]
+key = "candles_flare_stalvan"
+spell_id = 1900060
+name = "The Candles Flare"
+icon = 'Interface\Icons\Spell_Fire_Fire'
+visual = 686
+school = "fire"
+cast_time_ms = 2000
+cooldown_ms = 20000
+first_cast_ms = 8000
+range_max = 30.0
+chance = 100
+warning = "The candles flare! Get behind something solid!"
+effect = { kind = "gaze", damage = 900, radius = 30.0 }
+
+# ── The Tower of Ilgalar (#637): spell ids 1900070 to 1900079 ────────────────────────────────
+# A dungeon's rows go here, after this section's first row and before the next section's header.
+
+# Morganth's Tuning Pulse (06). Dark Glare's look (visual 8092). Placeholders: 1000 shadow damage
+# to every character within 40 yd not behind one of the Anchor's pylons, after a 2.5 s warning
+# cast, every 25 s.
+[[spell]]
+key = "tuning_pulse_morganth"
+spell_id = 1900070
+name = "Tuning Pulse"
+icon = 'Interface\Icons\Spell_Shadow_UnholyFrenzy'
+visual = 8092
+school = "shadow"
+cast_time_ms = 2500
+cooldown_ms = 25000
+first_cast_ms = 10000
+range_max = 40.0
+chance = 100
+warning = "The hum rises to a scream. Get behind a pylon!"
+effect = { kind = "gaze", damage = 1000, radius = 40.0 }
+
+# ── Raven Hill Deeps (#637): spell ids 1900080 to 1900089 ─────────────────────────────────────
+# A dungeon's rows go here, after this section's first row and before the next section's header.
+
+# The Grey Deacon's gaze from the shadow overhead (08). Dark Glare's look (visual 8092). No player
+# text names what casts the shadow. Placeholders: 1300 shadow damage to every character within
+# 40 yd not behind a rubble heap, after a 3 s warning cast, every 30 s.
+[[spell]]
+key = "crowned_shadow_deacon"
+spell_id = 1900080
+name = "Crowned Shadow"
+icon = 'Interface\Icons\Spell_Shadow_UnholyFrenzy'
+visual = 8092
+school = "shadow"
+cast_time_ms = 3000
+cooldown_ms = 30000
+first_cast_ms = 12000
+range_max = 40.0
+chance = 100
+warning = "A vast shadow crosses the shaft above. Get behind the rubble!"
+effect = { kind = "gaze", damage = 1300, radius = 40.0 }
+
+# ── Stonewatch Keep (#637): spell ids 1900090 to 1900099 ──────────────────────────────────────
+# A dungeon's rows go here, after this section's first row and before the next section's header.
+
+# Flame Breath, the Dragonspawn Envoy's and Singe's (10). Flame Patch's look (visual 2120).
+# Placeholders: a 5 yd fire patch at a random character for 10 s, 13 a second.
+[[spell]]
+key = "flame_breath_dragonkin"
+spell_id = 1900090
+name = "Flame Breath"
+icon = 'Interface\Icons\Spell_Fire_Fire'
+visual = 2120
+school = "fire"
+cast_time_ms = 1500
+cooldown_ms = 15000
+range_max = 30.0
+chance = 100
+target = "random"
+effect = { kind = "ground_patch", radius = 5.0, duration_ms = 10000, tick_ms = 1000, tick = { base = 13 } }

@@ -196,7 +196,20 @@ pub(crate) fn charge_dest(from: [f32; 3], to: [f32; 3], stop: f32) -> [f32; 3] {
 
 #[cfg(test)]
 mod tests {
-    use super::{all, charge_dest, healed};
+    use super::{all, charge_dest, get, healed};
+
+    #[test]
+    fn each_30_50_dungeon_section_starts_with_its_first_row() {
+        // #637: one row opens each dungeon's block of ids.
+        for (key, id) in [
+            ("candles_flare_stalvan", 1900060),
+            ("tuning_pulse_morganth", 1900070),
+            ("crowned_shadow_deacon", 1900080),
+            ("flame_breath_dragonkin", 1900090),
+        ] {
+            assert_eq!(get(key).map(|s| s.spell_id), Some(id), "{key}");
+        }
+    }
 
     #[test]
     fn a_charge_ends_short_of_its_target_and_never_backs_away() {

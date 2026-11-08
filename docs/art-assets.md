@@ -304,6 +304,22 @@ Twilight Listeners, the Hushed, the Hush, the turnkey and the four witnesses), t
 portcullises, the sealed door and the drain grate are stock displays and need no art. The jail
 is vanilla's map 34.
 
+## The 30-50 dungeons (#637)
+
+Stock stand-ins for Mistmantle Manor, the Tower of Ilgalar, Raven Hill Deeps and Stonewatch Keep.
+All are placeholders and none needs new art. "Where" names the spec's ticket.
+
+| Asset | Where | Stand-in |
+|---|---|---|
+| Humming ore in Mistmantle's floor | 04 | GameObject display 2370 (`CaveMineCrystalFormation04`) |
+| The Anchor's pylons | 06 | display 3080 (`UngoroCrystalPylon01`) |
+| Dark Iron Tribute crates | 06, 10 | displays 1868 and 1869 (`DarkIronCrate01`, `02`) |
+| Feed valves | 06 | display 755 (`DeadMineValve`) |
+| Rubble heaps, the dropped side tunnel | 08 | display 2230 (`G_CaveIn`) |
+| Brood cage and its lever | 10 | displays 676 (`G_Cage`) and 295 (`G_LeverMetal`) |
+| Singe's Scale icon | 11 | a free stock scale icon that passes `icon_check.py` |
+| Mourncrown | 12 | display 6678 (`World\Goober\G_Necropolis.m2`) |
+
 ## The Deeprun Tram (spec in `docs/specs/deeprun-tram/README.md`)
 
 | Asset | Where | Notes |

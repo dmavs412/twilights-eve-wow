@@ -548,6 +548,51 @@ struct DungeonFile {
     spawn: Vec<DungeonSpawn>,
 }
 
+/// A Phased Dungeon file's own creatures; the rest of the file is [`phased`]'s.
+#[derive(Deserialize)]
+struct DungeonTemplates {
+    #[serde(default)]
+    template: Vec<Template>,
+}
+
+/// The files only a hand-written template may share an entry across: `mobs.toml`'s row overrides
+/// the generated zone files' vanilla one, and those files share their common creatures.
+const OVERRIDING: [&str; 5] = [
+    "mobs.toml",
+    "elwynn.toml",
+    "duskwood.toml",
+    "redridge.toml",
+    "stormwind.toml",
+];
+
+/// Adds the `[[template]]` rows of the Phased Dungeon files `sources` (file name, text) to
+/// `template`, whose files `from` names entry by entry. Panics when two templates share an entry,
+/// naming both files, unless both are [`OVERRIDING`] files.
+fn join_dungeon_templates(
+    template: &mut Vec<Template>,
+    from: &mut Vec<(String, u32)>,
+    sources: &[(&str, &str)],
+) {
+    for (name, text) in sources {
+        let file: DungeonTemplates =
+            toml::from_str(text).unwrap_or_else(|e| panic!("content/{name} parses: {e}"));
+        from.extend(file.template.iter().map(|t| (name.to_string(), t.entry)));
+        template.extend(file.template);
+    }
+    let mut first: HashMap<u32, &str> = HashMap::new();
+    for (file, entry) in from.iter() {
+        let Some(had) = first.insert(*entry, file) else {
+            continue;
+        };
+        let overrides = had != file && OVERRIDING.contains(&had) && OVERRIDING.contains(&&**file);
+        assert!(
+            overrides,
+            "template {entry} is in content/{had} and content/{file}"
+        );
+        first.insert(*entry, had);
+    }
+}
+
 #[derive(Deserialize)]
 struct DungeonSpawn {
     guid: u32,
@@ -789,6 +834,17 @@ pub(crate) fn content() -> &'static Mobs {
             .flat_map(|(_, f)| f.template.iter().map(|t| t.entry))
             .filter(|e| !hand.template.iter().any(|t| t.entry == *e))
             .collect();
+        // Each template's file, entry by entry, for the duplicate check.
+        let mut from: Vec<(String, u32)> = Vec::new();
+        let files = [
+            ("mobs", &hand.template),
+            ("barrens", &barrens.template),
+            ("elwynn", &elwynn.template),
+        ];
+        let zone_files = eastern.iter().map(|(name, f)| (*name, &f.template));
+        for (name, list) in files.into_iter().chain(zone_files) {
+            from.extend(list.iter().map(|t| (format!("{name}.toml"), t.entry)));
+        }
         let mut template = hand.template;
         template.extend(barrens.template);
         let vanilla: Vec<u32> = elwynn
@@ -935,7 +991,15 @@ pub(crate) fn content() -> &'static Mobs {
         }
         let dungeon: DungeonFile = toml::from_str(include_str!("../content/wailing_caverns.toml"))
             .expect("content/wailing_caverns.toml parses");
+        from.extend(
+            dungeon
+                .template
+                .iter()
+                .map(|t| ("wailing_caverns.toml".to_string(), t.entry)),
+        );
         template.extend(dungeon.template);
+        // The Phased Dungeons' own creatures, checked below like any other.
+        join_dungeon_templates(&mut template, &mut from, phased::sources());
         lay_kits(&mut template, &overrides.kit);
         for t in &template {
             for roll in t.rolls.iter().chain(&t.extra_rolls) {
@@ -2158,6 +2222,62 @@ mod tests {
             Some("steppes_open")
         );
         assert_eq!((a.level_min, a.level_max), (3, 4));
+    }
+
+    /// A Phased Dungeon file holding a second copy of `mobs.toml`'s Phase Tester row, renumbered
+    /// to `entry`.
+    fn dungeon_file_with(entry: u32) -> String {
+        let text = include_str!("../content/mobs.toml");
+        let from = text.find("[[template]]\nentry = 97100\n").unwrap();
+        let to = from + text[from..].find("\n\n").unwrap();
+        format!("name = \"A Dungeon\"\nmap = 0\n\n{}\n", &text[from..to]).replacen(
+            "entry = 97100",
+            &format!("entry = {entry}"),
+            1,
+        )
+    }
+
+    #[test]
+    fn a_dungeon_files_template_joins_the_others() {
+        let mut template = Vec::new();
+        let mut from = vec![("mobs.toml".to_string(), 97100)];
+        let text = dungeon_file_with(97225);
+        join_dungeon_templates(&mut template, &mut from, &[("a_dungeon.toml", &text)]);
+        assert_eq!(template.len(), 1);
+        assert_eq!(
+            (template[0].entry, template[0].name.as_str()),
+            (97225, "Phase Tester")
+        );
+        assert_eq!(from[1], ("a_dungeon.toml".to_string(), 97225));
+    }
+
+    #[test]
+    #[should_panic(expected = "template 97100 is in content/mobs.toml and content/a_dungeon.toml")]
+    fn a_template_in_two_files_fails_to_load() {
+        let mut from = vec![("mobs.toml".to_string(), 97100)];
+        let text = dungeon_file_with(97100);
+        join_dungeon_templates(&mut Vec::new(), &mut from, &[("a_dungeon.toml", &text)]);
+    }
+
+    #[test]
+    fn a_hand_written_template_still_overrides_a_vanilla_one() {
+        let mut from = vec![
+            ("elwynn.toml".to_string(), 299),
+            ("mobs.toml".to_string(), 299),
+            ("redridge.toml".to_string(), 299),
+        ];
+        join_dungeon_templates(&mut Vec::new(), &mut from, &[]);
+    }
+
+    #[test]
+    fn every_phased_dungeon_template_is_known() {
+        for (name, text) in phased::sources() {
+            let file: DungeonTemplates = toml::from_str(text).unwrap();
+            for t in &file.template {
+                let known = template(t.entry).unwrap_or_else(|| panic!("{name}: {}", t.entry));
+                assert_eq!(known.name, t.name, "{name}: {}", t.entry);
+            }
+        }
     }
 
     #[test]

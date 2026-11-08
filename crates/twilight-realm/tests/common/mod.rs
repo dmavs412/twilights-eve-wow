@@ -127,17 +127,24 @@ pub fn creature_spell(key: &str) -> u32 {
         .unwrap() as u32
 }
 
-/// The hand-written creature template `entry` of `content/mobs.toml`.
+/// The hand-written creature template `entry` of `content/mobs.toml`, or of a Phased Dungeon's
+/// own file (`twilight_realm::phased_dungeon_sources`).
 pub fn mob_template(entry: u32) -> &'static toml::Value {
-    static FILE: std::sync::LazyLock<toml::Value> = std::sync::LazyLock::new(|| {
-        toml::from_str(include_str!("../../content/mobs.toml")).unwrap()
+    static FILES: std::sync::LazyLock<Vec<toml::Value>> = std::sync::LazyLock::new(|| {
+        let dungeons = twilight_realm::phased_dungeon_sources()
+            .iter()
+            .map(|(_, t)| *t);
+        std::iter::once(include_str!("../../content/mobs.toml"))
+            .chain(dungeons)
+            .map(|text| toml::from_str(text).unwrap())
+            .collect()
     });
-    FILE["template"]
-        .as_array()
-        .unwrap()
+    FILES
         .iter()
+        .filter_map(|f| f.get("template").and_then(|t| t.as_array()))
+        .flatten()
         .find(|t| t["entry"].as_integer() == Some(entry.into()))
-        .unwrap_or_else(|| panic!("{entry} is not a template of mobs.toml"))
+        .unwrap_or_else(|| panic!("{entry} is not a template of mobs.toml or a dungeon file"))
 }
 
 /// The Creature Spell keys template `entry` names, in order.
