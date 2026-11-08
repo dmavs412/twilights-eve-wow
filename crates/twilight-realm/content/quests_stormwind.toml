@@ -147,7 +147,7 @@ money = 0
 zone_or_sort = 717
 gives = [[980129, 1]]
 talk = [
-  { npc = 97211, option = "Why are you here?", reply = "I stopped the tram. In the tunnel, halfway to Ironforge, the rails run into grey, a wall of it, and I wasn't driving two hundred people into that. They called it sabotage. The tram's still sitting there, if anyone wants to look." },
+  { npc = 97211, option = "Why are you here?", reply = "I stopped the tram. In the tunnel, halfway to Ironforge, the rails run into grey, a wall of it, and I wasn't driving two hundred people into that. They called it sabotage. The tram's still sitting there, if anyone wants to look. Brannoc still keeps the station. Ask him what he hears down there at night." },
   { npc = 97212, option = "Why are you here?", reply = "I'm the last out of Moonbrook. The day before the grey came, the hooded men packed their crates and left, every one of them, and I said so to a clerk. They knew it was coming. The clerk wrote that down, and here I am." },
   { npc = 97213, option = "Why are you here?", reply = "I pilot the harbour. A mile out the sea goes grey and the water under it doesn't move. I turned back, and there was a cutter out there flying the Keep's flag, sitting at the edge of it, watching. I told the harbourmaster. He told someone else." },
   { npc = 97214, option = "Why are you here?", reply = "I was a page in the Keep. I copied an order that closed the Westfall road, and the order was dated three days before the mist came. I asked who signed it. That was my question, and this is my answer. There's a woman who comes down at night and writes what we say. Ask me about her." },
@@ -222,3 +222,27 @@ completion = "Ten. Into the strongbox with the rest. Keep bringing it."
 money = 800
 zone_or_sort = 717
 collect = [{ item = 980125, count = 10, from = [97200], chance = 35 }]
+
+# ── The Deeprun Tram (#586) ──────────────────────────────────────────────────────────────────────
+#
+# One quest, 97313 (#593, docs/specs/deeprun-tram/README.md "Before the run"); the issue's text is
+# the contract. Wender Cogg's reply in the quiet wing (97308 above) sends the player to Station
+# Master Brannoc, a Hub NPC in the Dwarven District's tram station hall (hub.toml 9300082). The
+# station bell starts the run (deeprun_tram.toml) and the Conductor (97218) ends it. The choices
+# are the first four rows of the Conductor's set (#592, gear.csv). `money` is copper and a
+# placeholder. `zone_or_sort` 2257 is the Deeprun Tram's AreaTable id.
+[[quest]]
+id = 97313
+kind = "story"
+giver = 190082
+ender = 190082
+level = 38
+title = "Down the Line"
+objectives = "Ring the station bell on the Stormwind platform and stop whatever comes out of the tunnel, then return to Station Master Brannoc."
+details = "Cogg stopped the line because the rails run into grey halfway to Ironforge. Fair enough. But every night since, I hear a tram come in from that side, stop at my platform, and go back. Nobody gets off that I can see in the morning. There's a bell on the platform. Ring it, and see what answers."
+progress = "Still hearing them?"
+completion = "The Conductor. I knew him. He took the last tram out the night the grey came, and I thought he died with it. Those crates were going somewhere, $C, and somebody in this city packed them. I'll have the Watch look at the manifests. Keep this, from the line's own stores."
+money = 1500
+choices = [905100, 905101, 905102, 905103]
+zone_or_sort = 2257
+kill = [[97218, 1]]

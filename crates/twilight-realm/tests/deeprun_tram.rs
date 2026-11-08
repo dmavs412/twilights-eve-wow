@@ -9,7 +9,8 @@
 //! timetable, the lamps and sounds warn of them, and a moving car hits a player in its lane. Each
 //! wave car carries two fighters and a porter (#590), and the porters carry the Tribute Pile's
 //! crates onto the cars. The boss car brings the Conductor and his frozen passengers (#591). His
-//! death leaves the Tribute Pile chest, the gold chest and a blue on his corpse (#592).
+//! death leaves the Tribute Pile chest, the gold chest and a blue on his corpse (#592). Station
+//! Master Brannoc in the station hall gives Down the Line, which his death completes (#593).
 
 mod common;
 
@@ -1827,4 +1828,164 @@ fn with_one_porter_boarded_no_gold_chest_stands_by_his_corpse() {
     let (copper, greens) = the_pile_chest(&mut party, &timed);
     assert_eq!(copper, 1100);
     of_set(&greens, 3, GREENS);
+}
+
+// ── Station Master Brannoc and Down the Line (#593) ────────────────────────────────────────────
+
+/// Station Master Brannoc (`hub.toml` 9300082) on the station hall's floor, and a step in front
+/// of him.
+const BRANNOC: u32 = 190082;
+const BRANNOC_AT: [f32; 3] = [-8350.5, 519.5, 91.80];
+const BY_BRANNOC: [f32; 3] = [-8349.0, 519.5, 91.80];
+const DOWN_THE_LINE: u32 = 97313;
+/// The first four rows of the Conductor's set.
+const DOWN_THE_LINE_CHOICES: [u32; 4] = [905100, 905101, 905102, 905103];
+
+/// [`STURDY_CALLINGS`] at Tier 2, where a level-38 quest is offered.
+const STURDY_TIER_2_CALLINGS: &str = r#"
+[[calling]]
+key = "test_sturdy_tier_2"
+name = "Test Sturdy Tier 2"
+tier = 2
+class = 1
+cap = 60
+tier_bonus = { strength = 0, agility = 0, stamina = 3000, intellect = 0, spirit = 0 }
+shapeshift_form = 0
+armour = ["cloth"]
+
+[[calling.skill]]
+key = "taunt"
+spell_id = 1161
+power_cost = 0
+cooldown_ms = 0
+gcd_ms = 0
+target = "self_area"
+radius_yd = 10.0
+max_targets = 100
+effects = [{ kind = "taunt", duration_ms = 4000 }]
+"#;
+
+/// Player 0 steps in front of Brannoc: his guid and where the client was shown him.
+fn at_brannoc(party: &mut Party) -> (u64, [f32; 3]) {
+    party.go_facing(0, BY_BRANNOC, BRANNOC_AT);
+    party.run(0.5);
+    party.unit(0, BRANNOC, BRANNOC_AT)
+}
+
+/// Player 0 sends `command` and lets the realm tick; the events that came.
+fn says(party: &mut Party, command: RealmCommand) -> Vec<SessionEvent> {
+    let from = party.seen(0).len();
+    party.cmd(0, command);
+    party.run(0.2);
+    since(party, from)
+}
+
+fn offered(events: &[SessionEvent], quest: u32) -> bool {
+    events.iter().any(|e| match e {
+        SessionEvent::QuestDetail(d) => d.quest_id == quest,
+        SessionEvent::QuestGreeting(list) => list.quests.iter().any(|q| q.quest_id == quest),
+        _ => false,
+    })
+}
+
+#[test]
+fn brannoc_stands_on_the_station_hall_s_floor_and_offers_down_the_line_at_level_38() {
+    let mut party = Party::edited(
+        Realm::with_seed(1),
+        &[38],
+        START_ELWYNN,
+        Box::new(NoGround),
+        |_, blob| blob.replace("calling = \"basic_warrior\"", "calling = \"zealot\""),
+    );
+    let (brannoc, at) = at_brannoc(&mut party);
+    assert!(near(at, BRANNOC_AT), "{at:?}");
+    assert!(!in_phase(&party), "the station hall is open world");
+    let events = says(&mut party, RealmCommand::QuestGiverHello { npc: brannoc });
+    assert!(offered(&events, DOWN_THE_LINE), "{events:?}");
+}
+
+#[test]
+fn the_conductor_s_kill_credits_down_the_line_and_brannoc_pays_1500_copper_and_offers_four_blues() {
+    let mut party = Party::edited(
+        Realm::with_seed(1).with_callings(STURDY_TIER_2_CALLINGS),
+        &[60],
+        START_ELWYNN,
+        Box::new(NoGround),
+        |_, blob| {
+            blob.replace(
+                "calling = \"basic_warrior\"",
+                "calling = \"test_sturdy_tier_2\"",
+            )
+        },
+    );
+    let (brannoc, _) = at_brannoc(&mut party);
+    says(
+        &mut party,
+        RealmCommand::QuestGiverAcceptQuest {
+            npc: brannoc,
+            quest: DOWN_THE_LINE,
+        },
+    );
+
+    enter(&mut party);
+    walk(&mut party, BY_THE_BELL);
+    assert!(in_phase(&party));
+    let (_, conductor) = to_the_conductor(&mut party, 0);
+    let (timed, _) = killing_the_conductor(&mut party, conductor);
+    let credited = untimed(&timed).iter().any(|e| {
+        matches!(e, SessionEvent::QuestObjectiveKill { quest_id, entry, .. }
+            if *quest_id == DOWN_THE_LINE && *entry == CONDUCTOR)
+    });
+    assert!(credited, "the Conductor's death gave no credit");
+
+    walk(&mut party, AT_THE_EXIT);
+    party.cmd(0, RealmCommand::AreaTrigger { id: EXIT });
+    party.cmd(0, RealmCommand::WorldportAck);
+    party.run(0.3);
+    let (brannoc, _) = at_brannoc(&mut party);
+    says(
+        &mut party,
+        RealmCommand::QuestGiverCompleteQuest {
+            npc: brannoc,
+            quest: DOWN_THE_LINE,
+        },
+    );
+    let events = says(
+        &mut party,
+        RealmCommand::QuestGiverRequestReward {
+            npc: brannoc,
+            quest: DOWN_THE_LINE,
+        },
+    );
+    let offer = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::QuestOffer(o) => Some(o.clone()),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("the reward panel: {events:?}"));
+    let choices: Vec<u32> = offer.choices.iter().map(|c| c.item_id).collect();
+    assert_eq!(choices, DOWN_THE_LINE_CHOICES);
+    assert_eq!(offer.money, 1500);
+
+    let events = says(
+        &mut party,
+        RealmCommand::QuestGiverChooseReward {
+            npc: brannoc,
+            quest: DOWN_THE_LINE,
+            choice: 0,
+        },
+    );
+    let done = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::QuestComplete(c) if c.quest_id == DOWN_THE_LINE => Some(c.clone()),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("the turn-in: {events:?}"));
+    assert_eq!(done.money, 1500);
+    assert!(
+        done.items.contains(&(DOWN_THE_LINE_CHOICES[0], 1)),
+        "{done:?}"
+    );
 }

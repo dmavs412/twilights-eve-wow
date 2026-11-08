@@ -2153,3 +2153,23 @@ grounded = false
 orientation = 1.57
 text_id = 64178
 greeting = "I know your face."
+
+# ── Station Master Brannoc, the Deeprun Tram (#586) ──────────────────────────────────────────────
+# In the Dwarven District's tram station hall, facing the tram entrance (trigger 2173), on the
+# hall floor `wmo_floor.py` lists as group 290 at z 91.80, the floor trigger 2171 puts a character
+# back on. He gives and takes Down the Line (#593, quests_stormwind.toml). Display 14405, Thief
+# Catcher Thunderbrew's (creature_template 14367), a dwarf.
+[[npc]]
+guid = 9300082
+entry = 190082
+name = "Station Master Brannoc"
+subname = "Deeprun Tram"
+level = 40
+display_id = 14405
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-8350.5, 519.5, 91.80]
+orientation = 5.50
+greeting = "Trams in the tunnel, $C. At night, with the line shut and its engineer in a cell. Someone is running my trams, and it isn't me."

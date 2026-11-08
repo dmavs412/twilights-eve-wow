@@ -1076,6 +1076,11 @@ const WITNESSES_AT: [(u32, [f32; 3]); 4] = [
     (97214, [162.7, 59.2, -34.8562]),
 ];
 const WHY: &str = "Why are you here?";
+/// Wender Cogg, and the sentence that ends his reply, sending the player to Station Master
+/// Brannoc (#593).
+const COGG: u32 = 97211;
+const TO_BRANNOC: &str =
+    " Brannoc still keeps the station. Ask him what he hears down there at night.";
 /// Beside the drain grate, out of the Hush's reach.
 const BY_GRATE: [f32; 3] = [166.0, 153.5, -33.9396];
 
@@ -1140,6 +1145,30 @@ fn hand_in(party: &mut Party, npc: u64, quest: u32) -> Vec<SessionEvent> {
     );
     party.run(0.2);
     since(party, from)
+}
+
+/// The text of the reply menu in `replied` (a gossip menu with no options), as the client asks
+/// for it.
+fn reply_text(party: &mut Party, replied: &[SessionEvent]) -> String {
+    let text_id = replied
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu {
+                text_id, options, ..
+            } if options.is_empty() => Some(*text_id),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("the reply menu: {replied:?}"));
+    let from = party.seen(0).len();
+    party.cmd(0, RealmCommand::NpcTextQuery { text_id });
+    party.run(0.1);
+    since(party, from)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::NpcGreeting { blocks, .. } => Some(blocks[0].male.clone()),
+            _ => None,
+        })
+        .expect("the reply text")
 }
 
 fn completed(events: &[SessionEvent], quest: u32) -> bool {
@@ -1324,11 +1353,16 @@ fn speaking_with_the_four_witnesses_credits_the_quiet_wing() {
             },
         );
         party.run(0.1);
-        let credited = since(&party, from).iter().any(|e| {
+        let replied = since(&party, from);
+        let credited = replied.iter().any(|e| {
             matches!(e, SessionEvent::QuestObjectiveKill { quest_id, entry: e, .. }
                 if *quest_id == THE_QUIET_WING && *e == entry)
         });
         assert!(credited, "{entry} gave no credit");
+        if entry == COGG {
+            let reply = reply_text(&mut party, &replied);
+            assert!(reply.ends_with(TO_BRANNOC), "{reply:?}");
+        }
     }
 
     walk(&mut party, CROSSING);

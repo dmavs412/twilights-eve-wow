@@ -290,6 +290,26 @@ fn shipped_creatures() -> Creatures {
             }
         }
     }
+    // The Deeprun Tram's line brings its creatures in on its cars once the bell rings (#590,
+    // #591): the fighters, the porter, the Conductor and his passengers.
+    let tram = toml_file(include_str!("../content/deeprun_tram.toml"));
+    let line = tram["tram"].as_table().unwrap();
+    let one = |key: &str| line[key].as_integer().unwrap() as u64;
+    let many = |key: &str| -> Vec<u64> {
+        line[key]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e.as_integer().unwrap() as u64)
+            .collect()
+    };
+    let mut made = many("fighters");
+    made.extend(many("passengers"));
+    made.extend(["lampman", "porter", "conductor"].map(one));
+    for entry in made {
+        c.spawns
+            .push(("deeprun_tram.toml [tram]".to_string(), entry));
+    }
     c
 }
 
