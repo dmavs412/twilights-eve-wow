@@ -206,6 +206,7 @@ struct Conn {
 fn run_realm(rx: Receiver<Inbound>, data_dir: &Path, mut world: Box<dyn World>) {
     let mut realm = Realm::with_seed(seed());
     load_unlocks(&mut realm, data_dir);
+    load_milestones(&mut realm, data_dir);
     load_saves(&mut realm, data_dir);
     let mut accounts = Accounts::load(data_dir);
     let mut conns: HashMap<u64, Conn> = HashMap::new();
@@ -357,6 +358,28 @@ fn load_unlocks(realm: &mut Realm, data_dir: &Path) {
     }
 }
 
+/// `<data-dir>/milestones.toml`: the Milestones reached (ADR 0034), which the realm writes. A
+/// missing file is nothing reached.
+fn load_milestones(realm: &mut Realm, data_dir: &Path) {
+    let text = match std::fs::read_to_string(milestones_path(data_dir)) {
+        Ok(text) => Some(text),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+        Err(e) => {
+            eprintln!("twilight-server: cannot read milestones.toml, so nothing is reached: {e}");
+            None
+        }
+    };
+    realm.set_milestones(text.as_deref());
+    for line in realm.drain_log() {
+        eprintln!("twilight-server: {line}");
+    }
+}
+
+/// `<data-dir>/milestones.toml`, beside the `characters` folder.
+fn milestones_path(data_dir: &Path) -> PathBuf {
+    data_dir.join("milestones.toml")
+}
+
 /// Imports every save under `data_dir`; one that cannot be read keeps its guid reserved.
 fn load_saves(realm: &mut Realm, data_dir: &Path) {
     let Ok(dir) = std::fs::read_dir(data_dir.join("characters")) else {
@@ -394,6 +417,13 @@ fn store(data_dir: &Path, op: Storage) {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
             r => r,
         },
+        Storage::Milestones { blob } => {
+            let path = milestones_path(data_dir);
+            let tmp = path.with_extension("toml.tmp");
+            std::fs::create_dir_all(data_dir)
+                .and_then(|()| std::fs::write(&tmp, blob))
+                .and_then(|()| std::fs::rename(&tmp, &path))
+        }
     };
     if let Err(e) = result {
         eprintln!("twilight-server: saving: {e}");

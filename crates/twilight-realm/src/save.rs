@@ -66,6 +66,9 @@ pub enum Storage {
     Write { guid: u64, blob: String },
     /// The character was deleted: remove its save.
     Remove { guid: u64 },
+    /// The realm's server-wide state file, `milestones.toml` (ADR 0034), whole: the host writes
+    /// it beside the saves.
+    Milestones { blob: String },
 }
 
 /// Why a save could not be imported.

@@ -18,7 +18,7 @@ fn last_write(realm: &mut Realm) -> String {
         .rev()
         .find_map(|op| match op {
             Storage::Write { blob, .. } => Some(blob),
-            Storage::Remove { .. } => None,
+            Storage::Remove { .. } | Storage::Milestones { .. } => None,
         })
         .expect("a save was written")
 }

@@ -186,7 +186,7 @@ impl Seen {
 
 /// An RFC 3339 date-time (a string, or a bare TOML date-time), in seconds since the Unix epoch.
 /// A date or time alone, a time with no offset, or a moment before 1970 is none.
-fn unix_secs(value: &toml::Value) -> Option<u64> {
+pub(crate) fn unix_secs(value: &toml::Value) -> Option<u64> {
     let at = match value {
         toml::Value::String(s) => s.parse::<Datetime>().ok()?,
         toml::Value::Datetime(d) => d.clone(),

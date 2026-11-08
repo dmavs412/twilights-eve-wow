@@ -202,9 +202,11 @@ fn save_path(guid: u64) -> Option<PathBuf> {
 }
 
 /// Imports every indexed save; one that cannot be read is skipped with a warning and left on
-/// disk, so a newer build can still read it. Reads the Server Unlocks first (ADR 0031).
+/// disk, so a newer build can still read it. Reads the Server Unlocks (ADR 0031) and the
+/// Milestones (ADR 0034) first.
 fn load_saves(realm: &mut Realm) -> BTreeSet<u64> {
     load_unlocks(realm);
+    load_milestones(realm);
     let mut saved = BTreeSet::new();
     let Some(index) = index_path().and_then(|p| crate::local_state::read_to_string(&p).ok()) else {
         return saved;
@@ -254,9 +256,43 @@ fn load_unlocks(realm: &mut Realm) {
     }
 }
 
+/// `benilla-config/twilight/milestones.toml`, beside the saves: the Milestones reached, which the
+/// realm writes. One file for the whole roster, the solo server.
+fn milestones_path() -> Option<PathBuf> {
+    index_path().map(|p| p.with_file_name("milestones.toml"))
+}
+
+/// Reads the Milestones state file; a missing one is nothing reached.
+fn load_milestones(realm: &mut Realm) {
+    let text = match milestones_path()
+        .as_deref()
+        .map(crate::local_state::read_to_string)
+    {
+        Some(Ok(text)) => Some(text),
+        Some(Err(e)) if e.kind() != std::io::ErrorKind::NotFound => {
+            warn!("twilight: cannot read milestones.toml, so nothing is reached: {e}");
+            None
+        }
+        _ => None,
+    };
+    realm.set_milestones(text.as_deref());
+    for line in realm.drain_log() {
+        warn!("twilight: {line}");
+    }
+}
+
 /// Carries out the realm's save requests.
 fn store(op: Storage, saved: &mut BTreeSet<u64>) {
     let changed = match op {
+        Storage::Milestones { blob } => {
+            // `None`: persistence is off (a capture run).
+            if let Some(Err(e)) =
+                milestones_path().map(|p| crate::local_state::write_atomic(&p, &blob))
+            {
+                warn!("twilight: writing milestones.toml: {e}");
+            }
+            return;
+        }
         Storage::Write { guid, blob } => {
             // `None`: persistence is off (a capture run).
             let Some(path) = save_path(guid) else {
@@ -476,6 +512,10 @@ fn pump(
                 );
                 routes.0.insert(wagon_guid, std::sync::Arc::new(route));
             }
+            continue;
+        }
+        // The reached Milestones (ADR 0034): nothing reads them yet.
+        if matches!(event, SessionEvent::Milestones { .. }) {
             continue;
         }
         // Our cart seat and its end go to the seat (spec #560).

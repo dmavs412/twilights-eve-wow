@@ -410,6 +410,10 @@ _Avoid_: silence, school lock
 A feature a server buys for everyone on it, on until a date (ADR 0031): a row of `unlocks.toml` in content, and a table with an `until` in the `unlocks.toml` beside the saves. Free while the game is tested. Solo buys the same way.
 _Avoid_: premium feature, DLC, entitlement
 
+**Milestone**:
+A fact about the whole server that the realm records once and never forgets in play (ADR 0034): a row of `content/milestones.toml`, and a table in the `milestones.toml` the realm writes beside the saves. Solo shares one file across the roster.
+_Avoid_: world state, flag, achievement
+
 **Open Road**:
 The +30% run speed a character has out of combat while the terrain texture under them is a road or street named in `roads.toml`. Adds to the Well Fed speed dish. Shown as a buff of the same name.
 _Avoid_: road bonus, path speed

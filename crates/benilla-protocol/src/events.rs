@@ -598,6 +598,9 @@ pub enum SessionEvent {
         /// way it arrived (a Deeprun Tram car, ADR 0033). A cart's wagon turns.
         backs_out: bool,
     },
+    /// Twilight's Eve, not 1.12: every reached Milestone's key (ADR 0034), sent at login before
+    /// the world and on each change. Never wire-decoded.
+    Milestones { reached: Vec<String> },
     /// Twilight's Eve, not 1.12: the player sat in the wagon `wagon_guid`; `pose` is their seat in
     /// its frame. Never wire-decoded.
     Seated {

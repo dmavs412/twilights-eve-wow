@@ -78,6 +78,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/deeprun_tram.toml"),
     include_str!("../content/instance_maps.toml"),
     include_str!("../content/unlocks.toml"),
+    include_str!("../content/milestones.toml"),
     include_str!("../content/writs.toml"),
     include_str!("../content/zones.toml"),
     include_str!("../../../data/twilights-eve/server_spells.json"),

@@ -73,6 +73,7 @@ mod inventory;
 mod items;
 mod looting;
 mod map_marks;
+mod milestones;
 mod mobs;
 mod objects;
 mod party;
@@ -775,6 +776,8 @@ pub struct Realm {
     unlocks: unlocks::Unlocks,
     /// Each Server Unlock's state at the last check, which runs at login and once a UTC day.
     unlocks_seen: unlocks::Seen,
+    /// The Milestones (ADR 0034): the catalogue and the state file the realm writes.
+    milestones: milestones::Milestones,
     /// The road textures Open Road runs faster on (spec #560).
     roads: roads::Roads,
 }
@@ -1007,6 +1010,71 @@ impl Realm {
         Self {
             unlocks: unlocks::Unlocks::new(unlocks::catalogue(toml)),
             ..self
+        }
+    }
+
+    /// Reads the Milestones state file (ADR 0034), `milestones.toml` in the realm's data folder;
+    /// `None` when there is none, so nothing is reached. What it names wrong goes to the log as a
+    /// warning.
+    pub fn set_milestones(&mut self, text: Option<&str>) {
+        let catalogue = self.milestones.catalogue().to_vec();
+        self.milestones = match text {
+            Some(text) => milestones::Milestones::parse(catalogue, text),
+            None => milestones::Milestones::new(catalogue),
+        };
+        self.log.extend_from_slice(self.milestones.warnings());
+    }
+
+    /// This realm with the Milestone catalogue `toml` (the shape of `content/milestones.toml`) in
+    /// place of the shipped one, and nothing reached: a test seam.
+    pub fn with_milestone_catalogue(self, toml: &str) -> Self {
+        Self {
+            milestones: milestones::Milestones::new(milestones::catalogue(toml)),
+            ..self
+        }
+    }
+
+    /// Whether Milestone `key` is reached. A key the catalogue does not list is not.
+    pub fn milestone_reached(&self, key: &str) -> bool {
+        self.milestones.reached(key)
+    }
+
+    /// Every reached Milestone's key, in catalogue order.
+    pub fn reached_milestones(&self) -> Vec<String> {
+        self.milestones.reached_keys()
+    }
+
+    /// Reaches Milestone `key` by the wall clock: the one way a Milestone is reached. It logs the
+    /// fact, tells every character in the world the reached set, and the state file goes to the
+    /// host with the tick's storage. A key already reached does nothing, and one the catalogue
+    /// lacks is a warning.
+    pub fn reach_milestone(&mut self, key: &str) {
+        let Some(m) = self.milestones.get(key) else {
+            self.log.push(format!(
+                "reach_milestone names {key}, which is no Milestone"
+            ));
+            return;
+        };
+        if self.milestones.reached(key) {
+            return;
+        }
+        self.log.push(format!("Milestone {} reached.", m.name));
+        self.milestones.reach(key, self.wall as u64);
+        let event = SessionEvent::Milestones {
+            reached: self.milestones.reached_keys(),
+        };
+        let sessions = std::iter::once((&self.world, &mut self.events))
+            .chain(self.parked.values_mut().map(|s| (&s.world, &mut s.events)));
+        for (_, events) in sessions.filter(|(w, _)| w.is_some()) {
+            events.push(event.clone());
+        }
+    }
+
+    /// Hands the Milestones state file to the host when it changed: one write however many were
+    /// reached since the last.
+    fn store_milestones(&mut self) {
+        if let Some(blob) = self.milestones.take_changed() {
+            self.storage.push(Storage::Milestones { blob });
         }
     }
 
@@ -2356,6 +2424,7 @@ impl Realm {
         self.party_tick(dt);
         self.tick_trades();
         self.tick_duels(dt);
+        self.store_milestones();
     }
 
     /// The Rumours' tick: a giver is made for each new one, and each that ran out of time or was
@@ -2727,14 +2796,17 @@ impl Realm {
         std::mem::take(&mut self.uses)
     }
 
-    /// The saves to write or remove since the last drain, oldest first.
+    /// The saves to write or remove since the last drain, oldest first, and the Milestones state
+    /// file when it changed.
     pub fn drain_storage(&mut self) -> Vec<Storage> {
+        // A Milestone reached between ticks is written now, not held for the next tick.
+        self.store_milestones();
         std::mem::take(&mut self.storage)
     }
 
     /// What the realm has to report since the last drain, for the host to log as warnings: what
-    /// a save named that the realm no longer has, what the Server Unlocks state file named wrong,
-    /// and each Server Unlock that went on or off.
+    /// a save named that the realm no longer has, what the Server Unlocks and Milestones state
+    /// files named wrong, each Server Unlock that went on or off, and each Milestone reached.
     pub fn drain_log(&mut self) -> Vec<String> {
         std::mem::take(&mut self.log)
     }
@@ -2943,6 +3015,10 @@ impl Realm {
                 .push(SessionEvent::CharacterLoginFailed { result: 5 });
             return;
         };
+        // The reached set comes before the world, which may load differently for it.
+        self.events.push(SessionEvent::Milestones {
+            reached: self.milestones.reached_keys(),
+        });
         let mut entry = world::InWorld::enter(c, self.dev, self.wall, &mut self.events);
         entry.casters = self.casters.clone();
         self.world = Some(entry);

@@ -1,0 +1,16 @@
+# Milestones (ADR 0034): facts about the whole server that the realm records once and never
+# forgets in play. The state file is `milestones.toml` in the realm's data folder, which the realm
+# writes; a host resets a Milestone by deleting its table while the realm is stopped.
+#
+# key        the Milestone's name in code, content and the state file
+# name       what the log says
+# after      optional: a Milestone that must be reached before this one can be
+
+[[milestone]]
+key = "ilgalar_anchor_broken"
+name = "The Ilgalar Anchor is broken"
+
+[[milestone]]
+key = "steppes_open"
+name = "The Burning Steppes are open"
+after = "ilgalar_anchor_broken"
