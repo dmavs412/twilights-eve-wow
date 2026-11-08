@@ -6,6 +6,54 @@
 # A spawn outside `bounds` keeps the zone's Level Stretch from zones.toml. Friendly NPCs and
 # critters keep their own levels, and a level_overrides.toml row beats a band.
 
-bounds = []
+# Every band box below, so a spawn outside them all keeps the Level Stretch.
+bounds = [
+  [-10050.0, -2083.0, -9450.0, -1717.0],
+  [-9449.0, -2383.0, -9160.0, -1860.0],
+  [-9583.0, -2917.0, -9217.0, -2384.0],
+  [-9583.0, -2383.0, -9450.0, -2084.0],
+  [-9883.0, -2817.0, -9584.0, -2084.0],
+]
 
+# No box reaches a Phased Dungeon footprint (Stonewatch Keep -9388,-3029; Ilgalar -9282,-3330).
 exclude = []
+
+# Three Corners: Guard Parker -9610,-1902; Redridge Thrasher -9534,-1934; Tarantula -9702,-1915.
+# The Mongrels and Poachers south of y -2083 (-9631,-2124; -9722,-2342) stand in the Lakeridge
+# Highway box and take that band.
+[[band]]
+name = "Three Corners"
+level_min = 30
+level_max = 32
+boxes = [[-10050.0, -2083.0, -9450.0, -1717.0]]
+
+# Lakeshire: the town (Magistrate Solomon -9219,-2222), the goretusk fields west of it (Great
+# Goretusk -9375..-9207, -1973..-1886; Bellygrub -9289,-1919) and the fields south-west of the
+# town down to the lake shore (Great Goretusk -9451,-2123). The north edge stops at x -9160, short
+# of the Redridge Brute at -9153,-2020; north of the town is gnoll country, a later band.
+[[band]]
+name = "Lakeshire"
+level_min = 31
+level_max = 33
+boxes = [[-9449.0, -2383.0, -9160.0, -1860.0]]
+
+# Lake Everstill: the lake (Murloc Flesheater -9419,-2624; Murloc Scout -9316,-2623; Murloc
+# Shorestriker -9562,-2623; Murloc Minor Tidecaller -9515,-2753; Dire Condor -9383,-2687; Lake
+# Thresher -9388,-2559 and -9508,-2491), and the strip of its chunks between Three Corners, the
+# Lakeridge Highway and Lakeshire (Black Dragon Whelp -9571..-9485, -2374..-2089).
+[[band]]
+name = "Lake Everstill"
+level_min = 32
+level_max = 35
+boxes = [
+  [-9583.0, -2917.0, -9217.0, -2384.0],
+  [-9583.0, -2383.0, -9450.0, -2084.0],
+]
+
+# Lakeridge Highway: the Blackrock camps south of the lake (Blackrock Outrunner, Blackrock Grunt
+# and Blackrock Renegade) and the eastern Mongrels and Poachers (-9796..-9598, -2531..-2124).
+[[band]]
+name = "Lakeridge Highway"
+level_min = 33
+level_max = 36
+boxes = [[-9883.0, -2817.0, -9584.0, -2084.0]]

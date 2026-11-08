@@ -2171,10 +2171,10 @@ mod tests {
 
     #[test]
     fn a_duskwood_spawn_inside_elwynns_band_bounds_keeps_its_own_levels() {
-        // Starving Dire Wolf at -10007.3, -1494.3, in the Darkened Bank.
+        // Starving Dire Wolf at -10007.3, -1494.3: the Darkened Bank's band, not Elwynn's.
         let wolf = content().spawn.iter().find(|s| s.guid == 4348).unwrap();
         assert_eq!(wolf.entry, 213);
-        assert_eq!((wolf.level_min, wolf.level_max), (31, 32));
+        assert_eq!((wolf.level_min, wolf.level_max), (30, 32));
     }
 
     #[test]
@@ -2182,10 +2182,10 @@ mod tests {
         let want = [
             (5086, (50, 50)),  // Mor'Ladim, Duskwood
             (4183, (50, 50)),  // Bliztik, Duskwood, neutral
-            (8747, (30, 32)),  // Redridge Thrasher
+            (8747, (33, 36)),  // Redridge Thrasher, in the Lakeridge Highway band
             (6214, (45, 47)),  // Shadowhide Warrior
-            (6707, (33, 35)),  // Great Goretusk, neutral
-            (6140, (30, 30)),  // Narnie, neutral beast
+            (10128, (33, 35)), // Great Goretusk, neutral
+            (6140, (31, 33)),  // Narnie, neutral beast, in the Lakeshire band
             (4061, (40, 40)),  // Role Dreuger, Duskwood, friendly
             (6139, (21, 21)),  // Bartender Wental, Redridge, friendly
             (4212, (1, 1)),    // Black Rat, Duskwood, critter

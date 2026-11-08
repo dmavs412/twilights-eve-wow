@@ -6,6 +6,65 @@
 # A spawn outside `bounds` keeps the zone's Level Stretch from zones.toml. Friendly NPCs and
 # critters keep their own levels, and a level_overrides.toml row beats a band.
 
-bounds = []
+# Every band box below, so a spawn outside them all keeps the Level Stretch.
+bounds = [
+  [-10175.0, -1650.0, -9883.0, 750.0],
+  [-10260.0, -190.0, -10176.0, 100.0],
+  [-10849.0, -1350.0, -10418.0, -1050.0],
+  [-10416.0, -1683.0, -10217.0, -1450.0],
+  [-10600.0, -1530.0, -10418.0, -1351.0],
+  [-10416.0, -1417.0, -10217.0, -1183.0],
+  [-11150.0, -1417.0, -10850.0, -1217.0],
+]
 
-exclude = []
+# The two Phased Dungeon footprints the boxes reach: Mistmantle Manor (mistmantle_manor.toml's
+# footprint turned by its yaw of 90.5 about -10368.6,-1255.5) and Forest's Edge (forest_edge.toml,
+# x -10080..-9910, y 530..680), which the Darkened Bank box reaches at its western end.
+exclude = [
+  [-10378.0, -1263.0, -10361.0, -1248.0],
+  [-10080.0, 530.0, -9910.0, 680.0],
+]
+
+# The Darkened Bank: the long northern strip along the river (Starving Dire Wolf -10177..-9997;
+# Pygmy Venom Web Spider -10160..-9956; Venom Web Spider -10153..-9979; Rabid Dire Wolf
+# -10180..-10041). The main box starts at x -10175, short of Brightwood Grove's Nightbane Worgen
+# and Black Ravager at -10178,-746 and -10178,-898 and of Raven Hill Cemetery's undead (Bone Chewer
+# -10193,137). The second box takes the wolves south of the river bend (Rabid Dire Wolf
+# -10245..-10186, -116..-61; Starving Dire Wolf -10227..-10186, -73..95) and stops at y 100,
+# short of the cemetery's Brain Eaters at y 108.
+[[band]]
+name = "The Darkened Bank"
+level_min = 30
+level_max = 32
+boxes = [
+  [-10175.0, -1650.0, -9883.0, 750.0],
+  [-10260.0, -190.0, -10176.0, 100.0],
+]
+
+# Darkshire (Lord Ello Ebonlocke -10552,-1109), Beggar's Haunt, and a third box for Naraxis's den
+# on the road between them (Naraxis -10573,-1498). Watcher Callahan (-10071,-1379) stands in the
+# Darkened Bank box; he is friendly and keeps his level either way.
+[[band]]
+name = "Darkshire and Beggar's Haunt"
+level_min = 31
+level_max = 33
+boxes = [
+  [-10849.0, -1350.0, -10418.0, -1050.0],
+  [-10416.0, -1683.0, -10217.0, -1450.0],
+  [-10600.0, -1530.0, -10418.0, -1351.0],
+]
+
+# Manor Mistmantle outside the manor house (Fetid Corpse -10380..-10270, -1364..-1196).
+[[band]]
+name = "Manor Mistmantle"
+level_min = 32
+level_max = 35
+boxes = [[-10416.0, -1417.0, -10217.0, -1183.0]]
+
+# Tranquil Gardens Cemetery (Skeletal Warrior -11047..-10917, -1376..-1243; Skeletal Mage
+# -11076..-10906, -1382..-1249; Insane Ghoul -11003,-1359).
+[[band]]
+name = "Tranquil Gardens Cemetery"
+level_min = 33
+level_max = 36
+boxes = [[-11150.0, -1417.0, -10850.0, -1217.0]]

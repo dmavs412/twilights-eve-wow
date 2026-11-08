@@ -309,9 +309,6 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
     fn a_band_file_with_no_band_parses() {
         let f = parse("test", "bounds = [[0.0, 0.0, 1.0, 1.0]]\nexclude = []\n");
         assert!(band_for(&f, 0.5, 0.5).is_none());
-        for zone in ["duskwood", "redridge"] {
-            assert!(zone_file(zone).is_some_and(|f| f.band.is_empty()), "{zone}");
-        }
         assert!(zone_file("stormwind").is_none());
     }
 
@@ -338,27 +335,34 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
         (rows, pair("from"), pair("to"))
     }
 
+    const ZONES: [(&str, &str); 2] = [
+        ("redridge", include_str!("../content/redridge.toml")),
+        ("duskwood", include_str!("../content/duskwood.toml")),
+    ];
+
+    /// The loaded spawn of a generated row, when its creature is hostile and not a critter.
+    fn hostile_spawn(guid: u32, entry: u32) -> Option<&'static mobs::Spawn> {
+        let hostile =
+            mobs::template(entry).is_some_and(|t| t.hostile && !t.friendly && t.creature_type != 8);
+        let spawn = mobs::content()
+            .spawn
+            .iter()
+            .find(|s| s.map == EASTERN_KINGDOMS && s.guid == guid && s.entry == entry);
+        spawn.filter(|_| hostile)
+    }
+
     #[test]
-    fn with_empty_band_files_redridge_and_duskwood_keep_their_stretch() {
-        let zones = [
-            ("redridge", include_str!("../content/redridge.toml")),
-            ("duskwood", include_str!("../content/duskwood.toml")),
-        ];
-        for (zone, text) in zones {
+    fn outside_the_bands_redridge_and_duskwood_keep_their_stretch() {
+        for (zone, text) in ZONES {
             let (rows, from, to) = zone_rows(zone, text);
             let mut checked = 0;
             for [guid, entry, lmin, lmax, x, y] in rows.into_iter().step_by(3) {
-                let (guid, entry) = (guid as u32, entry as u32);
-                let hostile = mobs::template(entry)
-                    .is_some_and(|t| t.hostile && !t.friendly && t.creature_type != 8);
-                let spawn = mobs::content()
-                    .spawn
-                    .iter()
-                    .find(|s| s.map == EASTERN_KINGDOMS && s.guid == guid && s.entry == entry);
-                let Some(s) = spawn.filter(|_| hostile) else {
+                let Some(s) = hostile_spawn(guid as u32, entry as u32) else {
                     continue;
                 };
-                assert!(range_in(zone, x as f32, y as f32).is_none());
+                if range_in(zone, x as f32, y as f32).is_some() {
+                    continue;
+                }
                 let want = [lmin as u8, lmax as u8].map(|l| stretch(l, from, to));
                 assert_eq!([s.level_min, s.level_max], want, "{zone} spawn {guid}");
                 checked += 1;
@@ -391,5 +395,126 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
         );
         let f = parse("redridge", &text);
         assert_eq!(band_for(&f, x, y).map(range), Some([31, 34]));
+    }
+
+    #[test]
+    fn every_hostile_spawn_in_a_band_box_takes_that_band() {
+        let want = [
+            ("redridge", "Three Corners", [30, 32]),
+            ("redridge", "Lakeshire", [31, 33]),
+            ("redridge", "Lake Everstill", [32, 35]),
+            ("redridge", "Lakeridge Highway", [33, 36]),
+            ("duskwood", "The Darkened Bank", [30, 32]),
+            ("duskwood", "Darkshire and Beggar's Haunt", [31, 33]),
+            ("duskwood", "Manor Mistmantle", [32, 35]),
+            ("duskwood", "Tranquil Gardens Cemetery", [33, 36]),
+        ];
+        for (zone, text) in ZONES {
+            let f = zone_file(zone).unwrap();
+            let names: Vec<&str> = f.band.iter().map(|b| b.name.as_str()).collect();
+            let listed: Vec<&str> = want.iter().filter(|w| w.0 == zone).map(|w| w.1).collect();
+            assert_eq!(names, listed, "{zone}");
+            let (rows, _, _) = zone_rows(zone, text);
+            for band in &f.band {
+                let [lo, hi] = want.iter().find(|w| w.1 == band.name).unwrap().2;
+                assert_eq!(range(band), [lo, hi], "{}", band.name);
+                let mut checked = 0;
+                for [guid, entry, _, _, x, y] in &rows {
+                    let (x, y) = (*x as f32, *y as f32);
+                    if !band.boxes.iter().any(|r| holds(r, x, y)) || !covers(f, x, y) {
+                        continue;
+                    }
+                    let Some(s) = hostile_spawn(*guid as u32, *entry as u32) else {
+                        continue;
+                    };
+                    let levels = s.level_min..=s.level_max;
+                    assert!(
+                        (lo..=hi).contains(levels.start()) && (lo..=hi).contains(levels.end()),
+                        "{} spawn {} ({}) at {x}, {y}: {levels:?}",
+                        band.name,
+                        s.guid,
+                        s.entry
+                    );
+                    checked += 1;
+                }
+                assert!(checked > 0, "no hostile spawn in {}", band.name);
+            }
+        }
+    }
+
+    /// The loaded spawns of `entry` on Eastern Kingdoms inside `area` ([x0, y0, x1, y1]).
+    fn spawns_of(entry: u32, area: Rect) -> Vec<&'static mobs::Spawn> {
+        mobs::content()
+            .spawn
+            .iter()
+            .filter(|s| s.map == EASTERN_KINGDOMS && s.entry == entry)
+            .filter(|s| holds(&area, s.position[0], s.position[1]))
+            .collect()
+    }
+
+    #[test]
+    fn the_lake_thresher_fetid_corpses_and_tranquil_gardens_skeletons_take_their_bands() {
+        let cases = [
+            (
+                "Lake Thresher",
+                14357,
+                [-9700.0, -3000.0, -9100.0, -2300.0],
+                32..=35,
+            ),
+            (
+                "Fetid Corpse",
+                1270,
+                [-10450.0, -1450.0, -10200.0, -1150.0],
+                32..=35,
+            ),
+            (
+                "Skeletal Warrior",
+                48,
+                [-11150.0, -1450.0, -10850.0, -1200.0],
+                33..=36,
+            ),
+        ];
+        for (name, entry, area, levels) in cases {
+            let spawns = spawns_of(entry, area);
+            assert!(spawns.len() >= 2, "only {} {name} spawns", spawns.len());
+            for s in spawns {
+                assert!(
+                    levels.contains(&s.level_min) && levels.contains(&s.level_max),
+                    "{name} {}: {}-{}",
+                    s.guid,
+                    s.level_min,
+                    s.level_max
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_shadowhide_gnoll_far_east_keeps_its_stretch() {
+        let (rows, from, to) = zone_rows("redridge", include_str!("../content/redridge.toml"));
+        let near = |r: &[f64; 6]| (r[4] + 9293.0).powi(2) + (r[5] + 3178.0).powi(2);
+        let row = rows
+            .iter()
+            .filter(|r| r[1] as u32 == 433)
+            .min_by(|a, b| near(a).total_cmp(&near(b)))
+            .unwrap();
+        let [guid, _, lmin, lmax, x, y] = *row;
+        assert!(near(row) < 100.0 * 100.0);
+        assert_eq!(range_in("redridge", x as f32, y as f32), None);
+        let s = hostile_spawn(guid as u32, 433).unwrap();
+        let want = [lmin as u8, lmax as u8].map(|l| stretch(l, from, to));
+        assert_eq!([s.level_min, s.level_max], want);
+    }
+
+    #[test]
+    fn magistrate_solomon_and_lord_ebonlocke_keep_their_levels() {
+        for (entry, level) in [(344, 36), (263, 30)] {
+            let s = mobs::content()
+                .spawn
+                .iter()
+                .find(|s| s.map == EASTERN_KINGDOMS && s.entry == entry)
+                .unwrap();
+            assert_eq!((s.level_min, s.level_max), (level, level), "{entry}");
+        }
     }
 }
