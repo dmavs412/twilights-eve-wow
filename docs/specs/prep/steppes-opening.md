@@ -323,3 +323,5 @@ the 40s, Blackrock Mountain's interior and its instance doors.
 12. Levels: sub-zone Level Bands spanning 50-60, the same mechanism as Redridge and Duskwood (that arc's Level Bands code ticket).
 13. Outposts: (b) Flame Crest's orcs turn hostile, as Blackrock. Morgan's Vigil's stock NPCs become Hub NPCs (Goldshire pattern); goblins and the Spirit Healer stay.
 14. Level gate: (a) none.
+15. Opening voice (Davis, after filing): the pass camp's captain yells at the opening; Toren is already taken (comment on #630).
+16. Altar of Storms (Davis, after filing): becomes a later dungeon, about 56-58, keeping vanilla levels around it; the lore bible changes (comment on #634).

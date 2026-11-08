@@ -40,3 +40,5 @@ rewards of the arc's dungeon-ending quest 99011 (RD:28-raven-hill-deeps-quests).
 ## Assumptions allowed
 
 - The stems, if `build_gear.py` refuses a name; pick another in the crypt's theme and record it.
+
+Blocked by GEAR:01-gear-sheet-tool. `sheet.py add-row` edits only `master.csv`, so write and change `gear.csv` rows with the `gear_sheet.py` tool that ticket adds, wherever this ticket says `sheet.py`.

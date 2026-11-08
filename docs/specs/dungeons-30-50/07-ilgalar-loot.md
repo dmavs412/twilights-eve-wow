@@ -40,3 +40,5 @@ file constants and its header):
 ## Assumptions allowed
 
 - The stems, if `build_gear.py` refuses a name; pick another in the tower's theme and record it.
+
+Blocked by GEAR:01-gear-sheet-tool. `sheet.py add-row` edits only `master.csv`, so write and change `gear.csv` rows with the `gear_sheet.py` tool that ticket adds, wherever this ticket says `sheet.py`.

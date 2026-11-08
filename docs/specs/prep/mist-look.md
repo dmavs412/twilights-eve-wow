@@ -276,3 +276,16 @@ Ticket order (assuming the recommendations above):
 Gate for each: `cargo check -q -p benilla-world` and `cargo test -q -p benilla-world --lib mist`,
 plus the capture set. The spec closes `unplayed`; Davis's play pass at the Westfall edge and in
 the tram tunnel removes it.
+
+## Grill answers (Davis, 2026-11-08)
+
+1. What bothers Davis: the flat painted wall, the straight steps, and that it is dead with no motion. NOT the colour.
+2. The picture: (a) a ROLLING GREY CLOUD BANK.
+3. Land inside: (b) yes, one row of closed chunks (33 yd) drawn inside the mist and fogged to full mist (amends ADR 0015); the realm wall still blocks walking.
+4. Build: (c) layered shells reaching into the closed side, plus slow drifting puffs along the foot so it churns.
+5. Colour (Claude, not a complaint): keep the scene fog colour as now.
+6. Approach: (c) within about 60 yd of the edge the scene fog pulls in and greys, AND the ambient sound fades (the Hush), sound in its own ticket.
+7. Steps (Claude, follows answer 1): (b) chamfer each corner across the closed chunk, more if shots still show steps.
+8. Tram wall (Claude): (b) same shader, its own colour from the WMO fog and its own depths; trams still burst through (ADR 0033).
+9. Judging: (b) the builder takes before/after WOW_CAPTURE shots at fixed viewpoints and times, Davis approves from the shots, then one play pass at the end.
+10. Maps (Claude): (a) not in scope, the colour does not change.

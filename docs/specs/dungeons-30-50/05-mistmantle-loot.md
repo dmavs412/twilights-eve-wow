@@ -48,3 +48,5 @@ the Deeprun Tram's (its header names them; add `mistmantle_manor.toml` to its fi
 
 - The stems, if `build_gear.py` refuses a name (length or a clash with an existing name): pick
   another in the dungeon's theme and record it.
+
+Blocked by GEAR:01-gear-sheet-tool. `sheet.py add-row` edits only `master.csv`, so write and change `gear.csv` rows with the `gear_sheet.py` tool that ticket adds, wherever this ticket says `sheet.py`.

@@ -65,3 +65,5 @@ The one proof of the dragons the player carries out: a scale, nothing written.
 - The stems, if `build_gear.py` refuses a name.
 - If a load check refuses a class 12 item that no quest collects, make the scale class 15
   (Miscellaneous) at quality 1 and record it.
+
+Blocked by GEAR:01-gear-sheet-tool. `sheet.py add-row` edits only `master.csv`, so write and change `gear.csv` rows with the `gear_sheet.py` tool that ticket adds, wherever this ticket says `sheet.py`.
