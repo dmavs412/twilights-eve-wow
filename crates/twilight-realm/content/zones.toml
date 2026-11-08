@@ -28,7 +28,9 @@ removed_guids = [
   5010,
 ]
 # Vanilla 18-35, the non-critter, non-friendly spawns with the Unseen aside, onto the lore
-# bible's 30-50 (docs/lore-bible.md, "Zone arcs and dungeons"); spec #466 decision 2.
+# bible's 30-50 (docs/lore-bible.md, "Zone arcs and dungeons"); spec #466 decision 2. Since #616
+# duskwood_bands.toml covers the whole zone and decides instead; this reaches only its exclude
+# boxes, where no spawn stands.
 levels = { from = [18, 35], to = [30, 50] }
 
 # The Grey Robes' four dig camps in Raven Hill Cemetery (#606, spec #595 decision 14), each two
@@ -188,6 +190,113 @@ level_max = 42
 position = [-10530.0, 395.0, 31.79]
 orientation = 1.57
 
+# Sareth's agents' camp in the Twilight Grove (#616, spec #595), centred on -10460,-470: the Grey
+# Captain (96053) at the centre, eight Grey Robe Agents (96051) in rings of 12 and 18 yd, and four
+# Grey Robe Wardens (96052) at 23 yd, all facing the centre. Ticket 23 adds the tents and fire.
+[[zone.added]]
+guid = 961519
+entry = 96053
+level_min = 47
+level_max = 47
+position = [-10460.0, -470.0, 50.70]
+orientation = 0.0
+
+[[zone.added]]
+guid = 961520
+entry = 96051
+level_min = 46
+level_max = 46
+position = [-10448.0, -470.0, 49.76]
+orientation = 3.14
+
+[[zone.added]]
+guid = 961521
+entry = 96051
+level_min = 46
+level_max = 46
+position = [-10447.0, -457.0, 46.70]
+orientation = 3.93
+
+[[zone.added]]
+guid = 961522
+entry = 96051
+level_min = 46
+level_max = 46
+position = [-10460.0, -458.0, 46.70]
+orientation = 4.71
+
+[[zone.added]]
+guid = 961523
+entry = 96051
+level_min = 46
+level_max = 46
+position = [-10473.0, -457.0, 49.42]
+orientation = 5.5
+
+[[zone.added]]
+guid = 961524
+entry = 96051
+level_min = 46
+level_max = 46
+position = [-10472.0, -470.0, 51.29]
+orientation = 0.0
+
+[[zone.added]]
+guid = 961525
+entry = 96051
+level_min = 46
+level_max = 46
+position = [-10473.0, -483.0, 50.25]
+orientation = 0.79
+
+[[zone.added]]
+guid = 961526
+entry = 96051
+level_min = 46
+level_max = 46
+position = [-10460.0, -482.0, 51.56]
+orientation = 1.57
+
+[[zone.added]]
+guid = 961527
+entry = 96051
+level_min = 46
+level_max = 46
+position = [-10447.0, -483.0, 50.71]
+orientation = 2.36
+
+[[zone.added]]
+guid = 961528
+entry = 96052
+level_min = 47
+level_max = 47
+position = [-10444.0, -454.0, 46.60]
+orientation = 3.93
+
+[[zone.added]]
+guid = 961529
+entry = 96052
+level_min = 47
+level_max = 47
+position = [-10476.0, -454.0, 49.46]
+orientation = 5.5
+
+[[zone.added]]
+guid = 961530
+entry = 96052
+level_min = 47
+level_max = 47
+position = [-10476.0, -486.0, 50.29]
+orientation = 0.79
+
+[[zone.added]]
+guid = 961531
+entry = 96052
+level_min = 47
+level_max = 47
+position = [-10444.0, -486.0, 51.09]
+orientation = 2.36
+
 [[zone]]
 file = "redridge"
 # Black Dragon Whelp (441): 35 spawns on Lake Everstill's shore, removed (#595 decision 8); the
@@ -202,10 +311,43 @@ removed_guids = [
   # Stonewatch Keep (stonewatch_keep.toml): every creature inside its footprint.
   6722, 6724, 7655, 18382, 18383, 18384, 18385, 18433, 18441, 18442, 18443, 18444, 18445, 18446,
   18451, 18452, 18453, 18454, 18455, 18456, 18457, 18458, 18459, 20703, 20704, 20705, 20706,
+  # The Lakeshire Watch's camp ground at Stonewatch Falls (#616, spec #595 decision 16): the
+  # Blackrock Outrunners (485) and Renegades (437) within 45 yd of -9515,-3270. The rabbit (6146)
+  # stays.
+  6193, 6194, 6195, 6196, 6197, 6737, 6738,
 ]
 # Vanilla 14-27, the non-critter, non-friendly spawns, onto the lore bible's 30-50
-# (docs/lore-bible.md, "Zone arcs and dungeons"); spec #466 decision 2.
+# (docs/lore-bible.md, "Zone arcs and dungeons"); spec #466 decision 2. Since #616
+# redridge_bands.toml covers the whole zone and decides instead; this reaches only its exclude
+# box, where no spawn stands.
 levels = { from = [14, 27], to = [30, 50] }
+
+# The cult courier in Galardell Valley (#616, spec #595): the Twilight Courier (96054) on the
+# valley path toward the Tower of Ilgalar, outside Ilgalar's Approach, and his two Twilight
+# Outriders (96055) within 5 yd. All three face the tower.
+[[zone.added]]
+guid = 961001
+entry = 96054
+level_min = 48
+level_max = 48
+position = [-9120.0, -3240.0, 101.19]
+orientation = 3.65
+
+[[zone.added]]
+guid = 961002
+entry = 96055
+level_min = 47
+level_max = 47
+position = [-9117.0, -3243.0, 101.06]
+orientation = 3.65
+
+[[zone.added]]
+guid = 961003
+entry = 96055
+level_min = 47
+level_max = 47
+position = [-9123.0, -3236.0, 101.20]
+orientation = 3.65
 
 [[zone]]
 file = "stormwind"

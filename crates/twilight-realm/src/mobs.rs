@@ -2212,9 +2212,9 @@ mod tests {
             (5086, (48, 48)),  // Mor'Ladim, Duskwood, held by level_overrides.toml
             (4183, (36, 38)),  // Bliztik, Duskwood, neutral, in the Raven Hill band
             (8747, (33, 36)),  // Redridge Thrasher, in the Lakeridge Highway band
-            (7525, (45, 47)),  // Shadowhide Warrior, Galardell Valley
+            (7525, (45, 48)),  // Shadowhide Warrior, in the Galardell Valley band
             (6214, (35, 38)),  // Shadowhide Warrior, in the Ilgalar's Approach band
-            (10128, (33, 35)), // Great Goretusk, neutral
+            (10128, (35, 37)), // Great Goretusk, neutral, nearest the Alther's Mill band
             (6140, (31, 33)),  // Narnie, neutral beast, in the Lakeshire band
             (4061, (40, 40)),  // Role Dreuger, Duskwood, friendly
             (6139, (21, 21)),  // Bartender Wental, Redridge, friendly

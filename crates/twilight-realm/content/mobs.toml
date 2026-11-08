@@ -2531,6 +2531,107 @@ speed_run = 1.143
 detection_range = 18.0
 spells = ["shadow_bolt_creature"]
 
+# Sareth's agents (#616, spec #595): Grey Robes camped in the Twilight Grove; nobody says whose
+# they are. The Twilight Cultist's form (96024) with the Grey Robes' display. Their camp is in
+# zones.toml. Elites carry no `rolls` yet: Loot Bands stop at 27-30. The Agent fights in melee.
+[[template]]
+entry = 96051
+name = "Grey Robe Agent"
+creature_type = 7
+rank = 0
+display_id = 2492
+faction_template = 14
+unit_class = "warrior"
+level_min = 46
+level_max = 46
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The Warden who keeps the agents' camp (#616): a caster.
+[[template]]
+entry = 96052
+name = "Grey Robe Warden"
+creature_type = 7
+rank = 0
+display_id = 2492
+faction_template = 14
+unit_class = "mage"
+level_min = 47
+level_max = 47
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["shadow_word_pain_creature"]
+
+# The Grey Captain who leads the agents' camp (#616): elite.
+[[template]]
+entry = 96053
+name = "The Grey Captain"
+creature_type = 7
+rank = 1
+display_id = 2492
+faction_template = 14
+unit_class = "warrior"
+level_min = 47
+level_max = 47
+health_multiplier = 1.6
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["shadow_word_pain_creature"]
+
+# The cult courier on the Galardell Valley path toward the Tower of Ilgalar (#616): an elite
+# caster in the Twilight cultist's look, with two Outriders for guards. His spawn is in zones.toml.
+[[template]]
+entry = 96054
+name = "Twilight Courier"
+creature_type = 7
+rank = 1
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 48
+level_max = 48
+health_multiplier = 1.6
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["shadow_bolt_creature", "shadow_word_pain_creature"]
+
+# The courier's guards (#616). Melee.
+[[template]]
+entry = 96055
+name = "Twilight Outrider"
+creature_type = 7
+rank = 0
+display_id = 2882
+faction_template = 14
+unit_class = "warrior"
+level_min = 47
+level_max = 47
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
 # The Writs' named creatures, made elite. Each row shadows its generated one (elwynn.toml,
 # redridge.toml, duskwood.toml), as Garrick Padfoot's does: a copy with only `rank` changed. A rare
 # (4) becomes a rare elite (2), and Dead-Tooth Jack, a normal creature, an elite (1). Tharil'zun,

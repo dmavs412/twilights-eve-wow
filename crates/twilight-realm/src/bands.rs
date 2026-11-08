@@ -352,37 +352,49 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
     }
 
     #[test]
-    fn outside_the_bands_redridge_and_duskwood_keep_their_stretch() {
+    fn every_hostile_redridge_and_duskwood_spawn_takes_a_band() {
+        // The bounds cover both zones whole (#616), so no spawn keeps a stretched level that no
+        // band gives.
         for (zone, text) in ZONES {
-            let (rows, from, to) = zone_rows(zone, text);
+            let (rows, _, _) = zone_rows(zone, text);
+            let bands: Vec<[u8; 2]> = zone_file(zone).unwrap().band.iter().map(range).collect();
             let mut checked = 0;
-            for [guid, entry, lmin, lmax, x, y] in rows.into_iter().step_by(3) {
+            for [guid, entry, _, _, x, y] in rows {
                 let Some(s) = hostile_spawn(guid as u32, entry as u32) else {
                     continue;
                 };
-                if range_in(zone, x as f32, y as f32).is_some() {
-                    continue;
-                }
-                let want = [lmin as u8, lmax as u8].map(|l| stretch(l, from, to));
-                assert_eq!([s.level_min, s.level_max], want, "{zone} spawn {guid}");
+                assert!(
+                    range_in(zone, x as f32, y as f32).is_some(),
+                    "{zone} spawn {guid} at {x}, {y} is outside the bands"
+                );
+                let inside = |[lo, hi]: &[u8; 2]| {
+                    (*lo..=*hi).contains(&s.level_min) && (*lo..=*hi).contains(&s.level_max)
+                };
+                assert!(
+                    bands.iter().any(inside),
+                    "{zone} spawn {guid} ({entry}): {}-{}",
+                    s.level_min,
+                    s.level_max
+                );
                 checked += 1;
             }
-            assert!(checked > 20, "only {checked} {zone} spawns checked");
+            assert!(checked > 300, "only {checked} {zone} spawns checked");
         }
     }
 
     #[test]
     fn a_redridge_vanilla_entry_takes_a_band_only_from_a_band() {
         let (rows, _, _) = zone_rows("redridge", include_str!("../content/redridge.toml"));
-        let [_, entry, _, _, x, y] = rows
+        let [_, entry, _, _, x, _] = rows
             .into_iter()
             .find(|r| {
                 let e = r[1] as u32;
-                let outside = range_in("redridge", r[4] as f32, r[5] as f32).is_none();
-                outside && !mobs::is_vanilla(e) && mobs::template(e).is_some_and(|t| t.hostile)
+                !mobs::is_vanilla(e) && mobs::template(e).is_some_and(|t| t.hostile)
             })
             .unwrap();
-        let (entry, x, y) = (entry as u32, x as f32, y as f32);
+        // East of Redridge's bounds, where no band file reaches.
+        let (entry, x, y) = (entry as u32, x as f32, -4300.0);
+        assert_eq!(range_in("redridge", x, y), None);
         assert_eq!(mobs::banded(entry, EASTERN_KINGDOMS, [x, y, 0.0]), None);
         assert_eq!(mobs::level_area(EASTERN_KINGDOMS, x, y), None);
         // The same parsing path, with one band around the point.
@@ -412,6 +424,8 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
             ("redridge", "Render's Camp", [41, 44]),
             ("redridge", "Render's Valley", [40, 43]),
             ("redridge", "Stonewatch", [43, 46]),
+            ("redridge", "Stonewatch Falls", [44, 47]),
+            ("redridge", "Galardell Valley", [45, 48]),
             ("duskwood", "The Darkened Bank", [30, 32]),
             ("duskwood", "Darkshire and Beggar's Haunt", [31, 33]),
             ("duskwood", "Manor Mistmantle", [32, 35]),
@@ -423,6 +437,7 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
             ("duskwood", "Vul'Gol Ogre Mound", [38, 41]),
             ("duskwood", "Raven Hill Cemetery", [38, 42]),
             ("duskwood", "Brightwood Grove", [40, 43]),
+            ("duskwood", "The Rotting Orchard", [45, 48]),
         ];
         for (zone, text) in ZONES {
             let f = zone_file(zone).unwrap();
@@ -555,14 +570,14 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
     }
 
     #[test]
-    fn rohh_the_silent_in_galardell_valley_keeps_his_stretch() {
-        let (rows, from, to) = zone_rows("redridge", include_str!("../content/redridge.toml"));
-        let [guid, _, lmin, lmax, x, y] = *rows.iter().find(|r| r[1] as u32 == 947).unwrap();
+    fn rohh_the_silent_in_galardell_valley_is_45_to_48() {
+        let (rows, _, _) = zone_rows("redridge", include_str!("../content/redridge.toml"));
+        let [guid, _, _, _, x, y] = *rows.iter().find(|r| r[1] as u32 == 947).unwrap();
         assert!((x + 9010.0).abs() < 5.0 && (y + 3209.0).abs() < 5.0);
-        assert_eq!(range_in("redridge", x as f32, y as f32), None);
+        let (x, y) = (x as f32, y as f32);
+        assert_eq!(band_in("redridge", x, y), Some("Galardell Valley"));
         let s = hostile_spawn(guid as u32, 947).unwrap();
-        let want = [lmin as u8, lmax as u8].map(|l| stretch(l, from, to));
-        assert_eq!([s.level_min, s.level_max], want);
+        assert!((45..=48).contains(&s.level_min) && (45..=48).contains(&s.level_max));
     }
 
     #[test]
@@ -588,21 +603,103 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
     }
 
     #[test]
-    fn a_shadowhide_brute_in_galardell_valley_away_from_the_tower_keeps_its_stretch() {
+    fn a_shadowhide_brute_in_galardell_valley_away_from_the_tower_takes_the_valley() {
         let p = [-9083.0, -3166.0, 0.0];
-        assert_eq!(range_in("redridge", p[0], p[1]), None);
-        assert_eq!(mobs::banded(432, EASTERN_KINGDOMS, p), None);
-        let (rows, from, to) = zone_rows("redridge", include_str!("../content/redridge.toml"));
+        assert_eq!(band_in("redridge", p[0], p[1]), Some("Galardell Valley"));
+        assert_eq!(mobs::banded(432, EASTERN_KINGDOMS, p), Some([45, 48]));
+        let (rows, _, _) = zone_rows("redridge", include_str!("../content/redridge.toml"));
         let near: Vec<_> = rows
             .iter()
             .filter(|r| r[1] as u32 == 432)
             .filter(|r| (r[4] as f32 - p[0]).hypot(r[5] as f32 - p[1]) <= 80.0)
             .collect();
         assert!(near.len() >= 2, "only {} brutes near {p:?}", near.len());
-        for [guid, _, lmin, lmax, _, _] in near {
+        for [guid, _, _, _, _, _] in near {
             let s = hostile_spawn(*guid as u32, 432).unwrap();
-            let want = [*lmin as u8, *lmax as u8].map(|l| stretch(l, from, to));
-            assert_eq!([s.level_min, s.level_max], want, "brute {guid}");
+            let levels = [s.level_min, s.level_max];
+            assert!(levels.iter().all(|l| (45..=48).contains(l)), "brute {guid}");
+        }
+    }
+
+    /// The Lakeshire Watch's camp at Stonewatch Falls (#616, spec #595 decision 16).
+    const WATCH_CAMP: [f32; 2] = [-9515.0, -3270.0];
+
+    #[test]
+    fn the_blackrock_outpost_at_stonewatch_falls_is_gone() {
+        let removed = [6193, 6194, 6195, 6196, 6197, 6737, 6738];
+        let [cx, cy] = WATCH_CAMP;
+        for s in &mobs::content().spawn {
+            if s.map != EASTERN_KINGDOMS {
+                continue;
+            }
+            assert!(!removed.contains(&s.guid), "spawn {} remains", s.guid);
+            let hostile = mobs::template(s.entry).is_some_and(|t| t.hostile && !t.friendly);
+            let d = (s.position[0] - cx).hypot(s.position[1] - cy);
+            assert!(
+                !hostile || d > 30.0,
+                "{} ({}) {d} yd from the camp",
+                s.guid,
+                s.entry
+            );
+        }
+    }
+
+    #[test]
+    fn the_grey_captain_and_the_courier_stand_where_they_are_put() {
+        // (entry, level, count, centre, nearest yd, farthest yd, band at the centre)
+        let camps = [
+            (96053, 47, 1, [-10460.0, -470.0], 0.0, 1.0, "Twilight Grove"),
+            (
+                96051,
+                46,
+                8,
+                [-10460.0, -470.0],
+                10.0,
+                25.0,
+                "Twilight Grove",
+            ),
+            (
+                96052,
+                47,
+                4,
+                [-10460.0, -470.0],
+                10.0,
+                25.0,
+                "Twilight Grove",
+            ),
+            (
+                96054,
+                48,
+                1,
+                [-9120.0, -3240.0],
+                0.0,
+                1.0,
+                "Galardell Valley",
+            ),
+            (
+                96055,
+                47,
+                2,
+                [-9120.0, -3240.0],
+                0.0,
+                5.0,
+                "Galardell Valley",
+            ),
+        ];
+        for (entry, level, count, [cx, cy], near, far, band) in camps {
+            let zone = zone_at(cx, cy).unwrap();
+            assert_eq!(band_in(zone, cx, cy), Some(band), "{entry}");
+            let spawns: Vec<_> = mobs::content()
+                .spawn
+                .iter()
+                .filter(|s| s.map == EASTERN_KINGDOMS && s.entry == entry)
+                .collect();
+            assert_eq!(spawns.len(), count, "{entry}");
+            for s in spawns {
+                let d = (s.position[0] - cx).hypot(s.position[1] - cy);
+                assert!((near..=far + 0.01).contains(&d), "{} is {d} yd out", s.guid);
+                assert_eq!((s.level_min, s.level_max), (level, level), "{}", s.guid);
+            }
         }
     }
 

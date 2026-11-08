@@ -6,25 +6,12 @@
 # A spawn outside `bounds` keeps the zone's Level Stretch from zones.toml. Friendly NPCs and
 # critters keep their own levels, and a level_overrides.toml row beats a band.
 
-# Every band box below, so a spawn outside them all keeps the Level Stretch.
+# The whole zone (#616): its chunks run x -10117..-8550, y -4250..-1750, so every spawn takes a
+# band and none keeps the Level Stretch. Three Corners' box runs on to y -1717; the second box
+# takes that strip, still short of Elwynn's bounds at y -1700.
 bounds = [
-  [-10050.0, -2083.0, -9450.0, -1717.0],
-  [-9449.0, -2383.0, -9160.0, -1860.0],
-  [-9583.0, -2917.0, -9217.0, -2384.0],
-  [-9583.0, -2383.0, -9450.0, -2084.0],
-  [-9883.0, -2817.0, -9584.0, -2084.0],
-  [-9420.0, -3440.0, -9150.0, -3170.0],
-  [-9050.0, -2017.0, -8981.0, -1950.0],
-  [-8980.0, -2060.0, -8750.0, -1910.0],
-  [-9159.0, -2460.0, -9051.0, -1950.0],
-  [-9050.0, -2060.0, -8981.0, -2018.0],
-  [-9050.0, -2460.0, -8835.0, -2061.0],
-  [-9216.0, -2850.0, -9017.0, -2470.0],
-  [-8834.0, -2540.0, -8583.0, -2120.0],
-  [-9917.0, -3510.0, -9500.0, -3118.0],
-  [-9917.0, -3117.0, -9551.0, -3050.0],
-  [-9550.0, -3117.0, -9050.0, -2918.0],
-  [-9216.0, -2917.0, -9083.0, -2851.0],
+  [-10117.0, -4250.0, -8550.0, -1750.0],
+  [-10050.0, -1749.0, -9450.0, -1717.0],
 ]
 
 # Stonewatch Keep's footprint: stonewatch_keep.toml's boxes turned by its yaw of 95 about
@@ -63,7 +50,7 @@ name = "Lake Everstill"
 level_min = 32
 level_max = 35
 boxes = [
-  [-9583.0, -2917.0, -9217.0, -2384.0],
+  [-9583.0, -2917.0, -9218.0, -2384.0],
   [-9583.0, -2383.0, -9450.0, -2084.0],
 ]
 
@@ -137,15 +124,17 @@ boxes = [[-8834.0, -2540.0, -8583.0, -2120.0]]
 # Render's Valley, the Blackrock camps in the south-east (Blackrock Grunt -9822..-9652; Blackrock
 # Outrunner -9816..-9538; Blackrock Renegade -9576..-9509, -3301..-3223; Blackrock Summoner
 # -9723,-3178), down to Boulderheart (-9543,-3500) by the Ranthals' farm (Clyde Ranthal
-# -9601,-3503, friendly). The chunks (x -9917..-9617, y -3383..-3050) are widened east to x -9500
-# and south to y -3510 for the camps' east end and Boulderheart; north of y -3118 the box stops at
-# x -9551, short of Stonewatch.
+# -9601,-3503, friendly). The chunks (x -9917..-9617, y -3383..-3050) are widened east to x -9584,
+# where Stonewatch Falls begins, and south to y -3510; a second box takes Boulderheart past the
+# Falls' south edge. North of y -3118 the box stops at x -9551, short of Stonewatch. The Blackrock
+# outpost east of x -9584 is the Falls' (#616).
 [[band]]
 name = "Render's Valley"
 level_min = 40
 level_max = 43
 boxes = [
-  [-9917.0, -3510.0, -9500.0, -3118.0],
+  [-9917.0, -3510.0, -9584.0, -3118.0],
+  [-9583.0, -3510.0, -9500.0, -3484.0],
   [-9917.0, -3117.0, -9551.0, -3050.0],
 ]
 
@@ -155,12 +144,47 @@ boxes = [
 # -9236..-9174, -2932..-2852). The keep's box runs north to y -2918, Lake Everstill's edge, for the
 # Scouts and Sentry at its north gate (-9534..-9501, -2923..-2918). The tower's chunks west of x
 # -9217 lie in the keep's box; east of it a box runs north to y -2851, short of Alther's Mill, for
-# the camp's north Grunts (-9208,-2852). Seeker Aqualon (-9389,-2875) stands in Lake Everstill's box.
+# the camp's north Grunts (-9208,-2852; -9216.9,-2861, for whom the box starts at x -9217 and Lake
+# Everstill's ends at x -9218, #616). Seeker Aqualon (-9389,-2875) stands in Lake Everstill's box.
 [[band]]
 name = "Stonewatch"
 level_min = 43
 level_max = 46
 boxes = [
   [-9550.0, -3117.0, -9050.0, -2918.0],
-  [-9216.0, -2917.0, -9083.0, -2851.0],
+  [-9217.0, -2917.0, -9083.0, -2851.0],
+]
+
+# Stonewatch Falls (#616): the lake shore below the falls (Murloc Nightcrawler and Tidecaller
+# -9466..-9423, -3350..-3325), the Blackrock left round the Watch's camp once zones.toml removes
+# its outpost (Blackrock Outrunner -9580,-3258 and -9496,-3213; Blackrock Renegade -9576,-3281 and
+# -9576,-3223), and the gnolls below Stonewatch's south wall (Shadowhide Gnoll -9428,-3145).
+# The chunks, x -9583..-9383 and y -3483..-3117, less Ilgalar's Approach: the main box stops at x
+# -9421, and two strips east of it run to x -9383 south and north of the approach. The north edge
+# is y -3118, short of Stonewatch.
+[[band]]
+name = "Stonewatch Falls"
+level_min = 44
+level_max = 47
+boxes = [
+  [-9583.0, -3483.0, -9421.0, -3118.0],
+  [-9420.0, -3483.0, -9383.0, -3441.0],
+  [-9420.0, -3169.0, -9383.0, -3118.0],
+]
+
+# Galardell Valley (#616): the Shadowhide gnolls east of the tower (Shadowhide Brute, Warrior,
+# Slayer and Darkweaver -9175..-9029, -3346..-3177; Rohh the Silent -9010,-3209; Lieutenant Fangore
+# -9112,-3311) and the strips round Ilgalar's Approach. The chunks, x -9417..-8883 and y
+# -3517..-3083, less the approach (listed first) and less the Falls' strips, so the boxes start
+# at x -9382. West of x -9050 the north edge is y -3118, short of Stonewatch; east of it the box
+# runs to the chunks' y -3083.
+[[band]]
+name = "Galardell Valley"
+level_min = 45
+level_max = 48
+boxes = [
+  [-9382.0, -3517.0, -8883.0, -3441.0],
+  [-9149.0, -3440.0, -8883.0, -3170.0],
+  [-9382.0, -3169.0, -9050.0, -3118.0],
+  [-9049.0, -3169.0, -8883.0, -3083.0],
 ]

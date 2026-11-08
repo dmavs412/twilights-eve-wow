@@ -6,25 +6,10 @@
 # A spawn outside `bounds` keeps the zone's Level Stretch from zones.toml. Friendly NPCs and
 # critters keep their own levels, and a level_overrides.toml row beats a band.
 
-# Every band box below, so a spawn outside them all keeps the Level Stretch.
-bounds = [
-  [-10175.0, -1650.0, -9883.0, 750.0],
-  [-10260.0, -190.0, -10176.0, 100.0],
-  [-10849.0, -1350.0, -10418.0, -1050.0],
-  [-10416.0, -1683.0, -10217.0, -1450.0],
-  [-10600.0, -1530.0, -10418.0, -1351.0],
-  [-10416.0, -1417.0, -10217.0, -1183.0],
-  [-11150.0, -1417.0, -10850.0, -1217.0],
-  [-10790.0, -650.0, -10261.0, 100.0],
-  [-10783.0, 183.0, -10617.0, 450.0],
-  [-10817.0, 484.0, -10283.0, 750.0],
-  [-11183.0, -750.0, -10950.0, -417.0],
-  [-11183.0, 17.0, -10817.0, 483.0],
-  [-11240.0, -317.0, -10917.0, 16.0],
-  [-10583.0, 101.0, -10250.0, 483.0],
-  [-10790.0, -1049.0, -10176.0, -651.0],
-  [-10417.0, -1117.0, -10176.0, -1050.0],
-]
+# The whole zone (#616): its chunks run x -11317..-9917, y -1783..617, so every spawn takes a
+# band and none keeps the Level Stretch. The box runs on to x -9883 and y 750, the Darkened Bank's
+# and the Hushed Bank's edges.
+bounds = [[-11317.0, -1783.0, -9883.0, 750.0]]
 
 # The two Phased Dungeon footprints the boxes reach: Mistmantle Manor (mistmantle_manor.toml's
 # footprint turned by its yaw of 90.5 about -10368.6,-1255.5) and Forest's Edge (forest_edge.toml,
@@ -155,3 +140,16 @@ boxes = [
   [-10790.0, -1049.0, -10176.0, -651.0],
   [-10417.0, -1117.0, -10176.0, -1050.0],
 ]
+
+# The Rotting Orchard (#616): the Nightbane worgen camp (Nightbane Dark Runner and Shadow Weaver
+# -11112..-10903, -984..-784; Nightbane Vile Fang and Tainted One -11232..-11143, -884..-811;
+# Nefaru -11223,-881) and the orchard's south end (Nightbane Vile Fang -11056..-10930,
+# -1157..-1085; Nightbane Tainted One -11149..-11077, -1167..-1140; Nefaru -11143,-1165; Gutspill
+# -11106,-1162). The chunks (x -11117..-10850, y -1017..-750) are widened west to x -11240 for the
+# camp's back and south to y -1216, short of Tranquil Gardens Cemetery, for the south end; the
+# north edge is y -751, short of the Yorgen Farmstead.
+[[band]]
+name = "The Rotting Orchard"
+level_min = 45
+level_max = 48
+boxes = [[-11240.0, -1216.0, -10850.0, -751.0]]
