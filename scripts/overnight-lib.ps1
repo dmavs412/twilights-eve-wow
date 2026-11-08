@@ -44,7 +44,11 @@ function Find-Claude {
 function Write-Log([string]$msg) {
     $line = "[{0}] {1}" -f (Get-Date -Format "HH:mm:ss"), $msg
     Write-Host $line
-    Add-Content -Path $script:RunLog -Value $line -Encoding utf8
+    # A reader (a tail in another shell) can hold the file for a moment; retry instead of losing the line.
+    for ($i = 0; $i -lt 20; $i++) {
+        try { [IO.File]::AppendAllText($script:RunLog, "$line`r`n", (New-Object Text.UTF8Encoding $false)); return }
+        catch { Start-Sleep -Milliseconds 250 }
+    }
 }
 
 # The gate for the commits $Before..$After in the current directory's checkout. Runs cargo via
