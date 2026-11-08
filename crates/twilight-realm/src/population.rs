@@ -86,7 +86,8 @@ pub(crate) struct Population {
 impl Population {
     /// Brings spawns within view of any of `players` into `mobs` and lets go those far from them
     /// all, and brings back the dead whose time is up. A spawn on land closed while the Milestones
-    /// `reached` are stays out.
+    /// `reached` are stays out, as does one whose Milestone keys they do not meet; one that stops
+    /// meeting them leaves at the next look, alive or dead, in a fight or out of one.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn update(
         &mut self,
@@ -145,11 +146,13 @@ impl Population {
         self.scanned_at = Some(players.to_vec());
         self.since_scan = 0.0;
 
-        // Out of view: the idle and the dead leave; a fight or a run home stays.
+        // Out of view: the idle and the dead leave; a fight or a run home stays. One whose
+        // Milestone keys are no longer met leaves whatever it is doing.
         let mut gone = Vec::new();
         mobs.retain(|m| {
-            let leaves =
-                matches!(m.state, State::Idle | State::Dead) && nearest(m.home) > FORGET_YD;
+            let leaves = (matches!(m.state, State::Idle | State::Dead)
+                && nearest(m.home) > FORGET_YD)
+                || m.spawn_row().is_some_and(|s| !s.milestones.met(reached));
             if leaves {
                 gone.push(m.guid);
                 if let Some(present) = self.present.get_mut(m.spawn as usize) {
@@ -197,7 +200,7 @@ impl Population {
                     if self.present[i as usize]
                         || flat_distance(spawn.position, me) > VIEW_YD
                         || self.dead.iter().any(|c| c.spawn == i)
-                        || crate::closed_at(map, spawn.position[0], spawn.position[1], reached)
+                        || !stands(spawn, map, reached)
                     {
                         continue;
                     }
@@ -276,6 +279,13 @@ impl Population {
     }
 }
 
+/// Whether `spawn` on `map` may be in the world while the Milestones `reached` are: not on
+/// closed land, and its Milestone keys met.
+fn stands(spawn: &mobs::Spawn, map: u32, reached: &[&str]) -> bool {
+    !crate::closed_at(map, spawn.position[0], spawn.position[1], reached)
+        && spawn.milestones.met(reached)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -331,6 +341,27 @@ mod tests {
                 "{entry} did not stream in at its spawn"
             );
         }
+    }
+
+    #[test]
+    fn an_added_spawn_waits_on_its_milestones() {
+        let gate = |text: &str| toml::from_str(text).unwrap();
+        let at = [-8900.0, -150.0, 82.0];
+        let after = mobs::Spawn {
+            position: at,
+            milestones: gate("after_milestone = \"ilgalar_anchor_broken\""),
+            ..Default::default()
+        };
+        let until = mobs::Spawn {
+            position: at,
+            milestones: gate("until_milestone = \"ilgalar_anchor_broken\""),
+            ..Default::default()
+        };
+        let anchor = ["ilgalar_anchor_broken"];
+        assert!(!stands(&after, EASTERN_KINGDOMS, &[]));
+        assert!(stands(&after, EASTERN_KINGDOMS, &anchor));
+        assert!(stands(&until, EASTERN_KINGDOMS, &[]));
+        assert!(!stands(&until, EASTERN_KINGDOMS, &anchor));
     }
 
     #[test]

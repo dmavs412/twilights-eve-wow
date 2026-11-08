@@ -224,11 +224,21 @@ pub(crate) struct Appears {
     /// In the Run until the lever of this guid has been pulled in it.
     #[serde(default)]
     pub(crate) until_used: Option<u32>,
+    /// Out of every Run until a Milestone is reached, or in it until one is (ADR 0034).
+    #[serde(flatten)]
+    pub(crate) milestones: crate::milestones::Gate,
 }
 
 impl Appears {
-    /// Whether it is in a Run with these stops `pinned`, creatures `dead` and levers `used`.
-    pub(crate) fn met(&self, pinned: &[String], dead: &[u32], used: &[u32]) -> bool {
+    /// Whether it is in a Run with these stops `pinned`, creatures `dead` and levers `used`, while
+    /// the Milestones `reached` are.
+    pub(crate) fn met<S: AsRef<str>>(
+        &self,
+        pinned: &[String],
+        dead: &[u32],
+        used: &[u32],
+        reached: &[S],
+    ) -> bool {
         self.after_pinned
             .as_ref()
             .is_none_or(|key| pinned.contains(key))
@@ -236,17 +246,24 @@ impl Appears {
             && self.until_dead.is_none_or(|guid| !dead.contains(&guid))
             && self.after_used.is_none_or(|guid| used.contains(&guid))
             && self.until_used.is_none_or(|guid| !used.contains(&guid))
+            && self.milestones.met(reached)
     }
 
-    /// Whether it comes into the Run after its start, once something has happened in it.
+    /// Whether it comes into the Run after its start, once something has happened in it or a
+    /// Milestone is reached.
     pub(crate) fn comes_later(&self) -> bool {
-        self.after_pinned.is_some() || self.after_dead.is_some() || self.after_used.is_some()
+        self.after_pinned.is_some()
+            || self.after_dead.is_some()
+            || self.after_used.is_some()
+            || self.milestones.after_milestone.is_some()
     }
 
-    /// Whether it has left a Run with these creatures `dead` and levers `used`.
-    pub(crate) fn gone(&self, dead: &[u32], used: &[u32]) -> bool {
+    /// Whether it has left a Run with these creatures `dead` and levers `used`, while the
+    /// Milestones `reached` are.
+    pub(crate) fn gone<S: AsRef<str>>(&self, dead: &[u32], used: &[u32], reached: &[S]) -> bool {
         self.until_dead.is_some_and(|guid| dead.contains(&guid))
             || self.until_used.is_some_and(|guid| used.contains(&guid))
+            || self.milestones.gone(reached)
     }
 }
 
@@ -464,8 +481,9 @@ impl Dungeon {
     }
 
     /// Refuses a lever table on a GameObject without `use = "lever"` and the use without the
-    /// table, a lever's `needs_dead` that names no creature of the dungeon, and an `after_used`,
-    /// `until_used` or timed call's `until_used` that names no lever of it.
+    /// table, a lever's `needs_dead` that names no creature of the dungeon, an `after_used`,
+    /// `until_used` or timed call's `until_used` that names no lever of it, and an
+    /// `after_milestone` or `until_milestone` that names no Milestone.
     fn check_levers(&self) {
         let levers: Vec<u32> = self
             .gameobject
@@ -496,6 +514,7 @@ impl Dungeon {
             .map(|c| (c.guid, &c.appears))
             .chain(self.gameobject.iter().map(|o| (o.guid, &o.appears)));
         for (guid, a) in appears {
+            a.milestones.check(&format!("{}: {guid}", self.name));
             for lever in [a.after_used, a.until_used].into_iter().flatten() {
                 assert!(
                     levers.contains(&lever),
@@ -1350,6 +1369,19 @@ impl Run {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_row_waiting_on_a_milestone_comes_later_or_goes() {
+        let row = |text: &str| -> Appears { toml::from_str(text).unwrap() };
+        let after = row("after_milestone = \"ilgalar_anchor_broken\"");
+        let until = row("until_milestone = \"ilgalar_anchor_broken\"");
+        let (none, anchor): ([&str; 0], _) = ([], ["ilgalar_anchor_broken"]);
+        assert!(after.comes_later() && !until.comes_later());
+        assert!(!after.met(&[], &[], &[], &none) && after.met(&[], &[], &[], &anchor));
+        assert!(until.met(&[], &[], &[], &none) && !until.met(&[], &[], &[], &anchor));
+        assert!(!until.gone(&[], &[], &none) && until.gone(&[], &[], &anchor));
+        assert!(!after.gone(&[], &[], &anchor));
+    }
 
     #[test]
     fn the_abbeys_tower_door_blocks_a_crossing_of_its_doorway_and_no_other_step() {

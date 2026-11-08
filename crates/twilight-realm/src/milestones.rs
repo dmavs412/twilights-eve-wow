@@ -56,6 +56,46 @@ fn shipped() -> &'static [Milestone] {
     FILE.get_or_init(|| catalogue(include_str!("../content/milestones.toml")))
 }
 
+/// The two keys a content row may carry to wait on Milestones (ADR 0034), flattened into the row.
+/// Each names a row of `content/milestones.toml`; a row with neither is always there.
+#[derive(Clone, Debug, Default, Deserialize)]
+pub(crate) struct Gate {
+    /// Absent until this Milestone is reached, then there for good.
+    #[serde(default)]
+    pub after_milestone: Option<String>,
+    /// There until this Milestone is reached, then gone for good.
+    #[serde(default)]
+    pub until_milestone: Option<String>,
+}
+
+impl Gate {
+    /// Whether the row is there while the Milestones `reached` are.
+    pub(crate) fn met<S: AsRef<str>>(&self, reached: &[S]) -> bool {
+        let has = |key: &String| reached.iter().any(|r| r.as_ref() == key);
+        self.after_milestone.as_ref().is_none_or(has) && !self.gone(reached)
+    }
+
+    /// Whether its `until_milestone` is among `reached`.
+    pub(crate) fn gone<S: AsRef<str>>(&self, reached: &[S]) -> bool {
+        self.until_milestone
+            .as_ref()
+            .is_some_and(|key| reached.iter().any(|r| r.as_ref() == key))
+    }
+
+    /// Panics naming `row` and a key the shipped catalogue does not list.
+    pub(crate) fn check(&self, row: &str) {
+        for key in [&self.after_milestone, &self.until_milestone]
+            .into_iter()
+            .flatten()
+        {
+            assert!(
+                shipped().iter().any(|m| m.key == *key),
+                "{row} names Milestone {key}, which content/milestones.toml does not list"
+            );
+        }
+    }
+}
+
 /// The catalogue and what the state file holds: the Milestones reached, the Tallies' counts.
 #[derive(Clone, Debug)]
 pub(crate) struct Milestones {
@@ -279,6 +319,30 @@ mod tests {
     #[should_panic(expected = "parses")]
     fn an_unknown_field_panics() {
         catalogue("[[milestone]]\nkey = \"steppes_open\"\nname = \"a\"\ngaol = 540\n");
+    }
+
+    #[test]
+    fn a_gate_waits_on_its_keys() {
+        let gate = |text: &str| -> Gate { toml::from_str(text).unwrap() };
+        let after = gate("after_milestone = \"ilgalar_anchor_broken\"");
+        let until = gate("until_milestone = \"ilgalar_anchor_broken\"");
+        let both =
+            gate("after_milestone = \"ilgalar_anchor_broken\"\nuntil_milestone = \"steppes_open\"");
+        let none: [&str; 0] = [];
+        let anchor = ["ilgalar_anchor_broken"];
+        let all = ["ilgalar_anchor_broken", "steppes_open"];
+        assert!(Gate::default().met(&none) && Gate::default().met(&all));
+        assert!(!after.met(&none) && after.met(&anchor));
+        assert!(until.met(&none) && !until.met(&anchor) && until.gone(&anchor));
+        assert!(!both.met(&none) && both.met(&anchor) && !both.met(&all));
+        both.check("test row");
+    }
+
+    #[test]
+    #[should_panic(expected = "test row names Milestone nope")]
+    fn a_gate_naming_no_milestone_panics() {
+        let gate: Gate = toml::from_str("until_milestone = \"nope\"").unwrap();
+        gate.check("test row");
     }
 
     #[test]

@@ -61,6 +61,13 @@
 #   every one (Discovery). It counts the discoveries made before the quest was taken.
 # - `after`: a quest offered only once that quest is handed in. When its giver is that quest's
 #   ender, it is the next in the chain: its accept panel opens as the other is handed in.
+#
+# Two optional keys hold a quest's offer on a Milestone (ADR 0034), each naming a row of
+# content/milestones.toml; the content load fails on a key that names none. `after_milestone`: not
+# offered until that Milestone is reached, then offered for good. `until_milestone`: offered until
+# it is reached, then never again. A quest may name both. Neither touches a quest already taken:
+# the character keeps it and its ender takes it in. A quest file's `[[gameobject]]` row takes the
+# same two keys: it is out of the world, and cannot be used, while they are not met.
 
 # ── The Near Plains (levels 1-6) ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 

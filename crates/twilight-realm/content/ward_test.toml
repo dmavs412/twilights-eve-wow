@@ -5,6 +5,12 @@
 # A 40x40 yd open-air box centred on (-9800, 555) in Elwynn, 300 yd north of the Test Grounds.
 # Terrain flatness and nearby spawns are unchecked; the ground there is taken as about z 47.
 # Every position is a world coordinate. The stops are two 20x40 yd boxes east of the building.
+#
+# When a creature or GameObject is in the Run: from the start, unless it names `after_pinned` (a
+# stop), `after_dead` or `until_dead` (a creature's guid), `after_used` or `until_used` (a
+# lever's guid), or `after_milestone` or `until_milestone` (a row of content/milestones.toml, ADR
+# 0034). An `after_milestone` row comes into a Run under way on the tick its Milestone is reached,
+# and an `until_milestone` row leaves it then.
 
 id = 90
 name = "the Ward Test"
@@ -176,3 +182,21 @@ position = [-9800.0, 560.0, 47.2]
 orientation = 0.0
 sides = "inside"
 until_used = 810005
+
+# Scenery in the building that stands until the Ilgalar Anchor breaks (#629).
+[[gameobject]]
+guid = 810008
+display = 461
+position = [-9805.0, 550.0, 47.2]
+orientation = 0.0
+sides = "inside"
+until_milestone = "ilgalar_anchor_broken"
+
+# Its twin, in the building once the Anchor breaks.
+[[gameobject]]
+guid = 810009
+display = 461
+position = [-9805.0, 560.0, 47.2]
+orientation = 0.0
+sides = "inside"
+after_milestone = "ilgalar_anchor_broken"

@@ -88,9 +88,9 @@ pub(crate) fn options() -> Vec<GossipOption> {
     ]
 }
 
-/// The innkeeper, when `guid` is one.
-fn innkeeper(guid: u64) -> Option<&'static Npc> {
-    hub::find(guid).filter(|n| n.is_innkeeper() && n.area.is_some())
+/// The innkeeper, when `guid` is one and the Milestones `reached` meet its keys.
+fn innkeeper(guid: u64, reached: &[&str]) -> Option<&'static Npc> {
+    hub::find(guid, reached).filter(|n| n.is_innkeeper() && n.area.is_some())
 }
 
 impl crate::Realm {
@@ -118,7 +118,8 @@ impl crate::Realm {
             self.events.push(crate::talents::rows_event(c, true));
             return;
         }
-        crate::vendor::list(npc.guid(), c, &mut self.events);
+        let reached = self.milestones.reached_refs();
+        crate::vendor::list(npc.guid(), c, &reached, &mut self.events);
     }
 
     /// Whether an innkeeper stands within service range of the character in the world.
@@ -131,7 +132,8 @@ impl crate::Realm {
     /// `CMSG_BINDER_ACTIVATE`: binds the character where they stand, at an innkeeper within
     /// reach, and saves. Refused without a word otherwise, as vmangos refuses it.
     pub(crate) fn binder_activate(&mut self, guid: u64) {
-        let Some(npc) = innkeeper(guid).filter(|n| self.near(n)) else {
+        let npc = innkeeper(guid, &self.milestones.reached_refs()).filter(|n| self.near(n));
+        let Some(npc) = npc else {
             return;
         };
         let Some(w) = &self.world else {

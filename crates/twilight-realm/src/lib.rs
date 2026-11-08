@@ -2081,6 +2081,7 @@ impl Realm {
                             c,
                             slot,
                             writs::window(self.wall as u64),
+                            &self.milestones.reached_refs(),
                             &mut self.events,
                         ) {
                             // A meal gives its Well Fed buff.
@@ -2146,7 +2147,8 @@ impl Realm {
                         .and_then(|c| Some((c, w.giver_object_within_reach(guid, c.position)?)));
                     if let Some((c, entry)) = giver {
                         let window = writs::window(self.wall as u64);
-                        quests::object_hello(c, entry, guid, window, &mut self.events);
+                        let reached = self.milestones.reached_refs();
+                        quests::object_hello(c, entry, guid, window, &reached, &mut self.events);
                     } else {
                         let quest_object = self
                             .characters
@@ -2303,6 +2305,7 @@ impl Realm {
             return;
         };
         let events = &mut self.events;
+        let reached = self.milestones.reached_refs();
         let open_chest = w
             .looting
             .open_guid()
@@ -2339,22 +2342,24 @@ impl Realm {
             RealmCommand::DestroyItem { bag, slot, count } => {
                 moved = equipment::destroy(c, bag, slot, count, events);
             }
-            RealmCommand::ListInventory { guid } => vendor::list(guid, c, events),
+            RealmCommand::ListInventory { guid } => vendor::list(guid, c, &reached, events),
             RealmCommand::BuyItem {
                 vendor,
                 entry,
                 count,
-            } => traded = vendor::buy(vendor, entry, count, c, events),
+            } => traded = vendor::buy(vendor, entry, count, c, &reached, events),
             RealmCommand::SellItem {
                 vendor,
                 item,
                 count,
-            } => traded = vendor::sell(vendor, item, count, c, &mut w.buyback, events),
+            } => {
+                traded = vendor::sell(vendor, item, count, c, &reached, &mut w.buyback, events);
+            }
             RealmCommand::BuybackItem { vendor, slot } => {
-                traded = vendor::buy_back(vendor, slot, c, &mut w.buyback, events);
+                traded = vendor::buy_back(vendor, slot, c, &reached, &mut w.buyback, events);
             }
             RealmCommand::RepairItem { vendor, item } => {
-                traded = vendor::repair(vendor, item, c, events);
+                traded = vendor::repair(vendor, item, c, &reached, events);
             }
             RealmCommand::RepopRequest => traded.changed = w.release(c, events),
             _ => return,

@@ -1,9 +1,12 @@
 //! Milestones (#627, ADR 0034): the realm reads its state file, reaches a Milestone once, hands
 //! the whole file to the host once a tick, and tells every character in the world the reached set.
+//! Content that waits on one (#629): quests, quest GameObjects and Phased Dungeon rows with
+//! `after_milestone` or `until_milestone`. The Hub NPC and added zone creature filters are tested
+//! in `src/hub.rs` and `src/population.rs`, which no test seam reaches.
 
 mod common;
 
-use benilla_protocol::SessionEvent;
+use benilla_protocol::{SessionEvent, START_ELWYNN};
 use common::party::*;
 use common::*;
 use twilight_realm::{Realm, Storage};
@@ -170,4 +173,193 @@ fn a_character_entering_afterwards_is_told_before_its_world() {
         })
         .expect("the world loads");
     assert!(told_at < world_at, "{told_at} before {world_at}");
+}
+
+const HIGHGUID_UNIT: u64 = 0xF130;
+const HIGHGUID_GAMEOBJECT: u64 = 0xF110;
+/// Marshal McBride on the Abbey steps (Elwynn spawn 79970), who gives the test quests.
+const MCBRIDE: u64 = HIGHGUID_UNIT << 48 | 197 << 24 | 79970;
+const BY_MCBRIDE: [f32; 3] = [-8910.0, -140.5, 82.0];
+const UNTIL_BREAK: u32 = 99631;
+const AFTER_BREAK: u32 = 99632;
+/// A notice on the steps that is posted once the Anchor breaks.
+const POSTED: u64 = HIGHGUID_GAMEOBJECT << 48 | 990631;
+
+const WAITING: &str = r#"
+[[gameobject]]
+guid = 990631
+entry = 990631
+display = 1
+map = 0
+position = [-8911.0, -138.5, 82.0]
+after_milestone = "ilgalar_anchor_broken"
+
+[[quest]]
+id = 99631
+kind = "story"
+giver = 197
+level = 5
+title = "Before the Break"
+objectives = "-"
+details = "-"
+progress = "-"
+completion = "-"
+money = 0
+until_milestone = "ilgalar_anchor_broken"
+
+[[quest]]
+id = 99632
+kind = "story"
+giver = 197
+level = 5
+title = "After the Break"
+objectives = "-"
+details = "-"
+progress = "-"
+completion = "-"
+money = 0
+after_milestone = "ilgalar_anchor_broken"
+"#;
+
+/// A level 10 warrior from Northshire beside McBride, with the waiting test content.
+fn on_the_steps() -> Party {
+    let realm = Realm::with_seed(1).with_quests(WAITING);
+    let mut p = Party::starting(realm, &[10], START_ELWYNN, Box::new(NoGround));
+    p.go(0, BY_MCBRIDE, std::f32::consts::PI);
+    p.run(0.5);
+    p
+}
+
+/// The quests McBride offers player 0 now.
+fn offered(p: &mut Party) -> Vec<u32> {
+    let from = p.seen(0).len();
+    p.cmd(0, RealmCommand::QuestGiverHello { npc: MCBRIDE });
+    p.seen(0)[from..]
+        .iter()
+        .flat_map(|e| match e {
+            SessionEvent::QuestGreeting(list) => list.quests.iter().map(|q| q.quest_id).collect(),
+            SessionEvent::QuestDetail(d) => vec![d.quest_id],
+            _ => Vec::new(),
+        })
+        .collect()
+}
+
+/// Whether player `i`'s client holds `guid`, by what it has been sent.
+fn shows(p: &Party, i: usize, guid: u64) -> bool {
+    let mut shown = false;
+    for e in p.seen(i) {
+        match e {
+            SessionEvent::ObjectCreate { guid: g, .. } if *g == guid => shown = true,
+            SessionEvent::ObjectsRemoved(gone) if gone.contains(&guid) => shown = false,
+            SessionEvent::ObjectDestroyed(g) if *g == guid => shown = false,
+            _ => {}
+        }
+    }
+    shown
+}
+
+#[test]
+fn a_quest_until_the_break_is_offered_before_it_and_handed_in_after() {
+    let mut p = on_the_steps();
+    assert!(offered(&mut p).contains(&UNTIL_BREAK));
+    p.cmd(
+        0,
+        RealmCommand::QuestGiverAcceptQuest {
+            npc: MCBRIDE,
+            quest: UNTIL_BREAK,
+        },
+    );
+    p.realm.reach_milestone(ANCHOR);
+    p.run(0.0);
+    let mut fresh = on_the_steps();
+    fresh.realm.reach_milestone(ANCHOR);
+    assert!(!offered(&mut fresh).contains(&UNTIL_BREAK));
+
+    // The one who took it before keeps it and hands it in.
+    let from = p.seen(0).len();
+    for command in [
+        RealmCommand::QuestGiverCompleteQuest {
+            npc: MCBRIDE,
+            quest: UNTIL_BREAK,
+        },
+        RealmCommand::QuestGiverRequestReward {
+            npc: MCBRIDE,
+            quest: UNTIL_BREAK,
+        },
+        RealmCommand::QuestGiverChooseReward {
+            npc: MCBRIDE,
+            quest: UNTIL_BREAK,
+            choice: 0,
+        },
+    ] {
+        p.cmd(0, command);
+    }
+    let done = p.seen(0)[from..]
+        .iter()
+        .any(|e| matches!(e, SessionEvent::QuestComplete(c) if c.quest_id == UNTIL_BREAK));
+    assert!(done, "{:?}", &p.seen(0)[from..]);
+}
+
+#[test]
+fn a_quest_after_the_break_is_offered_only_after_it() {
+    let mut p = on_the_steps();
+    assert!(!offered(&mut p).contains(&AFTER_BREAK));
+    p.realm.reach_milestone(ANCHOR);
+    assert!(offered(&mut p).contains(&AFTER_BREAK));
+}
+
+#[test]
+fn a_quest_gameobject_after_the_break_is_created_within_a_tick_of_it() {
+    let mut p = on_the_steps();
+    p.run(1.0);
+    assert!(!shows(&p, 0, POSTED), "posted before the break");
+    p.realm.reach_milestone(ANCHOR);
+    p.run(0.0);
+    assert!(shows(&p, 0, POSTED), "not posted a tick after the break");
+}
+
+/// The Ward Test's scenery that stands until the Anchor breaks, and its twin after.
+const UNTIL_SCENERY: u64 = HIGHGUID_GAMEOBJECT << 48 | 810008;
+const AFTER_SCENERY: u64 = HIGHGUID_GAMEOBJECT << 48 | 810009;
+/// In the Ward Test's building, by its inner portal to "water".
+const IN_THE_WARD_TEST: [f32; 3] = [-9790.0, 565.0, 47.2];
+
+#[test]
+fn a_phased_dungeons_twins_swap_in_a_run_under_way_when_the_milestone_is_reached() {
+    let mut p = Party::starting(Realm::with_seed(1), &[60], START_ELWYNN, Box::new(NoGround));
+    p.go(0, IN_THE_WARD_TEST, 0.0);
+    p.run(1.0);
+    assert!(shows(&p, 0, UNTIL_SCENERY), "until_milestone scenery");
+    assert!(!shows(&p, 0, AFTER_SCENERY), "after_milestone scenery");
+    p.realm.reach_milestone(ANCHOR);
+    p.run(0.0);
+    assert!(
+        !shows(&p, 0, UNTIL_SCENERY),
+        "until_milestone scenery stayed"
+    );
+    assert!(
+        shows(&p, 0, AFTER_SCENERY),
+        "after_milestone scenery did not come"
+    );
+}
+
+#[test]
+#[should_panic(expected = "quest 99639 names Milestone nope")]
+fn a_quest_waiting_on_no_milestone_fails_the_content_load() {
+    let _ = Realm::new().with_quests(
+        r#"
+[[quest]]
+id = 99639
+kind = "story"
+giver = 197
+level = 5
+title = "Nope"
+objectives = "-"
+details = "-"
+progress = "-"
+completion = "-"
+money = 0
+after_milestone = "nope"
+"#,
+    );
 }

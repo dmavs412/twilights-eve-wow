@@ -311,6 +311,9 @@ pub(crate) struct QuestObject {
     /// Seconds until it returns once used.
     #[serde(default = "a_minute")]
     pub(crate) respawn: f32,
+    /// The Milestones it waits on (ADR 0034): out of the world while they are not met.
+    #[serde(flatten)]
+    pub(crate) milestones: crate::milestones::Gate,
 }
 
 fn a_minute() -> f32 {
@@ -418,6 +421,10 @@ pub(crate) struct Quest {
     /// other. It asks for nothing but a word with its giver.
     #[serde(default)]
     pub(crate) advancement: Option<Advancement>,
+    /// The Milestones its offer waits on (ADR 0034). A character who holds it keeps it, and its
+    /// ender takes it in whatever they say.
+    #[serde(flatten)]
+    pub(crate) milestones: crate::milestones::Gate,
 }
 
 /// What makes a quest an Advancement Quest.
@@ -587,6 +594,9 @@ pub(crate) fn shipped() -> &'static [Quest] {
             quests.extend(file.quest);
             objects.extend(file.gameobject);
         }
+        for o in &objects {
+            o.milestones.check(&format!("quest GameObject {}", o.guid));
+        }
         for q in &quests {
             check(q, &|id| quests.iter().any(|o| o.id == id), &|entry| {
                 objects.iter().any(|o| o.entry == entry) || crate::phased::is_door(entry)
@@ -676,6 +686,7 @@ pub(crate) fn add(toml: &str) {
         }
     }
     for o in parsed.gameobject {
+        o.milestones.check(&format!("quest GameObject {}", o.guid));
         shipped();
         let shipped_here = SHIPPED_OBJECTS
             .get()
@@ -705,6 +716,7 @@ pub(crate) fn add(toml: &str) {
 /// What the content load refuses in `q`; `known` says whether a quest id exists and `object`
 /// whether a use objective's GameObject entry is declared.
 fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
+    q.milestones.check(&format!("quest {}", q.id));
     assert!(
         (q.giver == Giver::Unset) != q.giver_object.is_none(),
         "quest {} needs exactly one of `giver` and `giver_object`",

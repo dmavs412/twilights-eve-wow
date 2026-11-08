@@ -21,6 +21,8 @@ struct Giver {
     guid: u64,
     name: String,
     subtitle: String,
+    /// The Milestones a Hub NPC or a GameObject waits on (ADR 0034); a Field Giver waits on none.
+    milestones: Option<&'static crate::milestones::Gate>,
 }
 
 /// The quest givers in marking order: Hub NPCs, Field Givers, then GameObjects.
@@ -37,6 +39,7 @@ fn givers() -> &'static [Giver] {
                 guid: n.guid(),
                 name: n.name.clone(),
                 subtitle: n.subname.clone(),
+                milestones: Some(&n.milestones),
             });
         }
         for s in &mobs::content().spawn {
@@ -54,6 +57,7 @@ fn givers() -> &'static [Giver] {
                 guid: mobs::unit_guid(s.entry, s.guid),
                 name: t.name.clone(),
                 subtitle: String::new(),
+                milestones: None,
             });
         }
         for o in content::objects() {
@@ -72,6 +76,7 @@ fn givers() -> &'static [Giver] {
                 // The realm holds no GameObject name; the first quest it offers stands in.
                 name: q.title.clone(),
                 subtitle: String::new(),
+                milestones: Some(&o.milestones),
             });
         }
         out
@@ -135,7 +140,7 @@ fn row(g: &Giver, q: &Quest, ready: bool) -> MarkedQuest {
 
 /// The quests `g` takes in that are ready, then those it offers `c` now, in the Writ Board's
 /// `window`.
-fn quest_rows(c: &Char, g: &Giver, window: u32) -> Vec<MarkedQuest> {
+fn quest_rows(c: &Char, g: &Giver, window: u32, reached: &[&str]) -> Vec<MarkedQuest> {
     let mut rows = Vec::new();
     if !g.object {
         for q in content::ended_by(g.entry) {
@@ -150,7 +155,7 @@ fn quest_rows(c: &Char, g: &Giver, window: u32) -> Vec<MarkedQuest> {
         content::offered_by(g.entry).collect()
     };
     for q in offers {
-        if q.kind != Kind::Rumour && offered(c, q, window) {
+        if q.kind != Kind::Rumour && offered(c, q, window, reached) {
             rows.push(row(g, q, false));
         }
     }
@@ -177,12 +182,16 @@ fn service(role: &str) -> Option<(MapIcon, &'static str)> {
 
 /// Everything the map marks for `c`: quest marks, then service marks, dungeon marks, and the cart
 /// stops on their map, grey while `carts_locked`. `window` is the Writ Board's now. None stands on
-/// land closed while the Milestones `reached` are.
+/// land closed while the Milestones `reached` are, and none is of a Hub NPC or a GameObject whose
+/// Milestone keys they do not meet.
 pub(crate) fn marks(c: &Char, carts_locked: bool, window: u32, reached: &[&str]) -> Vec<MapMark> {
     let mut out = Vec::new();
     let mut quest_marked = Vec::new();
     for g in givers() {
-        let quests = quest_rows(c, g, window);
+        if g.milestones.is_some_and(|m| !m.met(reached)) {
+            continue;
+        }
+        let quests = quest_rows(c, g, window, reached);
         if quests.is_empty() {
             continue;
         }
@@ -208,7 +217,7 @@ pub(crate) fn marks(c: &Char, carts_locked: bool, window: u32, reached: &[&str])
         let Some((icon, label)) = service(&n.role) else {
             continue;
         };
-        if quest_marked.contains(&n.guid()) {
+        if quest_marked.contains(&n.guid()) || !n.milestones.met(reached) {
             continue;
         }
         out.push(MapMark {

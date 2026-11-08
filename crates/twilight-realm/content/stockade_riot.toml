@@ -21,6 +21,11 @@
 # wing (`creature` rows of map 34), not from map.html's schematic walls; each row names the one
 # it was fitted to.
 #
+# A row's `after_used` or `until_used` names a lever's guid: the row is in the Run once that lever
+# is pulled, or until it is. `after_milestone` or `until_milestone` names a row of
+# content/milestones.toml (ADR 0034) the same way, for every Run: in from the tick the Milestone
+# is reached, or gone from then. No row here names one yet.
+#
 # Guids: creatures 973001 and 973003 to 973027 (973002 is the quiet wing's), GameObjects 983001
 # to 983004 (the entry is the guid). Templates 97200 to 97205 in mobs.toml.
 #

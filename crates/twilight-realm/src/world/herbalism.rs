@@ -241,7 +241,8 @@ impl crate::Realm {
         };
         self.events.push(SessionEvent::GossipComplete);
         if option == OPTION_BROWSE {
-            crate::vendor::list(npc.guid(), c, &mut self.events);
+            let reached = self.milestones.reached_refs();
+            crate::vendor::list(npc.guid(), c, &reached, &mut self.events);
             return;
         }
         if option == OPTION_RESET {

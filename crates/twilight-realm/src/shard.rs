@@ -230,11 +230,11 @@ impl Shard {
         }
     }
 
-    /// The Run's creatures come and go on its facts: a death is recorded, a creature whose
-    /// `until_dead` has died or whose `until_used` lever is pulled is gone, and one whose
-    /// `after_pinned`, `after_dead` or `after_used` has come true appears, once, standing on
-    /// `host`'s ground.
-    fn run_changes(&mut self, host: &dyn Host) {
+    /// The Run's creatures come and go on its facts and the Milestones `reached`: a death is
+    /// recorded, a creature whose `until_dead` has died, whose `until_used` lever is pulled or whose
+    /// `until_milestone` is reached is gone, and one whose `after_pinned`, `after_dead`,
+    /// `after_used` or `after_milestone` has come true appears, once, standing on `host`'s ground.
+    fn run_changes(&mut self, host: &dyn Host, reached: &[&str]) {
         let Phase::Dungeon(_) = self.place.phase else {
             return;
         };
@@ -251,7 +251,10 @@ impl Shard {
                 }
             }
         }
-        let gone = |s: &mobs::Spawn| s.appears.is_some_and(|a| a.gone(&run.dead, &run.used));
+        let gone = |s: &mobs::Spawn| {
+            s.appears
+                .is_some_and(|a| a.gone(&run.dead, &run.used, reached))
+        };
         self.mobs
             .retain(|m| !m.spawn_row().is_some_and(|s| gone(s)));
         for (i, s) in content.spawn.iter().enumerate() {
@@ -260,7 +263,7 @@ impl Shard {
             };
             if a.comes_later()
                 && !run.appeared.contains(&s.guid)
-                && a.met(&run.pinned, &run.dead, &run.used)
+                && a.met(&run.pinned, &run.dead, &run.used, reached)
             {
                 run.appeared.push(s.guid);
                 let z = crate::ground::grounded_z(host, s.map, s.position, s.grounded);
@@ -357,7 +360,7 @@ impl Shard {
         if let Some(run) = &mut self.run {
             run.elapsed += dt;
             self.ground_run(host);
-            self.run_changes(host);
+            self.run_changes(host, reached);
             events.extend(self.tick_tram(dt));
             return events;
         }

@@ -409,6 +409,9 @@ pub(crate) struct Spawn {
     /// A row built from the vmangos spawns in the generated zone files, not one we placed:
     /// the spawn audit (ADR 0021) leaves it out.
     pub(crate) imported: bool,
+    /// The Milestones a hand-added spawn waits on (ADR 0034): the Population brings it in only
+    /// while they are met.
+    pub(crate) milestones: crate::milestones::Gate,
 }
 
 /// The high bits of a Camp number a dungeon file names, apart from every creature guid and from
@@ -625,6 +628,8 @@ struct Added {
     #[serde(default = "crate::ground::yes")]
     grounded: bool,
     orientation: f32,
+    #[serde(flatten)]
+    milestones: crate::milestones::Gate,
 }
 
 #[derive(Deserialize)]
@@ -908,6 +913,7 @@ pub(crate) fn content() -> &'static Mobs {
                 .iter()
                 .find(|t| t.entry == a.entry)
                 .unwrap_or_else(|| panic!("added spawn {} names no template", a.guid));
+            a.milestones.check(&format!("added spawn {}", a.guid));
             spawn.push(Spawn {
                 guid: a.guid,
                 entry: a.entry,
@@ -923,6 +929,7 @@ pub(crate) fn content() -> &'static Mobs {
                 phase: Phase::OpenWorld,
                 on_health: &[],
                 called_by: None,
+                milestones: a.milestones,
                 ..Default::default()
             });
         }
@@ -989,6 +996,7 @@ pub(crate) fn content() -> &'static Mobs {
                     asleep: c.asleep,
                     wake_radius_mod: c.wake_radius_mod,
                     imported: false,
+                    milestones: Default::default(),
                 });
                 // The creatures its calls bring in: rows the Run does not start with, each
                 // with a guid of its own above every authored one.
@@ -2130,6 +2138,27 @@ pub(crate) fn length(points: &[[f32; 3]]) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_zone_added_row_reads_its_milestone_keys() {
+        let file: ZonesFile = toml::from_str(
+            "[[zone]]\nfile = \"redridge\"\nremoved = []\n\n[[zone.added]]\nguid = 1\n\
+             entry = 2\nlevel_min = 3\nlevel_max = 4\nposition = [0.0, 0.0, 0.0]\n\
+             orientation = 0.0\nafter_milestone = \"ilgalar_anchor_broken\"\n\
+             until_milestone = \"steppes_open\"\n",
+        )
+        .unwrap();
+        let a = &file.zone[0].added[0];
+        assert_eq!(
+            a.milestones.after_milestone.as_deref(),
+            Some("ilgalar_anchor_broken")
+        );
+        assert_eq!(
+            a.milestones.until_milestone.as_deref(),
+            Some("steppes_open")
+        );
+        assert_eq!((a.level_min, a.level_max), (3, 4));
+    }
 
     #[test]
     fn elwynn_npcs_are_everyones_friends_and_its_beasts_still_fight() {

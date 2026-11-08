@@ -88,6 +88,10 @@ pub(crate) struct Npc {
     /// An innkeeper's inn as a rest area: the yards around `position` it covers.
     #[serde(default)]
     pub(crate) rest_radius: Option<f32>,
+    /// The Milestones it waits on (ADR 0034): out of the world, and serving no one, while they
+    /// are not met.
+    #[serde(flatten)]
+    pub(crate) milestones: crate::milestones::Gate,
 }
 
 /// A hint at a Legendary Fish (`angler_hints`): its trophy item, and the Angler Level that earns it.
@@ -111,6 +115,10 @@ pub(crate) fn npcs() -> &'static [Npc] {
     NPCS.get_or_init(|| {
         let file: File =
             toml::from_str(include_str!("../content/hub.toml")).expect("content/hub.toml parses");
+        for n in &file.npc {
+            n.milestones
+                .check(&format!("Hub NPC {} ({})", n.guid, n.name));
+        }
         file.npc
     })
 }
@@ -219,9 +227,12 @@ impl Npc {
     }
 }
 
-/// The NPC with object guid `guid`.
-pub(crate) fn find(guid: u64) -> Option<&'static Npc> {
-    npcs().iter().find(|n| n.guid() == guid)
+/// The NPC with object guid `guid`, while the Milestones `reached` meet its keys.
+pub(crate) fn find(guid: u64, reached: &[&str]) -> Option<&'static Npc> {
+    npcs()
+        .iter()
+        .find(|n| n.guid() == guid)
+        .filter(|n| n.milestones.met(reached))
 }
 
 /// `SMSG_CREATURE_QUERY_RESPONSE` for a Hub NPC's `entry`; `None` for any other entry.
@@ -267,7 +278,9 @@ impl crate::Realm {
     /// his lines and his Advancement Quests, as vmangos's gossip lists a quest giver's quests;
     /// an innkeeper's, the bind and the merchant window; a townsperson's is the greeting alone.
     pub(crate) fn gossip_hello(&mut self, guid: u64) {
-        let Some(npc) = find(guid).filter(|n| n.gossips() && n.text_id.is_some() && self.near(n))
+        let reached = self.milestones.reached_refs();
+        let Some(npc) =
+            find(guid, &reached).filter(|n| n.gossips() && n.text_id.is_some() && self.near(n))
         else {
             self.field_gossip_hello(guid);
             return;
@@ -278,7 +291,7 @@ impl crate::Realm {
             .and_then(|w| self.characters.get(w.guid));
         let window = crate::writs::window(self.wall as u64);
         let quests = player
-            .map(|c| crate::quests::gossip_rows(c, npc.entry, window))
+            .map(|c| crate::quests::gossip_rows(c, npc.entry, window, &reached))
             .unwrap_or_default();
         let mut options = if npc.is_innkeeper() {
             crate::inn::options()
@@ -305,7 +318,8 @@ impl crate::Realm {
 
     /// `CMSG_GOSSIP_SELECT_OPTION`: a line of a trainer's or an innkeeper's menu.
     pub(crate) fn gossip_select(&mut self, guid: u64, option: u32) {
-        match find(guid) {
+        let npc = find(guid, &self.milestones.reached_refs());
+        match npc {
             Some(npc) if option >= crate::quests::TALK_OPTION => {
                 if self.near(npc) {
                     self.talk_select(guid, npc.entry, option);
@@ -324,12 +338,14 @@ impl crate::Realm {
         }
     }
 
-    /// Whether the character in the world can reach `npc`.
+    /// Whether the character in the world can reach `npc`, and the Milestones meet its keys.
     pub(crate) fn near(&self, npc: &Npc) -> bool {
-        self.world
-            .as_ref()
-            .and_then(|w| self.characters.get(w.guid))
-            .is_some_and(|c| c.map == npc.map && within_reach(npc, c.position))
+        npc.milestones.met(&self.milestones.reached_refs())
+            && self
+                .world
+                .as_ref()
+                .and_then(|w| self.characters.get(w.guid))
+                .is_some_and(|c| c.map == npc.map && within_reach(npc, c.position))
     }
 }
 
@@ -373,8 +389,8 @@ struct Walk {
 impl InView {
     /// Brings the NPCs within view of any of `players` into the world, standing on the host's
     /// ground, lets go those far from them all, and walks the wanderers in view on by `dt`
-    /// seconds. Each stands on its own map only, and none on land closed while the Milestones
-    /// `reached` are.
+    /// seconds. Each stands on its own map only, none on land closed while the Milestones
+    /// `reached` are, and none whose keys they do not meet; one that stops meeting them leaves.
     pub(crate) fn update(
         &mut self,
         dt: f32,
@@ -384,13 +400,30 @@ impl InView {
         host: &dyn Host,
         events: &mut Vec<SessionEvent>,
     ) {
+        self.update_among(npcs(), dt, players, map, reached, host, events);
+    }
+
+    /// [`Self::update`] over the NPC rows `all`.
+    #[allow(clippy::too_many_arguments)]
+    fn update_among(
+        &mut self,
+        all: &[Npc],
+        dt: f32,
+        players: &[[f32; 3]],
+        map: u32,
+        reached: &[&str],
+        host: &dyn Host,
+        events: &mut Vec<SessionEvent>,
+    ) {
         let rng = &mut self.rng;
-        let all = npcs();
         self.present.resize_with(all.len(), || None);
         let mut gone = Vec::new();
         for (npc, present) in all.iter().zip(&mut self.present) {
             let [x, y, _] = npc.position;
-            let d = if map == npc.map && !crate::closed_at(map, x, y, reached) {
+            let d = if map == npc.map
+                && !crate::closed_at(map, x, y, reached)
+                && npc.milestones.met(reached)
+            {
                 players
                     .iter()
                     .map(|&p| flat_distance(npc.position, p))
@@ -532,5 +565,65 @@ impl Standing {
             duration,
             elapsed: 0.0,
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct Flat;
+    impl Host for Flat {
+        fn ground_height(&self, _: u32, _: f32, _: f32, z: f32) -> Option<f32> {
+            Some(z)
+        }
+        fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
+            true
+        }
+        fn area_at(&self, _: u32, _: f32, _: f32) -> Option<u32> {
+            None
+        }
+    }
+
+    /// Two test NPCs on the Abbey steps: one after the Anchor breaks, one until it does.
+    fn rows() -> Vec<Npc> {
+        let row = |guid: u32, key: &str| {
+            format!(
+                "[[npc]]\nguid = {guid}\nentry = {guid}\nname = \"Test\"\nlevel = 1\n\
+                 display_id = 1\nfaction_template = 35\nnpc_flags = 0\nmap = 0\n\
+                 position = [-8912.0, -140.0, 82.0]\norientation = 0.0\n\
+                 {key} = \"ilgalar_anchor_broken\"\n"
+            )
+        };
+        let text = row(990901, "after_milestone") + &row(990902, "until_milestone");
+        toml::from_str::<File>(&text).unwrap().npc
+    }
+
+    /// The guids of the creates and removes one look at the steps sends.
+    fn look(view: &mut InView, all: &[Npc], reached: &[&str]) -> (Vec<u64>, Vec<u64>) {
+        let mut events = Vec::new();
+        let at = [-8910.0, -140.0, 82.0];
+        view.update_among(all, 0.1, &[at], 0, reached, &Flat, &mut events);
+        let mut made = Vec::new();
+        let mut gone = Vec::new();
+        for e in events {
+            match e {
+                SessionEvent::ObjectCreate { guid, .. } => made.push(guid),
+                SessionEvent::ObjectsRemoved(g) => gone.extend(g),
+                _ => {}
+            }
+        }
+        (made, gone)
+    }
+
+    #[test]
+    fn an_npc_comes_and_goes_with_its_milestone() {
+        let all = rows();
+        let (after, until) = (all[0].guid(), all[1].guid());
+        let mut view = InView::default();
+        assert_eq!(look(&mut view, &all, &[]), (vec![until], vec![]));
+        let anchor = ["ilgalar_anchor_broken"];
+        assert_eq!(look(&mut view, &all, &anchor), (vec![after], vec![until]));
+        assert_eq!(look(&mut view, &all, &anchor), (vec![], vec![]));
     }
 }

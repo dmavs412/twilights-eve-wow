@@ -165,7 +165,8 @@ impl crate::Realm {
         let Some(open) = self.kitchens.0.get(&w.guid) else {
             return;
         };
-        let reach = match (hub::find(open.npc), self.characters.get(w.guid)) {
+        let npc = hub::find(open.npc, &self.milestones.reached_refs());
+        let reach = match (npc, self.characters.get(w.guid)) {
             (Some(npc), Some(c)) => c.map == npc.map && hub::within_reach(npc, c.position),
             _ => false,
         };

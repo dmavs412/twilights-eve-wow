@@ -727,8 +727,12 @@ impl InWorld {
             };
             let guid = o.object_guid();
             let seen = o.seen_from(self.phase, d.id)
-                && o.appears
-                    .met(&self.run_pinned, &self.run_dead, &self.run_used);
+                && o.appears.met(
+                    &self.run_pinned,
+                    &self.run_dead,
+                    &self.run_used,
+                    &self.reached,
+                );
             if !self.dungeon_objects.contains(&guid) {
                 if seen && d_yd <= VIEW_YD {
                     self.dungeon_objects.insert(guid);
@@ -745,7 +749,8 @@ impl InWorld {
     }
 
     /// Streams the open world's quest GameObjects in and out with the view, brings back those
-    /// whose respawn has run out, and shows none while the player is inside a Phased Dungeon.
+    /// whose respawn has run out, and shows none while the player is inside a Phased Dungeon. One
+    /// whose Milestone keys [`Self::reached`] does not meet is not shown, so it cannot be used.
     pub(super) fn show_quest_objects(
         &mut self,
         dt: f32,
@@ -763,6 +768,7 @@ impl InWorld {
             let d_yd = if o.map == self.map
                 && self.phase == Phase::OpenWorld
                 && !self.on_closed_land(o.map, o.position)
+                && o.milestones.met(&self.reached)
             {
                 flat_distance(o.position, me)
             } else {
@@ -914,7 +920,8 @@ impl InWorld {
 
 /// A fresh set of `phase`'s creatures, at full health where their content file puts them, at
 /// their written heights: the shard stands them on the ground on its first tick with a host
-/// (`crate::ground`).
+/// (`crate::ground`). Those that wait on a Milestone are counted as with none reached: the first
+/// tick brings in or takes away each the Milestones reached say, before any client sees them.
 pub(crate) fn creatures(phase: Phase) -> Vec<Mob> {
     let zone = mobs::zone_factor(crate::phased::zone(phase));
     mobs::content()
@@ -923,7 +930,10 @@ pub(crate) fn creatures(phase: Phase) -> Vec<Mob> {
         .enumerate()
         .filter(|(_, s)| s.phase == phase && s.called_by.is_none() && s.timed_by.is_none())
         .filter(|(_, s)| s.tram_of.is_none())
-        .filter(|(_, s)| s.appears.is_none_or(|a| a.met(&[], &[], &[])))
+        .filter(|(_, s)| {
+            s.appears
+                .is_none_or(|a| a.met(&[], &[], &[], &[] as &[&str]))
+        })
         .filter_map(|(i, s)| Mob::spawn(i as u32, s.level_min, s.position[2], zone))
         .collect()
 }

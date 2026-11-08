@@ -14,8 +14,8 @@ use crate::rules::durability;
 
 /// `CMSG_LIST_INVENTORY`: the vendor's rows, numbered from 1, or the Blood Coin vendor's; nothing
 /// for an NPC out of reach or that is no vendor.
-pub(crate) fn list(vendor: u64, c: &Char, events: &mut Vec<SessionEvent>) {
-    let Some(npc) = reachable(vendor, c) else {
+pub(crate) fn list(vendor: u64, c: &Char, reached: &[&str], events: &mut Vec<SessionEvent>) {
+    let Some(npc) = reachable(vendor, c, reached) else {
         return;
     };
     if let Some(currency) = npc.currency() {
@@ -56,6 +56,7 @@ pub(crate) fn buy(
     entry: u32,
     count: u8,
     c: &mut Char,
+    reached: &[&str],
     events: &mut Vec<SessionEvent>,
 ) -> Traded {
     let fail = |reason, events: &mut Vec<SessionEvent>| {
@@ -66,7 +67,7 @@ pub(crate) fn buy(
         });
         Traded::default()
     };
-    let Some(npc) = reachable(vendor, c) else {
+    let Some(npc) = reachable(vendor, c, reached) else {
         return fail(buy_result::DISTANCE_TOO_FAR, events);
     };
     if let Some(currency) = npc.currency() {
@@ -169,6 +170,7 @@ pub(crate) fn sell(
     guid: u64,
     count: u8,
     c: &mut Char,
+    reached: &[&str],
     buyback: &mut Buyback,
     events: &mut Vec<SessionEvent>,
 ) -> Traded {
@@ -180,7 +182,7 @@ pub(crate) fn sell(
         });
         Traded::default()
     };
-    if reachable(vendor, c).is_none() {
+    if reachable(vendor, c, reached).is_none() {
         return fail(sell_result::CANT_FIND_VENDOR, events);
     }
     let Some((slot, have, entry)) = c
@@ -236,6 +238,7 @@ pub(crate) fn buy_back(
     vendor: u64,
     slot: u32,
     c: &mut Char,
+    reached: &[&str],
     buyback: &mut Buyback,
     events: &mut Vec<SessionEvent>,
 ) -> Traded {
@@ -248,7 +251,7 @@ pub(crate) fn buy_back(
         });
         return Traded::default();
     };
-    if reachable(vendor, c).is_none() {
+    if reachable(vendor, c, reached).is_none() {
         events.push(SessionEvent::VendorSellFailed {
             vendor,
             item_guid: sold.item.guid,
@@ -291,10 +294,11 @@ pub(crate) fn repair(
     vendor: u64,
     guid: u64,
     c: &mut Char,
+    reached: &[&str],
     events: &mut Vec<SessionEvent>,
 ) -> Traded {
     let mut traded = Traded::default();
-    if !reachable(vendor, c).is_some_and(Npc::repairs) {
+    if !reachable(vendor, c, reached).is_some_and(Npc::repairs) {
         return traded;
     }
     let slots: Vec<Pos> = c
@@ -333,7 +337,9 @@ pub(crate) fn repair(
     traded
 }
 
-/// The vendor `guid`, if the character stands within reach of it.
-fn reachable(guid: u64, c: &Char) -> Option<&'static Npc> {
-    hub::find(guid).filter(|n| n.is_vendor() && c.map == n.map && hub::within_reach(n, c.position))
+/// The vendor `guid`, if the character stands within reach of it and the Milestones `reached`
+/// meet its keys.
+fn reachable(guid: u64, c: &Char, reached: &[&str]) -> Option<&'static Npc> {
+    hub::find(guid, reached)
+        .filter(|n| n.is_vendor() && c.map == n.map && hub::within_reach(n, c.position))
 }

@@ -21,6 +21,9 @@
 # host has none streamed in yet the NPC stands at it. `stock` is a vendor's list, in the merchant window's order. `greeting` opens a quest
 # giver's quest list. `faces` is an optional `[x, y]` spot the NPC stands facing, replacing
 # `orientation`. A wanderer never takes a step with something solid in the way.
+# `after_milestone` and `until_milestone` each name a row of content/milestones.toml (ADR 0034):
+# the NPC is out of the world until the first is reached, and gone for good once the second is.
+# While out it is not shown, marked on the map or served (gossip, quests, goods, inn, kitchen).
 
 [[npc]]
 guid = 0xF00001

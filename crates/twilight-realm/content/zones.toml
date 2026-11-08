@@ -5,7 +5,10 @@
 # for spawns outside the `bounds` of the zone's band file (redridge_bands.toml, duskwood_bands.toml)
 # and inside its `exclude` boxes; Stormwind has no band file.
 # A `[[zone.added]]` row places a creature by hand, in the shape of elwynn_overrides.toml's
-# `[[added]]`: a camp of its own at its own levels, past the Level Stretch.
+# `[[added]]`: a camp of its own at its own levels, past the Level Stretch. Its optional
+# `after_milestone` and `until_milestone` each name a row of content/milestones.toml (ADR 0034):
+# the creature is not brought in until the first is reached, and leaves for good, alive or dead,
+# once the second is.
 
 [[zone]]
 file = "duskwood"
