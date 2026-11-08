@@ -970,3 +970,39 @@ cooldown_ms = 0
 range_max = 0.0
 chance = 0
 effect = { kind = "marker" }
+
+# The Deeprun Tram's Mist Lamp (#590), the slow a Lampman's lamp puts on every player within its
+# radius (`[tram] lamp_spell` in deeprun_tram.toml). Chilled's icon, no look (visual 0). A marker:
+# the realm puts it up while the player stands near a lamp, with the slow `lamp_slow_pct` says,
+# so the cast columns are 0. 1900054 is Tram Strike's.
+[[spell]]
+key = "mist_lamp"
+spell_id = 1900055
+name = "Mist Lamp"
+icon = 'Interface\Icons\Spell_Frost_FrostArmor02'
+visual = 0
+aura_description = "Movement slowed by $s1%."
+school = "frost"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 0
+effect = { kind = "marker" }
+
+# The Deeprun Tram's Gilded (#590), the gold glow a porter wears (`[tram] gilded_spell` in
+# deeprun_tram.toml). Holy Strength's look (visual 4345), the Crusader's gold glow on its target,
+# and its icon: a placeholder in docs/art-assets.md. A marker, so the cast columns are 0. 1900055
+# is Mist Lamp's.
+[[spell]]
+key = "gilded"
+spell_id = 1900056
+name = "Gilded"
+icon = 'Interface\Icons\Spell_Holy_BlessingOfStrength'
+visual = 4345
+aura_description = "Carrying the cult's tribute."
+school = "holy"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 0
+effect = { kind = "marker" }

@@ -347,13 +347,18 @@ pub struct AuditRow {
 
 /// Every unit we placed: the creatures and GameObjects the content stands in the world, Hub
 /// NPCs, and each Rumour point and step point. Imported vmangos spawns are left out, and so are
-/// creatures only a fight brings in (calls for help, timed calls, Encounter waves).
+/// creatures only a fight brings in (calls for help, timed calls, Encounter waves, a tram's).
 pub fn audit_rows() -> Vec<AuditRow> {
     use crate::phased::{Phase, Sides};
     let swims = |entry| crate::mobs::template(entry).is_some_and(|t| t.swims);
     let mut out = Vec::new();
     for s in &crate::mobs::content().spawn {
-        if s.imported || s.called_by.is_some() || s.timed_by.is_some() || s.encounter.is_some() {
+        if s.imported
+            || s.called_by.is_some()
+            || s.timed_by.is_some()
+            || s.encounter.is_some()
+            || s.tram_of.is_some()
+        {
             continue;
         }
         out.push(AuditRow {

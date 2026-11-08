@@ -4546,11 +4546,9 @@ impl InWorld {
             }
             Effect::Taunt { duration_ms } => {
                 let me = self.guid;
-                if let Some(mob) = self
-                    .mobs
-                    .iter_mut()
-                    .find(|m| m.guid == target && m.alive() && !m.remote)
-                {
+                if let Some(mob) = self.mobs.iter_mut().find(|m| {
+                    m.guid == target && m.alive() && !m.remote && !m.template.never_fights
+                }) {
                     if mob.state == State::Idle {
                         super::engage(mob, me, events);
                     }
@@ -6853,6 +6851,60 @@ impl InWorld {
             charges: 0,
         };
         self.skills.apply(aura, events);
+    }
+
+    /// Each living creature the client has been shown wears the markers it was made with
+    /// ([`crate::mobs::Mob::wears`]), each put up once.
+    pub(super) fn show_worn(&mut self, events: &mut Vec<SessionEvent>) {
+        let due: Vec<(u64, u32, u32)> = self
+            .mobs
+            .iter()
+            .filter(|m| m.alive() && self.seen.contains(&m.guid))
+            .flat_map(|m| {
+                m.wears
+                    .iter()
+                    .map(move |&(spell, stacks)| (m.guid, spell, stacks))
+            })
+            .filter(|&(guid, spell, _)| !self.skills.marked(guid, spell))
+            .collect();
+        for (guid, spell_id, stacks) in due {
+            self.show_marker_on(guid, spell_id, true, stacks, events);
+        }
+    }
+
+    /// A slow of `pct` under `spell_id` on the player that holds while `on`: put up when it
+    /// turns on and taken off when it turns off, each with the run speed it leaves.
+    pub(crate) fn hold_slow(
+        &mut self,
+        spell_id: u32,
+        pct: u32,
+        on: bool,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let me = self.guid;
+        let held = |a: &Aura| {
+            a.unit == me && a.spell_id == spell_id && matches!(a.kind, AuraKind::MoveSlow { .. })
+        };
+        if self.skills.auras.iter().any(held) == on {
+            return;
+        }
+        if on {
+            let aura = Aura {
+                unit: me,
+                spell_id,
+                slot: 0,
+                level: 0,
+                left: UNTIL_BROKEN_SECS,
+                period: 0.0,
+                next_tick: 0.0,
+                kind: AuraKind::MoveSlow { pct },
+                charges: 0,
+            };
+            self.skills.apply(aura, events);
+        } else {
+            self.skills.remove_where(held, events);
+        }
+        self.update_speed(me, events);
     }
 
     /// Takes the player's [`AuraKind::Marker`] of `spell_id` off.

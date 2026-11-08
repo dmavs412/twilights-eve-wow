@@ -6,15 +6,30 @@
 //! out behind the mist wall. Tram code is for the tram only; every number is the dungeon's
 //! `[tram]` table in `content/deeprun_tram.toml`.
 //!
-//! The cars carry nothing yet (#590 loads them): [`Line::bring`] is where a tram's creatures are
-//! counted, and the Headway check asks whether any of them is alive.
+//! What a car carries (#590): when a wave tram's car stops, the line rolls its creatures (fighters
+//! and a porter), which the shard makes at the car's door and hands back to [`Line::bring`]. The
+//! line wakes them, sets each Lampman's lamps, keeps the Tribute Pile and walks each porter from
+//! the pile to a standing car. The Headway check asks whether any creature it brought is alive.
+//! The boss tram's car carries no wave; its stop is #591's.
 
 use benilla_protocol::guid::HIGH_TRANSPORT;
 use benilla_protocol::SessionEvent;
 use serde::Deserialize;
 
 use crate::carts::{self, CartState, Pose};
+use crate::mobs::Mob;
 use crate::phased::{gameobject_create, GameObject, GENERIC, HIGHGUID_GAMEOBJECT, NOT_SELECTABLE};
+use crate::rng::Rng;
+use crate::space::flat_distance;
+
+/// A walk at a creature's own walk speed.
+const FULL_SPEED_PCT: u32 = 100;
+
+/// How near its point a walking creature counts as there.
+const THERE_YD: f32 = 0.5;
+
+/// The crates on a Tribute Pile (GLOSSARY.md).
+const PILE_CRATES: usize = 12;
 
 /// A Phased Dungeon's `[tram]` table: the line's numbers.
 #[derive(Deserialize)]
@@ -66,6 +81,39 @@ pub struct Tram {
     pub whistle_sound: u32,
     /// The lamp's `GameObjectDisplayInfo`.
     pub lamp_display: u32,
+    /// What a wave tram's car carries (#590): this many fighters, each slot rolling one of
+    /// `fighters` with equal odds...
+    pub fighter_slots: usize,
+    pub fighters: Vec<u32>,
+    /// ...and at most one of them `lampman`; then one `porter`, while a crate is left.
+    pub lampman: u32,
+    pub porter: u32,
+    /// A fighter's level is rolled in this range.
+    pub fighter_levels: [u8; 2],
+    pub porter_level: u8,
+    /// How far apart along y a car's creatures stand at its door.
+    pub step_off_spacing_yd: f32,
+    /// How long a creature waits after stepping off.
+    pub wake_s: f32,
+    /// How long a porter takes to lift a crate...
+    pub lift_s: f32,
+    /// ...and its walk speed, in percent, carrying one.
+    pub carry_speed_pct: u32,
+    /// The porter's gold glow, a marker.
+    pub gilded_spell: u32,
+    pub gilded_spell_name: String,
+    /// A Lampman sets a lamp this often...
+    pub lamp_every_s: f32,
+    /// ...that slows every player within this many yards by this percent, under this spell.
+    pub lamp_radius_yd: f32,
+    pub lamp_slow_pct: u32,
+    pub lamp_spell: u32,
+    pub lamp_spell_name: String,
+    /// The Tribute Pile: each crate's `GameObjectDisplayInfo`, the first crate's guid (the entry
+    /// is the guid; the rest follow it) and every crate's point.
+    pub crate_display: u32,
+    pub pile_guid: u32,
+    pub pile: Vec<[f32; 3]>,
     /// Track a, then track b.
     pub track: Vec<Track>,
 }
@@ -83,6 +131,61 @@ pub struct Track {
 }
 
 impl Tram {
+    /// Refuses a table the line cannot run: a pile that is not [`PILE_CRATES`] points, or fighter
+    /// slots with no fighter but the Lampman to fill them. The creature templates are checked
+    /// where their spawn rows are made ([`crate::mobs::content`]).
+    pub(crate) fn check(&self, dungeon: &str) {
+        assert_eq!(
+            self.pile.len(),
+            PILE_CRATES,
+            "{dungeon}: the Tribute Pile is {PILE_CRATES} points"
+        );
+        assert!(
+            self.fighter_slots <= 1 || self.fighters.iter().any(|&e| e != self.lampman),
+            "{dungeon}: a car's fighter slots need a fighter besides the Lampman"
+        );
+        assert!(
+            self.fighter_levels[0] <= self.fighter_levels[1],
+            "{dungeon}: fighter_levels run low to high"
+        );
+        assert!(self.track.len() >= 2, "{dungeon}: tracks a and b");
+    }
+
+    /// The creatures the line brings in, each entry once, with its level range: the fighters
+    /// (the Lampman among them), then the porter.
+    pub(crate) fn creature_rows(&self) -> Vec<(u32, [u8; 2])> {
+        let mut rows: Vec<(u32, [u8; 2])> = Vec::new();
+        for &entry in self.fighters.iter().chain([&self.lampman]) {
+            if !rows.iter().any(|r| r.0 == entry) {
+                rows.push((entry, self.fighter_levels));
+            }
+        }
+        if !rows.iter().any(|r| r.0 == self.porter) {
+            rows.push((self.porter, [self.porter_level; 2]));
+        }
+        rows
+    }
+
+    /// The door of a car of track `track` stopped at `y`, on the platform floor.
+    pub(crate) fn door(&self, track: usize, y: f32) -> [f32; 3] {
+        [self.track[track].door_x, y, self.floor_z]
+    }
+
+    /// The middle of the Tribute Pile.
+    fn pile_centre(&self) -> [f32; 3] {
+        let n = self.pile.len().max(1) as f32;
+        let sum = self
+            .pile
+            .iter()
+            .fold([0.0; 3], |s, p| [s[0] + p[0], s[1] + p[1], s[2] + p[2]]);
+        [sum[0] / n, sum[1] / n, sum[2] / n]
+    }
+
+    /// Crate `k`'s guid: a GameObject whose entry is its guid.
+    fn crate_guid(&self, k: usize) -> u64 {
+        HIGHGUID_GAMEOBJECT << 48 | u64::from(self.pile_guid + k as u32)
+    }
+
     /// One way along a car's run in, in ms.
     pub fn leg_ms(&self) -> u64 {
         ms(self.run_in_yd / self.speed_yd_s)
@@ -144,6 +247,107 @@ struct Car {
     /// The players it has hit on the way in, and on the way out.
     hit_in: Vec<u64>,
     hit_out: Vec<u64>,
+    /// The boss tram's, which carries no wave.
+    boss: bool,
+    /// It has stopped at the platform.
+    stopped: bool,
+}
+
+/// A car that stopped since the shard last asked: its track and stop.
+struct Arrival {
+    track: usize,
+    stop_y: f32,
+    boss: bool,
+}
+
+/// What a tram creature is to the line.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Kind {
+    /// It turns on the closest player once awake.
+    Fighter,
+    /// A fighter that also sets lamps.
+    Lampman,
+    /// It never fights; it carries crates from the pile onto the cars.
+    Porter,
+}
+
+/// A creature stepping off a car, for the shard to make: the line's `seq`th, which numbers its
+/// guid.
+pub(crate) struct Stepping {
+    pub(crate) entry: u32,
+    pub(crate) level: u8,
+    pub(crate) at: [f32; 3],
+    pub(crate) facing: f32,
+    pub(crate) kind: Kind,
+    pub(crate) seq: u32,
+    /// The marker auras it wears, `(spell, stacks)`.
+    pub(crate) wears: Vec<(u32, u32)>,
+}
+
+/// Where a porter is in its walk.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Porter {
+    /// Not yet awake.
+    Waking,
+    /// Walking to crate `k` on the pile, which no other porter takes meanwhile.
+    ToCrate(usize),
+    /// Lifting crate `k`, until the line's clock reaches `until_ms`.
+    Lifting { k: usize, until_ms: u64 },
+    /// Carrying crate `k` to `to`.
+    Carrying { k: usize, to: Dest },
+    /// Beside the pile, which has no crate for it.
+    Waiting,
+}
+
+/// Where a porter carries its crate.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Dest {
+    /// The door of the standing car of this guid.
+    Car(u64),
+    /// This track's door at the middle stop, to wait for a car.
+    Track(usize),
+}
+
+/// A crate of the Tribute Pile.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Crate {
+    OnPile,
+    Carried,
+    Escaped,
+}
+
+/// A creature a tram brought.
+struct Brought {
+    guid: u64,
+    kind: Kind,
+    /// The line's clock when it stepped off.
+    made_ms: u64,
+    /// A fighter turned on a player.
+    turned: bool,
+    /// It died; the line has done with it.
+    dead: bool,
+    /// A Lampman's next lamp, on the line's clock.
+    next_lamp_ms: u64,
+    /// A porter's walk, and the track it last walked to.
+    porter: Porter,
+    last_track: usize,
+}
+
+/// A Lampman's lamp where he stood.
+struct Lamp {
+    guid: u64,
+    owner: u64,
+    position: [f32; 3],
+}
+
+/// What the line reports for the Conductor (#591) and the chest (#592).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Report {
+    /// Crates on the Tribute Pile, not carried and not escaped.
+    pub on_pile: usize,
+    pub escaped: usize,
+    pub porters_made: u32,
+    pub porters_dead: u32,
 }
 
 /// A lamp's lit spell: track `track`'s lamp is in view until the line's clock reaches `until_ms`.
@@ -191,16 +395,28 @@ pub struct Line {
     whistles: Vec<Whistle>,
     /// The sounds due since the realm last asked: `(sound, lamp guid)`.
     sounds: Vec<(u32, u64)>,
-    /// How many cars the line has made, which numbers their guids: a new tram never reuses an
-    /// old car's.
+    /// How many cars and lamps the line has made, which numbers their guids: a new tram never
+    /// reuses an old car's.
     made: u32,
+    /// The dice its cars' creatures are rolled with.
+    rng: Rng,
+    /// The cars that stopped since the shard last asked.
+    arrivals: Vec<Arrival>,
+    /// How many creatures the line has rolled, which numbers their guids.
+    seq: u32,
     /// The creatures the trams brought (#590), which the Headway check counts.
-    brought: Vec<u64>,
+    brought: Vec<Brought>,
+    /// The Tribute Pile, crate by crate.
+    pile: Vec<Crate>,
+    lamps: Vec<Lamp>,
+    porters_made: u32,
+    porters_dead: u32,
 }
 
 impl Line {
-    /// A line on `map` just started: tram 1 arrives `first_s` from now.
-    pub fn new(tram: &'static Tram, map: u32) -> Self {
+    /// A line on `map` just started: tram 1 arrives `first_s` from now. `seed` rolls its cars'
+    /// creatures.
+    pub fn new(tram: &'static Tram, map: u32, seed: u64) -> Self {
         Self {
             tram,
             map,
@@ -214,7 +430,14 @@ impl Line {
             whistles: Vec::new(),
             sounds: Vec::new(),
             made: 0,
+            rng: Rng::new(seed),
+            arrivals: Vec::new(),
+            seq: 0,
             brought: Vec::new(),
+            pile: vec![Crate::OnPile; tram.pile.len()],
+            lamps: Vec::new(),
+            porters_made: 0,
+            porters_dead: 0,
         }
     }
 
@@ -223,14 +446,306 @@ impl Line {
         self.tram
     }
 
-    /// Counts the creature `guid` as one a tram brought (#590).
-    pub fn bring(&mut self, guid: u64) {
-        self.brought.push(guid);
+    /// Counts the creature `guid`, of `kind`, as one a tram brought, stepping off now.
+    pub fn bring(&mut self, guid: u64, kind: Kind) {
+        if kind == Kind::Porter {
+            self.porters_made += 1;
+        }
+        self.brought.push(Brought {
+            guid,
+            kind,
+            made_ms: self.now_ms,
+            turned: false,
+            dead: false,
+            next_lamp_ms: self.now_ms + ms(self.tram.wake_s),
+            porter: Porter::Waking,
+            last_track: 0,
+        });
     }
 
     /// Whether the creature `guid` is one a tram brought.
     pub fn brought(&self, guid: u64) -> bool {
-        self.brought.contains(&guid)
+        self.brought.iter().any(|b| b.guid == guid)
+    }
+
+    /// The pile's crates, the escapes and the porters, for the Conductor (#591) and the chest
+    /// (#592).
+    pub fn report(&self) -> Report {
+        let count = |c: Crate| self.pile.iter().filter(|&&p| p == c).count();
+        Report {
+            on_pile: count(Crate::OnPile),
+            escaped: count(Crate::Escaped),
+            porters_made: self.porters_made,
+            porters_dead: self.porters_dead,
+        }
+    }
+
+    /// The creatures of each wave car that stopped since the last ask: `fighter_slots` fighters,
+    /// each rolled from `fighters` with a second Lampman rerolled, then a porter while any crate
+    /// has yet to escape. They stand at the car's door along y, facing the centre strip.
+    pub(crate) fn take_stepping(&mut self) -> Vec<Stepping> {
+        let tram = self.tram;
+        let mut out = Vec::new();
+        for a in std::mem::take(&mut self.arrivals) {
+            // The boss tram's stop brings the Conductor (#591), not a wave.
+            if a.boss {
+                continue;
+            }
+            let mut kinds = Vec::new();
+            let mut lampman = false;
+            for _ in 0..tram.fighter_slots {
+                let entry = loop {
+                    let e = tram.fighters[self.rng.below(tram.fighters.len() as u32) as usize];
+                    if !(e == tram.lampman && lampman) {
+                        break e;
+                    }
+                };
+                lampman |= entry == tram.lampman;
+                let [lo, hi] = tram.fighter_levels;
+                let level = self.rng.urand(u32::from(lo), u32::from(hi)) as u8;
+                let kind = if entry == tram.lampman {
+                    Kind::Lampman
+                } else {
+                    Kind::Fighter
+                };
+                kinds.push((entry, level, kind, Vec::new()));
+            }
+            if self.pile.iter().any(|&c| c != Crate::Escaped) {
+                let wears = vec![(tram.gilded_spell, 0)];
+                kinds.push((tram.porter, tram.porter_level, Kind::Porter, wears));
+            }
+            let door = tram.door(a.track, a.stop_y);
+            let facing = 0.0f32.atan2(tram.pile_centre()[0] - door[0]);
+            for (j, (entry, level, kind, wears)) in kinds.into_iter().enumerate() {
+                self.seq += 1;
+                let k = j as f32 - 1.0;
+                out.push(Stepping {
+                    entry,
+                    level,
+                    at: [door[0], door[1] + k * tram.step_off_spacing_yd, door[2]],
+                    facing,
+                    kind,
+                    seq: self.seq,
+                    wears,
+                });
+            }
+        }
+        out
+    }
+
+    /// The fighters awake since the last ask, each once: the realm turns each on the closest
+    /// living player.
+    pub(crate) fn take_waking(&mut self) -> Vec<u64> {
+        let (now, wake) = (self.now_ms, ms(self.tram.wake_s));
+        self.brought
+            .iter_mut()
+            .filter(|b| b.kind != Kind::Porter && !b.turned && !b.dead)
+            .filter(|b| b.made_ms + wake <= now)
+            .map(|b| {
+                b.turned = true;
+                b.guid
+            })
+            .collect()
+    }
+
+    /// The lamps' points, which slow the players near them.
+    pub fn lamp_points(&self) -> Vec<[f32; 3]> {
+        self.lamps.iter().map(|l| l.position).collect()
+    }
+
+    /// The tram creatures' own turn, among the shard's `mobs`: a death puts a carried crate back
+    /// and puts out a Lampman's lamps, each awake Lampman sets his lamp when it is due, and each
+    /// awake porter walks on; one that boarded a standing car leaves `mobs`. The moves the
+    /// clients that see the walkers are sent.
+    pub(crate) fn run_creatures(&mut self, mobs: &mut Vec<Mob>) -> Vec<SessionEvent> {
+        let tram = self.tram;
+        let now = self.now_ms;
+        let wake = ms(tram.wake_s);
+        let standing = self.standing_doors();
+        let mut events = Vec::new();
+        let mut boarded = Vec::new();
+        for i in 0..self.brought.len() {
+            let b = &self.brought[i];
+            if b.dead {
+                continue;
+            }
+            let Some(mob) = mobs.iter_mut().find(|m| m.guid == b.guid) else {
+                continue;
+            };
+            if !mob.alive() {
+                self.died(i);
+                continue;
+            }
+            if now < b.made_ms + wake {
+                continue;
+            }
+            match b.kind {
+                Kind::Fighter => {}
+                Kind::Lampman => {
+                    if now >= b.next_lamp_ms {
+                        self.made += 1;
+                        let guid = mist_lamp_guid(tram.lamp_display, self.made);
+                        let owner = b.guid;
+                        self.lamps.push(Lamp {
+                            guid,
+                            owner,
+                            position: mob.position,
+                        });
+                        self.brought[i].next_lamp_ms += ms(tram.lamp_every_s);
+                    }
+                }
+                Kind::Porter => {
+                    if self.porter_step(i, mob, &standing, &mut events) {
+                        boarded.push(mob.guid);
+                    }
+                }
+            }
+        }
+        mobs.retain(|m| !boarded.contains(&m.guid));
+        events
+    }
+
+    /// Creature `i` died: a porter's carried crate goes back on the pile, and a Lampman's lamps
+    /// go out.
+    fn died(&mut self, i: usize) {
+        let b = &mut self.brought[i];
+        b.dead = true;
+        let guid = b.guid;
+        match (b.kind, b.porter) {
+            (Kind::Porter, Porter::Carrying { k, .. }) => {
+                self.pile[k] = Crate::OnPile;
+                self.porters_dead += 1;
+            }
+            (Kind::Porter, _) => self.porters_dead += 1,
+            (Kind::Lampman, _) => self.lamps.retain(|l| l.owner != guid),
+            (Kind::Fighter, _) => {}
+        }
+    }
+
+    /// The cars standing at the platform now: guid, track and door.
+    fn standing_doors(&self) -> Vec<(u64, usize, [f32; 3])> {
+        let (leg, dwell) = (self.tram.leg_ms(), self.tram.dwell_ms());
+        self.cars
+            .iter()
+            .filter(|c| {
+                let arrived = c.started_ms + leg;
+                (arrived..arrived + dwell).contains(&self.now_ms)
+            })
+            .map(|c| (c.guid, c.track, self.tram.door(c.track, c.path[1][1])))
+            .collect()
+    }
+
+    /// Porter `i`'s walk on: to the closest free crate on the pile (or beside the pile, to wait
+    /// for one), a lift, then to the door of the closest standing car (or its last track's middle
+    /// door, to wait for one). Whether it boarded a standing car, its crate escaped.
+    fn porter_step(
+        &mut self,
+        i: usize,
+        mob: &mut Mob,
+        standing: &[(u64, usize, [f32; 3])],
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        let tram = self.tram;
+        let now = self.now_ms;
+        let state = self.brought[i].porter;
+        let carry = tram.carry_speed_pct;
+        match state {
+            Porter::Waking | Porter::Waiting => {
+                let next = self.free_crate(mob.position);
+                let (state, to) = match next {
+                    Some(k) => (Porter::ToCrate(k), tram.pile[k]),
+                    None => (Porter::Waiting, tram.pile_centre()),
+                };
+                self.brought[i].porter = state;
+                walk_toward(mob, to, FULL_SPEED_PCT, events);
+            }
+            Porter::ToCrate(k) => {
+                if there(mob, tram.pile[k]) {
+                    self.brought[i].porter = Porter::Lifting {
+                        k,
+                        until_ms: now + ms(tram.lift_s),
+                    };
+                } else {
+                    walk_toward(mob, tram.pile[k], FULL_SPEED_PCT, events);
+                }
+            }
+            Porter::Lifting { k, until_ms } => {
+                if now >= until_ms {
+                    self.pile[k] = Crate::Carried;
+                    let to = self.carry_to(i, mob.position, standing);
+                    self.brought[i].porter = Porter::Carrying { k, to };
+                    walk_toward(mob, self.dest_point(to, standing), carry, events);
+                }
+            }
+            Porter::Carrying { k, to } => {
+                let still = match to {
+                    Dest::Car(car) => standing.iter().any(|s| s.0 == car),
+                    Dest::Track(_) => standing.is_empty(),
+                };
+                if !still {
+                    let to = self.carry_to(i, mob.position, standing);
+                    self.brought[i].porter = Porter::Carrying { k, to };
+                    walk_toward(mob, self.dest_point(to, standing), carry, events);
+                    return false;
+                }
+                let point = self.dest_point(to, standing);
+                if !there(mob, point) {
+                    walk_toward(mob, point, carry, events);
+                } else if matches!(to, Dest::Car(_)) {
+                    self.pile[k] = Crate::Escaped;
+                    self.brought[i].porter = Porter::Waiting;
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    /// The closest crate on the pile to `at` that no porter is walking to or lifting.
+    fn free_crate(&self, at: [f32; 3]) -> Option<usize> {
+        let taken = |k: usize| {
+            self.brought.iter().any(|b| {
+                !b.dead
+                    && matches!(b.porter,
+                        Porter::ToCrate(j) | Porter::Lifting { k: j, .. } if j == k)
+            })
+        };
+        (0..self.pile.len())
+            .filter(|&k| self.pile[k] == Crate::OnPile && !taken(k))
+            .min_by(|&a, &b| {
+                flat_distance(at, self.tram.pile[a])
+                    .total_cmp(&flat_distance(at, self.tram.pile[b]))
+            })
+    }
+
+    /// Where porter `i` at `at` carries its crate: the closest standing car, whose track it
+    /// last walked to from then on; with none standing, its last track's middle door.
+    fn carry_to(&mut self, i: usize, at: [f32; 3], standing: &[(u64, usize, [f32; 3])]) -> Dest {
+        let closest = standing
+            .iter()
+            .min_by(|a, b| flat_distance(at, a.2).total_cmp(&flat_distance(at, b.2)));
+        match closest {
+            Some(&(car, track, _)) => {
+                self.brought[i].last_track = track;
+                Dest::Car(car)
+            }
+            None => Dest::Track(self.brought[i].last_track),
+        }
+    }
+
+    /// The point of `to`: a standing car's door, or a track's door at the middle stop.
+    fn dest_point(&self, to: Dest, standing: &[(u64, usize, [f32; 3])]) -> [f32; 3] {
+        let middle = |track: usize| {
+            let y = self.tram.stops[self.tram.stops.len() / 2];
+            self.tram.door(track, y)
+        };
+        match to {
+            Dest::Car(car) => standing
+                .iter()
+                .find(|s| s.0 == car)
+                .map_or(middle(0), |s| s.2),
+            Dest::Track(track) => middle(track),
+        }
     }
 
     /// Runs the line `dt` seconds on: each tram due its warning gets its cars rolling, each
@@ -260,6 +775,16 @@ impl Line {
                 track,
                 until_ms: now + ms(self.tram.whistle_s),
             });
+        }
+        for car in self.cars.iter_mut() {
+            if !car.stopped && car.started_ms + leg <= now {
+                car.stopped = true;
+                self.arrivals.push(Arrival {
+                    track: car.track,
+                    stop_y: car.path[1][1],
+                    boss: car.boss,
+                });
+            }
         }
         let period = self.tram.period_ms();
         let dwell = self.tram.dwell_ms();
@@ -302,6 +827,8 @@ impl Line {
                 started_ms: started,
                 hit_in: Vec::new(),
                 hit_out: Vec::new(),
+                boss: n > tram.wave_trams,
+                stopped: false,
             });
         }
         self.sounds.push((tram.bell_sound, tram.lamp_guid(track)));
@@ -372,8 +899,47 @@ impl Line {
         hits
     }
 
-    /// The cars and lit lamps in view, with their creates: the whole Phase sees them.
+    /// The cars, the lit track lamps, the Lampmen's lamps and the crates on the Tribute Pile in
+    /// view, with their creates: the whole Phase sees them.
     pub fn in_view(&self) -> Vec<(u64, SessionEvent)> {
+        let tram = self.tram;
+        let still = |guid: u64, entry: u32, display_id: u32, position: [f32; 3]| {
+            let create = gameobject_create(&GameObject {
+                guid,
+                entry,
+                display_id,
+                type_id: GENERIC,
+                flags: NOT_SELECTABLE,
+                faction: 0,
+                position,
+                orientation: 0.0,
+            });
+            (guid, create)
+        };
+        let mut seen = self.moving_in_view();
+        for l in &self.lamps {
+            seen.push(still(
+                l.guid,
+                tram.lamp_display,
+                tram.lamp_display,
+                l.position,
+            ));
+        }
+        for (k, _) in self
+            .pile
+            .iter()
+            .enumerate()
+            .filter(|(_, &c)| c == Crate::OnPile)
+        {
+            let guid = tram.crate_guid(k);
+            let entry = tram.pile_guid + k as u32;
+            seen.push(still(guid, entry, tram.crate_display, tram.pile[k]));
+        }
+        seen
+    }
+
+    /// The cars and lit track lamps in view, with their creates.
+    fn moving_in_view(&self) -> Vec<(u64, SessionEvent)> {
         let mut seen: Vec<(u64, SessionEvent)> = self
             .cars
             .iter()
@@ -433,6 +999,29 @@ impl Line {
     }
 }
 
+/// Whether `mob` has walked to `point` and stopped there.
+fn there(mob: &Mob, point: [f32; 3]) -> bool {
+    mob.walk.is_none() && flat_distance(mob.position, point) <= THERE_YD
+}
+
+/// Starts `mob` walking to `point` at `speed_pct` of its walk speed, unless it is there or
+/// already on its way.
+fn walk_toward(mob: &mut Mob, point: [f32; 3], speed_pct: u32, events: &mut Vec<SessionEvent>) {
+    let heading_there = mob
+        .walk
+        .as_ref()
+        .is_some_and(|w| w.points.last() == Some(&point));
+    if heading_there || there(mob, point) {
+        return;
+    }
+    events.push(mob.walk_path(vec![point], speed_pct));
+}
+
+/// The guid of the `n`th thing a line made, as a Lampman's lamp of `display`: a GameObject.
+fn mist_lamp_guid(display: u32, n: u32) -> u64 {
+    HIGHGUID_GAMEOBJECT << 48 | u64::from(display & 0xFF_FFFF) << 24 | u64::from(n & 0xFF_FFFF)
+}
+
 /// The guid of the `n`th car a line made: a `HIGHGUID_TRANSPORT` GameObject of `entry`.
 fn car_guid(entry: u32, n: u32) -> u64 {
     u64::from(HIGH_TRANSPORT) << 48 | u64::from(entry & 0xFF_FFFF) << 24 | u64::from(n & 0xFF_FFFF)
@@ -467,6 +1056,20 @@ mod tests {
     }
 
     #[test]
+    fn each_tram_creature_has_its_spawn_row_and_only_the_porter_is_porter_level() {
+        let rows = tram().creature_rows();
+        let entries: Vec<u32> = rows.iter().map(|r| r.0).collect();
+        assert_eq!(entries, [97215, 97207, 97216, 97217]);
+        for (entry, levels) in rows {
+            let row = crate::mobs::tram_row(18, entry).expect("a spawn row");
+            let s = &crate::mobs::content().spawn[row as usize];
+            assert_eq!([s.level_min, s.level_max], levels);
+            assert!(s.appears.is_none(), "no Run starts with it");
+        }
+        assert_eq!(tram().creature_rows()[3].1, [38, 38]);
+    }
+
+    #[test]
     fn a_car_rolls_in_in_five_seconds_and_its_period_is_fifty() {
         assert_eq!(tram().leg_ms(), 5_000);
         assert_eq!(tram().period_ms(), 50_000);
@@ -474,7 +1077,7 @@ mod tests {
 
     #[test]
     fn with_a_tram_creature_alive_at_each_warning_every_tram_is_one_car_and_the_gaps_are_long() {
-        let mut line = Line::new(tram(), 369);
+        let mut line = Line::new(tram(), 369, 0);
         let mut arrivals = Vec::new();
         let mut seen = 0;
         for _ in 0..3000 {

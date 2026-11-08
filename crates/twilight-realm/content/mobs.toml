@@ -2123,6 +2123,73 @@ speed_walk = 1.0
 speed_run = 1.143
 detection_range = 10.0
 
+# The Deeprun Tram's trams (#590, spec docs/specs/deeprun-tram/README.md "What a car carries",
+# deeprun_tram.toml's [tram]). No template here has a spawn row of its own; the tram line makes
+# each at a car's door. Displays are vanilla's (`creature_template` in the vmangos dump). Faction
+# 14 is the cult's, as the Twilight Listener's (97207), who rides the trams too. Every multiplier
+# is 1.0, a placeholder, unless a row says otherwise. The tram row sets each level.
+
+# Dockhands of the cult in dock clothes: the Defias Dockworker's display (entry 6927).
+[[template]]
+entry = 97215
+name = "Twilight Hauler"
+creature_type = 7
+rank = 0
+display_id = 2357
+faction_template = 14
+unit_class = "warrior"
+level_min = 38
+level_max = 40
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# He sets the mist lamps (the line does, from where he stands); no spell of his own. The Twilight
+# Aquamancer's display (entry 4811).
+[[template]]
+entry = 97216
+name = "Twilight Lampman"
+creature_type = 7
+rank = 0
+display_id = 2886
+faction_template = 14
+unit_class = "mage"
+level_min = 38
+level_max = 40
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# He never fights: he carries the Tribute Pile's crates onto the cars. Half a normal's health. The
+# Dabyrie Laborer's display (entry 2582). His walk is twice a normal's, so a crate lifted after
+# tram 1's stop can reach its car before it leaves; at 1.0 no porter ever reaches a standing car.
+[[template]]
+entry = 97217
+name = "Twilight Porter"
+creature_type = 7
+rank = 0
+display_id = 3958
+faction_template = 14
+unit_class = "warrior"
+level_min = 38
+level_max = 38
+health_multiplier = 0.5
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 2.0
+speed_run = 1.143
+detection_range = 18.0
+never_fights = true
+
 # The Northshire Rumours' creatures (#289, rumours.toml). None has a spawn row; the realm makes
 # each at run time. The three givers are friendly level 10s. Their displays come from vmangos's
 # creature_template: Hermit Oswin wears Farmer Saldean's (entry 233, display 1943, a human man),

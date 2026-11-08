@@ -5,8 +5,10 @@
 //! trigger 2171 inside sends the character back out to the hall. The arrival point is open world;
 //! a walk west onto the platform enters the Phase. The mist wall across the tunnel
 //! (`data/twilights-eve/mist_walls.json`) refuses any step through it, and the station bell is a
-//! lever whose pull is Run state. Ringing it starts the tram line (#589): empty cars roll in on
-//! the timetable, the lamps and sounds warn of them, and a moving car hits a player in its lane.
+//! lever whose pull is Run state. Ringing it starts the tram line (#589): cars roll in on the
+//! timetable, the lamps and sounds warn of them, and a moving car hits a player in its lane. Each
+//! wave car carries two fighters and a porter (#590), and the porters carry the Tribute Pile's
+//! crates onto the cars.
 
 mod common;
 
@@ -305,6 +307,15 @@ fn ring_now(party: &mut Party) {
 /// Ticks `secs` in 0.1 s steps; each event each player's client got, with the seconds since the
 /// start it came at. Run straight after [`ring_now`], the line's clock and these seconds agree.
 fn ticks(party: &mut Party, secs: f32) -> Vec<Vec<(f32, SessionEvent)>> {
+    ticks_doing(party, secs, |_| {})
+}
+
+/// [`ticks`], doing `each` to the party after every step.
+fn ticks_doing(
+    party: &mut Party,
+    secs: f32,
+    mut each: impl FnMut(&mut Party),
+) -> Vec<Vec<(f32, SessionEvent)>> {
     let mut timed = vec![Vec::new(); party.sessions.len()];
     let steps = (secs * 10.0).round() as u32;
     for step in 1..=steps {
@@ -312,14 +323,30 @@ fn ticks(party: &mut Party, secs: f32) -> Vec<Vec<(f32, SessionEvent)>> {
         for (i, events) in party.run(0.1).into_iter().enumerate() {
             timed[i].extend(events.into_iter().map(|e| (at, e)));
         }
+        each(party);
     }
     timed
 }
 
-/// Rings the bell and ticks `secs`; what player 0's client got, timed.
+/// [`ticks`], killing every tram creature as soon as a client is shown it: every tram finds the
+/// last one's creatures dead.
+fn ticks_clearing(party: &mut Party, secs: f32) -> Vec<Vec<(f32, SessionEvent)>> {
+    let mut killed = Vec::new();
+    ticks_doing(party, secs, |party| {
+        for guid in tram_creatures(party) {
+            if !killed.contains(&guid) {
+                killed.push(guid);
+                party.realm.kill_creature(guid);
+            }
+        }
+    })
+}
+
+/// Rings the bell and ticks `secs`, clearing each tram's creatures; what player 0's client got,
+/// timed.
 fn after_the_bell(party: &mut Party, secs: f32) -> Vec<(f32, SessionEvent)> {
     ring_now(party);
-    ticks(party, secs).swap_remove(0)
+    ticks_clearing(party, secs).swap_remove(0)
 }
 
 /// Whether `a` and `b` are the same moment, give or take a tick.
@@ -575,7 +602,7 @@ fn a_car_hits_a_player_in_its_lane_once_each_way_and_not_one_on_the_centre_strip
     ring_now(&mut party);
     party.go(0, ON_TRACK_A, 0.0);
     party.go(1, ON_THE_CENTRE_STRIP, 0.0);
-    let mut timed = ticks(&mut party, 34.0);
+    let mut timed = ticks_clearing(&mut party, 34.0);
     let theirs = timed.pop().unwrap();
     let timed = timed.pop().unwrap();
     let max = max_health(&party, 0, on_track);
@@ -599,4 +626,533 @@ fn a_car_hits_a_player_in_its_lane_once_each_way_and_not_one_on_the_centre_strip
         "the centre strip is no lane"
     );
     assert!(roots(&theirs, beside).is_empty());
+}
+
+// What a car carries (#590, spec "What a car carries", ADR 0033): every number below is the
+// `[tram]` table's in `content/deeprun_tram.toml`.
+
+/// The Twilight Hauler, Listener and Lampman, who fight, and the Twilight Porter, who carries.
+const HAULER: u32 = 97215;
+const LISTENER: u32 = 97207;
+const LAMPMAN: u32 = 97216;
+const PORTER: u32 = 97217;
+const FIGHTERS: [u32; 3] = [HAULER, LISTENER, LAMPMAN];
+/// Track A's car doors, on the centre strip side, and the lead stop, where tram 1's car stands.
+const DOOR_A: f32 = -40.0;
+const LEAD_STOP: f32 = 2512.2;
+/// The Lampman's lamp (a lantern) and its slow; the porter's gold glow.
+const LAMP_DISPLAY: u32 = 6038;
+const LAMP_B: u64 = 0xF110 << 48 | 983028;
+const MIST_LAMP: u32 = 1900055;
+const GILDED: u32 = 1900056;
+/// The Tribute Pile: crate `k` is GameObject 983013 + k (the entry is the guid), at `PILE[k]`.
+const PILE: [[f32; 2]; 12] = [
+    [-19.7, 2488.7],
+    [-18.5, 2488.7],
+    [-17.3, 2488.7],
+    [-19.7, 2489.9],
+    [-18.5, 2489.9],
+    [-17.3, 2489.9],
+    [-19.7, 2491.1],
+    [-18.5, 2491.1],
+    [-17.3, 2491.1],
+    [-19.7, 2492.3],
+    [-18.5, 2492.3],
+    [-17.3, 2492.3],
+];
+
+fn crate_guid(k: usize) -> u64 {
+    0xF110 << 48 | (983013 + k as u64)
+}
+
+/// The east strip's south end: more than a leash (50 yd) from either track's doors, so a fighter
+/// turned on a player there gives up the chase and goes back to its door, alive.
+const SAFE: [f32; 3] = [45.0, 2410.0, -4.29649];
+/// The east platform's middle, farther from track A's doors than the bell.
+const EAST: [f32; 3] = [45.0, 2491.0, -4.29649];
+
+/// The tram creatures any client has been shown, with their entries.
+fn tram_creatures_by_entry(party: &Party) -> Vec<(u64, u32)> {
+    let mut out: Vec<(u64, u32)> = Vec::new();
+    for i in 0..party.sessions.len() {
+        for (guid, entry, _) in unit_creates(party.seen(i)) {
+            let tram = FIGHTERS.contains(&entry) || entry == PORTER;
+            if tram && !out.iter().any(|o| o.0 == guid) {
+                out.push((guid, entry));
+            }
+        }
+    }
+    out
+}
+
+fn tram_creatures(party: &Party) -> Vec<u64> {
+    tram_creatures_by_entry(party)
+        .into_iter()
+        .map(|c| c.0)
+        .collect()
+}
+
+/// [`ticks`], killing every creature of `entries` as soon as a client is shown it.
+fn ticks_killing(
+    party: &mut Party,
+    secs: f32,
+    entries: &'static [u32],
+) -> Vec<Vec<(f32, SessionEvent)>> {
+    let mut killed = Vec::new();
+    ticks_doing(party, secs, move |party| {
+        for (guid, entry) in tram_creatures_by_entry(party) {
+            if entries.contains(&entry) && !killed.contains(&guid) {
+                killed.push(guid);
+                party.realm.kill_creature(guid);
+            }
+        }
+    })
+}
+
+/// The units created in `timed`: `(seconds, guid, entry, position)`.
+fn units_made(timed: &[(f32, SessionEvent)]) -> Vec<(f32, u64, u32, [f32; 3])> {
+    timed
+        .iter()
+        .filter_map(|(t, e)| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                kind: benilla_protocol::EntityKind::Unit,
+                position,
+                fields,
+                ..
+            } => Some((*t, *guid, fields.object_entry().unwrap_or(0), *position)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// When `guid` started a fight, swung or moved in `timed`.
+fn acts(timed: &[(f32, SessionEvent)], guid: u64) -> Vec<f32> {
+    timed
+        .iter()
+        .filter_map(|(t, e)| match e {
+            SessionEvent::AttackStart { attacker, .. } if *attacker == guid => Some(*t),
+            SessionEvent::AttackerState(s) if s.attacker == guid => Some(*t),
+            SessionEvent::MonsterMove { guid: g, .. } if *g == guid => Some(*t),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Whom `guid` turned on in `timed`, and when.
+fn turned_on(timed: &[(f32, SessionEvent)], guid: u64) -> Vec<(f32, u64)> {
+    timed
+        .iter()
+        .filter_map(|(t, e)| match e {
+            SessionEvent::AttackStart { attacker, victim } if *attacker == guid => {
+                Some((*t, *victim))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// `guid`'s moves in `timed`: `(seconds, path, duration, running)`.
+fn moves(timed: &[(f32, SessionEvent)], guid: u64) -> Vec<(f32, Vec<[f32; 3]>, u32, bool)> {
+    timed
+        .iter()
+        .filter_map(|(t, e)| match e {
+            SessionEvent::MonsterMove {
+                guid: g,
+                path,
+                duration_ms,
+                run_mode,
+                stop: false,
+                ..
+            } if *g == guid => Some((*t, path.clone(), *duration_ms, *run_mode)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Whether `timed` shows `unit` wearing an aura of `spell_id`.
+fn wears(timed: &[(f32, SessionEvent)], unit: u64, spell_id: u32) -> bool {
+    timed.iter().any(|(_, e)| match e {
+        SessionEvent::ObjectValues { guid, fields } if *guid == unit => {
+            fields.unit_auras().any(|a| a.spell_id == spell_id)
+        }
+        _ => false,
+    })
+}
+
+/// The player `guid`'s run speeds set in `timed`.
+fn run_speeds(timed: &[(f32, SessionEvent)], guid: u64) -> Vec<f32> {
+    timed
+        .iter()
+        .filter_map(|(_, e)| match e {
+            SessionEvent::ForceSpeedChange {
+                guid: g,
+                kind: benilla_protocol::messages::SpeedKind::Run,
+                speed,
+                ..
+            } if *g == guid => Some(*speed),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The Lampmen's lamps created in `timed`: `(seconds, guid, position)`.
+fn lamps_made(timed: &[(f32, SessionEvent)]) -> Vec<(f32, u64, [f32; 3])> {
+    timed
+        .iter()
+        .filter_map(|(t, e)| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                display_id: Some(LAMP_DISPLAY),
+                position,
+                ..
+            } if *guid != LAMP_A && *guid != LAMP_B => Some((*t, *guid, *position)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Every event in `timed`, untimed.
+fn untimed(timed: &[(f32, SessionEvent)]) -> Vec<SessionEvent> {
+    timed.iter().map(|(_, e)| e.clone()).collect()
+}
+
+#[test]
+fn tram_1_s_car_brings_two_fighters_and_a_porter_who_wait_a_second_then_the_fighters_turn_on_the_closest_player(
+) {
+    let mut party = by_the_bell(&[38, 38]);
+    let (near, far) = (party.guids[0], party.guids[1]);
+    party.go(1, EAST, 0.0);
+    party.run(0.2);
+    ring_now(&mut party);
+    let mut timed = ticks(&mut party, 12.0);
+    let theirs = timed.pop().unwrap();
+    let mine = timed.pop().unwrap();
+    let made = units_made(&mine);
+    assert_eq!(made.len(), 3, "{made:?}");
+    let fighters: Vec<u64> = made
+        .iter()
+        .filter(|m| FIGHTERS.contains(&m.2))
+        .map(|m| m.1)
+        .collect();
+    assert_eq!(fighters.len(), 2, "{made:?}");
+    assert_eq!(made.iter().filter(|m| m.2 == PORTER).count(), 1);
+    for &(t, _, _, at_door) in &made {
+        assert!(at(t, 10.0), "they step off as the car stops: {made:?}");
+        assert!((at_door[0] - DOOR_A).abs() < 0.01, "{made:?}");
+        assert!((at_door[1] - LEAD_STOP).abs() < 1.6, "{made:?}");
+    }
+    for &(_, guid, _, _) in &made {
+        let first = acts(&mine, guid)
+            .into_iter()
+            .chain(acts(&theirs, guid))
+            .fold(f32::MAX, f32::min);
+        assert!(
+            first > 10.95,
+            "nothing acts in its first second: {guid:x} at {first}"
+        );
+    }
+    for &f in &fighters {
+        let turned = turned_on(&mine, f);
+        assert!(
+            turned
+                .first()
+                .is_some_and(|&(t, victim)| victim == near && t < 11.25),
+            "{turned:?}"
+        );
+        assert!(turned_on(&theirs, f).iter().all(|&(_, v)| v != far));
+    }
+}
+
+#[test]
+fn tram_creatures_alive_at_tram_2_s_warning_keep_it_one_car_and_the_next_gap_long() {
+    let mut party = by_the_bell(&[38]);
+    ring_now(&mut party);
+    party.go(0, SAFE, 0.0);
+    let timed = ticks(&mut party, 92.0).swap_remove(0);
+    let trams = trams(&timed);
+    assert!(trams.len() >= 3, "{trams:?}");
+    for (got, want) in trams.iter().zip([(10.0, 1), (50.0, 1), (90.0, 1)]) {
+        assert!(at(got.0, want.0) && got.1 == want.1, "{trams:?}");
+    }
+}
+
+#[test]
+fn killing_tram_1_s_creatures_before_tram_2_s_warning_gives_it_two_cars_and_a_short_gap() {
+    let mut party = by_the_bell(&[38]);
+    ring_now(&mut party);
+    party.go(0, SAFE, 0.0);
+    let mut timed = ticks_clearing(&mut party, 20.0).swap_remove(0);
+    let later = ticks(&mut party, 60.0).swap_remove(0);
+    timed.extend(later.into_iter().map(|(t, e)| (t + 20.0, e)));
+    let trams = trams(&timed);
+    assert!(trams.len() >= 3, "{trams:?}");
+    for (got, want) in trams.iter().zip([(10.0, 1), (50.0, 2), (75.0, 1)]) {
+        assert!(at(got.0, want.0) && got.1 == want.1, "{trams:?}");
+    }
+}
+
+#[test]
+fn a_porter_carries_the_closest_crate_onto_the_standing_car_and_it_has_escaped() {
+    let mut party = by_the_bell(&[38]);
+    ring_now(&mut party);
+    party.go(0, SAFE, 0.0);
+    let timed = ticks_killing(&mut party, 30.0, &FIGHTERS).swap_remove(0);
+    let porter = units_made(&timed)
+        .into_iter()
+        .find(|m| m.2 == PORTER)
+        .expect("tram 1 brings a porter")
+        .1;
+    assert!(wears(&timed, porter, GILDED), "the porter's gold glow");
+    let walks = moves(&timed, porter);
+    assert!(walks.len() >= 2, "{walks:?}");
+    let (start, path, duration, running) = &walks[0];
+    assert!(at(*start, 11.0) && !running, "a walk once awake: {walks:?}");
+    let to = *path.last().unwrap();
+    let k = PILE
+        .iter()
+        .position(|p| (p[0] - to[0]).abs() < 0.01 && (p[1] - to[1]).abs() < 0.01)
+        .expect("it walks to a crate");
+    assert_eq!(
+        k, 9,
+        "the crate closest to the porter, at the door's north end"
+    );
+    let reached = start + *duration as f32 / 1000.0;
+    let lifted = removed_at(&timed, crate_guid(k)).expect("the crate it reached leaves view");
+    assert!(
+        (lifted - reached - 2.0).abs() < 0.2,
+        "reached {reached}, lifted {lifted}"
+    );
+    let (carried_at, carry, _, running) = &walks[1];
+    assert!(at(*carried_at, lifted) && !running, "{walks:?}");
+    let door = *carry.last().unwrap();
+    assert!(
+        (door[0] - DOOR_A).abs() < 0.01 && (door[1] - LEAD_STOP).abs() < 0.01,
+        "to the standing car's door: {door:?}"
+    );
+    let boarded = removed_at(&timed, porter).expect("it boards the car");
+    assert!(boarded < 30.0, "before the car leaves: {boarded}");
+    assert!(!died(&untimed(&timed), porter), "it boards without dying");
+    let report = party.realm.tram_report_as(party.sessions[0]).unwrap();
+    assert_eq!((report.escaped, report.on_pile), (1, 11), "{report:?}");
+    assert_eq!((report.porters_made, report.porters_dead), (1, 0));
+}
+
+#[test]
+fn a_porter_killed_carrying_puts_its_crate_back_on_the_pile() {
+    let mut party = by_the_bell(&[38]);
+    ring_now(&mut party);
+    party.go(0, SAFE, 0.0);
+    let timed = ticks_killing(&mut party, 20.0, &FIGHTERS).swap_remove(0);
+    let report = party.realm.tram_report_as(party.sessions[0]).unwrap();
+    assert_eq!(report.on_pile, 11, "a crate is carried by now: {report:?}");
+    let k = (0..12)
+        .find(|&k| removed_at(&timed, crate_guid(k)).is_some())
+        .expect("a crate left view");
+    let porter = units_made(&timed)
+        .into_iter()
+        .find(|m| m.2 == PORTER)
+        .unwrap()
+        .1;
+    party.realm.kill_creature(porter);
+    let after = ticks(&mut party, 0.3).swap_remove(0);
+    assert_eq!(
+        shown_and_gone(&after, crate_guid(k)).first().map(|s| s.1),
+        Some(true),
+        "the crate is back in view"
+    );
+    let report = party.realm.tram_report_as(party.sessions[0]).unwrap();
+    assert_eq!((report.on_pile, report.escaped), (12, 0), "{report:?}");
+    assert_eq!(report.porters_dead, 1);
+}
+
+/// A free `self_area` taunt of radius 10 and 4 s, on a test Calling.
+const TEST_CALLINGS: &str = r#"
+[[calling]]
+key = "test_tank"
+name = "Test Tank"
+tier = 0
+class = 1
+cap = 60
+tier_bonus = { strength = 0, agility = 0, stamina = 0, intellect = 0, spirit = 0 }
+shapeshift_form = 0
+armour = ["cloth"]
+
+[[calling.skill]]
+key = "taunt"
+spell_id = 1161
+power_cost = 0
+cooldown_ms = 0
+gcd_ms = 0
+target = "self_area"
+radius_yd = 10.0
+max_targets = 100
+effects = [{ kind = "taunt", duration_ms = 4000 }]
+"#;
+const TAUNT: u32 = 1161;
+
+#[test]
+fn a_porter_cannot_be_made_to_fight_by_a_blow_or_a_taunt() {
+    let mut party = Party::edited(
+        Realm::with_seed(1).with_callings(TEST_CALLINGS),
+        &[60],
+        START_ELWYNN,
+        Box::new(NoGround),
+        |_, blob| blob.replace("calling = \"basic_warrior\"", "calling = \"test_tank\""),
+    );
+    party.go(0, STATION, 0.0);
+    party.run(0.2);
+    party.cmd(0, RealmCommand::AreaTrigger { id: ENTRANCE });
+    party.cmd(0, RealmCommand::WorldportAck);
+    party.run(0.2);
+    party.go(0, BY_THE_BELL, 0.0);
+    party.run(0.2);
+    ring_now(&mut party);
+    ticks_killing(&mut party, 10.2, &FIGHTERS);
+    let (porter, at_door) = party.unit(0, PORTER, [DOOR_A, LEAD_STOP, 0.0]);
+    let me = party.guids[0];
+    let beside = [at_door[0] + 1.5, at_door[1], at_door[2]];
+    party.go(0, beside, std::f32::consts::PI);
+    party.cmd(0, RealmCommand::AttackSwing { guid: porter });
+    party.cmd(
+        0,
+        RealmCommand::CastSpell {
+            spell_id: TAUNT,
+            target: None,
+        },
+    );
+    let timed = ticks_killing(&mut party, 2.0, &FIGHTERS).swap_remove(0);
+    let blows = timed.iter().any(|(_, e)| {
+        matches!(e, SessionEvent::AttackerState(s) if s.attacker == me && s.victim == porter)
+    });
+    assert!(blows, "the blow lands on the porter");
+    assert!(turned_on(&timed, porter).is_empty(), "it turns on no one");
+    assert!(
+        swung_at(&untimed(&timed), porter).is_empty(),
+        "it never swings"
+    );
+    let walks = moves(&timed, porter);
+    assert!(
+        !walks.is_empty() && walks.iter().all(|w| !w.3),
+        "it walks on to the pile: {walks:?}"
+    );
+}
+
+#[test]
+fn a_lampman_sets_a_lamp_a_second_after_stepping_off_and_every_12_seconds_and_his_death_puts_them_out(
+) {
+    let mut party = by_the_bell(&[38]);
+    let me = party.guids[0];
+    ring_now(&mut party);
+    party.go(0, SAFE, 0.0);
+    // Every tram creature but the first Lampman dies as it comes.
+    let mut lampman = None;
+    let mut killed = Vec::new();
+    let mut timed = Vec::new();
+    let mut made_at = 0.0;
+    let mut t = 0.0;
+    for step in 1..=1200 {
+        t = step as f32 / 10.0;
+        timed.extend(party.run(0.1).swap_remove(0).into_iter().map(|e| (t, e)));
+        for (guid, entry) in tram_creatures_by_entry(&party) {
+            if entry == LAMPMAN && lampman.is_none() {
+                lampman = Some(guid);
+                made_at = t;
+            } else if lampman != Some(guid) && !killed.contains(&guid) {
+                killed.push(guid);
+                party.realm.kill_creature(guid);
+            }
+        }
+        if lampman.is_some() && t >= made_at + 1.2 {
+            break;
+        }
+    }
+    let lampman = lampman.expect("a Lampman within the first trams");
+    let lamps = lamps_made(&timed);
+    assert_eq!(lamps.len(), 1, "{lamps:?}");
+    let (lit, first, at_lamp) = lamps[0];
+    assert!(
+        (lit - made_at - 1.0).abs() < 0.15,
+        "made {made_at}, lit {lit}"
+    );
+
+    // Within 6 yd of the lamp: slowed 30%; out of every lamp's reach, not.
+    party.go(0, [at_lamp[0] + 3.0, at_lamp[1], at_lamp[2]], 0.0);
+    let inside = ticks(&mut party, 0.5).swap_remove(0);
+    assert!(wears(&inside, me, MIST_LAMP), "the player wears Mist Lamp");
+    let slowed = *run_speeds(&inside, me).last().expect("a slowed run speed");
+    party.go(0, SAFE, 0.0);
+    let outside = ticks(&mut party, 0.5).swap_remove(0);
+    let freed = *run_speeds(&outside, me).last().expect("the run speed back");
+    assert!((slowed - freed * 0.7).abs() < 1e-3, "{slowed} of {freed}");
+
+    // The second lamp, 12 s after the first.
+    let base = t + 1.0;
+    let more: Vec<(f32, SessionEvent)> = ticks(&mut party, 12.0)
+        .swap_remove(0)
+        .into_iter()
+        .map(|(t, e)| (t + base, e))
+        .collect();
+    let second = lamps_made(&more);
+    assert_eq!(second.len(), 1, "{second:?}");
+    assert!(
+        (second[0].0 - lit - 12.0).abs() < 0.15,
+        "{second:?} after {lit}"
+    );
+
+    party.realm.kill_creature(lampman);
+    let out = ticks(&mut party, 0.3).swap_remove(0);
+    assert!(removed_at(&out, first).is_some(), "the first lamp goes out");
+    assert!(removed_at(&out, second[0].1).is_some(), "and the second");
+}
+
+#[test]
+fn with_a_head_count_of_2_a_fighter_s_maximum_health_is_half_again_a_solo_run_s() {
+    for players in [1, 2] {
+        let mut party = by_the_bell(&vec![38; players]);
+        ring_now(&mut party);
+        for i in 0..players {
+            party.go(i, SAFE, 0.0);
+        }
+        let timed = ticks(&mut party, 10.5).swap_remove(0);
+        let fighter = units_made(&timed)
+            .into_iter()
+            .find(|m| FIGHTERS.contains(&m.2))
+            .expect("a fighter")
+            .1;
+        let made = timed
+            .iter()
+            .find_map(|(_, e)| match e {
+                SessionEvent::ObjectCreate { guid, fields, .. } if *guid == fighter => {
+                    fields.unit_max_health()
+                }
+                _ => None,
+            })
+            .unwrap();
+        let now = max_health(&party, 0, fighter);
+        let want = if players == 2 {
+            (made as f32 * 1.5).round() as u32
+        } else {
+            made
+        };
+        assert_eq!(now, want, "{players} players: made at {made}");
+    }
+}
+
+#[test]
+fn the_tram_s_templates_load_and_only_the_porter_never_fights() {
+    for (entry, display, levels) in [
+        (HAULER, 2357, [38, 40]),
+        (LAMPMAN, 2886, [38, 40]),
+        (PORTER, 3958, [38, 38]),
+    ] {
+        let t = mob_template(entry);
+        let int = |k: &str| t[k].as_integer().unwrap();
+        assert_eq!(int("display_id"), display, "{entry}");
+        assert_eq!([int("level_min"), int("level_max")], levels, "{entry}");
+        assert_eq!(int("faction_template"), 14, "{entry}");
+        let never = t.get("never_fights").and_then(|v| v.as_bool()) == Some(true);
+        assert_eq!(never, entry == PORTER, "{entry}");
+    }
+    assert!(mob_template(LISTENER).get("never_fights").is_none());
 }

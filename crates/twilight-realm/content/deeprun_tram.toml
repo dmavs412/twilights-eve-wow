@@ -12,12 +12,14 @@
 # `grounded = false`, each naming the stock spawn it came from; ground_check.py leaves the rows
 # alone. The platform floor is z -4.2965, the arrival point's and the vanilla benches'.
 #
-# The shell (#587): the station bell. The tram line (#589): the `[tram]` table below, empty cars
-# on the timetable. The trams' creatures, the Tribute Pile and the Conductor come with the next
-# tickets. Ringing the bell is the lever's pull, Run state; the tram line starts from it.
+# The shell (#587): the station bell. The tram line (#589): the `[tram]` table below, cars on the
+# timetable. What a car carries (#590): fighters, porters and the Tribute Pile, also in `[tram]`.
+# The Conductor comes with the next ticket. Ringing the bell is the lever's pull, Run state; the
+# tram line starts from it.
 #
 # Guids: creatures 973201 up (973101 to 973123 are the quiet wing's), GameObjects 983012 up (the
-# entry is the guid). Templates 97215 up in mobs.toml.
+# entry is the guid). Templates 97215 up in mobs.toml. The tram's creatures have no guid here:
+# the line numbers each one it makes.
 
 id = 18
 name = "The Deeprun Tram"
@@ -57,8 +59,9 @@ lever = { used_text = "The bell rings down the tunnel. Something far off answers
 
 # The tram line (#589, spec "The trams", ADR 0033): Run state that starts on the tick after the
 # bell is rung. Each tram's cars roll in on one track, stand at the platform and back out, and the
-# timetable follows the group's pace (Headway, GLOSSARY.md). Read by src/tram.rs. The cars carry
-# nothing yet; #590 loads them.
+# timetable follows the group's pace (Headway, GLOSSARY.md). Read by src/tram.rs. What a wave
+# tram's car carries (#590, spec "What a car carries"): two fighters and a porter, who step off
+# at its door on the centre strip side.
 [tram]
 bell = 983012              # the lever whose use starts the line
 car_entry = 176080         # vanilla's Subway, GameObject type 11
@@ -86,7 +89,34 @@ hit_spell = 1900054        # the root's aura, in creature_spells.toml
 hit_spell_name = "Tram Strike"
 bell_sound = 7234          # SoundEntries BellTollDwarfGnome, an arrival's warning
 whistle_sound = 6757       # SoundEntries SubwayStart, a departure's warning
-lamp_display = 6038        # General Lantern 01, lit while a warning lasts
+lamp_display = 6038        # General Lantern 01, lit while a warning lasts; also a Lampman's lamp
+fighter_slots = 2          # fighters a wave car carries
+fighters = [97215, 97207, 97216]   # each fighter slot rolls one with equal odds
+lampman = 97216                    # at most one a car
+porter = 97217                     # one a car while any crate is left to escape
+fighter_levels = [38, 40]
+porter_level = 38
+step_off_spacing_yd = 1.5  # a car's creatures stand this far apart along y at its door
+wake_s = 1.0               # stepping off to acting
+lift_s = 2.0               # a porter lifting a crate
+carry_speed_pct = 70       # of a porter's walk speed, carrying
+gilded_spell = 1900056     # the porter's gold glow, in creature_spells.toml
+gilded_spell_name = "Gilded"
+lamp_every_s = 12.0        # a Lampman's lamps: the first wake_s after stepping off, then this often
+lamp_radius_yd = 6.0
+lamp_slow_pct = 30
+lamp_spell = 1900055       # the lamp's slow, in creature_spells.toml
+lamp_spell_name = "Mist Lamp"
+crate_display = 31         # vanilla's Sealed Crate
+pile_guid = 983013         # the first crate's guid; crate k is pile_guid + k (to 983024)
+# The Tribute Pile, on the centre strip beside the bell. Z: the Subway Benches on the centre
+# strip, e.g. 176102 (-20.6, 2480.5, -4.29).
+pile = [
+  [-19.7, 2488.7, -4.29], [-18.5, 2488.7, -4.29], [-17.3, 2488.7, -4.29],
+  [-19.7, 2489.9, -4.29], [-18.5, 2489.9, -4.29], [-17.3, 2489.9, -4.29],
+  [-19.7, 2491.1, -4.29], [-18.5, 2491.1, -4.29], [-17.3, 2491.1, -4.29],
+  [-19.7, 2492.3, -4.29], [-18.5, 2492.3, -4.29], [-17.3, 2492.3, -4.29],
+]
 
 # Each track: its x, the x of its cars' doors on the centre strip side (#590), and its lamp at the
 # platform's south end. The lamp's guid follows the bell's (983012 up; the entry is the guid).

@@ -1164,6 +1164,9 @@ pub(crate) fn content() -> &'static [Dungeon] {
                 }
             }
             d.check_levers();
+            if let Some(tram) = &d.tram {
+                tram.check(&d.name);
+            }
         })
         .collect()
     })
@@ -1259,11 +1262,13 @@ pub(crate) struct Run {
     pub(crate) head_count: u32,
     /// The dungeon's tram line (ADR 0033), from the tick after its bell is rung.
     pub(crate) tram: Option<crate::tram::Line>,
+    /// The seed it started with, which rolls its tram's creatures.
+    pub(crate) seed: u64,
 }
 
 impl Run {
     /// A Run of dungeon `dungeon`, its inner portals as the content opens them and its key on
-    /// the holder `seed` picks.
+    /// the holder `seed` picks; `seed` also rolls its tram's creatures.
     pub(crate) fn new(dungeon: u32, seed: u64) -> Self {
         Self {
             elapsed: 0.0,
@@ -1281,6 +1286,7 @@ impl Run {
             unlocked: Vec::new(),
             head_count: 0,
             tram: None,
+            seed,
         }
     }
 

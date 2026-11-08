@@ -647,7 +647,9 @@ struct Session {
 /// a holder rolls any, so every other shard leaves the realm's dice where they were.
 fn shard_seed(place: shard::Place, rng: &mut rng::Rng) -> u64 {
     match place.phase {
-        phased::Phase::Dungeon(id) if phased::dungeon(id).is_some_and(|d| d.key.is_some()) => {
+        phased::Phase::Dungeon(id)
+            if phased::dungeon(id).is_some_and(|d| d.key.is_some() || d.tram.is_some()) =>
+        {
             rng.seed()
         }
         _ => 0,
@@ -954,6 +956,28 @@ impl Realm {
         for mob in self.creatures_mut(guid) {
             mob.position = at;
         }
+    }
+
+    /// Kills creature `guid` where it stands, with no killer and no loot: a test seam, so a script
+    /// can clear a wave without dice deciding the blows. The clients learn nothing of it.
+    pub fn kill_creature(&mut self, guid: u64) {
+        for mob in self.creatures_mut(guid) {
+            mob.health = 0;
+            mob.state = mobs::State::Dead;
+            mob.walk = None;
+        }
+    }
+
+    /// The tram line's report in the Phase `session`'s character stands in (ADR 0033): the
+    /// Tribute Pile's crates and the porters. `None` with no line running there.
+    pub fn tram_report_as(&self, session: SessionId) -> Option<tram::Report> {
+        let world = if self.active == session {
+            self.world.as_ref()
+        } else {
+            self.parked.get(&session).and_then(|s| s.world.as_ref())
+        };
+        let place = world.and_then(|w| w.shard_place())?;
+        Some(self.shards.get(&place)?.tram()?.report())
     }
 
     /// Sets the wall clock to `unix_ms`, milliseconds since the Unix epoch. Ticks advance it in
@@ -1670,9 +1694,12 @@ impl Realm {
     }
 
     /// The tram lines' tick (ADR 0033), after the shards ran them and sent their cars and lamps:
-    /// every character in a line's Phase hears its warnings on the lamps, and each moving car's
-    /// lane hit lands on the character it hit.
+    /// every character in a line's Phase hears its warnings on the lamps, each moving car's lane
+    /// hit lands on the character it hit, each fighter awake turns on the closest character, and
+    /// a character near a Lampman's lamp is slowed (and one away from every lamp, or outside
+    /// the Phase, is not).
     fn tick_trams(&mut self) {
+        self.tick_mist_lamps();
         let places: Vec<shard::Place> = self
             .shards
             .iter()
@@ -1693,7 +1720,11 @@ impl Realm {
                     alive: w.alive(),
                 });
             }
-            let Some(line) = self.shards.get_mut(&place).and_then(|s| s.tram_mut()) else {
+            let Some(shard) = self.shards.get_mut(&place) else {
+                continue;
+            };
+            let woken = shard.wake_tram(&players);
+            let Some(line) = shard.tram_mut() else {
                 continue;
             };
             let hits = line.hits(&players);
@@ -1715,6 +1746,50 @@ impl Realm {
                 for hit in hits.iter().filter(|h| h.player == me) {
                     w.tram_hit(hit.car, t.hit_spell, t.hit_pct, t.hit_root_ms, events);
                 }
+                events.extend(
+                    woken
+                        .iter()
+                        .filter(|(g, _)| *g == me)
+                        .map(|(_, e)| e.clone()),
+                );
+            }
+        }
+    }
+
+    /// Each character wears a tram's lamp slow while within its radius of one of its line's
+    /// Lampmen's lamps in their Phase, and has it taken off otherwise.
+    fn tick_mist_lamps(&mut self) {
+        let lines: Vec<(shard::Place, &'static tram::Tram, Vec<[f32; 3]>)> = self
+            .shards
+            .iter()
+            .filter_map(|(place, s)| s.tram().map(|l| (*place, l.tram(), l.lamp_points())))
+            .collect();
+        let trams = phased::content().iter().filter_map(|d| d.tram.as_ref());
+        let characters = &self.characters;
+        let worlds = std::iter::once((&mut self.world, &mut self.events)).chain(
+            self.parked
+                .values_mut()
+                .map(|s| (&mut s.world, &mut s.events)),
+        );
+        for (w, events) in worlds {
+            let Some(w) = w.as_mut() else { continue };
+            let Some(at) = characters.get(w.guid).map(|c| c.position) else {
+                continue;
+            };
+            let place = w.shard_place();
+            for tram in trams.clone() {
+                let lamps = lines
+                    .iter()
+                    .find(|(p, t, _)| Some(*p) == place && std::ptr::eq(*t, tram))
+                    .map_or(&[][..], |l| &l.2[..]);
+                w.mist_lamps(
+                    lamps,
+                    at,
+                    tram.lamp_spell,
+                    tram.lamp_radius_yd,
+                    tram.lamp_slow_pct,
+                    events,
+                );
             }
         }
     }

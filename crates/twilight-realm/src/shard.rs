@@ -356,7 +356,7 @@ impl Shard {
             run.elapsed += dt;
             self.ground_run(host);
             self.run_changes(host);
-            self.tick_tram(dt);
+            events.extend(self.tick_tram(dt));
             return events;
         }
         let map = self.place.map;
@@ -370,28 +370,73 @@ impl Shard {
     }
 
     /// The Run's tram line (ADR 0033): it starts on the tick after the dungeon's bell is pulled,
-    /// and from then on runs `dt` on, told whether any creature a tram brought is alive.
-    fn tick_tram(&mut self, dt: f32) {
+    /// and from then on runs `dt` on, told whether any creature a tram brought is alive. The
+    /// creatures of each car that stopped step off at its door into the mobs, and the line runs
+    /// its creatures' own turn. The moves the clients that see them are sent.
+    fn tick_tram(&mut self, dt: f32) -> Vec<SessionEvent> {
         let Phase::Dungeon(id) = self.place.phase else {
-            return;
+            return Vec::new();
         };
         let Some(run) = &mut self.run else {
-            return;
+            return Vec::new();
         };
-        match &mut run.tram {
-            Some(line) => {
-                let alive = self.mobs.iter().any(|m| m.alive() && line.brought(m.guid));
-                line.tick(dt, alive);
+        let Some(line) = &mut run.tram else {
+            let rung = crate::phased::dungeon(id)
+                .and_then(|d| d.tram.as_ref())
+                .filter(|t| run.used.contains(&t.bell));
+            if let Some(tram) = rung {
+                run.tram = Some(crate::tram::Line::new(tram, self.place.map, run.seed));
             }
-            None => {
-                let rung = crate::phased::dungeon(id)
-                    .and_then(|d| d.tram.as_ref())
-                    .filter(|t| run.used.contains(&t.bell));
-                if let Some(tram) = rung {
-                    run.tram = Some(crate::tram::Line::new(tram, self.place.map));
-                }
-            }
+            return Vec::new();
+        };
+        let alive = self.mobs.iter().any(|m| m.alive() && line.brought(m.guid));
+        line.tick(dt, alive);
+        let zone = mobs::zone_factor(crate::phased::zone(self.place.phase));
+        for s in line.take_stepping() {
+            let Some(row) = mobs::tram_row(id, s.entry) else {
+                continue;
+            };
+            let [x, y, z] = s.at;
+            let Some(mut mob) = Mob::tram(row, s.level, [x, y], z, zone, s.seq) else {
+                continue;
+            };
+            mob.orientation = s.facing;
+            mob.home_orientation = s.facing;
+            mob.wears = s.wears;
+            line.bring(mob.guid, s.kind);
+            self.mobs.push(mob);
         }
+        line.run_creatures(&mut self.mobs)
+    }
+
+    /// The tram's fighters awake since the last call (ADR 0033), each turned on the closest
+    /// living player of `players`, as an Encounter's wave is: what to tell that player, by guid.
+    pub(crate) fn wake_tram(
+        &mut self,
+        players: &[crate::tram::Standing],
+    ) -> Vec<(u64, SessionEvent)> {
+        let Some(line) = self.run.as_mut().and_then(|r| r.tram.as_mut()) else {
+            return Vec::new();
+        };
+        let mut told = Vec::new();
+        for guid in line.take_waking() {
+            let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == guid) else {
+                continue;
+            };
+            if mob.state != State::Idle {
+                continue;
+            }
+            let Some(target) = players.iter().filter(|p| p.alive).min_by(|a, b| {
+                flat_distance(a.position, mob.position)
+                    .total_cmp(&flat_distance(b.position, mob.position))
+            }) else {
+                continue;
+            };
+            let mut events = Vec::new();
+            crate::world::engage(mob, target.guid, &mut events);
+            told.extend(events.into_iter().map(|e| (target.guid, e)));
+        }
+        told
     }
 
     /// The Run's tram line, once its bell is rung.

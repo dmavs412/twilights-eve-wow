@@ -871,6 +871,7 @@ impl InWorld {
         p.shot_timer = (p.shot_timer - dt).max(0.0);
 
         self.wake_sleepers(me, events);
+        self.show_worn(events);
         // Hostile mobs notice a living player who comes too close, and bring their camp.
         let p = &mut self.player;
         if p.alive() {
@@ -972,6 +973,10 @@ impl InWorld {
     /// goes one hop: a mob that joins calls no one. With a `host`, a campmate joins only when it
     /// has line of sight to the pulled mob; an attack passes none and calls through walls.
     fn pull(&mut self, i: usize, host: Option<&dyn Host>, events: &mut Vec<SessionEvent>) {
+        // A creature that never fights is pulled by nothing, and calls no one.
+        if self.mobs[i].template.never_fights {
+            return;
+        }
         let camp = self.mobs[i].camp;
         let at = self.mobs[i].position;
         let map = self.map;
@@ -1548,6 +1553,22 @@ impl InWorld {
         self.start_root(spell_id, root_ms, events);
     }
 
+    /// The Lampmen's `lamps` of the tram line in the player's Phase (ADR 0033): a living player
+    /// at `at` within `radius` yards of any wears `spell_id`'s slow of `pct`, and one out of every
+    /// lamp's reach has it taken off.
+    pub(crate) fn mist_lamps(
+        &mut self,
+        lamps: &[[f32; 3]],
+        at: [f32; 3],
+        spell_id: u32,
+        radius: f32,
+        pct: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let near = self.player.alive() && lamps.iter().any(|&l| distance(l, at) <= radius);
+        self.hold_slow(spell_id, pct, near, events);
+    }
+
     /// The player loses `damage` to a creature's blow or spell: rage from it, and a timed cast
     /// broken (the Hearthstone's interrupts on damage).
     fn player_takes(
@@ -2049,8 +2070,8 @@ fn at_tier_rate(c: &Char, base: u32) -> u32 {
 /// `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat
 /// flag. Turning from idle, its aggro line comes due (`Realm::creature_speech`).
 pub(crate) fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
-    // A dummy never turns on anyone.
-    if mob.template.inert {
+    // A dummy never turns on anyone, nor does a creature that never fights.
+    if mob.template.inert || mob.template.never_fights {
         return;
     }
     if mob.state == State::Idle && mob.template.say.is_some() {

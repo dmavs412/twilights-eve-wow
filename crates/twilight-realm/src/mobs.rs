@@ -55,6 +55,13 @@ const TIMED_LIVE_BASE: u32 = 0xC0_0000;
 /// The first low guid of a creature made at run time for an Audience.
 pub(crate) const AUDIENCE_GUID_BASE: u32 = 0xD0_0000;
 
+/// The first low guid given to a creature row a tram line brings in (ADR 0033).
+const TRAM_GUID_BASE: u32 = 0xE0_0000;
+
+/// The first low guid of a creature a tram has brought in: one for every creature of a Run, so
+/// no two share a guid.
+const TRAM_LIVE_BASE: u32 = 0xE8_0000;
+
 /// A creature guid: `entry` and the low guid `low` under `HIGHGUID_UNIT`.
 pub(crate) fn unit_guid(entry: u32, low: u32) -> u64 {
     HIGHGUID_UNIT << 48 | u64::from(entry & 0xFF_FFFF) << 24 | u64::from(low & 0xFF_FFFF)
@@ -134,6 +141,10 @@ pub(crate) struct Template {
     /// than dying it heals to full [`INERT_RESET_SECS`] after it last took damage.
     #[serde(default)]
     pub(crate) inert: bool,
+    /// It never fights (a tram's porter): no pull, aggro or taunt turns it on anyone, and it
+    /// never swings. Damage still lands on it and it can die.
+    #[serde(default)]
+    pub(crate) never_fights: bool,
     /// The stacks its death adds to its Phased Dungeon's meter, in place of the meter's own.
     #[serde(default)]
     pub(crate) noise_on_death: Option<u32>,
@@ -323,6 +334,7 @@ impl Template {
             spells,
             equip,
             inert: false,
+            never_fights: false,
             noise_on_death: None,
             wakes_sleepers: None,
             hunts_at_meter_max: None,
@@ -382,6 +394,9 @@ pub(crate) struct Spawn {
     pub(crate) every: &'static [phased::Every],
     /// A creature a timed call brings in: the caller's guid and which of its timed calls.
     pub(crate) timed_by: Option<(u32, usize)>,
+    /// A creature a tram line brings in (ADR 0033), not one the Run starts with: the id of the
+    /// dungeon whose line it is.
+    pub(crate) tram_of: Option<u32>,
     /// When a dungeon creature is in the Run; none for any other spawn.
     pub(crate) appears: Option<&'static phased::Appears>,
     /// A creature an Encounter's wave brings in, not one the Population streams: the encounter's
@@ -927,6 +942,7 @@ pub(crate) fn content() -> &'static Mobs {
         }
         let mut called_guids = 0;
         let mut timed_guids = 0;
+        let mut tram_guids = 0;
         for d in phased::content() {
             for c in &d.creature {
                 let Some(t) = template.iter().find(|t| t.entry == c.entry) else {
@@ -949,6 +965,7 @@ pub(crate) fn content() -> &'static Mobs {
                     called_by: None,
                     every: &c.every,
                     timed_by: None,
+                    tram_of: None,
                     appears: Some(&c.appears),
                     encounter: None,
                     asleep: c.asleep,
@@ -1009,6 +1026,34 @@ pub(crate) fn content() -> &'static Mobs {
                         });
                         timed_guids += 1;
                     }
+                }
+            }
+            // The creatures its tram line brings in (ADR 0033): one row for each distinct entry,
+            // which the line makes at a car's door with a guid of its own.
+            if let Some(tram) = &d.tram {
+                for (entry, level) in tram.creature_rows() {
+                    let t = template
+                        .iter()
+                        .find(|t| t.entry == entry)
+                        .unwrap_or_else(|| {
+                            panic!("{}: the tram's creature {entry} has no template", d.name)
+                        });
+                    let guid = TRAM_GUID_BASE + tram_guids;
+                    spawn.push(Spawn {
+                        guid,
+                        entry,
+                        level_min: level[0],
+                        level_max: level[1],
+                        position: tram.door(0, tram.stops[0]),
+                        grounded: false,
+                        display_id: t.display_id,
+                        camp: guid,
+                        map: d.map,
+                        phase: Phase::Dungeon(d.id),
+                        tram_of: Some(d.id),
+                        ..Default::default()
+                    });
+                    tram_guids += 1;
                 }
             }
         }
@@ -1103,6 +1148,15 @@ pub(crate) fn area_parent(area: u32) -> Option<&'static u32> {
             file.area.into_iter().map(|r| (r.id, r.zone)).collect()
         })
         .get(&area)
+}
+
+/// The index of the spawn row of `entry` that dungeon `dungeon`'s tram line brings in.
+pub(crate) fn tram_row(dungeon: u32, entry: u32) -> Option<u32> {
+    content()
+        .spawn
+        .iter()
+        .position(|s| s.tram_of == Some(dungeon) && s.entry == entry)
+        .map(|i| i as u32)
 }
 
 pub(crate) fn template(entry: u32) -> Option<&'static Template> {
@@ -1273,6 +1327,9 @@ pub(crate) struct Mob {
     /// by stacks (Withering Blight), as that player's session last counted it. A session reads
     /// the others' entries, so the cut reaches its blows at every player.
     pub(crate) withered: HashMap<u64, u32>,
+    /// The marker auras it wears from the moment it is made, `(spell, stacks)`: each session
+    /// puts them up once its client is shown the creature (a tram porter's gold glow).
+    pub(crate) wears: Vec<(u32, u32)>,
 }
 
 /// A creature's stance (#473): the damage it deals and takes, each changed by a percent.
@@ -1439,6 +1496,7 @@ impl Mob {
             flee_due: false,
             stance: None,
             withered: HashMap::new(),
+            wears: Vec::new(),
         })
     }
 
@@ -1456,6 +1514,26 @@ impl Mob {
         let low = TIMED_LIVE_BASE + (wave & 0x3F_FFFF);
         mob.guid = unit_guid(mob.template.entry, low);
         mob.brought_by = Some(brought_by);
+        Some(mob)
+    }
+
+    /// The mob of the tram row `index` (ADR 0033) at `level`, standing at `position` and height
+    /// `z`: the `seq`th creature its line has made this Run, which numbers its guid, in a camp of
+    /// its own.
+    pub(crate) fn tram(
+        index: u32,
+        level: u8,
+        position: [f32; 2],
+        z: f32,
+        zone: ZoneFactor,
+        seq: u32,
+    ) -> Option<Self> {
+        let mut mob = Self::spawn(index, level, z, zone)?;
+        let [x, y] = position;
+        mob.position = [x, y, z];
+        mob.home = mob.position;
+        mob.guid = unit_guid(mob.template.entry, TRAM_LIVE_BASE + (seq & 0x7_FFFF));
+        mob.camp = mob.guid as u32 | 1 << 31;
         Some(mob)
     }
 
@@ -1529,6 +1607,7 @@ impl Mob {
             flee_due: false,
             stance: None,
             withered: HashMap::new(),
+            wears: Vec::new(),
         }
     }
 
@@ -1891,6 +1970,40 @@ impl Mob {
             duration_ms: clock::ms(duration),
             flying: false,
             run_mode: true,
+        }
+    }
+
+    /// Starts a walk along `path`, as [`Self::run_path`] runs one, at its template's walk speed
+    /// times `speed_pct` percent.
+    pub(crate) fn walk_path(&mut self, mut path: Vec<[f32; 3]>, speed_pct: u32) -> SessionEvent {
+        if path.first().is_none_or(|p| *p != self.position) {
+            path.insert(0, self.position);
+        }
+        if path.len() < 2 {
+            path.push(self.position);
+        }
+        let speed =
+            BASE_WALK * self.template.speed_walk * self.speed_mul * speed_pct as f32 / 100.0;
+        let duration = length(&path) / speed.max(f32::EPSILON);
+        let spline_id = self.next_spline_id;
+        self.next_spline_id += 1;
+        self.walk = Some(Walk {
+            points: path.clone(),
+            duration,
+            elapsed: 0.0,
+            aimed_at: [f32::MAX; 3],
+        });
+        SessionEvent::MonsterMove {
+            guid: self.guid,
+            transport: None,
+            start: self.position,
+            spline_id,
+            path,
+            facing: MonsterMoveFacing::None,
+            stop: false,
+            duration_ms: clock::ms(duration),
+            flying: false,
+            run_mode: false,
         }
     }
 

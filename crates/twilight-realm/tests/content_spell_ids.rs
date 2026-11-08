@@ -27,6 +27,8 @@ const ID_KEYS: &[(&str, &str, Ids)] = &[
     ("flask_spell", "flask_spell_name", Ids::One),
     ("flask_aura_spell", "flask_aura_spell_name", Ids::One),
     ("hit_spell", "hit_spell_name", Ids::One),
+    ("gilded_spell", "gilded_spell_name", Ids::One),
+    ("lamp_spell", "lamp_spell_name", Ids::One),
     // Every rank's aura is the one spell's name.
     ("aura_spell_ids", "aura_spell_name", Ids::SameName),
     ("equip_spells", "equip_spell_names", Ids::Parallel),

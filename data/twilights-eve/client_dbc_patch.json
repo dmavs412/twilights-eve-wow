@@ -8443,6 +8443,57 @@
    }
   },
   {
+   "spell_id": 1900055,
+   "creature": "mist_lamp",
+   "fields": {
+    "name": "Mist Lamp",
+    "icon": "Interface\\Icons\\Spell_Frost_FrostArmor02",
+    "school": 4,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 4
+     }
+    ],
+    "aura_description": "Movement slowed by $s1%.",
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 21
+   }
+  },
+  {
+   "spell_id": 1900056,
+   "creature": "gilded",
+   "fields": {
+    "name": "Gilded",
+    "icon": "Interface\\Icons\\Spell_Holy_BlessingOfStrength",
+    "school": 1,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 4
+     }
+    ],
+    "aura_description": "Carrying the cult's tribute.",
+    "visual": 107,
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 21
+   }
+  },
+  {
    "spell_id": 1950000,
    "buff": "open_road",
    "fields": {
