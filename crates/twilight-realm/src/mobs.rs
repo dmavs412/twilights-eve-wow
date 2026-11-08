@@ -671,6 +671,9 @@ pub(crate) struct Mobs {
     pub(crate) spawn: Vec<Spawn>,
     /// Entries whose template comes from `elwynn.toml` and no hand-written one overrides.
     vanilla: Vec<u32>,
+    /// Entries whose template comes from `duskwood.toml` or `redridge.toml` and `mobs.toml` does
+    /// not define.
+    zone_vanilla: Vec<u32>,
 }
 
 /// Whether `entry`'s template is vanilla Elwynn's, not one `mobs.toml` defines.
@@ -679,17 +682,20 @@ pub(crate) fn is_vanilla(entry: u32) -> bool {
 }
 
 /// The Level Band range for a creature of `entry` standing at `position` on `map`, when its
-/// template is vanilla and the point is in a band. For a creature spawned at runtime; the
-/// static spawns take theirs when the content loads.
+/// template is vanilla Elwynn's, Duskwood's or Redridge's and the point is in a band. The first
+/// band file covering the point decides (`bands::zone_at`). For a creature spawned at runtime;
+/// the static spawns take theirs when the content loads.
 pub(crate) fn banded(entry: u32, map: u32, position: [f32; 3]) -> Option<[u8; 2]> {
-    if map != crate::content::EASTERN_KINGDOMS || !is_vanilla(entry) {
+    let vanilla = is_vanilla(entry) || content().zone_vanilla.contains(&entry);
+    if map != crate::content::EASTERN_KINGDOMS || !vanilla {
         return None;
     }
-    crate::bands::range_at(position[0], position[1])
+    let [x, y, _] = position;
+    crate::bands::range_in(crate::bands::zone_at(x, y)?, x, y)
 }
 
 /// The name of the `level_overrides.toml` area holding the point, else (on Eastern Kingdoms) the
-/// Elwynn band that covers it.
+/// band that covers it, from the first band file covering the point.
 pub(crate) fn level_area(map: u32, x: f32, y: f32) -> Option<&'static str> {
     static FILE: OnceLock<BandFile> = OnceLock::new();
     let bands = FILE.get_or_init(|| {
@@ -703,7 +709,7 @@ pub(crate) fn level_area(map: u32, x: f32, y: f32) -> Option<&'static str> {
         .map(|a| a.name.as_str())
         .or_else(|| {
             (map == crate::content::EASTERN_KINGDOMS)
-                .then(|| crate::bands::band_at(x, y))
+                .then(|| crate::bands::band_in(crate::bands::zone_at(x, y)?, x, y))
                 .flatten()
         })
 }
@@ -724,7 +730,7 @@ pub(crate) fn content() -> &'static Mobs {
         });
         let zone_overrides: ZonesFile = toml::from_str(include_str!("../content/zones.toml"))
             .expect("content/zones.toml parses");
-        let mut eastern: Vec<ZoneFile> = ZONE_FILES
+        let mut eastern: Vec<(&str, ZoneFile)> = ZONE_FILES
             .iter()
             .map(|(name, text)| {
                 let mut file: ZoneFile = toml::from_str(text)
@@ -736,22 +742,26 @@ pub(crate) fn content() -> &'static Mobs {
                     .unwrap_or_else(|| panic!("content/zones.toml has no [[zone]] for {name}"));
                 file.spawns
                     .retain(|r| !z.removed.contains(&r.1) && !z.removed_guids.contains(&r.0));
-                // The Level Stretch, for every creature but friendly NPCs and critters
-                // (CreatureType.dbc 8).
-                if let Some(Stretch { from, to }) = z.levels {
-                    for r in &mut file.spawns {
-                        let keeps = file
-                            .template
-                            .iter()
-                            .find(|t| t.entry == r.1)
-                            .is_some_and(|t| t.friendly || t.creature_type == 8);
-                        if !keeps {
-                            r.2 = crate::bands::stretch(r.2, from, to);
-                            r.3 = crate::bands::stretch(r.3, from, to);
-                        }
+                // The zone's Level Band where its band file covers the point, else its Level
+                // Stretch, for every creature but friendly NPCs and critters (CreatureType.dbc 8).
+                // Before level_overrides.toml, so its rows beat a band.
+                for r in &mut file.spawns {
+                    let keeps = file
+                        .template
+                        .iter()
+                        .find(|t| t.entry == r.1)
+                        .is_some_and(|t| t.friendly || t.creature_type == 8);
+                    if keeps {
+                        continue;
+                    }
+                    if let Some([lo, hi]) = crate::bands::range_in(name, r.4, r.5) {
+                        (r.2, r.3) = (lo, hi);
+                    } else if let Some(Stretch { from, to }) = z.levels {
+                        r.2 = crate::bands::stretch(r.2, from, to);
+                        r.3 = crate::bands::stretch(r.3, from, to);
                     }
                 }
-                file
+                (*name, file)
             })
             .collect();
         let difficulty = hand.difficulty;
@@ -766,6 +776,14 @@ pub(crate) fn content() -> &'static Mobs {
                 (z.area, factor)
             })
             .collect();
+        // Duskwood's and Redridge's templates that mobs.toml does not define: the Level Bands
+        // level them when they spawn at runtime.
+        let zone_vanilla: Vec<u32> = eastern
+            .iter()
+            .filter(|(name, _)| matches!(*name, "duskwood" | "redridge"))
+            .flat_map(|(_, f)| f.template.iter().map(|t| t.entry))
+            .filter(|e| !hand.template.iter().any(|t| t.entry == *e))
+            .collect();
         let mut template = hand.template;
         template.extend(barrens.template);
         let vanilla: Vec<u32> = elwynn
@@ -778,7 +796,7 @@ pub(crate) fn content() -> &'static Mobs {
         // The other zones' templates, past the entries Elwynn or the hand already define (seven
         // shared creatures such as the Stormwind City Guard). They are not `vanilla`: that list is
         // Elwynn's, which the Level Bands read.
-        for file in &mut eastern {
+        for (_, file) in &mut eastern {
             for t in std::mem::take(&mut file.template) {
                 if !template.iter().any(|have| have.entry == t.entry) {
                     template.push(t);
@@ -818,7 +836,7 @@ pub(crate) fn content() -> &'static Mobs {
         .chain(
             eastern
                 .into_iter()
-                .map(|f| (f.spawns, crate::content::EASTERN_KINGDOMS)),
+                .map(|(_, f)| (f.spawns, crate::content::EASTERN_KINGDOMS)),
         );
         for (rows, map) in zones {
             spawn.extend(rows.into_iter().map(
@@ -1096,6 +1114,7 @@ pub(crate) fn content() -> &'static Mobs {
             template,
             spawn,
             vanilla,
+            zone_vanilla,
         }
     })
 }

@@ -1,0 +1,11 @@
+# Hand-written. Duskwood Level Bands (spec #595): each sub-zone gives the creatures of
+# content/duskwood.toml that spawn in it a level from its band, in place of their vanilla levels.
+# Boxes are [x0, y0, x1, y1] in WoW coordinates on map 0 (x runs north, y runs west).
+# A point inside `bounds` and outside every `exclude` box takes the band of the box that holds it,
+# or of the nearest box when none does; when two boxes hold the point, the band listed first wins.
+# A spawn outside `bounds` keeps the zone's Level Stretch from zones.toml. Friendly NPCs and
+# critters keep their own levels, and a level_overrides.toml row beats a band.
+
+bounds = []
+
+exclude = []

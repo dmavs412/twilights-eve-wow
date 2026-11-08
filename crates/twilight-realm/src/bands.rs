@@ -1,5 +1,6 @@
-//! Elwynn Level Bands (`content/elwynn_bands.toml`): each sub-zone gives the vanilla creatures
-//! that spawn in it a level from its band, in place of the template's own levels.
+//! Level Bands, one file per zone (`content/elwynn_bands.toml`, `redridge_bands.toml`,
+//! `duskwood_bands.toml`): each sub-zone gives the vanilla creatures that spawn in it a level from
+//! its band, in place of the template's own levels.
 
 use std::sync::OnceLock;
 
@@ -19,15 +20,32 @@ struct Band {
 struct BandFile {
     bounds: Vec<Rect>,
     exclude: Vec<Rect>,
+    #[serde(default)]
     band: Vec<Band>,
 }
 
+/// Each zone's band file, by the name of its spawn file without `.toml`, in the order a runtime
+/// spawn tries them.
+const FILES: [(&str, &str); 3] = [
+    ("duskwood", include_str!("../content/duskwood_bands.toml")),
+    ("redridge", include_str!("../content/redridge_bands.toml")),
+    ("elwynn", include_str!("../content/elwynn_bands.toml")),
+];
+
+fn parse(zone: &str, text: &str) -> BandFile {
+    toml::from_str(text).unwrap_or_else(|e| panic!("content/{zone}_bands.toml parses: {e}"))
+}
+
+/// The band file for `zone`'s spawns, if it has one.
+fn zone_file(zone: &str) -> Option<&'static BandFile> {
+    static PARSED: [OnceLock<BandFile>; 3] = [OnceLock::new(), OnceLock::new(), OnceLock::new()];
+    let i = FILES.iter().position(|(z, _)| *z == zone)?;
+    Some(PARSED[i].get_or_init(|| parse(FILES[i].0, FILES[i].1)))
+}
+
+#[cfg(test)]
 fn file() -> &'static BandFile {
-    static FILE: OnceLock<BandFile> = OnceLock::new();
-    FILE.get_or_init(|| {
-        toml::from_str(include_str!("../content/elwynn_bands.toml"))
-            .expect("content/elwynn_bands.toml parses")
-    })
+    zone_file("elwynn").expect("Elwynn has a band file")
 }
 
 fn holds(r: &Rect, x: f32, y: f32) -> bool {
@@ -41,21 +59,44 @@ fn gap(r: &Rect, x: f32, y: f32) -> f32 {
     dx * dx + dy * dy
 }
 
-/// The level range for a vanilla creature standing at (`x`, `y`) on Eastern Kingdoms: the band
-/// holding the point, or the band with the nearest box. `None` outside the bounds and inside an
-/// excluded box.
+/// The level range for a vanilla Elwynn creature standing at (`x`, `y`) on Eastern Kingdoms:
+/// `range_in` for Elwynn's band file.
 pub(crate) fn range_at(x: f32, y: f32) -> Option<[u8; 2]> {
-    band_for(x, y).map(|b| [b.level_min, b.level_max.max(b.level_min)])
+    range_in("elwynn", x, y)
 }
 
-/// The name of the band `range_at` would use for the point.
-pub(crate) fn band_at(x: f32, y: f32) -> Option<&'static str> {
-    band_for(x, y).map(|b| b.name.as_str())
+/// The level range for a creature of `zone`'s spawn file standing at (`x`, `y`) on Eastern
+/// Kingdoms: the band holding the point, or the band with the nearest box. `None` for a zone with
+/// no band file, outside its bounds and inside an excluded box.
+pub(crate) fn range_in(zone: &str, x: f32, y: f32) -> Option<[u8; 2]> {
+    band_for(zone_file(zone)?, x, y).map(range)
 }
 
-fn band_for(x: f32, y: f32) -> Option<&'static Band> {
-    let f = file();
-    if !f.bounds.iter().any(|b| holds(b, x, y)) || f.exclude.iter().any(|b| holds(b, x, y)) {
+/// The name of the band `range_in` would use for the point.
+pub(crate) fn band_in(zone: &str, x: f32, y: f32) -> Option<&'static str> {
+    band_for(zone_file(zone)?, x, y).map(|b| b.name.as_str())
+}
+
+/// The first zone, in `FILES` order, whose band file covers the point: inside its bounds and
+/// outside its excluded boxes. That file decides a runtime spawn's band and a point's band name.
+pub(crate) fn zone_at(x: f32, y: f32) -> Option<&'static str> {
+    FILES
+        .iter()
+        .map(|(z, _)| *z)
+        .find(|z| zone_file(z).is_some_and(|f| covers(f, x, y)))
+}
+
+fn range(b: &Band) -> [u8; 2] {
+    [b.level_min, b.level_max.max(b.level_min)]
+}
+
+fn covers(f: &BandFile, x: f32, y: f32) -> bool {
+    f.bounds.iter().any(|b| holds(b, x, y)) && !f.exclude.iter().any(|b| holds(b, x, y))
+}
+
+/// The band of the box holding the point, or of the nearest box; on a tie the band listed first.
+fn band_for(f: &BandFile, x: f32, y: f32) -> Option<&Band> {
+    if !covers(f, x, y) {
         return None;
     }
     f.band
@@ -227,5 +268,128 @@ mod tests {
     #[test]
     fn forest_edge_is_excluded() {
         assert!(range_at(-10000.0, 600.0).is_none());
+    }
+
+    const TEST_FILE: &str = r#"
+bounds = [[0.0, 0.0, 100.0, 100.0]]
+exclude = [[80.0, 80.0, 100.0, 100.0]]
+
+[[band]]
+name = "West"
+level_min = 30
+level_max = 33
+boxes = [[0.0, 0.0, 40.0, 40.0]]
+
+[[band]]
+name = "East"
+level_min = 36
+level_max = 38
+boxes = [[20.0, 20.0, 60.0, 60.0]]
+"#;
+
+    #[test]
+    fn a_band_file_looks_up_boxes_bounds_and_excludes() {
+        let f = parse("test", TEST_FILE);
+        let at = |x, y| band_for(&f, x, y).map(range);
+        assert_eq!(at(10.0, 10.0), Some([30, 33]));
+        assert_eq!(at(50.0, 50.0), Some([36, 38]));
+        // In the bounds, in no box: the nearest box's band.
+        assert_eq!(at(70.0, 60.0), Some([36, 38]));
+        assert_eq!(at(5.0, 50.0), Some([30, 33]));
+        assert_eq!(at(90.0, 90.0), None);
+        assert_eq!(at(150.0, 10.0), None);
+        // Both boxes hold (30, 30): the band listed first wins.
+        assert_eq!(
+            band_for(&f, 30.0, 30.0).map(|b| b.name.as_str()),
+            Some("West")
+        );
+    }
+
+    #[test]
+    fn a_band_file_with_no_band_parses() {
+        let f = parse("test", "bounds = [[0.0, 0.0, 1.0, 1.0]]\nexclude = []\n");
+        assert!(band_for(&f, 0.5, 0.5).is_none());
+        for zone in ["duskwood", "redridge"] {
+            assert!(zone_file(zone).is_some_and(|f| f.band.is_empty()), "{zone}");
+        }
+        assert!(zone_file("stormwind").is_none());
+    }
+
+    /// `zone`'s generated rows (guid, entry, level_min, level_max, x, y) and its Level Stretch.
+    fn zone_rows(zone: &str, text: &str) -> (Vec<[f64; 6]>, [u8; 2], [u8; 2]) {
+        let v: toml::Value = toml::from_str(text).unwrap();
+        let rows = v["spawns"].as_array().unwrap();
+        let num = |c: &toml::Value| c.as_float().or(c.as_integer().map(|i| i as f64)).unwrap();
+        let rows = rows
+            .iter()
+            .map(|r| std::array::from_fn(|i| num(&r[i])))
+            .collect();
+        let zones: toml::Value = toml::from_str(include_str!("../content/zones.toml")).unwrap();
+        let z = zones["zone"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|z| z["file"].as_str() == Some(zone))
+            .unwrap();
+        let pair = |k: &str| -> [u8; 2] {
+            let a = z["levels"][k].as_array().unwrap();
+            [0, 1].map(|i| a[i].as_integer().unwrap() as u8)
+        };
+        (rows, pair("from"), pair("to"))
+    }
+
+    #[test]
+    fn with_empty_band_files_redridge_and_duskwood_keep_their_stretch() {
+        let zones = [
+            ("redridge", include_str!("../content/redridge.toml")),
+            ("duskwood", include_str!("../content/duskwood.toml")),
+        ];
+        for (zone, text) in zones {
+            let (rows, from, to) = zone_rows(zone, text);
+            let mut checked = 0;
+            for [guid, entry, lmin, lmax, x, y] in rows.into_iter().step_by(3) {
+                let (guid, entry) = (guid as u32, entry as u32);
+                let hostile = mobs::template(entry)
+                    .is_some_and(|t| t.hostile && !t.friendly && t.creature_type != 8);
+                let spawn = mobs::content()
+                    .spawn
+                    .iter()
+                    .find(|s| s.map == EASTERN_KINGDOMS && s.guid == guid && s.entry == entry);
+                let Some(s) = spawn.filter(|_| hostile) else {
+                    continue;
+                };
+                assert!(range_in(zone, x as f32, y as f32).is_none());
+                let want = [lmin as u8, lmax as u8].map(|l| stretch(l, from, to));
+                assert_eq!([s.level_min, s.level_max], want, "{zone} spawn {guid}");
+                checked += 1;
+            }
+            assert!(checked > 20, "only {checked} {zone} spawns checked");
+        }
+    }
+
+    #[test]
+    fn a_redridge_vanilla_entry_takes_a_band_only_from_a_band() {
+        let (rows, _, _) = zone_rows("redridge", include_str!("../content/redridge.toml"));
+        let [_, entry, _, _, x, y] = rows
+            .into_iter()
+            .find(|r| {
+                let e = r[1] as u32;
+                !mobs::is_vanilla(e) && mobs::template(e).is_some_and(|t| t.hostile)
+            })
+            .unwrap();
+        let (entry, x, y) = (entry as u32, x as f32, y as f32);
+        assert_eq!(mobs::banded(entry, EASTERN_KINGDOMS, [x, y, 0.0]), None);
+        assert_eq!(mobs::level_area(EASTERN_KINGDOMS, x, y), None);
+        // The same parsing path, with one band around the point.
+        let text = format!(
+            "bounds = [[{x0}, {y0}, {x1}, {y1}]]\nexclude = []\n\n[[band]]\nname = \"Lakeshire\"\n\
+             level_min = 31\nlevel_max = 34\nboxes = [[{x0}, {y0}, {x1}, {y1}]]\n",
+            x0 = x - 50.0,
+            y0 = y - 50.0,
+            x1 = x + 50.0,
+            y1 = y + 50.0,
+        );
+        let f = parse("redridge", &text);
+        assert_eq!(band_for(&f, x, y).map(range), Some([31, 34]));
     }
 }

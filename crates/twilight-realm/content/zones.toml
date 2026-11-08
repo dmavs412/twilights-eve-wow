@@ -1,7 +1,9 @@
 # Hand-written changes laid over the generated content/duskwood.toml, redridge.toml and
 # stormwind.toml (spec #466), which are never edited. One [[zone]] per file.
 # `levels` is the zone's Level Stretch: every spawn but friendly NPCs and critters has its vanilla
-# levels mapped linearly from `from` onto `to`, rounded and clamped into `to`.
+# levels mapped linearly from `from` onto `to`, rounded and clamped into `to`. It is the fallback
+# for spawns outside the `bounds` of the zone's band file (redridge_bands.toml, duskwood_bands.toml)
+# and inside its `exclude` boxes; Stormwind has no band file.
 # A `[[zone.added]]` row places a creature by hand, in the shape of elwynn_overrides.toml's
 # `[[added]]`: a camp of its own at its own levels, past the Level Stretch.
 
