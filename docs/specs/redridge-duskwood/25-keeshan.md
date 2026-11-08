@@ -88,3 +88,5 @@ Bounties pay money and offer no choice.
 
 Assumptions allowed: the path's points (vanilla's or fewer), Keeshan's lines, and the ambush's
 creatures within the band.
+
+Blocked by ESC:04-escort-ambushes, the last escort realm ticket. The escort spec's comment on this issue changes the data shape; the latest comment wins.
