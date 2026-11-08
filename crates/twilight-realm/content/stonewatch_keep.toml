@@ -1,4 +1,4 @@
-# Stonewatch Keep, a Phased Dungeon for levels 44 to 48 in Redridge (the lore bible's "Zone arcs
+# Stonewatch Keep, a Phased Dungeon for levels 45 to 48 in Redridge (the lore bible's "Zone arcs
 # and dungeons"). Hand-written, from the game data.
 #
 # The building is the stock `ruinedkeep.wmo`, placed by the ADT's MODF at (-9387.8, -3029.3,
@@ -13,7 +13,7 @@
 
 id = 9
 name = "Stonewatch Keep"
-levels = [44, 48]
+levels = [45, 48]
 map = 0
 zone = 44
 origin = [-9387.8, -3029.3, 142.6]
@@ -117,6 +117,6 @@ orientation = 4.8
 [[creature]]
 guid = 971002
 entry = 97100
-level = 44
+level = 45
 position = [-9385.2, -3059.2, 139.22]
 orientation = 4.8

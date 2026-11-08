@@ -1,4 +1,4 @@
-# Raven Hill Deeps, a Phased Dungeon for levels 44 to 48 in Duskwood (the lore bible's "Zone arcs
+# Raven Hill Deeps, a Phased Dungeon for levels 40 to 44 in Duskwood (the lore bible's "Zone arcs
 # and dungeons"). Hand-written, from the game data.
 #
 # The building is the stock `md_crypt_c.wmo`, the crypt under Raven Hill Cemetery, placed by the
@@ -13,7 +13,7 @@
 
 id = 11
 name = "Raven Hill Deeps"
-levels = [44, 48]
+levels = [40, 44]
 map = 0
 zone = 10
 origin = [-10413.7, 405.5, 47.2]
@@ -96,6 +96,6 @@ orientation = 1.32
 [[creature]]
 guid = 971004
 entry = 97100
-level = 44
+level = 40
 position = [-10377.3, 427.4, 29.08]
 orientation = 1.32

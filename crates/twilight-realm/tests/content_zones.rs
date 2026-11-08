@@ -20,3 +20,22 @@ fn each_zone_toml_is_the_import_of_its_dump() {
         );
     }
 }
+
+/// The Black Dragon Whelp (441) stood 35 times on Lake Everstill's shore, telling a level 35
+/// player "dragons" ten levels before Stonewatch Keep shows them; `zones.toml` removes it from
+/// the open world (#595 decision 8). A Phased Dungeon's own creature of that entry is allowed.
+#[test]
+fn no_black_dragon_whelp_spawns_in_the_open_world() {
+    const WHELP: &str = "(entry 441)";
+    let phased: Vec<String> = twilight_realm::audit_rows()
+        .into_iter()
+        .filter(|r| r.phased)
+        .map(|r| r.what)
+        .collect();
+    let found: Vec<String> = twilight_realm::placed()
+        .into_iter()
+        .filter(|p| p.map == 0 && p.what.ends_with(WHELP) && !phased.contains(&p.what))
+        .map(|p| p.what)
+        .collect();
+    assert!(found.is_empty(), "{}", found.join("\n"));
+}

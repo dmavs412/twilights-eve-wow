@@ -1966,4 +1966,15 @@ mod lore_bible_dungeons {
             assert!(near, "{}: its portal is off the footprint", d.name);
         }
     }
+
+    /// Raven Hill Deeps and Stonewatch Keep take the lore bible's bands, Raven Hill 40-44 and
+    /// Stonewatch 45-48 (#595 decision 9).
+    #[test]
+    fn raven_hill_and_stonewatch_take_the_bibles_levels() {
+        assert_eq!(
+            dungeon(11).expect("Raven Hill Deeps").levels,
+            Some([40, 44])
+        );
+        assert_eq!(dungeon(9).expect("Stonewatch Keep").levels, Some([45, 48]));
+    }
 }

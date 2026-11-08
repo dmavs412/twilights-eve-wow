@@ -30,7 +30,9 @@ levels = { from = [18, 35], to = [30, 50] }
 
 [[zone]]
 file = "redridge"
-removed = []
+# Black Dragon Whelp (441): 35 spawns on Lake Everstill's shore, removed (#595 decision 8); the
+# model is the Stonewatch Keep dungeon's to use.
+removed = [441]
 # The open-world creatures inside the lore bible's Phased Dungeons, deleted (2026-10-27,
 # Davis's call); phased.rs's lore_bible_dungeons test keeps the footprints clear.
 removed_guids = [
