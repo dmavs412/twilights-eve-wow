@@ -85,12 +85,15 @@ pub(crate) struct Population {
 
 impl Population {
     /// Brings spawns within view of any of `players` into `mobs` and lets go those far from them
-    /// all, and brings back the dead whose time is up.
+    /// all, and brings back the dead whose time is up. A spawn on land closed while the Milestones
+    /// `reached` are stays out.
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn update(
         &mut self,
         dt: f32,
         players: &[[f32; 3]],
         map: u32,
+        reached: &[&str],
         host: &dyn Host,
         mobs: &mut Vec<Mob>,
         events: &mut Vec<SessionEvent>,
@@ -166,7 +169,7 @@ impl Population {
                 cell(me[0] - VIEW_YD, me[1] - VIEW_YD),
                 cell(me[0] + VIEW_YD, me[1] + VIEW_YD),
             );
-            self.stream_in(lo, hi, me, map, host, grid, mobs, events);
+            self.stream_in(lo, hi, me, map, reached, host, grid, mobs, events);
         }
     }
 
@@ -177,6 +180,7 @@ impl Population {
         hi: (i32, i32),
         me: [f32; 3],
         map: u32,
+        reached: &[&str],
         host: &dyn Host,
         grid: &Grid,
         mobs: &mut Vec<Mob>,
@@ -193,6 +197,7 @@ impl Population {
                     if self.present[i as usize]
                         || flat_distance(spawn.position, me) > VIEW_YD
                         || self.dead.iter().any(|c| c.spawn == i)
+                        || crate::closed_at(map, spawn.position[0], spawn.position[1], reached)
                     {
                         continue;
                     }
@@ -301,6 +306,7 @@ mod tests {
             0.1,
             &[spawn.position],
             map,
+            &[],
             &Flat,
             &mut mobs,
             &mut Vec::new(),

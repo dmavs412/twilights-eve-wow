@@ -1,4 +1,10 @@
-# Zones cut out of the world (ADR 0015). AreaTable zone ids; a chunk is closed when its
+# Zones cut out of the world (ADR 0015, ADR 0034). AreaTable zone ids; a chunk is closed when its
 # area rolls up through AreaTable's parents to one of these. Rerun closed_zones.py after an edit.
-map = 0          # Azeroth
-zones = [40]     # Westfall
+map = 0                      # Azeroth
+# Closed for good: Westfall, the Badlands, the Swamp of Sorrows, the Wetlands, Searing Gorge.
+zones = [40, 3, 8, 11, 51]
+
+# Closed until a Milestone (content/milestones.toml) is reached, then open for good.
+[[opens]]
+zone = 46                    # Burning Steppes
+milestone = "steppes_open"

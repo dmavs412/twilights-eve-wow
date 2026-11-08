@@ -414,8 +414,9 @@ fn an_absorb_shield_is_larger_with_two_inside() {
 
 /// `UNIT_FIELD_RESISTANCES`, whose first is armour.
 const UNIT_FIELD_RESISTANCES: u16 = 155;
-/// Far from Elwynn's creatures, so nothing fights the character there.
-const NOWHERE: [f32; 3] = [-5000.0, -5000.0, 47.2];
+/// Far from Elwynn's creatures, so nothing fights the character there, and on open land: the sea
+/// at (-5000, -5000) rolls up to the Wetlands, closed for good.
+const NOWHERE: [f32; 3] = [-6000.0, -6000.0, 47.2];
 
 #[test]
 fn an_armor_debuff_stacks_to_its_most_and_all_of_it_goes_when_it_runs_out() {

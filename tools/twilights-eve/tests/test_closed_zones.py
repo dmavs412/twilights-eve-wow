@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -69,7 +70,60 @@ class Chunks(unittest.TestCase):
 
     def test_one_chunk_per_line(self):
         text = closed_zones.render(0, [40], [[1, 2], [3, 4]])
-        self.assertEqual(text.splitlines(), ['{"map": 0, "zones": [40], "chunks": [', "[1, 2],", "[3, 4]", "]}"])
+        self.assertEqual(
+            text.splitlines(),
+            ['{"map": 0, "zones": [40], "chunks": [', "[1, 2],", "[3, 4]", '], "gated": []}'],
+        )
+
+    def test_no_opens_rows_writes_an_empty_gated_list(self):
+        data = json.loads(closed_zones.render(0, [40], [[1, 2]]))
+        self.assertEqual(data["gated"], [])
+
+    def test_gated_rows_carry_key_zone_and_sorted_chunks_one_per_line(self):
+        chunks, _ = closed_zones.closed_chunks(self.TILES, PARENT, {12})
+        text = closed_zones.render(0, [40], [[1, 2]], [("steppes_open", 12, chunks)])
+        data = json.loads(text)
+        self.assertEqual(data["chunks"], [[1, 2]])
+        self.assertEqual(data["gated"], [{"key": "steppes_open", "zone": 12, "chunks": [[482, 786], [496, 784]]}])
+        self.assertEqual(
+            text.splitlines(),
+            [
+                '{"map": 0, "zones": [40], "chunks": [',
+                "[1, 2]",
+                '], "gated": [',
+                '{"key": "steppes_open", "zone": 12, "chunks": [',
+                "[482, 786],",
+                "[496, 784]",
+                "]}",
+                "]}",
+            ],
+        )
+
+
+class Config(unittest.TestCase):
+    def load(self, text):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "closed_zones.toml")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(text)
+            return closed_zones.load_config(path)
+
+    def test_opens_rows_come_back_with_their_milestone(self):
+        cfg = self.load('map = 0\nzones = [40, 3]\n[[opens]]\nzone = 46\nmilestone = "steppes_open"\n')
+        self.assertEqual(cfg, (0, [40, 3], [(46, "steppes_open")]))
+
+    def test_no_opens_rows_is_an_empty_list(self):
+        self.assertEqual(self.load("map = 0\nzones = [40]\n"), (0, [40], []))
+
+    def test_a_zone_in_zones_and_in_opens_is_an_error_naming_it(self):
+        with self.assertRaisesRegex(ValueError, "zone 46"):
+            self.load('map = 0\nzones = [40, 46]\n[[opens]]\nzone = 46\nmilestone = "steppes_open"\n')
+
+    def test_a_zone_in_two_opens_rows_is_an_error_naming_it(self):
+        with self.assertRaisesRegex(ValueError, "zone 46"):
+            self.load(
+                'map = 0\nzones = [40]\n[[opens]]\nzone = 46\nmilestone = "a"\n[[opens]]\nzone = 46\nmilestone = "b"\n'
+            )
 
 
 if __name__ == "__main__":

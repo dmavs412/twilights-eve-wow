@@ -178,6 +178,15 @@ pub(crate) fn come_out(c: &mut Char) {
     }
 }
 
+/// Puts `c` at their bind point, listed in its map's home zone.
+pub(crate) fn go_home(c: &mut Char) {
+    let to = c.bind.place;
+    c.map = to.map;
+    c.zone = home_zone(to.map);
+    c.position = to.position;
+    c.orientation = to.orientation;
+}
+
 /// The zone a character on `map`'s open world is listed in: Elwynn Forest on Eastern Kingdoms,
 /// The Barrens elsewhere, as a new character's.
 fn home_zone(map: u32) -> u32 {

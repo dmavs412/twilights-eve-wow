@@ -62,7 +62,7 @@ pub(crate) mod ride;
 mod road;
 mod specials;
 
-pub(crate) use dungeon::come_out;
+pub(crate) use dungeon::{come_out, go_home};
 
 /// vanilla's player speeds (`baseMoveSpeed`): yd/s, turn in rad/s.
 const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
@@ -430,6 +430,9 @@ pub(crate) struct InWorld {
     /// The map marks show the cart stops grey: the Carts unlock is off, as of the realm's last
     /// sync.
     pub(crate) carts_locked: bool,
+    /// The Milestones reached (ADR 0034), as of the realm's last sync: the zones they open show
+    /// what stands on them.
+    pub(crate) reached: Vec<String>,
 }
 
 impl InWorld {
@@ -584,6 +587,7 @@ impl InWorld {
             road: road::OpenRoad::default(),
             rider: None,
             carts_locked: false,
+            reached: Vec::new(),
         };
         events.push(w.player_create(c));
         w.show_well_fed(c, events);
@@ -946,7 +950,8 @@ impl InWorld {
     /// The world map's marks, sent when they differ from the last list sent.
     fn map_marks_tick(&mut self, c: &Char, wall: f64, events: &mut Vec<SessionEvent>) {
         let window = crate::writs::window(wall as u64);
-        let marks = crate::map_marks::marks(c, self.carts_locked, window);
+        let reached: Vec<&str> = self.reached.iter().map(String::as_str).collect();
+        let marks = crate::map_marks::marks(c, self.carts_locked, window, &reached);
         if self.marks_sent.as_ref() != Some(&marks) {
             self.marks_sent = Some(marks.clone());
             events.push(SessionEvent::MapMarks { marks });

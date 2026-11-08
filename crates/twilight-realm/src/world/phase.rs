@@ -259,17 +259,19 @@ impl InWorld {
     /// (ADR 0015) or goes through a placed mist wall (ADR 0033), the client is snapped back to
     /// `from`, told so at most once every [`CLOSED_HUSH_SECS`], and the step is refused. Unlike
     /// [`Self::walled_off`], it holds the dead too and any step length; only the realm's own
-    /// teleports pass. Whether the step was refused.
+    /// teleports pass. A zone a Milestone opens is closed until `reached` holds it. Whether the
+    /// step was refused.
     pub(crate) fn closed_off(
         &mut self,
         from: [f32; 3],
         to: [f32; 3],
         orientation: f32,
+        reached: &[&str],
         events: &mut Vec<SessionEvent>,
     ) -> bool {
         if self.teleport_pending()
             || self.transferring()
-            || !(super::closed::closed_at(self.map, to[0], to[1])
+            || !(super::closed::closed_at(self.map, to[0], to[1], reached)
                 || super::closed::crosses_mist_wall(self.map, from, to))
         {
             return false;
@@ -282,6 +284,13 @@ impl InWorld {
             });
         }
         true
+    }
+
+    /// Whether `at` on `map` is closed land while [`Self::reached`] holds: nothing on it is sent.
+    fn on_closed_land(&self, map: u32, at: [f32; 3]) -> bool {
+        super::closed::closed_unless(map, at[0], at[1], |key| {
+            self.reached.iter().any(|r| r == key)
+        })
     }
 
     /// Puts the player at the `back` of stop `stop`'s inner portal, in the same Phase and Run.
@@ -425,7 +434,10 @@ impl InWorld {
             let open = o
                 .gate
                 .is_none_or(|key| self.inner_open.iter().any(|k| k == key));
-            let seen = d.map == self.map && self.phase == Phase::Dungeon(d.id) && open;
+            let seen = d.map == self.map
+                && self.phase == Phase::Dungeon(d.id)
+                && open
+                && !self.on_closed_land(d.map, o.object.position);
             let d_yd = if seen {
                 flat_distance(o.object.position, me)
             } else {
@@ -571,7 +583,7 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) {
         for d in phased::content() {
-            let d_yd = if d.map == self.map {
+            let d_yd = if d.map == self.map && !self.on_closed_land(d.map, d.portal.position) {
                 flat_distance(d.portal.position, me)
             } else {
                 f32::INFINITY
@@ -603,7 +615,7 @@ impl InWorld {
         host: &dyn Host,
         events: &mut Vec<SessionEvent>,
     ) {
-        let d_yd = if d.map == self.map {
+        let d_yd = if d.map == self.map && !self.on_closed_land(d.map, door.position) {
             flat_distance(door.position, me)
         } else {
             f32::INFINITY
@@ -708,7 +720,7 @@ impl InWorld {
     ) {
         let mut gone = Vec::new();
         for o in &d.gameobject {
-            let d_yd = if d.map == self.map {
+            let d_yd = if d.map == self.map && !self.on_closed_land(d.map, o.position) {
                 flat_distance(o.position, me)
             } else {
                 f32::INFINITY
@@ -748,7 +760,10 @@ impl InWorld {
         let mut gone = Vec::new();
         for o in quests::content::objects() {
             let guid = o.object_guid();
-            let d_yd = if o.map == self.map && self.phase == Phase::OpenWorld {
+            let d_yd = if o.map == self.map
+                && self.phase == Phase::OpenWorld
+                && !self.on_closed_land(o.map, o.position)
+            {
                 flat_distance(o.position, me)
             } else {
                 f32::INFINITY

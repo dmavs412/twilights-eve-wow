@@ -58,17 +58,39 @@ def closed_chunks(tiles, parent, closed):
     return [list(g) for g in sorted(found)], per_area
 
 
-def render(map_id, zones, chunks):
-    """The JSON text: the header on one line, one `[gx, gy]` per line."""
-    head = '{"map": %d, "zones": %s, "chunks": [' % (map_id, json.dumps(sorted(zones)))
+def chunk_lines(chunks):
+    """`[` then one `[gx, gy]` per line then `]`, or `[]` when there are none."""
     body = ",\n".join(json.dumps(c) for c in chunks)
-    return head + ("\n" + body + "\n" if chunks else "") + "]}\n"
+    return "[" + ("\n" + body + "\n" if chunks else "") + "]"
+
+
+def render(map_id, zones, chunks, gated=()):
+    """The JSON text: the header on one line, one `[gx, gy]` per line, then `gated`.
+
+    `gated` is a list of (key, zone, chunks), one per `opens` row; each becomes
+    `{"key": ..., "zone": ..., "chunks": [...]}` with its chunks one per line too.
+    """
+    head = '{"map": %d, "zones": %s, "chunks": ' % (map_id, json.dumps(sorted(zones)))
+    rows = [
+        '{"key": %s, "zone": %d, "chunks": %s}' % (json.dumps(key), zone, chunk_lines(cs))
+        for key, zone, cs in gated
+    ]
+    tail = "[" + ("\n" + ",\n".join(rows) + "\n" if rows else "") + "]"
+    return head + chunk_lines(chunks) + ', "gated": ' + tail + "}\n"
 
 
 def load_config(path):
+    """(map, zones closed for good, [(zone, milestone), ...] from the `opens` rows)."""
     with open(path, "rb") as f:
         cfg = tomllib.load(f)
-    return int(cfg["map"]), [int(z) for z in cfg["zones"]]
+    zones = [int(z) for z in cfg["zones"]]
+    opens = [(int(o["zone"]), str(o["milestone"])) for o in cfg.get("opens", [])]
+    seen = set(zones)
+    for zone, _ in opens:
+        if zone in seen:
+            raise ValueError("closed_zones.toml: zone %d is listed twice" % zone)
+        seen.add(zone)
+    return int(cfg["map"]), zones, opens
 
 
 def area_names(rows, strings):
@@ -86,7 +108,10 @@ def main():
 
     import wowmpq
 
-    map_id, zones = load_config(TOML_PATH)
+    try:
+        map_id, zones, opens = load_config(TOML_PATH)
+    except ValueError as e:
+        sys.exit(str(e))
     if map_id not in MAP_DIRS:
         sys.exit("closed_zones.toml: unknown map %d" % map_id)
     gd = wowmpq.GameData(args.data)
@@ -102,19 +127,27 @@ def main():
             if t:
                 tiles[(tx, ty)] = {k: v[0] for k, v in t["chunks"].items()}
     chunks, per_area = closed_chunks(tiles, parent, set(zones))
+    gated = []
+    for zone, key in opens:
+        gated_chunks, gated_areas = closed_chunks(tiles, parent, {zone})
+        gated.append((key, zone, gated_chunks))
+        per_area.update(gated_areas)
+    until = {zone: key for zone, key in opens}
 
     with open(JSON_PATH, "w", newline="\n", encoding="utf-8") as f:
-        f.write(render(map_id, zones, chunks))
+        f.write(render(map_id, zones, chunks, gated))
 
     per_zone = {}
     for area, n in per_area.items():
         z = roll_up(area, parent)
         per_zone[z] = per_zone.get(z, 0) + n
     for z in sorted(per_zone):
-        print("zone %d %s: %d chunks" % (z, names.get(z, "?"), per_zone[z]))
+        mark = " (until %s)" % until[z] if z in until else ""
+        print("zone %d %s: %d chunks%s" % (z, names.get(z, "?"), per_zone[z], mark))
     for area, n in sorted(per_area.items(), key=lambda kv: (-kv[1], kv[0])):
         print("  area %d %s: %d" % (area, names.get(area, "?"), n))
-    print("%d closed chunks -> %s" % (len(chunks), JSON_PATH))
+    n_gated = sum(len(cs) for _, _, cs in gated)
+    print("%d closed chunks, %d gated -> %s" % (len(chunks), n_gated, JSON_PATH))
 
 
 if __name__ == "__main__":

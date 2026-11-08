@@ -341,8 +341,9 @@ impl Shard {
 
     /// Streams spawns and Hub NPCs in around `players` and out once none is near, brings back
     /// the dead whose time is up, walks the Hub's wanderers, and runs the cart wagons to
-    /// `wall_ms` with the Carts unlock `carts_on`. The destroys and moves it makes; the creates go
-    /// to each client as its view takes them in.
+    /// `wall_ms` with the Carts unlock `carts_on`. Nothing streams in on land closed while the
+    /// Milestones `reached` are. The destroys and moves it makes; the creates go to each client as
+    /// its view takes them in.
     pub(crate) fn update(
         &mut self,
         dt: f32,
@@ -350,6 +351,7 @@ impl Shard {
         host: &dyn Host,
         wall_ms: u64,
         carts_on: bool,
+        reached: &[&str],
     ) -> Vec<SessionEvent> {
         let mut events = Vec::new();
         if let Some(run) = &mut self.run {
@@ -361,9 +363,10 @@ impl Shard {
         }
         let map = self.place.map;
         self.population
-            .update(dt, players, map, host, &mut self.mobs, &mut events);
+            .update(dt, players, map, reached, host, &mut self.mobs, &mut events);
         self.settle_audience(host, &mut events);
-        self.hub.update(dt, players, map, host, &mut events);
+        self.hub
+            .update(dt, players, map, reached, host, &mut events);
         events.extend(self.carts.update(wall_ms, carts_on));
         events.retain(|e| !matches!(e, SessionEvent::ObjectCreate { .. }));
         events

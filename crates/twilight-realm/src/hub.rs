@@ -373,12 +373,14 @@ struct Walk {
 impl InView {
     /// Brings the NPCs within view of any of `players` into the world, standing on the host's
     /// ground, lets go those far from them all, and walks the wanderers in view on by `dt`
-    /// seconds. Each stands on its own map only.
+    /// seconds. Each stands on its own map only, and none on land closed while the Milestones
+    /// `reached` are.
     pub(crate) fn update(
         &mut self,
         dt: f32,
         players: &[[f32; 3]],
         map: u32,
+        reached: &[&str],
         host: &dyn Host,
         events: &mut Vec<SessionEvent>,
     ) {
@@ -387,7 +389,8 @@ impl InView {
         self.present.resize_with(all.len(), || None);
         let mut gone = Vec::new();
         for (npc, present) in all.iter().zip(&mut self.present) {
-            let d = if map == npc.map {
+            let [x, y, _] = npc.position;
+            let d = if map == npc.map && !crate::closed_at(map, x, y, reached) {
                 players
                     .iter()
                     .map(|&p| flat_distance(npc.position, p))

@@ -116,7 +116,9 @@ pub use ground::SETTLE_WINDOW_SECS;
 pub use objects::{ObjectKind, ObjectSpec, CHEST_DISPLAY};
 pub use phased::{test_grounds_start, GameObjectUse, UseKind};
 pub use save::{SaveError, Storage, SAVE_VERSION};
-pub use world::closed::{audit_rows, closed_at, placed, AuditKind, AuditRow, Placed};
+pub use world::closed::{
+    audit_rows, closed_at, closed_for_good, placed, AuditKind, AuditRow, Placed,
+};
 
 /// What the realm asks of whoever runs it. Coordinates are WoW's (`x` north, `y` west, `z` up).
 pub trait Host {
@@ -1479,6 +1481,8 @@ impl Realm {
         }
         self.shards.retain(|map, _| on.contains_key(map));
         let (wall_ms, carts_on) = (self.wall_ms(), self.unlock_on("carts"));
+        let reached = self.milestones.reached_keys();
+        let reached: Vec<&str> = reached.iter().map(String::as_str).collect();
         for (map, players) in &on {
             let shard = self
                 .shards
@@ -1491,7 +1495,7 @@ impl Realm {
             let alive: Vec<u64> = players.iter().filter(|p| p.alive).map(|p| p.guid).collect();
             let (head_count, scaled) = shard.scale_to_head_count(&alive);
             let tuned = head_count.and_then(|n| tuned_line(*map, n));
-            let mut made = shard.update(dt, &positions, host, wall_ms, carts_on);
+            let mut made = shard.update(dt, &positions, host, wall_ms, carts_on, &reached);
             made.extend(scaled);
             let mut owners = shard.owners(players);
             let shard = &self.shards[map];
@@ -1962,8 +1966,9 @@ impl Realm {
                     r.leaving = true;
                 } else if let Some(w) = &mut self.world {
                     let from = self.characters.get(w.guid).map(|c| c.position);
+                    let reached = self.milestones.reached_refs();
                     let walled = from.is_some_and(|from| {
-                        w.closed_off(from, position, orientation, &mut self.events)
+                        w.closed_off(from, position, orientation, &reached, &mut self.events)
                             || w.walled_off(from, position, orientation, &mut self.events)
                     });
                     if !walled && from.is_none_or(|from| w.moved(from, position, &mut self.events))
@@ -2601,6 +2606,7 @@ impl Realm {
             return;
         };
         w.carts_locked = carts_locked;
+        w.reached = self.milestones.reached_keys();
         let Some(c) = self.characters.get_mut(w.guid) else {
             return;
         };
@@ -3007,6 +3013,15 @@ impl Realm {
         // A save from inside the Dungeon comes back outside it: a run ends with its session.
         if let Some(c) = self.characters.get_mut(guid) {
             world::come_out(c);
+            // A save on closed land (a host reset the Milestones) comes back at its bind point.
+            let [x, y, _] = c.position;
+            if closed_at(c.map, x, y, &self.milestones.reached_refs()) {
+                self.log.push(format!(
+                    "{} stood on closed land, so enters the world at their bind point.",
+                    c.name
+                ));
+                world::go_home(c);
+            }
             rest::come_back(c, self.wall);
         }
         let Some(c) = self.characters.get(guid) else {

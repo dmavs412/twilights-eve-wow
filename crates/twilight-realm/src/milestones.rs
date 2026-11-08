@@ -165,6 +165,11 @@ impl Milestones {
             .collect()
     }
 
+    /// Every reached Milestone's key, borrowed, in no order: what [`crate::closed_at`] takes.
+    pub(crate) fn reached_refs(&self) -> Vec<&str> {
+        self.reached.keys().map(String::as_str).collect()
+    }
+
     /// The catalogue row of `key`.
     pub(crate) fn get(&self, key: &str) -> Option<&Milestone> {
         self.catalogue.iter().find(|m| m.key == key)

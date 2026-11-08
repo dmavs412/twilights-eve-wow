@@ -1,6 +1,7 @@
 //! Closed Zones (ADR 0015): the map chunks the world leaves out, read from
 //! `data/twilights-eve/closed_chunks.json`. The realm reads the same file with its own reader
-//! (`twilight-realm`'s `world/closed.rs`); the math below matches it line for line.
+//! (`twilight-realm`'s `world/closed.rs`); the math below matches it line for line. Unlike the
+//! realm, it treats land a Milestone opens as closed.
 
 use std::collections::HashSet;
 use std::sync::OnceLock;
@@ -18,23 +19,31 @@ struct Closed {
     chunks: HashSet<(u32, u32)>,
 }
 
-/// `{"map": 0, "zones": [..], "chunks": [[gx, gy], ..]}`: the map, its closed `AreaTable` zone
-/// ids, and the chunks in the file's order.
+/// `{"map": 0, "zones": [..], "chunks": [[gx, gy], ..], "gated": [{"key", "zone", "chunks"}, ..]}`:
+/// the map, its closed `AreaTable` zone ids, and the chunks in the file's order. A gated zone,
+/// which a Milestone opens (ADR 0034), counts as closed: the client has no reached set yet, so
+/// its zone and chunks follow the closed-for-good ones.
 fn parse(text: &str) -> (u32, Vec<u32>, Vec<(u32, u32)>) {
     let v: serde_json::Value = serde_json::from_str(text).expect("closed_chunks.json parses");
     let num = |v: &serde_json::Value| v.as_u64().expect("closed_chunks.json holds numbers") as u32;
-    let list: Vec<(u32, u32)> = v["chunks"]
-        .as_array()
-        .expect("closed_chunks.json has chunks")
-        .iter()
-        .map(|c| (num(&c[0]), num(&c[1])))
-        .collect();
-    let zones: Vec<u32> = v["zones"]
+    let chunks = |v: &serde_json::Value| -> Vec<(u32, u32)> {
+        v.as_array()
+            .expect("closed_chunks.json has chunks")
+            .iter()
+            .map(|c| (num(&c[0]), num(&c[1])))
+            .collect()
+    };
+    let mut list = chunks(&v["chunks"]);
+    let mut zones: Vec<u32> = v["zones"]
         .as_array()
         .expect("closed_chunks.json has zones")
         .iter()
         .map(num)
         .collect();
+    for g in v["gated"].as_array().into_iter().flatten() {
+        zones.push(num(&g["zone"]));
+        list.extend(chunks(&g["chunks"]));
+    }
     (num(&v["map"]), zones, list)
 }
 
@@ -146,6 +155,14 @@ mod tests {
         assert!(!closed_at(0, -8933.54, -136.523), "Deputy Willem");
         assert!(!closed_at(1, -10508.8, 1045.23), "Kalimdor is all open");
         assert!(!closed_at(1, -417.0, -2646.0), "the Crossroads");
+    }
+
+    #[test]
+    fn the_gated_steppes_count_as_closed_and_lakeshire_is_open() {
+        assert!(closed_at(0, -8378.5, -2748.9), "Morgan's Vigil");
+        assert!(!closed_at(0, -9219.0, -2222.0), "Lakeshire");
+        assert!(zone_closed(0, 46), "the Burning Steppes");
+        assert!(!closed_chunks_near(0, -8378.5, -2748.9, 50.0).is_empty());
     }
 
     #[test]

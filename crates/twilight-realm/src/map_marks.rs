@@ -176,8 +176,9 @@ fn service(role: &str) -> Option<(MapIcon, &'static str)> {
 }
 
 /// Everything the map marks for `c`: quest marks, then service marks, dungeon marks, and the cart
-/// stops on their map, grey while `carts_locked`. `window` is the Writ Board's now.
-pub(crate) fn marks(c: &Char, carts_locked: bool, window: u32) -> Vec<MapMark> {
+/// stops on their map, grey while `carts_locked`. `window` is the Writ Board's now. None stands on
+/// land closed while the Milestones `reached` are.
+pub(crate) fn marks(c: &Char, carts_locked: bool, window: u32, reached: &[&str]) -> Vec<MapMark> {
     let mut out = Vec::new();
     let mut quest_marked = Vec::new();
     for g in givers() {
@@ -282,6 +283,7 @@ pub(crate) fn marks(c: &Char, carts_locked: bool, window: u32) -> Vec<MapMark> {
             });
         }
     }
+    out.retain(|m| !crate::closed_at(m.map, m.position[0], m.position[1], reached));
     out
 }
 

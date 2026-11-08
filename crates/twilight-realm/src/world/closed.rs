@@ -1,10 +1,11 @@
 //! Closed Zones (ADR 0015): the map chunks no one may stand on, read from
-//! `data/twilights-eve/closed_chunks.json`. The wall that keeps characters off them is
+//! `data/twilights-eve/closed_chunks.json`, some for good and some until a Milestone is reached
+//! (ADR 0034). The wall that keeps characters off them is
 //! [`InWorld::closed_off`](super::InWorld::closed_off); content placed on one is a bug the
 //! `closed_zones` test names. The placed mist walls (ADR 0033), read from
 //! `data/twilights-eve/mist_walls.json`, are refused by the same wall.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
 use serde::Deserialize;
@@ -20,11 +21,23 @@ const CHUNKS: i64 = 64 * 16;
 struct File {
     map: u32,
     chunks: Vec<[u32; 2]>,
+    #[serde(default)]
+    gated: Vec<GatedZone>,
+}
+
+/// A zone closed until its Milestone `key` is reached (ADR 0034).
+#[derive(Deserialize)]
+struct GatedZone {
+    key: String,
+    chunks: Vec<[u32; 2]>,
 }
 
 struct Closed {
     map: u32,
+    /// Closed for good.
     chunks: HashSet<(u32, u32)>,
+    /// Closed until the Milestone named is reached, by chunk.
+    gated: HashMap<(u32, u32), String>,
 }
 
 fn closed() -> &'static Closed {
@@ -37,22 +50,49 @@ fn closed() -> &'static Closed {
         Closed {
             map: file.map,
             chunks: file.chunks.into_iter().map(|[gx, gy]| (gx, gy)).collect(),
+            gated: file
+                .gated
+                .into_iter()
+                .flat_map(|z| {
+                    let key = z.key;
+                    z.chunks
+                        .into_iter()
+                        .map(move |[gx, gy]| ((gx, gy), key.clone()))
+                })
+                .collect(),
         }
     })
 }
 
-/// Whether `(x, y)` on `map` lies on a closed chunk. A point off the map's grid, or on another
-/// map than the file's, is open.
-pub fn closed_at(map: u32, x: f32, y: f32) -> bool {
-    let c = closed();
+/// The chunk `(x, y)` on `map` lies on, when it is the file's map and on its grid.
+fn chunk_of(c: &Closed, map: u32, x: f32, y: f32) -> Option<(u32, u32)> {
     if map != c.map {
-        return false;
+        return None;
     }
     let index = |v: f32| ((32.0 * TILE_SIZE - v) / CHUNK_SIZE).floor() as i64;
     let (gx, gy) = (index(y), index(x));
-    (0..CHUNKS).contains(&gx)
-        && (0..CHUNKS).contains(&gy)
-        && c.chunks.contains(&(gx as u32, gy as u32))
+    ((0..CHUNKS).contains(&gx) && (0..CHUNKS).contains(&gy)).then_some((gx as u32, gy as u32))
+}
+
+/// Whether `(x, y)` on `map` lies on a closed chunk while the Milestones `reached` are: one
+/// closed for good, or one gated on a Milestone not among them. A point off the map's grid, or
+/// on another map than the file's, is open.
+pub fn closed_at(map: u32, x: f32, y: f32, reached: &[&str]) -> bool {
+    closed_unless(map, x, y, |key| reached.contains(&key))
+}
+
+/// [`closed_at`] with the reached set asked of `reached`, key by key.
+pub(crate) fn closed_unless(map: u32, x: f32, y: f32, reached: impl Fn(&str) -> bool) -> bool {
+    let c = closed();
+    chunk_of(c, map, x, y).is_some_and(|chunk| {
+        c.chunks.contains(&chunk) || c.gated.get(&chunk).is_some_and(|key| !reached(key))
+    })
+}
+
+/// Whether `(x, y)` on `map` lies on a chunk closed for good, which no Milestone opens.
+pub fn closed_for_good(map: u32, x: f32, y: f32) -> bool {
+    let c = closed();
+    chunk_of(c, map, x, y).is_some_and(|chunk| c.chunks.contains(&chunk))
 }
 
 /// One placed mist wall (ADR 0033): a vertical wall over the x, y segment `from` to `to` on
@@ -485,6 +525,12 @@ mod tests {
         let s = steps([10.0, -7.0], 8.0);
         assert_eq!((s[0], *s.last().unwrap()), (-7.0, 10.0));
         assert!(s.windows(2).all(|w| w[1] - w[0] <= 8.0));
+    }
+
+    #[test]
+    fn searing_gorge_is_closed_for_good_and_morgan_s_vigil_is_not() {
+        assert!(closed_for_good(0, -6679.9, -1194.4), "Kalaran Windblade");
+        assert!(!closed_for_good(0, -8378.5, -2748.9), "Marshal Maxwell");
     }
 
     /// The Deeprun Tram's wall (`mist_walls.json`): map 369, y 2400 from x -75 to 35, Z -20 to 30.
