@@ -1,4 +1,5 @@
-# Claude Code hook: one cargo command at a time across sessions (#191, spec #190).
+# Claude Code hook: one cargo command at a time per checkout (#191, spec #190), and one client
+# build at a time on the whole machine (scripts/client-lock.ps1).
 # PreToolUse runs -Mode acquire, PostToolUse/PostToolUseFailure run -Mode release.
 # Reads the hook JSON on stdin; acts only on Bash/PowerShell commands that run cargo.
 #
@@ -33,12 +34,16 @@ function Write-Holder([string]$started, [bool]$background) {
         ConvertTo-Json -Compress | Set-Content $lock -Encoding utf8
 }
 
+. (Join-Path $PSScriptRoot 'client-lock.ps1')
+$clientBuild = Test-ClientCargo $command
+
 if ($Mode -eq 'release') {
-    $holder = Read-Holder
-    if (-not ($holder -and $holder.session -eq $me)) { exit 0 }
     $response = "$($hook.tool_response | ConvertTo-Json -Compress -Depth 6)"
     $backgrounded = $hook.hook_event_name -ne 'PostToolUseFailure' -and
         ($hook.tool_input.run_in_background -eq $true -or $response -match 'background')
+    if ($clientBuild) { Exit-ClientLock $me -Background:$backgrounded }
+    $holder = Read-Holder
+    if (-not ($holder -and $holder.session -eq $me)) { exit 0 }
     if ($backgrounded) { Write-Holder $holder.started $true } else { Remove-Item $lock -Force }
     exit 0
 }
@@ -52,8 +57,16 @@ if ($command -match '(?m)(^|[;&|(])\s*g?timeout\s+(\S+\s+){1,4}cargo\b') {
     exit 2
 }
 
+# A client build waits for the machine-wide client lock (scripts/client-lock.ps1), which the other
+# builder may hold for a while. The hook's timeout in .claude/settings.json is set to cover the wait.
+if ($clientBuild -and -not (Enter-ClientLock $me 0 25)) {
+    $c = Get-ClientLockHolder
+    [Console]::Error.WriteLine(("Client build lock held by {0} since {1} ({2}). Only one client build runs at a time on this machine; build the realm meanwhile, or wait and retry." -f $c.holder, $c.started, $ClientLockPath))
+    exit 2
+}
+
 $holder = Read-Holder
-# A script holding the lock for a whole run (overnight.ps1) names itself in CLAUDE_BUILD_LOCK_HOLDER;
+# A script holding the lock for a whole run (worker.ps1) names itself in CLAUDE_BUILD_LOCK_HOLDER;
 # the sessions it starts inherit that and pass without touching its lock.
 if ($holder -and $env:CLAUDE_BUILD_LOCK_HOLDER -and $holder.session -eq $env:CLAUDE_BUILD_LOCK_HOLDER) { exit 0 }
 if ($holder -and $holder.session -ne $me) {
@@ -63,6 +76,7 @@ if ($holder -and $holder.session -ne $me) {
     if ($running -and $age.TotalHours -lt $StaleHours) {
         $how = if ($holder.background) { ' (a background build still running)' } else { '' }
         [Console]::Error.WriteLine(("Build lock held by session {0} for {1:N0} min{2} (target/.claude-build.lock). Wait for it or stop." -f $holder.session, $age.TotalMinutes, $how))
+        if ($clientBuild) { Exit-ClientLock $me }
         exit 2
     }
 }

@@ -29,19 +29,23 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   rlibs with corrupt MSVC debug info, and later links fail (`LNK1103`, or unresolved symbols) on
   a crate you never touched. The cure is `cargo clean -p <crate>` for each crate the linker names.
   The build-lock hook refuses `timeout` in front of cargo.
-- **Do the work in this session.** Search with Grep, read with Read. The Agent tool is denied
-  in `.claude/settings.json`, so no subagents and no skills that fan out (implement-spec,
-  wayfinder, code-review, research). If a task seems to need one, say so and do it inline.
+- **Prep agents, yes; building agents, no.** An interactive chat may start read-only subagents
+  to prepare a grill: each researches one topic (lore bible, vmangos DB, content, specs) and
+  writes one draft to `docs/specs/prep/<topic>.md`. They run no cargo, commit nothing and edit
+  no issue. Code, data and generated JSON are built only by a Build chat or the builders.
 - **Keep context small.** Read the lines you need. Report in a few lines. Davis runs `/clear` or
   `/compact` between tasks; say so when a task is done and the next one starts cold.
-- **Unattended runs.** `scripts/overnight.ps1` works through open issues labelled
-  `ready-for-agent`, oldest first, one fresh Opus session each, with no one at the keyboard;
-  rules in `docs/agents/unattended.md`. An evening grill ends by writing those tickets: each
-  one fully specified, with its assumptions allowed and its acceptance stated, so the night
-  session can pick a reading and record it instead of asking.
+- **Builders.** `scripts/overnight.ps1` runs two builders, day or night, each a fresh Opus
+  session per `ready-for-agent` ticket in its own worktree (`..\twilights-eve-w1`, `-w2`) with
+  its own `target`; a builder lands each ticket on `origin/main` after its gate. Only one client
+  build runs at a time on the machine (`scripts/client-lock.ps1`). `-LingerMinutes` keeps them
+  polling for tickets a grill files during the day. Rules in `docs/agents/unattended.md`.
+  Every grill ends by writing tickets: each one fully specified, with its assumptions allowed
+  and its acceptance stated, so a builder can pick a reading and record it instead of asking.
+  Tickets that would edit the same file get a "Blocked by" between them.
 - **Three lanes.** A chat learns its lane from `/build`, `/pipeline` or `/smoke`; with none
-  given, ask. The **Build** lane (this checkout, interactive or overnight) is the only one
-  that builds or edits code, the CSV or generated JSON. **Lane 2** writes no code: it smoke-runs
+  given, ask. The **Build** lane (a Build chat in this checkout, or a builder in its worktree)
+  is the only one that builds or edits code, the CSV or generated JSON. **Lane 2** writes no code: it smoke-runs
   from a `play/` copy, reproduces Davis's bugs and writes issues. The **Pipeline** lane edits
   only `scripts/`, `docs/`, `.claude/` and issues, runs no `cargo`, and files an issue when its
   work needs code. Every lane commits only the files it touched. Every `cargo` command takes
@@ -59,7 +63,8 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   A bug fix, a new data row, or a component that follows an existing pattern goes straight to
   code. A ticket labelled `ready-for-agent` has already passed grilling.
 - **Land as small commits on `main`**, each saying what changed and which check ran, and push
-  `main` once the check has passed. `overnight.ps1` pushes at the end of a night. A branch
+  `main` once the check has passed. A builder pushes each ticket as it lands, so pull before
+  you commit in this checkout. A branch
   and a pull request only when Davis asks. CI (`.github/workflows/ci.yml`) repeats the check and
   the realm tests and runs the client's tests on GitHub's runners; it is a backstop you never
   wait on.
@@ -89,8 +94,9 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   data-gated test runs here, and one that cannot find the install fails instead of passing by
   skipping (#433). CI has no game data and skips them.
 - Python is `~/.local/bin/python3.15`; `python3` on PATH is the Microsoft Store stub. No Node.
-- Build in this checkout's `target` only; a worktree's own `target` is 18 GB and fills C:.
-  `CARGO_BUILD_JOBS=4` is in the user environment. Davis plays from a `play/` copy
+- Three build folders: this checkout's `target` and one per builder worktree (18 to 40 GB
+  each; C: had 160 GB free on 2026-11-07). No other worktree builds. `CARGO_BUILD_JOBS=4` is in
+  the user environment. Davis plays from a `play/` copy
   (gitignored, newest 3 kept), because a running exe cannot be overwritten.
 - `WOW_PROBE=list` lists the variables that drive a run with no one at the keyboard.
 - Text is LF in every checkout (`.gitattributes` `eol=lf` overrides `core.autocrlf`); only

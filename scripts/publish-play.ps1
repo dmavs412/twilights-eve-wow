@@ -33,10 +33,15 @@ if ($ownLock) {
     New-Item -ItemType Directory -Force (Split-Path $lock) | Out-Null
     @{ session = $me; started = (Get-Date).ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress | Set-Content $lock -Encoding utf8
 }
+# A release build of the client links the largest binary, so it also waits for the machine-wide
+# client lock that the builders share (scripts/client-lock.ps1).
+. (Join-Path $PSScriptRoot 'client-lock.ps1')
 try {
+    if (-not (Enter-ClientLock $me $PID 60)) { Write-Host ("client build lock held by {0}; gave up after 60 min" -f (Get-ClientLockHolder).holder); exit 1 }
     cargo build --release -q -p twilights-eve
     if ($LASTEXITCODE -ne 0) { Write-Host 'release build failed'; exit 1 }
 } finally {
+    Exit-ClientLock $me
     if ($ownLock) { Remove-Item $lock -Force -ErrorAction SilentlyContinue }
 }
 

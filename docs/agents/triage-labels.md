@@ -18,11 +18,12 @@ Repo-only labels:
 | ---------- | ----------------------------------------------------------------------------------------- |
 | `bug`      | Overnight runs these first. An open `bug` without `ready-for-agent` is Lane 2's queue: Lane 2 adds a reproduction and failing-test outline, then `ready-for-agent` |
 | `blocked`  | An unattended session could not finish; its comment says why                              |
+| `in-progress` | A builder (`scripts/worker.ps1`) has claimed the ticket; the next `overnight.ps1` clears a claim left by a run that died |
 | `on-hold`  | Parked for later; not picked by overnight runs                                            |
 | `unplayed` | Spec landed and closed, Davis hasn't played it; his play note removes it                  |
 
 A closed issue keeps no workflow label (`needs-triage`, `needs-info`, `ready-for-agent`,
-`blocked`): whoever closes it removes them, and `overnight.ps1` does so for the tickets and specs
-it closes. `bug` and `unplayed` stay on closed issues.
+`blocked`, `in-progress`): whoever closes it removes them, and the builders do so for the
+tickets and specs they close. `bug` and `unplayed` stay on closed issues.
 
 Edit the "Label in our tracker" column to match whatever vocabulary you actually use.
