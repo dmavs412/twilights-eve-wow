@@ -8,7 +8,7 @@
 //! lever whose pull is Run state. Ringing it starts the tram line (#589): cars roll in on the
 //! timetable, the lamps and sounds warn of them, and a moving car hits a player in its lane. Each
 //! wave car carries two fighters and a porter (#590), and the porters carry the Tribute Pile's
-//! crates onto the cars.
+//! crates onto the cars. The boss car brings the Conductor and his frozen passengers (#591).
 
 mod common;
 
@@ -671,12 +671,15 @@ const SAFE: [f32; 3] = [45.0, 2410.0, -4.29649];
 /// The east platform's middle, farther from track A's doors than the bell.
 const EAST: [f32; 3] = [45.0, 2491.0, -4.29649];
 
-/// The tram creatures any client has been shown, with their entries.
+/// The tram creatures any client has been shown, with their entries: the boss car's too.
 fn tram_creatures_by_entry(party: &Party) -> Vec<(u64, u32)> {
     let mut out: Vec<(u64, u32)> = Vec::new();
     for i in 0..party.sessions.len() {
         for (guid, entry, _) in unit_creates(party.seen(i)) {
-            let tram = FIGHTERS.contains(&entry) || entry == PORTER;
+            let tram = FIGHTERS.contains(&entry)
+                || entry == PORTER
+                || entry == CONDUCTOR
+                || PASSENGERS.contains(&entry);
             if tram && !out.iter().any(|o| o.0 == guid) {
                 out.push((guid, entry));
             }
@@ -1155,4 +1158,472 @@ fn the_tram_s_templates_load_and_only_the_porter_never_fights() {
         assert_eq!(never, entry == PORTER, "{entry}");
     }
     assert!(mob_template(LISTENER).get("never_fights").is_none());
+}
+
+// The Conductor (#591, spec "The Conductor", ADR 0033, ADR 0013): every number below is the
+// `[tram]` table's in `content/deeprun_tram.toml`.
+
+/// The Conductor and his six passengers' templates.
+const CONDUCTOR: u32 = 97218;
+const PASSENGERS: [u32; 6] = [97219, 97220, 97221, 97222, 97223, 97224];
+/// Frozen in the Mist, Tribute and Crate Toss.
+const FROZEN: u32 = 1900057;
+const TRIBUTE: u32 = 1900058;
+const CRATE_TOSS: u32 = 1900059;
+/// `UNIT_FLAG_NOT_SELECTABLE`.
+const NOT_SELECTABLE: u32 = 0x0200_0000;
+/// `UNIT_FIELD_FLAGS`.
+const UNIT_FIELD_FLAGS: u16 = 46;
+/// Track B's x, for a runaway car on it.
+const ON_TRACK_B: [f32; 3] = [4.53, 2470.0, -4.3];
+
+/// A test Calling with stamina enough to stand beside the Conductor through a fight's first
+/// minute: every hit below is a share of maximum health, so the size of it changes nothing.
+const STURDY_CALLINGS: &str = r#"
+[[calling]]
+key = "test_sturdy"
+name = "Test Sturdy"
+tier = 0
+class = 1
+cap = 60
+tier_bonus = { strength = 0, agility = 0, stamina = 3000, intellect = 0, spirit = 0 }
+shapeshift_form = 0
+armour = ["cloth"]
+
+[[calling.skill]]
+key = "taunt"
+spell_id = 1161
+power_cost = 0
+cooldown_ms = 0
+gcd_ms = 0
+target = "self_area"
+radius_yd = 10.0
+max_targets = 100
+effects = [{ kind = "taunt", duration_ms = 4000 }]
+"#;
+
+/// [`by_the_bell`] with `players` level-60 characters on the sturdy test Calling.
+fn sturdy_by_the_bell(players: usize) -> Party {
+    let mut party = Party::edited(
+        Realm::with_seed(1).with_callings(STURDY_CALLINGS),
+        &vec![60; players],
+        START_ELWYNN,
+        Box::new(NoGround),
+        |_, blob| blob.replace("calling = \"basic_warrior\"", "calling = \"test_sturdy\""),
+    );
+    for i in 0..players {
+        party.go(i, STATION, 0.0);
+        party.run(0.2);
+        party.cmd(i, RealmCommand::AreaTrigger { id: ENTRANCE });
+        party.cmd(i, RealmCommand::WorldportAck);
+        party.run(0.2);
+        party.go(i, BY_THE_BELL, 0.0);
+        party.run(0.2);
+    }
+    assert!(party.realm.run_elapsed_as(party.sessions[0]).is_some());
+    party
+}
+
+/// 10 yd from the boss car's door on the centre strip: twice a level-40 passenger's aggro radius
+/// for a level-60 character, so a passenger that thaws there waits for the line to turn it.
+const OFF_THE_DOOR: [f32; 3] = [DOOR_A + 10.0, LEAD_STOP, -4.2965];
+
+/// Rings the bell and ticks until the boss car's Conductor steps off, each fighter dying as it
+/// comes and each porter dying once `escapes` crates have escaped (at once, with 0), with every
+/// player at [`SAFE`]: what player 0's client got, timed from the bell, and the Conductor's guid.
+fn to_the_conductor(party: &mut Party, escapes: usize) -> (Vec<(f32, SessionEvent)>, u64) {
+    ring_now(party);
+    for i in 0..party.sessions.len() {
+        party.go(i, SAFE, 0.0);
+    }
+    let mut killed = Vec::new();
+    let mut timed = Vec::new();
+    for step in 1..=4000 {
+        let t = step as f32 / 10.0;
+        timed.extend(party.run(0.1).swap_remove(0).into_iter().map(|e| (t, e)));
+        let escaped = party
+            .realm
+            .tram_report_as(party.sessions[0])
+            .map_or(0, |r| r.escaped);
+        for (guid, entry) in tram_creatures_by_entry(party) {
+            let spared = entry == CONDUCTOR
+                || PASSENGERS.contains(&entry)
+                || (entry == PORTER && escaped < escapes);
+            if !spared && !killed.contains(&guid) {
+                killed.push(guid);
+                party.realm.kill_creature(guid);
+            }
+        }
+        if let Some(c) = units_made(&timed).into_iter().find(|u| u.2 == CONDUCTOR) {
+            return (timed, c.1);
+        }
+    }
+    panic!("no Conductor within 400 s of the bell");
+}
+
+/// The create of `guid` in `timed`.
+fn create_of(timed: &[(f32, SessionEvent)], guid: u64) -> benilla_protocol::ObjectFields {
+    timed
+        .iter()
+        .find_map(|(_, e)| match e {
+            SessionEvent::ObjectCreate {
+                guid: g, fields, ..
+            } if *g == guid => Some(fields.clone()),
+            _ => None,
+        })
+        .expect("a create")
+}
+
+/// The stacks of `spell_id` on `unit` the client was last shown in `timed`; 0 with none.
+fn stacks_of(timed: &[(f32, SessionEvent)], unit: u64, spell_id: u32) -> u8 {
+    timed
+        .iter()
+        .filter_map(|(_, e)| match e {
+            SessionEvent::ObjectValues { guid, fields } if *guid == unit => fields
+                .unit_auras()
+                .find(|a| a.spell_id == spell_id)
+                .map(|a| a.stacks),
+            _ => None,
+        })
+        .last()
+        .unwrap_or(0)
+}
+
+/// The passengers in `timed`, in the order they stepped off: `(guid, entry, position)`.
+fn passengers(timed: &[(f32, SessionEvent)]) -> Vec<(u64, u32, [f32; 3])> {
+    units_made(timed)
+        .into_iter()
+        .filter(|u| PASSENGERS.contains(&u.2))
+        .map(|u| (u.1, u.2, u.3))
+        .collect()
+}
+
+/// When `guid` first turned on someone in `timed`.
+fn first_turn(timed: &[(f32, SessionEvent)], guid: u64) -> Option<f32> {
+    turned_on(timed, guid).first().map(|t| t.0)
+}
+
+/// Whether `timed` sets `guid`'s unit flags to 0, clearing `UNIT_FLAG_NOT_SELECTABLE`.
+fn flags_cleared(timed: &[(f32, SessionEvent)], guid: u64) -> bool {
+    timed.iter().any(|(_, e)| match e {
+        SessionEvent::ObjectValues { guid: g, fields } if *g == guid => fields
+            .raw_fields()
+            .any(|(f, v)| f == UNIT_FIELD_FLAGS && v == 0),
+        _ => false,
+    })
+}
+
+/// `timed`, each moment moved on by `by` seconds.
+fn later(timed: Vec<(f32, SessionEvent)>, by: f32) -> Vec<(f32, SessionEvent)> {
+    timed.into_iter().map(|(t, e)| (t + by, e)).collect()
+}
+
+/// What each client got, timed on a clock that reads `now`.
+struct Log {
+    timed: Vec<Vec<(f32, SessionEvent)>>,
+    now: f32,
+}
+
+impl Log {
+    /// Ticks on until the clock reads `until`, adding what each client got.
+    fn to(&mut self, party: &mut Party, until: f32) {
+        for (i, t) in ticks(party, until - self.now).into_iter().enumerate() {
+            self.timed[i].extend(later(t, self.now));
+        }
+        self.now = until;
+    }
+}
+
+/// The Tram Strike hits from `car` on `guid` in `timed`, by when.
+fn struck_by(timed: &[(f32, SessionEvent)], guid: u64, car: u64) -> Vec<f32> {
+    timed
+        .iter()
+        .filter_map(|(t, e)| match e {
+            SessionEvent::SpellDamageLog(l)
+                if l.target == guid && l.spell_id == TRAM_STRIKE && l.attacker == car =>
+            {
+                Some(*t)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn the_conductor_steps_off_with_3_passengers_and_no_tribute_and_4_escapes_give_him_4_stacks_and_4_passengers(
+) {
+    let mut runs = Vec::new();
+    for escapes in [0, 4] {
+        let mut party = sturdy_by_the_bell(1);
+        let (mut timed, conductor) = to_the_conductor(&mut party, escapes);
+        let report = party.realm.tram_report_as(party.sessions[0]).unwrap();
+        assert_eq!(report.escaped, escapes, "{report:?}");
+        let made_at = timed.last().unwrap().0;
+        timed.extend(later(ticks(&mut party, 0.5).swap_remove(0), made_at));
+        let fields = create_of(&timed, conductor);
+        let door = units_made(&timed)
+            .into_iter()
+            .find(|u| u.1 == conductor)
+            .unwrap()
+            .3;
+        assert!(
+            (door[0] - DOOR_A).abs() < 0.01 && (door[1] - LEAD_STOP).abs() < 0.01,
+            "at the boss car's door: {door:?}"
+        );
+        let riders = passengers(&timed);
+        let want: Vec<u32> = PASSENGERS[..3 + escapes / 3].to_vec();
+        let entries: Vec<u32> = riders.iter().map(|p| p.1).collect();
+        assert_eq!(entries, want, "{escapes} escapes");
+        let offsets: Vec<f32> = riders.iter().map(|p| p.2[1] - door[1]).collect();
+        for (got, want) in offsets.iter().zip([-1.5, 1.5, -3.0, 3.0]) {
+            assert!((got - want).abs() < 0.01, "{offsets:?}");
+        }
+        runs.push((
+            stacks_of(&timed, conductor, TRIBUTE),
+            fields.unit_max_health().unwrap(),
+            fields.unit_min_damage().unwrap(),
+            fields.unit_max_damage().unwrap(),
+        ));
+    }
+    let (none, four) = (runs[0], runs[1]);
+    assert_eq!(none.0, 0, "no escapes, no Tribute marker");
+    assert_eq!(four.0, 4, "a Tribute stack per escaped crate");
+    let health = four.1 as f32 / none.1 as f32;
+    assert!((health - 1.16).abs() < 0.002, "{} of {}", four.1, none.1);
+    assert!((four.2 / none.2 - 1.12).abs() < 1e-3, "{four:?} {none:?}");
+    assert!((four.3 / none.3 - 1.12).abs() < 1e-3, "{four:?} {none:?}");
+}
+
+#[test]
+fn frozen_passengers_cannot_be_targeted_or_hurt_and_wake_a_group_at_each_mark_of_his_health() {
+    let mut party = sturdy_by_the_bell(1);
+    let (mut timed, conductor) = to_the_conductor(&mut party, 0);
+    let riders = passengers(&timed);
+    assert_eq!(riders.len(), 3);
+    let door = [DOOR_A, LEAD_STOP, -4.2965];
+    party.go_facing(0, [door[0] + 1.5, door[1], door[2]], door);
+    party.cmd(0, RealmCommand::AttackSwing { guid: riders[0].0 });
+    let made_at = timed.last().unwrap().0;
+    timed.extend(later(ticks(&mut party, 4.0).swap_remove(0), made_at));
+    for &(p, _, _) in &riders {
+        let fields = create_of(&timed, p);
+        assert_ne!(fields.unit_flags() & NOT_SELECTABLE, 0, "untargetable");
+        let max = fields.unit_max_health().unwrap();
+        assert!(wears(&timed, p, FROZEN), "{p:x} wears Frozen in the Mist");
+        assert!(
+            acts(&timed, p).is_empty(),
+            "{p:x} does nothing while frozen"
+        );
+        let hurt = timed.iter().any(|(_, e)| {
+            matches!(e, SessionEvent::ObjectValues { guid, fields }
+                if *guid == p && fields.unit_health().is_some_and(|h| h < max))
+        });
+        assert!(!hurt, "{p:x} takes no damage while frozen");
+    }
+    assert!(
+        first_turn(&timed, conductor).is_some(),
+        "the Conductor turned on the player"
+    );
+
+    // The player stops swinging and steps out of a thawed passenger's aggro radius; the
+    // Conductor follows. Then 75%, 50% and 25%: one passenger each, who attacks a second after.
+    party.cmd(0, RealmCommand::AttackStop);
+    party.go_facing(0, OFF_THE_DOOR, door);
+    ticks(&mut party, 3.0);
+    let mut woken = Vec::new();
+    for pct in [75, 50, 25] {
+        party.realm.set_creature_health_pct(conductor, pct);
+        let after = ticks(&mut party, 1.5).swap_remove(0);
+        let now: Vec<u64> = riders
+            .iter()
+            .map(|r| r.0)
+            .filter(|&p| first_turn(&after, p).is_some())
+            .collect();
+        assert_eq!(now.len(), 1, "one wakes at {pct}%: {now:?}");
+        let t = first_turn(&after, now[0]).unwrap();
+        assert!(t > 0.95 && t < 1.35, "it attacks a second after: {t}");
+        assert!(flags_cleared(&after, now[0]), "targetable again");
+        assert!(!woken.contains(&now[0]));
+        woken.push(now[0]);
+    }
+    assert_eq!(woken, riders.iter().map(|r| r.0).collect::<Vec<_>>());
+}
+
+#[test]
+fn with_4_passengers_the_first_mark_wakes_2() {
+    let mut party = sturdy_by_the_bell(1);
+    let (timed, conductor) = to_the_conductor(&mut party, 4);
+    let riders = passengers(&timed);
+    assert_eq!(riders.len(), 4);
+    party.go(0, OFF_THE_DOOR, std::f32::consts::PI);
+    ticks(&mut party, 4.0);
+    party.realm.set_creature_health_pct(conductor, 75);
+    let after = ticks(&mut party, 1.5).swap_remove(0);
+    let woken: Vec<u64> = riders
+        .iter()
+        .map(|r| r.0)
+        .filter(|&p| first_turn(&after, p).is_some())
+        .collect();
+    assert_eq!(woken, [riders[0].0, riders[1].0], "the first group is 2");
+}
+
+/// Player 0 beside the Conductor at the boss car's door, and player 1 at [`EAST`], farther from
+/// him; ticks until he has turned on player 0. What each client got since, on a clock that reads
+/// 0 at his engage.
+fn engaged_with_the_conductor(party: &mut Party, conductor: u64) -> Log {
+    let door = [DOOR_A, LEAD_STOP, -4.2965];
+    party.go_facing(0, [door[0] + 1.5, door[1], door[2]], door);
+    party.go(1, EAST, 0.0);
+    let timed = ticks(party, 2.0);
+    let turned = turned_on(&timed[0], conductor);
+    let &(engaged, victim) = turned.first().expect("he turns on the closest player");
+    assert_eq!(victim, party.guids[0]);
+    Log {
+        timed: timed.into_iter().map(|t| later(t, -engaged)).collect(),
+        now: 2.0 - engaged,
+    }
+}
+
+#[test]
+fn ten_seconds_after_his_engage_a_lamp_and_the_bell_warn_of_a_runaway_car_that_hits_its_lane_both_ways(
+) {
+    let mut party = sturdy_by_the_bell(2);
+    let (_, conductor) = to_the_conductor(&mut party, 0);
+    let mut log = engaged_with_the_conductor(&mut party, conductor);
+    log.to(&mut party, 11.5);
+    let (bell_a, bell_b) = (
+        sounds_on(&log.timed[0], LAMP_A),
+        sounds_on(&log.timed[0], LAMP_B),
+    );
+    let rang: Vec<(f32, u32)> = bell_a.iter().chain(&bell_b).copied().collect();
+    assert_eq!(rang.len(), 1, "one bell: {rang:?}");
+    assert!(at(rang[0].0, 10.0) && rang[0].1 == BELL_SOUND, "{rang:?}");
+    let (lamp, lane) = if bell_a.is_empty() {
+        (LAMP_B, ON_TRACK_B)
+    } else {
+        (LAMP_A, ON_TRACK_A)
+    };
+    assert!(
+        shown_and_gone(&log.timed[0], lamp)
+            .first()
+            .is_some_and(|&(t, shown)| shown && at(t, 10.0)),
+        "the lamp lights with the bell"
+    );
+
+    // Player 1 steps into that lane before the car comes.
+    let runner = party.guids[1];
+    party.go(1, lane, 0.0);
+    log.to(&mut party, 25.0);
+    let cars = car_creates(&log.timed[0]);
+    assert_eq!(cars.len(), 1, "{cars:?}");
+    let (made, car, at_start, progress) = cars[0];
+    assert!(at(made, 13.0), "3 s after the bell: {made}");
+    assert_eq!(progress, Some(0), "it starts rolling at once");
+    assert!((at_start[0] - lane[0]).abs() < 0.01, "on the lit track");
+    let gone = removed_at(&log.timed[0], car).expect("it backs out and is gone");
+    assert!(gone < made + 10.2, "no stand at the platform: {gone}");
+    let hit = struck_by(&log.timed[1], runner, car);
+    assert_eq!(hit.len(), 2, "once in and once out: {hit:?}");
+    assert!(hit[0] > made && hit[0] < made + 5.0, "rolling in: {hit:?}");
+    assert!(
+        hit[1] > made + 5.0 && hit[1] < made + 10.0,
+        "backing out: {hit:?}"
+    );
+}
+
+/// The tossed crates' circles created in `timed`: `(seconds, guid, centre)`.
+fn circles(timed: &[(f32, SessionEvent)]) -> Vec<(f32, u64, [f32; 3])> {
+    timed
+        .iter()
+        .filter_map(|(t, e)| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                kind: benilla_protocol::EntityKind::DynamicObject,
+                position,
+                fields,
+                ..
+            } if fields.object_entry() == Some(CRATE_TOSS) => Some((*t, *guid, *position)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The Crate Toss hits on `guid` in `timed`: `(seconds, damage)`.
+fn catches(timed: &[(f32, SessionEvent)], guid: u64) -> Vec<(f32, u32)> {
+    timed
+        .iter()
+        .filter_map(|(t, e)| match e {
+            SessionEvent::SpellDamageLog(l) if l.target == guid && l.spell_id == CRATE_TOSS => {
+                Some((*t, l.damage))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn twenty_seconds_after_his_engage_he_tosses_a_crate_at_the_farther_player_who_catches_it_or_it_is_lost(
+) {
+    let mut party = sturdy_by_the_bell(2);
+    let (_, conductor) = to_the_conductor(&mut party, 0);
+    let far = party.guids[1];
+    let mut log = engaged_with_the_conductor(&mut party, conductor);
+    log.to(&mut party, 24.0);
+    let tossed = circles(&log.timed[1]);
+    assert_eq!(tossed.len(), 1, "{tossed:?}");
+    let (shown, circle, centre) = tossed[0];
+    assert!(shown > 19.95 && shown < 20.25, "{shown}");
+    assert!(
+        flat_distance(centre, EAST) < 0.1,
+        "under the farther player"
+    );
+    let k = (0..12)
+        .find(|&k| removed_at(&log.timed[1], crate_guid(k)).is_some())
+        .expect("a crate leaves the pile");
+    assert!(at(removed_at(&log.timed[1], crate_guid(k)).unwrap(), shown));
+    let caught = catches(&log.timed[1], far);
+    assert_eq!(caught.len(), 1, "{caught:?}");
+    assert!((caught[0].0 - shown - 3.0).abs() < 0.25, "{caught:?}");
+    let max = max_health(&party, 1, far);
+    assert_eq!(caught[0].1, max * 15 / 100, "15% of {max}");
+    assert!(catches(&log.timed[0], party.guids[0]).is_empty());
+    let report = party.realm.tram_report_as(party.sessions[0]).unwrap();
+    assert_eq!((report.on_pile, report.lost), (12, 0), "{report:?}");
+    assert!(
+        removed_at(&log.timed[1], circle).is_some(),
+        "the circle goes"
+    );
+    assert!(
+        shown_and_gone(&log.timed[1], crate_guid(k))
+            .last()
+            .is_some_and(|s| s.1),
+        "the caught crate is back on the pile"
+    );
+
+    // The next toss, at 40 s: the farther player walks out of the circle.
+    log.to(&mut party, 40.5);
+    assert_eq!(circles(&log.timed[1]).len(), 2, "a second toss");
+    party.go(1, SAFE, 0.0);
+    log.to(&mut party, 44.0);
+    assert_eq!(catches(&log.timed[1], far).len(), 1, "nobody caught it");
+    let report = party.realm.tram_report_as(party.sessions[0]).unwrap();
+    assert_eq!(
+        (report.on_pile, report.escaped, report.lost),
+        (11, 0, 1),
+        "{report:?}"
+    );
+
+    // He shows on the Boss Bar.
+    let bars: Vec<&Vec<u64>> = party
+        .seen(0)
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::BossFight { guids } => Some(guids),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        bars.iter().any(|g| g.contains(&conductor)),
+        "the Boss Bar lists him: {bars:?}"
+    );
 }

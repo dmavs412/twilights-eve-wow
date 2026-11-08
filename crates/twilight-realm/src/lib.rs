@@ -1695,7 +1695,8 @@ impl Realm {
 
     /// The tram lines' tick (ADR 0033), after the shards ran them and sent their cars and lamps:
     /// every character in a line's Phase hears its warnings on the lamps, each moving car's lane
-    /// hit lands on the character it hit, each fighter awake turns on the closest character, and
+    /// hit lands on the character it hit, the Conductor's tossed crate lands on whoever stands in
+    /// its circle (#591), each fighter awake turns on the closest character, and
     /// a character near a Lampman's lamp is slowed (and one away from every lamp, or outside
     /// the Phase, is not).
     fn tick_trams(&mut self) {
@@ -1728,6 +1729,7 @@ impl Realm {
                 continue;
             };
             let hits = line.hits(&players);
+            let caught = line.toss(&players);
             let sounds = line.take_sounds();
             let t = line.tram();
             let sessions = std::iter::once((&mut self.world, &mut self.events)).chain(
@@ -1744,7 +1746,11 @@ impl Realm {
                 }
                 let me = w.guid;
                 for hit in hits.iter().filter(|h| h.player == me) {
-                    w.tram_hit(hit.car, t.hit_spell, t.hit_pct, t.hit_root_ms, events);
+                    w.tram_hit(hit.from, t.hit_spell, t.hit_pct, t.hit_root_ms, events);
+                }
+                // A caught crate (#591): its share of their health, and no root.
+                for hit in caught.iter().filter(|h| h.player == me) {
+                    w.tram_hit(hit.from, t.toss_spell, t.toss_catch_pct, 0, events);
                 }
                 events.extend(
                     woken

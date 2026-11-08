@@ -5,6 +5,7 @@ mod advance;
 mod call_for_help;
 mod cast;
 pub(crate) use cast::action_buttons;
+pub(crate) use cast::{patch_create, HIGHGUID_DYNAMICOBJECT};
 pub(crate) mod closed;
 mod creature_cast;
 mod hearth;
@@ -973,8 +974,8 @@ impl InWorld {
     /// goes one hop: a mob that joins calls no one. With a `host`, a campmate joins only when it
     /// has line of sight to the pulled mob; an attack passes none and calls through walls.
     fn pull(&mut self, i: usize, host: Option<&dyn Host>, events: &mut Vec<SessionEvent>) {
-        // A creature that never fights is pulled by nothing, and calls no one.
-        if self.mobs[i].template.never_fights {
+        // A creature that never fights, or a frozen one, is pulled by nothing, and calls no one.
+        if self.mobs[i].template.never_fights || self.mobs[i].frozen {
             return;
         }
         let camp = self.mobs[i].camp;
@@ -1291,6 +1292,10 @@ impl InWorld {
         if mob.asleep {
             return;
         }
+        // Frozen: nothing at all, until it thaws.
+        if mob.frozen {
+            return;
+        }
         // Sliding from a knockback: no swing, no cast and no chase until it lands.
         if mob.knocked > 0.0 {
             mob.knocked = (mob.knocked - dt).max(0.0);
@@ -1520,7 +1525,8 @@ impl InWorld {
     }
 
     /// A tram car `car` hit the player in its lane (ADR 0033): `pct` of their maximum health as
-    /// physical damage that armour does not reduce, then rooted `root_ms` under `spell_id`.
+    /// physical damage that armour does not reduce, then rooted `root_ms` under `spell_id`; with
+    /// `root_ms` 0 (a caught crate) not rooted.
     pub(crate) fn tram_hit(
         &mut self,
         car: u64,
@@ -1550,7 +1556,9 @@ impl InWorld {
             },
         ));
         self.player_takes(car, damage, school, events);
-        self.start_root(spell_id, root_ms, events);
+        if root_ms > 0 {
+            self.start_root(spell_id, root_ms, events);
+        }
     }
 
     /// The Lampmen's `lamps` of the tram line in the player's Phase (ADR 0033): a living player
@@ -2070,8 +2078,8 @@ fn at_tier_rate(c: &Char, base: u32) -> u32 {
 /// `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat
 /// flag. Turning from idle, its aggro line comes due (`Realm::creature_speech`).
 pub(crate) fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
-    // A dummy never turns on anyone, nor does a creature that never fights.
-    if mob.template.inert || mob.template.never_fights {
+    // A dummy never turns on anyone, nor does a creature that never fights or a frozen one.
+    if mob.template.inert || mob.template.never_fights || mob.frozen {
         return;
     }
     if mob.state == State::Idle && mob.template.say.is_some() {
@@ -2106,6 +2114,10 @@ pub(crate) fn wound(
     harms: &mut Vec<Harm>,
     events: &mut Vec<SessionEvent>,
 ) {
+    // A frozen creature takes none.
+    if mob.frozen {
+        return;
+    }
     let damage = mob.takes(damage);
     // A dummy's health stops at 1; the clock to its reset starts over with every hit.
     if mob.template.inert {

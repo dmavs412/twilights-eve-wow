@@ -311,7 +311,7 @@ is vanilla's map 34.
 | Station bell | a GameObject display, stock until painted | Stands in as vanilla's Horde Bell (display 3972). Wanted: a dwarven brass platform bell on a post. |
 | Gold chest look | a GameObject display, stock until painted | Stands in as the small wooden chest (259), the same as the Tribute Pile's. Wanted: the same chest, gilded, so a clean sweep reads at a glance. |
 | Porter's gold glow | the porter's marker aura visual | Stands in as Holy Strength's look (visual 4345, the Crusader's gold glow) on the Gilded marker (1900056, #590). Wanted: a faint gold shimmer on the porter and the crate it carries. |
-| Crate toss circle | the toss's ground marker visual | Stands in as a stock ground-patch visual. Wanted: a crate's shadow growing on the floor. |
+| Crate toss circle | the toss's ground marker visual | Stands in as Flare's look (stock spell 1543) on the Crate Toss circle (1900059, #591). Wanted: a crate's shadow growing on the floor. |
 
 Every creature (Haulers, Listeners, Lampmen, porters, the Conductor and the passengers), the
 tram cars, the crates, the lamps and the frozen passengers' ice are stock displays and need no

@@ -521,7 +521,7 @@ impl Skills {
 
 /// `HIGHGUID_DYNAMICOBJECT`, `TYPEMASK_OBJECT | TYPEMASK_DYNAMICOBJECT`, and the
 /// `DYNAMICOBJECT_*` fields (`UpdateFields_1_12_1.h`).
-const HIGHGUID_DYNAMICOBJECT: u64 = 0xF100;
+pub(crate) const HIGHGUID_DYNAMICOBJECT: u64 = 0xF100;
 const TYPE_DYNAMICOBJECT: u32 = 0x01 | 0x40;
 const DYNAMICOBJECT_CASTER: u16 = 6;
 const DYNAMICOBJECT_BYTES: u16 = 8;
@@ -533,7 +533,7 @@ const DYNAMIC_OBJECT_AREA_SPELL: u32 = 1;
 
 /// The DynamicObject that shows a patch on the ground, its fields as vmangos's
 /// `DynamicObject::Create` fills them: the client draws `spell_id`'s area visual at `centre`.
-fn patch_create(
+pub(crate) fn patch_create(
     guid: u64,
     caster: u64,
     spell_id: u32,
@@ -6854,8 +6854,18 @@ impl InWorld {
     }
 
     /// Each living creature the client has been shown wears the markers it was made with
-    /// ([`crate::mobs::Mob::wears`]), each put up once.
+    /// ([`crate::mobs::Mob::wears`]), each put up once, and has each it has shed since
+    /// ([`crate::mobs::Mob::shed`]) taken off.
     pub(super) fn show_worn(&mut self, events: &mut Vec<SessionEvent>) {
+        let shed: Vec<(u64, u32)> = self
+            .mobs
+            .iter()
+            .flat_map(|m| m.shed.iter().map(move |&spell| (m.guid, spell)))
+            .filter(|&(guid, spell)| self.skills.marked(guid, spell))
+            .collect();
+        for (guid, spell_id) in shed {
+            self.skills.hide_marker_on(guid, spell_id, events);
+        }
         let due: Vec<(u64, u32, u32)> = self
             .mobs
             .iter()

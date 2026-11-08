@@ -1330,6 +1330,11 @@ pub(crate) struct Mob {
     /// The marker auras it wears from the moment it is made, `(spell, stacks)`: each session
     /// puts them up once its client is shown the creature (a tram porter's gold glow).
     pub(crate) wears: Vec<(u32, u32)>,
+    /// The markers of [`Self::wears`] it has shed since: each session takes each off.
+    pub(crate) shed: Vec<u32>,
+    /// Frozen in place (the Deeprun Tram's passengers, ADR 0033): it cannot be selected, takes no
+    /// damage, is pulled by nothing and does nothing until thawed.
+    pub(crate) frozen: bool,
 }
 
 /// A creature's stance (#473): the damage it deals and takes, each changed by a percent.
@@ -1497,6 +1502,8 @@ impl Mob {
             stance: None,
             withered: HashMap::new(),
             wears: Vec::new(),
+            shed: Vec::new(),
+            frozen: false,
         })
     }
 
@@ -1608,6 +1615,8 @@ impl Mob {
             stance: None,
             withered: HashMap::new(),
             wears: Vec::new(),
+            shed: Vec::new(),
+            frozen: false,
         }
     }
 
@@ -1666,6 +1675,26 @@ impl Mob {
                 (UNIT_FIELD_MAXDAMAGE, float(self.stats.max_damage)),
             ],
         ))
+    }
+
+    /// Its made maximum health and swing damage times `health_pct` and `damage_pct` percent,
+    /// before any Head Count scales them ([`Self::scale_to`] scales the made stats): it is made at
+    /// full health.
+    pub(crate) fn strengthen(&mut self, health_pct: u32, damage_pct: u32) {
+        let (h, d) = (health_pct as f32 / 100.0, damage_pct as f32 / 100.0);
+        self.stats.max_health = (self.stats.max_health as f32 * h).round() as u32;
+        self.health = self.stats.max_health;
+        self.stats.min_damage *= d;
+        self.stats.max_damage *= d;
+    }
+
+    /// It thaws: selectable again, and the marker `spell_id` it wore while frozen comes off.
+    /// The values the clients that see it are sent.
+    pub(crate) fn thaw(&mut self, spell_id: u32) -> SessionEvent {
+        self.frozen = false;
+        self.wears.retain(|w| w.0 != spell_id);
+        self.shed.push(spell_id);
+        values(self.guid, &[(UNIT_FIELD_FLAGS, 0)])
     }
 
     /// Runs its stance's clock on by `dt`. The stance's spell when it ended: its time ran out,
@@ -1889,6 +1918,9 @@ impl Mob {
         }
         if self.asleep {
             pairs.push((UNIT_NPC_EMOTESTATE, EMOTE_STATE_SLEEP));
+        }
+        if self.frozen {
+            pairs.push((UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE));
         }
         pairs.extend(guid_pairs(OBJECT_FIELD_GUID, self.guid));
         SessionEvent::ObjectCreate {

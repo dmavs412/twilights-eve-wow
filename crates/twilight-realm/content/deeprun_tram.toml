@@ -14,12 +14,12 @@
 #
 # The shell (#587): the station bell. The tram line (#589): the `[tram]` table below, cars on the
 # timetable. What a car carries (#590): fighters, porters and the Tribute Pile, also in `[tram]`.
-# The Conductor comes with the next ticket. Ringing the bell is the lever's pull, Run state; the
-# tram line starts from it.
+# The Conductor (#591): the boss tram's passengers, Tribute and his two moves, also in `[tram]`.
+# Ringing the bell is the lever's pull, Run state; the tram line starts from it.
 #
 # Guids: creatures 973201 up (973101 to 973123 are the quiet wing's), GameObjects 983012 up (the
-# entry is the guid). Templates 97215 up in mobs.toml. The tram's creatures have no guid here:
-# the line numbers each one it makes.
+# entry is the guid). Templates 97215 to 97224 in mobs.toml. The tram's creatures have no guid
+# here: the line numbers each one it makes.
 
 id = 18
 name = "The Deeprun Tram"
@@ -117,6 +117,29 @@ pile = [
   [-19.7, 2491.1, -4.29], [-18.5, 2491.1, -4.29], [-17.3, 2491.1, -4.29],
   [-19.7, 2492.3, -4.29], [-18.5, 2492.3, -4.29], [-17.3, 2492.3, -4.29],
 ]
+# The Conductor (#591, spec "The Conductor"): the boss tram's car brings him and his frozen
+# passengers, who step off at its door like a wave car's creatures, step_off_spacing_yd apart.
+conductor = 97218
+conductor_level = 42
+passengers = [97219, 97220, 97221, 97222, 97223, 97224]   # a seventh takes the first again
+passenger_level = 40
+passengers_base = 3
+passengers_per_crates = 3      # one more per this many escaped crates
+passengers_max = 7
+wake_at_pct = [75, 50, 25]     # of his health; each wakes the next group of passengers
+frozen_spell = 1900057         # the passengers' ice, in creature_spells.toml
+frozen_spell_name = "Frozen in the Mist"
+tribute_spell = 1900058        # his buff, a stack per escaped crate, in creature_spells.toml
+tribute_spell_name = "Tribute"
+tribute_health_pct = 4         # per stack, of his maximum health
+tribute_damage_pct = 3         # per stack, of his swing
+move_every_s = 10.0            # runaway car first, then the toss, alternating
+runaway_warn_s = 3.0           # the bell and the lamp to the runaway car
+toss_spell = 1900059           # the toss's circle and its catch damage, in creature_spells.toml
+toss_spell_name = "Crate Toss"
+toss_radius_yd = 3.0
+toss_warn_s = 3.0              # the circle shows this long before the crate lands
+toss_catch_pct = 15            # of each catcher's maximum health
 
 # Each track: its x, the x of its cars' doors on the centre strip side (#590), and its lamp at the
 # platform's south end. The lamp's guid follows the bell's (983012 up; the entry is the guid).

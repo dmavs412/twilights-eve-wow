@@ -2190,6 +2190,142 @@ speed_run = 1.143
 detection_range = 18.0
 never_fights = true
 
+# The boss tram's (#591, spec "The Conductor"): the Conductor and his frozen passengers, whom the
+# line makes at the boss car's door. The Conductor is the generic boss of docs/balance/rules.md
+# (2.0 health, 1.1 damage) and shows on the Boss Bar (ADR 0013). Durtham Greldon's display (entry
+# 2737), a dwarf.
+[[template]]
+entry = 97218
+name = "The Conductor"
+subname = "The Last Tram"
+creature_type = 7
+boss = true
+rank = 1
+display_id = 9817
+faction_template = 14
+unit_class = "warrior"
+level_min = 42
+level_max = 42
+health_multiplier = 2.0
+damage_multiplier = 1.1
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The Stilled Passengers: stock Stormwind and Ironforge citizens, frozen mid-step until the
+# Conductor's health wakes them. One display each: Thomas Miller (3518), Edna Mullby (1286) and
+# Evan Larson (1310), humans; Demnul Farmountain (7298), a dwarf; Prynne (10456) and Binny
+# Springblade (10455), gnomes.
+[[template]]
+entry = 97219
+name = "Stilled Passenger"
+creature_type = 7
+rank = 0
+display_id = 1541
+faction_template = 14
+unit_class = "warrior"
+level_min = 40
+level_max = 40
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 97220
+name = "Stilled Passenger"
+creature_type = 7
+rank = 0
+display_id = 1440
+faction_template = 14
+unit_class = "warrior"
+level_min = 40
+level_max = 40
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 97221
+name = "Stilled Passenger"
+creature_type = 7
+rank = 0
+display_id = 1489
+faction_template = 14
+unit_class = "warrior"
+level_min = 40
+level_max = 40
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 97222
+name = "Stilled Passenger"
+creature_type = 7
+rank = 0
+display_id = 6062
+faction_template = 14
+unit_class = "warrior"
+level_min = 40
+level_max = 40
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 97223
+name = "Stilled Passenger"
+creature_type = 7
+rank = 0
+display_id = 9821
+faction_template = 14
+unit_class = "warrior"
+level_min = 40
+level_max = 40
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 97224
+name = "Stilled Passenger"
+creature_type = 7
+rank = 0
+display_id = 9818
+faction_template = 14
+unit_class = "warrior"
+level_min = 40
+level_max = 40
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
 # The Northshire Rumours' creatures (#289, rumours.toml). None has a spawn row; the realm makes
 # each at run time. The three givers are friendly level 10s. Their displays come from vmangos's
 # creature_template: Hermit Oswin wears Farmer Saldean's (entry 233, display 1943, a human man),

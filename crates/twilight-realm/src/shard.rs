@@ -403,14 +403,17 @@ impl Shard {
             mob.orientation = s.facing;
             mob.home_orientation = s.facing;
             mob.wears = s.wears;
-            line.bring(mob.guid, s.kind);
+            mob.frozen = s.frozen;
+            mob.strengthen(s.health_pct, s.damage_pct);
+            line.bring(mob.guid, s.kind, mob.position);
             self.mobs.push(mob);
         }
         line.run_creatures(&mut self.mobs)
     }
 
-    /// The tram's fighters awake since the last call (ADR 0033), each turned on the closest
-    /// living player of `players`, as an Encounter's wave is: what to tell that player, by guid.
+    /// The tram's fighters, Conductor and thawed passengers awake since the last call (ADR 0033),
+    /// each turned on the closest living player of `players`, as an Encounter's wave is: what to
+    /// tell that player, by guid.
     pub(crate) fn wake_tram(
         &mut self,
         players: &[crate::tram::Standing],
@@ -434,6 +437,9 @@ impl Shard {
             };
             let mut events = Vec::new();
             crate::world::engage(mob, target.guid, &mut events);
+            if mob.state == State::Engaged {
+                line.engaged(guid);
+            }
             told.extend(events.into_iter().map(|e| (target.guid, e)));
         }
         told

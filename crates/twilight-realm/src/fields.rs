@@ -77,6 +77,8 @@ pub(crate) const UNIT_FLAG_IN_COMBAT: u32 = 0x0008_0000;
 pub(crate) const UNIT_FLAG_PVP_ATTACKABLE: u32 = 0x8;
 /// `UNIT_FLAG_FLEEING`: the server drives the unit's movement.
 pub(crate) const UNIT_FLAG_FLEEING: u32 = 0x0080_0000;
+/// `UNIT_FLAG_NOT_SELECTABLE`: the client cannot target it.
+pub(crate) const UNIT_FLAG_NOT_SELECTABLE: u32 = 0x0200_0000;
 
 /// The two dwords of a guid field.
 pub(crate) fn guid_pairs(field: u16, guid: u64) -> [(u16, u32); 2] {

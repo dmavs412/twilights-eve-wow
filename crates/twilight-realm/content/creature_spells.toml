@@ -1006,3 +1006,56 @@ cooldown_ms = 0
 range_max = 0.0
 chance = 0
 effect = { kind = "marker" }
+
+# The Deeprun Tram's Frozen in the Mist (#591), the ice a Stilled Passenger wears until it wakes
+# (`[tram] frozen_spell` in deeprun_tram.toml). Freezing Trap Effect's look (visual 3355): its ice
+# shell and the animation freeze the client already honours. Freezing Trap's icon. A marker, so
+# the cast columns are 0. 1900056 is Gilded's.
+[[spell]]
+key = "frozen_in_the_mist"
+spell_id = 1900057
+name = "Frozen in the Mist"
+icon = 'Interface\Icons\Spell_Frost_ChainsOfIce'
+visual = 3355
+aura_description = "Stopped mid-step by the mist."
+school = "frost"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 0
+effect = { kind = "marker" }
+
+# The Deeprun Tram's Tribute (#591), the Conductor's buff, one stack per crate that escaped
+# (`[tram] tribute_spell` in deeprun_tram.toml). A crate's icon and no look. A marker: the realm
+# makes him stronger by the stacks, so the cast columns are 0. 1900057 is Frozen in the Mist's.
+[[spell]]
+key = "tribute"
+spell_id = 1900058
+name = "Tribute"
+icon = 'Interface\Icons\INV_Crate_01'
+visual = 0
+aura_description = "Each stack: $s1% health and damage from tribute that reached the mist."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 0
+effect = { kind = "marker" }
+
+# The Deeprun Tram's Crate Toss (#591): the circle the Conductor's tossed crate lands in, and the
+# damage a catch deals (`[tram] toss_spell` in deeprun_tram.toml). The circle is a DynamicObject of
+# this spell, drawn with Flare's look (visual 1543), a placeholder in docs/art-assets.md. A crate's
+# icon. A marker, so the cast columns are 0. 1900058 is Tribute's.
+[[spell]]
+key = "crate_toss"
+spell_id = 1900059
+name = "Crate Toss"
+icon = 'Interface\Icons\INV_Crate_02'
+visual = 1543
+aura_description = "Caught a tossed crate."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 0
+effect = { kind = "marker" }
