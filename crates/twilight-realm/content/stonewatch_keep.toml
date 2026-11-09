@@ -7,9 +7,21 @@
 # widened by a yard each way; the comment above it names the group. The portal stands in the
 # doorway the WMO's portal 0 draws between the building and the outside.
 #
-# A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the hall inside
-# the gate so a character can see the Phase, and the open-world creatures that stood inside the
-# boxes are deleted. Guids: creatures 971001 up, one a dungeon.
+# The Blackrock hold the keep with the cult's coin and a black dragonspawn's brood beside them
+# (#647, spec #637): three encounters, about 15 minutes. The gate hall, the right halls and the
+# rear storage, where a Blackrock Quartermaster and a Twilight Paymaster count the Tribute crates;
+# the staging area and the war room, where a Dragonspawn Envoy calls Black Broodlings from the
+# brood cage every 20 s of his fight until its lever is pulled; and the top storey, where
+# Gath'Ilzogg and Singe fight as one camp and the survivor enrages when the other dies.
+#
+# The floors, from `tools/twilights-eve/wmo_floor.py`: the gate hall at z 139.22 (group 13); the
+# right halls (groups 7 and 10), the rear storage (group 8) and the staging area (group 15) at
+# 140.68; the war room (group 2), a ramp that falls about 0.77 yd a yard from 156.8 at its north
+# end to 150.1 at its south end; left_upper03 (group 3) at 149.50; the top storey (group 0) at
+# 158.07. Every row is interior, `grounded = false` with that floor's Z.
+#
+# Guids: creatures 974301 to 974317, GameObjects 983061 to 983065 (the entry is the guid).
+# Templates 97280 to 97288 here, spells in creature_spells.toml's Stonewatch Keep section.
 
 id = 9
 name = "Stonewatch Keep"
@@ -113,10 +125,411 @@ z = [-4.0, 7.0]
 position = [-9386.3, -3046.8, 139.16]
 orientation = 4.8
 
-# The Phase Tester: friendly, no quests.
+# ── Templates ────────────────────────────────────────────────────────────────────────────────────
+# Displays and factions are vanilla's (vmangos creature_template). All numbers are placeholders.
+
+# The keep's watch, in the Blackrock Sentry's kit.
+[[template]]
+entry = 97280
+name = "Blackrock Sentry"
+creature_type = 7
+display_id = 6029
+faction_template = 40
+unit_class = "warrior"
+level_min = 45
+level_max = 45
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+say = { aggro = ["Intruders in the keep!"], aggro_chance = 30 }
+
+# The Blackrock Shadowcaster's robes.
+[[template]]
+entry = 97281
+name = "Blackrock Shadowcaster"
+creature_type = 7
+display_id = 6039
+faction_template = 40
+unit_class = "mage"
+level_min = 45
+level_max = 45
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+spells = ["shadow_bolt_creature"]
+say = { aggro = ["The keep is ours now."], aggro_chance = 30 }
+
+# The pairs in the right halls, in the Blackrock Gladiator's kit.
+[[template]]
+entry = 97282
+name = "Blackrock Gladiator"
+creature_type = 7
+rank = 1
+display_id = 6042
+faction_template = 40
+unit_class = "warrior"
+level_min = 46
+level_max = 46
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+say = { aggro = ["Blood for the warlord!"], aggro_chance = 30 }
+
+# The rear storage's keeper, in the Blackrock Outrunner's kit.
+[[template]]
+entry = 97283
+name = "Blackrock Quartermaster"
+creature_type = 7
+rank = 1
+display_id = 6034
+faction_template = 40
+unit_class = "warrior"
+level_min = 46
+level_max = 46
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["shield_wall_rook"]
+say = { aggro = ["Every crate is counted. So are you."], aggro_chance = 100 }
+
+# The cult's coin beside him, in the Twilight Acolyte's robes: he mends himself.
+[[template]]
+entry = 97284
+name = "Twilight Paymaster"
+creature_type = 7
+rank = 1
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 46
+level_max = 46
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+spells = ["dark_mending_paymaster", "shadow_bolt_creature"]
+say = { aggro = ["The coin is for them, not for you."], aggro_chance = 100 }
+
+# The war room's encounter, in the Black Dragonspawn's scales. His timed call is on his creature
+# row.
+[[template]]
+entry = 97285
+name = "Dragonspawn Envoy"
+creature_type = 2
+rank = 1
+display_id = 143
+faction_template = 103
+unit_class = "warrior"
+level_min = 47
+level_max = 47
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["flame_breath_dragonkin", "terrify_creature", "sunder_kobold"]
+say = { aggro = ["Small things. You will burn with the rest."], aggro_chance = 100 }
+
+# The brood, vanilla's Black Broodling.
+[[template]]
+entry = 97286
+name = "Black Broodling"
+creature_type = 2
+display_id = 397
+faction_template = 103
+unit_class = "warrior"
+level_min = 45
+level_max = 46
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The keep's last two bosses, both on the Boss Bar, hostile from the Run's start. Each enrages
+# when the other dies (`on_partner_death` on their creature rows).
+[[template]]
+entry = 97287
+name = "Gath'Ilzogg"
+creature_type = 7
+rank = 1
+boss = true
+display_id = 6050
+faction_template = 40
+unit_class = "warrior"
+level_min = 48
+level_max = 48
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["shield_wall_rook", "cleave_gathilzogg", "rushing_charge"]
+say = { aggro = ["Ask my ally what it thinks of you."], aggro_chance = 100 }
+
+[[template]]
+entry = 97288
+name = "Singe"
+creature_type = 2
+rank = 1
+boss = true
+display_id = 497
+faction_template = 103
+unit_class = "warrior"
+level_min = 48
+level_max = 48
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["flame_breath_dragonkin", "wing_buffet_singe", "terrify_creature"]
+
+# ── Encounter 1: the gate hall, the right halls and the stores ───────────────────────────────────
+# Two Sentries and a Shadowcaster in the gate hall, facing the gate.
 [[creature]]
-guid = 971002
-entry = 97100
+guid = 974301
+entry = 97280
 level = 45
-position = [-9385.2, -3059.2, 139.22]
-orientation = 4.8
+position = [-9384.0, -3057.0, 139.22]
+grounded = false
+orientation = 1.68
+camp = 1
+
+[[creature]]
+guid = 974302
+entry = 97280
+level = 45
+position = [-9386.5, -3057.0, 139.22]
+grounded = false
+orientation = 1.68
+camp = 1
+
+[[creature]]
+guid = 974303
+entry = 97281
+level = 45
+position = [-9385.0, -3060.0, 139.22]
+grounded = false
+orientation = 1.68
+camp = 1
+
+# A pair of Gladiators in the entry hall (group 7), facing the gate hall.
+[[creature]]
+guid = 974304
+entry = 97282
+level = 46
+position = [-9398.0, -3061.0, 140.68]
+grounded = false
+orientation = 0.21
+camp = 2
+
+[[creature]]
+guid = 974305
+entry = 97282
+level = 46
+position = [-9400.0, -3061.0, 140.68]
+grounded = false
+orientation = 0.21
+camp = 2
+
+# A pair in righthall09 (group 10), facing the entry hall.
+[[creature]]
+guid = 974306
+entry = 97282
+level = 46
+position = [-9405.0, -3071.0, 140.68]
+grounded = false
+orientation = 0.96
+camp = 3
+
+[[creature]]
+guid = 974307
+entry = 97282
+level = 46
+position = [-9407.0, -3073.0, 140.68]
+grounded = false
+orientation = 0.96
+camp = 3
+
+# The Quartermaster and the Paymaster in the rear storage, among the Tribute crates.
+[[creature]]
+guid = 974308
+entry = 97283
+level = 46
+position = [-9407.0, -3059.0, 140.68]
+grounded = false
+orientation = 5.96
+camp = 4
+rolls = [{ chance = 50, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
+
+[[creature]]
+guid = 974309
+entry = 97284
+level = 46
+position = [-9408.5, -3061.0, 140.68]
+grounded = false
+orientation = 5.96
+camp = 4
+
+# The Tribute: one crate under the cult's mark (vanilla's DarkIronCrate01, display 1868) and two
+# plain ones (DarkIronCrate02, 1869, and another 1868).
+[[gameobject]]
+guid = 983063
+display = 1868
+position = [-9410.0, -3056.0, 140.68]
+grounded = false
+orientation = 0.0
+sides = "inside"
+
+[[gameobject]]
+guid = 983064
+display = 1869
+position = [-9411.0, -3062.0, 140.68]
+grounded = false
+orientation = 1.2
+sides = "inside"
+
+[[gameobject]]
+guid = 983065
+display = 1868
+position = [-9405.0, -3055.0, 140.68]
+grounded = false
+orientation = 2.4
+sides = "inside"
+
+# ── Encounter 2: the staging area and the war room ───────────────────────────────────────────────
+# A Sentry, a Shadowcaster and a Sentry in the staging area, facing the gate hall.
+[[creature]]
+guid = 974310
+entry = 97280
+level = 45
+position = [-9367.0, -3068.0, 140.68]
+grounded = false
+orientation = 2.61
+camp = 5
+
+[[creature]]
+guid = 974311
+entry = 97281
+level = 45
+position = [-9368.0, -3070.5, 140.68]
+grounded = false
+orientation = 2.61
+camp = 5
+
+[[creature]]
+guid = 974312
+entry = 97280
+level = 45
+position = [-9369.5, -3068.0, 140.68]
+grounded = false
+orientation = 2.61
+camp = 5
+
+# The Dragonspawn Envoy on the war room's ramp, facing down it toward the brood cage, and two
+# Broodlings beside him. Every 20 s of his fight two more come out of the cage, until its lever is
+# pulled.
+[[creature]]
+guid = 974313
+entry = 97285
+level = 47
+position = [-9366.0, -3062.0, 152.55]
+grounded = false
+orientation = 4.71
+camp = 6
+every = [{ every_s = 20, entry = 97286, level = 45, count = 2, position = [-9368.0, -3070.0, 149.50], until_used = 983061 }]
+rolls = [{ chance = 50, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
+
+[[creature]]
+guid = 974314
+entry = 97286
+level = 45
+position = [-9364.0, -3062.0, 152.42]
+grounded = false
+orientation = 4.71
+camp = 6
+
+[[creature]]
+guid = 974315
+entry = 97286
+level = 46
+position = [-9368.0, -3062.0, 152.69]
+grounded = false
+orientation = 4.71
+camp = 6
+
+# The brood cage's lever (vanilla's G_LeverMetal, display 295) on the ramp's east side. It pulls
+# from the Run's start; the Envoy does not hold it.
+[[gameobject]]
+guid = 983061
+display = 295
+position = [-9364.0, -3060.0, 153.97]
+grounded = false
+orientation = 4.71
+sides = "inside"
+use = "lever"
+lever = { used_text = "The cage slams shut on the brood." }
+
+# The brood cage (G_Cage, display 676) in left_upper03, at the ramp's foot: the Envoy's call
+# comes from here.
+[[gameobject]]
+guid = 983062
+display = 676
+position = [-9368.0, -3070.0, 149.50]
+grounded = false
+orientation = 1.57
+sides = "inside"
+
+# ── Encounter 3: the top storey ──────────────────────────────────────────────────────────────────
+# Gath'Ilzogg at vanilla's spot and Singe beside him, one camp, facing the stair. When one dies,
+# the other enrages. The arc's ticket 29 adds page three (980386) to Gath'Ilzogg's `drop`, and
+# ticket 11 adds Singe's Scale to Singe's.
+[[creature]]
+guid = 974316
+entry = 97287
+level = 48
+position = [-9383.0, -3082.0, 158.07]
+grounded = false
+orientation = 1.4
+camp = 7
+on_partner_death = { guid = 974317, spell = "enraged_partner" }
+rolls = [{ chance = 100, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
+
+[[creature]]
+guid = 974317
+entry = 97288
+level = 48
+position = [-9378.0, -3076.0, 158.07]
+grounded = false
+orientation = 1.4
+camp = 7
+on_partner_death = { guid = 974316, spell = "enraged_partner" }
+rolls = [{ chance = 100, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]

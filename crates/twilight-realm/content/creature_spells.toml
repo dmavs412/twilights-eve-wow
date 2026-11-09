@@ -1277,6 +1277,70 @@ chance = 100
 target = "random"
 effect = { kind = "ground_patch", radius = 5.0, duration_ms = 10000, tick_ms = 1000, tick = { base = 13 } }
 
+# Singe's Wing Buffet (#647). Shadow Nova's look (visual 686). Placeholders: 180 physical damage
+# to every character within 10 yd of her after a 1 s cast, every 20 s.
+[[spell]]
+key = "wing_buffet_singe"
+spell_id = 1900091
+name = "Wing Buffet"
+icon = 'Interface\Icons\Spell_Nature_Cyclone'
+visual = 686
+school = "physical"
+cast_time_ms = 1000
+cooldown_ms = 20000
+range_max = 30.0
+chance = 100
+effect = { kind = "nova", damage = 180, radius = 10.0 }
+
+# Gath'Ilzogg's Warlord's Cleave (#647), Mortal Blow in kind. Looks like vanilla Heroic Strike
+# rank 1 (78). Placeholders: one blow of 200% of his average swing, instant, every 10 s.
+[[spell]]
+key = "cleave_gathilzogg"
+spell_id = 1900092
+name = "Warlord's Cleave"
+icon = 'Interface\Icons\Ability_Warrior_Cleave'
+visual = 78
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 10000
+range_max = 5.0
+chance = 100
+effect = { kind = "hit", pct_of_swing = 200 }
+
+# The enrage of Gath'Ilzogg or Singe once the other is dead (#647): forced up by on_partner_death,
+# never cast. Shield Wall's look (871). Half again as much damage dealt, for the rest of the fight.
+[[spell]]
+key = "enraged_partner"
+spell_id = 1900093
+name = "Enraged"
+icon = 'Interface\Icons\Spell_Shadow_UnholyFrenzy'
+visual = 871
+aura_description = "Damage dealt increased by 50%."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 0
+warning = "A roar of rage shakes the roof!"
+effect = { kind = "stance", damage_dealt_pct = 50, damage_taken_pct = 0, duration_ms = 0 }
+
+# The Twilight Paymaster's Dark Mending (#647), the Abbot's heal in kind (visual 2050); a Kick
+# stops it (ADR 0020). Placeholders: 20% of his max health after a 3 s cast, every 15 s, once he
+# is under 70% health.
+[[spell]]
+key = "dark_mending_paymaster"
+spell_id = 1900094
+name = "Dark Mending"
+icon = 'Interface\Icons\Spell_Shadow_ChillTouch'
+visual = 2050
+school = "shadow"
+cast_time_ms = 3000
+cooldown_ms = 15000
+range_max = 0.0
+chance = 100
+below_health_pct = 70
+effect = { kind = "heal", pct_max_health = 20 }
+
 # ── Test rows: spell ids 1900100 up ──────────────────────────────────────────────────────────────
 # Rows only the realm's tests use, on the Ward Test (content/ward_test.toml).
 

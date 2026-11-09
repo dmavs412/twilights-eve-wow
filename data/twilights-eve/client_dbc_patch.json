@@ -8872,6 +8872,110 @@
    }
   },
   {
+   "spell_id": 1900091,
+   "creature": "wing_buffet_singe",
+   "fields": {
+    "name": "Wing Buffet",
+    "icon": "Interface\\Icons\\Spell_Nature_Cyclone",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 64,
+    "speed": 20.0,
+    "range_index": 4,
+    "cast_time_index": 4
+   }
+  },
+  {
+   "spell_id": 1900092,
+   "creature": "cleave_gathilzogg",
+   "fields": {
+    "name": "Warlord's Cleave",
+    "icon": "Interface\\Icons\\Ability_Warrior_Cleave",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1900093,
+   "creature": "enraged_partner",
+   "fields": {
+    "name": "Enraged",
+    "icon": "Interface\\Icons\\Spell_Shadow_UnholyFrenzy",
+    "school": 0,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 50,
+      "per_level": 0,
+      "aura": 79,
+      "misc_value": 127
+     },
+     {
+      "effect": 6,
+      "aura": 87,
+      "base": 0,
+      "per_level": 0,
+      "misc_value": 127
+     }
+    ],
+    "aura_description": "Damage dealt increased by 50%.",
+    "visual": 345,
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 21
+   }
+  },
+  {
+   "spell_id": 1900094,
+   "creature": "dark_mending_paymaster",
+   "fields": {
+    "name": "Dark Mending",
+    "icon": "Interface\\Icons\\Spell_Shadow_ChillTouch",
+    "school": 5,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 10,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 285,
+    "range_index": 1,
+    "cast_time_index": 14
+   }
+  },
+  {
    "spell_id": 1900100,
    "creature": "test_enrage",
    "fields": {
