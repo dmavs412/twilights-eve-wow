@@ -136,6 +136,9 @@ item = [
   # shows INV_Letter_08, the reply INV_Letter_10, stock icons no other item does.
   { entry = 980154, name = "Lord Ebonlocke's Letter", quality = 1, item_level = 37, class = 12, display_id = 3023, max_count = 1, description = "Sealed with the Ebonlocke seal. 'For the military. By hand.'" },
   { entry = 980155, name = "General Jonathan's Reply", quality = 1, item_level = 37, class = 12, display_id = 3033, max_count = 1, description = "Sealed with the General's own seal, not the Keep's." },
+  # Oslow's bridge seal (#614, quests_stormwind.toml 97410): INV_Misc_Rune_06, a stock icon no
+  # other item shows.
+  { entry = 980156, name = "Wax Seal Impression", quality = 1, item_level = 42, class = 12, display_id = 20984, max_count = 1, description = "Grey-green wax with a house's crest pressed into it. Not the crown's." },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye

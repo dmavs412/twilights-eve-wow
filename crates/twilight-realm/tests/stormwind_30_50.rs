@@ -1,7 +1,8 @@
 //! Stormwind's quests from 30 to 50 (spec #595), walked on the shipped content
 //! (`content/quests_stormwind.toml`). Band 30-35 (#604): Commander Wray's two sets of orders, the
 //! poster beside the Writ Board, and Magistrate Solomon's request to the city gate. Band 35-40
-//! (#609): Darkshire's thirteenth letter to the General and his answer.
+//! (#609): Darkshire's thirteenth letter to the General and his answer. Band 40-45 (#614):
+//! Tharil'zun's orders to the General and on to Marshal Dughan, and Oslow's bridge seal.
 
 mod common;
 
@@ -21,9 +22,14 @@ const BLACKROCK_MENACE: u32 = 98108;
 const DARKSHIRES_THIRTEENTH_LETTER: u32 = 97406;
 const AN_ANSWER_FOR_DARKSHIRE: u32 = 97407;
 const DARKSHIRE_WAITS: u32 = 98601;
+const THE_SAME_DESK: u32 = 97408;
+const EVIDENCE_FOR_GOLDSHIRE: u32 = 97409;
+const THE_BRIDGE_SEAL: u32 = 97410;
+const THARILZUN: u32 = 98304;
+const THE_EVERSTILL_BRIDGE: u32 = 98105;
 
 /// Each quest: `(id, level, giver, giver_object, ender, after)`.
-const BANDS: [(u32, u32, Option<u32>, Option<u32>, u32, Option<u32>); 7] = [
+const BANDS: [(u32, u32, Option<u32>, Option<u32>, u32, Option<u32>); 10] = [
     (97401, 30, Some(WRAY), None, SOLOMON, None),
     (97402, 30, Some(WRAY), None, ELLO, None),
     (97403, 30, None, Some(POSTER_ENTRY), PARKER, None),
@@ -45,10 +51,20 @@ const BANDS: [(u32, u32, Option<u32>, Option<u32>, u32, Option<u32>); 7] = [
         ELLO,
         Some(DARKSHIRES_THIRTEENTH_LETTER),
     ),
+    (97408, 44, Some(MARRIS), None, MARCUS, Some(THARILZUN)),
+    (97409, 44, Some(MARCUS), None, DUGHAN, Some(THE_SAME_DESK)),
+    (
+        97410,
+        42,
+        Some(OSLOW),
+        None,
+        DUGHAN,
+        Some(THE_EVERSTILL_BRIDGE),
+    ),
 ];
 
 /// Each story quest's reward choices.
-const CHOICES: [(u32, &[u32]); 7] = [
+const CHOICES: [(u32, &[u32]); 10] = [
     (97401, &[903204, 903206, 903208]),
     (97402, &[903214, 903216, 903218]),
     (97403, &[903200, 903201, 903202, 903203]),
@@ -56,6 +72,9 @@ const CHOICES: [(u32, &[u32]); 7] = [
     (97405, &[903205, 903207, 903210]),
     (97406, &[903224, 903226, 903228]),
     (97407, &[903234, 903236, 903238]),
+    (97408, &[903244, 903246, 903248]),
+    (97409, &[903254, 903256, 903258]),
+    (97410, &[903240, 903241, 903242, 903243]),
 ];
 
 /// The zones' first quests, which the way in must not gate.
@@ -76,6 +95,13 @@ const ELLO: u32 = 263;
 const ELLO_AT: [f32; 3] = [-10552.2, -1108.79, 31.511];
 const ALTHEA: u32 = 264;
 const ALTHEA_AT: [f32; 3] = [-10559.5, -1152.25, 28.076];
+const MARRIS: u32 = 382;
+const MARRIS_AT: [f32; 3] = [-9284.03, -2298.16, 67.577];
+const OSLOW: u32 = 341;
+const OSLOW_AT: [f32; 3] = [-9279.22, -2268.53, 67.631];
+/// Marshal Dughan in Goldshire, who keeps the evidence.
+const DUGHAN: u32 = 240;
+const DUGHAN_AT: [f32; 3] = [-9465.5, 74.0, 57.0];
 
 /// The poster beside the Writ Board.
 const POSTER_ENTRY: u32 = 980202;
@@ -87,6 +113,8 @@ const WRAYS_LETTER: u32 = 980152;
 const SOLOMONS_REQUEST: u32 = 980153;
 const EBONLOCKES_LETTER: u32 = 980154;
 const JONATHANS_REPLY: u32 = 980155;
+const THARILZUNS_ORDERS: u32 = 980322;
+const WAX_SEAL_IMPRESSION: u32 = 980156;
 
 fn quest_file(text: &str) -> Vec<toml::Value> {
     let file: toml::Table = text.parse().unwrap();
@@ -434,5 +462,82 @@ fn ebonlocke_writes_only_after_darkshire_waits_and_the_general_answers_his_lette
         carries(&party, JONATHANS_REPLY),
         0,
         "Ebonlocke keeps the reply"
+    );
+}
+
+#[test]
+fn tharilzuns_orders_go_to_the_general_only_after_tharilzun_and_on_to_dughan() {
+    let mut early = questing_party("zealot", 44, &[]);
+    let marris = meet(&mut early, MARRIS, MARRIS_AT);
+    let offered = offers(&mut early, marris);
+    assert!(!offered.contains(&THE_SAME_DESK), "{offered:?}");
+
+    let mut party = questing_party("zealot", 44, &[THARILZUN]);
+    let marcus = meet(&mut party, MARCUS, MARCUS_AT);
+    let offered = offers(&mut party, marcus);
+    assert!(!offered.contains(&EVIDENCE_FOR_GOLDSHIRE), "{offered:?}");
+
+    let marris = meet(&mut party, MARRIS, MARRIS_AT);
+    let offered = offers(&mut party, marris);
+    assert!(offered.contains(&THE_SAME_DESK), "{offered:?}");
+    accept(&mut party, marris, THE_SAME_DESK);
+    assert_eq!(
+        carries(&party, THARILZUNS_ORDERS),
+        1,
+        "Marris hands over the orders"
+    );
+
+    let marcus = meet(&mut party, MARCUS, MARCUS_AT);
+    let events = hand_in(&mut party, marcus, THE_SAME_DESK);
+    assert!(completed(&events, THE_SAME_DESK), "{events:?}");
+    assert_eq!(
+        carries(&party, THARILZUNS_ORDERS),
+        0,
+        "the General takes the orders"
+    );
+    let offered = offers(&mut party, marcus);
+    assert!(offered.contains(&EVIDENCE_FOR_GOLDSHIRE), "{offered:?}");
+    accept(&mut party, marcus, EVIDENCE_FOR_GOLDSHIRE);
+    assert_eq!(
+        carries(&party, THARILZUNS_ORDERS),
+        1,
+        "the General hands the orders back"
+    );
+
+    let dughan = meet(&mut party, DUGHAN, DUGHAN_AT);
+    let events = hand_in(&mut party, dughan, EVIDENCE_FOR_GOLDSHIRE);
+    assert!(completed(&events, EVIDENCE_FOR_GOLDSHIRE), "{events:?}");
+    assert_eq!(
+        carries(&party, THARILZUNS_ORDERS),
+        0,
+        "Dughan keeps the orders"
+    );
+}
+
+#[test]
+fn oslow_sends_the_bridge_seal_to_dughan_only_after_the_everstill_bridge() {
+    let mut early = questing_party("zealot", 44, &[]);
+    let oslow = meet(&mut early, OSLOW, OSLOW_AT);
+    let offered = offers(&mut early, oslow);
+    assert!(!offered.contains(&THE_BRIDGE_SEAL), "{offered:?}");
+
+    let mut party = questing_party("zealot", 44, &[THE_EVERSTILL_BRIDGE]);
+    let oslow = meet(&mut party, OSLOW, OSLOW_AT);
+    let offered = offers(&mut party, oslow);
+    assert!(offered.contains(&THE_BRIDGE_SEAL), "{offered:?}");
+    accept(&mut party, oslow, THE_BRIDGE_SEAL);
+    assert_eq!(
+        carries(&party, WAX_SEAL_IMPRESSION),
+        1,
+        "Oslow hands over the wax"
+    );
+
+    let dughan = meet(&mut party, DUGHAN, DUGHAN_AT);
+    let events = hand_in(&mut party, dughan, THE_BRIDGE_SEAL);
+    assert!(completed(&events, THE_BRIDGE_SEAL), "{events:?}");
+    assert_eq!(
+        carries(&party, WAX_SEAL_IMPRESSION),
+        0,
+        "Dughan keeps the seal"
     );
 }

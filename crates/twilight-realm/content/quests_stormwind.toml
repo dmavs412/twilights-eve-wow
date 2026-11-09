@@ -254,7 +254,8 @@ kill = [[97218, 1]]
 # character to both zones. All four are level 30, so only a Tier 2 character is offered them, and
 # none is a prerequisite: each zone's first quests are offered without them. Solomon's request goes
 # the other way, from Lakeshire to General Marcus Jonathan at the city gate (stormwind.toml, vmangos
-# guid 79677), and from 37 Lord Ebonlocke's letter does the same (97406, 97407; #609). The quest
+# guid 79677), and from 37 Lord Ebonlocke's letter does the same (97406, 97407; #609). From 42 the
+# evidence goes on to Marshal Dughan in Goldshire (97408 to 97410; #614). The quest
 # items are in quest_items.toml. `money` is copper. `zone_or_sort` 1519 is
 # Stormwind City's AreaTable id.
 
@@ -389,3 +390,60 @@ choices = [903234, 903236, 903238]
 zone_or_sort = 1519
 gives = [[980155, 1]]
 collect = [{ item = 980155, count = 1 }]
+
+# The evidence for Goldshire (#614, spec #595 decision 2): Tharil'zun's orders (quests_redridge.toml
+# 98304) go to the General and on to Marshal Dughan, and Oslow's bridge seal (98105) goes straight
+# to him. Dughan keeps both; the court chain spec's first quest names 97409 or 97410 in `after`.
+[[quest]]
+id = 97408
+kind = "story"
+giver = 382
+ender = 466
+after = 98304
+level = 44
+title = "The Same Desk"
+objectives = "Take Tharil'zun's orders to General Marcus Jonathan at the gate of Stormwind."
+details = "These orders go to someone who can raise an army. That isn't the magistrate, and it isn't me. General Jonathan, at Stormwind's gate. He turned Solomon down once. Let's see him turn this down."
+progress = "From Lakeshire again?"
+completion = "The cult's mark on a warlord's orders. I believe it. I'd have believed it a year ago. If I take this up the hill it comes back down unread, or not at all. There's a marshal in Goldshire who keeps papers like this where they don't go missing. Take it to him. Not up the hill."
+money = 0
+choices = [903244, 903246, 903248]
+zone_or_sort = 1519
+gives = [[980322, 1]]
+collect = [{ item = 980322, count = 1 }]
+
+[[quest]]
+id = 97409
+kind = "story"
+giver = 466
+ender = 240
+after = 97408
+level = 44
+title = "Evidence for Goldshire"
+objectives = "Carry Tharil'zun's orders to Marshal Dughan in Goldshire."
+details = "Dughan keeps what the Watch finds and the Keep doesn't want to hear about. He's been doing it for a year. Add this to his pile, and tell him the General sent it."
+progress = "More papers?"
+completion = "Orcs, now. The same mark as on the writ from the Stockade. I'll keep it with the others. That pile is getting too heavy for one marshal and one strongbox. Someone in that city is going to have to read the whole of it at once."
+money = 0
+choices = [903254, 903256, 903258]
+zone_or_sort = 1519
+gives = [[980322, 1]]
+collect = [{ item = 980322, count = 1 }]
+
+[[quest]]
+id = 97410
+kind = "story"
+giver = 341
+ender = 240
+after = 98105
+level = 42
+title = "The Bridge Seal"
+objectives = "Carry the wax seal from the bridge stone's note to Marshal Dughan in Goldshire."
+details = "That wax off the note that came with the bridge stone. I kept it, like I said. The magistrate tells me there's a marshal in Goldshire who collects seals that turn up where they shouldn't. Take it to him. If a friend in the city paid for my bridge, I'd like to thank him by name."
+progress = "A seal?"
+completion = "A house's seal, not an office's. A noble house, an old one, with money enough to buy a bridge in Redridge and not sign its name to it. I know most of the seals in Stormwind. Not this one. I'll find it."
+money = 0
+choices = [903240, 903241, 903242, 903243]
+zone_or_sort = 1519
+gives = [[980156, 1]]
+collect = [{ item = 980156, count = 1 }]
