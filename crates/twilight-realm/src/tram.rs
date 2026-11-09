@@ -12,7 +12,8 @@
 //! the pile to a standing car. The Headway check asks whether any creature it brought is alive.
 //!
 //! The Conductor (#591): the boss tram's car brings him, with a Tribute stack per escaped crate,
-//! and his passengers frozen beside him. His health's wake marks thaw them group by group, and
+//! and his passengers frozen beside him. His health's wake marks thaw them group by group,
+//! through the generic `frozen_until` dungeon creature key (#637), and
 //! from his engage he sends a runaway car down a track and tosses a crate from the pile in turn.
 //!
 //! The loot (#592): once he has died, the crates still on the pile become the Tribute Pile chest,
@@ -381,8 +382,9 @@ pub(crate) struct Stepping {
     pub(crate) seq: u32,
     /// The marker auras it wears, `(spell, stacks)`.
     pub(crate) wears: Vec<(u32, u32)>,
-    /// It steps off frozen (a passenger).
-    pub(crate) frozen: bool,
+    /// It steps off frozen (a passenger) until the Conductor's health reaches this percent, with
+    /// this marker spell: the shard makes it the mob's `frozen_until` (#637).
+    pub(crate) frozen_until: Option<(u32, u32)>,
     /// Its made maximum health and swing damage, in percent (the Conductor's Tribute).
     pub(crate) health_pct: u32,
     pub(crate) damage_pct: u32,
@@ -481,10 +483,6 @@ struct Boss {
     /// Where he stands, or where his corpse lies once he is `dead`.
     at: [f32; 3],
     dead: bool,
-    /// His passengers, in the order they stepped off.
-    passengers: Vec<u64>,
-    /// How many of `wake_at_pct`'s marks his health has reached.
-    marks: usize,
     /// His next move on the line's clock, from his engage; none before it.
     next_move_ms: Option<u64>,
     /// The moves he has made: odd ones the runaway car, even ones the toss.
@@ -613,8 +611,13 @@ impl Line {
         self.tram
     }
 
+    /// The Conductor's guid, once he has stepped off.
+    pub(crate) fn conductor(&self) -> Option<u64> {
+        self.boss.as_ref().map(|b| b.conductor)
+    }
+
     /// Counts the creature `guid`, of `kind`, as one a tram brought, stepping off now. The
-    /// Conductor starts his fight, and each passenger joins it frozen.
+    /// Conductor starts his fight; a passenger steps off frozen and stirs once thawed.
     pub fn bring(&mut self, guid: u64, kind: Kind, at: [f32; 3]) {
         match kind {
             Kind::Porter => self.porters_made += 1,
@@ -623,8 +626,6 @@ impl Line {
                     conductor: guid,
                     at,
                     dead: false,
-                    passengers: Vec::new(),
-                    marks: 0,
                     next_move_ms: None,
                     moves: 0,
                     runaway: None,
@@ -632,12 +633,7 @@ impl Line {
                     toss: None,
                 })
             }
-            Kind::Passenger => {
-                if let Some(boss) = &mut self.boss {
-                    boss.passengers.push(guid);
-                }
-            }
-            Kind::Fighter | Kind::Lampman => {}
+            Kind::Passenger | Kind::Fighter | Kind::Lampman => {}
         }
         self.brought.push(Brought {
             guid,
@@ -787,7 +783,7 @@ impl Line {
                     kind,
                     seq: self.seq,
                     wears,
-                    frozen: false,
+                    frozen_until: None,
                     health_pct: 100,
                     damage_pct: 100,
                 });
@@ -822,13 +818,18 @@ impl Line {
             kind: Kind::Conductor,
             seq: self.seq,
             wears: tribute,
-            frozen: false,
+            frozen_until: None,
             health_pct: 100 + escaped * tram.tribute_health_pct,
             damage_pct: 100 + escaped * tram.tribute_damage_pct,
         }];
+        let groups = tram.wake_at_pct.len();
         for j in 0..n as usize {
             let side = if j % 2 == 0 { -1.0 } else { 1.0 };
             let k = side * (j / 2 + 1) as f32;
+            // The mark of its wake group; 0, never reached while he lives, with no mark for it.
+            let pct = (0..groups)
+                .find(|&g| wake_group(n as usize, groups, g).contains(&j))
+                .map_or(0, |g| tram.wake_at_pct[g]);
             self.seq += 1;
             out.push(Stepping {
                 entry: tram.passengers[j % tram.passengers.len()],
@@ -838,7 +839,7 @@ impl Line {
                 kind: Kind::Passenger,
                 seq: self.seq,
                 wears: vec![(tram.frozen_spell, 0)],
-                frozen: true,
+                frozen_until: Some((pct, tram.frozen_spell)),
                 health_pct: 100,
                 damage_pct: 100,
             });
@@ -866,7 +867,8 @@ impl Line {
         self.lamps.iter().map(|l| l.position).collect()
     }
 
-    /// The tram creatures' own turn, among the shard's `mobs`: a death puts a carried crate back
+    /// The tram creatures' own turn, among the shard's `mobs`: a passenger found thawed starts to
+    /// stir, a death puts a carried crate back
     /// and puts out a Lampman's lamps, each awake Lampman sets his lamp when it is due, and each
     /// awake porter walks on; one that boarded a standing car leaves `mobs`. The moves the
     /// clients that see the walkers are sent.
@@ -889,6 +891,11 @@ impl Line {
                 self.died(i);
                 continue;
             }
+            // A passenger thawed by its `frozen_until` starts to stir.
+            if b.stir_ms.is_none() && !mob.frozen {
+                self.brought[i].stir_ms = Some(now);
+            }
+            let b = &self.brought[i];
             if now < b.made_ms + wake {
                 continue;
             }
@@ -915,16 +922,16 @@ impl Line {
             }
         }
         mobs.retain(|m| !boarded.contains(&m.guid));
-        self.run_boss(mobs, &mut events);
+        self.run_boss(mobs);
         events
     }
 
-    /// The Conductor's turn (#591), once the boss car has stopped. While he lives: each wake
-    /// mark his health has reached thaws its group of passengers, and from his engage a move
-    /// comes due every `move_every_s`, the runaway car's warning and the toss in turn. A runaway
+    /// The Conductor's turn (#591), once the boss car has stopped. While he lives, from his
+    /// engage a move comes due every `move_every_s`, the runaway car's warning and the toss in
+    /// turn; his passengers thaw by their own `frozen_until` (#637). A runaway
     /// car warned of rolls `runaway_warn_s` later. Once he dies he makes no more moves, and a
     /// crate in the air goes back on the pile.
-    fn run_boss(&mut self, mobs: &mut [Mob], events: &mut Vec<SessionEvent>) {
+    fn run_boss(&mut self, mobs: &[Mob]) {
         let tram = self.tram;
         let now = self.now_ms;
         let Some(boss) = &mut self.boss else {
@@ -934,24 +941,12 @@ impl Line {
         if rolls.is_some() {
             boss.runaway = None;
         }
-        let mut thaw = Vec::new();
         let mut warn = false;
         let mut caught = None;
         if !boss.dead {
             match mobs.iter().find(|m| m.guid == boss.conductor) {
                 Some(c) if c.alive() => {
                     boss.at = c.position;
-                    let groups = tram.wake_at_pct.len();
-                    while let Some(&pct) = tram.wake_at_pct.get(boss.marks) {
-                        let reached = u64::from(c.health) * 100
-                            <= u64::from(c.stats.max_health) * u64::from(pct);
-                        if !reached {
-                            break;
-                        }
-                        let group = wake_group(boss.passengers.len(), groups, boss.marks);
-                        thaw.extend_from_slice(&boss.passengers[group]);
-                        boss.marks += 1;
-                    }
                     if c.state == State::Engaged && boss.next_move_ms.is_none() {
                         boss.next_move_ms = Some(now + ms(tram.move_every_s));
                     }
@@ -977,18 +972,6 @@ impl Line {
         }
         if let Some(t) = caught {
             self.pile[t.k] = Crate::OnPile;
-        }
-        for guid in thaw {
-            let Some(m) = mobs
-                .iter_mut()
-                .find(|m| m.guid == guid && m.frozen && m.alive())
-            else {
-                continue;
-            };
-            events.push(m.thaw(tram.frozen_spell));
-            if let Some(b) = self.brought.iter_mut().find(|b| b.guid == guid) {
-                b.stir_ms = Some(now);
-            }
         }
         if warn {
             let track = self.rng.below(tram.track.len() as u32) as usize;

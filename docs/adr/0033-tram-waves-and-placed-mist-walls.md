@@ -18,6 +18,8 @@ inside a building. Grilled 2026-11-06.
   Encounter's waves are (`src/encounters.rs`).
 - **Tram code is for the tram only.** Davis chose this over a general wave-dungeon kind. A second
   wave dungeon is the time to generalise it. Its numbers stay in the dungeon's content file.
+  Amended (#637): the frozen passengers' thaw is now the generic `frozen_until` dungeon creature
+  key; the rest stays tram code.
 - **A mist wall can be placed.** `data/twilights-eve/mist_walls.json` lists vertical mist walls
   on any map, each a line from one point to another and a height band. The client draws each one
   with the Closed Zones' shader and makes it solid, and the realm refuses any step that crosses

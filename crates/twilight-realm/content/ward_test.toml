@@ -11,6 +11,10 @@
 # lever's guid), or `after_milestone` or `until_milestone` (a row of content/milestones.toml, ADR
 # 0034). An `after_milestone` row comes into a Run under way on the tick its Milestone is reached,
 # and an `until_milestone` row leaves it then.
+#
+# A creature with `frozen_until = { guid = <boss>, pct = <1 to 99> }` (#637) starts each Run frozen
+# in the grey, wearing `spell` (a Creature Spell key, "frozen_in_the_mist" when left out), and
+# thaws the first time the creature of `guid`, alive, is at or below `pct`% of its health.
 
 id = 90
 name = "the Ward Test"
@@ -117,6 +121,31 @@ level = 1
 position = [-9800.0, 540.0, 47.2]
 orientation = 3.14
 until_used = 810005
+
+# A level 10 Brother in the building's south-west corner, the boss of two Brothers frozen beside
+# him: one thaws at 75% of his health, the other at 40%.
+[[creature]]
+guid = 800010
+entry = 96003
+level = 10
+position = [-9815.0, 540.0, 47.2]
+orientation = 0.0
+
+[[creature]]
+guid = 800011
+entry = 96003
+level = 5
+position = [-9815.0, 537.0, 47.2]
+orientation = 0.0
+frozen_until = { guid = 800010, pct = 75 }
+
+[[creature]]
+guid = 800012
+entry = 96003
+level = 5
+position = [-9812.0, 540.0, 47.2]
+orientation = 0.0
+frozen_until = { guid = 800010, pct = 40 }
 
 # The ward stone at the water stop.
 [[gameobject]]

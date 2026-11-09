@@ -128,6 +128,12 @@ pub(crate) struct StopObject<'a> {
 }
 
 /// A creature of a Phased Dungeon, there from the Run's start at full health.
+///
+/// `frozen_until = { guid = 974250, pct = 75 }` keeps it frozen in the grey (#637): it starts
+/// each Run frozen, wearing the marker `spell` (a Creature Spell key, `"frozen_in_the_mist"` when
+/// left out), and thaws the first time the creature of `guid`, alive, has health at or below
+/// `pct`% of its maximum, then turns on the closest living player. If that creature dies first,
+/// it stays frozen for the rest of the Run.
 #[derive(Deserialize)]
 pub(crate) struct Creature {
     pub(crate) guid: u32,
@@ -165,6 +171,25 @@ pub(crate) struct Creature {
     /// How far from its point it strolls while awake and idle, in yards.
     #[serde(default)]
     pub(crate) wander: f32,
+    /// It starts each Run frozen until another creature's health mark.
+    #[serde(default)]
+    pub(crate) frozen_until: Option<FrozenUntil>,
+}
+
+/// A creature's `frozen_until`: the creature of `guid` (the boss), alive at or below `pct`% of
+/// its maximum health, thaws it.
+#[derive(Deserialize)]
+pub(crate) struct FrozenUntil {
+    pub(crate) guid: u32,
+    pub(crate) pct: u32,
+    /// The marker aura it wears while frozen, by Creature Spell key.
+    #[serde(default = "frozen_marker")]
+    pub(crate) spell: String,
+}
+
+/// The ice a frozen creature wears unless its row names another: Freezing Trap's look.
+fn frozen_marker() -> String {
+    "frozen_in_the_mist".into()
 }
 
 /// A creature's call for help: the first time its health is at or below `pct`% of its maximum
@@ -532,6 +557,34 @@ impl Dungeon {
                     c.guid
                 );
             }
+        }
+    }
+
+    /// Refuses a `frozen_until` whose `guid` names no creature of the dungeon, whose `pct` is
+    /// outside 1 to 99 or whose `spell` is no Creature Spell, and one on a creature that starts
+    /// asleep.
+    fn check_frozen(&self) {
+        for c in &self.creature {
+            let Some(f) = &c.frozen_until else {
+                continue;
+            };
+            let row = format!("{}: creature {}'s frozen_until", self.name, c.guid);
+            assert!(
+                self.creature.iter().any(|b| b.guid == f.guid),
+                "{row} waits on {}, no creature of it",
+                f.guid
+            );
+            assert!(
+                (1..=99).contains(&f.pct),
+                "{row} pct {} is not 1 to 99",
+                f.pct
+            );
+            assert!(
+                crate::creature_spells::get(&f.spell).is_some(),
+                "{row} wears {}, no Creature Spell",
+                f.spell
+            );
+            assert!(!c.asleep, "{row} on a creature that starts asleep");
         }
     }
 
@@ -1196,6 +1249,7 @@ pub(crate) fn content() -> &'static [Dungeon] {
                     }
                 }
                 d.check_levers();
+                d.check_frozen();
                 if let Some(tram) = &d.tram {
                     tram.check(&d.name);
                 }
@@ -1595,6 +1649,65 @@ until_used = 3
 "#,
         )
         .check_levers();
+    }
+
+    /// The Lever Check with creature 4 frozen until `frozen_until`, starting asleep or not.
+    fn with_frozen(frozen_until: &str, asleep: bool) -> Dungeon {
+        with_lever(&format!(
+            r#"
+[[creature]]
+guid = 4
+entry = 96003
+level = 1
+position = [0.0, 0.0, 0.0]
+orientation = 0.0
+asleep = {asleep}
+frozen_until = {frozen_until}
+"#
+        ))
+    }
+
+    #[test]
+    fn a_frozen_until_on_a_creature_of_the_dungeon_passes_the_check() {
+        let d = with_frozen("{ guid = 1, pct = 75 }", false);
+        d.check_frozen();
+        let f = d.creature[1].frozen_until.as_ref().unwrap();
+        assert_eq!(f.spell, "frozen_in_the_mist", "the marker's default");
+        with_frozen(
+            r#"{ guid = 1, pct = 1, spell = "frozen_in_the_mist" }"#,
+            false,
+        )
+        .check_frozen();
+    }
+
+    #[test]
+    #[should_panic(expected = "waits on 7, no creature")]
+    fn a_frozen_until_that_names_no_creature_of_the_dungeon_is_refused() {
+        with_frozen("{ guid = 7, pct = 75 }", false).check_frozen();
+    }
+
+    #[test]
+    #[should_panic(expected = "pct 100 is not 1 to 99")]
+    fn a_frozen_until_past_99_percent_is_refused() {
+        with_frozen("{ guid = 1, pct = 100 }", false).check_frozen();
+    }
+
+    #[test]
+    #[should_panic(expected = "pct 0 is not 1 to 99")]
+    fn a_frozen_until_at_0_percent_is_refused() {
+        with_frozen("{ guid = 1, pct = 0 }", false).check_frozen();
+    }
+
+    #[test]
+    #[should_panic(expected = "no Creature Spell")]
+    fn a_frozen_until_with_an_unknown_marker_is_refused() {
+        with_frozen(r#"{ guid = 1, pct = 50, spell = "no_such_ice" }"#, false).check_frozen();
+    }
+
+    #[test]
+    #[should_panic(expected = "starts asleep")]
+    fn a_frozen_creature_that_starts_asleep_is_refused() {
+        with_frozen("{ guid = 1, pct = 50 }", true).check_frozen();
     }
 
     #[test]

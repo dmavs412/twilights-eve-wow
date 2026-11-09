@@ -120,6 +120,8 @@ pile = [
 ]
 # The Conductor (#591, spec "The Conductor"): the boss tram's car brings him and his frozen
 # passengers, who step off at its door like a wave car's creatures, step_off_spacing_yd apart.
+# Each passenger's thaw runs through the generic frozen_until dungeon creature key (#637): its
+# group's wake_at_pct mark of the Conductor's health, wearing frozen_spell.
 conductor = 97218
 conductor_level = 42
 passengers = [97219, 97220, 97221, 97222, 97223, 97224]   # a seventh takes the first again

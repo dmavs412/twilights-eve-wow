@@ -1495,8 +1495,11 @@ impl Realm {
             let alive: Vec<u64> = players.iter().filter(|p| p.alive).map(|p| p.guid).collect();
             let (head_count, scaled) = shard.scale_to_head_count(&alive);
             let tuned = head_count.and_then(|n| tuned_line(*map, n));
+            // Before the update, so a tram line sees its passengers thawed this tick.
+            let (thawed, woken) = shard.thaw_frozen(players);
             let mut made = shard.update(dt, &positions, host, wall_ms, carts_on, &reached);
             made.extend(scaled);
+            made.extend(thawed);
             let mut owners = shard.owners(players);
             let shard = &self.shards[map];
             let sessions = std::iter::once((self.active, &mut self.world, &mut self.events)).chain(
@@ -1512,6 +1515,13 @@ impl Realm {
                 if let Some(text) = &tuned {
                     events.push(quests::system_line(text.clone()));
                 }
+                // The thawed creatures that turned on this player.
+                events.extend(
+                    woken
+                        .iter()
+                        .filter(|(g, _)| *g == p.guid)
+                        .map(|(_, e)| e.clone()),
+                );
                 // What streamed out or came back, the Hub's wanderers' walks, and the creatures
                 // scaled to the Head Count.
                 for e in &made {

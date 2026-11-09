@@ -475,6 +475,167 @@ fn a_timed_call_until_used_brings_its_adds_before_the_pull_and_none_after() {
     assert_eq!(adds(&p, 0).len(), 2, "a call after the pull");
 }
 
+/// The boss in the building's south-west corner, and the two frozen beside him until his 75% and
+/// 40% marks (#637); a spot beside them.
+const BOSS: u64 = 800010;
+const FROZEN_75: u64 = 800011;
+const FROZEN_40: u64 = 800012;
+const FROZEN_75_AT: [f32; 3] = [-9815.0, 537.0, 47.2];
+const BY_FROZEN: [f32; 3] = [-9813.5, 537.0, 47.2];
+/// Frozen in the Mist, the ice a frozen creature wears.
+const ICE: u32 = 1900057;
+/// `UNIT_FIELD_FLAGS` and `UNIT_FLAG_NOT_SELECTABLE`.
+const UNIT_FIELD_FLAGS: u16 = 46;
+const NOT_SELECTABLE: u32 = 0x0200_0000;
+
+/// Whether player `i`'s client was last shown `guid` as not selectable: by its create, or by a
+/// later change of its flags.
+fn frozen(p: &Party, i: usize, guid: u64) -> bool {
+    let mut frozen = false;
+    for e in p.seen(i) {
+        match e {
+            SessionEvent::ObjectCreate {
+                guid: g, fields, ..
+            } if *g == guid => frozen = fields.unit_flags() & NOT_SELECTABLE != 0,
+            SessionEvent::ObjectValues { guid: g, fields } if *g == guid => {
+                if let Some((_, v)) = fields.raw_fields().find(|(f, _)| *f == UNIT_FIELD_FLAGS) {
+                    frozen = v & NOT_SELECTABLE != 0;
+                }
+            }
+            _ => {}
+        }
+    }
+    frozen
+}
+
+/// Whether player `i`'s client was shown `guid` wearing the aura `spell_id`.
+fn wears(p: &Party, i: usize, guid: u64, spell_id: u32) -> bool {
+    p.seen(i).iter().any(|e| match e {
+        SessionEvent::ObjectValues { guid: g, fields } if *g == guid => {
+            fields.unit_auras().any(|a| a.spell_id == spell_id)
+        }
+        _ => false,
+    })
+}
+
+/// Whether player `i`'s client was shown `guid` below the maximum health of its create.
+fn hurt(p: &Party, i: usize, guid: u64) -> bool {
+    let max = p.seen(i).iter().find_map(|e| match e {
+        SessionEvent::ObjectCreate {
+            guid: g, fields, ..
+        } if *g == guid => fields.unit_max_health(),
+        _ => None,
+    });
+    let max = max.expect("a create with its maximum health");
+    p.seen(i).iter().any(|e| {
+        matches!(e, SessionEvent::ObjectValues { guid: g, fields }
+            if *g == guid && fields.unit_health().is_some_and(|h| h < max))
+    })
+}
+
+/// Whether `guid` turned on player `i`, as their client was shown.
+fn turned_on(p: &Party, i: usize, guid: u64) -> bool {
+    let me = p.guids[i];
+    p.seen(i).iter().any(|e| {
+        matches!(e, SessionEvent::AttackStart { attacker, victim }
+            if *attacker == guid && *victim == me)
+    })
+}
+
+#[test]
+fn creatures_frozen_until_a_boss_s_mark_start_frozen_wear_the_ice_and_take_no_damage() {
+    let mut p = party(1);
+    p.go_facing(0, BY_FROZEN, FROZEN_75_AT);
+    p.run(0.5);
+    for g in [FROZEN_75, FROZEN_40] {
+        assert!(holds(&p, 0, unit(g)), "{g} is not in view");
+        assert!(frozen(&p, 0, unit(g)), "{g} is selectable");
+        assert!(wears(&p, 0, unit(g), ICE), "{g} wears no ice");
+    }
+    assert!(!frozen(&p, 0, unit(BOSS)), "the boss is frozen");
+    p.cmd(
+        0,
+        RealmCommand::AttackSwing {
+            guid: unit(FROZEN_75),
+        },
+    );
+    p.run(4.0);
+    assert!(!hurt(&p, 0, unit(FROZEN_75)), "damage to it landed");
+    for g in [FROZEN_75, FROZEN_40] {
+        assert!(!turned_on(&p, 0, unit(g)), "{g} acted while frozen");
+        assert!(frozen(&p, 0, unit(g)), "{g} thawed on its own");
+    }
+}
+
+#[test]
+fn each_frozen_creature_thaws_at_its_mark_of_the_boss_s_health_and_turns_on_the_player() {
+    let mut p = party(1);
+    p.go_facing(0, BY_FROZEN, FROZEN_75_AT);
+    p.run(0.5);
+    p.realm.set_creature_health_pct(unit(BOSS), 70);
+    p.run(0.5);
+    assert!(
+        !frozen(&p, 0, unit(FROZEN_75)),
+        "70% did not thaw the 75% one"
+    );
+    assert!(
+        turned_on(&p, 0, unit(FROZEN_75)),
+        "the thawed one did not turn"
+    );
+    assert!(frozen(&p, 0, unit(FROZEN_40)), "70% thawed the 40% one");
+    assert!(!turned_on(&p, 0, unit(FROZEN_40)));
+
+    p.realm.set_creature_health_pct(unit(BOSS), 40);
+    p.run(0.5);
+    assert!(
+        !frozen(&p, 0, unit(FROZEN_40)),
+        "40% did not thaw the 40% one"
+    );
+    assert!(
+        turned_on(&p, 0, unit(FROZEN_40)),
+        "the thawed one did not turn"
+    );
+}
+
+#[test]
+fn a_boss_killed_before_its_marks_leaves_them_frozen() {
+    let mut p = party(1);
+    p.go_facing(0, BY_FROZEN, FROZEN_75_AT);
+    p.run(0.5);
+    p.realm.kill_creature(unit(BOSS));
+    p.run(3.0);
+    for g in [FROZEN_75, FROZEN_40] {
+        assert!(frozen(&p, 0, unit(g)), "{g} thawed after the boss died");
+        assert!(!turned_on(&p, 0, unit(g)), "{g} turned after the boss died");
+    }
+}
+
+#[test]
+fn a_run_that_resets_freezes_them_again() {
+    let mut p = party(1);
+    p.go_facing(0, BY_FROZEN, FROZEN_75_AT);
+    p.run(0.5);
+    p.realm.set_creature_health_pct(unit(BOSS), 30);
+    p.run(0.5);
+    for g in [FROZEN_75, FROZEN_40] {
+        assert!(!frozen(&p, 0, unit(g)), "{g} did not thaw");
+    }
+    // The player leaves, the Run resets, and the next one starts as the first did.
+    p.go(0, [-9900.0, 555.0, 47.2], 0.0);
+    p.run(1.0);
+    let n = p.seen(0).len();
+    p.go_facing(0, BY_FROZEN, FROZEN_75_AT);
+    p.run(1.0);
+    let made: Vec<u64> = unit_creates(&p.seen(0)[n..])
+        .into_iter()
+        .map(|(guid, _, _)| guid)
+        .collect();
+    for g in [FROZEN_75, FROZEN_40] {
+        assert!(made.contains(&unit(g)), "{g} not made again: {made:x?}");
+        assert!(frozen(&p, 0, unit(g)), "{g} is not frozen in the new Run");
+    }
+}
+
 #[test]
 fn a_run_that_resets_puts_the_lever_back() {
     let mut p = party(2);

@@ -409,7 +409,11 @@ impl Shard {
             mob.orientation = s.facing;
             mob.home_orientation = s.facing;
             mob.wears = s.wears;
-            mob.frozen = s.frozen;
+            // A passenger waits on the Conductor, who stepped off first.
+            mob.frozen_until = s
+                .frozen_until
+                .and_then(|(pct, marker)| Some((line.conductor()?, pct, marker)));
+            mob.frozen = s.frozen_until.is_some();
             mob.strengthen(s.health_pct, s.damage_pct);
             line.bring(mob.guid, s.kind, mob.position);
             self.mobs.push(mob);
@@ -449,6 +453,53 @@ impl Shard {
             told.extend(events.into_iter().map(|e| (target.guid, e)));
         }
         told
+    }
+
+    /// Thaws each frozen creature whose boss (`frozen_until`, #637) is alive at or below its
+    /// mark, once, and turns it on the closest living player of `players`. A tram passenger is
+    /// left for its line to turn after `wake_s` (ADR 0033). A boss that died first leaves it
+    /// frozen for the rest of the Run. The values the clients that see the thawed creatures are
+    /// sent, and what to tell each player turned on, by guid.
+    pub(crate) fn thaw_frozen<S>(
+        &mut self,
+        players: &[OnShard<S>],
+    ) -> (Vec<SessionEvent>, Vec<(u64, SessionEvent)>) {
+        let due: Vec<usize> = (0..self.mobs.len())
+            .filter(|&i| {
+                let m = &self.mobs[i];
+                let Some((boss, pct, _)) = m.frozen_until.filter(|_| m.frozen && m.alive()) else {
+                    return false;
+                };
+                self.mobs.iter().any(|b| {
+                    b.guid == boss
+                        && b.alive()
+                        && u64::from(b.health) * 100
+                            <= u64::from(b.stats.max_health) * u64::from(pct)
+                })
+            })
+            .collect();
+        let mut shown = Vec::new();
+        let mut told = Vec::new();
+        for i in due {
+            let mob = &mut self.mobs[i];
+            let Some((_, _, marker)) = mob.frozen_until.take() else {
+                continue;
+            };
+            shown.push(mob.thaw(marker));
+            if mob.spawn_row().is_some_and(|s| s.tram_of.is_some()) {
+                continue;
+            }
+            let Some(target) = players.iter().filter(|p| p.alive).min_by(|a, b| {
+                flat_distance(a.position, mob.position)
+                    .total_cmp(&flat_distance(b.position, mob.position))
+            }) else {
+                continue;
+            };
+            let mut events = Vec::new();
+            crate::world::engage(mob, target.guid, &mut events);
+            told.extend(events.into_iter().map(|e| (target.guid, e)));
+        }
+        (shown, told)
     }
 
     /// The Run's tram line, once its bell is rung.

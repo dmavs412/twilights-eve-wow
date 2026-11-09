@@ -399,6 +399,9 @@ pub(crate) struct Spawn {
     pub(crate) tram_of: Option<u32>,
     /// When a dungeon creature is in the Run; none for any other spawn.
     pub(crate) appears: Option<&'static phased::Appears>,
+    /// A dungeon creature's `frozen_until` (#637): its boss's mob guid, the percent of the boss's
+    /// maximum health that thaws it, and the marker's spell id.
+    pub(crate) frozen_until: Option<(u64, u32, u32)>,
     /// A creature an Encounter's wave brings in, not one the Population streams: the encounter's
     /// index in `content/encounters.toml` and the wave's.
     pub(crate) encounter: Option<(usize, usize)>,
@@ -1056,6 +1059,13 @@ pub(crate) fn content() -> &'static Mobs {
                     timed_by: None,
                     tram_of: None,
                     appears: Some(&c.appears),
+                    frozen_until: c.frozen_until.as_ref().map(|f| {
+                        let boss = d.creature.iter().find(|b| b.guid == f.guid);
+                        let entry = boss.map_or(0, |b| b.entry);
+                        let marker =
+                            crate::creature_spells::get(&f.spell).map_or(0, |s| s.spell_id);
+                        (unit_guid(entry, f.guid), f.pct, marker)
+                    }),
                     encounter: None,
                     asleep: c.asleep,
                     wake_radius_mod: c.wake_radius_mod,
@@ -1426,6 +1436,9 @@ pub(crate) struct Mob {
     /// Frozen in place (the Deeprun Tram's passengers, ADR 0033): it cannot be selected, takes no
     /// damage, is pulled by nothing and does nothing until thawed.
     pub(crate) frozen: bool,
+    /// What thaws it while frozen (#637): the boss's mob guid in this Run, the percent of the
+    /// boss's maximum health it waits for, and the marker's spell id. Cleared when it thaws.
+    pub(crate) frozen_until: Option<(u64, u32, u32)>,
 }
 
 /// A creature's stance (#473): the damage it deals and takes, each changed by a percent.
@@ -1592,9 +1605,13 @@ impl Mob {
             flee_due: false,
             stance: None,
             withered: HashMap::new(),
-            wears: Vec::new(),
+            // A row frozen until its boss's health mark starts each Run frozen, wearing the ice.
+            wears: spawn
+                .frozen_until
+                .map_or_else(Vec::new, |(_, _, marker)| vec![(marker, 0)]),
             shed: Vec::new(),
-            frozen: false,
+            frozen: spawn.frozen_until.is_some(),
+            frozen_until: spawn.frozen_until,
         })
     }
 
@@ -1708,6 +1725,7 @@ impl Mob {
             wears: Vec::new(),
             shed: Vec::new(),
             frozen: false,
+            frozen_until: None,
         }
     }
 
