@@ -7,9 +7,22 @@
 # bounding box in that frame, z widened by a yard each way; the comment above it names the group.
 # The portal stands in the doorway the WMO's portal 2 draws between the building and the outside.
 #
-# A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the ground floor
-# so a character can see the Phase, and the open-world creatures that stood inside the boxes are
-# deleted. Guids: creatures 971001 up, one a dungeon.
+# The tower is a working machine (#643, spec #637): three encounters, about 15 minutes. Feed
+# valves on the ground floor and the ramp keep the hum going upstairs; the Blackrock Overseer
+# guards the emptied strongbox on the middle storey; Morganth waits on the top floor beside the
+# Anchor, and every 20 s of his fight he calls a Servant of Ilgalar for each valve still open.
+# The tower keeps running after he dies.
+#
+# The floors, from `tools/twilights-eve/wmo_floor.py`: the ground floor at z 115.67 (group 4;
+# group 1 at the door); the ramp, group 4, rising round the tower's inside; the middle storey at
+# about z 141.3 (group 3); the top floor at z 150.09 (group 2). wmo_floor.py lists each slab's
+# underside too, about a yard below its walking face (140.34 under the middle storey, 149.23 under
+# the top floor, a yard under each stretch of ramp); every row here stands on the face. Interior
+# rows are `grounded = false` with that floor's Z.
+#
+# Guids: creatures 974101 to 974114, GameObjects 983041 to 983050 (the entry is the guid), and
+# the Anchor at the Steppes spec's 794101. Templates 97240 to 97244 here, spells in
+# creature_spells.toml's Tower of Ilgalar section.
 
 id = 8
 name = "Tower of Ilgalar"
@@ -47,10 +60,368 @@ z = [-2.0, 30.0]
 position = [-9282.2, -3327.6, 115.67]
 orientation = 1.47
 
-# The Phase Tester: friendly, no quests.
+# ── Templates ────────────────────────────────────────────────────────────────────────────────────
+# Displays are vanilla's (vmangos creature_template). All numbers are placeholders.
+
+# The cult's hands at the valves, in the Twilight Acolyte's robes.
+[[template]]
+entry = 97240
+name = "Twilight Tuner"
+creature_type = 7
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 35
+level_max = 36
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+spells = ["shadow_bolt_creature"]
+say = { aggro = ["The hum must not stop!"], aggro_chance = 30 }
+
+# The tower's own servants, vanilla's Servant of Ilgalar.
+[[template]]
+entry = 97241
+name = "Servant of Ilgalar"
+creature_type = 3
+display_id = 3916
+faction_template = 14
+unit_class = "warrior"
+level_min = 35
+level_max = 37
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The Blackrock hired to carry the crates, in the Blackrock Grunt's kit.
+[[template]]
+entry = 97242
+name = "Blackrock Porter"
+creature_type = 7
+display_id = 6033
+faction_template = 40
+unit_class = "warrior"
+level_min = 36
+level_max = 36
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+say = { aggro = ["Crates go up. You go down."], aggro_chance = 30 }
+
+# The middle storey's encounter, in the Blackrock Champion's kit: Shield Wall, Mortal Blow and
+# Sunder Armor.
+[[template]]
+entry = 97243
+name = "Blackrock Overseer"
+creature_type = 7
+rank = 1
+display_id = 6044
+faction_template = 40
+unit_class = "warrior"
+level_min = 37
+level_max = 37
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["shield_wall_rook", "mortal_blow_overseer", "sunder_kobold"]
+say = { aggro = ["Two lots of buyers came for those books. You're the third, and I'm not selling."], aggro_chance = 100 }
+
+# The tower's last boss and its Boss Bar, hostile from the Run's start: Tuning Pulse, Shadow Word:
+# Pain and Void Barrier. His timed calls are on his creature row.
+[[template]]
+entry = 97244
+name = "Morganth"
+creature_type = 7
+rank = 1
+boss = true
+display_id = 3383
+faction_template = 14
+unit_class = "mage"
+level_min = 38
+level_max = 38
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+spells = ["tuning_pulse_morganth", "shadow_word_pain_creature", "void_barrier_morganth"]
+say = { aggro = ["Too late. They took the pages that worked. All you'll find is what failed."], aggro_chance = 100 }
+
+# ── Encounter 1: the ground floor and the feed valves ────────────────────────────────────────────
+# Two pairs on the ground floor, facing the door.
 [[creature]]
-guid = 971001
-entry = 97100
-level = 34
-position = [-9279.5, -3299.8, 115.67]
+guid = 974101
+entry = 97240
+level = 35
+position = [-9275.0, -3300.0, 115.67]
+grounded = false
+orientation = 4.5
+camp = 1
+
+[[creature]]
+guid = 974102
+entry = 97241
+level = 35
+position = [-9277.0, -3302.0, 115.67]
+grounded = false
+orientation = 4.5
+camp = 1
+
+[[creature]]
+guid = 974103
+entry = 97240
+level = 36
+position = [-9270.0, -3290.0, 115.67]
+grounded = false
+orientation = 4.5
+camp = 2
+
+[[creature]]
+guid = 974104
+entry = 97241
+level = 37
+position = [-9272.0, -3292.0, 115.67]
+grounded = false
+orientation = 4.5
+camp = 2
+
+# Valve A at the ramp's foot (vanilla's DeadMineValve, display 755). Each valve pulls from the
+# Run's start; its guards do not hold it. Pulling one stops one of Morganth's calls.
+[[gameobject]]
+guid = 983041
+display = 755
+position = [-9278.0, -3310.0, 115.67]
+grounded = false
+orientation = 4.5
+sides = "inside"
+use = "lever"
+lever = { used_text = "The valve groans shut. Something above stops answering." }
+
+[[creature]]
+guid = 974105
+entry = 97240
+level = 35
+position = [-9280.5, -3310.0, 115.67]
+grounded = false
+orientation = 4.5
+camp = 3
+
+[[creature]]
+guid = 974106
+entry = 97242
+level = 36
+position = [-9278.0, -3307.5, 115.67]
+grounded = false
+orientation = 4.5
+camp = 3
+
+# Valve B on the ramp, on its walking face at this point (126.35; 125.37 is its underside).
+[[gameobject]]
+guid = 983042
+display = 755
+position = [-9281.0, -3302.0, 126.35]
+grounded = false
+orientation = 4.5
+sides = "inside"
+use = "lever"
+lever = { used_text = "The valve groans shut. Something above stops answering." }
+
+[[creature]]
+guid = 974107
+entry = 97240
+level = 36
+position = [-9283.5, -3302.0, 126.98]
+grounded = false
+orientation = 4.5
+camp = 4
+
+[[creature]]
+guid = 974108
+entry = 97242
+level = 36
+position = [-9281.0, -3299.5, 126.21]
+grounded = false
+orientation = 4.5
+camp = 4
+
+# Valve C at the ramp's head, on the middle storey's floor (141.33; 140.34 is its underside).
+[[gameobject]]
+guid = 983043
+display = 755
+position = [-9272.0, -3310.0, 141.33]
+grounded = false
+orientation = 4.5
+sides = "inside"
+use = "lever"
+lever = { used_text = "The valve groans shut. Something above stops answering." }
+
+[[creature]]
+guid = 974109
+entry = 97240
+level = 36
+position = [-9274.5, -3310.0, 141.30]
+grounded = false
+orientation = 4.5
+camp = 5
+
+[[creature]]
+guid = 974110
+entry = 97242
+level = 36
+position = [-9272.0, -3312.5, 141.36]
+grounded = false
+orientation = 4.5
+camp = 5
+
+# Crates the Porters carried in: one under the cult's mark (vanilla's DarkIronCrate01, display
+# 1868) and a plain one (DarkIronCrate02, 1869).
+[[gameobject]]
+guid = 983045
+display = 1868
+position = [-9281.0, -3305.0, 115.67]
+grounded = false
+orientation = 4.5
+sides = "inside"
+
+[[gameobject]]
+guid = 983046
+display = 1869
+position = [-9284.0, -3308.0, 115.67]
+grounded = false
+orientation = 1.2
+sides = "inside"
+
+# ── Encounter 2: the middle storey ───────────────────────────────────────────────────────────────
+# The Blackrock Overseer and two Porters, facing the ramp's head.
+[[creature]]
+guid = 974111
+entry = 97243
+level = 37
+position = [-9288.0, -3308.0, 141.31]
+grounded = false
+orientation = 6.16
+camp = 6
+rolls = [{ chance = 50, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
+
+[[creature]]
+guid = 974112
+entry = 97242
+level = 36
+position = [-9285.0, -3308.0, 141.26]
+grounded = false
+orientation = 6.16
+camp = 6
+
+[[creature]]
+guid = 974113
+entry = 97242
+level = 36
+position = [-9291.0, -3305.0, 141.33]
+grounded = false
+orientation = 6.16
+camp = 6
+
+# The emptied strongbox, its lock cut (vanilla's TreasureChest01, display 259): the books were
+# taken before the players came.
+[[gameobject]]
+guid = 983044
+display = 259
+position = [-9290.0, -3295.0, 141.26]
+grounded = false
+orientation = 0.0
+sides = "inside"
+
+# A Dark Iron crate (1868).
+[[gameobject]]
+guid = 983047
+display = 1868
+position = [-9283.0, -3316.0, 141.36]
+grounded = false
+orientation = 2.0
+sides = "inside"
+
+# ── Encounter 3: the top floor ───────────────────────────────────────────────────────────────────
+# Morganth, facing the Anchor, there from the Run's start. Every 20 s of his fight he calls a
+# Servant of Ilgalar for each valve still open, in from the top floor's far side. ticket 27 of the
+# arc fills his `drop`.
+[[creature]]
+guid = 974114
+entry = 97244
+level = 38
+position = [-9272.0, -3310.0, 150.04]
+grounded = false
+orientation = 3.02
+every = [
+    { every_s = 20, entry = 97241, level = 37, count = 1, position = [-9285.0, -3285.0, 150.13], until_used = 983041 },
+    { every_s = 20, entry = 97241, level = 37, count = 1, position = [-9285.0, -3285.0, 150.13], until_used = 983042 },
+    { every_s = 20, entry = 97241, level = 37, count = 1, position = [-9285.0, -3285.0, 150.13], until_used = 983043 },
+]
+rolls = [{ chance = 100, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
+
+# Cover from Tuning Pulse: three pylons about 7 yd round the Anchor, each shown by vanilla's
+# UngoroCrystalPylon01 (display 3080) at the same spot.
+[[cover]]
+position = [-9281.0, -3302.0, 151.30]
+radius = 1.5
+height = 6.0
+
+[[gameobject]]
+guid = 983048
+display = 3080
+position = [-9281.0, -3302.0, 151.30]
+grounded = false
+orientation = 0.0
+sides = "inside"
+
+[[cover]]
+position = [-9295.0, -3303.0, 150.13]
+radius = 1.5
+height = 6.0
+
+[[gameobject]]
+guid = 983049
+display = 3080
+position = [-9295.0, -3303.0, 150.13]
+grounded = false
+orientation = 2.1
+sides = "inside"
+
+[[cover]]
+position = [-9283.0, -3316.0, 150.14]
+radius = 1.5
+height = 6.0
+
+[[gameobject]]
+guid = 983050
+display = 3080
+position = [-9283.0, -3316.0, 150.14]
+grounded = false
+orientation = 4.2
+sides = "inside"
+
+# The Anchor (#637). #631 gives this row `until_milestone =
+# "ilgalar_anchor_broken"` and adds the broken Anchor, 794102, beside it.
+[[gameobject]]
+guid = 794101
+display = 1667
+position = [-9288.0, -3308.0, 150.09]
 orientation = 1.47
+sides = "inside"

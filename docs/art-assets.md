@@ -315,6 +315,7 @@ All are placeholders and none needs new art. "Where" names the spec's ticket.
 | The Anchor's pylons | 06 | display 3080 (`UngoroCrystalPylon01`) |
 | Dark Iron Tribute crates | 06, 10 | displays 1868 and 1869 (`DarkIronCrate01`, `02`) |
 | Feed valves | 06 | display 755 (`DeadMineValve`) |
+| The emptied strongbox, its lock cut | 06 | display 259 (`TreasureChest01`) |
 | Rubble heaps, the dropped side tunnel | 08 | display 2230 (`G_CaveIn`) |
 | Brood cage and its lever | 10 | displays 676 (`G_Cage`) and 295 (`G_LeverMetal`) |
 | Singe's Scale icon | 11 | a free stock scale icon that passes `icon_check.py` |

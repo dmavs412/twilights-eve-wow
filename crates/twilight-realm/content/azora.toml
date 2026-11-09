@@ -21,8 +21,8 @@
 # and return portal included, is the terrain's, written by ground_check.py --fix (#549).
 #   water  Lake Everstill's shallows, about (-9190, -2020).
 #   fire   the Blackrock foothills on Redridge's northern edge, about (-8985, -2380).
-#   shadow the ground at the foot of the Tower of Ilgalar, about (-9235, -2700). The cellar
-#          beneath it is not known to be reachable geometry, so the ground at its foot stands in.
+#   shadow the ground in the hills east of Lakeshire, about (-9235, -2700), on the road toward the
+#          Tower of Ilgalar (its door is at (-9282, -3328)).
 #
 # Displays are in mobs.toml; the stock ones named there are unchecked against vmangos.
 # Guids: creatures 970001 up, GameObjects 975001 up (the entry is the guid).

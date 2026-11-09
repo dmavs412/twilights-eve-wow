@@ -8669,6 +8669,55 @@
    }
   },
   {
+   "spell_id": 1900071,
+   "creature": "void_barrier_morganth",
+   "fields": {
+    "name": "Void Barrier",
+    "icon": "Interface\\Icons\\Spell_Holy_PowerWordShield",
+    "school": 5,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 110,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "aura_description": "Absorbs $s1 damage.",
+    "visual": 784,
+    "range_index": 1,
+    "cast_time_index": 4,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1900072,
+   "creature": "mortal_blow_overseer",
+   "fields": {
+    "name": "Mortal Blow",
+    "icon": "Interface\\Icons\\Ability_Rogue_Ambush",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
    "spell_id": 1900080,
    "creature": "crowned_shadow_deacon",
    "fields": {
