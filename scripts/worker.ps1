@@ -106,13 +106,15 @@ Write-Log "builder $Name in $Worktree (claude: $claude)"
 Reset-Worktree
 Write-Log "warming the realm test build"
 cmd /c "cargo test -q -p twilight-realm --no-run 2>&1" | Out-Null
-if (Enter-ClientLock $holder $PID 120) {
+# No waiting: if the other builder holds the client lock, start tickets now; a long client build
+# in a session goes through scripts/cargo-long.py anyway.
+if (Enter-ClientLock $holder $PID 0) {
     Write-Log "warming the client test build"
     cmd /c "cargo test -q -p benilla-app --lib --no-run 2>&1" | Out-Null
     Exit-ClientLock $holder
     Write-Log "warm-up done"
 } else {
-    Write-Log "client lock busy for 2 h; skipped the client warm-up"
+    Write-Log "client lock busy; skipped the client warm-up"
 }
 
 while ($true) {
