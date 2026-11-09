@@ -4,7 +4,8 @@
 //! and the quiet wing (905080 to 905099); then the Deeprun Tram's two (#592): the Conductor's blues
 //! (905100 to 905119) and the Platform greens (905120 to 905139); then Mistmantle Manor's set
 //! (#642, 905140 to 905159); then the Tower of Ilgalar's (#644, 905160 to 905179); then Raven Hill
-//! Deeps' (#646, 905180 to 905199); then Stonewatch Keep's (#648, 905200 to 905219). The phased
+//! Deeps' (#646, 905180 to 905199); then Stonewatch Keep's (#648, 905200 to 905219); then the
+//! twelve epics 905909 to 905920 on those four dungeons' final bosses (#657). The phased
 //! harness of `northshire_abbey.rs` cannot kill a boss in a dungeon cheaply, so these assert the
 //! `rolls` data: chances, lists, no stand-in.
 
@@ -587,5 +588,104 @@ fn the_stonewatch_bosses_roll_the_twenty_and_no_stand_in() {
             !STONEWATCH_KEEP.contains(&id.to_string()),
             "the keep still names the stand-in {id}"
         );
+    }
+}
+
+/// The twelve 30-50 dungeon epics (#657): entry, item level, required level.
+const EPICS_30_50: [(i64, i64, i64); 12] = [
+    (905909, 36, 33),
+    (905910, 36, 33),
+    (905911, 36, 33),
+    (905912, 38, 35),
+    (905913, 38, 35),
+    (905914, 38, 35),
+    (905915, 44, 41),
+    (905916, 44, 41),
+    (905917, 44, 41),
+    (905918, 48, 45),
+    (905919, 48, 45),
+    (905920, 48, 45),
+];
+
+#[test]
+fn the_thirty_to_fifty_epics_are_picked_up_epics_with_no_line() {
+    let gear = parse(GEAR);
+    for (id, level, required) in EPICS_30_50 {
+        let row = item(&gear, id).unwrap_or_else(|| panic!("row {id} missing"));
+        assert_eq!(
+            (
+                int(row, "quality"),
+                int(row, "item_level"),
+                int(row, "required_level"),
+                int(row, "bonding")
+            ),
+            (4, level, required, 1),
+            "row {id}"
+        );
+        assert!(row.get("line").is_none(), "row {id} has a line");
+    }
+}
+
+/// A template's `extra_rolls` as (chance, list) pairs.
+fn extra_rolls(t: &Value) -> Vec<(i64, Vec<i64>)> {
+    t.get("extra_rolls")
+        .map(|r| {
+            r.as_array()
+                .unwrap()
+                .iter()
+                .map(|roll| {
+                    (
+                        roll["chance"].as_integer().unwrap(),
+                        integers(&roll["one_of"]),
+                    )
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+#[test]
+fn each_thirty_to_fifty_final_boss_rolls_its_three_epics_at_five_percent() {
+    // Final boss template, its creature row's guid, its set and its three epics.
+    for (text, entry, guid, set, epics) in [
+        (
+            MISTMANTLE_MANOR,
+            97229,
+            974014,
+            MISTMANTLE20,
+            [905909, 905910, 905911],
+        ),
+        (ILGALAR, 97244, 974114, ILGALAR20, [905912, 905913, 905914]),
+        (
+            RAVEN_HILL_DEEPS,
+            97265,
+            974213,
+            RAVEN_HILL20,
+            [905915, 905916, 905917],
+        ),
+        (
+            STONEWATCH_KEEP,
+            97287,
+            974316,
+            STONEWATCH20,
+            [905918, 905919, 905920],
+        ),
+    ] {
+        let file = parse(text);
+        for t in file["template"].as_array().unwrap() {
+            let found = extra_rolls(t);
+            if entry_of(t) == entry {
+                assert_eq!(found, vec![(5, epics.to_vec())], "template {entry}");
+            } else {
+                // Singe (97288) among them: one epic roll per dungeon.
+                assert!(found.is_empty(), "template {}", entry_of(t));
+            }
+        }
+        let row = creatures(&file)
+            .into_iter()
+            .find(|c| c["guid"].as_integer() == Some(guid))
+            .unwrap_or_else(|| panic!("boss {guid}"));
+        assert_eq!(entry_of(row), entry, "boss {guid}");
+        assert_eq!(rolls(row), vec![(100, range(set.0, set.1))], "boss {guid}");
     }
 }

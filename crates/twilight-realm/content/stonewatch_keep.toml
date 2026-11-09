@@ -274,6 +274,9 @@ detection_range = 18.0
 [[template]]
 entry = 97287
 name = "Gath'Ilzogg"
+# The keep's three epics (#657), on top of the set roll on his creature row. Singe rolls none,
+# so the keep's epic rate matches the other three dungeons'.
+extra_rolls = [{ chance = 5, one_of = [905918, 905919, 905920] }]
 creature_type = 7
 rank = 1
 boss = true

@@ -147,6 +147,8 @@ say = { aggro = ["Two lots of buyers came for those books. You're the third, and
 [[template]]
 entry = 97244
 name = "Morganth"
+# The tower's three epics (#657), on top of the set roll on his creature row.
+extra_rolls = [{ chance = 5, one_of = [905912, 905913, 905914] }]
 creature_type = 7
 rank = 1
 boss = true

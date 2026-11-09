@@ -213,6 +213,8 @@ say = { aggro = ["Back to the face! The seam won't open itself."], aggro_chance 
 [[template]]
 entry = 97265
 name = "The Grey Deacon"
+# The deeps' three epics (#657), on top of the set roll on his creature row.
+extra_rolls = [{ chance = 5, one_of = [905915, 905916, 905917] }]
 creature_type = 7
 rank = 1
 boss = true

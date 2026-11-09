@@ -124,6 +124,8 @@ spells = ["terrify_creature", "shadow_word_pain_creature"]
 [[template]]
 entry = 97229
 name = "Stalvan Mistmantle"
+# The manor's three epics (#657), on top of the set roll on his creature row.
+extra_rolls = [{ chance = 5, one_of = [905909, 905910, 905911] }]
 creature_type = 6
 rank = 1
 boss = true
