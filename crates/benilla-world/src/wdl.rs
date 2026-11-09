@@ -16,7 +16,7 @@ use benilla_assets::coords::{bevy_to_wow, wow_to_bevy};
 use benilla_assets::materials::{WdlExt, WdlMaterial};
 use benilla_assets::LockRecover;
 use benilla_assets::MapCatalogRes;
-use benilla_assets::{AssetSet, RenderConfig, WorldAssets};
+use benilla_assets::{AssetSet, ReachedMilestones, RenderConfig, WorldAssets};
 use benilla_formats::WdlFile;
 
 /// Chebyshev tile radius of the WDL ring. The shader keeps it a backdrop (near plane at
@@ -34,6 +34,7 @@ pub(crate) struct WdlPlugin;
 impl Plugin for WdlPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<WdlMaterial>::default())
+            .add_message::<crate::mist::ZonesOpened>()
             .add_systems(Startup, setup_wdl.after(AssetSet::Open))
             // The ring follows the world's lifecycle: it spawns only while a world is live.
             .add_systems(Update, stream_wdl.run_if(crate::schedule::world_is_live))
@@ -125,6 +126,8 @@ fn stream_wdl(
     current_map: Option<Res<CurrentMap>>,
     map_catalog: Option<Res<MapCatalogRes>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    reached: Option<Res<ReachedMilestones>>,
+    mut opened: MessageReader<crate::mist::ZonesOpened>,
 ) {
     // All four are absent without client data. `Option`, not `Res`: a missing `Res` fails
     // validation, which panics the client, and a build run from the wrong folder gets here.
@@ -177,44 +180,43 @@ fn stream_wdl(
         }
     }
 
+    // A Milestone opened land (ADR 0034): a ring tile with a cell over it is built again in place,
+    // so the cells come back with no frame of gap.
+    let reached = || reached.as_ref().map(|r| r.get()).unwrap_or_default();
+    if let Some(z) = crate::mist::ZonesOpened::merged(opened.read()) {
+        let map_id = streamer.map_id;
+        let reached = reached();
+        for (&coords, &e) in &streamer.loaded {
+            let Some(tile) = streamer.wdl.tile_mesh(coords.0, coords.1) else {
+                continue;
+            };
+            let opens = (0..tile.indices.len() / 12).any(|cell| {
+                let [x, y, _] = tile.positions[289 + cell];
+                benilla_formats::closed_zones::closed_at(map_id, x, y, &z.before)
+                    && !benilla_formats::closed_zones::closed_at(map_id, x, y, &z.now)
+            });
+            if let Some(mesh) = opens
+                .then(|| ring_mesh(&streamer.wdl, coords, map_id, &reached))
+                .flatten()
+            {
+                commands.entity(e).insert(Mesh3d(meshes.add(mesh)));
+            }
+        }
+    }
+
     let missing: Vec<(u32, u32)> = desired
         .into_iter()
         .filter(|c| !streamer.loaded.contains_key(c))
         .take(WDL_LOADS_PER_FRAME)
         .collect();
+    if missing.is_empty() {
+        return;
+    }
+    let reached = reached();
     for coords in missing {
-        let Some(mut tile) = streamer.wdl.tile_mesh(coords.0, coords.1) else {
+        let Some(mesh) = ring_mesh(&streamer.wdl, coords, streamer.map_id, &reached) else {
             continue;
         };
-        // Closed Zones (ADR 0015): a cell over a closed chunk drops its 12 indices, judged at
-        // its centre vertex, which follows the 17 × 17 outer grid.
-        let map_id = streamer.map_id;
-        tile.indices = tile
-            .indices
-            .chunks(12)
-            .enumerate()
-            .filter(|&(cell, _)| {
-                let [x, y, _] = tile.positions[289 + cell];
-                !benilla_formats::closed_zones::closed_at(map_id, x, y)
-            })
-            .flat_map(|(_, fan)| fan.iter().copied())
-            .collect();
-        let positions: Vec<[f32; 3]> = tile
-            .positions
-            .iter()
-            .map(|p| wow_to_bevy(*p).to_array())
-            .collect();
-        // A constant normal and zero UV satisfy the `StandardMaterial` pipeline; the shader reads
-        // neither.
-        let n = positions.len();
-        let mut mesh = Mesh::new(
-            PrimitiveTopology::TriangleList,
-            RenderAssetUsages::default(),
-        );
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 1.0, 0.0]; n]);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; n]);
-        mesh.insert_indices(Indices::U32(tile.indices));
         let e = commands
             .spawn((
                 Mesh3d(meshes.add(mesh)),
@@ -229,6 +231,46 @@ fn stream_wdl(
             .id();
         streamer.loaded.insert(coords, e);
     }
+}
+
+/// Ring tile `coords` of `wdl` on `map_id` as a mesh in Bevy space, its cells over land closed
+/// while `reached` are left out; `None` for a tile the file lacks.
+fn ring_mesh(
+    wdl: &WdlFile,
+    coords: (u32, u32),
+    map_id: u32,
+    reached: &benilla_formats::closed_zones::Reached,
+) -> Option<Mesh> {
+    let mut tile = wdl.tile_mesh(coords.0, coords.1)?;
+    // Closed Zones (ADR 0015): a cell over a closed chunk drops its 12 indices, judged at its
+    // centre vertex, which follows the 17 × 17 outer grid.
+    tile.indices = tile
+        .indices
+        .chunks(12)
+        .enumerate()
+        .filter(|&(cell, _)| {
+            let [x, y, _] = tile.positions[289 + cell];
+            !benilla_formats::closed_zones::closed_at(map_id, x, y, reached)
+        })
+        .flat_map(|(_, fan)| fan.iter().copied())
+        .collect();
+    let positions: Vec<[f32; 3]> = tile
+        .positions
+        .iter()
+        .map(|p| wow_to_bevy(*p).to_array())
+        .collect();
+    // A constant normal and zero UV satisfy the `StandardMaterial` pipeline; the shader reads
+    // neither.
+    let n = positions.len();
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 1.0, 0.0]; n]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; n]);
+    mesh.insert_indices(Indices::U32(tile.indices));
+    Some(mesh)
 }
 
 /// Leaving the world drops the ring; the parsed `.wdl` stays for `height_under`.

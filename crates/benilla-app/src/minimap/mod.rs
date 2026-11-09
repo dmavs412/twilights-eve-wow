@@ -361,7 +361,11 @@ fn emit_minimap(
     widget: Res<MinimapWidget>,
     assets: Option<Res<MinimapAssets>>,
     mut cache: ResMut<MinimapTileCache>,
-    map: Option<Res<CurrentMap>>,
+    // The map, and the Milestones reached that open its gated land (ADR 0034).
+    (map, reached): (
+        Option<Res<CurrentMap>>,
+        Option<Res<benilla_assets::ReachedMilestones>>,
+    ),
     catalog: Option<Res<MapCatalogRes>>,
     player: Res<Player>,
     lighting: Option<Res<benilla_world::lighting::WowLighting>>,
@@ -621,8 +625,9 @@ fn emit_minimap(
             .as_ref()
             .map(|l| l.fog_color)
             .unwrap_or([0.6, 0.62, 0.65]);
+        let reached = reached.map(|r| r.get()).unwrap_or_default();
         for (gx, gy) in
-            benilla_formats::closed_zones::closed_chunks_near(map.0, wx, wy, half_extent)
+            benilla_formats::closed_zones::closed_chunks_near(map.0, wx, wy, half_extent, &reached)
         {
             let (north, west) = benilla_formats::closed_zones::chunk_corner(gx, gy);
             let rect = world_rect(center, wx, wy, px_per_yd, north, west, CHUNK_YARDS);

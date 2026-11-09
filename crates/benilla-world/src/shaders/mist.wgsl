@@ -21,7 +21,8 @@
 // w: the yards each piece takes to fade in above its own foot.
 @group(#{MATERIAL_BIND_GROUP}) @binding(102) var<uniform> foot: vec4<f32>;
 // x: the yards the noise moves the fade's start; y: the fade's alpha ceiling at the lowest noise;
-// z: the yards from the camera within which the wisps and the skirt vanish.
+// z: the yards from the camera within which the wisps and the skirt vanish; w: the fade factor,
+// 1 but on a curtain fading out because its zone opened.
 @group(#{MATERIAL_BIND_GROUP}) @binding(103) var<uniform> rag: vec4<f32>;
 
 // Noise cells per yard of the first octave.
@@ -88,5 +89,5 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         let to_camera = distance(in.world_position.xyz, view.world_position.xyz);
         alpha = alpha * smoothstep(0.5, rag.z, to_camera);
     }
-    return vec4<f32>(colour, alpha);
+    return vec4<f32>(colour, alpha * rag.w);
 }

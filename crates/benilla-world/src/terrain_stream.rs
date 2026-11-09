@@ -141,6 +141,25 @@ struct TileState {
     merged: Vec<Entity>,
 }
 
+impl TileState {
+    /// A tile requested as `handle`, spawned once it loads.
+    fn new(handle: Handle<AdtTile>) -> Self {
+        Self {
+            handle,
+            entity: None,
+            material: None,
+            next_cell: 0,
+            furnished: false,
+            placements: Vec::new(),
+            liquid: Vec::new(),
+            wall: None,
+            clutter: Vec::new(),
+            welds: Vec::new(),
+            merged: Vec::new(),
+        }
+    }
+}
+
 /// Doodad and WMO placements, spawned once and refcounted across the tiles that list them.
 #[derive(Resource, Default)]
 pub(crate) struct Placements {
@@ -401,6 +420,7 @@ impl Plugin for TerrainPlugin {
             .init_resource::<StaticMerge>()
             .init_resource::<crate::model_forms::ModelForms>()
             .init_resource::<CurrentArea>()
+            .add_message::<crate::mist::ZonesOpened>()
             // In `WorldStage::Stream`, between the teleport snap (Input) and the loading cover
             // (Present), so a swap never renders uncovered. `finish_colliders` heads the chain so
             // the collider queue read downstream is this frame's.
@@ -408,6 +428,7 @@ impl Plugin for TerrainPlugin {
                 Update,
                 (
                     finish_colliders,
+                    reload_opened_tiles,
                     stream_terrain,
                     furnish_tile_cells,
                     spawn_loaded_placements,
@@ -657,24 +678,15 @@ fn stream_terrain(
     }
     for c in stale {
         if let Some(t) = state.tiles.remove(&c) {
-            despawn_tile_owned(&mut commands, &t);
-            activity.tiles_dropped += 1;
-            for &uid in &t.placements {
-                release_placement(&mut commands, placements, uid, &mut activity);
-            }
-            handoff_straddlers(
+            drop_tile(
                 &mut commands,
                 &state.tiles,
                 placements,
                 c,
-                &t.placements,
-                merge::merge_enabled(),
+                &t,
+                &mut activity,
+                staticgx.as_deref_mut(),
             );
-            // A retained-pass batch has no entity or blob, so its owner's items leave here or
-            // never; the cells re-bake without them.
-            if let Some(gx) = staticgx.as_deref_mut() {
-                gx.release_owner(c);
-            }
         }
     }
 
@@ -697,20 +709,9 @@ fn stream_terrain(
             activity.tiles_requested += 1;
             state.tiles.insert(
                 (tx, ty),
-                TileState {
-                    handle: asset_server
-                        .load(format!("mpq://World/Maps/{dir}/{dir}_{tx}_{ty}.adt")),
-                    entity: None,
-                    material: None,
-                    next_cell: 0,
-                    furnished: false,
-                    placements: Vec::new(),
-                    liquid: Vec::new(),
-                    wall: None,
-                    clutter: Vec::new(),
-                    welds: Vec::new(),
-                    merged: Vec::new(),
-                },
+                TileState::new(
+                    asset_server.load(format!("mpq://World/Maps/{dir}/{dir}_{tx}_{ty}.adt")),
+                ),
             );
         }
     }
@@ -1073,6 +1074,109 @@ fn release_world(
     // Reset residency, or the next entry could clear its cover on this world's counts.
     if let Some(p) = progress.as_mut() {
         **p = WorldLoadProgress::default();
+    }
+}
+
+/// Tear down tile `c`, already out of `tiles`: what it spawned, its placement references, the
+/// straddlers it owned (handed to a still-loaded referrer) and its retained-pass batches.
+fn drop_tile(
+    commands: &mut Commands,
+    tiles: &HashMap<(i32, i32), TileState>,
+    placements: &mut Placements,
+    c: (i32, i32),
+    t: &TileState,
+    activity: &mut StreamActivity,
+    staticgx: Option<&mut crate::static_gx::StaticGx>,
+) {
+    despawn_tile_owned(commands, t);
+    activity.tiles_dropped += 1;
+    for &uid in &t.placements {
+        release_placement(commands, placements, uid, activity);
+    }
+    handoff_straddlers(
+        commands,
+        tiles,
+        placements,
+        c,
+        &t.placements,
+        merge::merge_enabled(),
+    );
+    // A retained-pass batch has no entity or blob, so its owner's items leave here or never; the
+    // cells re-bake without them.
+    if let Some(gx) = staticgx {
+        gx.release_owner(c);
+    }
+}
+
+/// Loads again every resident tile that holds land a Milestone just opened ([`ZonesOpened`],
+/// ADR 0034): the `AdtLoader` cuts the new copy by the new set, and once it lands the tile is
+/// torn down and spawned afresh from it, so its terrain, water, clutter, placements and collision
+/// come in and the opened chunks lose `impassable`. Until then the old tile stands.
+#[allow(clippy::too_many_arguments)]
+fn reload_opened_tiles(
+    mut commands: Commands,
+    mut state: ResMut<TerrainStreamer>,
+    mut placements: ResMut<Placements>,
+    asset_server: Res<AssetServer>,
+    mut opened: MessageReader<crate::mist::ZonesOpened>,
+    mut loaded: MessageReader<AssetEvent<AdtTile>>,
+    // The tiles asked for again, by the asset id the new copy lands under.
+    mut reloading: Local<HashMap<AssetId<AdtTile>, (i32, i32)>>,
+    mut activity: ResMut<StreamActivity>,
+    mut staticgx: Option<ResMut<crate::static_gx::StaticGx>>,
+    where_: (Res<ViewFocus>, Option<Res<CurrentMap>>),
+) {
+    let (focus, current_map) = where_;
+    if let Some(z) = crate::mist::ZonesOpened::merged(opened.read()) {
+        let map_id = focus.map(current_map.map(|m| m.0));
+        let held: std::collections::HashSet<(i32, i32)> =
+            benilla_formats::closed_zones::opened_chunks(map_id, &z.before, &z.now)
+                .into_iter()
+                .map(|(gx, gy)| ((gx / 16) as i32, (gy / 16) as i32))
+                .collect();
+        for (&c, t) in state.tiles.iter().filter(|(c, _)| held.contains(c)) {
+            let Some(path) = asset_server.get_path(t.handle.id()) else {
+                continue;
+            };
+            asset_server.reload(path.into_owned());
+            reloading.insert(t.handle.id(), c);
+        }
+        if !held.is_empty() {
+            info!(
+                "terrain: {} resident tile(s) hold opened land, reloading",
+                reloading.len()
+            );
+        }
+    }
+    for event in loaded.read() {
+        let AssetEvent::Modified { id } = event else {
+            continue;
+        };
+        let Some(c) = reloading.remove(id) else {
+            continue;
+        };
+        // Dropped, or not spawned yet, which spawns from the new copy anyway.
+        if !state
+            .tiles
+            .get(&c)
+            .is_some_and(|t| t.handle.id() == *id && t.entity.is_some())
+        {
+            continue;
+        }
+        let Some(t) = state.tiles.remove(&c) else {
+            continue;
+        };
+        drop_tile(
+            &mut commands,
+            &state.tiles,
+            &mut placements,
+            c,
+            &t,
+            &mut activity,
+            staticgx.as_deref_mut(),
+        );
+        state.tiles.insert(c, TileState::new(t.handle.clone()));
+        state.settled = false;
     }
 }
 

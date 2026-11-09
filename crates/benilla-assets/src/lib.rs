@@ -37,7 +37,7 @@ pub use model::{
 mod adt;
 mod terrain;
 mod wdt;
-pub use adt::{chunk_to_mesh, chunks_to_mesh, AdtLoader, AdtTile, ChunkShading};
+pub use adt::{chunk_to_mesh, chunks_to_mesh, AdtLoader, AdtTile, ChunkShading, ReachedMilestones};
 pub use wdt::{WdtIndex, WdtIndexLoader};
 mod blp;
 pub use blp::{BlpImageLoader, BlpLoaderSettings, BlpVariant};
@@ -214,7 +214,10 @@ pub fn register_asset_loaders(app: &mut App) {
     app.register_asset_loader(BlpImageLoader);
     app.register_asset_loader(M2ModelLoader);
     app.register_asset_loader(WmoModelLoader);
-    app.register_asset_loader(AdtLoader);
+    // One reached set (ADR 0034) for the app and the ADT loader on the asset threads.
+    let reached = ReachedMilestones::default();
+    app.insert_resource(reached.clone());
+    app.register_asset_loader(AdtLoader { reached });
     app.register_asset_loader(WdtIndexLoader);
     // The materials' WGSL, compiled in; it too needs `AssetPlugin` first.
     materials::register_shaders(app);
@@ -502,11 +505,17 @@ mod tests {
         let reader = benilla_formats::Chain::open(&data).expect("open chain");
         let mut url = None;
         // A tile the Closed Zones (ADR 0015) cover loads with every chunk cut, so the search
-        // skips one whose centre chunk is closed (map 0, Azeroth).
+        // skips one whose centre chunk is closed (map 0, Azeroth) with nothing reached, as the
+        // loader starts.
+        let none = benilla_formats::closed_zones::Reached::default();
         'find: for tx in 28..36u32 {
             for ty in 46..52u32 {
-                let open =
-                    !benilla_formats::closed_zones::chunk_closed(0, tx * 16 + 8, ty * 16 + 8);
+                let open = !benilla_formats::closed_zones::chunk_closed(
+                    0,
+                    tx * 16 + 8,
+                    ty * 16 + 8,
+                    &none,
+                );
                 if open && reader.contains(&format!("World\\Maps\\Azeroth\\Azeroth_{tx}_{ty}.adt"))
                 {
                     url = Some(format!("mpq://World/Maps/Azeroth/Azeroth_{tx}_{ty}.adt"));

@@ -6,8 +6,9 @@
 //! shares one material.
 
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
-use benilla_formats::closed_zones::closed_at;
+use benilla_formats::closed_zones::{closed_at, Reached};
 use benilla_formats::{
     adt_to_tile_mesh, blp_bytes_to_native_chain, ChunkMesh, Doodad, TileMesh, WmoInstance,
     ALPHA_MAP_SIZE, CHUNK_SIZE, SHADOW_MAP_SIZE,
@@ -126,9 +127,32 @@ pub fn chunks_to_mesh(parts: &[(&ChunkMesh, &ChunkShading)]) -> Option<Mesh> {
     Some(mesh)
 }
 
-/// Loads a `*.adt` tile into an [`AdtTile`].
+/// The Milestones reached (ADR 0034), shared by the app, which sets them from the realm's
+/// `SessionEvent::Milestones`, and the [`AdtLoader`] on the asset threads, which cuts a tile by
+/// them. [`crate::register_asset_loaders`] makes the one handle and inserts it as a resource.
+#[derive(Resource, Clone, Default)]
+pub struct ReachedMilestones(Arc<RwLock<Reached>>);
+
+impl ReachedMilestones {
+    /// A copy of the set now.
+    pub fn get(&self) -> Reached {
+        self.0.read().unwrap_or_else(|e| e.into_inner()).clone()
+    }
+
+    /// Sets the set to `now`, and returns the keys `now` adds to the last one.
+    pub fn set(&self, now: Reached) -> Vec<String> {
+        let mut held = self.0.write().unwrap_or_else(|e| e.into_inner());
+        let added = now.added_since(&held);
+        *held = now;
+        added
+    }
+}
+
+/// Loads a `*.adt` tile into an [`AdtTile`], cut by the Milestones reached when it loads.
 #[derive(Default, TypePath)]
-pub struct AdtLoader;
+pub struct AdtLoader {
+    pub reached: ReachedMilestones,
+}
 
 impl AssetLoader for AdtLoader {
     type Asset = AdtTile;
@@ -146,7 +170,7 @@ impl AssetLoader for AdtLoader {
         let to_io = |e: anyhow::Error| std::io::Error::other(format!("{e:#}"));
         let mut tile = adt_to_tile_mesh(&bytes).map_err(to_io)?;
         if let Some(map) = map_of_adt(&ctx.path().to_string()) {
-            cut_closed(map, &mut tile);
+            cut_closed(map, &mut tile, &self.reached.get());
         }
 
         // Layer array: a solid-green fallback at index 0, then each unique layer texture, packed
@@ -306,16 +330,16 @@ fn map_of_adt(path: &str) -> Option<u32> {
     name.starts_with("azeroth_").then_some(AZEROTH)
 }
 
-/// Cuts the Closed Zones (ADR 0015) out of a decoded tile of `map`: a chunk whose centre is
-/// closed draws no terrain, water or clutter, welds no collision and is fenced in as impassable,
-/// and a doodad or WMO placed on a closed chunk goes.
-fn cut_closed(map: u32, tile: &mut TileMesh) {
+/// Cuts the Closed Zones (ADR 0015) out of a decoded tile of `map` while `reached` are: a chunk
+/// whose centre is closed draws no terrain, water or clutter, welds no collision and is fenced in
+/// as impassable, and a doodad or WMO placed on a closed chunk goes.
+fn cut_closed(map: u32, tile: &mut TileMesh, reached: &Reached) {
     for chunk in &mut tile.chunks {
         // `positions[0]` is the chunk's north-west corner; its centre is half a chunk in.
         let Some(&[x, y, _]) = chunk.positions.first() else {
             continue;
         };
-        if !closed_at(map, x - CHUNK_SIZE / 2.0, y - CHUNK_SIZE / 2.0) {
+        if !closed_at(map, x - CHUNK_SIZE / 2.0, y - CHUNK_SIZE / 2.0, reached) {
             continue;
         }
         chunk.indices.clear();
@@ -325,9 +349,9 @@ fn cut_closed(map: u32, tile: &mut TileMesh) {
         chunk.impassable = true;
     }
     tile.doodads
-        .retain(|d| !closed_at(map, d.position[0], d.position[1]));
+        .retain(|d| !closed_at(map, d.position[0], d.position[1], reached));
     tile.wmos
-        .retain(|w| !closed_at(map, w.position[0], w.position[1]));
+        .retain(|w| !closed_at(map, w.position[0], w.position[1], reached));
 }
 
 #[cfg(test)]
@@ -399,7 +423,7 @@ mod closed_tests {
             doodads: vec![doodad(SENTINEL_HILL, 1), doodad(GOLDSHIRE, 2)],
             wmos: Vec::new(),
         };
-        cut_closed(AZEROTH, &mut tile);
+        cut_closed(AZEROTH, &mut tile, &Reached::default());
         let [closed, open] = &tile.chunks[..] else {
             unreachable!()
         };
@@ -416,6 +440,39 @@ mod closed_tests {
         assert!(!open.impassable && open.liquids.len() == 1);
         let left: Vec<u32> = tile.doodads.iter().map(|d| d.unique_id).collect();
         assert_eq!(left, vec![2]);
+    }
+
+    #[test]
+    fn a_steppes_chunk_is_cut_with_no_keys_and_uncut_with_steppes_open() {
+        // Marshal Maxwell at Morgan's Vigil, in the Burning Steppes (ADR 0034).
+        const MORGANS_VIGIL: [f32; 2] = [-8378.5, -2748.9];
+        let tile = || TileMesh {
+            chunks: vec![chunk(corner_of(MORGANS_VIGIL))],
+            doodads: vec![doodad(MORGANS_VIGIL, 1)],
+            wmos: Vec::new(),
+        };
+        let mut shut = tile();
+        cut_closed(AZEROTH, &mut shut, &Reached::default());
+        assert!(shut.chunks[0].impassable && shut.chunks[0].indices.is_empty());
+        assert!(shut.doodads.is_empty());
+
+        let mut open = tile();
+        cut_closed(AZEROTH, &mut open, &Reached::new(["steppes_open"]));
+        assert!(!open.chunks[0].impassable);
+        assert_eq!(open.chunks[0].indices, vec![0, 1, 2]);
+        assert_eq!(open.chunks[0].liquids.len(), 1);
+        assert_eq!(open.doodads.len(), 1);
+    }
+
+    #[test]
+    fn the_shared_set_reports_only_the_keys_it_adds() {
+        let reached = ReachedMilestones::default();
+        assert_eq!(
+            reached.set(Reached::new(["steppes_open"])),
+            vec!["steppes_open"]
+        );
+        assert!(reached.set(Reached::new(["steppes_open"])).is_empty());
+        assert!(reached.get().contains("steppes_open"));
     }
 
     #[test]

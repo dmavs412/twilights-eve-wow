@@ -4,11 +4,13 @@
 //! tile's terrain root that despawns with it. `shaders/mist.wgsl` colours it with the scene fog.
 //! A placed mist wall (`benilla_formats::mist_walls`, ADR 0033) stands where there is no closed
 //! chunk, as in the Deeprun Tram's tunnel: the same curtain on a straight line, and a solid box.
+//! When a Milestone opens a gated zone during play ([`ZonesOpened`], ADR 0034), the curtain on
+//! its old border fades out over [`OPEN_FADE_SECS`] on a copy of its own; placed walls never fade.
 
 use avian3d::prelude::{Collider, RigidBody};
 use benilla_assets::coords::wow_to_bevy;
-use benilla_assets::AdtTile;
-use benilla_formats::closed_zones::chunk_closed;
+use benilla_assets::{AdtTile, ReachedMilestones};
+use benilla_formats::closed_zones::{chunk_closed, Reached};
 use benilla_formats::mist_walls::{mist_walls, MistWall};
 use benilla_formats::{ChunkMesh, CHUNK_SIZE, TILE_SIZE};
 use bevy::asset::RenderAssetUsages;
@@ -63,6 +65,35 @@ pub const SKIRT_RAISE_YD: f32 = 1.5;
 /// Yards from the camera within which the wisp sheets and the skirt vanish, so the camera never
 /// crosses a hard sheet. The backdrop keeps its alpha at every distance.
 pub const CAMERA_FADE_YD: f32 = 3.0;
+/// Seconds the curtain on a newly opened zone's border takes to fade to nothing.
+pub const OPEN_FADE_SECS: f32 = 6.0;
+
+/// The fade factor of a curtain `secs` after its zone opened: 1 at the start, falling evenly to
+/// 0 at [`OPEN_FADE_SECS`] and staying there.
+pub fn open_fade(secs: f32) -> f32 {
+    (1.0 - secs / OPEN_FADE_SECS).clamp(0.0, 1.0)
+}
+
+/// The Milestones reached went from `before` to `now`, adding keys (ADR 0034): the land they
+/// open loads in and the mist on its border fades. The app writes it from the realm's
+/// `SessionEvent::Milestones`, after it sets [`ReachedMilestones`] to `now`.
+#[derive(Message, Clone, Debug)]
+pub struct ZonesOpened {
+    pub before: Reached,
+    pub now: Reached,
+}
+
+impl ZonesOpened {
+    /// The first event's `before` and the last one's `now`, for a frame with several.
+    pub fn merged<'a>(events: impl IntoIterator<Item = &'a ZonesOpened>) -> Option<ZonesOpened> {
+        events.into_iter().fold(None, |acc, e| {
+            Some(ZonesOpened {
+                before: acc.map_or_else(|| e.before.clone(), |a: ZonesOpened| a.before),
+                now: e.now.clone(),
+            })
+        })
+    }
+}
 
 /// Chunks across a map, both ways: 64 tiles of 16.
 const CHUNKS: u32 = 64 * 16;
@@ -82,7 +113,8 @@ pub struct MistExt {
     /// [`FOOT_DESAT`], [`FOOT_VALUE`], [`COLOUR_RAMP_YD`] and [`FOOT_RAMP_YD`], read by the shader.
     #[uniform(102)]
     pub(crate) foot: Vec4,
-    /// [`RAG_YD`], [`FADE_FLOOR`] and [`CAMERA_FADE_YD`], read by the shader.
+    /// [`RAG_YD`], [`FADE_FLOOR`], [`CAMERA_FADE_YD`] and, in `w`, the fade factor the shader
+    /// multiplies into the alpha: 1 on every curtain but one fading out ([`open_fade`]).
     #[uniform(103)]
     pub(crate) rag: Vec4,
 }
@@ -116,6 +148,17 @@ struct Mist {
 #[derive(Component)]
 struct MistBuilt;
 
+/// A tile's curtain, a child of its terrain root.
+#[derive(Component)]
+struct MistCurtain;
+
+/// A curtain on a newly opened zone's border, detached from every tile, with its own material
+/// instance: it fades out and despawns [`OPEN_FADE_SECS`] after the zone opened.
+#[derive(Component)]
+struct FadingMist {
+    secs: f32,
+}
+
 /// One curtain segment, in WoW coordinates: along a chunk side from `from` to `to` (`[x, y]`),
 /// from `bottom` up to `top`, over the open chunk's terrain `rows`.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -138,6 +181,25 @@ fn grid_line(i: u32) -> f32 {
 /// 1024 × 1024 grid is closed by `closed(gx, gy)`. The open chunk owns the side, so an edge on a
 /// tile border is built once, by the tile holding the open chunk.
 pub(crate) fn segments(chunks: &[ChunkMesh], closed: impl Fn(u32, u32) -> bool) -> Vec<Segment> {
+    sides(chunks, &closed, &closed)
+}
+
+/// The segments of the curtain that opening a zone takes down: each side of a chunk open under
+/// `before` whose neighbour `before` closes and `now` opens.
+pub(crate) fn opened_segments(
+    chunks: &[ChunkMesh],
+    before: impl Fn(u32, u32) -> bool,
+    now: impl Fn(u32, u32) -> bool,
+) -> Vec<Segment> {
+    sides(chunks, &before, &|gx, gy| before(gx, gy) && !now(gx, gy))
+}
+
+/// One segment per side of a chunk `closed` leaves open whose neighbour `across` picks.
+fn sides(
+    chunks: &[ChunkMesh],
+    closed: &dyn Fn(u32, u32) -> bool,
+    across: &dyn Fn(u32, u32) -> bool,
+) -> Vec<Segment> {
     let mut out = Vec::new();
     for chunk in chunks {
         // `positions[0]` is the north-west corner, on the grid lines of the chunk's own indices.
@@ -191,7 +253,7 @@ pub(crate) fn segments(chunks: &[ChunkMesh], closed: impl Fn(u32, u32) -> bool) 
             let Some((nx, ny)) = neighbour.filter(|&(nx, ny)| nx < CHUNKS && ny < CHUNKS) else {
                 continue;
             };
-            if !closed(nx, ny) {
+            if !across(nx, ny) {
                 continue;
             }
             let rows: [[[f32; 3]; 9]; 3] = std::array::from_fn(|j| {
@@ -397,26 +459,32 @@ fn setup_mist(mut commands: Commands, mut materials: ResMut<Assets<MistMaterial>
             fog: Vec4::ZERO,
             shape: Vec4::new(OPAQUE_YD, DRIFT_YD_S, DRIFT_UP_YD_S, WARP_YD),
             foot: Vec4::new(FOOT_DESAT, FOOT_VALUE, COLOUR_RAMP_YD, FOOT_RAMP_YD),
-            rag: Vec4::new(RAG_YD, FADE_FLOOR, CAMERA_FADE_YD, 0.0),
+            rag: Vec4::new(RAG_YD, FADE_FLOOR, CAMERA_FADE_YD, 1.0),
         },
     });
     commands.insert_resource(Mist { material });
 }
 
-/// Builds each newly spawned tile's curtain, once, as a child of its terrain root.
+/// Builds each newly spawned tile's curtain, once, as a child of its terrain root, for the
+/// Milestones reached.
 fn build_mist_curtains(
     mut commands: Commands,
     roots: Query<(Entity, &TerrainTileRoot), Without<MistBuilt>>,
     tiles: Res<Assets<AdtTile>>,
+    reached: Option<Res<ReachedMilestones>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mist: Res<Mist>,
 ) {
+    if roots.is_empty() {
+        return;
+    }
+    let reached = reached.map(|r| r.get()).unwrap_or_default();
     for (root, tile) in &roots {
         let Some(adt) = tiles.get(&tile.adt) else {
             continue;
         };
         let map = tile.map;
-        let found = segments(&adt.chunks, |gx, gy| chunk_closed(map, gx, gy));
+        let found = segments(&adt.chunks, |gx, gy| chunk_closed(map, gx, gy, &reached));
         commands.entity(root).insert(MistBuilt);
         if found.is_empty() {
             continue;
@@ -426,6 +494,7 @@ fn build_mist_curtains(
         let handle = meshes.add(mesh);
         commands.entity(root).with_children(|c| {
             let mut curtain = c.spawn((
+                MistCurtain,
                 Mesh3d(handle),
                 MeshMaterial3d(mist.material.clone()),
                 Transform::IDENTITY, // the mesh is in absolute world coords
@@ -436,6 +505,87 @@ fn build_mist_curtains(
                 curtain.insert(aabb);
             }
         });
+    }
+}
+
+/// On a zone opening, takes down every built curtain segment between an open chunk and a newly
+/// opened one: a copy of those segments, on no tile and with a material of its own, starts to
+/// fade, and the tile's curtain is rebuilt for the new set, so a segment on the new border with a
+/// zone still closed comes in at once.
+#[allow(clippy::too_many_arguments)]
+fn fade_opened_curtains(
+    mut commands: Commands,
+    mut opened: MessageReader<ZonesOpened>,
+    roots: Query<(Entity, &TerrainTileRoot, Option<&Children>), With<MistBuilt>>,
+    curtains: Query<(), With<MistCurtain>>,
+    tiles: Res<Assets<AdtTile>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<MistMaterial>>,
+    mist: Res<Mist>,
+) {
+    let Some(ZonesOpened { before, now }) = ZonesOpened::merged(opened.read()) else {
+        return;
+    };
+    for (root, tile, children) in &roots {
+        let Some(adt) = tiles.get(&tile.adt) else {
+            continue;
+        };
+        let map = tile.map;
+        let fading = opened_segments(
+            &adt.chunks,
+            |gx, gy| chunk_closed(map, gx, gy, &before),
+            |gx, gy| chunk_closed(map, gx, gy, &now),
+        );
+        if fading.is_empty() {
+            continue;
+        }
+        for &child in children.into_iter().flatten() {
+            if curtains.contains(child) {
+                commands.entity(child).despawn();
+            }
+        }
+        commands.entity(root).remove::<MistBuilt>();
+        let Some(mut material) = materials.get(&mist.material).cloned() else {
+            continue;
+        };
+        material.extension.rag.w = open_fade(0.0);
+        let mesh = curtain_mesh(&fading);
+        let aabb = mesh.compute_aabb();
+        let mut curtain = commands.spawn((
+            FadingMist { secs: 0.0 },
+            Mesh3d(meshes.add(mesh)),
+            MeshMaterial3d(materials.add(material)),
+            Transform::IDENTITY,
+            crate::exterior_cull::ExteriorScene,
+        ));
+        if let Some(aabb) = aabb {
+            curtain.insert(aabb);
+        }
+    }
+}
+
+/// Fades each [`FadingMist`] by [`open_fade`], in the shared curtain's colour and drift, and
+/// despawns it once it is gone.
+fn tick_fading_mist(
+    mut commands: Commands,
+    time: Res<Time>,
+    mist: Res<Mist>,
+    mut materials: ResMut<Assets<MistMaterial>>,
+    mut fading: Query<(Entity, &mut FadingMist, &MeshMaterial3d<MistMaterial>)>,
+) {
+    let fog = materials.get(&mist.material).map(|m| m.extension.fog);
+    for (e, mut f, material) in &mut fading {
+        f.secs += time.delta_secs();
+        if f.secs >= OPEN_FADE_SECS {
+            commands.entity(e).despawn();
+            continue;
+        }
+        if let Some(m) = materials.get_mut(&material.0) {
+            if let Some(fog) = fog {
+                m.extension.fog = fog;
+            }
+            m.extension.rag.w = open_fade(f.secs);
+        }
     }
 }
 
@@ -460,13 +610,18 @@ pub struct MistPlugin;
 impl Plugin for MistPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<MistMaterial>::default())
+            .add_message::<ZonesOpened>()
             .add_systems(Startup, setup_mist)
             .add_systems(
                 Update,
                 (
-                    build_mist_curtains.in_set(WorldStage::Stream),
+                    (fade_opened_curtains, build_mist_curtains)
+                        .chain()
+                        .in_set(WorldStage::Stream),
                     build_placed_walls.in_set(WorldStage::Stream),
-                    tint_mist.in_set(crate::lighting::LightingConsumeSet),
+                    (tint_mist, tick_fading_mist)
+                        .chain()
+                        .in_set(crate::lighting::LightingConsumeSet),
                 ),
             );
     }
@@ -557,6 +712,70 @@ mod tests {
                 assert!(off < 0.01, "row 0 ends {off} yd from its corner");
             }
         }
+    }
+
+    #[test]
+    fn a_border_chunk_beside_a_gated_one_has_a_segment_until_its_key_is_reached() {
+        // Morgan's Vigil's chunk, in the gated Burning Steppes, and its neighbour to the west.
+        let index = |v: f32| ((32.0 * TILE_SIZE - v) / CHUNK_SIZE).floor() as u32;
+        let (gx, gy) = (index(-2748.9), index(-8378.5));
+        let none = Reached::default();
+        let steppes = Reached::new(["steppes_open"]);
+        assert!(chunk_closed(0, gx, gy, &none));
+        let west = chunk(gx - 1, gy);
+        // Only the gated chunk counts, so the test holds wherever the Steppes' edge runs.
+        let gated = |reached: &Reached| {
+            let reached = reached.clone();
+            move |x, y| (x, y) == (gx, gy) && chunk_closed(0, x, y, &reached)
+        };
+        let shut = segments(std::slice::from_ref(&west), gated(&none));
+        assert_eq!(shut.len(), 1, "the east side, against the Steppes");
+        assert!(segments(std::slice::from_ref(&west), gated(&steppes)).is_empty());
+        let fading = opened_segments(std::slice::from_ref(&west), gated(&none), gated(&steppes));
+        assert_eq!(fading, shut, "the segment the key takes down fades");
+    }
+
+    #[test]
+    fn a_side_against_a_zone_closed_for_good_never_fades() {
+        // The east neighbour stays closed; the south one opens.
+        let before = |gx, gy| (gx, gy) == (CX + 1, CY) || (gx, gy) == (CX, CY + 1);
+        let now = |gx, gy| (gx, gy) == (CX + 1, CY);
+        let fading = opened_segments(&[chunk(CX, CY)], before, now);
+        assert_eq!(fading.len(), 1);
+        assert_eq!(fading[0].from, [grid_line(CY + 1), grid_line(CX)]);
+        // A chunk closed before, opened now, owns no side that fades.
+        assert!(opened_segments(&[chunk(CX, CY)], |_, _| true, |_, _| false).is_empty());
+    }
+
+    #[test]
+    fn the_open_fade_runs_from_one_to_nothing_over_six_seconds() {
+        assert_eq!(open_fade(0.0), 1.0);
+        assert_eq!(open_fade(3.0), 0.5);
+        assert_eq!(open_fade(6.0), 0.0);
+        assert_eq!(open_fade(9.0), 0.0);
+        assert_eq!(OPEN_FADE_SECS, 6.0);
+    }
+
+    #[test]
+    fn merged_events_keep_the_first_before_and_the_last_now() {
+        let (a, b, c) = (
+            Reached::default(),
+            Reached::new(["x"]),
+            Reached::new(["x", "y"]),
+        );
+        let events = [
+            ZonesOpened {
+                before: a.clone(),
+                now: b.clone(),
+            },
+            ZonesOpened {
+                before: b,
+                now: c.clone(),
+            },
+        ];
+        let merged = ZonesOpened::merged(&events).unwrap();
+        assert_eq!((merged.before, merged.now), (a, c));
+        assert!(ZonesOpened::merged(&[]).is_none());
     }
 
     #[test]

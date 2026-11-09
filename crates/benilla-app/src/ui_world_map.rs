@@ -99,7 +99,12 @@ fn map_row_view(
     WorldMapZoneView {
         name,
         area_id: a.area_id,
-        closed: benilla_formats::closed_zones::zone_closed(a.map_id, a.area_id),
+        // With nothing reached; [`mark_closed`] marks it for the Milestones reached.
+        closed: benilla_formats::closed_zones::zone_closed(
+            a.map_id,
+            a.area_id,
+            &benilla_formats::closed_zones::Reached::default(),
+        ),
         map_file: a.name.clone(),
         loc_rect: (a.loc_left, a.loc_right, a.loc_top, a.loc_bottom),
         // WorldMapOverlay rows by WMA id, each revealed by its covered areas' `exploreFlag` bits.
@@ -352,6 +357,18 @@ pub(crate) fn seed_world_map_catalog(world: &mut World, script: &mut UiScript) {
         );
         world.insert_resource(data);
         world.insert_resource(WorldMapCatalog(views));
+    }
+    // The catalog is built once a process; which zones are misted follows the Milestones reached.
+    let reached = world
+        .get_resource::<benilla_assets::ReachedMilestones>()
+        .map(|r| r.get())
+        .unwrap_or_default();
+    if world.contains_resource::<WorldMapCatalog>() {
+        world.resource_scope(|world, mut catalog: Mut<WorldMapCatalog>| {
+            if let Some(mut data) = world.get_resource_mut::<WorldMapUiData>() {
+                mark_closed(&mut catalog.0, &mut data, &reached);
+            }
+        });
     }
     let Some(catalog) = world.get_resource::<WorldMapCatalog>() else {
         return;
@@ -1042,6 +1059,7 @@ pub(crate) struct WorldMapUiPlugin;
 
 impl Plugin for WorldMapUiPlugin {
     fn build(&self, app: &mut App) {
+        app.add_message::<benilla_world::mist::ZonesOpened>();
         app.add_systems(
             Update,
             (
@@ -1050,7 +1068,52 @@ impl Plugin for WorldMapUiPlugin {
                 feed_world_map_carts.after(UiInput),
                 // After the script tick, so the jump hit-tests this tick's frame rects.
                 dev_map_jump.after(UiInput),
+                unmist_opened_zones,
             ),
+        );
+    }
+}
+
+/// Marks each zone of the catalog misted or not while the Milestones `reached` are (ADR 0034):
+/// `views` and `data.continents` share their order.
+fn mark_closed(
+    views: &mut [WorldMapContinentView],
+    data: &mut WorldMapUiData,
+    reached: &benilla_formats::closed_zones::Reached,
+) {
+    use benilla_formats::closed_zones::zone_closed;
+    for (view, entry) in views.iter_mut().zip(&data.continents) {
+        for zone in &mut view.zones {
+            zone.closed = zone_closed(entry.map_id, zone.area_id, reached);
+        }
+    }
+    for d in &mut data.direct {
+        d.view.closed = zone_closed(d.map_id, d.view.area_id, reached);
+    }
+}
+
+/// A zone a Milestone opens during play stops being misted on the world map, pushed to the VM at
+/// once; a later login's seed marks it from the reached set too.
+fn unmist_opened_zones(
+    mut opened: MessageReader<benilla_world::mist::ZonesOpened>,
+    catalog: Option<ResMut<WorldMapCatalog>>,
+    data: Option<ResMut<WorldMapUiData>>,
+    script: Option<NonSendMut<UiScript>>,
+) {
+    let Some(z) = benilla_world::mist::ZonesOpened::merged(opened.read()) else {
+        return;
+    };
+    let (Some(mut catalog), Some(mut data)) = (catalog, data) else {
+        return;
+    };
+    mark_closed(&mut catalog.0, &mut data, &z.now);
+    if let Some(mut script) = script {
+        script.set_world_map_catalog(catalog.0.clone());
+        script.set_world_map_direct_areas(
+            data.direct
+                .iter()
+                .map(|d| (d.id, d.view.clone()))
+                .collect::<Vec<_>>(),
         );
     }
 }

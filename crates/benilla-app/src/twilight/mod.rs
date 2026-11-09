@@ -19,6 +19,7 @@ use twilight_realm::{DevMultipliers, Host, Realm, RealmCommand, Storage};
 use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink, SelfGuid};
 
 mod goto;
+mod milestones;
 mod remote;
 #[cfg(test)]
 pub(crate) mod vanilla_player;
@@ -108,6 +109,8 @@ impl Plugin for TwilightPlugin {
             .add_message::<DevRumour>()
             .add_message::<DevRumourStep>()
             .add_message::<DevRumourEnd>()
+            .add_message::<benilla_world::mist::ZonesOpened>()
+            .init_resource::<milestones::MilestonesInbox>()
             .init_resource::<goto::GotoGround>();
         app.insert_resource(LocalRealm {
             far,
@@ -116,7 +119,8 @@ impl Plugin for TwilightPlugin {
         })
         .add_systems(
             Update,
-            (goto::fetch_goto_ground, pump)
+            // The reached set lands in the frame it comes, before the world streams.
+            (goto::fetch_goto_ground, pump, milestones::apply_milestones)
                 .chain()
                 .in_set(WorldStage::Net)
                 .before(crate::net::apply_net_updates),
@@ -359,6 +363,7 @@ fn pump(
         Option<ResMut<crate::player::SeatInbox>>,
         Option<ResMut<crate::alchemy::AlchemyInbox>>,
         Option<ResMut<crate::alchemy::AlchemyOutbox>>,
+        Option<ResMut<milestones::MilestonesInbox>>,
     ),
 ) {
     let LocalRealm {
@@ -514,8 +519,11 @@ fn pump(
             }
             continue;
         }
-        // The reached Milestones (ADR 0034): nothing reads them yet.
+        // The reached Milestones (ADR 0034), which open gated land.
         if matches!(event, SessionEvent::Milestones { .. }) {
+            if let Some(inbox) = reel.13.as_deref_mut() {
+                inbox.0.push(event);
+            }
             continue;
         }
         // Our cart seat and its end go to the seat (spec #560).
