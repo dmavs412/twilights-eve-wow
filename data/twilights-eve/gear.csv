@@ -1025,12 +1025,36 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 903237,Pathfinder's Ring,Ring,Misc,,Uncommon,38,36,,28,18,,,,,,,,,,,,,,,,,,,46,quest-ring-swift-b,,,,31906,,2922,Pickup,,,,,,,,,,,
 903238,Pathfinder's Circle,Ring,Misc,,Uncommon,38,36,,,11,23,12,,,,,,,,,,,,,,,,,46,quest-ring-mind-a,,,,35313,,2922,Pickup,,,,,,,,,,,
 903239,Pathfinder's Seal,Ring,Misc,,Uncommon,38,36,,,12,21,13,,,,,,,,,,,,,,,,,46,quest-ring-mind-b,,,,35423,,2922,Pickup,,,,,,,,,,,
+903240,Outrider's Robe,Chest,Cloth,,Uncommon,43,40,,,13,26,14,661,,,,,,,,,,,,,,,,53,quest-chest-cloth,,,,26192,INV_Chest_Cloth_19,4479,Pickup,70,,Cloth,26197,26194,26189,26187,26193,26190,26196,26186
+903241,Outrider's Jerkin,Chest,Leather,,Uncommon,43,40,,36,17,,,1156,,,,,,,,,,,,,,,,53,quest-chest-leather,,,,27564,INV_Shirt_04,5259,Pickup,85,,Leather,27572,27569,27573,27565,27567,27566,27570,27568
+903242,Outrider's Hauberk,Chest,Mail,,Uncommon,43,40,36,,17,,,1983,,,,,,,,,,,,,,,,53,quest-chest-mail,,,,27039,INV_Chest_Chain_03,6642,Pickup,100,,Chain,27042,27044,27040,27038,27041,27045,27043,27037
+903243,Outrider's Cuirass,Chest,Plate,,Uncommon,43,40,36,,17,,,2478,,,,,,,,,,,,,,,,53,quest-chest-plate,,,,27171,INV_Chest_Plate12,8858,Pickup,115,,Plate,27178,27177,27176,27170,27172,27169,27174,27173
+903244,Outrider's Cutlass,Weapon,Sword,1H,Uncommon,43,40,36,,17,,,,,87,135,Physical,2.0,,,,,,,,,,,53,quest-sword,,,,5153,INV_Sword_40,9876,Pickup,75,Side,Metal,,,,,,,,
+903245,Outrider's Kite Shield,Offhand,Shield,,Uncommon,43,40,36,,17,,,893,12,,,,,,,,,,,,,,,53,quest-shield,,,,18769,,5971,Pickup,85,Shield,Metal,,,,,,,,
+903246,Outrider's Dirk,Weapon,Dagger,1H,Uncommon,43,40,,36,17,,,,,67,99,Physical,1.5,,,,,,,,,,,53,quest-dagger,,,,22247,INV_Sword_21,10247,Pickup,55,Side,Metal,,,,,,,,
+903247,Outrider's Recurve,Ranged,Bow,,Uncommon,43,40,,36,17,,,,,82,121,Physical,2.4,,,,,,,,,,,53,quest-bow,,,,20653,INV_Weapon_Bow_14,8695,Pickup,65,,Wood,,,,,,,,
+903248,Outrider's Quarterstaff,Weapon,Staff,2H,Uncommon,43,40,,,,53,,,,179,266,Physical,3.0,,,,,,,,,,106,106,quest-staff,,,,20356,INV_Staff_03,13075,Pickup,85,Staff,Wood,,,,,,,,
+903249,Outrider's Cudgel,Weapon,Mace,1H,Uncommon,43,40,,,,27,,,,87,135,Physical,2.0,,,,,,,,,,52,53,quest-mace,,,,19673,,10761,Pickup,75,Side,Wood,,,,,,,,
+903250,Outrider's Lantern,Offhand,Held,,Uncommon,43,40,,,,27,,,,,,,,,,,,,,,,,52,53,quest-held,,,,28514,,4373,Pickup,,Hip,,,,,,,,,
+903251,Outrider's Torc,Amulet,Misc,,Uncommon,43,40,36,,17,,,,,,,,,,,,,,,,,,,53,quest-amulet-might,,,,31604,,7629,Pickup,,,,,,,,,,,
+903252,Outrider's Talisman,Amulet,Misc,,Uncommon,43,40,,36,17,,,,,,,,,,,,,,,,,,,53,quest-amulet-swift,,,,31603,,7629,Pickup,,,,,,,,,,,
+903253,Outrider's Pendant,Amulet,Misc,,Uncommon,43,40,,,13,26,14,,,,,,,,,,,,,,,,,53,quest-amulet-mind,,,,32713,,7629,Pickup,,,,,,,,,,,
+903254,Outrider's Band,Ring,Misc,,Uncommon,43,40,36,,17,,,,,,,,,,,,,,,,,,,53,quest-ring-might-a,,,,32305,,3927,Pickup,,,,,,,,,,,
+903255,Outrider's Signet,Ring,Misc,,Uncommon,43,40,32,,21,,,,,,,,,,,,,,,,,,,53,quest-ring-might-b,,,,32323,,3927,Pickup,,,,,,,,,,,
+903256,Outrider's Loop,Ring,Misc,,Uncommon,43,40,,36,17,,,,,,,,,,,,,,,,,,,53,quest-ring-swift-a,,,,32347,,3927,Pickup,,,,,,,,,,,
+903257,Outrider's Ring,Ring,Misc,,Uncommon,43,40,,32,21,,,,,,,,,,,,,,,,,,,53,quest-ring-swift-b,,,,31906,,3927,Pickup,,,,,,,,,,,
+903258,Outrider's Circle,Ring,Misc,,Uncommon,43,40,,,13,26,14,,,,,,,,,,,,,,,,,53,quest-ring-mind-a,,,,35313,,3927,Pickup,,,,,,,,,,,
+903259,Outrider's Seal,Ring,Misc,,Uncommon,43,40,,,14,24,15,,,,,,,,,,,,,,,,,53,quest-ring-mind-b,,,,35423,,3927,Pickup,,,,,,,,,,,
 903300,Thresher-Bone Sword,Weapon,Sword,1H,Rare,33,30,57,,28,,,,,85,131,Physical,2.0,,,,,,,,,,,85,quest-elite-sword,,,,32077,INV_Sword_42,7285,Pickup,90,Side,Metal,,,,,,,,
 903301,Thresher-Tooth Dirk,Weapon,Dagger,1H,Rare,33,30,,57,28,,,,,66,96,Physical,1.5,,,,,,,,,,,85,quest-elite-dagger,,,,32075,INV_Weapon_ShortBlade_06,7074,Pickup,65,Side,Metal,,,,,,,,
 903302,Dockmaster's Driftwood Staff,Weapon,Staff,2H,Rare,33,30,,,,85,,,,173,256,Physical,3.0,,,,,,,,,,170,170,quest-elite-staff,,,,20330,INV_Staff_30,8554,Pickup,100,Staff,Wood,,,,,,,,
 903303,Overseer's Iron Band,Ring,Misc,,Rare,38,36,66,,33,,,,,,,,,,,,,,,,,,,99,quest-elite-ring-might,,,,32335,,3887,Pickup,,,,,,,,,,,
 903304,Overseer's Coiled Band,Ring,Misc,,Rare,38,36,,66,33,,,,,,,,,,,,,,,,,,,99,quest-elite-ring-swift,,,,35367,,3887,Pickup,,,,,,,,,,,
 903305,Overseer's Grey Band,Ring,Misc,,Rare,38,36,,,24,50,25,,,,,,,,,,,,,,,,,99,quest-elite-ring-mind,,,,35472,,3887,Pickup,,,,,,,,,,,
+903306,Warchief's-Bane Robe,Chest,Cloth,,Rare,43,40,,,28,57,30,760,,,,,,,,,,,,,,,,115,quest-elite-chest-cloth,,,,28078,INV_Chest_Cloth_28,5957,Pickup,84,,Cloth,28067,28068,28071,28082,28083,28079,28084,28080
+903307,Warchief's-Bane Jerkin,Chest,Leather,,Rare,43,40,,78,37,,,1330,,,,,,,,,,,,,,,,115,quest-elite-chest-leather,,,,27728,INV_Chest_Samurai,6994,Pickup,102,,Leather,27729,27732,27721,27727,27722,27724,27723,27725
+903308,Warchief's-Bane Hauberk,Chest,Mail,,Rare,43,40,78,,37,,,2280,,,,,,,,,,,,,,,,115,quest-elite-chest-mail,,,,26123,INV_Misc_Desecrated_MailChest,8834,Pickup,120,,Chain,26128,26116,26126,26122,26125,26127,26130,26129
+903309,Warchief's-Bane Breastplate,Chest,Plate,,Rare,43,40,78,,37,,,2850,,,,,,,,,,,,,,,,115,quest-elite-chest-plate,,,,27308,INV_Misc_Desecrated_PlateChest,11781,Pickup,138,,Plate,27306,27302,27304,27307,27309,27310,27311,27312
 906000,Morgan's Loaded Die,Trinket,Misc,,Rare,14,,,,,,,,,,,,,,,,,,,,,,,0,,,1960000,,6540,INV_Misc_Bone_09,1153,Pickup,,,,,,,,,,,
 906001,Apprentice's Hourglass,Trinket,Misc,,Rare,22,,,,,,,,,,,,,,,,,,,,,,,0,,,1960004,,6540,INV_Misc_PocketWatch_01,1527,Pickup,,,,,,,,,,,
 906002,Vael's Echo Shard,Trinket,Misc,,Rare,24,,,,,,,,,,,,,,,,,,,,,,,0,,,1960005,,2516,INV_Enchant_ShardNexusLarge,1527,Pickup,,,,,,,,,,,

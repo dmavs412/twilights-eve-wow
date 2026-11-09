@@ -51,6 +51,14 @@ const SVENS_REVENGE: [(i64, &str); 3] = [
     (903305, "quest-elite-ring-mind"),
 ];
 
+/// Tharil'zun's blue Chests (98304): entry and Line.
+const THARILZUN: [(i64, &str); 4] = [
+    (903306, "quest-elite-chest-cloth"),
+    (903307, "quest-elite-chest-leather"),
+    (903308, "quest-elite-chest-mail"),
+    (903309, "quest-elite-chest-plate"),
+];
+
 fn items() -> Vec<Value> {
     let gear: Value = toml::from_str(GEAR).expect("parses");
     gear["item"].as_array().unwrap().clone()
@@ -132,6 +140,26 @@ fn band_35_40_greens_repeat_each_quest_line_with_its_icon() {
 }
 
 #[test]
+fn band_40_45_greens_repeat_each_quest_line_with_its_icon() {
+    let items = items();
+    let mut seen = HashSet::new();
+    for (n, want) in GREEN_LINES.iter().enumerate() {
+        let i = item(&items, 903240 + n as i64);
+        assert_row(i, 2, 43, 40, want);
+        assert!(
+            seen.insert(line(i).unwrap()),
+            "{want} has two rows in band 40-45"
+        );
+        let first = item(&items, 903200 + n as i64);
+        assert_eq!(
+            icon(i),
+            icon(first),
+            "{want} changes its icon in band 40-45"
+        );
+    }
+}
+
+#[test]
 fn the_thresher_pays_three_quest_elite_blues() {
     let items = items();
     for (entry, want) in THRESHER {
@@ -148,6 +176,19 @@ fn svens_revenge_pays_three_quest_elite_rings() {
 }
 
 #[test]
+fn tharilzun_pays_one_quest_elite_chest_per_armour_type() {
+    let items = items();
+    let mut types = HashSet::new();
+    for (entry, want) in THARILZUN {
+        let i = item(&items, entry);
+        assert_row(i, 3, 43, 40, want);
+        assert_eq!(int(i, "inventory_type"), 5, "{entry} is a Chest");
+        types.insert(int(i, "subclass"));
+    }
+    assert_eq!(types.len(), 4, "Tharil'zun's Chests repeat an armour type");
+}
+
+#[test]
 fn every_quest_line_shows_one_icon_no_other_item_shows() {
     let items = items();
     let mut line_icon: HashMap<&str, String> = HashMap::new();
@@ -158,7 +199,10 @@ fn every_quest_line_shows_one_icon_no_other_item_shows() {
             assert_eq!(*first, shown, "{l} shows two icons");
         }
     }
-    let blues = THRESHER.iter().chain(SVENS_REVENGE.iter());
+    let blues = THRESHER
+        .iter()
+        .chain(SVENS_REVENGE.iter())
+        .chain(THARILZUN.iter());
     for want in GREEN_LINES.iter().chain(blues.map(|(_, l)| l)) {
         assert!(line_icon.contains_key(want), "{want} has no row");
     }
