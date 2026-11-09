@@ -263,6 +263,20 @@ sharing a skill's key). Its docstring has the full usage.
 ~/.local/bin/python3.15 tools/twilights-eve/sheet.py set acolyte/blood_lance visual=24328
 ```
 
+`tools/twilights-eve/gear_sheet.py` does the same for `data/twilights-eve/gear.csv` by `entry`.
+`get` and `set` read and change a row. `scale` copies a row to a new entry at another item level
+and quality, with the budget, stats, weapon damage, armour and sell price that build_gear.py's
+tier rule asks for. `looks` lists the free vanilla models near an item level from the vmangos
+`item_template`, and for a Chest its family's eight Wardrobe cells. `look-check` fails rows whose
+model is far from their item level, Chests whose looks run against their item levels, and Chests
+that share a model or a Wardrobe. Its docstring has the full usage; run `build_gear.py` after an
+edit.
+
+```
+~/.local/bin/python3.15 tools/twilights-eve/gear_sheet.py scale 902080 902100 item_level=33 required_level=31
+~/.local/bin/python3.15 tools/twilights-eve/gear_sheet.py looks Chest Mail 43
+```
+
 ## The outputs
 
 `server_spells.json` is what the realm loads into its content resource at boot: a list of
