@@ -2226,14 +2226,21 @@ mod lore_bible_dungeons {
         }
     }
 
-    /// Mistmantle Manor's shell with a creature of `entry` beside its Phase Tester, or in its
-    /// place when `tester` is false.
-    fn mistmantle_with(entry: u32, tester: bool) -> Dungeon {
-        let text = include_str!("../content/mistmantle_manor.toml");
+    /// A shell as Mistmantle Manor's was before #641: the house's one room and its Phase Tester.
+    const SHELL: &str = "id = 10\nname = \"A Shell\"\nlevels = [32, 36]\nmap = 0\n\
+        origin = [-10368.6, -1255.5, 31.8]\nyaw = 90.5\n\n\
+        [[footprint]]\nx = [-7.0, 7.0]\ny = [-7.0, 9.0]\nz = [2.0, 15.0]\n\n\
+        [portal]\nposition = [-10362.6, -1257.0, 35.91]\norientation = 3.15\n\n\
+        [[creature]]\nguid = 971003\nentry = 97100\nlevel = 32\n\
+        position = [-10370.6, -1255.0, 35.91]\norientation = 3.15\n";
+
+    /// [`SHELL`] with a creature of `entry` beside its Phase Tester, or in its place when
+    /// `tester` is false.
+    fn shell_with(entry: u32, tester: bool) -> Dungeon {
         let text = if tester {
-            text.to_string()
+            SHELL.to_string()
         } else {
-            text.replacen("entry = 97100", "entry = 3122", 1)
+            SHELL.replacen("entry = 97100", "entry = 3122", 1)
         };
         let row = format!(
             "\n[[creature]]\nguid = 971004\nentry = {entry}\nlevel = 32\n\
@@ -2245,20 +2252,20 @@ mod lore_bible_dungeons {
     #[test]
     fn a_phase_tester_beside_a_hostile_creature_is_neither() {
         // Bloodtalon Taillasher: hostile, no Boss Bar.
-        let why = not_shell_or_filled(&mistmantle_with(3122, true));
+        let why = not_shell_or_filled(&shell_with(3122, true));
         assert!(why.is_some_and(|w| w.contains("Phase Tester")));
     }
 
     #[test]
     fn a_filled_dungeon_with_no_boss_bar_creature_is_neither() {
-        let why = not_shell_or_filled(&mistmantle_with(3122, false));
+        let why = not_shell_or_filled(&shell_with(3122, false));
         assert!(why.is_some_and(|w| w.contains("no Boss Bar creature")));
     }
 
     #[test]
     fn a_filled_dungeon_with_a_boss_bar_creature_passes() {
         // Bloodtalon Scythemaw has the Boss Bar.
-        assert_eq!(not_shell_or_filled(&mistmantle_with(3123, false)), None);
+        assert_eq!(not_shell_or_filled(&shell_with(3123, false)), None);
     }
 
     /// Raven Hill Deeps and Stonewatch Keep take the lore bible's bands, Raven Hill 40-44 and

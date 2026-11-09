@@ -1083,6 +1083,41 @@ chance = 100
 warning = "The candles flare! Get behind something solid!"
 effect = { kind = "gaze", damage = 900, radius = 30.0 }
 
+# Steward Aldric's Hush (#641). Looks like the priest's Silence (visual 15487), as take_down_quill.
+# Placeholders: a random character within 30 yd cannot cast for 4 s after a 1 s cast, every 15 s.
+[[spell]]
+key = "hush_steward"
+spell_id = 1900061
+name = "Hush"
+icon = 'Interface\Icons\Spell_Shadow_ImpPhaseShift'
+visual = 15487
+aura_description = "Silenced."
+school = "shadow"
+cast_time_ms = 1000
+cooldown_ms = 15000
+range_max = 30.0
+chance = 100
+target = "random"
+effect = { kind = "silence", duration_ms = 4000 }
+
+# Stalvan Mistmantle's Grief (#641). Shadow Nova's look (visual 686). Placeholders: 150 shadow
+# damage to every character within 10 yd of him after a 2 s cast, every 15 s, once he is below 30%
+# health.
+[[spell]]
+key = "grief_stalvan"
+spell_id = 1900062
+name = "Grief"
+icon = 'Interface\Icons\Spell_Shadow_ShadowBolt'
+visual = 686
+school = "shadow"
+cast_time_ms = 2000
+cooldown_ms = 15000
+range_max = 60.0
+chance = 100
+below_health_pct = 30
+warning = "Stalvan's grief fills the room!"
+effect = { kind = "nova", damage = 150, radius = 10.0 }
+
 # ── The Tower of Ilgalar (#637): spell ids 1900070 to 1900079 ────────────────────────────────
 # A dungeon's rows go here, after this section's first row and before the next section's header.
 

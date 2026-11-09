@@ -1,38 +1,326 @@
 # Mistmantle Manor, a Phased Dungeon for levels 32 to 36 in Duskwood (the lore bible's "Zone arcs
 # and dungeons"). Hand-written, from the game data.
 #
-# The building is the stock `duskwoodabandoned_human_farm.wmo` at Manor Mistmantle, placed by the
-# ADT's MODF at (-10368.6, -1255.5, 31.8) with heading -89.5, so `origin` is that point and `yaw`
-# is 90.5 (heading plus 180), as Jasperlode's. Each footprint box is one indoor WMO group's MOGI
-# bounding box in that frame, z widened by a yard each way; the comment above it names the group.
-# The portal stands in the doorway the WMO's portal 0 draws between the building and the outside.
+# The household went still on the night the dark came, and something under the house still hums
+# (#641, spec #637). A run of about 15 minutes, three plain fights: the yard and the steward, the
+# walled garden and the lady, and Stalvan in the house. No meter and no sleepers. The house is
+# silent: only Stalvan speaks.
 #
-# A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the house's one
-# room so a character can see the Phase, and the open-world creatures that stood inside the boxes
-# are deleted. Guids: creatures 971001 up, one a dungeon.
+# One box in the world frame over the farm, Forest's Edge's form. The farm has no outbuildings in
+# the game data. The box holds the house (the stock `duskwoodabandoned_human_farm.wmo`, placed by
+# the ADT's MODF at (-10368.6, -1255.5, 31.8), its door at (-10362.6, -1257.0)), the fenced yard
+# north of it (fences along x -10313, y -1191 to -1220; a gate torch at (-10315, -1199); a cart and
+# barrels by the door) and the walled garden east of it (fences x -10379 to -10337, y -1299 to
+# -1271). The house's one room floors at z 35.91 (wmo_floor.py); its rows keep that Z with
+# `grounded = false`. Outdoor rows take their Z from ground_check.py --fix.
+#
+# Guids: creatures 974001 to 974014, GameObjects 983031 to 983035. Templates 97225 to 97229 below.
 
 id = 10
 name = "Mistmantle Manor"
 levels = [32, 36]
 map = 0
 zone = 10
-origin = [-10368.6, -1255.5, 31.8]
-yaw = 90.5
+origin = [0.0, 0.0, 0.0]
+yaw = 0.0
 
-# Group 1.
 [[footprint]]
-x = [-7.0, 7.0]
-y = [-7.0, 9.0]
-z = [2.0, 15.0]
+x = [-10392.0, -10298.0]
+y = [-1307.0, -1183.0]
+z = [25.0, 70.0]
 
+# On the west edge, where the track from Darkshire meets the box, facing in.
 [portal]
-position = [-10362.6, -1257.0, 35.91]
-orientation = 3.15
+position = [-10345.0, -1184.0, 40.05]
+orientation = 4.71
 
-# The Phase Tester: friendly, no quests.
+# No one walks across the box's edge, in or out, except within gap_yd of the Portal.
+[wall]
+gap_yd = 8.0
+
+# ── Templates ────────────────────────────────────────────────────────────────────────────────────
+# Displays and factions are vanilla's (creature_template in the vmangos dump). The names but
+# Stalvan's are placeholders.
+
+# The farm's hands, risen in the yard: melee only. Fetid Corpse's display.
+[[template]]
+entry = 97225
+name = "Risen Farmhand"
+creature_type = 6
+display_id = 559
+faction_template = 21
+unit_class = "warrior"
+level_min = 32
+level_max = 33
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The house's servants, still at their posts: melee only. Haunted Servitor's display.
+[[template]]
+entry = 97226
+name = "Silent Servant"
+creature_type = 6
+display_id = 3229
+faction_template = 21
+unit_class = "warrior"
+level_min = 33
+level_max = 34
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The steward at the front door: Hush. Wandering Spirit's male display (3228), a human ghost.
+[[template]]
+entry = 97227
+name = "Steward Aldric"
+creature_type = 6
+rank = 1
+display_id = 3228
+faction_template = 21
+unit_class = "warrior"
+level_min = 34
+level_max = 34
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["hush_steward"]
+
+# The lady in her walled garden: Fear and Shadow Word: Pain. Wandering Spirit's female display
+# (3227), a human ghost.
+[[template]]
+entry = 97228
+name = "Lady Corrine Mistmantle"
+creature_type = 6
+rank = 1
+display_id = 3227
+faction_template = 21
+unit_class = "mage"
+level_min = 35
+level_max = 35
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["terrify_creature", "shadow_word_pain_creature"]
+
+# The last boss and its Boss Bar, in the house from the Run's start: The Candles Flare, Fear and,
+# below 30% health, Grief. Vanilla Stalvan's display and faction.
+[[template]]
+entry = 97229
+name = "Stalvan Mistmantle"
+creature_type = 6
+rank = 1
+boss = true
+display_id = 1562
+faction_template = 14
+unit_class = "warrior"
+level_min = 36
+level_max = 36
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["candles_flare_stalvan", "terrify_creature", "grief_stalvan"]
+say = { aggro = ["Hush. You'll wake the house."], aggro_chance = 100 }
+
+# ── Encounter 1, the yard and the steward ────────────────────────────────────────────────────────
+# Three camps of three Risen Farmhands across the yard, between the Portal and the front door.
+
 [[creature]]
-guid = 971003
-entry = 97100
+guid = 974001
+entry = 97225
 level = 32
-position = [-10370.6, -1255.0, 35.91]
-orientation = 3.15
+position = [-10335.0, -1211.7, 37.62]
+orientation = 4.71
+camp = 1
+
+[[creature]]
+guid = 974002
+entry = 97225
+level = 32
+position = [-10333.0, -1215.2, 37.05]
+orientation = 4.71
+camp = 1
+
+[[creature]]
+guid = 974003
+entry = 97225
+level = 33
+position = [-10337.0, -1215.2, 37.87]
+orientation = 4.71
+camp = 1
+
+[[creature]]
+guid = 974004
+entry = 97225
+level = 32
+position = [-10322.0, -1245.7, 35.91]
+orientation = 3.14
+camp = 2
+
+[[creature]]
+guid = 974005
+entry = 97225
+level = 32
+position = [-10320.0, -1249.2, 36.01]
+orientation = 3.14
+camp = 2
+
+[[creature]]
+guid = 974006
+entry = 97225
+level = 33
+position = [-10324.0, -1249.2, 35.52]
+orientation = 3.14
+camp = 2
+
+[[creature]]
+guid = 974007
+entry = 97225
+level = 32
+position = [-10346.0, -1229.7, 37.46]
+orientation = 1.57
+camp = 3
+
+[[creature]]
+guid = 974008
+entry = 97225
+level = 32
+position = [-10344.0, -1233.2, 36.63]
+orientation = 1.57
+camp = 3
+
+[[creature]]
+guid = 974009
+entry = 97225
+level = 33
+position = [-10348.0, -1233.2, 36.83]
+orientation = 1.57
+camp = 3
+
+# The steward at the front door, facing north into the yard. At half health two Silent Servants
+# come out of the door.
+[[creature]]
+guid = 974010
+entry = 97227
+level = 34
+position = [-10357.0, -1257.0, 35.30]
+orientation = 0.0
+on_health = [{ pct = 50, entry = 97226, level = 33, count = 2, position = [-10362.6, -1257.0, 35.91] }]
+rolls = [{ chance = 50, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
+
+# ── Encounter 2, the walled garden ───────────────────────────────────────────────────────────────
+# The lady and two Silent Servants, one camp.
+
+[[creature]]
+guid = 974011
+entry = 97226
+level = 33
+position = [-10350.0, -1281.0, 35.30]
+orientation = 0.0
+camp = 4
+
+[[creature]]
+guid = 974012
+entry = 97226
+level = 34
+position = [-10368.0, -1281.0, 35.31]
+orientation = 0.0
+camp = 4
+
+[[creature]]
+guid = 974013
+entry = 97228
+level = 35
+position = [-10360.0, -1288.0, 35.33]
+orientation = 0.0
+camp = 4
+rolls = [{ chance = 50, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
+
+# ── Encounter 3, the house ───────────────────────────────────────────────────────────────────────
+# Stalvan at the room's south end, facing the door, there from the Run's start. His `drop` stays
+# empty for the arc's Surveyor's Site Record (ticket 26 of #637). The room's floor here is 35.88.
+[[creature]]
+guid = 974014
+entry = 97229
+level = 36
+position = [-10374.5, -1255.5, 35.88]
+grounded = false
+orientation = 0.0
+rolls = [{ chance = 100, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
+
+# The ore under the torn-up floorboards at Stalvan's feet: scenery, never named in any text.
+# CaveMineCrystalFormation04.
+[[gameobject]]
+guid = 983031
+display = 2370
+position = [-10376.0, -1255.5, 35.88]
+grounded = false
+orientation = 0.0
+sides = "inside"
+
+# Cover from The Candles Flare: two stacks of crates (WestFallCrate) between Stalvan and the door,
+# so a character near the door can put one between them and him.
+
+[[cover]]
+position = [-10369.0, -1251.5, 35.91]
+radius = 1.2
+height = 4.0
+
+[[gameobject]]
+guid = 983032
+display = 18
+position = [-10369.0, -1251.5, 35.91]
+grounded = false
+orientation = 0.0
+sides = "inside"
+
+[[cover]]
+position = [-10369.0, -1259.5, 35.91]
+radius = 1.2
+height = 4.0
+
+[[gameobject]]
+guid = 983033
+display = 18
+position = [-10369.0, -1259.5, 35.91]
+grounded = false
+orientation = 0.0
+sides = "inside"
+
+# Candles (Candle01): scenery. The second stands a yard north of the ticket's point, where the
+# room has floor.
+[[gameobject]]
+guid = 983034
+display = 100
+position = [-10364.0, -1250.0, 35.92]
+grounded = false
+orientation = 0.0
+sides = "inside"
+
+[[gameobject]]
+guid = 983035
+display = 100
+position = [-10364.0, -1260.0, 35.91]
+grounded = false
+orientation = 0.0
+sides = "inside"

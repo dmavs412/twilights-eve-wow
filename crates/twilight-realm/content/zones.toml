@@ -24,8 +24,9 @@ removed_guids = [
   4883, 4884, 4885, 4886, 4888, 4889, 4898, 4980, 4982, 4983, 4986, 4987, 4989, 4992, 5037,
   5093, 5094, 5095, 5101, 5102, 5126, 5966, 5969, 5970, 5971, 5972, 5973, 5979, 5980, 5981,
   5983,
-  # Mistmantle Manor (mistmantle_manor.toml): every creature inside its footprint.
-  5010,
+  # Mistmantle Manor (mistmantle_manor.toml): every creature inside its footprint, which now
+  # covers the yard and the walled garden: Stalvan and the Fetid Corpses (#641).
+  5010, 4316, 4317, 4829, 4906, 5935, 5936, 5939, 6077, 6080, 6091,
 ]
 # Vanilla 18-35, the non-critter, non-friendly spawns with the Unseen aside, onto the lore
 # bible's 30-50 (docs/lore-bible.md, "Zone arcs and dungeons"); spec #466 decision 2. Since #616

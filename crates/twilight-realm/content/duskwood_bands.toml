@@ -11,8 +11,8 @@
 # and the Hushed Bank's edges.
 bounds = [[-11317.0, -1783.0, -9883.0, 750.0]]
 
-# The two Phased Dungeon footprints the boxes reach: Mistmantle Manor (mistmantle_manor.toml's
-# footprint turned by its yaw of 90.5 about -10368.6,-1255.5) and Forest's Edge (forest_edge.toml,
+# The two Phased Dungeon footprints the boxes reach: Mistmantle Manor's house (its footprint until
+# #641 grew it over the yard, whose creatures zones.toml removes) and Forest's Edge (forest_edge.toml,
 # x -10080..-9910, y 530..680), which the Darkened Bank box reaches at its western end. Raven Hill
 # Deeps lies under Raven Hill Cemetery's box and is not excluded: its footprint is the crypt below
 # the graves, and zones.toml already removed every creature inside it.
