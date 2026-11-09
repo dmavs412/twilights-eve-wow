@@ -220,3 +220,164 @@ completion = "Ten fewer over the docks. The children can mend nets without looki
 money = 990
 zone_or_sort = 44
 kill = [[428, 10]]
+
+# ── Redridge 35-40 (#595) ─────────────────────────────────────────────────────────────────────
+# Toren in Lakeshire's inn (a Hub NPC, hub.toml 9300083), the tower's hill, the mystics' ringing
+# stones, the Rethban diggers, and the north farms' gnolls. Toren at the Inn has no prerequisite,
+# so a character who never freed him at Ridgepoint still meets him. Every other giver and ender
+# is a vanilla Redridge spawn (content/redridge.toml).
+
+[[quest]]
+id = 98201
+kind = "story"
+giver = 6727
+ender = 190083
+level = 36
+title = "Toren at the Inn"
+objectives = "Speak with the young man in the corner of Lakeshire's inn."
+details = "There's a lad in the corner who came in off the Elwynn road a fortnight back with nothing but a coat and a pack. He pays in good coin, drinks nothing, and asks every traveller what they've seen in the east. When someone says the word 'tower', he goes white. You look like you've seen the east. Go and talk to him before he wears a hole in my floor."
+progress = "You've come from the east?"
+completion = "My name is Toren. I was a student once, in the tower in Elwynn, and then for a while a prisoner in a cellar at Ridgepoint. The people who kept me fed me and never laid a hand on me, because someone told them not to. I know whose tower stands on that hill. I won't go near it. Please don't tell me what's inside. Not yet."
+money = 0
+choices = [903220, 903221, 903222, 903223]
+zone_or_sort = 44
+
+# The gnolls of Ilgalar's Approach. The dungeon's boss quest, 98501 "Morganth", follows this one.
+[[quest]]
+id = 98202
+kind = "story"
+giver = 382
+after = 98109
+level = 36
+title = "Into Ilgalar"
+objectives = "Kill 12 gnolls on the tower's hill in eastern Redridge, then return to Marshal Marris in Lakeshire."
+details = "You found the door. Now I want to see it from here. The Blackrock keep carrying crates up that hill, a few every night, and the gnolls on the slope let them through and turn everyone else back. I can't send eleven men up a hill full of gnolls. But clear the slope and I can put one man on the ridge with a glass, and the Watch can at least watch the door. While you're up there, listen."
+progress = "Is the slope clear?"
+completion = "Louder, you say. Like the whole hill is a bell somebody keeps striking. I've eleven men and not one of them is going through that door. If you go in, I'll want to know who's ringing it."
+money = 1260
+choices = [903231, 903232, 903233]
+zone_or_sort = 44
+kill = [{ family = "Gnolls on the tower's hill slain", entries = [433, 434, 429, 431], count = 12 }]
+
+[[quest]]
+id = 98203
+kind = "story"
+giver = 382
+after = 98108
+level = 36
+title = "Shadow Magic"
+objectives = "Kill 8 Redridge Mystics and bring 6 Ringing Stones to Marshal Marris in Lakeshire."
+details = "The gnolls in the canyons have mystics now, and the mystics have something new. My men say they knock a stone against a rock before they cast. It rings like a bell, and then the fire comes. Nobody's brought one back yet. The scouts say the mystics trade for them with someone out east, and gnolls don't trade with anyone. Kill the mystics and bring me their stones. I want to know who's handing them out."
+progress = "Got those stones?"
+completion = "Strike one and it rings. Hold it to your ear and it sounds wrong, like a note held too long. Gnolls don't make these. Somebody east of here gives them out."
+money = 1260
+choices = [903225, 903227, 903230]
+zone_or_sort = 44
+kill = [[430, 8]]
+collect = [{ item = 980311, count = 6, from = [430], chance = 50 }]
+
+[[quest]]
+id = 98204
+kind = "story"
+giver = 341
+after = 98105
+level = 38
+title = "The Rethban Diggers"
+objectives = "Kill 10 Redridge Drudgers in the Rethban Caverns and bring 6 Humming Ore to Foreman Oslow in Lakeshire."
+details = "With the bridge up, my crew can see the north road again, and they don't like what they see. Carts, every night, heading east, loaded heavy. They come out of the Rethban Caverns north of the lake. I quarried stone in those caves when I was young. Now the gnolls are in there, digging day and night, and gnolls don't dig for themselves. Go in, put the drudgers down and bring me what they're digging."
+progress = "What are they bringing up?"
+completion = "That's not iron. It hums. My men won't keep it in the shed overnight, and I don't blame them. Every cart of this goes the same way, east, toward that hill."
+money = 1330
+choices = [903235, 903237, 903239]
+zone_or_sort = 44
+kill = [[580, 10]]
+collect = [{ item = 980312, count = 6, from = [580], chance = 50 }]
+
+[[quest]]
+id = 98205
+kind = "story"
+giver = 900
+level = 37
+title = "Brutes in the Canyons"
+objectives = "Kill 12 Redridge Brutes in the canyons north of Lakeshire, then return to Bailiff Conacher in Lakeshire."
+details = "The farms on the north side have lost their grain three times since harvest. Not to thieves. To gnolls. Brutes come down out of the canyons at night, break the barn doors and carry the sacks off on their backs. The farmers sit up with pitchforks, and the farmers lose. I'm the bailiff, so they come to me, and all I have is a ledger full of complaints. Go up into the canyons and break the brutes before the next raid."
+progress = "Any fewer of them?"
+completion = "Twelve brutes. The farmers will sleep tonight for the first time in a month, and so will I. They tell me the raids have a leader, though, a big one the others follow. That's the next problem. Here, for your trouble."
+money = 1295
+choices = [903224, 903226, 903229]
+zone_or_sort = 44
+kill = [[426, 12]]
+
+[[quest]]
+id = 98206
+kind = "story"
+giver = 900
+after = 98205
+level = 38
+title = "Yowler"
+objectives = "Kill Yowler and 8 Redridge Alphas in the canyons north of Lakeshire, then return to Bailiff Conacher in Lakeshire."
+details = "The farmers have a name for the gnoll who leads the raids. Yowler. They say you hear him before you see him, howling the pack down out of the hills, with the alphas running at his side. Kill the brutes and the raids slow down. Kill Yowler and they stop. The farmers won't believe he's gone until somebody sees him dead, so make sure of it, and thin out the alphas while you're there."
+progress = "Is Yowler dead?"
+completion = "Dead? Truly? Then the north farms can bring the harvest in. I'll ride out and tell them myself, and I'll make sure they know who did it. The canyons will be quiet for a season, maybe two. Take this, with the town's thanks."
+money = 1330
+choices = [903234, 903236, 903238]
+zone_or_sort = 44
+kill = [[518, 1], [445, 8]]
+
+# Bounties: money only, no choices.
+
+[[quest]]
+id = 98211
+kind = "bounty"
+giver = 903
+level = 37
+title = "Bashers on the North Road"
+objectives = "Kill 10 Redridge Bashers in the canyons, then return to Guard Howe in Lakeshire."
+details = "The bashers in the canyons have started coming down to the north road. They wait behind the rocks and swing at whatever passes, cart, horse or traveller. I stand at this post all day and listen to people tell me about it. The Watch pays a bounty on bashers. Ten at a time, and I'll pay each time you bring word."
+progress = "Road still dangerous?"
+completion = "Ten fewer on the north road. The carters will thank you, if they ever stop complaining long enough. Here's the Watch's coin. The canyons breed more of them every spring, so come back."
+money = 1110
+zone_or_sort = 44
+kill = [[446, 10]]
+
+[[quest]]
+id = 98212
+kind = "bounty"
+giver = 415
+level = 36
+title = "Fangs from the Mill"
+objectives = "Bring 8 Greater Tarantula Fangs from the Greater Tarantulas at Alther's Mill to Verner Osgood in Lakeshire."
+details = "The greater tarantulas have taken over Alther's Mill. Nobody's ground flour there since they moved in, and the millers won't go back while the webs are up. The fangs are worth something to me. I've a buyer who pays by the fang and doesn't say what for, and I don't ask. Eight at a time. Don't get bitten. Those ones don't let go."
+progress = "Any fangs?"
+completion = "Eight, and good ones. My buyer will be pleased, and the millers might get their mill back one day. Here's your share. The spiders keep breeding, so the offer stands."
+money = 1080
+zone_or_sort = 44
+collect = [{ item = 980313, count = 8, from = [505], chance = 50 }]
+
+[[quest]]
+id = 98213
+kind = "bounty"
+giver = 342
+level = 37
+title = "Stolen Grain"
+objectives = "Bring 8 Stolen Grain Sacks from the Redridge Brutes and Redridge Mystics to Martie Jainrose."
+details = "Every sack of grain I grew this year has my mark on it, stitched in the corner. I know, because I stitched them. And every week a few more go from the barn, carried up into the canyons by gnolls. The brutes take them and the mystics keep them, for what I can't think. Bring my grain home. I'll pay for every sack with my mark on it."
+progress = "Found my sacks?"
+completion = "That's my stitching. Half of it's chewed, but the grain's dry. Another week of bread for the farm. Here's your coin, and if you see more of my mark up in those canyons, bring it home."
+money = 1110
+zone_or_sort = 44
+collect = [{ item = 980314, count = 8, from = [426, 430], chance = 50 }]
+
+[[quest]]
+id = 98214
+kind = "bounty"
+giver = 1070
+level = 36
+title = "Grunts on the Highway"
+objectives = "Kill 10 Blackrock Grunts on the Lakeridge Highway, then return to Deputy Feldon in Lakeshire."
+details = "The outrunners were the eyes. The grunts are the fists, and there are more of them on the Lakeridge Highway every week. They stop carts, take what they like and send the drivers back to town on foot. The magistrate has put a bounty on them, as he does on everything else. Ten at a time. Bring me word and I'll pay."
+progress = "Highway clear?"
+completion = "Ten grunts. The carters will try the highway again tomorrow, and the Blackrock will send more by the end of the week. The bounty stands as long as they keep coming. Here's your pay."
+money = 1080
+zone_or_sort = 44
+kill = [[440, 10]]

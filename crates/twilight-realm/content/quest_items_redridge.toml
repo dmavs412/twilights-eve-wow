@@ -12,4 +12,14 @@ item = [
   { entry = 980306, name = "Thresher's Jaw", quality = 1, item_level = 34, class = 12, display_id = 7135, max_count = 1, description = "Rows of teeth, and splinters of keel between them." },
   { entry = 980307, name = "Goretusk Flank", quality = 1, item_level = 31, class = 12, display_id = 25467, stackable = 20, description = "Tough, but Breanna can make anything tender." },
   { entry = 980308, name = "Tarantula Silk", quality = 1, item_level = 32, class = 12, display_id = 7717, stackable = 20, description = "Thick as twine and very sticky." },
+  # Redridge 35-40 (#607). No free stock fang icon is left, so the fang shows a bone.
+  { entry = 980311, name = "Ringing Stone", quality = 1, item_level = 36, class = 12, display_id = 4655, stackable = 20, description = "A grey stone that rings when you knock it. The note doesn't stop when it should." },
+  { entry = 980312, name = "Humming Ore", quality = 1, item_level = 38, class = 12, display_id = 4689, stackable = 20, description = "Dull ore with a hum you feel in your fingers." },
+  { entry = 980313, name = "Greater Tarantula Fang", quality = 1, item_level = 36, class = 12, display_id = 1503, stackable = 20, description = "Osgood pays by the fang. Don't ask what for." },
+  { entry = 980314, name = "Stolen Grain Sack", quality = 1, item_level = 37, class = 12, display_id = 1244, stackable = 20, description = "Martie's mark, stitched on the corner." },
+  # Ilgalar's three items for the dungeon ticket's quests (98501 to 98503): defined here so that
+  # ticket edits no item file. No quest uses them yet.
+  { entry = 980381, name = "Morganth's Failure Notes", quality = 1, item_level = 38, class = 12, display_id = 1103, max_count = 1, description = "Cipher, page after page, in a small, proud hand. The cover says only: 'What went wrong.'" },
+  { entry = 980382, name = "Letters Under a Crowned Seal", quality = 1, item_level = 38, class = 12, display_id = 3024, max_count = 1, description = "A bundle of letters, each sealed in grey wax.", pages = ["Engineer. They give you a tower and keep your name off every stone you set. I would give you the credit you are owed, and a name that outlasts every one of theirs. Consider it. You know how to reach my people.", "Below it, a crown pressed into grey wax, and one letter: S."] },
+  { entry = 980383, name = "Toren's Translation", quality = 1, item_level = 38, class = 12, display_id = 7743, max_count = 1, description = "Three pages in Toren's careful hand. The first line reads: 'The Duskwood test.'" },
 ]

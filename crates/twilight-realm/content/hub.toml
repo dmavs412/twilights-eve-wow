@@ -2176,3 +2176,23 @@ map = 0
 position = [-8350.5, 519.5, 91.80]
 orientation = 5.50
 greeting = "Trams in the tunnel, $C. At night, with the line shut and its engineer in a cell. Someone is running my trams, and it isn't me."
+
+# ── Toren in Lakeshire (#595) ────────────────────────────────────────────────────────────────────
+# A third Toren, in the form of Ridgepoint's, so his quest list stays his own: in Lakeshire's inn
+# from 36 to 50, a few yards from Innkeeper Brianna (6727), on the inn's ground floor
+# `wmo_floor.py -9228 -2162` lists as group 10 at z 63.73. No ambush and no move. He takes Toren
+# at the Inn (98201, quests_redridge.toml).
+[[npc]]
+guid = 9300083
+entry = 190083
+name = "Toren"
+subname = "Lakeshire Inn"
+level = 20
+display_id = 3346
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-9228.0, -2162.0, 63.73]
+orientation = 0.0
+greeting = "Don't say the word. The tower. I hear it in my sleep as it is."

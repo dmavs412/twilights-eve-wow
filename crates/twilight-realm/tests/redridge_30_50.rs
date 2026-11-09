@@ -1,6 +1,8 @@
 //! Redridge's quests from 30 to 50 (spec #595), walked on the shipped content
 //! (`content/quests_redridge.toml`). Band 30-35 (#602): Three Corners, Lakeshire's three problems,
-//! the bridge, the lakebed, the Thresher and the tower on the hill, and four bounties.
+//! the bridge, the lakebed, the Thresher and the tower on the hill, and four bounties. Band 35-40
+//! (#607): Toren in Lakeshire's inn, the tower's hill, the ringing stones, the Rethban diggers,
+//! the north farms' gnolls, and four bounties.
 
 mod common;
 
@@ -77,6 +79,51 @@ const BAREN_AT: [f32; 3] = [-9261.03, -2172.66, 64.203];
 const TOWER_DOOR: [f32; 3] = [-9282.2, -3327.6, 0.0];
 
 const PARKERS_REPORT: u32 = 980301;
+
+const TOREN_AT_THE_INN: u32 = 98201;
+
+/// Band 35-40's quests: `(id, giver, ender)`, the ender when it is not the giver.
+const BAND_35_40: [(u32, u32, Option<u32>); 10] = [
+    (98201, BRIANNA, Some(TOREN)),
+    (98202, MARRIS, None),
+    (98203, MARRIS, None),
+    (98204, OSLOW, None),
+    (98205, CONACHER, None),
+    (98206, CONACHER, None),
+    (98211, 903, None),
+    (98212, 415, None),
+    (98213, 342, None),
+    (98214, FELDON, None),
+];
+
+/// `(quest, the quest it follows)`; every other quest of band 35-40 has no `after`.
+const CHAINED_35_40: [(u32, u32); 4] = [
+    (98202, 98109),
+    (98203, 98108),
+    (98204, 98105),
+    (98206, 98205),
+];
+
+/// Each band 35-40 story quest's reward choices (#605's rows); the bounties offer none.
+const CHOICES_35_40: [(u32, &[u32]); 6] = [
+    (98201, &[903220, 903221, 903222, 903223]),
+    (98202, &[903231, 903232, 903233]),
+    (98203, &[903225, 903227, 903230]),
+    (98204, &[903235, 903237, 903239]),
+    (98205, &[903224, 903226, 903229]),
+    (98206, &[903234, 903236, 903238]),
+];
+
+const BRIANNA: u32 = 6727;
+const BRIANNA_AT: [f32; 3] = [-9223.98, -2157.12, 64.017];
+const CONACHER: u32 = 900;
+/// Toren in Lakeshire's inn (`hub.toml` 9300083), on the inn's ground floor.
+const TOREN: u32 = 190083;
+const TOREN_AT: [f32; 3] = [-9228.0, -2162.0, 63.73];
+
+/// Ilgalar's three items, defined for the dungeon ticket's quests.
+const ILGALAR_ITEMS: [u32; 3] = [980381, 980382, 980383];
+const LETTERS_UNDER_A_CROWNED_SEAL: u32 = 980382;
 
 fn redridge_quests() -> toml::Table {
     include_str!("../content/quests_redridge.toml")
@@ -321,6 +368,112 @@ fn walking_to_the_tower_door_credits_the_tower_on_the_hill() {
     assert!(!met(&short, THE_TOWER_ON_THE_HILL), "met short of the door");
     let there = walk(&mut party, TOWER_DOOR);
     assert!(met(&there, THE_TOWER_ON_THE_HILL), "{there:?}");
+}
+
+#[test]
+fn band_35_40_loads_with_its_givers_enders_and_zone() {
+    let mut realm = realm();
+    for (id, giver, ender) in BAND_35_40 {
+        let row = quest_row(id);
+        assert_eq!(entry(&row, "giver"), Some(giver), "quest {id}'s giver");
+        assert_eq!(entry(&row, "ender"), ender, "quest {id}'s ender");
+        let want = if id >= 98211 { "bounty" } else { "story" };
+        assert_eq!(row["kind"].as_str(), Some(want), "quest {id}'s kind");
+        let t = template(&mut realm, id);
+        assert_eq!(Some(t.title.as_str()), row["title"].as_str(), "quest {id}");
+        assert_eq!(t.zone_or_sort, REDRIDGE, "quest {id}'s zone");
+    }
+}
+
+#[test]
+fn band_35_40_chains_as_the_ticket_names() {
+    for (id, _, _) in BAND_35_40 {
+        let want = CHAINED_35_40.iter().find(|c| c.0 == id).map(|c| c.1);
+        assert_eq!(entry(&quest_row(id), "after"), want, "quest {id}'s `after`");
+    }
+}
+
+#[test]
+fn every_band_35_40_story_quest_offers_the_choices_its_gear_row_names() {
+    let mut realm = realm();
+    for (id, _, _) in BAND_35_40 {
+        let want: Vec<u32> = CHOICES_35_40
+            .iter()
+            .find(|c| c.0 == id)
+            .map_or(Vec::new(), |c| c.1.to_vec());
+        let got: Vec<u32> = template(&mut realm, id)
+            .choices
+            .iter()
+            .map(|c| c.0)
+            .filter(|&item| item != 0)
+            .collect();
+        assert_eq!(got, want, "quest {id}'s choices");
+    }
+}
+
+#[test]
+fn toren_is_a_quest_giver_on_the_inn_s_ground_floor() {
+    let hub: toml::Table = include_str!("../content/hub.toml").parse().unwrap();
+    let row = hub["npc"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|n| n["entry"].as_integer() == Some(TOREN.into()))
+        .expect("Toren's hub row");
+    assert_eq!(row["map"].as_integer(), Some(0));
+    assert_eq!(row["role"].as_str(), Some("giver"));
+    assert_eq!(row["npc_flags"].as_integer(), Some(0x2), "a quest giver");
+
+    let mut party = questing_party(36, &[]);
+    walk(&mut party, [TOREN_AT[0] + 1.5, TOREN_AT[1], TOREN_AT[2]]);
+    let (_, at) = party.unit(0, TOREN, TOREN_AT);
+    assert!(
+        (0..3).all(|i| (at[i] - TOREN_AT[i]).abs() < 0.01),
+        "Toren shown at {at:?}"
+    );
+}
+
+#[test]
+fn brianna_offers_toren_at_the_inn_cold_and_toren_takes_it_with_nothing_to_collect() {
+    let row = quest_row(TOREN_AT_THE_INN);
+    for key in ["after", "kill", "collect", "talk", "explore", "gives"] {
+        assert!(row.get(key).is_none(), "98201 has no `{key}`");
+    }
+
+    let mut party = questing_party(36, &[]);
+    let brianna = meet(&mut party, BRIANNA, BRIANNA_AT);
+    assert!(offered(&mut party, brianna, TOREN_AT_THE_INN));
+    accept(&mut party, brianna, TOREN_AT_THE_INN);
+
+    let toren = meet(&mut party, TOREN, TOREN_AT);
+    let events = hand_in(&mut party, toren, TOREN_AT_THE_INN);
+    assert!(completed(&events, TOREN_AT_THE_INN), "{events:?}");
+}
+
+#[test]
+fn ilgalar_s_three_items_exist_and_the_letters_have_two_pages() {
+    let items: toml::Table = include_str!("../content/quest_items_redridge.toml")
+        .parse()
+        .unwrap();
+    let rows = items["item"].as_array().unwrap();
+    for id in ILGALAR_ITEMS {
+        let row = rows
+            .iter()
+            .find(|i| i["entry"].as_integer() == Some(id.into()))
+            .unwrap_or_else(|| panic!("item {id}"));
+        let pages = row.get("pages").and_then(|p| p.as_array()).map(Vec::len);
+        let want = (id == LETTERS_UNDER_A_CROWNED_SEAL).then_some(2);
+        assert_eq!(pages, want, "item {id}'s pages");
+    }
+
+    let mut realm = realm();
+    for id in ILGALAR_ITEMS {
+        realm.handle(RealmCommand::ItemQuery { entry: id });
+        let known = drain(&mut realm)
+            .iter()
+            .any(|e| matches!(e, SessionEvent::ItemTemplate { info: Some(_), .. }));
+        assert!(known, "the realm knows item {id}");
+    }
 }
 
 fn met(events: &[SessionEvent], quest: u32) -> bool {
