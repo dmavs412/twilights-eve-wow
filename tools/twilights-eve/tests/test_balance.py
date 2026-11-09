@@ -27,6 +27,22 @@ def swing(mob: dict) -> float:
 # today's from level 10 up. Their mobs keep that strength, so a slow choice still has time to show.
 SIZED_AT = 2.0
 
+# They were sized in Elwynn's kits, too. The 30-50 arc's Quest Lines (#600) start at required level
+# 30, so a level-30 kit would wear them and end the fights before Elusiveness's Evasion comes back.
+# These tests measure the talent choices, so they fight without that gear.
+SIZED_WITHOUT = "quest-"
+_set_aside = {}
+
+
+def setUpModule():
+    _set_aside.update({e: r for e, r in model.GEAR.items() if r["line"].startswith(SIZED_WITHOUT)})
+    for entry in _set_aside:
+        del model.GEAR[entry]
+
+
+def tearDownModule():
+    model.GEAR.update(_set_aside)
+
 
 def totals(calling: str, n: int, rows: dict, fights: int, rng: random.Random, level: int = 30,
            gear: str = "green", rank: int = 0) -> tuple:
