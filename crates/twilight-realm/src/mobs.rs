@@ -2651,6 +2651,82 @@ mod tests {
         assert!(!princess.rolls.is_empty(), "mobs.toml gives Princess rolls");
     }
 
+    /// Redridge's and Duskwood's named elites and rares, and the arc's two named elites (#658).
+    const NAMED_31_50: [u32; 18] = [
+        486, 584, 616, 947, 14269, 14270, 14271, 14272, 14273, 14357, 96054, 507, 521, 522, 534,
+        574, 1200, 96053,
+    ];
+
+    /// The six Elite blues of `band`, by its first level (spec #650's table, and Elwynn's 27-30
+    /// pool below it).
+    fn elite_blues(band: &crate::rules::loot::Band) -> Vec<u32> {
+        let first = match band.levels[0] {
+            27 => 904018,
+            31 => 904024,
+            36 => 904030,
+            41 => 904036,
+            46 => 904042,
+            other => panic!("no Elite pool for the band from {other}"),
+        };
+        (first..first + 6).collect()
+    }
+
+    #[test]
+    fn redridge_and_duskwood_named_creatures_roll_their_bands_elite_pool_then_its_greens() {
+        for entry in NAMED_31_50 {
+            let t = template(entry).unwrap_or_else(|| panic!("template {entry}"));
+            let level = content()
+                .spawn
+                .iter()
+                .filter(|s| s.entry == entry && s.phase == Phase::OpenWorld)
+                .filter(|s| s.map == crate::content::EASTERN_KINGDOMS)
+                .map(|s| s.level_min)
+                .min()
+                .unwrap_or_else(|| panic!("{} has no open-world spawn", t.name));
+            let band = crate::rules::loot::band_of(level);
+            let greens: Vec<u32> = band.green_rows().into_iter().map(|(e, _)| e).collect();
+            let rolls: Vec<(u8, Vec<u32>)> = t
+                .rolls
+                .iter()
+                .map(|r| (r.chance, r.one_of.clone()))
+                .collect();
+            assert_eq!(
+                rolls,
+                [(20, elite_blues(band)), (50, greens)],
+                "{} (lowest level {level})",
+                t.name
+            );
+        }
+    }
+
+    #[test]
+    fn no_other_redridge_duskwood_or_stormwind_template_rolls_the_31_50_pools() {
+        let zones: ZonesFile = toml::from_str(include_str!("../content/zones.toml")).unwrap();
+        let mut entries: HashSet<u32> = HashSet::new();
+        for (name, text) in ZONE_FILES {
+            if !matches!(name, "redridge" | "duskwood" | "stormwind") {
+                continue;
+            }
+            let file: ZoneFile = toml::from_str(text).unwrap();
+            entries.extend(file.template.iter().map(|t| t.entry));
+            let z = zones.zone.iter().find(|z| z.file == name).unwrap();
+            entries.extend(z.added.iter().map(|a| a.entry));
+        }
+        for t in &content().template {
+            if !entries.contains(&t.entry) || NAMED_31_50.contains(&t.entry) {
+                continue;
+            }
+            let pooled = t.rolls.iter().chain(&t.extra_rolls).flat_map(|r| &r.one_of);
+            for item in pooled {
+                assert!(
+                    !(902100..=902179).contains(item) && !(904024..=904047).contains(item),
+                    "{} rolls {item}",
+                    t.name
+                );
+            }
+        }
+    }
+
     /// A level-10 warrior, and the same one in a stance of 10% less dealt and taken (#473).
     fn plain_and_stanced() -> (Mob, Mob) {
         let t: &'static Template = Box::leak(Box::new(warrior(0)));
