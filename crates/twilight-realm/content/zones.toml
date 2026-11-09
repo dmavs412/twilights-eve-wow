@@ -9,6 +9,10 @@
 # `after_milestone` and `until_milestone` each name a row of content/milestones.toml (ADR 0034):
 # the creature is not brought in until the first is reached, and leaves for good, alive or dead,
 # once the second is.
+# A `[[zone.rolls]]` row sets the `rolls` of the template with its `entry`, as the `rolls` key does
+# on a mobs.toml template, wherever that template comes from: a generated zone file or mobs.toml.
+# It is a content error when the template already has rolls or another row names the entry, so
+# every 31-50 elite roll sits here. Ticket 08 of spec #650 fills it.
 
 [[zone]]
 file = "duskwood"

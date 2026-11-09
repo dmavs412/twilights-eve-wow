@@ -653,6 +653,45 @@ struct ZoneOverrides {
     /// past the Level Stretch.
     #[serde(default)]
     added: Vec<Added>,
+    /// Loot rolls set on a template by entry, wherever the template comes from (spec #650).
+    #[serde(default)]
+    rolls: Vec<EntryRolls>,
+}
+
+/// A `[[zone.rolls]]` row: the `rolls` of the template with `entry`.
+#[derive(Deserialize)]
+struct EntryRolls {
+    entry: u32,
+    rolls: Vec<crate::rules::loot::Roll>,
+}
+
+/// Sets each of `rows`' rolls on every template of its entry. A row naming no template, a
+/// template that already carries rolls, or an entry two rows name is a content error: a
+/// template's rolls are written in one place.
+fn apply_zone_rolls(template: &mut [Template], rows: &[EntryRolls]) {
+    let mut seen = HashSet::new();
+    for r in rows {
+        assert!(
+            seen.insert(r.entry),
+            "[[zone.rolls]] names entry {} twice",
+            r.entry
+        );
+        let mut found = false;
+        for t in template.iter_mut().filter(|t| t.entry == r.entry) {
+            assert!(
+                t.rolls.is_empty(),
+                "[[zone.rolls]] for entry {} names a template that already has rolls",
+                r.entry
+            );
+            t.rolls = r.rolls.clone();
+            found = true;
+        }
+        assert!(
+            found,
+            "[[zone.rolls]] for entry {} names no template",
+            r.entry
+        );
+    }
 }
 
 #[derive(Clone, Copy, Deserialize)]
@@ -784,7 +823,7 @@ pub(crate) fn content() -> &'static Mobs {
         elwynn.spawns.retain(|r| {
             !overrides.removed.contains(&r.1) && !overrides.removed_guids.contains(&r.0)
         });
-        let zone_overrides: ZonesFile = toml::from_str(include_str!("../content/zones.toml"))
+        let mut zone_overrides: ZonesFile = toml::from_str(include_str!("../content/zones.toml"))
             .expect("content/zones.toml parses");
         let mut eastern: Vec<(&str, ZoneFile)> = ZONE_FILES
             .iter()
@@ -969,6 +1008,10 @@ pub(crate) fn content() -> &'static Mobs {
                 [s.level_min, s.level_max] = range;
             }
         }
+        let mut zone_rolls = Vec::new();
+        for z in &mut zone_overrides.zone {
+            zone_rolls.append(&mut z.rolls);
+        }
         let zone_added = zone_overrides.zone.into_iter().flat_map(|z| z.added);
         for a in overrides.added.into_iter().chain(zone_added) {
             let t = template
@@ -1006,6 +1049,7 @@ pub(crate) fn content() -> &'static Mobs {
         template.extend(dungeon.template);
         // The Phased Dungeons' own creatures, checked below like any other.
         join_dungeon_templates(&mut template, &mut from, phased::sources());
+        apply_zone_rolls(&mut template, &zone_rolls);
         lay_kits(&mut template, &overrides.kit);
         for t in &template {
             for roll in t.rolls.iter().chain(&t.extra_rolls) {
@@ -2511,6 +2555,78 @@ mod tests {
         assert_eq!(t.say.as_ref().map(|s| s.aggro_chance), Some(30));
         assert_eq!(t.flee_at_pct, Some(20), "no flee_at_pct in the kit");
         assert!(t.emote_ooc.is_none());
+    }
+
+    /// Two warriors, entries 1 and 2, with no rolls.
+    fn two_warriors() -> [Template; 2] {
+        let [mut a, mut b] = [warrior(0), warrior(0)];
+        (a.entry, b.entry) = (1, 2);
+        [a, b]
+    }
+
+    /// The `[[zone.rolls]]` rows of `toml` (the shape of `content/zones.toml`'s).
+    fn zone_rolls(toml: &str) -> Vec<EntryRolls> {
+        let mut file: ZonesFile = toml::from_str(&format!(
+            "[[zone]]\nfile = \"redridge\"\nremoved = []\n\n{toml}"
+        ))
+        .unwrap();
+        file.zone.remove(0).rolls
+    }
+
+    #[test]
+    fn a_zone_rolls_row_sets_its_entrys_rolls_and_leaves_the_rest() {
+        let mut template = two_warriors();
+        let rows = zone_rolls(
+            "[[zone.rolls]]\nentry = 2\nrolls = [{ chance = 20, one_of = [7, 8] }, \
+             { chance = 50, one_of = [9] }]\n",
+        );
+        apply_zone_rolls(&mut template, &rows);
+        assert!(template[0].rolls.is_empty(), "entry 1 has no row");
+        let set: Vec<(u8, Vec<u32>)> = template[1]
+            .rolls
+            .iter()
+            .map(|r| (r.chance, r.one_of.clone()))
+            .collect();
+        assert_eq!(set, [(20, vec![7, 8]), (50, vec![9])]);
+    }
+
+    #[test]
+    #[should_panic(expected = "entry 3")]
+    fn a_zone_rolls_row_naming_no_template_panics() {
+        let rows = zone_rolls("[[zone.rolls]]\nentry = 3\nrolls = [{ chance = 5, one_of = [7] }]");
+        apply_zone_rolls(&mut two_warriors(), &rows);
+    }
+
+    #[test]
+    #[should_panic(expected = "already has rolls")]
+    fn a_zone_rolls_row_on_a_template_with_rolls_panics() {
+        let mut template = two_warriors();
+        template[0].rolls = vec![crate::rules::loot::Roll {
+            chance: 10,
+            one_of: vec![7],
+        }];
+        let rows = zone_rolls("[[zone.rolls]]\nentry = 1\nrolls = [{ chance = 5, one_of = [8] }]");
+        apply_zone_rolls(&mut template, &rows);
+    }
+
+    #[test]
+    #[should_panic(expected = "names entry 2 twice")]
+    fn two_zone_rolls_rows_naming_one_entry_panic() {
+        let rows = zone_rolls(
+            "[[zone.rolls]]\nentry = 2\nrolls = [{ chance = 5, one_of = [7] }]\n\n\
+             [[zone.rolls]]\nentry = 2\nrolls = [{ chance = 9, one_of = [8] }]\n",
+        );
+        apply_zone_rolls(&mut two_warriors(), &rows);
+    }
+
+    #[test]
+    fn the_content_loads_and_princess_keeps_her_rolls() {
+        let princess = content()
+            .template
+            .iter()
+            .find(|t| t.entry == 330)
+            .expect("Princess");
+        assert!(!princess.rolls.is_empty(), "mobs.toml gives Princess rolls");
     }
 
     /// A level-10 warrior, and the same one in a stance of 10% less dealt and taken (#473).
