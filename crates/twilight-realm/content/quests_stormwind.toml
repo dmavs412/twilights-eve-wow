@@ -246,3 +246,106 @@ money = 1500
 choices = [905100, 905101, 905102, 905103]
 zone_or_sort = 2257
 kill = [[97218, 1]]
+
+# ── Redridge and Duskwood: the way in (#595) ─────────────────────────────────────────────────────
+#
+# Five quests, 97401 to 97405 (#604, spec #595 decisions 2 and 3); the issue's text is the
+# contract. Commander Wray (hub.toml 9300034) and the poster beside the Writ Board each send the
+# character to both zones. All four are level 30, so only a Tier 2 character is offered them, and
+# none is a prerequisite: each zone's first quests are offered without them. Solomon's request goes
+# the other way, from Lakeshire to General Marcus Jonathan at the city gate (stormwind.toml, vmangos
+# guid 79677). The quest items are in quest_items.toml. `money` is copper. `zone_or_sort` 1519 is
+# Stormwind City's AreaTable id.
+
+# The poster beside the Writ Board. Display 17 is vanilla's Wanted Poster, a placeholder
+# (docs/art-assets.md). It stands on the Trade District's street floor (wmo_floor.py group 277).
+[[gameobject]]
+guid = 791002
+entry = 980202
+display = 17
+map = 0
+position = [-8823.0, 667.0, 95.43]
+orientation = 0.0
+
+[[quest]]
+id = 97401
+kind = "story"
+giver = 190071
+ender = 344
+level = 30
+title = "Orders for Lakeshire"
+objectives = "Carry Commander Wray's orders to Magistrate Solomon in Lakeshire, in Redridge."
+details = "You've earned your Tier, $C, and the army has nowhere to send you. Not because we don't need you. Because we're not allowed to go. Magistrate Solomon in Lakeshire has asked the barracks for a company three times. The answer comes down from the Keep: no. I can't send soldiers. I can send you, with my seal on it, so he knows somebody here read his letters. East through Elwynn, past Three Corners."
+progress = "From the barracks?"
+completion = "Wray's seal. So someone in that city does read. One fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
+money = 0
+choices = [903204, 903206, 903208]
+zone_or_sort = 1519
+gives = [[980151, 1]]
+collect = [{ item = 980151, count = 1 }]
+
+[[quest]]
+id = 97402
+kind = "story"
+giver = 190071
+ender = 263
+level = 30
+title = "Orders for Darkshire"
+objectives = "Carry Commander Wray's letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
+details = "Lord Ebonlocke in Darkshire writes to the Keep every month. I know, because his letters come back down to the barracks marked 'for the military', and the military isn't allowed to answer them. Take him this. It isn't an answer. It's an apology, and you. South through Elwynn and over the river."
+progress = "From Stormwind? Truly?"
+completion = "An apology from a commander who isn't allowed to help. It's more than the Keep has sent me in a year. Welcome to Darkshire."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 1519
+gives = [[980152, 1]]
+collect = [{ item = 980152, count = 1 }]
+
+[[quest]]
+id = 97403
+kind = "story"
+giver_object = 980202
+ender = 464
+level = 30
+title = "Hands Wanted: The Lakeshire Watch"
+objectives = "Report to Guard Parker at Three Corners, on the road into Redridge."
+details = "HANDS WANTED. The Lakeshire Watch pays for every able fighter who reports to Guard Parker at Three Corners, on the road east past Elwynn. Orcs, gnolls, murlocs. Bring your own blade. Signed, Marshal Marris."
+progress = "You read the poster?"
+completion = "You read the poster. Marris will be pleased. He paid for the ink himself."
+money = 0
+choices = [903200, 903201, 903202, 903203]
+zone_or_sort = 1519
+
+[[quest]]
+id = 97404
+kind = "story"
+giver_object = 980202
+ender = 264
+level = 30
+title = "Hands Wanted: The Night Watch"
+objectives = "Report to Commander Althea Ebonlocke in Darkshire, in Duskwood."
+details = "HANDS WANTED. The Night Watch of Darkshire takes anyone who can hold a blade after dark. Report to Commander Althea Ebonlocke in Darkshire, south through Elwynn and over the bridge. Pay, board, and no questions about the dark. Signed, A. Ebonlocke."
+progress = "Here about the poster?"
+completion = "Somebody read it. Good. You can start tonight. Every night is tonight, here."
+money = 0
+choices = [903211, 903212, 903213]
+zone_or_sort = 1519
+
+# Solomon's court hand-off, once the Blackrock Menace (quests_redridge.toml) is done.
+[[quest]]
+id = 97405
+kind = "story"
+giver = 344
+ender = 466
+after = 98108
+level = 34
+title = "A Magistrate's Request"
+objectives = "Take Magistrate Solomon's request to General Marcus Jonathan at the gate of Stormwind."
+details = "Marris says the orcs are being paid. I'll not wait for them to finish counting. This is a request for one company of the army, in my hand, with the Watch's numbers and yours. Take it to General Marcus Jonathan at the city gate. Not to the Keep. My letters to the Keep don't come back."
+progress = "A letter from Lakeshire?"
+completion = "Solomon. A good man, and right about the orcs, I'd wager. I can't send him a company. The court has ruled that the Blackrock are a Redridge matter, and the army stays at the walls until it says otherwise. I've asked. Tell him I asked."
+money = 0
+choices = [903205, 903207, 903210]
+zone_or_sort = 1519
+gives = [[980153, 1]]
+collect = [{ item = 980153, count = 1 }]
