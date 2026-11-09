@@ -15,7 +15,7 @@
       "Bash(sort:*)", "Bash(uniq:*)", "Bash(diff:*)", "Bash(echo:*)", "Bash(sqlite3:*)", "Bash(jq:*)"
     ],
     "ask": [
-      "Bash(cargo build:*)", "Bash(cargo run:*)", "Bash(cargo clean:*)", "Bash(*run.ps1*)",
+      "Bash(cargo build:*)", "Bash(cargo clean:*)", "Bash(*run.ps1*)",
       "Bash(git push:*)", "Bash(git reset --hard:*)", "Bash(git rebase:*)", "Bash(git worktree add:*)",
       "Bash(git worktree remove:*)", "Bash(rm -rf:*)", "Bash(rm -r:*)",
       "Bash(gh pr merge:*)", "Bash(gh pr create:*)", "Bash(gh issue delete:*)"
