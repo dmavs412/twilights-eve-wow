@@ -24,6 +24,13 @@
 # `after_milestone` and `until_milestone` each name a row of content/milestones.toml (ADR 0034):
 # the NPC is out of the world until the first is reached, and gone for good once the second is.
 # While out it is not shown, marked on the map or served (gossip, quests, goods, inn, kitchen).
+# `[npc.readout]` makes a gossip NPC say how far a Tally (ADR 0034) has come, in place of
+# `greeting` and `text_id`, which it then needs neither of. `milestone` names a row of
+# content/milestones.toml with a `goal`; `before = { text_id, text }` shows until that row's
+# `after` is reached; `progress = [{ from_pct, text_id, text }, ...]`, starting at 0 and rising,
+# shows its last row whose `from_pct` is at or below the count x 100 / goal, rounded down; and
+# `reached = { text_id, text }` shows once it is reached. Every stage has its own text id, clear
+# of every other NPC's: the client asks for a text once per id and keeps it.
 
 [[npc]]
 guid = 0xF00001
@@ -1437,6 +1444,70 @@ npc_flags = 0x4004
 map = 0
 position = [-9462.29, 87.815, 58.421]
 orientation = 0.733
+
+# ── The Burning Steppes Tally's readouts (#626) ──────────────────────────────────────────────────
+# Two townsfolk who say in words how far `steppes_open`'s Tally has come (ADR 0034). Names and
+# bodies are placeholders: display 3343 is the Stormwind guard body Sergeant Keane wears.
+#
+# Herald Osric Penn, beside the Writ Board and facing it, inside Stormwind's city model on the
+# street floor `wmo_floor.py` lists as group 277 at z 95.43, a yard east of (-8824, 667), where
+# `ground_check.py --fix` moved him off a wall. He also cries a Milestone's `announce` on /1
+# (src/chat.rs).
+[[npc]]
+guid = 9300089
+entry = 190088
+name = "Herald Osric Penn"
+subname = "Stormwind Herald"
+level = 30
+display_id = 3343
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-8823.0, 667.0, 95.43]
+orientation = 0.0
+faces = [-8821.0, 663.0]
+
+[npc.readout]
+milestone = "steppes_open"
+before = { text_id = 64301, text = "No word from the east worth crying, $C. Redridge says the grey over Blackrock Pass hasn't moved in twelve years. I'll cry it the day it does." }
+progress = [
+  { from_pct = 0, text_id = 64302, text = "Word from Redridge: the tower on the hill is down, and the grey over Blackrock Pass has begun to thin. The Watch has a camp at the pass. Things are walking out of the mist, and the captain needs swords to put them down. They've barely started." },
+  { from_pct = 25, text_id = 64303, text = "The camp at Blackrock Pass holds, and the mist keeps thinning. A quarter of the way, the captain writes. Perhaps a little more." },
+  { from_pct = 50, text_id = 64304, text = "Half the pass is clear, by the captain's count. You can see the road climbing into the rocks now, where there was only grey." },
+  { from_pct = 75, text_id = 64305, text = "Three parts done, the captain writes. The grey over the pass is a curtain now, not a wall." },
+  { from_pct = 90, text_id = 64306, text = "Any day now. The last report says the mist over the pass is a rag. One more good push." },
+]
+reached = { text_id = 64307, text = "The pass is open, $C. The Burning Steppes lie beyond it, the first land the Hush has given back. Marshal Maxwell holds Morgan's Vigil on the far side." }
+
+# Watchman Hollis Pell, in Lakeshire between the town hall and the inn, outdoors: `wmo_floor.py`
+# finds only terrain there. `ground_check.py --fix` set his z and moved him a yard east of
+# (-9255, -2205), off a doodad.
+[[npc]]
+guid = 9300090
+entry = 190089
+name = "Watchman Hollis Pell"
+subname = "Lakeshire Watch"
+level = 30
+display_id = 3343
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9254.0, -2205.0, 63.93]
+orientation = 4.7
+
+[npc.readout]
+milestone = "steppes_open"
+before = { text_id = 64311, text = "The pass? Grey as ever. Nothing goes up that road and nothing comes down it. Ask me again when that changes." }
+progress = [
+  { from_pct = 0, text_id = 64312, text = "Since the tower fell, the grey over the pass has started to thin, and what lived behind it is walking out. The captain's camp up the road counts every one put down. We've hardly started." },
+  { from_pct = 25, text_id = 64313, text = "A quarter of the way, by the captain's tally. The road shows through the grey for the first stretch." },
+  { from_pct = 50, text_id = 64314, text = "Halfway. On a clear morning you can see rocks past the border stones now." },
+  { from_pct = 75, text_id = 64315, text = "Three parts of the way. The grey's thin enough to see torches behind it at night. Theirs, not ours." },
+  { from_pct = 90, text_id = 64316, text = "Nearly there. The captain says one more good week. Or one good night with enough swords." },
+]
+reached = { text_id = 64317, text = "The pass is open. Follow the road up and you'll come to Morgan's Vigil. The orcs at Flame Crest fly Blackrock colours now, so give them a wide berth." }
 
 # ── Goldshire's townsfolk (#459) ─────────────────────────────────────────────────────────────────
 # Moved from their Goldshire spawns in content/elwynn.toml to the same x and y, under titles the

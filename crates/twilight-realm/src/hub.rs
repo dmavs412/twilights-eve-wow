@@ -92,6 +92,81 @@ pub(crate) struct Npc {
     /// are not met.
     #[serde(flatten)]
     pub(crate) milestones: crate::milestones::Gate,
+    /// Its gossip greeting says how far a Tally has come (ADR 0034), in place of `greeting`.
+    #[serde(default)]
+    pub(crate) readout: Option<Readout>,
+}
+
+/// A Tally's stages in words: one greeting before its `after` is reached, one per band of the
+/// count while it runs, and one once it is reached. Each stage has its own text id, because the
+/// client asks for a text only on its first visit to that id and keeps it.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Readout {
+    milestone: String,
+    before: Stage,
+    /// From the lowest `from_pct` up: the last whose `from_pct` the count has passed shows.
+    progress: Vec<Stage>,
+    reached: Stage,
+}
+
+/// One of a readout's greetings.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Stage {
+    /// In `progress`: the count, in whole percent of the goal, this stage shows from.
+    #[serde(default)]
+    from_pct: u64,
+    text_id: u32,
+    text: String,
+}
+
+impl Readout {
+    fn stages(&self) -> impl Iterator<Item = &Stage> {
+        [&self.before, &self.reached]
+            .into_iter()
+            .chain(&self.progress)
+    }
+
+    /// The stage's text id while the Milestones are as `state` holds them.
+    fn text_id(&self, state: &crate::milestones::Milestones) -> u32 {
+        let Some(m) = state.get(&self.milestone) else {
+            return self.before.text_id;
+        };
+        if state.reached(&m.key) {
+            return self.reached.text_id;
+        }
+        if m.after.as_ref().is_some_and(|a| !state.reached(a)) {
+            return self.before.text_id;
+        }
+        let (count, goal) = state.tally(&m.key).unwrap_or((0, 1));
+        let pct = count * 100 / goal;
+        self.progress
+            .iter()
+            .rfind(|s| s.from_pct <= pct)
+            .unwrap_or(&self.before)
+            .text_id
+    }
+
+    /// Panics naming `npc` on a readout of no Tally, or one whose `progress` does not start at 0
+    /// or does not rise.
+    fn check(&self, npc: &str) {
+        assert!(
+            crate::milestones::shipped_goal(&self.milestone).is_some(),
+            "{npc}'s readout names {}, which has no goal",
+            self.milestone
+        );
+        assert!(
+            self.progress.first().is_some_and(|s| s.from_pct == 0),
+            "{npc}'s readout progress does not start at 0"
+        );
+        assert!(
+            self.progress
+                .windows(2)
+                .all(|w| w[0].from_pct < w[1].from_pct),
+            "{npc}'s readout progress does not rise"
+        );
+    }
 }
 
 /// A hint at a Legendary Fish (`angler_hints`): its trophy item, and the Angler Level that earns it.
@@ -119,8 +194,43 @@ pub(crate) fn npcs() -> &'static [Npc] {
             n.milestones
                 .check(&format!("Hub NPC {} ({})", n.guid, n.name));
         }
+        check_readouts(&file.npc);
         file.npc
     })
+}
+
+/// Panics on a readout that [`Readout::check`] refuses, or whose text ids repeat within it or
+/// clash with any other Hub NPC's.
+fn check_readouts(all: &[Npc]) {
+    let ids = |n: &Npc| -> Vec<u32> {
+        let stages = n.readout.iter().flat_map(Readout::stages);
+        n.text_id
+            .into_iter()
+            .chain(stages.map(|s| s.text_id))
+            .collect()
+    };
+    for (i, n) in all.iter().enumerate() {
+        let Some(readout) = &n.readout else { continue };
+        readout.check(&n.name);
+        let own = ids(n);
+        for (j, id) in own.iter().enumerate() {
+            assert!(
+                !own[..j].contains(id),
+                "{}'s readout has text {id} twice",
+                n.name
+            );
+            let other = all
+                .iter()
+                .enumerate()
+                .find(|&(k, m)| k != i && ids(m).contains(id));
+            assert!(
+                other.is_none(),
+                "{}'s readout text {id} is {}'s too",
+                n.name,
+                other.map_or("", |(_, m)| m.name.as_str())
+            );
+        }
+    }
 }
 
 /// The Hub NPC of spawn `low` (its low guid) standing on `map`.
@@ -258,11 +368,20 @@ pub(crate) fn within_reach(npc: &Npc, at: [f32; 3]) -> bool {
     flat_distance(npc.position, at) <= crate::space::INTERACTION_YD + npc.wander
 }
 
-/// A Hub NPC's gossip greeting, for `CMSG_NPC_TEXT_QUERY`; `None` for any other text.
+/// A Hub NPC's gossip greeting, or a readout's stage, for `CMSG_NPC_TEXT_QUERY`; `None` for any
+/// other text.
 pub(crate) fn greeting(text_id: u32) -> Option<SessionEvent> {
+    let stage = || {
+        npcs()
+            .iter()
+            .filter_map(|n| n.readout.as_ref())
+            .flat_map(Readout::stages)
+            .find(|s| s.text_id == text_id)
+            .map(|s| s.text.clone())
+    };
     let text = match npcs().iter().find(|n| n.text_id == Some(text_id)) {
         Some(npc) => npc.greeting.clone(),
-        None => crate::quests::talk_text(text_id)?,
+        None => stage().or_else(|| crate::quests::talk_text(text_id))?,
     };
     let mut blocks = vec![NpcTextBlock::default(); NPC_TEXT_BLOCKS];
     blocks[0] = NpcTextBlock {
@@ -276,11 +395,12 @@ pub(crate) fn greeting(text_id: u32) -> Option<SessionEvent> {
 impl crate::Realm {
     /// `CMSG_GOSSIP_HELLO` at a Hub NPC with a gossip greeting: its menu. A trainer's carries
     /// his lines and his Advancement Quests, as vmangos's gossip lists a quest giver's quests;
-    /// an innkeeper's, the bind and the merchant window; a townsperson's is the greeting alone.
+    /// an innkeeper's, the bind and the merchant window; a townsperson's is the greeting alone,
+    /// and a readout's greeting is its Tally's stage.
     pub(crate) fn gossip_hello(&mut self, guid: u64) {
         let reached = self.milestones.reached_refs();
-        let Some(npc) =
-            find(guid, &reached).filter(|n| n.gossips() && n.text_id.is_some() && self.near(n))
+        let talks = |n: &Npc| n.text_id.is_some() || n.readout.is_some();
+        let Some(npc) = find(guid, &reached).filter(|n| n.gossips() && talks(n) && self.near(n))
         else {
             self.field_gossip_hello(guid);
             return;
@@ -308,9 +428,13 @@ impl crate::Realm {
         };
         options.extend(player.map_or_else(Vec::new, |c| crate::world::hint_options(npc, c)));
         options.extend(player.map_or_else(Vec::new, |c| crate::quests::talk_options(c, npc.entry)));
+        let text_id = match &npc.readout {
+            Some(readout) => readout.text_id(&self.milestones),
+            None => npc.text_id.unwrap_or_default(),
+        };
         self.events.push(SessionEvent::GossipMenu {
             npc: npc.guid(),
-            text_id: npc.text_id.unwrap_or_default(),
+            text_id,
             options,
             quests,
         });

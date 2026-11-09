@@ -233,6 +233,10 @@ impl Realm {
             let guid = w.guid;
             self.save(guid);
         }
+        // Each character's own hand-in feeds the Tallies once.
+        if let Some(quest) = done.handed_in {
+            self.feed_milestones(quest);
+        }
     }
 }
 

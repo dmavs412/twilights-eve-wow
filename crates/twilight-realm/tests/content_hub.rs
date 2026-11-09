@@ -26,6 +26,8 @@ struct Npc {
     #[serde(default)]
     greeting: String,
     text_id: Option<u32>,
+    /// A Tally's stages in words, in place of `greeting` (ADR 0034).
+    readout: Option<toml::Value>,
     #[serde(default)]
     wander: f32,
     #[serde(default)]
@@ -157,7 +159,7 @@ fn every_npcs_flags_fit_its_role() {
     let elwynn = elwynn_givers();
     for n in hub() {
         let gives = quests.iter().any(|q| q.giver == n.entry) || elwynn.contains(&n.entry);
-        let talks = n.text_id.is_some() && !n.greeting.is_empty();
+        let talks = (n.text_id.is_some() && !n.greeting.is_empty()) || n.readout.is_some();
         let ok = match n.role.as_str() {
             "goods" => n.npc_flags == VENDOR | REPAIR && !n.stock.is_empty(),
             // Goldshire's shopkeepers sell and do not repair; Andrew Krighton repairs and sells
@@ -447,7 +449,7 @@ fn goldshire_townsfolk_speak_and_no_title_names_a_dead_trade() {
             .any(|t| n.subname.contains(t));
         assert!(!trainer && !dead, "{}: {:?}", n.name, n.subname);
         assert!(
-            n.role != "ambient" || !n.greeting.is_empty(),
+            n.role != "ambient" || !n.greeting.is_empty() || n.readout.is_some(),
             "{} says nothing",
             n.name
         );

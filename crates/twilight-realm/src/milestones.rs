@@ -21,6 +21,34 @@ pub(crate) struct Milestone {
     /// A Milestone that must be reached before this one can be.
     #[serde(default)]
     pub after: Option<String>,
+    /// The count that reaches it: it makes the Milestone a Tally.
+    #[serde(default)]
+    pub goal: Option<u64>,
+    /// The quests whose hand-ins add to the Tally's count.
+    #[serde(default)]
+    pub feeds: Vec<Feed>,
+    /// The line every character in the world sees on `/1` when it is reached.
+    #[serde(default)]
+    pub announce: Option<String>,
+    /// The Hub NPC line every character in the world hears when it is reached.
+    #[serde(default)]
+    pub yell: Option<Yell>,
+}
+
+/// A quest that feeds a Tally, and what each hand-in adds.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Feed {
+    pub quest: u32,
+    pub points: u64,
+}
+
+/// A Hub NPC's yell: its creature entry and its words.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Yell {
+    pub npc: u32,
+    pub text: String,
 }
 
 #[derive(Deserialize)]
@@ -29,8 +57,9 @@ struct Catalogue {
     milestone: Vec<Milestone>,
 }
 
-/// A catalogue's rows from its text (the shape of `content/milestones.toml`); a repeated key, or
-/// an `after` that names no row, panics.
+/// A catalogue's rows from its text (the shape of `content/milestones.toml`); a repeated key, an
+/// `after` that names no row, `feeds` without a `goal`, a quest fed twice and a `goal` below 1
+/// panic.
 pub(crate) fn catalogue(text: &str) -> Vec<Milestone> {
     let file: Catalogue = toml::from_str(text).expect("content/milestones.toml parses");
     for (i, m) in file.milestone.iter().enumerate() {
@@ -46,8 +75,54 @@ pub(crate) fn catalogue(text: &str) -> Vec<Milestone> {
                 m.key
             );
         }
+        assert!(
+            m.feeds.is_empty() || m.goal.is_some(),
+            "milestone {} has feeds and no goal",
+            m.key
+        );
+        assert!(
+            m.goal.is_none_or(|g| g >= 1),
+            "milestone {} has a goal below 1",
+            m.key
+        );
+        for (j, f) in m.feeds.iter().enumerate() {
+            assert!(
+                m.feeds[..j].iter().all(|g| g.quest != f.quest),
+                "milestone {} feeds quest {} twice",
+                m.key,
+                f.quest
+            );
+        }
     }
     file.milestone
+}
+
+/// Panics on a catalogue row that names content the realm lacks: a fed quest, or a yell's Hub
+/// NPC. Apart from [`catalogue`], whose shipped rows the quests and the Hub NPCs read as they load.
+fn check_content(catalogue: &[Milestone]) {
+    for m in catalogue {
+        for f in &m.feeds {
+            assert!(
+                crate::quests::content::quest(f.quest).is_some(),
+                "milestone {} feeds quest {}, which the content lacks",
+                m.key,
+                f.quest
+            );
+        }
+        if let Some(yell) = &m.yell {
+            assert!(
+                crate::hub::npcs().iter().any(|n| n.entry == yell.npc),
+                "milestone {}'s yell names npc {}, which is no Hub NPC entry",
+                m.key,
+                yell.npc
+            );
+        }
+    }
+}
+
+/// The shipped catalogue's goal for Milestone `key`, if it is a Tally.
+pub(crate) fn shipped_goal(key: &str) -> Option<u64> {
+    shipped().iter().find(|m| m.key == key)?.goal
 }
 
 /// The shipped catalogue.
@@ -118,8 +193,10 @@ impl Default for Milestones {
 }
 
 impl Milestones {
-    /// `catalogue` with nothing reached: there is no state file.
+    /// `catalogue` with nothing reached: there is no state file. A row naming a quest or a Hub NPC
+    /// the content lacks panics.
     pub(crate) fn new(catalogue: Vec<Milestone>) -> Self {
+        check_content(&catalogue);
         Self {
             catalogue,
             reached: HashMap::new(),
@@ -222,6 +299,56 @@ impl Milestones {
         self.dirty = true;
     }
 
+    /// Tally `key`'s count (0 when it has none) and goal; `None` for a Milestone that is no Tally.
+    pub(crate) fn tally(&self, key: &str) -> Option<(u64, u64)> {
+        let goal = self.get(key)?.goal?;
+        Some((self.counts.get(key).copied().unwrap_or(0), goal))
+    }
+
+    /// A hand-in of `quest`: adds its points to each Tally it feeds whose `after` is reached and
+    /// which is not, up to the goal, and marks the state for writing. The keys whose count it
+    /// brought to their goal, which the caller reaches.
+    pub(crate) fn feed(&mut self, quest: u32) -> Vec<String> {
+        let mut full = Vec::new();
+        for m in &self.catalogue {
+            let (Some(goal), Some(f)) = (m.goal, m.feeds.iter().find(|f| f.quest == quest)) else {
+                continue;
+            };
+            let open = m
+                .after
+                .as_ref()
+                .is_none_or(|a| self.reached.contains_key(a));
+            if !open || self.reached.contains_key(&m.key) {
+                continue;
+            }
+            let count = self.counts.entry(m.key.clone()).or_insert(0);
+            if *count >= goal {
+                continue;
+            }
+            *count = (*count + f.points).min(goal);
+            self.dirty = true;
+            if *count >= goal {
+                full.push(m.key.clone());
+            }
+        }
+        full
+    }
+
+    /// The Tallies whose count is at their goal, whose `after` is reached and which are not: what
+    /// a state file may hold that the realm reaches when it reads it.
+    pub(crate) fn full(&self) -> Vec<String> {
+        self.catalogue
+            .iter()
+            .filter(|m| {
+                let at_goal = m
+                    .goal
+                    .is_some_and(|g| self.counts.get(&m.key).is_some_and(|&n| n >= g));
+                at_goal && !self.reached(&m.key) && m.after.as_ref().is_none_or(|a| self.reached(a))
+            })
+            .map(|m| m.key.clone())
+            .collect()
+    }
+
     /// The whole state file, when it changed since the last call.
     pub(crate) fn take_changed(&mut self) -> Option<String> {
         std::mem::take(&mut self.dirty).then(|| self.render())
@@ -319,6 +446,63 @@ mod tests {
     #[should_panic(expected = "parses")]
     fn an_unknown_field_panics() {
         catalogue("[[milestone]]\nkey = \"steppes_open\"\nname = \"a\"\ngaol = 540\n");
+    }
+
+    #[test]
+    #[should_panic(expected = "steppes_open has feeds and no goal")]
+    fn feeds_without_a_goal_panic() {
+        catalogue(
+            "[[milestone]]\nkey = \"steppes_open\"\nname = \"a\"\n\
+             feeds = [{ quest = 1, points = 15 }]\n",
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "steppes_open feeds quest 1 twice")]
+    fn a_quest_fed_twice_panics() {
+        catalogue(
+            "[[milestone]]\nkey = \"steppes_open\"\nname = \"a\"\ngoal = 30\n\
+             feeds = [{ quest = 1, points = 15 }, { quest = 1, points = 120 }]\n",
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "steppes_open has a goal below 1")]
+    fn a_goal_of_nothing_panics() {
+        catalogue("[[milestone]]\nkey = \"steppes_open\"\nname = \"a\"\ngoal = 0\n");
+    }
+
+    #[test]
+    fn the_shipped_tally_opens_the_steppes_at_540() {
+        assert_eq!(shipped_goal("steppes_open"), Some(540));
+        assert_eq!(shipped_goal("ilgalar_anchor_broken"), None);
+        assert!(shipped()[1].announce.is_some());
+    }
+
+    #[test]
+    fn a_feed_counts_only_after_its_after_and_stops_at_the_goal() {
+        let rows = catalogue(
+            "[[milestone]]\nkey = \"a\"\nname = \"a\"\n\n\
+             [[milestone]]\nkey = \"b\"\nname = \"b\"\nafter = \"a\"\ngoal = 30\n\
+             feeds = [{ quest = 7, points = 20 }]\n",
+        );
+        let mut state = Milestones {
+            catalogue: rows,
+            ..Milestones::new(Vec::new())
+        };
+        assert!(state.feed(7).is_empty());
+        assert_eq!(state.tally("b"), Some((0, 30)));
+        assert!(state.take_changed().is_none());
+        state.reach("a", 0);
+        assert!(state.feed(7).is_empty());
+        assert_eq!(state.tally("b"), Some((20, 30)));
+        assert_eq!(state.feed(7), ["b"]);
+        assert_eq!(state.tally("b"), Some((30, 30)));
+        assert_eq!(state.full(), ["b"]);
+        state.reach("b", 0);
+        let _ = state.take_changed();
+        assert!(state.feed(7).is_empty());
+        assert!(state.take_changed().is_none());
     }
 
     #[test]

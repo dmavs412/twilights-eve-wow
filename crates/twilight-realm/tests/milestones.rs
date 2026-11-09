@@ -343,6 +343,284 @@ fn a_phased_dungeons_twins_swap_in_a_run_under_way_when_the_milestone_is_reached
     );
 }
 
+// ── The Tally (#630) ────────────────────────────────────────────────────────────────────────────
+
+/// A bounty McBride gives, with nothing to do: each hand-in feeds the test catalogue's Tally.
+const FED: u32 = 99633;
+const FED_QUEST: &str = r#"
+[[quest]]
+id = 99633
+kind = "bounty"
+giver = 197
+level = 5
+title = "For the Tally"
+objectives = "-"
+details = "-"
+progress = "-"
+completion = "-"
+money = 0
+"#;
+const ANNOUNCE: &str =
+    "The mist has rolled off Blackrock Pass. The road into the Burning Steppes is open.";
+const YELL: &str = "The pass is clear!";
+/// Toren in Lakeshire's inn (`hub.toml` 9300083), who yells in the test catalogue.
+const TOREN: u64 = HIGHGUID_UNIT << 48 | 190083 << 24 | 9300083;
+/// Herald Osric Penn beside Stormwind's Writ Board (`hub.toml` 9300089).
+const HERALD: u64 = HIGHGUID_UNIT << 48 | 190088 << 24 | 9300089;
+const BY_HERALD: [f32; 3] = [-8822.0, 666.0, 95.43];
+/// The Redridge side of Blackrock Pass, and a step north onto a Burning Steppes chunk.
+const PASS_OPEN: [f32; 3] = [-8690.0, -2560.0, 132.0];
+const PASS_STEPPES: [f32; 3] = [-8650.0, -2560.0, 132.0];
+
+/// The shipped catalogue with a goal of 30, fed 15 a hand-in of [`FED`], and Toren's yell.
+fn tally_catalogue() -> String {
+    let shipped = include_str!("../content/milestones.toml");
+    assert!(shipped.contains("goal = 540\nfeeds = []\n"), "{shipped}");
+    shipped.replace(
+        "goal = 540\nfeeds = []\n",
+        &format!(
+            "goal = 30\nfeeds = [{{ quest = {FED}, points = 15 }}]\n\
+             yell = {{ npc = 190083, text = \"{YELL}\" }}\n"
+        ),
+    )
+}
+
+/// Two level 10 warriors in Northshire at the break, player 0 beside McBride and player 1 at
+/// the Redridge side of Blackrock Pass, nothing pending.
+fn tally_party() -> Party {
+    let realm = Realm::with_seed(1)
+        .with_quests(FED_QUEST)
+        .with_milestone_catalogue(&tally_catalogue());
+    let mut p = Party::starting(realm, &[10, 10], START_ELWYNN, Box::new(NoGround));
+    p.realm.set_wall_clock(BREAK_MS);
+    p.go(0, BY_MCBRIDE, std::f32::consts::PI);
+    p.go(1, PASS_OPEN, 0.0);
+    p.run(0.5);
+    ack(&mut p, 1);
+    let _ = p.realm.drain_storage();
+    p
+}
+
+/// Acknowledges player `i`'s last teleport, if any.
+fn ack(p: &mut Party, i: usize) {
+    let counter = p.seen(i).iter().rev().find_map(|e| match e {
+        SessionEvent::Teleport { counter, .. } => Some(*counter),
+        _ => None,
+    });
+    if let Some(counter) = counter {
+        p.cmd(i, RealmCommand::TeleportAck { counter });
+    }
+}
+
+/// Player `i` steps to `to`; whether they were snapped back.
+fn snapped(p: &mut Party, i: usize, to: [f32; 3]) -> bool {
+    let from = p.seen(i).len();
+    p.go(i, to, 0.0);
+    p.run(0.1);
+    let back = p.seen(i)[from..]
+        .iter()
+        .any(|e| matches!(e, SessionEvent::Teleport { .. }));
+    ack(p, i);
+    back
+}
+
+/// Player 0 takes and hands in [`FED`]; panics if it did not go through.
+fn hand_in_fed(p: &mut Party) {
+    let from = p.seen(0).len();
+    for command in [
+        RealmCommand::QuestGiverAcceptQuest {
+            npc: MCBRIDE,
+            quest: FED,
+        },
+        RealmCommand::QuestGiverCompleteQuest {
+            npc: MCBRIDE,
+            quest: FED,
+        },
+        RealmCommand::QuestGiverChooseReward {
+            npc: MCBRIDE,
+            quest: FED,
+            choice: 0,
+        },
+    ] {
+        p.cmd(0, command);
+    }
+    let done = p.seen(0)[from..]
+        .iter()
+        .any(|e| matches!(e, SessionEvent::QuestComplete(c) if c.quest_id == FED));
+    assert!(done, "{:?}", &p.seen(0)[from..]);
+}
+
+/// The chat lines of `chat_type` among `events`: each sender and text.
+fn lines(events: &[SessionEvent], chat_type: u8) -> Vec<(u64, String)> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::Chat(m) if m.chat_type == chat_type => {
+                Some((m.sender_guid, m.text.clone()))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn the_tally_counts_hand_ins_after_the_break_and_opens_the_steppes_at_its_goal() {
+    use benilla_protocol::messages::{CHAT_MSG_CHANNEL, CHAT_MSG_MONSTER_YELL};
+    let mut p = tally_party();
+    assert!(snapped(&mut p, 1, PASS_STEPPES), "the Steppes are walled");
+
+    // Before the break, a hand-in adds nothing.
+    hand_in_fed(&mut p);
+    p.run(0.1);
+    assert!(writes(p.realm.drain_storage()).is_empty());
+
+    p.realm.reach_milestone(ANCHOR);
+    p.run(0.1);
+    let _ = p.realm.drain_storage();
+    hand_in_fed(&mut p);
+    p.run(0.1);
+    let blobs = writes(p.realm.drain_storage());
+    assert_eq!(blobs.len(), 1, "{blobs:?}");
+    assert!(blobs[0].contains("count = 15\n"), "{}", blobs[0]);
+    assert!(!p.realm.milestone_reached(STEPPES));
+
+    let from = [p.seen(0).len(), p.seen(1).len()];
+    hand_in_fed(&mut p);
+    assert!(p.realm.milestone_reached(STEPPES));
+    for (i, &from) in from.iter().enumerate() {
+        let got = &p.seen(i)[from..];
+        let both = got.iter().any(
+            |e| matches!(e, SessionEvent::Milestones { reached } if reached == &[ANCHOR, STEPPES]),
+        );
+        assert!(both, "player {i}: {got:?}");
+        let channel = lines(got, CHAT_MSG_CHANNEL);
+        assert_eq!(channel, [(HERALD, ANNOUNCE.to_string())], "player {i}");
+        let yells = lines(got, CHAT_MSG_MONSTER_YELL);
+        assert_eq!(yells, [(TOREN, YELL.to_string())], "player {i}");
+        let told_at = got
+            .iter()
+            .position(|e| matches!(e, SessionEvent::Milestones { .. }))
+            .unwrap();
+        let line_at = got
+            .iter()
+            .position(|e| matches!(e, SessionEvent::Chat(_)))
+            .unwrap();
+        assert!(
+            told_at < line_at,
+            "player {i}: the lines follow the reached set"
+        );
+    }
+    p.run(0.1);
+    let blobs = writes(p.realm.drain_storage());
+    assert_eq!(blobs.len(), 1, "{blobs:?}");
+    assert!(blobs[0].contains("count = 30\n"), "{}", blobs[0]);
+    assert!(!snapped(&mut p, 1, PASS_STEPPES), "the Steppes are open");
+
+    // Past the goal, a hand-in changes nothing and writes nothing.
+    hand_in_fed(&mut p);
+    p.run(0.1);
+    assert!(writes(p.realm.drain_storage()).is_empty());
+}
+
+#[test]
+fn a_state_file_at_the_goal_reaches_the_tally_when_read() {
+    let mut realm = at_the_break();
+    realm.set_milestones(Some(&format!(
+        "[{ANCHOR}]\nreached = \"{BREAK}\"\n\n[{STEPPES}]\ncount = 600\n"
+    )));
+    assert!(realm.milestone_reached(STEPPES));
+    let blobs = writes(realm.drain_storage());
+    assert_eq!(blobs.len(), 1, "{blobs:?}");
+    assert!(
+        blobs[0].contains(&format!("[{STEPPES}]\nreached = \"{BREAK}\"")),
+        "{}",
+        blobs[0]
+    );
+}
+
+/// Player 0 by the herald with the Milestones state file `state`; the text id his gossip
+/// greeting carries.
+fn herald_says(state: &str) -> u32 {
+    let mut p = Party::starting(Realm::with_seed(1), &[10], START_ELWYNN, Box::new(NoGround));
+    p.realm.set_wall_clock(BREAK_MS);
+    p.realm.set_milestones(Some(state));
+    p.go(0, BY_HERALD, 0.0);
+    p.run(0.5);
+    let from = p.seen(0).len();
+    p.cmd(0, RealmCommand::GossipHello { guid: HERALD });
+    p.seen(0)[from..]
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu { npc, text_id, .. } if *npc == HERALD => Some(*text_id),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("no menu: {:?}", &p.seen(0)[from..]))
+}
+
+#[test]
+fn the_herald_says_how_far_the_tally_has_come() {
+    let broken = format!("[{ANCHOR}]\nreached = \"{BREAK}\"\n");
+    let counted = |n: u32| format!("{broken}\n[{STEPPES}]\ncount = {n}\n");
+    assert_eq!(herald_says(""), 64301, "before the break");
+    assert_eq!(herald_says(&broken), 64302, "count 0");
+    assert_eq!(herald_says(&counted(134)), 64302, "24%");
+    assert_eq!(herald_says(&counted(135)), 64303, "25%");
+    assert_eq!(herald_says(&counted(486)), 64306, "90%");
+    let reached = format!("{broken}\n[{STEPPES}]\nreached = \"{BREAK}\"\n");
+    assert_eq!(herald_says(&reached), 64307, "reached");
+
+    let mut realm = Realm::new();
+    for (id, opens) in [
+        (64301, "No word from the east"),
+        (64302, "Word from Redridge"),
+        (64303, "The camp at Blackrock Pass holds"),
+        (64304, "Half the pass is clear"),
+        (64305, "Three parts done"),
+        (64306, "Any day now"),
+        (64307, "The pass is open, $C"),
+    ] {
+        realm.handle(RealmCommand::NpcTextQuery { text_id: id });
+        let said = realm.drain_events().into_iter().find_map(|e| match e {
+            SessionEvent::NpcGreeting { text_id, blocks } if text_id == id => {
+                Some(blocks[0].male.clone())
+            }
+            _ => None,
+        });
+        assert!(
+            said.as_deref().is_some_and(|s| s.starts_with(opens)),
+            "{id}: {said:?}"
+        );
+    }
+}
+
+#[test]
+fn the_herald_answers_a_name_query() {
+    let mut p = Party::new(Realm::new(), &[1]);
+    let from = p.seen(0).len();
+    p.cmd(0, RealmCommand::NameQuery { guid: HERALD });
+    let named = p.seen(0)[from..].iter().any(|e| {
+        matches!(e, SessionEvent::PlayerName { guid, name, .. }
+            if *guid == HERALD && name == "Herald Osric Penn")
+    });
+    assert!(named, "{:?}", &p.seen(0)[from..]);
+}
+
+#[test]
+#[should_panic(expected = "milestone steppes_open feeds quest 99638, which the content lacks")]
+fn a_fed_quest_the_content_lacks_fails_the_load() {
+    let text = tally_catalogue().replace(&format!("quest = {FED}"), "quest = 99638");
+    let _ = Realm::new().with_milestone_catalogue(&text);
+}
+
+#[test]
+#[should_panic(expected = "which is no Hub NPC entry")]
+fn a_yell_from_no_hub_npc_fails_the_load() {
+    let text = tally_catalogue().replace("npc = 190083", "npc = 197");
+    let _ = Realm::new()
+        .with_quests(FED_QUEST)
+        .with_milestone_catalogue(&text);
+}
+
 #[test]
 #[should_panic(expected = "quest 99639 names Milestone nope")]
 fn a_quest_waiting_on_no_milestone_fails_the_content_load() {

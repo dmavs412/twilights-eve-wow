@@ -418,6 +418,10 @@ _Avoid_: premium feature, DLC, entitlement
 A fact about the whole server that the realm records once and never forgets in play (ADR 0034): a row of `content/milestones.toml`, and a table in the `milestones.toml` the realm writes beside the saves. Solo shares one file across the roster.
 _Avoid_: world state, flag, achievement
 
+**Tally**:
+A Milestone's count toward its goal (ADR 0034): each hand-in of a quest it feeds adds points, for the whole server, and reaching the goal reaches the Milestone. Shown by NPCs in words, never on screen.
+_Avoid_: progress bar, meter
+
 **Open Road**:
 The +30% run speed a character has out of combat while the terrain texture under them is a road or street named in `roads.toml`. Adds to the Well Fed speed dish. Shown as a buff of the same name.
 _Avoid_: road bonus, path speed

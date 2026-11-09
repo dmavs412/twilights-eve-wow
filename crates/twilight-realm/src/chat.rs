@@ -199,7 +199,50 @@ impl Realm {
         }
     }
 
-    /// `SMSG_NAME_QUERY_RESPONSE` for a character; an unknown guid answers with no name.
+    /// A reached Milestone's opening (ADR 0034), to every character in the world: `announce` on
+    /// `/1` from the herald, then the `yell` from its Hub NPC, wherever each character stands.
+    pub(crate) fn milestone_lines(
+        &mut self,
+        announce: Option<String>,
+        yell: Option<crate::milestones::Yell>,
+    ) {
+        let mut lines = Vec::new();
+        if let Some(text) = announce {
+            let herald = crate::hub::spawned(HERALD, EASTERN_KINGDOMS);
+            lines.push(SessionEvent::Chat(ChatMessage {
+                chat_type: m::CHAT_MSG_CHANNEL,
+                language: LANGUAGE_UNIVERSAL,
+                sender_guid: herald.map_or(0, |n| n.guid()),
+                target_guid: 0,
+                sender_name: None,
+                channel: Some(WORLD_CHANNEL.into()),
+                text,
+                chat_tag: 0,
+            }));
+        }
+        if let Some(yell) = yell {
+            if let Some(npc) = crate::hub::npcs().iter().find(|n| n.entry == yell.npc) {
+                lines.push(SessionEvent::Chat(ChatMessage {
+                    chat_type: m::CHAT_MSG_MONSTER_YELL,
+                    language: LANGUAGE_UNIVERSAL,
+                    sender_guid: npc.guid(),
+                    target_guid: 0,
+                    sender_name: Some(npc.name.clone()),
+                    channel: None,
+                    text: yell.text,
+                    chat_tag: 0,
+                }));
+            }
+        }
+        for l in self.listeners() {
+            for line in &lines {
+                self.send_to(l.session, line.clone());
+            }
+        }
+    }
+
+    /// `SMSG_NAME_QUERY_RESPONSE` for a character, or a Hub NPC that speaks on `/1` (the herald);
+    /// an unknown guid answers with no name.
     pub(crate) fn name_query(&mut self, guid: u64) {
         let answer = match self.characters.get(guid) {
             Some(c) => SessionEvent::PlayerName {
@@ -211,7 +254,11 @@ impl Realm {
             },
             None => SessionEvent::PlayerName {
                 guid,
-                name: String::new(),
+                name: crate::hub::npcs()
+                    .iter()
+                    .find(|n| n.guid() == guid)
+                    .map(|n| n.name.clone())
+                    .unwrap_or_default(),
                 race: 0,
                 gender: 0,
                 class: 0,
@@ -220,6 +267,12 @@ impl Realm {
         self.events.push(answer);
     }
 }
+
+/// Herald Osric Penn's Hub NPC spawn (`content/hub.toml`), who cries a Milestone's `announce` on
+/// `/1` (#630).
+const HERALD: u32 = 9300089;
+/// The map the herald stands on.
+const EASTERN_KINGDOMS: u32 = 0;
 
 /// Who may hear a creature: the characters on its shard, or the one session whose own world
 /// holds it.

@@ -5,6 +5,12 @@
 # key        the Milestone's name in code, content and the state file
 # name       what the log says
 # after      optional: a Milestone that must be reached before this one can be
+# goal       optional: the count that reaches this Milestone. It makes the Milestone a Tally.
+# feeds      with a goal: [{ quest, points }]. Each hand-in of `quest` by any character adds
+#            `points` to the count while `after` is reached and this Milestone is not.
+# announce   optional: a line every character in the world sees on /1 when it is reached
+# yell       optional: { npc, text }: Hub NPC `npc` yells `text`, heard by every character in the
+#            world, when it is reached
 
 [[milestone]]
 key = "ilgalar_anchor_broken"
@@ -14,3 +20,10 @@ name = "The Ilgalar Anchor is broken"
 key = "steppes_open"
 name = "The Burning Steppes are open"
 after = "ilgalar_anchor_broken"
+# Points are roughly solo minutes: a camp bounty 15, a camp Writ 120 (ticket 06). 540 is nine
+# hours of bounties alone (#626 decision 1: "about 8 to 10 hours").
+goal = 540
+feeds = []
+announce = "The mist has rolled off Blackrock Pass. The road into the Burning Steppes is open."
+# The yell is the Blackrock Pass camp captain's (Davis on #630, 2026-11-08: Toren is gone by
+# then); #632 adds the captain (Hub NPC entry 190090) and this row's `yell`.

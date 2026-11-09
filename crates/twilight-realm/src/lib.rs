@@ -1017,7 +1017,8 @@ impl Realm {
 
     /// Reads the Milestones state file (ADR 0034), `milestones.toml` in the realm's data folder;
     /// `None` when there is none, so nothing is reached. What it names wrong goes to the log as a
-    /// warning.
+    /// warning. A Tally whose count is at its goal, with its `after` reached, is reached now by
+    /// the wall clock, and the file written.
     pub fn set_milestones(&mut self, text: Option<&str>) {
         let catalogue = self.milestones.catalogue().to_vec();
         self.milestones = match text {
@@ -1025,6 +1026,17 @@ impl Realm {
             None => milestones::Milestones::new(catalogue),
         };
         self.log.extend_from_slice(self.milestones.warnings());
+        for key in self.milestones.full() {
+            self.reach_milestone(&key);
+        }
+    }
+
+    /// A character's hand-in of `quest`: it feeds each Tally that counts it (ADR 0034), and one
+    /// brought to its goal is reached.
+    pub(crate) fn feed_milestones(&mut self, quest: u32) {
+        for key in self.milestones.feed(quest) {
+            self.reach_milestone(&key);
+        }
     }
 
     /// This realm with the Milestone catalogue `toml` (the shape of `content/milestones.toml`) in
@@ -1048,8 +1060,9 @@ impl Realm {
 
     /// Reaches Milestone `key` by the wall clock: the one way a Milestone is reached. It logs the
     /// fact, tells every character in the world the reached set, and the state file goes to the
-    /// host with the tick's storage. A key already reached does nothing, and one the catalogue
-    /// lacks is a warning.
+    /// host with the tick's storage. Its `announce` line on `/1` and its `yell` follow the reached
+    /// set to every character in the world. A key already reached does nothing, and one the
+    /// catalogue lacks is a warning.
     pub fn reach_milestone(&mut self, key: &str) {
         let Some(m) = self.milestones.get(key) else {
             self.log.push(format!(
@@ -1061,6 +1074,7 @@ impl Realm {
             return;
         }
         self.log.push(format!("Milestone {} reached.", m.name));
+        let (announce, yell) = (m.announce.clone(), m.yell.clone());
         self.milestones.reach(key, self.wall as u64);
         let event = SessionEvent::Milestones {
             reached: self.milestones.reached_keys(),
@@ -1070,6 +1084,7 @@ impl Realm {
         for (_, events) in sessions.filter(|(w, _)| w.is_some()) {
             events.push(event.clone());
         }
+        self.milestone_lines(announce, yell);
     }
 
     /// Hands the Milestones state file to the host when it changed: one write however many were
