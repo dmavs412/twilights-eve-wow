@@ -910,6 +910,153 @@ pub(super) const ON_DEMAND: &[Scenario] = &[
         minute: 720,
         ui: Some(UiFixture::NameWater),
     },
+    // ---- The mist at the Closed Zones' edge (spec #662) ----
+    // Before and after shots of the mist look, taken by `scripts/mist-shots.ps1`: six views, each
+    // at noon, dusk and night. Captures run with no server, so the Steppes border stays closed.
+    Scenario {
+        name: "mist-straight-noon",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STRAIGHT_EYE,
+        look: MIST_STRAIGHT_LOOK,
+        minute: 720,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-straight-dusk",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STRAIGHT_EYE,
+        look: MIST_STRAIGHT_LOOK,
+        minute: 1170,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-straight-night",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STRAIGHT_EYE,
+        look: MIST_STRAIGHT_LOOK,
+        minute: 0,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-step-noon",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STEP_EYE,
+        look: MIST_STEP_LOOK,
+        minute: 720,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-step-dusk",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STEP_EYE,
+        look: MIST_STEP_LOOK,
+        minute: 1170,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-step-night",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STEP_EYE,
+        look: MIST_STEP_LOOK,
+        minute: 0,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-stair-noon",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STAIR_EYE,
+        look: MIST_STAIR_LOOK,
+        minute: 720,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-stair-dusk",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STAIR_EYE,
+        look: MIST_STAIR_LOOK,
+        minute: 1170,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-stair-night",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STAIR_EYE,
+        look: MIST_STAIR_LOOK,
+        minute: 0,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-close-noon",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_CLOSE_EYE,
+        look: MIST_CLOSE_LOOK,
+        minute: 720,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-close-dusk",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_CLOSE_EYE,
+        look: MIST_CLOSE_LOOK,
+        minute: 1170,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-close-night",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_CLOSE_EYE,
+        look: MIST_CLOSE_LOOK,
+        minute: 0,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-far-noon",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_FAR_EYE,
+        look: MIST_FAR_LOOK,
+        minute: 720,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-far-dusk",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_FAR_EYE,
+        look: MIST_FAR_LOOK,
+        minute: 1170,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-far-night",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_FAR_EYE,
+        look: MIST_FAR_LOOK,
+        minute: 0,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-steppes-noon",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STEPPES_EYE,
+        look: MIST_STEPPES_LOOK,
+        minute: 720,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-steppes-dusk",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STEPPES_EYE,
+        look: MIST_STEPPES_LOOK,
+        minute: 1170,
+        ui: None,
+    },
+    Scenario {
+        name: "mist-steppes-night",
+        map: Some(MAP_AZEROTH),
+        eye: MIST_STEPPES_EYE,
+        look: MIST_STEPPES_LOOK,
+        minute: 0,
+        ui: None,
+    },
 ];
 
 /// The `name-close` subject: the `name-water` wolf's name, orbited at any distance. World text is
@@ -931,6 +1078,33 @@ pub(super) const TRAM_LOOK: [f32; 3] = [-2.44, -1400.0, -118.0];
 /// rim hides the dome from a level look; the ridge sits low in the frame as the control.
 pub(super) const SCAR_EYE: [f32; 3] = [-11892.7, -2647.1, 20.0];
 pub(super) const SCAR_LOOK: [f32; 3] = [-11792.7, -2647.1, 66.6];
+
+/// `mist-straight-*`: the straight river stretch of the Westfall edge on y 866.7, 107 yd away,
+/// x -9600 to -9800.
+pub(super) const MIST_STRAIGHT_EYE: [f32; 3] = [-9700.0, 760.0, 34.1];
+pub(super) const MIST_STRAIGHT_LOOK: [f32; 3] = [-9700.0, 880.0, 35.4];
+
+/// `mist-step-*`: the step at x -9600, where the edge turns from y 866.7 north to y 1000; the
+/// closed chunk's corner at (-9600, 866.7) faces the eye.
+pub(super) const MIST_STEP_EYE: [f32; 3] = [-9680.0, 820.0, 29.1];
+pub(super) const MIST_STEP_LOOK: [f32; 3] = [-9600.0, 880.0, 30.0];
+
+/// `mist-stair-*`: the one-chunk staircase from (-9800, 833.3) down to (-9933, 733.3).
+pub(super) const MIST_STAIR_EYE: [f32; 3] = [-9800.0, 700.0, 34.8];
+pub(super) const MIST_STAIR_LOOK: [f32; 3] = [-9880.0, 790.0, 33.2];
+
+/// `mist-close-*`: 15 yd from the wall on y 733.3, at the river's edge.
+pub(super) const MIST_CLOSE_EYE: [f32; 3] = [-9980.0, 718.0, 24.3];
+pub(super) const MIST_CLOSE_LOOK: [f32; 3] = [-9980.0, 760.0, 28.0];
+
+/// `mist-far-*`: the straight stretch and the step from about 280 yd.
+pub(super) const MIST_FAR_EYE: [f32; 3] = [-9560.0, 600.0, 55.1];
+pub(super) const MIST_FAR_LOOK: [f32; 3] = [-9680.0, 900.0, 40.7];
+
+/// `mist-steppes-*`: the Burning Steppes border on x -8666.7 from the Blackrock Pass camp, 93 yd
+/// away. Open land until zone 46 is in `closed_chunks.json` (#628).
+pub(super) const MIST_STEPPES_EYE: [f32; 3] = [-8760.0, -2590.0, 134.9];
+pub(super) const MIST_STEPPES_LOOK: [f32; 3] = [-8640.0, -2590.0, 157.3];
 
 /// Find a scenario by name across both tables, as `WOW_CAPTURE=` resolution does; every `ui-*`
 /// fixture lives in [`ON_DEMAND`].
@@ -1013,6 +1187,101 @@ mod ui_opt_in_tests {
                  a world capture and photographed with no player UI. If it opens no window, that \
                  is what `UiFixture::Bare` is for.",
                 s.name
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod mist_tests {
+    use super::*;
+    use benilla_formats::closed_zones::{closed_at, closed_chunks_near, zone_closed, Reached};
+
+    /// The Burning Steppes, `AreaTable` zone 46: closed once #628 lists it.
+    const BURNING_STEPPES: u32 = 46;
+
+    const SHOT_SCRIPT: &str = include_str!("../../../../scripts/mist-shots.ps1");
+
+    fn mist_rows() -> impl Iterator<Item = &'static Scenario> {
+        ON_DEMAND.iter().filter(|s| s.name.starts_with("mist-"))
+    }
+
+    /// The game minute a `mist-` name's time suffix pins, or `None` for any other suffix.
+    fn suffix_minute(name: &str) -> Option<u32> {
+        [("-noon", 720), ("-dusk", 1170), ("-night", 0)]
+            .into_iter()
+            .find(|(suffix, _)| name.ends_with(suffix))
+            .map(|(_, minute)| minute)
+    }
+
+    #[test]
+    fn every_mist_view_has_noon_dusk_and_night() {
+        let rows: Vec<_> = mist_rows().collect();
+        assert_eq!(rows.len(), 18, "six views by three times");
+        let mut views = std::collections::BTreeMap::<&str, Vec<u32>>::new();
+        for s in &rows {
+            let minute = suffix_minute(s.name)
+                .unwrap_or_else(|| panic!("{} ends in no -noon, -dusk or -night", s.name));
+            assert_eq!(s.minute, minute, "{} is pinned to the wrong minute", s.name);
+            assert_eq!(s.map, Some(MAP_AZEROTH), "{} is not on map 0", s.name);
+            assert!(s.ui.is_none(), "{} opens a UI fixture", s.name);
+            let view = s.name.rsplit_once('-').map(|(v, _)| v).unwrap();
+            views.entry(view).or_default().push(minute);
+        }
+        assert_eq!(views.len(), 6, "six views: {:?}", views.keys());
+        for (view, mut minutes) in views {
+            minutes.sort_unstable();
+            assert_eq!(minutes, [0, 720, 1170], "{view} lacks a time");
+        }
+    }
+
+    #[test]
+    fn mist_eyes_stand_on_open_land() {
+        let reached = Reached::default();
+        for s in mist_rows() {
+            assert!(
+                !closed_at(MAP_AZEROTH, s.eye[0], s.eye[1], &reached),
+                "{}'s eye stands on a closed chunk",
+                s.name
+            );
+        }
+    }
+
+    #[test]
+    fn mist_looks_face_the_edge() {
+        let reached = Reached::default();
+        let steppes_closed = zone_closed(MAP_AZEROTH, BURNING_STEPPES, &reached);
+        for s in mist_rows() {
+            if s.name.starts_with("mist-steppes-") && !steppes_closed {
+                continue;
+            }
+            assert!(
+                !closed_chunks_near(MAP_AZEROTH, s.look[0], s.look[1], 60.0, &reached).is_empty(),
+                "{}'s look point has no closed chunk within 60 yd",
+                s.name
+            );
+        }
+    }
+
+    #[test]
+    fn every_mist_scenario_is_in_the_shot_script() {
+        let words: Vec<&str> = SHOT_SCRIPT
+            .split(|c: char| !(c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'))
+            .collect();
+        for s in mist_rows() {
+            assert!(
+                words.contains(&s.name),
+                "{} is missing from scripts/mist-shots.ps1",
+                s.name
+            );
+        }
+        for word in words
+            .iter()
+            .filter(|w| w.starts_with("mist-") && suffix_minute(w).is_some())
+        {
+            assert!(
+                mist_rows().any(|s| s.name == *word),
+                "scripts/mist-shots.ps1 names {word}, which is no scenario"
             );
         }
     }
