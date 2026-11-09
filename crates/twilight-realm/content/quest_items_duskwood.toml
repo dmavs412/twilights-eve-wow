@@ -22,4 +22,15 @@ item = [
   { entry = 980412, name = "Crate Seal", quality = 1, item_level = 39, class = 12, display_id = 32278, stackable = 20, description = "Grey wax off a crate lid, pressed with a crown." },
   { entry = 980413, name = "Morbent's Ledger", quality = 1, item_level = 40, class = 12, display_id = 1317, max_count = 1, pages = ["Spades, twelve. Lamps, twenty. Timber, three carts, by the ogres. Men, fourteen. All to the hill, as ordered. At the top, a crown."] },
   { entry = 980414, name = "Ravager Haunch", quality = 1, item_level = 37, class = 12, display_id = 3397, stackable = 20, description = "Smitts says it stews well. Smitts has never been wrong about a stew." },
+  # Duskwood 40-45 (#613, quests_duskwood.toml). Each shows a stock icon no other item does: the
+  # account INV_Misc_Book_03, the stake INV_Spear_02, the pelt INV_Misc_Pelt_Wolf_01, the orders
+  # INV_Scroll_06 and the notes INV_Misc_Note_04. The account goes in the bag on accept and
+  # leaves it on hand-in; the stake and the pelt are drops while their quest wants more.
+  { entry = 980421, name = "Sirra's Account", quality = 1, item_level = 41, class = 12, display_id = 3426, max_count = 1, description = "Six pages in Sirra's hand. The last line: 'Made by hands.'" },
+  { entry = 980422, name = "Survey Stake", quality = 1, item_level = 42, class = 12, display_id = 16149, stackable = 20, description = "A grey ash stake, a crown burned into its head." },
+  { entry = 980423, name = "Nightbane Pelt", quality = 1, item_level = 42, class = 12, display_id = 1421, stackable = 20, description = "Coarse and black, and it smells of wet dog and worse." },
+  # The Deeps' quests of a later ticket collect the orders and the notes (99011, 99012); defined
+  # here so that ticket touches no item file. No quest collects them yet.
+  { entry = 980486, name = "Crowned Orders", quality = 1, item_level = 42, class = 12, display_id = 15274, max_count = 1, description = "Orders on grey paper, sealed with a crown.", pages = ["Dig to the grey and no further. What stands in it belongs to the Master. Touch nothing that stands still.", "Find the apprentice who reads M.'s hand. Bring him whole. Below it, a crown."] },
+  { entry = 980487, name = "Morganth's Notes, Page Two", quality = 1, item_level = 42, class = 12, display_id = 8628, max_count = 1, description = "One page of cipher, torn from a bound book. Grey dust in the creases." },
 ]

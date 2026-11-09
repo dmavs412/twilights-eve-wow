@@ -353,3 +353,172 @@ completion = "Good meat, that. Into the pot by sundown, not that we get a sundow
 money = 1110
 zone_or_sort = 10
 collect = [{ item = 980414, count = 8, from = [923], chance = 50 }]
+
+# ── Duskwood 40-45 (#595) ────────────────────────────────────────────────────────────────────────
+#
+# Duskwood's night was made, and made badly. Sirra asks the three watchers who stood a post that
+# night what they remember, and sends her account to Lord Ello, who will not send it on; Jitters
+# follows the Grey Robe Surveyors' stakes to the crypt under Raven Hill's mausoleum; and Calor
+# wants the worgen of Brightwood Grove and their leader dead. The Surveyors' camps are in
+# content/zones.toml (#611). The quest items are in content/quest_items_duskwood.toml.
+
+[[quest]]
+id = 98801
+kind = "story"
+giver = 268
+after = 98606
+level = 40
+title = "Twelve Years Ago"
+objectives = "Ask Watchers Royce, Keller and Hartin what they remember of the night the dark came, then return to Sirra Von'Indi."
+details = "Since you found the Mistmantles' house, I've been reading everything we wrote about that night, and it isn't enough. Three of the Watch stood a post that night and still stand one now. Royce, Keller and Hartin. They don't talk about it. They might talk to you. Ask them what they remember, not what they think it means. I'll do the thinking."
+progress = "Did they talk?"
+completion = "Dogs that hide, a bell under the ground, the dead woken by accident. That isn't a curse. Curses don't ring."
+money = 0
+choices = [903244, 903246, 903248]
+zone_or_sort = 10
+talk = [
+  { npc = 999, option = "What do you remember of the night the dark came?", reply = "The dogs. Every dog in Darkshire went under a bed an hour before. Then the birds stopped. Then it was dark, like a lid coming down, and it never came off." },
+  { npc = 885, option = "What do you remember of the night the dark came?", reply = "A sound from the north, under the ground, like a bell somebody struck and never stopped. I felt it in the gate posts. It's still there, if you put your hand on the stones by that house." },
+  { npc = 886, option = "What do you remember of the night the dark came?", reply = "The dead in the gardens sat up. Not all at once. One by one, as if something had woken them by accident and they didn't know what to do about it." },
+]
+
+[[quest]]
+id = 98802
+kind = "story"
+giver = 268
+ender = 263
+after = 98801
+level = 41
+title = "A Machine That Went Wrong"
+objectives = "Carry Sirra Von'Indi's account to Lord Ello Ebonlocke in Darkshire."
+details = "Everything I have says the same. The night over Duskwood was made, and made badly, by someone who set something in that hill and didn't know how to stop it. Not a god, not a curse. Hands. I've written it out plainly. Take it to Lord Ebonlocke. He must send it to the city, and they must listen."
+progress = "From Sirra?"
+completion = "Made by hands. I believe her. I'll not write it to the city. Do you know what they'll call it? A curse. Then they'll call Darkshire cursed, and stop sending even the letters they don't answer. Keep it, Sirra will. One day someone will ask the right question."
+money = 0
+choices = [903255, 903257, 903259]
+zone_or_sort = 10
+gives = [[980421, 1]]
+collect = [{ item = 980421, count = 1 }]
+
+[[quest]]
+id = 98803
+kind = "story"
+giver = 288
+after = 98702
+level = 42
+title = "What the Diggers Want"
+objectives = "Kill 6 Grey Robe Surveyors in Raven Hill Cemetery, and bring 5 Survey Stakes to Jitters in Raven Hill."
+details = "More of them came. New ones, and these don't dig. I watched from the wall last night. Grey robes again, but they carry chains and poles and little shuttered lamps, and they walk slow lines across the cemetery, stopping every few yards to drive a stake into the ground. Measuring. Nobody measures a graveyard unless they mean to build in it or take something out of it. Put six of them down and pull up their stakes. Bring me five. I want to see where the lines go."
+progress = "Did you pull up their stakes?"
+completion = "Stakes in a line, from the west wall to the crypt door, every one with that crown on it. They're not robbing graves. They're following something under them. A seam, the miners in Elwynn would call it. Whatever's down there, they want all of it."
+money = 1470
+choices = [903240, 903241, 903242, 903243]
+zone_or_sort = 10
+kill = [[96050, 6]]
+collect = [{ item = 980422, count = 5, from = [96050], chance = 60 }]
+
+# The spot is Raven Hill Deeps' Portal on the mausoleum floor (raven_hill_deeps.toml).
+[[quest]]
+id = 98804
+kind = "story"
+giver = 288
+after = 98803
+level = 42
+title = "Into the Deeps"
+objectives = "Find where the Grey Robes go down, in the crypt beneath the mausoleum on Raven Hill, then return to Jitters."
+details = "I laid your stakes out on my table in the order you pulled them, and they make one line. It runs from the west wall to the old mausoleum on the hill and stops at its floor. There's a crypt under it, older than the hamlet. Every night the Grey Robes go in there with their lanterns, a dozen at a time, and every morning fewer come up. Go to the mausoleum and find where they go down. Don't go down. Just find it, and come back and tell me."
+progress = "Did you find where they go down?"
+completion = "They've broken into the old crypt. If you go down, take friends."
+money = 1470
+choices = [903251, 903252, 903253]
+zone_or_sort = 10
+explore = { place = "The crypt beneath Raven Hill", position = [-10418.6, 410.8], radius = 10.0, map = 0 }
+
+[[quest]]
+id = 98805
+kind = "story"
+giver = 663
+level = 41
+title = "Worgen in the Woods"
+objectives = "Kill 10 Nightbane Worgen and 10 Nightbane Shadow Weavers in Brightwood Grove, then return to Calor in Darkshire."
+details = "I hunted Brightwood Grove before the dark, deer and boar, and I could walk it blind. Now I don't walk it at all. The worgen packs own it. They hunt the grove's roads in the dark, which here means always, and the ones in rags call shadows down on anyone they catch. I've buried six friends this year who went out for firewood. I'm done burying. Go into the grove and kill them, the brutes and the weavers both, ten of each."
+progress = "Are the packs any thinner?"
+completion = "Twenty. The grove's roads will stay quiet for a week, maybe two, and the woodcutters can go out with one guard each instead of three. That's more than they've had all year. Thank you."
+money = 1435
+choices = [903245, 903247, 903250]
+zone_or_sort = 10
+kill = [[898, 10], [533, 10]]
+
+[[quest]]
+id = 98806
+kind = "story"
+giver = 663
+after = 98805
+level = 43
+title = "Fenros"
+objectives = "Kill Fenros and 8 Nightbane Dark Runners in Brightwood Grove, then return to Calor in Darkshire."
+details = "The packs came back, as I said they would, and this time I saw why. They have a leader. A big grey brute the woodcutters call Fenros, bigger than any worgen I've seen, and the runners go wherever he points. Kill the runners and he finds more. Kill him and the packs fall to fighting each other over who leads next. He keeps to the grove with his runners around him. Kill eight of them, and then kill him."
+progress = "Is Fenros dead?"
+completion = "Fenros is dead? Then the packs will tear at each other for weeks deciding who leads, and while they fight, they don't hunt our roads. I'll take that. I'll take any quiet the wood gives us. Here, with the hunters' thanks."
+money = 1505
+choices = [903254, 903256, 903258]
+zone_or_sort = 10
+kill = [[507, 1], [205, 8]]
+
+# ── Darkshire's and Raven Hill's bounties, 40-45 (#595) ──────────────────────────────────────────
+
+[[quest]]
+id = 98811
+kind = "bounty"
+giver = 999
+level = 41
+title = "Ravagers on the West Road"
+objectives = "Kill 10 Black Ravagers or Black Ravager Mastiffs on the west road, then return to Watcher Royce in Darkshire."
+details = "The black ravagers have come down out of the hills to the west road, whole packs of them, the big ones and the mastiffs both. They don't care about a Watch tabard. They took a carter's ox last week, and most of the carter. Nothing comes into Darkshire from the west unless it passes them, and precious little comes in as it is. The Watch pays by the ten. Thin them out, as often as you like."
+progress = "Seen the ravagers?"
+completion = "Ten. That road might carry a cart again before the month is out. The Watch pays, as promised, and the bounty stands. There are always more of them in those hills."
+money = 1230
+zone_or_sort = 10
+kill = [{ family = "Black Ravagers slain", entries = [628, 1258], count = 10 }]
+
+[[quest]]
+id = 98812
+kind = "bounty"
+giver = 273
+level = 42
+title = "Pelts for the Shutters"
+objectives = "Bring 8 Nightbane Pelts to Tavernkeep Smitts in Darkshire."
+details = "The wind comes through my shutters like they aren't there, and wood's scarce with the grove full of worgen. So I nail hides over them. Worgen hide, if you must know. Thick and black, keeps the cold out and the draught too, and the regulars stopped complaining about the smell after the first week. Bring me eight pelts off the Nightbane in Brightwood Grove, any of them, and I'll pay for every lot."
+progress = "Got my pelts?"
+completion = "Good thick ones. That's the back windows done, and the front by the end of the week. Don't tell the regulars what they're looking at. Come back when you have more. Every winter here is a long one."
+money = 1260
+zone_or_sort = 10
+collect = [{ item = 980423, count = 8, from = [898, 533, 205], chance = 50 }]
+
+[[quest]]
+id = 98813
+kind = "bounty"
+giver = 288
+level = 42
+title = "Ghouls on the East Side"
+objectives = "Kill 10 Plague Spreaders or Brain Eaters in Raven Hill Cemetery, then return to Jitters."
+details = "The Grey Robes aren't the only things out there. The ghouls on the cemetery's east side have started coming over the wall, the plague spreaders and the brain eaters both. One left a trail of black spit right across my doorstep. I scrubbed it for an hour. The hamlet's put some money together again. Kill ten of them and it's yours, and ten more after that, if the wall keeps letting them over."
+progress = "Did you kill the ghouls?"
+completion = "Ten. I'll sleep tonight, or lie still with my eyes shut, which is close enough. The hamlet's money is yours. The bounty stands, as long as they keep climbing the wall."
+money = 1260
+zone_or_sort = 10
+kill = [{ family = "Ghouls slain", entries = [604, 570], count = 10 }]
+
+[[quest]]
+id = 98814
+kind = "bounty"
+giver = 885
+level = 43
+title = "Bones on Raven Hill"
+objectives = "Kill 10 Skeletal Warders or Skeletal Raiders in Raven Hill Cemetery, then return to Watcher Keller in Darkshire."
+details = "Raven Hill is the hamlet's trouble, but my riders carry the post out there once a week, and the warders and the raiders come off the cemetery to meet them on the road. I lost a horse to them last month and nearly lost the rider. My men are tired of putting down the same dead twice. The Watch pays a bounty for every ten. Go up to Raven Hill's cemetery and break them, and keep breaking them."
+progress = "How many did you break?"
+completion = "Ten. That's ten my riders won't meet on the road this week. The Watch pays, and I'll thank you myself. Come back when they're up again. In Duskwood the dead always get up again."
+money = 1290
+zone_or_sort = 10
+kill = [{ family = "Skeletons slain", entries = [785, 1110], count = 10 }]

@@ -4,7 +4,9 @@
 //! and Sirra to the silent house on the hill; and four bounties. Band 35-40 (#608): Jitters'
 //! watch on Raven Hill Cemetery and the Grey Robes' crown, the Night Watch on the south road
 //! following the Defias and the ogres' crates, Sven Yorgen's revenge on Morbent Fel; and four
-//! bounties.
+//! bounties. Band 40-45 (#613): Sirra asks the Watch about the night the dark came and sends
+//! her account to Lord Ello, Jitters follows the Surveyors' stakes to the crypt under Raven Hill,
+//! Calor's worgen and Fenros; and four bounties.
 
 mod common;
 
@@ -120,6 +122,57 @@ const BY_THE_GATE: [f32; 3] = [-10345.0, -1176.0, 40.05];
 const PORTAL: [f32; 3] = [-10345.0, -1186.0, 40.05];
 const UP_THE_YARD: [f32; 3] = [-10354.0, -1222.0, 37.0];
 const MANOR_DOOR: [f32; 3] = [-10362.6, -1257.0, 35.91];
+
+const TWELVE_YEARS_AGO: u32 = 98801;
+const A_MACHINE_THAT_WENT_WRONG: u32 = 98802;
+const WHAT_THE_DIGGERS_WANT: u32 = 98803;
+const INTO_THE_DEEPS: u32 = 98804;
+const WORGEN_IN_THE_WOODS: u32 = 98805;
+const FENROS: u32 = 98806;
+
+/// Every quest of band 40-45: `(id, giver, ender, after)`, the ender `None` when it is the giver.
+const BAND_40_45: [(u32, u32, Option<u32>, Option<u32>); 10] = [
+    (98801, SIRRA, None, Some(98606)),
+    (98802, SIRRA, Some(ELLO), Some(98801)),
+    (98803, JITTERS, None, Some(98702)),
+    (98804, JITTERS, None, Some(98803)),
+    (98805, CALOR, None, None),
+    (98806, CALOR, None, Some(98805)),
+    (98811, ROYCE, None, None),
+    (98812, 273, None, None),
+    (98813, JITTERS, None, None),
+    (98814, KELLER, None, None),
+];
+
+/// Each band 40-45 story quest's green choices, from the band's Quest Lines (#610).
+const CHOICES_40_45: [(u32, &[u32]); 6] = [
+    (98801, &[903244, 903246, 903248]),
+    (98802, &[903255, 903257, 903259]),
+    (98803, &[903240, 903241, 903242, 903243]),
+    (98804, &[903251, 903252, 903253]),
+    (98805, &[903245, 903247, 903250]),
+    (98806, &[903254, 903256, 903258]),
+];
+
+/// Band 40-45's Darkshire people (`content/duskwood.toml`): entries and where each stands.
+const ROYCE: u32 = 999;
+const KELLER: u32 = 885;
+const HARTIN: u32 = 886;
+const CALOR: u32 = 663;
+const ROYCE_AT: [f32; 3] = [-10547.6, -1312.39, 41.695];
+const KELLER_AT: [f32; 3] = [-10520.7, -1279.64, 39.307];
+const HARTIN_AT: [f32; 3] = [-10523.4, -1197.27, 27.192];
+const CALOR_AT: [f32; 3] = [-10572.9, -1211.98, 26.219];
+
+/// The account 98802 gives, and the two items the Deeps' quest of a later ticket uses.
+const SIRRAS_ACCOUNT: u32 = 980421;
+const CROWNED_ORDERS: u32 = 980486;
+const MORGANTHS_NOTES: u32 = 980487;
+
+/// Raven Hill Deeps' Portal on the mausoleum floor (`content/raven_hill_deeps.toml`), and a
+/// spot by the mausoleum, outside the spot's radius.
+const DEEPS_PORTAL: [f32; 3] = [-10418.6, 410.8, 47.8];
+const BY_THE_MAUSOLEUM: [f32; 3] = [-10440.0, 410.8, 47.8];
 
 fn duskwood_quests() -> toml::Table {
     include_str!("../content/quests_duskwood.toml")
@@ -430,11 +483,11 @@ fn standing_at_the_manor_s_door_credits_the_silent_house() {
     assert!(complete(&events), "{events:?}");
 }
 
-#[test]
-fn the_surveyor_s_site_record_reads_two_pages() {
-    let mut realm = realm();
-    realm.handle(RealmCommand::ItemQuery { entry: SITE_RECORD });
-    let first = drain(&mut realm)
+/// Item `entry`'s first page and each page's next page, as the client reads them; `(0, [])` for
+/// an item that is not readable. Panics when the realm has no such item.
+fn pages(realm: &mut Realm, entry: u32) -> (u32, Vec<u32>) {
+    realm.handle(RealmCommand::ItemQuery { entry });
+    let first = drain(realm)
         .into_iter()
         .find_map(|e| match e {
             SessionEvent::ItemTemplate {
@@ -442,17 +495,26 @@ fn the_surveyor_s_site_record_reads_two_pages() {
             } => Some(info.page_text),
             _ => None,
         })
-        .expect("the record is an item");
-    assert_ne!(first, 0, "the record is not readable");
+        .unwrap_or_else(|| panic!("item {entry} is not an item"));
+    if first == 0 {
+        return (0, Vec::new());
+    }
     realm.handle(RealmCommand::PageTextQuery { page_id: first });
-    let pages: Vec<u32> = drain(&mut realm)
+    let next = drain(realm)
         .into_iter()
         .filter_map(|e| match e {
             SessionEvent::PageText { next_page_id, .. } => Some(next_page_id),
             _ => None,
         })
         .collect();
-    assert_eq!(pages, [first + 1, 0], "two pages");
+    (first, next)
+}
+
+#[test]
+fn the_surveyor_s_site_record_reads_two_pages() {
+    let (first, next) = pages(&mut realm(), SITE_RECORD);
+    assert_ne!(first, 0, "the record is not readable");
+    assert_eq!(next, [first + 1, 0], "two pages");
 }
 
 #[test]
@@ -651,6 +713,183 @@ fn every_band_35_40_story_quest_offers_the_choices_the_gear_table_names() {
         assert_eq!(got, want, "quest {id}'s choices");
     }
     for id in 98711..=98714 {
+        let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
+        assert!(
+            t.choices.iter().all(|c| c.0 == 0),
+            "bounty {id} offers a choice"
+        );
+    }
+}
+
+#[test]
+fn band_40_45_s_quests_load_with_their_givers_enders_and_zone() {
+    let rows = duskwood_quests();
+    let ids: Vec<u32> = rows["quest"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|q| int(q, "id").unwrap() as u32)
+        .filter(|id| (98801..=98814).contains(id))
+        .collect();
+    assert_eq!(ids, BAND_40_45.map(|q| q.0));
+    let mut realm = realm();
+    for (id, giver, ender, _) in BAND_40_45 {
+        let row = quest_row(id);
+        assert_eq!(int(&row, "giver"), Some(giver.into()), "quest {id}'s giver");
+        assert_eq!(
+            int(&row, "ender"),
+            ender.map(i64::from),
+            "quest {id}'s ender"
+        );
+        assert_eq!(int(&row, "zone_or_sort"), Some(10), "quest {id}");
+        let kind = row["kind"].as_str().unwrap();
+        let want = if id >= 98811 { "bounty" } else { "story" };
+        assert_eq!(kind, want, "quest {id}");
+        let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
+        assert_eq!(t.zone_or_sort, 10, "quest {id}");
+        assert_eq!(Some(t.title.as_str()), row["title"].as_str(), "quest {id}");
+    }
+}
+
+#[test]
+fn band_40_45_s_chains_hold() {
+    for (id, _, _, after) in BAND_40_45 {
+        assert_eq!(
+            int(&quest_row(id), "after"),
+            after.map(i64::from),
+            "quest {id}'s `after`"
+        );
+    }
+
+    // A newcomer gets Calor's worgen and nothing else of the band's chains.
+    let mut party = in_darkshire(&[]);
+    let sirra = up_to(&mut party, SIRRA, SIRRA_AT);
+    assert!(!offers(&mut party, sirra).contains(&TWELVE_YEARS_AGO));
+    let calor = up_to(&mut party, CALOR, CALOR_AT);
+    let offered = offers(&mut party, calor);
+    assert!(offered.contains(&WORGEN_IN_THE_WOODS), "{offered:?}");
+    assert!(!offered.contains(&FENROS), "{offered:?}");
+    let jitters = up_to(&mut party, JITTERS, JITTERS_AT);
+    let offered = offers(&mut party, jitters);
+    assert!(!offered.contains(&WHAT_THE_DIGGERS_WANT), "{offered:?}");
+
+    // Each chain's next step opens once the one before it is handed in.
+    let done = [
+        DARKSHIRE_WAITS,
+        A_CLERKS_RECORDS,
+        98605,
+        THE_TUTORS_NAME,
+        RAVEN_HILLS_WATCH,
+        THE_GRAVE_ROBBERS,
+        WORGEN_IN_THE_WOODS,
+    ];
+    let mut party = in_darkshire(&done);
+    let sirra = up_to(&mut party, SIRRA, SIRRA_AT);
+    let offered = offers(&mut party, sirra);
+    assert!(offered.contains(&TWELVE_YEARS_AGO), "{offered:?}");
+    assert!(!offered.contains(&A_MACHINE_THAT_WENT_WRONG), "{offered:?}");
+    let calor = up_to(&mut party, CALOR, CALOR_AT);
+    assert!(offers(&mut party, calor).contains(&FENROS));
+    let jitters = up_to(&mut party, JITTERS, JITTERS_AT);
+    let offered = offers(&mut party, jitters);
+    assert!(offered.contains(&WHAT_THE_DIGGERS_WANT), "{offered:?}");
+    assert!(!offered.contains(&INTO_THE_DEEPS), "{offered:?}");
+
+    let mut party = in_darkshire(&[RAVEN_HILLS_WATCH, THE_GRAVE_ROBBERS, WHAT_THE_DIGGERS_WANT]);
+    let jitters = up_to(&mut party, JITTERS, JITTERS_AT);
+    assert!(offers(&mut party, jitters).contains(&INTO_THE_DEEPS));
+}
+
+#[test]
+fn speaking_with_the_three_watchers_credits_twelve_years_ago() {
+    let done = [DARKSHIRE_WAITS, A_CLERKS_RECORDS, 98605, THE_TUTORS_NAME];
+    let mut party = in_darkshire(&done);
+    let sirra = up_to(&mut party, SIRRA, SIRRA_AT);
+    accept(&mut party, sirra, TWELVE_YEARS_AGO);
+    let events = hand_in(&mut party, sirra, TWELVE_YEARS_AGO);
+    assert!(!completed(&events, TWELVE_YEARS_AGO), "handed in unasked");
+
+    let option = "What do you remember of the night the dark came?";
+    for (entry, at) in [(ROYCE, ROYCE_AT), (KELLER, KELLER_AT), (HARTIN, HARTIN_AT)] {
+        let npc = up_to(&mut party, entry, at);
+        let events = ask(&mut party, npc, option);
+        assert!(credited(&events, TWELVE_YEARS_AGO), "{entry}: {events:?}");
+    }
+
+    let sirra = up_to(&mut party, SIRRA, SIRRA_AT);
+    let events = hand_in(&mut party, sirra, TWELVE_YEARS_AGO);
+    assert!(completed(&events, TWELVE_YEARS_AGO), "{events:?}");
+}
+
+#[test]
+fn a_machine_that_went_wrong_puts_sirra_s_account_in_the_bag_and_ebonlocke_takes_it() {
+    let done = [
+        DARKSHIRE_WAITS,
+        A_CLERKS_RECORDS,
+        98605,
+        THE_TUTORS_NAME,
+        TWELVE_YEARS_AGO,
+    ];
+    let mut party = in_darkshire(&done);
+    let sirra = up_to(&mut party, SIRRA, SIRRA_AT);
+    accept(&mut party, sirra, A_MACHINE_THAT_WENT_WRONG);
+    assert_eq!(
+        carries(&party, SIRRAS_ACCOUNT),
+        1,
+        "Sirra hands over her account"
+    );
+
+    let ello = up_to(&mut party, ELLO, ELLO_AT);
+    let events = hand_in(&mut party, ello, A_MACHINE_THAT_WENT_WRONG);
+    assert!(completed(&events, A_MACHINE_THAT_WENT_WRONG), "{events:?}");
+    assert_eq!(
+        carries(&party, SIRRAS_ACCOUNT),
+        0,
+        "the account stays with Ebonlocke"
+    );
+}
+
+#[test]
+fn standing_at_the_crypt_s_portal_credits_into_the_deeps() {
+    let done = [RAVEN_HILLS_WATCH, THE_GRAVE_ROBBERS, WHAT_THE_DIGGERS_WANT];
+    let mut party = in_darkshire(&done);
+    let jitters = up_to(&mut party, JITTERS, JITTERS_AT);
+    accept(&mut party, jitters, INTO_THE_DEEPS);
+
+    let complete = |events: &[SessionEvent]| {
+        events.iter().any(|e| {
+            matches!(e, SessionEvent::QuestObjectivesComplete { quest_id } if *quest_id == INTO_THE_DEEPS)
+        })
+    };
+    let events = walk(&mut party, BY_THE_MAUSOLEUM);
+    assert!(!complete(&events), "explored short of the portal");
+    let events = walk(&mut party, DEEPS_PORTAL);
+    assert!(complete(&events), "{events:?}");
+}
+
+#[test]
+fn the_crowned_orders_read_two_pages_and_morganth_s_notes_exist() {
+    let mut realm = realm();
+    let (first, next) = pages(&mut realm, CROWNED_ORDERS);
+    assert_ne!(first, 0, "the orders are not readable");
+    assert_eq!(next, [first + 1, 0], "two pages");
+    pages(&mut realm, MORGANTHS_NOTES);
+}
+
+#[test]
+fn every_band_40_45_story_quest_offers_the_choices_the_gear_table_names() {
+    let mut realm = realm();
+    for (id, want) in CHOICES_40_45 {
+        let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
+        let got: Vec<u32> = t
+            .choices
+            .iter()
+            .map(|c| c.0)
+            .filter(|&item| item != 0)
+            .collect();
+        assert_eq!(got, want, "quest {id}'s choices");
+    }
+    for id in 98811..=98814 {
         let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
         assert!(
             t.choices.iter().all(|c| c.0 == 0),
