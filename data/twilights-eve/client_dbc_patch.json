@@ -10525,353 +10525,403 @@
   },
   {
    "id": 998035,
-   "base": 19029,
-   "icon": "Interface\\Icons\\INV_Chest_Cloth_45"
+   "base": 18769,
+   "icon": "Interface\\Icons\\INV_Shield_12"
   },
   {
    "id": 998036,
    "base": 19029,
-   "icon": "Interface\\Icons\\INV_Chest_Leather_02"
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_45"
   },
   {
    "id": 998037,
    "base": 19029,
-   "icon": "Interface\\Icons\\INV_Chest_Leather_03"
+   "icon": "Interface\\Icons\\INV_Chest_Leather_02"
   },
   {
    "id": 998038,
-   "base": 19110,
-   "icon": "Interface\\Icons\\INV_Chest_Cloth_39"
+   "base": 19029,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_03"
   },
   {
    "id": 998039,
    "base": 19110,
-   "icon": "Interface\\Icons\\INV_Chest_Leather_01"
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_39"
   },
   {
    "id": 998040,
    "base": 19110,
-   "icon": "Interface\\Icons\\INV_Shirt_Green_01"
+   "icon": "Interface\\Icons\\INV_Chest_Leather_01"
   },
   {
    "id": 998041,
+   "base": 19110,
+   "icon": "Interface\\Icons\\INV_Shirt_Green_01"
+  },
+  {
+   "id": 998042,
    "base": 20330,
    "icon": "Interface\\Icons\\INV_Staff_30"
   },
   {
-   "id": 998042,
+   "id": 998043,
    "base": 20356,
    "icon": "Interface\\Icons\\INV_Staff_03"
   },
   {
-   "id": 998043,
+   "id": 998044,
    "base": 20653,
    "icon": "Interface\\Icons\\INV_Weapon_Bow_14"
   },
   {
-   "id": 998044,
+   "id": 998045,
+   "base": 20653,
+   "icon": "Interface\\Icons\\INV_Weapon_Crossbow_05"
+  },
+  {
+   "id": 998046,
    "base": 22247,
    "icon": "Interface\\Icons\\INV_Sword_21"
   },
   {
-   "id": 998045,
+   "id": 998047,
    "base": 22677,
    "icon": "Interface\\Icons\\INV_Chest_Plate07"
   },
   {
-   "id": 998046,
+   "id": 998048,
    "base": 22677,
    "icon": "Interface\\Icons\\INV_Chest_Plate09"
   },
   {
-   "id": 998047,
+   "id": 998049,
    "base": 22688,
    "icon": "Interface\\Icons\\INV_Chest_Plate04"
   },
   {
-   "id": 998048,
+   "id": 998050,
    "base": 22688,
    "icon": "Interface\\Icons\\INV_Chest_Plate10"
   },
   {
-   "id": 998049,
+   "id": 998051,
    "base": 22688,
    "icon": "Interface\\Icons\\INV_Chest_Plate13"
-  },
-  {
-   "id": 998050,
-   "base": 22689,
-   "icon": "Interface\\Icons\\INV_Chest_Chain_04"
-  },
-  {
-   "id": 998051,
-   "base": 22689,
-   "icon": "Interface\\Icons\\INV_Chest_Chain_14"
   },
   {
    "id": 998052,
    "base": 22689,
-   "icon": "Interface\\Icons\\INV_Chest_Plate03"
+   "icon": "Interface\\Icons\\INV_Chest_Chain_04"
   },
   {
    "id": 998053,
-   "base": 25755,
-   "icon": "Interface\\Icons\\INV_Chest_Cloth_05"
+   "base": 22689,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_14"
   },
   {
    "id": 998054,
-   "base": 25755,
-   "icon": "Interface\\Icons\\INV_Chest_Plate10"
+   "base": 22689,
+   "icon": "Interface\\Icons\\INV_Chest_Plate03"
   },
   {
    "id": 998055,
    "base": 25755,
-   "icon": "Interface\\Icons\\INV_Chest_Plate13"
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_05"
   },
   {
    "id": 998056,
+   "base": 25755,
+   "icon": "Interface\\Icons\\INV_Chest_Plate10"
+  },
+  {
+   "id": 998057,
+   "base": 25755,
+   "icon": "Interface\\Icons\\INV_Chest_Plate13"
+  },
+  {
+   "id": 998058,
    "base": 25763,
    "icon": "Interface\\Icons\\INV_Chest_Plate02"
   },
   {
-   "id": 998057,
+   "id": 998059,
    "base": 25763,
    "icon": "Interface\\Icons\\INV_Chest_Plate09"
   },
   {
-   "id": 998058,
+   "id": 998060,
    "base": 25769,
    "icon": "Interface\\Icons\\INV_Chest_Chain_07"
   },
   {
-   "id": 998059,
+   "id": 998061,
    "base": 25769,
    "icon": "Interface\\Icons\\INV_Chest_Plate10"
   },
   {
-   "id": 998060,
+   "id": 998062,
    "base": 25769,
    "icon": "Interface\\Icons\\INV_Chest_Plate13"
   },
   {
-   "id": 998061,
+   "id": 998063,
    "base": 25780,
    "icon": "Interface\\Icons\\INV_Chest_Chain_14"
   },
   {
-   "id": 998062,
+   "id": 998064,
    "base": 25780,
    "icon": "Interface\\Icons\\INV_Chest_Plate03"
-  },
-  {
-   "id": 998063,
-   "base": 25877,
-   "icon": "Interface\\Icons\\INV_Chest_Cloth_39"
-  },
-  {
-   "id": 998064,
-   "base": 25877,
-   "icon": "Interface\\Icons\\INV_Chest_Cloth_40"
   },
   {
    "id": 998065,
    "base": 25877,
-   "icon": "Interface\\Icons\\INV_Chest_Leather_01"
-  },
-  {
-   "id": 998066,
-   "base": 25889,
    "icon": "Interface\\Icons\\INV_Chest_Cloth_39"
   },
   {
+   "id": 998066,
+   "base": 25877,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_40"
+  },
+  {
    "id": 998067,
-   "base": 25889,
+   "base": 25877,
    "icon": "Interface\\Icons\\INV_Chest_Leather_01"
   },
   {
    "id": 998068,
+   "base": 25889,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_39"
+  },
+  {
+   "id": 998069,
+   "base": 25889,
+   "icon": "Interface\\Icons\\INV_Chest_Leather_01"
+  },
+  {
+   "id": 998070,
    "base": 26123,
    "icon": "Interface\\Icons\\INV_Misc_Desecrated_MailChest"
   },
   {
-   "id": 998069,
+   "id": 998071,
+   "base": 26161,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_19"
+  },
+  {
+   "id": 998072,
    "base": 26192,
    "icon": "Interface\\Icons\\INV_Chest_Cloth_19"
   },
   {
-   "id": 998070,
+   "id": 998073,
    "base": 26654,
    "icon": "Interface\\Icons\\INV_Chest_Plate12"
   },
   {
-   "id": 998071,
+   "id": 998074,
    "base": 26933,
    "icon": "Interface\\Icons\\INV_Chest_Chain_14"
   },
   {
-   "id": 998072,
+   "id": 998075,
    "base": 26933,
    "icon": "Interface\\Icons\\INV_Chest_Chain_16"
   },
   {
-   "id": 998073,
+   "id": 998076,
    "base": 26933,
    "icon": "Interface\\Icons\\INV_Chest_Plate03"
   },
   {
-   "id": 998074,
+   "id": 998077,
    "base": 26961,
    "icon": "Interface\\Icons\\INV_Chest_Chain_11"
   },
   {
-   "id": 998075,
+   "id": 998078,
    "base": 26972,
    "icon": "Interface\\Icons\\INV_Chest_Plate06"
   },
   {
-   "id": 998076,
+   "id": 998079,
    "base": 26972,
    "icon": "Interface\\Icons\\INV_Chest_Plate09"
   },
   {
-   "id": 998077,
+   "id": 998080,
    "base": 26984,
    "icon": "Interface\\Icons\\INV_Chest_Chain_08"
   },
   {
-   "id": 998078,
+   "id": 998081,
    "base": 26984,
    "icon": "Interface\\Icons\\INV_Chest_Chain_14"
   },
   {
-   "id": 998079,
+   "id": 998082,
    "base": 26984,
    "icon": "Interface\\Icons\\INV_Chest_Plate03"
   },
   {
-   "id": 998080,
-   "base": 26990,
-   "icon": "Interface\\Icons\\INV_Chest_Chain_11"
-  },
-  {
-   "id": 998081,
-   "base": 26990,
-   "icon": "Interface\\Icons\\INV_Chest_Plate15"
-  },
-  {
-   "id": 998082,
-   "base": 27010,
-   "icon": "Interface\\Icons\\INV_Chest_Chain_05"
-  },
-  {
    "id": 998083,
-   "base": 27010,
+   "base": 26990,
    "icon": "Interface\\Icons\\INV_Chest_Chain_11"
   },
   {
    "id": 998084,
+   "base": 26990,
+   "icon": "Interface\\Icons\\INV_Chest_Plate15"
+  },
+  {
+   "id": 998085,
+   "base": 27010,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_05"
+  },
+  {
+   "id": 998086,
+   "base": 27010,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_11"
+  },
+  {
+   "id": 998087,
    "base": 27039,
    "icon": "Interface\\Icons\\INV_Chest_Chain_03"
   },
   {
-   "id": 998085,
+   "id": 998088,
    "base": 27049,
    "icon": "Interface\\Icons\\INV_Chest_Chain_03"
   },
   {
-   "id": 998086,
+   "id": 998089,
    "base": 27081,
    "icon": "Interface\\Icons\\INV_Chest_Plate10"
   },
   {
-   "id": 998087,
+   "id": 998090,
    "base": 27081,
    "icon": "Interface\\Icons\\INV_Chest_Plate13"
   },
   {
-   "id": 998088,
+   "id": 998091,
    "base": 27155,
    "icon": "Interface\\Icons\\INV_Chest_Plate12"
   },
   {
-   "id": 998089,
+   "id": 998092,
    "base": 27171,
    "icon": "Interface\\Icons\\INV_Chest_Plate12"
   },
   {
-   "id": 998090,
+   "id": 998093,
    "base": 27308,
    "icon": "Interface\\Icons\\INV_Misc_Desecrated_PlateChest"
   },
   {
-   "id": 998091,
+   "id": 998094,
    "base": 27564,
    "icon": "Interface\\Icons\\INV_Shirt_04"
   },
   {
-   "id": 998092,
+   "id": 998095,
    "base": 27669,
    "icon": "Interface\\Icons\\INV_Chest_Chain_13"
   },
   {
-   "id": 998093,
+   "id": 998096,
    "base": 27669,
    "icon": "Interface\\Icons\\INV_Chest_Cloth_07"
   },
   {
-   "id": 998094,
+   "id": 998097,
    "base": 27683,
    "icon": "Interface\\Icons\\INV_Chest_Cloth_45"
   },
   {
-   "id": 998095,
+   "id": 998098,
    "base": 27683,
    "icon": "Interface\\Icons\\INV_Chest_Leather_03"
   },
   {
-   "id": 998096,
-   "base": 27728,
-   "icon": "Interface\\Icons\\INV_Chest_Samurai"
-  },
-  {
-   "id": 998097,
-   "base": 27769,
-   "icon": "Interface\\Icons\\INV_Chest_Chain_03"
-  },
-  {
-   "id": 998098,
-   "base": 27873,
-   "icon": "Interface\\Icons\\INV_Chest_Cloth_19"
-  },
-  {
    "id": 998099,
-   "base": 27962,
+   "base": 27716,
    "icon": "Interface\\Icons\\INV_Shirt_04"
   },
   {
    "id": 998100,
-   "base": 28028,
-   "icon": "Interface\\Icons\\INV_Shirt_04"
+   "base": 27728,
+   "icon": "Interface\\Icons\\INV_Chest_Samurai"
   },
   {
    "id": 998101,
-   "base": 28078,
-   "icon": "Interface\\Icons\\INV_Chest_Cloth_28"
+   "base": 27769,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_03"
   },
   {
    "id": 998102,
-   "base": 28424,
+   "base": 27873,
    "icon": "Interface\\Icons\\INV_Chest_Cloth_19"
   },
   {
    "id": 998103,
+   "base": 27962,
+   "icon": "Interface\\Icons\\INV_Shirt_04"
+  },
+  {
+   "id": 998104,
+   "base": 28028,
+   "icon": "Interface\\Icons\\INV_Shirt_04"
+  },
+  {
+   "id": 998105,
+   "base": 28078,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_28"
+  },
+  {
+   "id": 998106,
+   "base": 28424,
+   "icon": "Interface\\Icons\\INV_Chest_Cloth_19"
+  },
+  {
+   "id": 998107,
+   "base": 28514,
+   "icon": "Interface\\Icons\\INV_Misc_Bag_15"
+  },
+  {
+   "id": 998108,
+   "base": 29807,
+   "icon": "Interface\\Icons\\INV_Chest_Chain_03"
+  },
+  {
+   "id": 998109,
+   "base": 29844,
+   "icon": "Interface\\Icons\\INV_Chest_Plate12"
+  },
+  {
+   "id": 998110,
+   "base": 31603,
+   "icon": "Interface\\Icons\\INV_Jewelry_Necklace_18"
+  },
+  {
+   "id": 998111,
+   "base": 31604,
+   "icon": "Interface\\Icons\\INV_Jewelry_Necklace_17"
+  },
+  {
+   "id": 998112,
    "base": 32075,
    "icon": "Interface\\Icons\\INV_Weapon_ShortBlade_06"
   },
   {
-   "id": 998104,
+   "id": 998113,
    "base": 32077,
    "icon": "Interface\\Icons\\INV_Sword_42"
+  },
+  {
+   "id": 998114,
+   "base": 32713,
+   "icon": "Interface\\Icons\\INV_Jewelry_Necklace_19"
   }
  ],
  "spell_visuals": [

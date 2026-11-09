@@ -1,7 +1,9 @@
 //! The Quest Lines of the 30-50 arc (#600, spec #595): 20 green `quest-*` Lines and 16 blue
 //! `quest-elite-*` Lines that every later quest reward of the arc extends. Band 30-35 holds the
 //! greens 903200 to 903219 and The Thresher's blues 903300 to 903302; band 35-40 (#605) the greens
-//! 903220 to 903239 and Sven's Revenge's blue rings 903303 to 903305. Each Line shows one icon that
+//! 903220 to 903239 and Sven's Revenge's blue rings 903303 to 903305; band 40-45 (#610) the greens
+//! 903240 to 903259 and Tharil'zun's Chests 903306 to 903309; band 45-50 (#615) the greens 903260
+//! to 903279 and the named elites' blues 903310 to 903318. Each Line shows one icon that
 //! no other Line or unlined item shows. A row's icon here is its `icon` path, or its stock
 //! `display_id` when it has none; `icon_check.py` compares the DBC's icon names behind those.
 
@@ -57,6 +59,20 @@ const THARILZUN: [(i64, &str); 4] = [
     (903307, "quest-elite-chest-leather"),
     (903308, "quest-elite-chest-mail"),
     (903309, "quest-elite-chest-plate"),
+];
+
+/// The band 45-50 named elites' blues: The Grey Captain (98902), The Last Courier (98404) and
+/// Mor'Ladim (98903). Entry and Line.
+const BAND_45_50_ELITES: [(i64, &str); 9] = [
+    (903310, "quest-elite-amulet-might"),
+    (903311, "quest-elite-amulet-swift"),
+    (903312, "quest-elite-amulet-mind"),
+    (903313, "quest-elite-shield"),
+    (903314, "quest-elite-bow"),
+    (903315, "quest-elite-held"),
+    (903316, "quest-elite-ring-might"),
+    (903317, "quest-elite-ring-swift"),
+    (903318, "quest-elite-ring-mind"),
 ];
 
 fn items() -> Vec<Value> {
@@ -160,6 +176,26 @@ fn band_40_45_greens_repeat_each_quest_line_with_its_icon() {
 }
 
 #[test]
+fn band_45_50_greens_repeat_each_quest_line_with_its_icon() {
+    let items = items();
+    let mut seen = HashSet::new();
+    for (n, want) in GREEN_LINES.iter().enumerate() {
+        let i = item(&items, 903260 + n as i64);
+        assert_row(i, 2, 48, 45, want);
+        assert!(
+            seen.insert(line(i).unwrap()),
+            "{want} has two rows in band 45-50"
+        );
+        let first = item(&items, 903200 + n as i64);
+        assert_eq!(
+            icon(i),
+            icon(first),
+            "{want} changes its icon in band 45-50"
+        );
+    }
+}
+
+#[test]
 fn the_thresher_pays_three_quest_elite_blues() {
     let items = items();
     for (entry, want) in THRESHER {
@@ -189,6 +225,22 @@ fn tharilzun_pays_one_quest_elite_chest_per_armour_type() {
 }
 
 #[test]
+fn band_45_50_elites_pay_nine_quest_elite_blues() {
+    let items = items();
+    for (entry, want) in BAND_45_50_ELITES {
+        assert_row(item(&items, entry), 3, 48, 45, want);
+    }
+    for (later, (earlier, _)) in BAND_45_50_ELITES[6..].iter().zip(SVENS_REVENGE) {
+        assert_eq!(
+            icon(item(&items, later.0)),
+            icon(item(&items, earlier)),
+            "{} changes its Line's icon",
+            later.0
+        );
+    }
+}
+
+#[test]
 fn every_quest_line_shows_one_icon_no_other_item_shows() {
     let items = items();
     let mut line_icon: HashMap<&str, String> = HashMap::new();
@@ -202,10 +254,12 @@ fn every_quest_line_shows_one_icon_no_other_item_shows() {
     let blues = THRESHER
         .iter()
         .chain(SVENS_REVENGE.iter())
-        .chain(THARILZUN.iter());
+        .chain(THARILZUN.iter())
+        .chain(BAND_45_50_ELITES.iter());
     for want in GREEN_LINES.iter().chain(blues.map(|(_, l)| l)) {
         assert!(line_icon.contains_key(want), "{want} has no row");
     }
+    assert_eq!(line_icon.len(), 36, "the arc has 36 Quest Lines");
     let owner: HashMap<&String, &str> = line_icon.iter().map(|(l, s)| (s, *l)).collect();
     assert_eq!(
         owner.len(),
