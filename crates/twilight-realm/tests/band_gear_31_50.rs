@@ -1,7 +1,8 @@
 //! The Loot Bands past 30 (spec #650): one row on each of the 20 `world-*` Lines and the six
 //! `elite-*` Lines per band. Band 31-35 (#654) holds the greens 902100 to 902119 and the Elite
 //! blues 904024 to 904029; band 36-40 the greens 902120 to 902139 and the blues 904030 to 904035.
-//! Each green scales the 27-30 row of its Line (902080 + i), each blue the band's Elite row
+//! Band 41-45 (#655) holds 902140 to 902159 and 904036 to 904041; band 46-50 902160 to 902179
+//! and 904042 to 904047. Each green scales the 27-30 row of its Line (902080 + i), each blue the band's Elite row
 //! (904018 + i). A row's icon here is its `icon` path, or its stock `display_id` when it has none;
 //! `icon_check.py` compares the DBC's icon names behind those.
 
@@ -20,9 +21,11 @@ const ROBE: i64 = 20;
 
 /// Each band: first green, first Elite blue, item level, required level, and the Chest armour
 /// for cloth, leather, mail and plate.
-const BANDS: [(i64, i64, i64, i64, [i64; 4]); 2] = [
+const BANDS: [(i64, i64, i64, i64, [i64; 4]); 4] = [
     (902100, 904024, 33, 31, [492, 861, 1475, 1844]),
     (902120, 904030, 38, 36, [570, 998, 1710, 2138]),
+    (902140, 904036, 43, 41, [661, 1156, 1983, 2478]),
+    (902160, 904042, 48, 46, [766, 1341, 2298, 2873]),
 ];
 
 /// The 27-30 band's first green and first Elite blue: the sources of every row here.
@@ -127,6 +130,23 @@ fn each_chest_has_its_bands_armour() {
                 int(i, "entry")
             );
         }
+    }
+}
+
+#[test]
+fn every_line_has_one_row_per_band_past_30() {
+    let items = items();
+    let mut rows: HashMap<&str, usize> = HashMap::new();
+    for i in &items {
+        let entry = int(i, "entry");
+        let past_30 = (902100..=902179).contains(&entry) || (904024..=904047).contains(&entry);
+        if let Some(l) = line(i).filter(|_| past_30) {
+            *rows.entry(l).or_default() += 1;
+        }
+    }
+    assert_eq!(rows.len(), 26, "20 world Lines and six elite Lines");
+    for (l, n) in rows {
+        assert_eq!(n, BANDS.len(), "{l} rows across the bands past 30");
     }
 }
 

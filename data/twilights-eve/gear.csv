@@ -1025,6 +1025,46 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 902137,Alther's Ring,Ring,Misc,,Uncommon,38,36,,26,20,,,,,,,,,,,,,,,,,,,46,world-ring-swift-b,,,,12984,,1247,Equip,,,,,,,,,,,
 902138,Yorgen Circle,Ring,Misc,,Uncommon,38,36,,,10,23,13,,,,,,,,,,,,,,,,,46,world-ring-mind-a,,,,9832,,1247,Equip,,,,,,,,,,,
 902139,Addle's Seal,Ring,Misc,,Uncommon,38,36,,,10,19,17,,,,,,,,,,,,,,,,,46,world-ring-mind-b,,,,12987,,1247,Equip,,,,,,,,,,,
+902140,Render's Wool Robe,Chest,Cloth,,Uncommon,43,41,,,12,26,15,661,,,,,,,,,,,,,,,,53,world-chest-cloth,,,,28074,INV_Chest_Leather_01,3540,Equip,70,,Cloth,28067,28068,28065,28057,28062,26470,28061,28088
+902141,Brightwood Leather Jerkin,Chest,Leather,,Uncommon,43,41,,34,19,,,1156,,,,,,,,,,,,,,,,53,world-chest-leather,,,,18903,INV_Chest_Leather_03,4795,Equip,85,,Leather,18921,3169,23023,3606,18912,17129,27807,18904
+902142,Vul'Gol Chain Hauberk,Chest,Mail,,Uncommon,43,41,34,,19,,,1983,,,,,,,,,,,,,,,,53,world-chest-mail,,,,27889,INV_Chest_Plate03,5298,Equip,100,,Chain,27898,27893,27108,27895,27892,27894,27890,27891
+902143,Rethban Plate Cuirass,Chest,Plate,,Uncommon,43,41,34,,19,,,2478,,,,,,,,,,,,,,,,53,world-chest-plate,,,,27081,INV_Chest_Plate10,12141,Equip,115,,Plate,27083,27080,27082,27074,27075,27079,27076,27540
+902144,Render's Cutlass,Weapon,Sword,1H,Uncommon,43,41,34,,19,,,,,88,134,Physical,2.0,,,,,,,,,,,53,world-sword,,,,26572,INV_Sword_23,9512,Equip,70,Side,Metal,,,,,,,,
+902145,Brightwood Kite Shield,Offhand,Shield,,Uncommon,43,41,34,,19,,,892,13,,,,,,,,,,,,,,,53,world-shield,,,,18697,INV_Shield_14,6068,Equip,80,Shield,Metal,,,,,,,,
+902146,Vul'Gol Dirk,Weapon,Dagger,1H,Uncommon,43,41,,34,19,,,,,68,99,Physical,1.5,,,,,,,,,,,53,world-dagger,,,,20475,INV_Weapon_ShortBlade_25,9482,Equip,50,Side,Metal,,,,,,,,
+902147,Rethban Shortbow,Ranged,Bow,,Uncommon,43,41,,34,19,,,,,82,121,Physical,2.4,,,,,,,,,,,53,world-bow,,,,20555,INV_Weapon_Bow_08,7085,Equip,60,,Wood,,,,,,,,
+902148,Render's Quarterstaff,Weapon,Staff,2H,Uncommon,43,41,,,,54,,,,179,265,Physical,3.0,,,,,,,,,,104,106,world-staff,,,,20357,INV_Staff_Goldfeathered_01,10928,Equip,80,Staff,Wood,,,,,,,,
+902149,Brightwood Cudgel,Weapon,Mace,1H,Uncommon,43,41,,,,26,,,,88,134,Physical,2.0,,,,,,,,,,53,53,world-mace,,,,19713,INV_Hammer_23,9143,Equip,70,Side,Wood,,,,,,,,
+902150,Vul'Gol Lantern,Offhand,Held,,Uncommon,43,41,,,,26,,,,,,,,,,,,,,,,,53,53,world-held,,,,21605,INV_Potion_19,4951,Equip,,Hip,,,,,,,,,
+902151,Rethban Torc,Amulet,Misc,,Uncommon,43,41,34,,19,,,,,,,,,,,,,,,,,,,53,world-amulet-might,,,,9852,,3800,Equip,,,,,,,,,,,
+902152,Render's Talisman,Amulet,Misc,,Uncommon,43,41,,34,19,,,,,,,,,,,,,,,,,,,53,world-amulet-swift,,,,9853,,3800,Equip,,,,,,,,,,,
+902153,Brightwood Pendant,Amulet,Misc,,Uncommon,43,41,,,12,26,15,,,,,,,,,,,,,,,,,53,world-amulet-mind,,,,9857,,3800,Equip,,,,,,,,,,,
+902154,Vul'Gol Band,Ring,Misc,,Uncommon,43,41,34,,19,,,,,,,,,,,,,,,,,,,53,world-ring-might-a,,,,9835,,1676,Equip,,,,,,,,,,,
+902155,Rethban Signet,Ring,Misc,,Uncommon,43,41,31,,22,,,,,,,,,,,,,,,,,,,53,world-ring-might-b,,,,9823,,1676,Equip,,,,,,,,,,,
+902156,Render's Loop,Ring,Misc,,Uncommon,43,41,,34,19,,,,,,,,,,,,,,,,,,,53,world-ring-swift-a,,,,4284,,1676,Equip,,,,,,,,,,,
+902157,Brightwood Ring,Ring,Misc,,Uncommon,43,41,,31,22,,,,,,,,,,,,,,,,,,,53,world-ring-swift-b,,,,12984,,1676,Equip,,,,,,,,,,,
+902158,Vul'Gol Circle,Ring,Misc,,Uncommon,43,41,,,12,26,15,,,,,,,,,,,,,,,,,53,world-ring-mind-a,,,,9832,,1676,Equip,,,,,,,,,,,
+902159,Rethban Seal,Ring,Misc,,Uncommon,43,41,,,11,23,19,,,,,,,,,,,,,,,,,53,world-ring-mind-b,,,,12987,,1676,Equip,,,,,,,,,,,
+902160,Galardell Wool Robe,Chest,Cloth,,Uncommon,48,46,,,13,31,17,766,,,,,,,,,,,,,,,,61,world-chest-cloth,,,,28417,INV_Chest_Leather_01,4758,Equip,70,,Cloth,28414,28409,28412,28410,28413,28415,28416,11548
+902161,Orchard Leather Jerkin,Chest,Leather,,Uncommon,48,46,,39,22,,,1341,,,,,,,,,,,,,,,,61,world-chest-leather,,,,18934,INV_Chest_Leather_03,6445,Equip,85,,Leather,19010,18939,23073,18938,18936,17115,18935,18937
+902162,Ebonlocke Chain Hauberk,Chest,Mail,,Uncommon,48,46,39,,22,,,2298,,,,,,,,,,,,,,,,61,world-chest-mail,,,,26087,INV_Chest_Plate03,7120,Equip,100,,Chain,26098,26091,26097,26088,26089,6926,3193,26090
+902163,Stonefall Plate Cuirass,Chest,Plate,,Uncommon,48,46,39,,22,,,2873,,,,,,,,,,,,,,,,61,world-chest-plate,,,,27081,INV_Chest_Plate10,16316,Equip,115,,Plate,27083,27080,27082,27074,27075,27079,27076,27540
+902164,Galardell Cutlass,Weapon,Sword,1H,Uncommon,48,46,39,,22,,,,,102,156,Physical,2.0,,,,,,,,,,,61,world-sword,,,,20221,INV_Sword_23,12783,Equip,70,Side,Metal,,,,,,,,
+902165,Orchard Kite Shield,Offhand,Shield,,Uncommon,48,46,39,,22,,,1034,15,,,,,,,,,,,,,,,61,world-shield,,,,26693,INV_Shield_14,8155,Equip,80,Shield,Metal,,,,,,,,
+902166,Ebonlocke Dirk,Weapon,Dagger,1H,Uncommon,48,46,,39,22,,,,,78,115,Physical,1.5,,,,,,,,,,,61,world-dagger,,,,28520,INV_Weapon_ShortBlade_25,12743,Equip,50,Side,Metal,,,,,,,,
+902167,Stonefall Shortbow,Ranged,Bow,,Uncommon,48,46,,39,22,,,,,96,140,Physical,2.4,,,,,,,,,,,61,world-bow,,,,21113,INV_Weapon_Bow_08,9522,Equip,60,,Wood,,,,,,,,
+902168,Galardell Quarterstaff,Weapon,Staff,2H,Uncommon,48,46,,,,62,,,,207,307,Physical,3.0,,,,,,,,,,120,122,world-staff,,,,20293,INV_Staff_Goldfeathered_01,14686,Equip,80,Staff,Wood,,,,,,,,
+902169,Orchard Cudgel,Weapon,Mace,1H,Uncommon,48,46,,,,30,,,,102,156,Physical,2.0,,,,,,,,,,61,61,world-mace,,,,18572,INV_Hammer_23,12287,Equip,70,Side,Wood,,,,,,,,
+902170,Ebonlocke Lantern,Offhand,Held,,Uncommon,48,46,,,,30,,,,,,,,,,,,,,,,,61,61,world-held,,,,28553,INV_Potion_19,6654,Equip,,Hip,,,,,,,,,
+902171,Stonefall Torc,Amulet,Misc,,Uncommon,48,46,39,,22,,,,,,,,,,,,,,,,,,,61,world-amulet-might,,,,9852,,5107,Equip,,,,,,,,,,,
+902172,Galardell Talisman,Amulet,Misc,,Uncommon,48,46,,39,22,,,,,,,,,,,,,,,,,,,61,world-amulet-swift,,,,9853,,5107,Equip,,,,,,,,,,,
+902173,Orchard Pendant,Amulet,Misc,,Uncommon,48,46,,,13,31,17,,,,,,,,,,,,,,,,,61,world-amulet-mind,,,,9857,,5107,Equip,,,,,,,,,,,
+902174,Ebonlocke Band,Ring,Misc,,Uncommon,48,46,39,,22,,,,,,,,,,,,,,,,,,,61,world-ring-might-a,,,,9835,,2252,Equip,,,,,,,,,,,
+902175,Stonefall Signet,Ring,Misc,,Uncommon,48,46,35,,26,,,,,,,,,,,,,,,,,,,61,world-ring-might-b,,,,9823,,2252,Equip,,,,,,,,,,,
+902176,Galardell Loop,Ring,Misc,,Uncommon,48,46,,39,22,,,,,,,,,,,,,,,,,,,61,world-ring-swift-a,,,,4284,,2252,Equip,,,,,,,,,,,
+902177,Orchard Ring,Ring,Misc,,Uncommon,48,46,,35,26,,,,,,,,,,,,,,,,,,,61,world-ring-swift-b,,,,12984,,2252,Equip,,,,,,,,,,,
+902178,Ebonlocke Circle,Ring,Misc,,Uncommon,48,46,,,13,31,17,,,,,,,,,,,,,,,,,61,world-ring-mind-a,,,,9832,,2252,Equip,,,,,,,,,,,
+902179,Stonefall Seal,Ring,Misc,,Uncommon,48,46,,,13,26,22,,,,,,,,,,,,,,,,,61,world-ring-mind-b,,,,12987,,2252,Equip,,,,,,,,,,,
 903200,Wayfarer's Robe,Chest,Cloth,,Uncommon,33,30,,,9,20,10,492,,,,,,,,,,,,,,,,39,quest-chest-cloth,,,,27873,INV_Chest_Cloth_19,2480,Pickup,70,,Cloth,25996,27872,25997,25994,25999,25998,12973,25995
 903201,Wayfarer's Jerkin,Chest,Leather,,Uncommon,33,30,,26,13,,,861,,,,,,,,,,,,,,,,39,quest-chest-leather,,,,27962,INV_Shirt_04,2912,Pickup,85,,Leather,27968,10179,27584,27964,27966,27963,27967,27965
 903202,Wayfarer's Hauberk,Chest,Mail,,Uncommon,33,30,26,,13,,,1475,,,,,,,,,,,,,,,,39,quest-chest-mail,,,,27769,INV_Chest_Chain_03,3677,Pickup,100,,Chain,27774,27776,27779,27783,27778,27777,27770,27771
@@ -1136,6 +1176,18 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 904033,Canyon Chief's Signet,Ring,Misc,,Rare,38,36,67,,32,,,,,,,,,,,,,,,,,,,99,elite-ring-might,,,,31664,,3786,Equip,,,,,,,,,,,
 904034,Canyon Chief's Loop,Ring,Misc,,Rare,38,36,,67,32,,,,,,,,,,,,,,,,,,,99,elite-ring-swift,,,,32678,,3786,Equip,,,,,,,,,,,
 904035,Canyon Chief's Band,Ring,Misc,,Rare,38,36,,,22,51,26,,,,,,,,,,,,,,,,,99,elite-ring-mind,,,,31905,,3786,Equip,,,,,,,,,,,
+904036,Blackrock Captain's Torc,Amulet,Misc,,Rare,43,41,78,,37,,,,,,,,,,,,,,,,,,,115,elite-amulet-might,,,,23715,,6912,Equip,,,,,,,,,,,
+904037,Blackrock Captain's Pendant,Amulet,Misc,,Rare,43,41,,78,37,,,,,,,,,,,,,,,,,,,115,elite-amulet-swift,,,,23717,,6912,Equip,,,,,,,,,,,
+904038,Blackrock Captain's Charm,Amulet,Misc,,Rare,43,41,,,26,59,30,,,,,,,,,,,,,,,,,115,elite-amulet-mind,,,,30696,,6912,Equip,,,,,,,,,,,
+904039,Blackrock Captain's Signet,Ring,Misc,,Rare,43,41,78,,37,,,,,,,,,,,,,,,,,,,115,elite-ring-might,,,,31664,,5088,Equip,,,,,,,,,,,
+904040,Blackrock Captain's Loop,Ring,Misc,,Rare,43,41,,78,37,,,,,,,,,,,,,,,,,,,115,elite-ring-swift,,,,32678,,5088,Equip,,,,,,,,,,,
+904041,Blackrock Captain's Band,Ring,Misc,,Rare,43,41,,,26,59,30,,,,,,,,,,,,,,,,,115,elite-ring-mind,,,,31905,,5088,Equip,,,,,,,,,,,
+904042,Gravewatch Torc,Amulet,Misc,,Rare,48,46,91,,42,,,,,,,,,,,,,,,,,,,133,elite-amulet-might,,,,23715,,9289,Equip,,,,,,,,,,,
+904043,Gravewatch Pendant,Amulet,Misc,,Rare,48,46,,91,42,,,,,,,,,,,,,,,,,,,133,elite-amulet-swift,,,,23717,,9289,Equip,,,,,,,,,,,
+904044,Gravewatch Charm,Amulet,Misc,,Rare,48,46,,,30,68,35,,,,,,,,,,,,,,,,,133,elite-amulet-mind,,,,30696,,9289,Equip,,,,,,,,,,,
+904045,Gravewatch Signet,Ring,Misc,,Rare,48,46,91,,42,,,,,,,,,,,,,,,,,,,133,elite-ring-might,,,,31664,,6837,Equip,,,,,,,,,,,
+904046,Gravewatch Loop,Ring,Misc,,Rare,48,46,,91,42,,,,,,,,,,,,,,,,,,,133,elite-ring-swift,,,,32678,,6837,Equip,,,,,,,,,,,
+904047,Gravewatch Band,Ring,Misc,,Rare,48,46,,,30,68,35,,,,,,,,,,,,,,,,,133,elite-ring-mind,,,,31905,,6837,Equip,,,,,,,,,,,
 905140,Tutor's Robe,Chest,Cloth,,Rare,36,33,,,22,47,24,618,,,,,,,,,,,,,,,,93,dungeon-chest-cloth,,,,16531,INV_Chest_Cloth_31,3353,Equip,80,,Cloth,,25859,25855,14541,14542,25858,11421,25857
 905141,Candlewick Jerkin,Chest,Leather,,Rare,36,33,,63,30,,,1081,,,,,,,,,,,,,,,,93,dungeon-chest-leather,,,,11382,INV_Chest_Cloth_07,5933,Equip,100,,Leather,,9527,28042,17002,28046,17114,14522,28039
 905142,Mistmantle Hauberk,Chest,Mail,,Rare,36,33,63,,30,,,1854,,,,,,,,,,,,,,,,93,dungeon-chest-mail,,,,26961,INV_Chest_Chain_11,4818,Equip,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
