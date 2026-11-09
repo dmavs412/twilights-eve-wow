@@ -275,6 +275,58 @@ impl Shard {
         }
     }
 
+    /// The Run records the deaths its dungeon's Bonus Chest watches (spec #650) on its clock, and
+    /// judges the challenge once the creature that judges it has died: met, the chest is due
+    /// `east_yd` east of the boss's corpse; failed, nothing comes.
+    fn judge_bonus_chest(&mut self) {
+        let Phase::Dungeon(id) = self.place.phase else {
+            return;
+        };
+        let Some(chest) = crate::phased::dungeon(id).and_then(|d| d.bonus_chest.as_ref()) else {
+            return;
+        };
+        let Some(run) = self.run.as_mut().filter(|r| !r.chest_judged) else {
+            return;
+        };
+        let watched = chest.watched();
+        for m in self.mobs.iter().filter(|m| m.state == State::Dead) {
+            let Some(s) = m.spawn_row().filter(|s| watched.contains(&s.guid)) else {
+                continue;
+            };
+            if run.chest_deaths.iter().any(|&(g, _)| g == s.guid) {
+                continue;
+            }
+            run.chest_deaths.push((s.guid, run.elapsed));
+            if s.guid == chest.boss {
+                run.chest_corpse = Some(m.position);
+            }
+        }
+        let Some(met) = chest.judge(&run.chest_deaths, &run.used) else {
+            return;
+        };
+        run.chest_judged = true;
+        if met {
+            run.chest_due = run.chest_corpse.map(|[x, y, z]| [x + chest.east_yd, y, z]);
+        }
+    }
+
+    /// Where the Run's earned Bonus Chest stands, once, on the first ask after it was earned.
+    pub(crate) fn take_bonus_chest(&mut self) -> Option<[f32; 3]> {
+        self.run.as_mut().and_then(|r| r.chest_due.take())
+    }
+
+    /// The run-time GameObject `guid` holds the Run's Bonus Chest.
+    pub(crate) fn keep_bonus_chest(&mut self, guid: u64) {
+        if let Some(run) = &mut self.run {
+            run.chest = Some(guid);
+        }
+    }
+
+    /// The run-time GameObject that holds the Run's Bonus Chest, which goes with the Run.
+    pub(crate) fn bonus_chest(&self) -> Option<u64> {
+        self.run.as_ref().and_then(|r| r.chest)
+    }
+
     /// The stacks on the Run's meter; 0 with none.
     pub(crate) fn noise(&self) -> u32 {
         self.run.as_ref().map_or(0, |r| r.noise)
@@ -361,6 +413,7 @@ impl Shard {
             run.elapsed += dt;
             self.ground_run(host);
             self.run_changes(host, reached);
+            self.judge_bonus_chest();
             events.extend(self.tick_tram(dt));
             return events;
         }

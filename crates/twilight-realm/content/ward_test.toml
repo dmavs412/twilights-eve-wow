@@ -252,3 +252,16 @@ position = [-9805.0, 560.0, 47.2]
 orientation = 0.0
 sides = "inside"
 after_milestone = "ilgalar_anchor_broken"
+
+# The Bonus Chest (#653, spec #650): when the Brother that calls (800004) dies with the lever at the
+# water stop never pulled, a strongbox of two Hogger's camp blues and 100 copper stands 2 yd east of
+# his corpse.
+[bonus_chest]
+boss = 800004
+entry = 980720
+display = 259
+east_yd = 2.0
+money = 100
+one_of = [905040, 905041]
+found_text = "A strongbox lies where the Brother fell."
+challenge = { kind = "unused", levers = [810005] }

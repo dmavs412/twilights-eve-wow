@@ -578,6 +578,52 @@ impl Dungeon {
         }
     }
 
+    /// Refuses a Bonus Chest whose `boss` or `together_s` guid is no creature of the dungeon, whose
+    /// `unused` lever is no lever of it, whose `together_s` leaves out the boss, or whose `one_of`
+    /// is empty or names no item.
+    fn check_bonus_chest(&self) {
+        let Some(chest) = &self.bonus_chest else {
+            return;
+        };
+        let creature = |guid: u32| self.creature.iter().any(|c| c.guid == guid);
+        let lever = |guid: u32| {
+            self.gameobject
+                .iter()
+                .any(|o| o.guid == guid && o.use_kind == Some(UseKind::Lever))
+        };
+        let row = format!("{}: the bonus chest", self.name);
+        assert!(
+            creature(chest.boss),
+            "{row}'s boss {} is no creature of it",
+            chest.boss
+        );
+        match &chest.challenge {
+            Challenge::WithinS { .. } => {}
+            Challenge::Unused { levers } => {
+                for &l in levers {
+                    assert!(lever(l), "{row}'s unused {l} is no lever of it");
+                }
+            }
+            Challenge::TogetherS { guids, .. } => {
+                for &g in guids {
+                    assert!(creature(g), "{row}'s together_s {g} is no creature of it");
+                }
+                assert!(
+                    guids.contains(&chest.boss),
+                    "{row}'s together_s leaves out its boss {}",
+                    chest.boss
+                );
+            }
+        }
+        assert!(!chest.one_of.is_empty(), "{row} holds no items");
+        for &item in &chest.one_of {
+            assert!(
+                crate::items::template(item).is_some(),
+                "{row} names item {item}, which the content does not have"
+            );
+        }
+    }
+
     /// Refuses a `frozen_until` whose `guid` names no creature of the dungeon, whose `pct` is
     /// outside 1 to 99 or whose `spell` is no Creature Spell, and one on a creature that starts
     /// asleep.
@@ -779,6 +825,85 @@ pub(crate) struct Dungeon {
     /// The Deeprun Tram's line (ADR 0033): trams that come once its bell is rung.
     #[serde(default)]
     pub(crate) tram: Option<crate::tram::Tram>,
+    /// The chest its boss leaves when the Run met its optional challenge (spec #650).
+    #[serde(default)]
+    pub(crate) bonus_chest: Option<BonusChest>,
+}
+
+/// A Phased Dungeon's Bonus Chest (spec #650): when `boss` dies and the Run met `challenge`, a
+/// chest of `entry` stands `east_yd` east of its corpse, at the corpse's Z, holding `money` copper
+/// and one of `one_of` drawn evenly.
+#[derive(Deserialize)]
+pub(crate) struct BonusChest {
+    pub(crate) boss: u32,
+    /// A run-time GameObject entry with no template, as the tram's chests.
+    pub(crate) entry: u32,
+    pub(crate) display: u32,
+    pub(crate) east_yd: f32,
+    pub(crate) money: u32,
+    pub(crate) one_of: Vec<u32>,
+    /// Shown to every character in the Phase when the chest appears.
+    #[serde(default)]
+    pub(crate) found_text: Option<String>,
+    pub(crate) challenge: Challenge,
+}
+
+/// What a Run must do for its dungeon's Bonus Chest, judged once, when the chest would appear.
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub(crate) enum Challenge {
+    /// The boss dies at most `seconds` into the Run.
+    WithinS { seconds: f32 },
+    /// The boss dies with none of `levers` pulled in the Run.
+    Unused { levers: Vec<u32> },
+    /// The first and the last deaths of `guids` are at most `seconds` apart; judged at the last.
+    TogetherS { guids: Vec<u32>, seconds: f32 },
+}
+
+impl Challenge {
+    /// Whether the Run met it, with `deaths` the `(guid, elapsed)` of each watched creature that
+    /// died, `used` the levers pulled and `boss_died_at` the Run's clock at the boss's death. A
+    /// `together_s` with a guid still alive fails.
+    pub(crate) fn holds(&self, deaths: &[(u32, f32)], used: &[u32], boss_died_at: f32) -> bool {
+        match self {
+            Self::WithinS { seconds } => boss_died_at <= *seconds,
+            Self::Unused { levers } => !levers.iter().any(|l| used.contains(l)),
+            Self::TogetherS { guids, seconds } => {
+                let at: Vec<f32> = deaths
+                    .iter()
+                    .filter(|(g, _)| guids.contains(g))
+                    .map(|&(_, t)| t)
+                    .collect();
+                let first = at.iter().copied().fold(f32::INFINITY, f32::min);
+                let last = at.iter().copied().fold(f32::NEG_INFINITY, f32::max);
+                at.len() == guids.len() && last - first <= *seconds
+            }
+        }
+    }
+}
+
+impl BonusChest {
+    /// The creatures whose deaths it watches: the boss, and a `together_s`'s guids.
+    pub(crate) fn watched(&self) -> Vec<u32> {
+        let mut out = vec![self.boss];
+        if let Challenge::TogetherS { guids, .. } = &self.challenge {
+            out.extend(guids.iter().filter(|&&g| g != self.boss));
+        }
+        out
+    }
+
+    /// Whether the Run met the challenge, once the creature that judges it has died: the boss, or
+    /// the last of a `together_s`'s guids. `None` before then.
+    pub(crate) fn judge(&self, deaths: &[(u32, f32)], used: &[u32]) -> Option<bool> {
+        let died = |guid: u32| deaths.iter().find(|(g, _)| *g == guid).map(|&(_, t)| t);
+        let boss_died_at = died(self.boss)?;
+        if let Challenge::TogetherS { guids, .. } = &self.challenge {
+            if guids.iter().any(|&g| died(g).is_none()) {
+                return None;
+            }
+        }
+        Some(self.challenge.holds(deaths, used, boss_died_at))
+    }
 }
 
 /// A door inside a Phased Dungeon, locked at the start of every Run until a character with the
@@ -1292,6 +1417,7 @@ pub(crate) fn content() -> &'static [Dungeon] {
                 d.check_levers();
                 d.check_frozen();
                 d.check_partners();
+                d.check_bonus_chest();
                 if let Some(tram) = &d.tram {
                     tram.check(&d.name);
                 }
@@ -1401,6 +1527,16 @@ pub(crate) struct Run {
     pub(crate) tram: Option<crate::tram::Line>,
     /// The seed it started with, which rolls its tram's creatures.
     pub(crate) seed: u64,
+    /// The creatures its Bonus Chest watches that have died, each with `elapsed` at its death.
+    pub(crate) chest_deaths: Vec<(u32, f32)>,
+    /// Where the Bonus Chest's boss died.
+    pub(crate) chest_corpse: Option<[f32; 3]>,
+    /// Whether its Bonus Chest's challenge was judged.
+    pub(crate) chest_judged: bool,
+    /// Where the Bonus Chest stands, once earned and until the realm makes it.
+    pub(crate) chest_due: Option<[f32; 3]>,
+    /// The run-time GameObject that holds its Bonus Chest, which goes with the Run.
+    pub(crate) chest: Option<u64>,
 }
 
 impl Run {
@@ -1424,6 +1560,11 @@ impl Run {
             head_count: 0,
             tram: None,
             seed,
+            chest_deaths: Vec::new(),
+            chest_corpse: None,
+            chest_judged: false,
+            chest_due: None,
+            chest: None,
         }
     }
 
@@ -1691,6 +1832,166 @@ until_used = 3
 "#,
         )
         .check_levers();
+    }
+
+    /// `challenge` as its content row writes it.
+    fn challenge(text: &str) -> Challenge {
+        #[derive(Deserialize)]
+        struct Row {
+            challenge: Challenge,
+        }
+        toml::from_str::<Row>(&format!("challenge = {text}"))
+            .expect("the challenge parses")
+            .challenge
+    }
+
+    #[test]
+    fn within_s_holds_at_its_seconds_and_fails_a_second_later() {
+        let c = challenge(r#"{ kind = "within_s", seconds = 300 }"#);
+        assert_eq!(c, Challenge::WithinS { seconds: 300.0 });
+        assert!(c.holds(&[(1, 300.0)], &[], 300.0));
+        assert!(!c.holds(&[(1, 301.0)], &[], 301.0));
+    }
+
+    #[test]
+    fn unused_fails_on_a_listed_lever_and_holds_on_an_unlisted_one() {
+        let c = challenge(r#"{ kind = "unused", levers = [2, 3] }"#);
+        assert!(c.holds(&[(1, 10.0)], &[], 10.0));
+        assert!(!c.holds(&[(1, 10.0)], &[3], 10.0), "a listed lever");
+        assert!(c.holds(&[(1, 10.0)], &[5], 10.0), "an unlisted lever");
+    }
+
+    #[test]
+    fn together_s_holds_for_deaths_its_seconds_apart_and_waits_for_the_last() {
+        let c = challenge(r#"{ kind = "together_s", guids = [1, 4], seconds = 10 }"#);
+        assert!(c.holds(&[(4, 5.0), (1, 15.0)], &[], 15.0));
+        assert!(!c.holds(&[(4, 5.0), (1, 16.0)], &[], 16.0));
+        assert!(
+            c.holds(&[(1, 20.0), (4, 30.0)], &[], 20.0),
+            "the boss first"
+        );
+        let chest: BonusChest = toml::from_str(
+            r#"
+boss = 1
+entry = 980799
+display = 259
+east_yd = 2.0
+money = 1
+one_of = [905040]
+challenge = { kind = "together_s", guids = [1, 4], seconds = 10 }
+"#,
+        )
+        .unwrap();
+        assert_eq!(chest.judge(&[(1, 5.0)], &[]), None, "4 lives");
+        assert_eq!(chest.judge(&[(4, 5.0)], &[]), None, "the boss lives");
+        assert_eq!(chest.judge(&[(1, 5.0), (4, 9.0)], &[]), Some(true));
+        assert_eq!(chest.judge(&[(1, 5.0), (4, 16.0)], &[]), Some(false));
+        let mut watched = chest.watched();
+        watched.sort_unstable();
+        assert_eq!(watched, [1, 4]);
+    }
+
+    #[test]
+    fn the_boss_s_death_judges_within_s_and_unused() {
+        let unused: BonusChest = toml::from_str(
+            r#"
+boss = 1
+entry = 980799
+display = 259
+east_yd = 2.0
+money = 1
+one_of = [905040]
+challenge = { kind = "unused", levers = [2] }
+"#,
+        )
+        .unwrap();
+        assert_eq!(unused.judge(&[], &[]), None, "the boss lives");
+        assert_eq!(unused.judge(&[(1, 3.0)], &[]), Some(true));
+        assert_eq!(unused.judge(&[(1, 3.0)], &[2]), Some(false));
+    }
+
+    /// The Lever Check with a Bonus Chest of `boss`, `one_of` and `challenge`, and a creature 4.
+    fn with_bonus_chest(boss: u32, one_of: &str, challenge: &str) -> Dungeon {
+        with_lever(&format!(
+            r#"
+[[creature]]
+guid = 4
+entry = 96003
+level = 1
+position = [0.0, 0.0, 0.0]
+orientation = 0.0
+
+[bonus_chest]
+boss = {boss}
+entry = 980799
+display = 259
+east_yd = 2.0
+money = 100
+one_of = {one_of}
+challenge = {challenge}
+"#
+        ))
+    }
+
+    #[test]
+    fn a_bonus_chest_of_its_own_creatures_levers_and_items_passes_the_check() {
+        let items = "[905040, 905041]";
+        with_bonus_chest(1, items, r#"{ kind = "unused", levers = [2] }"#).check_bonus_chest();
+        with_bonus_chest(1, items, r#"{ kind = "within_s", seconds = 60 }"#).check_bonus_chest();
+        with_bonus_chest(
+            4,
+            items,
+            r#"{ kind = "together_s", guids = [1, 4], seconds = 10 }"#,
+        )
+        .check_bonus_chest();
+    }
+
+    #[test]
+    #[should_panic(expected = "the Lever Check: the bonus chest's boss 7 is no creature")]
+    fn a_bonus_chest_whose_boss_is_no_creature_is_refused() {
+        with_bonus_chest(7, "[905040]", r#"{ kind = "within_s", seconds = 60 }"#)
+            .check_bonus_chest();
+    }
+
+    #[test]
+    #[should_panic(expected = "together_s 7 is no creature")]
+    fn a_together_s_guid_that_is_no_creature_is_refused() {
+        with_bonus_chest(
+            1,
+            "[905040]",
+            r#"{ kind = "together_s", guids = [1, 7], seconds = 10 }"#,
+        )
+        .check_bonus_chest();
+    }
+
+    #[test]
+    #[should_panic(expected = "unused 1 is no lever")]
+    fn an_unused_lever_that_is_no_lever_is_refused() {
+        with_bonus_chest(1, "[905040]", r#"{ kind = "unused", levers = [1] }"#).check_bonus_chest();
+    }
+
+    #[test]
+    #[should_panic(expected = "together_s leaves out its boss 1")]
+    fn a_together_s_without_the_boss_is_refused() {
+        with_bonus_chest(
+            1,
+            "[905040]",
+            r#"{ kind = "together_s", guids = [4], seconds = 10 }"#,
+        )
+        .check_bonus_chest();
+    }
+
+    #[test]
+    #[should_panic(expected = "the bonus chest holds no items")]
+    fn a_bonus_chest_of_no_items_is_refused() {
+        with_bonus_chest(1, "[]", r#"{ kind = "within_s", seconds = 60 }"#).check_bonus_chest();
+    }
+
+    #[test]
+    #[should_panic(expected = "names item 4242424, which the content does not have")]
+    fn a_bonus_chest_of_an_unknown_item_is_refused() {
+        with_bonus_chest(1, "[4242424]", r#"{ kind = "within_s", seconds = 60 }"#)
+            .check_bonus_chest();
     }
 
     /// The Lever Check with creature 4 frozen until `frozen_until`, starting asleep or not.

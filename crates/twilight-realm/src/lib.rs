@@ -1471,10 +1471,14 @@ impl Realm {
                 patches: w.patches(),
             });
         }
-        // A shard no one stands on resets its Run, and the chests its tram line left go with it.
+        // A shard no one stands on resets its Run, and the chests its tram line left and its
+        // Bonus Chest go with it.
         for (place, shard) in &self.shards {
             if !on.contains_key(place) {
                 for &chest in shard.tram().map_or(&[][..], |l| l.chests()) {
+                    self.objects.remove(chest);
+                }
+                if let Some(chest) = shard.bonus_chest() {
                     self.objects.remove(chest);
                 }
             }
@@ -1780,6 +1784,60 @@ impl Realm {
                     .filter(|(g, _)| *g == w.guid)
                     .map(|(_, e)| e.clone()),
             );
+        }
+    }
+
+    /// Each Run whose Bonus Chest was earned (spec #650) leaves it, for every character in the
+    /// Phase then, holding the dungeon's `money` and one of its `one_of` drawn evenly; each of them
+    /// is told its `found_text`. A character who comes in later is not shown it, as with the tram's
+    /// chests.
+    fn tick_bonus_chests(&mut self) {
+        let due: Vec<(shard::Place, [f32; 3])> = self
+            .shards
+            .iter_mut()
+            .filter_map(|(place, s)| Some((*place, s.take_bonus_chest()?)))
+            .collect();
+        for (place, at) in due {
+            let phased::Phase::Dungeon(id) = place.phase else {
+                continue;
+            };
+            let Some(chest) = phased::dungeon(id).and_then(|d| d.bonus_chest.as_ref()) else {
+                continue;
+            };
+            let worlds = std::iter::once(&self.world).chain(self.parked.values().map(|s| &s.world));
+            let players: Vec<u64> = worlds
+                .flatten()
+                .filter(|w| w.shard_place() == Some(place))
+                .map(|w| w.guid)
+                .collect();
+            let item = chest.one_of[self.rng.below(chest.one_of.len() as u32) as usize];
+            let spec = ObjectSpec {
+                entry: chest.entry,
+                display: chest.display,
+                kind: ObjectKind::Chest {
+                    items: vec![item],
+                    money: chest.money,
+                },
+                map: place.map,
+                position: at,
+                orientation: 0.0,
+            };
+            let guid = self
+                .objects
+                .spawn_in(spec, Audience::of(&players), place.phase);
+            if let Some(shard) = self.shards.get_mut(&place) {
+                shard.keep_bonus_chest(guid);
+            }
+            let Some(text) = &chest.found_text else {
+                continue;
+            };
+            let sessions = std::iter::once((&self.world, &mut self.events))
+                .chain(self.parked.values_mut().map(|s| (&s.world, &mut s.events)));
+            for (w, events) in sessions {
+                if w.as_ref().is_some_and(|w| w.shard_place() == Some(place)) {
+                    events.push(SessionEvent::Notification { text: text.clone() });
+                }
+            }
         }
     }
 
@@ -2441,6 +2499,7 @@ impl Realm {
         self.tick_gazes();
         self.tick_encounters(dt, host);
         self.tick_trams();
+        self.tick_bonus_chests();
         self.party_tick(dt);
         self.tick_trades();
         self.tick_duels(dt);

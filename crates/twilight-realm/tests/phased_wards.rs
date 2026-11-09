@@ -186,14 +186,16 @@ fn quest_credits(p: &Party, i: usize, quest: u32) -> usize {
         .count()
 }
 
-/// Player `i` stands at `at` facing `toward` and fights the creature `target` until it dies.
+/// Player `i` stands at `at` facing `toward` and fights the creature `target` until it dies; a
+/// death in an earlier Run does not count.
 fn kill(p: &mut Party, i: usize, at: [f32; 3], toward: [f32; 3], target: u64) {
+    let from = p.seen(i).len();
     p.go_facing(i, at, toward);
     p.run(0.2);
     p.cmd(i, RealmCommand::AttackSwing { guid: target });
     for _ in 0..120 {
         p.run(0.5);
-        if died(p.seen(i), target) {
+        if died(&p.seen(i)[from..], target) {
             return;
         }
     }
@@ -815,6 +817,119 @@ fn a_survivor_that_leashes_calms_and_pulled_again_enrages_again() {
     );
     assert!(enraged(&p, 0, unit(PARTNER_B)), "pulled again, no rage");
     assert_eq!(warnings(&p, 0, ENRAGE_WARNING), 2, "the second warning");
+}
+
+/// The Ward Test's Bonus Chest (#653): its entry, its found text and the blues it holds one of.
+const BONUS_CHEST: u32 = 980720;
+const FOUND: &str = "A strongbox lies where the Brother fell.";
+const BLUES: [u32; 2] = [905040, 905041];
+/// Outside the building and its stops.
+const OUTSIDE: [f32; 3] = [-9900.0, 555.0, 47.2];
+
+/// The Bonus Chests player `i`'s client was created since event `from`: `(guid, position)`.
+fn bonus_chests(p: &Party, i: usize, from: usize) -> Vec<(u64, [f32; 3])> {
+    p.seen(i)[from..]
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                kind: benilla_protocol::EntityKind::GameObject,
+                position,
+                fields,
+                ..
+            } if fields.object_entry() == Some(BONUS_CHEST) => Some((*guid, *position)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Player `i` steps beside `at` and opens the chest `guid`: the loot window's copper and items.
+fn open_chest(p: &mut Party, i: usize, guid: u64, at: [f32; 3]) -> (u32, Vec<u32>) {
+    p.go(i, [at[0] + 1.0, at[1], at[2]], std::f32::consts::PI);
+    p.run(0.3);
+    let before = p.seen(i).len();
+    p.cmd(i, RealmCommand::UseGameObject { guid });
+    p.run(0.3);
+    let window = p.seen(i)[before..]
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::LootResponse { gold, items, .. } => {
+                Some((*gold, items.iter().map(|i| i.item_id).collect()))
+            }
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("a loot window on {guid:x}"));
+    p.cmd(i, RealmCommand::LootRelease { guid });
+    window
+}
+
+#[test]
+fn the_caller_killed_with_the_lever_never_pulled_leaves_a_bonus_chest_for_the_phase() {
+    let mut p = party(3);
+    p.go(1, BY_INNER_FIRE, 0.0);
+    p.go(2, OUTSIDE, 0.0);
+    p.run(1.0);
+    kill(&mut p, 0, BY_CALLER, CALLER_AT, unit(CALLER));
+    p.run(1.0);
+    let made = bonus_chests(&p, 0, 0);
+    assert_eq!(made.len(), 1, "one chest: {made:?}");
+    let (chest, at) = made[0];
+    let east = [CALLER_AT[0] + 2.0, CALLER_AT[1], CALLER_AT[2]];
+    assert!(
+        flat_distance(at, east) < 0.5,
+        "about 2 yd east of the caller: {at:?}"
+    );
+    assert_eq!(bonus_chests(&p, 1, 0), made, "the other in the Phase");
+    assert!(bonus_chests(&p, 2, 0).is_empty(), "outside the Phase");
+    p.run(2.0);
+    assert_eq!(notes(&p, 0, FOUND), 1, "the found text once");
+    assert_eq!(notes(&p, 1, FOUND), 1, "the found text once");
+    assert_eq!(notes(&p, 2, FOUND), 0, "outside the Phase");
+
+    let (copper, items) = open_chest(&mut p, 0, chest, at);
+    assert_eq!(copper, 100);
+    assert_eq!(items.len(), 1, "{items:?}");
+    assert!(BLUES.contains(&items[0]), "{items:?}");
+}
+
+#[test]
+fn the_caller_killed_after_the_lever_is_pulled_leaves_no_chest() {
+    let mut p = party(2);
+    p.go(0, BY_INNER_FIRE, 0.0);
+    p.go(1, BY_LEVER, 0.0);
+    p.run(1.0);
+    free_the_lever(&mut p, 1);
+    click(&mut p, 1, object(LEVER));
+    assert_eq!(notes(&p, 1, LEVER_USED), 1);
+    kill(&mut p, 0, BY_CALLER, CALLER_AT, unit(CALLER));
+    p.run(2.0);
+    for i in 0..2 {
+        assert!(bonus_chests(&p, i, 0).is_empty(), "a chest for {i}");
+        assert_eq!(notes(&p, i, FOUND), 0, "found text for {i}");
+    }
+}
+
+#[test]
+fn a_run_that_resets_takes_the_bonus_chest_and_the_next_run_earns_it_again() {
+    let mut p = party(1);
+    kill(&mut p, 0, BY_CALLER, CALLER_AT, unit(CALLER));
+    p.run(1.0);
+    assert_eq!(bonus_chests(&p, 0, 0).len(), 1);
+    p.go(0, OUTSIDE, 0.0);
+    p.run(1.0);
+    let n = p.seen(0).len();
+    p.go(0, BY_INNER_FIRE, 0.0);
+    p.run(1.0);
+    assert!(bonus_chests(&p, 0, n).is_empty(), "the chest stayed");
+    assert!(holds(&p, 0, unit(CALLER)), "the caller is back");
+    kill(&mut p, 0, BY_CALLER, CALLER_AT, unit(CALLER));
+    p.run(1.0);
+    let again = bonus_chests(&p, 0, n);
+    assert_eq!(again.len(), 1, "the next Run's chest: {again:?}");
+    assert_eq!(notes(&p, 0, FOUND), 2);
+    let (copper, items) = open_chest(&mut p, 0, again[0].0, again[0].1);
+    assert_eq!(copper, 100);
+    assert!(items.len() == 1 && BLUES.contains(&items[0]), "{items:?}");
 }
 
 #[test]
