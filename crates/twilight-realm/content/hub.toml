@@ -1530,6 +1530,136 @@ faces = [-8667.0, -2560.0]
 after_milestone = "ilgalar_anchor_broken"
 greeting = "The grey's thinning, and whatever lived behind it is walking down this road. Every one you put down is a stretch of the pass we get back. The Watch pays, and Stormwind keeps count."
 
+# ── Morgan's Vigil (#626) ────────────────────────────────────────────────────────────────────────
+# The Burning Steppes' Alliance outpost (#634), moved from their spawns in the generated
+# content/burning_steppes.toml (import_zone.rs's `hub_npcs`) to the same spots, with their vmangos
+# names, entries, displays and faction templates. Each says one line. No stock and no flights: the
+# game has no flight paths, and stock lists are later work. They stand on land the mist closes
+# until `steppes_open`, so nobody sees them before. z is vmangos's, or ground_check.py's where it
+# moved one.
+[[npc]]
+guid = 9300092
+entry = 9560
+name = "Marshal Maxwell"
+level = 55
+display_id = 8685
+faction_template = 12
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-8378.5, -2748.9, 186.7]
+orientation = 4.38
+text_id = 64331
+greeting = "Morgan's Vigil holds, and the Blackrock hold everything else. If you came up that road to fight, $C, you've come to the right ridge."
+
+[[npc]]
+guid = 9300093
+entry = 9565
+name = "Mayara Brightwing"
+level = 57
+display_id = 8695
+faction_template = 12
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-8380.6, -2751.9, 187.1]
+orientation = 0.79
+text_id = 64332
+greeting = "Mind the drakes over the Terror Wing. They don't land where you can reach them, and they always see you first."
+
+[[npc]]
+guid = 9300094
+entry = 9561
+name = "Jalinda Sprig"
+level = 57
+display_id = 8693
+faction_template = 64
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-8398.9, -2768.6, 194.9]
+orientation = 0.47
+text_id = 64333
+greeting = "Everything up here is either on fire or about to be. I keep a bucket by my bedroll."
+
+[[npc]]
+guid = 9300095
+entry = 3298
+name = "Gabrielle Chase"
+subname = "Food & Drink"
+level = 53
+display_id = 1442
+faction_template = 12
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-8354.4, -2734.1, 185.2]
+orientation = 4.66
+text_id = 64334
+greeting = "The bread's hard and the water tastes of ash, but it's food. Sit down before you fall down."
+
+[[npc]]
+guid = 9300096
+entry = 2299
+name = "Borgus Stoutarm"
+subname = "Gryphon Master"
+level = 55
+display_id = 1626
+faction_template = 55
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-8365.1, -2736.9, 185.7]
+orientation = 5.65
+text_id = 64335
+greeting = "My birds won't fly. Not while the sky past the ridges is grey. So I feed them, and I wait."
+
+[[npc]]
+guid = 9300097
+entry = 1296
+name = "Felder Stover"
+subname = "Weaponsmith"
+level = 54
+display_id = 1426
+faction_template = 12
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-8366.4, -2762.5, 187.6]
+orientation = 0.96
+text_id = 64336
+greeting = "Bring me Blackrock steel and I'll tell you what it's worth. Mostly it's worth not being hit with it."
+
+[[npc]]
+guid = 9300098
+entry = 9177
+name = "Oralius"
+level = 55
+display_id = 8872
+faction_template = 55
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-8371.9, -2743.4, 186.2]
+orientation = 5.59
+text_id = 64337
+greeting = "The mountain's angry. You can feel it through your boots at night. Something inside it is at war."
+
+[[npc]]
+guid = 9300099
+entry = 9562
+name = "Helendis Riverhorn"
+level = 55
+display_id = 8694
+faction_template = 80
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-8377.2, -2780.5, 193.7]
+orientation = 1.15
+text_id = 64338
+greeting = "The ogres at Dreadmaul take tribute from someone. Wagons go in full and come out empty. Find out who pays."
+
 # ── Goldshire's townsfolk (#459) ─────────────────────────────────────────────────────────────────
 # Moved from their Goldshire spawns in content/elwynn.toml to the same x and y, under titles the
 # game has a use for: no class trainer, no trade it lacks. Each says one line. Smith Argus keeps

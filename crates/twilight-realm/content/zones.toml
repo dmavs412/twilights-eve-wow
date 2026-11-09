@@ -1,9 +1,10 @@
-# Hand-written changes laid over the generated content/duskwood.toml, redridge.toml and
-# stormwind.toml (spec #466), which are never edited. One [[zone]] per file.
+# Hand-written changes laid over the generated content/duskwood.toml, redridge.toml,
+# stormwind.toml (spec #466) and burning_steppes.toml (#634), which are never edited. One [[zone]]
+# per file.
 # `levels` is the zone's Level Stretch: every spawn but friendly NPCs and critters has its vanilla
 # levels mapped linearly from `from` onto `to`, rounded and clamped into `to`. It is the fallback
-# for spawns outside the `bounds` of the zone's band file (redridge_bands.toml, duskwood_bands.toml)
-# and inside its `exclude` boxes; Stormwind has no band file.
+# for spawns outside the `bounds` of the zone's band file (redridge_bands.toml, duskwood_bands.toml,
+# burning_steppes_bands.toml) and inside its `exclude` boxes; Stormwind has no band file.
 # A `[[zone.added]]` row places a creature by hand, in the shape of elwynn_overrides.toml's
 # `[[added]]`: a camp of its own at its own levels, past the Level Stretch. Its optional
 # `after_milestone` and `until_milestone` each name a row of content/milestones.toml (ADR 0034):
@@ -665,3 +666,19 @@ level_min = 45
 level_max = 45
 position = [-8820.0, 660.0, 95.42]
 orientation = 3.9
+
+[[zone]]
+file = "burning_steppes"
+removed = []
+# The open-world creatures inside the lore bible's Phased Dungeons, deleted as in Redridge;
+# phased.rs's lore_bible_dungeons test keeps the footprints clear.
+removed_guids = [
+  # Blackrock Stronghold (blackrock_stronghold.toml): every creature inside its footprint.
+  10, 5517, 5518, 5519, 5520, 5521, 5522, 5523, 5524, 5525, 5526, 5527, 5528, 5529, 5530, 5531,
+  5532, 5533, 5536, 300762,
+  # Dreadmaul Rock (dreadmaul_rock.toml): every creature inside its footprint.
+  943, 3264, 3266, 4611, 4613, 5271, 5279, 5390, 5412, 5425, 5428, 5438, 300761,
+]
+# Vanilla 50-57 onto 50-60 (#634, spec #626). burning_steppes_bands.toml covers the whole zone and
+# decides instead, so this applies to no spawn.
+levels = { from = [50, 57], to = [50, 60] }

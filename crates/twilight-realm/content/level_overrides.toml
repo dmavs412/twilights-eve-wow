@@ -108,3 +108,17 @@ y = [-3090.8, -3070.8]
 creature = [
   { entry = 486, levels = [44, 44] },  # Tharil'zun, spawn at -9439.3, -3080.8
 ]
+
+# Flame Crest's two orcs (#634), hostile since mobs.toml's templates, at those templates' 55-56.
+# The bands pass them by, since burning_steppes.toml's generated rows call them friendly. The box
+# holds both spawns and stops short of Ragged John and the goblins at y -2180.
+[[area]]
+name = "Flame Crest"
+band = [55, 57]
+map = 0
+x = [-7510.0, -7490.0]
+y = [-2200.0, -2182.0]
+creature = [
+  { entry = 3708, levels = [55, 56] },  # Gruna, spawn at -7498.1, -2191.4
+  { entry = 13177, levels = [55, 56] }, # Vahgruk, spawn at -7504.1, -2190.8
+]

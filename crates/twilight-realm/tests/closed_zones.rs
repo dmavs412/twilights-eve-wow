@@ -203,6 +203,93 @@ fn a_quest_object_on_the_steppes_shows_only_once_they_open() {
     );
 }
 
+/// Whether `events` hold a create of the unit `guid`.
+fn creates_unit(events: &[SessionEvent], want: u64) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::ObjectCreate { guid, .. } if *guid == want))
+}
+
+/// A creature's object guid (`HIGHGUID_UNIT`, entry, spawn).
+fn unit_guid(entry: u64, low: u64) -> u64 {
+    0xF130 << 48 | entry << 24 | low
+}
+
+/// The loaded Burning Steppes spawn (#634) nearest open land, as (object guid, the open point
+/// nearest it within view, at its z): every spawn of `burning_steppes.toml` the realm loads, each
+/// with open points sampled on rings round it out to 95 yd.
+fn steppes_spawn_nearest_the_border() -> (u64, [f32; 3]) {
+    let file: toml::Value = toml::from_str(include_str!("../content/burning_steppes.toml"))
+        .expect("burning_steppes.toml parses");
+    let loaded: Vec<String> = placed()
+        .into_iter()
+        .filter(|p| p.map == 0)
+        .map(|p| p.what)
+        .collect();
+    let num = |v: &toml::Value| {
+        v.as_float()
+            .unwrap_or_else(|| v.as_integer().unwrap() as f64)
+    };
+    let mut best: Option<(f32, u64, [f32; 3])> = None;
+    for r in file["spawns"].as_array().unwrap() {
+        let (low, entry) = (r[0].as_integer().unwrap(), r[1].as_integer().unwrap());
+        if !loaded.contains(&format!("creature {low} (entry {entry})")) {
+            continue;
+        }
+        let [x, y, z] = [num(&r[4]), num(&r[5]), num(&r[6])].map(|v| v as f32);
+        assert!(closed_at(0, x, y, &[]), "spawn {low} stands on open land");
+        for k in 0..32 {
+            let a = k as f32 * std::f32::consts::TAU / 32.0;
+            for d in (10..=95).step_by(5) {
+                let d = d as f32;
+                let p = [x + d * a.cos(), y + d * a.sin()];
+                if best.is_some_and(|b| b.0 <= d) || closed_at(0, p[0], p[1], &[]) {
+                    continue;
+                }
+                best = Some((d, unit_guid(entry as u64, low as u64), [p[0], p[1], z]));
+            }
+        }
+    }
+    let (_, guid, at) = best.expect("a Steppes spawn within view of open land");
+    (guid, at)
+}
+
+#[test]
+fn the_steppes_creatures_and_morgans_vigil_show_only_once_the_steppes_open() {
+    let (spawn, open) = steppes_spawn_nearest_the_border();
+    let maxwell = hub_guid(9560);
+    let mut p = Party::starting(realm(), &[1], START_ELWYNN, Box::new(NoGround));
+    p.go(0, open, 0.0);
+    p.run(2.0);
+    ack(&mut p);
+    assert!(!creates_unit(p.seen(0), spawn), "the spawn before");
+    let from = p.seen(0).len();
+    p.go(0, PASS_OPEN, 0.0);
+    p.run(2.0);
+    ack(&mut p);
+    assert!(
+        !creates_unit(&p.seen(0)[from..], maxwell),
+        "Marshal Maxwell before"
+    );
+    // Once reached, the spawn comes in on the next look from where it was hidden, and the Marshal
+    // once the player walks into view of the Vigil.
+    p.go(0, open, 0.0);
+    p.run(0.5);
+    ack(&mut p);
+    let from = p.seen(0).len();
+    p.realm.reach_milestone(STEPPES_OPEN);
+    p.run(1.0);
+    assert!(creates_unit(&p.seen(0)[from..], spawn), "the spawn after");
+    let from = p.seen(0).len();
+    let [x, y, _] = MORGANS_VIGIL;
+    p.go(0, [x - 40.0, y, 186.0], 0.0);
+    p.run(1.0);
+    assert!(
+        creates_unit(&p.seen(0)[from..], maxwell),
+        "Marshal Maxwell after"
+    );
+}
+
 /// Each `position = [x, y, z]` line of a save, in order.
 fn save_positions(blob: &str) -> Vec<(usize, [f32; 3])> {
     blob.lines()

@@ -1,5 +1,5 @@
 //! Level Bands, one file per zone (`content/elwynn_bands.toml`, `redridge_bands.toml`,
-//! `duskwood_bands.toml`): each sub-zone gives the vanilla creatures that spawn in it a level from
+//! `duskwood_bands.toml`, `burning_steppes_bands.toml`): each sub-zone gives the vanilla creatures that spawn in it a level from
 //! its band, in place of the template's own levels.
 
 use std::sync::OnceLock;
@@ -25,11 +25,16 @@ struct BandFile {
 }
 
 /// Each zone's band file, by the name of its spawn file without `.toml`, in the order a runtime
-/// spawn tries them.
-const FILES: [(&str, &str); 3] = [
+/// spawn tries them. The Burning Steppes' bounds reach over Northshire and Redridge's north edge,
+/// so it comes last and the other zones keep their own land.
+const FILES: [(&str, &str); 4] = [
     ("duskwood", include_str!("../content/duskwood_bands.toml")),
     ("redridge", include_str!("../content/redridge_bands.toml")),
     ("elwynn", include_str!("../content/elwynn_bands.toml")),
+    (
+        "burning_steppes",
+        include_str!("../content/burning_steppes_bands.toml"),
+    ),
 ];
 
 fn parse(zone: &str, text: &str) -> BandFile {
@@ -38,7 +43,7 @@ fn parse(zone: &str, text: &str) -> BandFile {
 
 /// The band file for `zone`'s spawns, if it has one.
 fn zone_file(zone: &str) -> Option<&'static BandFile> {
-    static PARSED: [OnceLock<BandFile>; 3] = [OnceLock::new(), OnceLock::new(), OnceLock::new()];
+    static PARSED: [OnceLock<BandFile>; 4] = [const { OnceLock::new() }; 4];
     let i = FILES.iter().position(|(z, _)| *z == zone)?;
     Some(PARSED[i].get_or_init(|| parse(FILES[i].0, FILES[i].1)))
 }
@@ -725,6 +730,88 @@ boxes = [[20.0, 20.0, 60.0, 60.0]]
             assert!(!deeps.holds(s.map, s.position), "{} in the Deeps", s.guid);
         }
         assert_eq!(count, 18);
+    }
+
+    /// `burning_steppes.toml`'s rows (#634).
+    fn steppes_rows() -> Vec<[f64; 6]> {
+        zone_rows(
+            "burning_steppes",
+            include_str!("../content/burning_steppes.toml"),
+        )
+        .0
+    }
+
+    #[test]
+    fn a_burning_steppes_spawn_takes_its_sub_zones_band() {
+        let rows = steppes_rows();
+        for (band, [lo, hi]) in [
+            ("Blackrock Pass", [50, 51]),
+            ("Draco'dar", [57, 59]),
+            ("Blackrock Mountain", [58, 60]),
+        ] {
+            let mut checked = 0;
+            for [guid, entry, _, _, x, y] in &rows {
+                let (x, y) = (*x as f32, *y as f32);
+                let inside = zone_file("burning_steppes")
+                    .unwrap()
+                    .band
+                    .iter()
+                    .find(|b| b.name == band)
+                    .is_some_and(|b| b.boxes.iter().any(|r| holds(r, x, y)));
+                if !inside || band_in("burning_steppes", x, y) != Some(band) {
+                    continue;
+                }
+                let Some(s) = hostile_spawn(*guid as u32, *entry as u32) else {
+                    continue;
+                };
+                let levels = [s.level_min, s.level_max];
+                assert!(
+                    levels.iter().all(|l| (lo..=hi).contains(l)),
+                    "{band} spawn {guid}: {levels:?}"
+                );
+                checked += 1;
+            }
+            assert!(checked > 0, "no hostile spawn in {band}");
+        }
+    }
+
+    #[test]
+    fn every_hostile_burning_steppes_spawn_is_50_to_60() {
+        let mut checked = 0;
+        for [guid, entry, _, _, x, y] in steppes_rows() {
+            let Some(s) = hostile_spawn(guid as u32, entry as u32) else {
+                continue;
+            };
+            assert!(range_in("burning_steppes", x as f32, y as f32).is_some());
+            let levels = [s.level_min, s.level_max];
+            assert!(
+                levels.iter().all(|l| (50..=60).contains(l)),
+                "spawn {guid} ({entry}): {levels:?}"
+            );
+            checked += 1;
+        }
+        assert!(checked > 300, "only {checked} Steppes spawns checked");
+    }
+
+    #[test]
+    fn ragged_john_keeps_his_own_level_at_flame_crest() {
+        let john = mobs::content()
+            .spawn
+            .iter()
+            .find(|s| s.map == EASTERN_KINGDOMS && s.entry == 9563)
+            .unwrap();
+        let [x, y, _] = john.position;
+        assert_eq!(band_in("burning_steppes", x, y), Some("Flame Crest"));
+        assert!(mobs::template(9563).unwrap().friendly);
+        assert_eq!((john.level_min, john.level_max), (57, 57));
+    }
+
+    #[test]
+    fn a_runtime_spawn_at_morgans_vigil_takes_the_vigils_band() {
+        // A Black Drake, a vanilla Steppes entry, at the Vigil; Redridge's bounds stop short.
+        let p = [-8300.0, -2750.0, 0.0];
+        assert_eq!(zone_at(p[0], p[1]), Some("burning_steppes"));
+        assert_eq!(mobs::banded(7044, EASTERN_KINGDOMS, p), Some([50, 52]));
     }
 
     #[test]

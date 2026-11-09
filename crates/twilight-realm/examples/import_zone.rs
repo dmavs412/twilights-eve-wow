@@ -1,5 +1,6 @@
-//! Writes `content/duskwood.toml`, `content/redridge.toml` and `content/stormwind.toml`, the
-//! realm's copies of Duskwood, Redridge Mountains and Stormwind City's spawns (spec #466), from
+//! Writes `content/duskwood.toml`, `content/redridge.toml`, `content/stormwind.toml` and
+//! `content/burning_steppes.toml`, the realm's copies of Duskwood, Redridge Mountains, Stormwind
+//! City (spec #466) and the Burning Steppes' (#634) spawns, from
 //! their dumps in `data/twilights-eve/` (every creature spawn of the zone, friendly NPCs included,
 //! imported from the vmangos world DB by `tools/twilights-eve/import_barrens_spawns.py
 //! --all-creatures`). `import_elwynn.rs` shares the conversion.
@@ -66,6 +67,17 @@ pub const ZONES: &[Zone] = &[
         doc: "docs/reference/zone-spawns.md",
         // Shylamiir and Tannysa teach Herbalism.
         hub_npcs: &[5502, 5566],
+    },
+    Zone {
+        name: "Burning Steppes",
+        dump: "burning_steppes_spawns.json",
+        toml: "burning_steppes.toml",
+        example: "import_zone",
+        test: "tests/content_zones.rs",
+        doc: "docs/reference/zone-spawns.md",
+        // Morgan's Vigil's eight are Hub NPCs (#634): Marshal Maxwell, Mayara Brightwing, Jalinda
+        // Sprig, Gabrielle Chase, Borgus Stoutarm, Felder Stover, Oralius and Helendis Riverhorn.
+        hub_npcs: &[9560, 9565, 9561, 3298, 2299, 1296, 9177, 9562],
     },
 ];
 

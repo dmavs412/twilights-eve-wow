@@ -1,0 +1,110 @@
+# Hand-written. Burning Steppes Level Bands (#634, spec #626): each sub-zone gives the creatures of
+# content/burning_steppes.toml that spawn in it a level from its band, in place of their vanilla
+# levels. Boxes are [x0, y0, x1, y1] in WoW coordinates on map 0 (x runs north, y runs west), each
+# the AreaTable sub-area's chunk extent from an ADT scan (2026-11-08).
+# A point inside `bounds` and outside every `exclude` box takes the band of the box that holds it,
+# or of the nearest box when none does; when two boxes hold the point, the band listed first wins.
+# The boxes overlap, so the small sub-areas come first. A spawn outside `bounds` keeps the zone's
+# Level Stretch from zones.toml. Friendly NPCs and critters keep their own levels, and a
+# level_overrides.toml row beats a band.
+
+# The whole zone: its spawns run x -8502..-7442, y -3052..-579, so every spawn takes a band and
+# none keeps the Level Stretch. A spawn on plain "Burning Steppes" chunks takes the nearest box's
+# band.
+bounds = [[-8700.0, -4300.0, -7350.0, 1100.0]]
+
+# zones.toml removed every creature inside Blackrock Stronghold's and Dreadmaul Rock's footprints.
+exclude = []
+
+# Morgan's Vigil: Ember Worg -8214,-2729; Black Broodling -8243,-2745; Black Drake -8238,-2679.
+[[band]]
+name = "Morgan's Vigil"
+level_min = 50
+level_max = 52
+boxes = [[-8467.0, -2900.0, -8200.0, -2633.0]]
+
+# Blackrock Pass: Obsidian Elemental -8381,-2466; Flamekin Sprite -8502,-2549; Flamekin Spitter
+# -8500,-2540.
+[[band]]
+name = "Blackrock Pass"
+level_min = 50
+level_max = 51
+boxes = [[-8667.0, -2667.0, -8300.0, -2433.0]]
+
+# Flame Crest: Flamekin Torcher -7611,-2181; Tinkee Steamboil -7500,-2178; Maxwort Uberglint
+# -7498,-2175. Gruna and Vahgruk take 55-56 from level_overrides.toml instead (mobs.toml makes them
+# hostile), and Ragged John, friendly, keeps his own level.
+[[band]]
+name = "Flame Crest"
+level_min = 55
+level_max = 57
+boxes = [[-7633.0, -2267.0, -7467.0, -2067.0]]
+
+# Slither Rock: Black Broodling -7725,-2952.
+[[band]]
+name = "Slither Rock"
+level_min = 52
+level_max = 54
+boxes = [[-7733.0, -3100.0, -7533.0, -2933.0]]
+
+# The Pillar of Ash: Blackrock Soldier -8088,-1895; Blackrock Slayer -8092,-1902; Blackrock
+# Sorcerer -8086,-1726.
+[[band]]
+name = "The Pillar of Ash"
+level_min = 55
+level_max = 57
+boxes = [[-8200.0, -1967.0, -7967.0, -1700.0]]
+
+# Altar of Storms: Blackrock Warlock -7604,-793; Lava Crab -7580,-841.
+[[band]]
+name = "Altar of Storms"
+level_min = 56
+level_max = 58
+boxes = [[-7767.0, -900.0, -7433.0, -600.0]]
+
+# Blackrock Stronghold, round the dungeon's footprint: Blackrock Slayer -7697,-1546; Blackrock
+# Warlock -7690,-1541; Blackrock Sorcerer -7754,-1528.
+[[band]]
+name = "Blackrock Stronghold"
+level_min = 56
+level_max = 58
+boxes = [[-7867.0, -1600.0, -7500.0, -1233.0]]
+
+# Dreadmaul Rock, round the dungeon's footprint: Firegut Ogre -7951,-2451; Krom'Grul -7957,-2600;
+# Hahk'Zor -7842,-2658.
+[[band]]
+name = "Dreadmaul Rock"
+level_min = 53
+level_max = 55
+boxes = [[-8133.0, -2800.0, -7467.0, -2433.0]]
+
+# Ruins of Thaurissan: War Reaver -7723,-2055; Thaurissan Spy -7830,-2139; Thauris Balgarr
+# -7827,-1845.
+[[band]]
+name = "Ruins of Thaurissan"
+level_min = 54
+level_max = 56
+boxes = [[-7967.0, -2433.0, -7400.0, -1767.0]]
+
+# Draco'dar: Searscale Drake -8192,-851; Giant Ember Worg -8158,-1043; Hematos -8019,-1033.
+[[band]]
+name = "Draco'dar"
+level_min = 57
+level_max = 59
+boxes = [[-8467.0, -1100.0, -7900.0, -667.0]]
+
+# Blackrock Mountain: Flamescale Dragonspawn -7990,-1356; Gor'tesh -8111,-1418 and Magma Lord
+# Bokk -8159,-1303 just west of the box, nearest to it.
+[[band]]
+name = "Blackrock Mountain"
+level_min = 58
+level_max = 60
+boxes = [[-8100.0, -1367.0, -7400.0, -800.0]]
+
+# Terror Wing Path: Black Dragonspawn -7766,-2872; Black Wyrmkin -7811,-2855; Firegut Ogre
+# -7916,-2816.
+[[band]]
+name = "Terror Wing Path"
+level_min = 51
+level_max = 53
+boxes = [[-8500.0, -3200.0, -7367.0, -2600.0]]

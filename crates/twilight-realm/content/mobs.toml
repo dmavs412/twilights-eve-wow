@@ -3037,3 +3037,48 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 20.0
+
+# Flame Crest's two orcs turn hostile, as the Blackrock are (#634, spec #626 decision 13). Each row
+# shadows content/burning_steppes.toml's generated friendly one, as Garrick Padfoot's does: a copy
+# with the Blackrock Soldier's faction template (40), no NPC flags, no subname and levels 55-56.
+# Their spawns take 55-56 from level_overrides.toml's Flame Crest box, since the bands pass over a
+# creature the generated file calls friendly.
+[[template]]
+entry = 3708
+name = "Gruna"
+subname = ""
+creature_type = 7
+rank = 0
+display_id = 13970
+faction_template = 40
+hostile = true
+unit_class = "warrior"
+level_min = 55
+level_max = 56
+health_multiplier = 1.25
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 13177
+name = "Vahgruk"
+subname = ""
+creature_type = 7
+rank = 1
+display_id = 1652
+faction_template = 40
+hostile = true
+unit_class = "warrior"
+level_min = 55
+level_max = 56
+health_multiplier = 3.0
+damage_multiplier = 3.25
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0

@@ -1,6 +1,6 @@
 //! The mobs: their templates and spawns (`content/mobs.toml` by hand, and the generated zone
-//! files `content/barrens.toml`, `elwynn.toml`, `duskwood.toml`, `redridge.toml` and
-//! `stormwind.toml`, made from the research dumps by `examples/import_barrens.rs`,
+//! files `content/barrens.toml`, `elwynn.toml`, `duskwood.toml`, `redridge.toml`,
+//! `stormwind.toml` and `burning_steppes.toml`, made from the research dumps by `examples/import_barrens.rs`,
 //! `examples/import_elwynn.rs` and `examples/import_zone.rs`), and each one's state in the world.
 
 use std::collections::{HashMap, HashSet};
@@ -563,12 +563,13 @@ struct DungeonTemplates {
 
 /// The files only a hand-written template may share an entry across: `mobs.toml`'s row overrides
 /// the generated zone files' vanilla one, and those files share their common creatures.
-const OVERRIDING: [&str; 5] = [
+const OVERRIDING: [&str; 6] = [
     "mobs.toml",
     "elwynn.toml",
     "duskwood.toml",
     "redridge.toml",
     "stormwind.toml",
+    "burning_steppes.toml",
 ];
 
 /// Adds the `[[template]]` rows of the Phased Dungeon files `sources` (file name, text) to
@@ -630,8 +631,8 @@ struct Overrides {
     kit: Vec<Kit>,
 }
 
-/// `content/zones.toml`: hand-written changes to the generated Duskwood, Redridge and Stormwind
-/// City spawns (spec #466).
+/// `content/zones.toml`: hand-written changes to the generated Duskwood, Redridge, Stormwind City
+/// (spec #466) and Burning Steppes (#634) spawns.
 #[derive(Deserialize)]
 struct ZonesFile {
     zone: Vec<ZoneOverrides>,
@@ -702,10 +703,14 @@ struct Stretch {
 
 /// The generated zone files that `content/zones.toml` lays its changes over, all on Eastern
 /// Kingdoms.
-const ZONE_FILES: [(&str, &str); 3] = [
+const ZONE_FILES: [(&str, &str); 4] = [
     ("duskwood", include_str!("../content/duskwood.toml")),
     ("redridge", include_str!("../content/redridge.toml")),
     ("stormwind", include_str!("../content/stormwind.toml")),
+    (
+        "burning_steppes",
+        include_str!("../content/burning_steppes.toml"),
+    ),
 ];
 
 #[derive(Deserialize)]
@@ -871,11 +876,11 @@ pub(crate) fn content() -> &'static Mobs {
                 (z.area, factor)
             })
             .collect();
-        // Duskwood's and Redridge's templates that mobs.toml does not define: the Level Bands
-        // level them when they spawn at runtime.
+        // Duskwood's, Redridge's and the Burning Steppes' templates that mobs.toml does not
+        // define: the Level Bands level them when they spawn at runtime.
         let zone_vanilla: Vec<u32> = eastern
             .iter()
-            .filter(|(name, _)| matches!(*name, "duskwood" | "redridge"))
+            .filter(|(name, _)| matches!(*name, "duskwood" | "redridge" | "burning_steppes"))
             .flat_map(|(_, f)| f.template.iter().map(|t| t.entry))
             .filter(|e| !hand.template.iter().any(|t| t.entry == *e))
             .collect();
@@ -2393,6 +2398,21 @@ mod tests {
             .spawn
             .iter()
             .any(|s| [3094, 6492].contains(&s.entry)));
+    }
+
+    #[test]
+    fn flame_crests_orcs_turn_hostile_and_ragged_john_stays_friendly() {
+        // Gruna and Vahgruk (#634): hostile, so they show no NPC flags, and at 55-56.
+        for entry in [3708, 13177] {
+            let t = template(entry).unwrap();
+            assert!(t.hostile && !t.friendly, "{} is not hostile", t.name);
+            assert_eq!(t.faction_template, 40, "{}", t.name);
+            assert!(t.subname.is_empty(), "{}", t.name);
+            let s = content().spawn.iter().find(|s| s.entry == entry).unwrap();
+            assert_eq!((s.level_min, s.level_max), (55, 56), "{}", t.name);
+        }
+        let john = template(9563).unwrap();
+        assert!(john.friendly && !john.hostile);
     }
 
     #[test]
