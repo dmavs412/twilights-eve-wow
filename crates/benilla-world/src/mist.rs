@@ -43,9 +43,26 @@ pub const OPAQUE_YD: f32 = 25.0;
 pub const RAG_YD: f32 = 20.0;
 /// The fade's alpha ceiling where the noise is lowest; it reaches 1 where the noise is highest.
 pub const FADE_FLOOR: f32 = 0.3;
-/// The noise's drift sideways along the curtain and upward, in yards per second.
-pub const DRIFT_YD_S: f32 = 0.4;
-pub const DRIFT_UP_YD_S: f32 = 0.3;
+/// Yards after which every octave of the shader's noise repeats, along and up: 256 cells of the
+/// first octave's 23 yd. The lattice in `mist.wgsl` wraps on this period and must match it.
+pub const NOISE_PERIOD_YD: f32 = 5888.0;
+/// The noise's drift sideways along the curtain, in yards per second, before each layer's
+/// [`LAYER_DRIFT`]. [`DRIFT_UP_YD_S`] must stay half of it, so [`DRIFT_WRAP_SECS`] moves every
+/// layer a whole number of noise periods both ways.
+pub const DRIFT_YD_S: f32 = 1.2;
+/// The noise's drift upward, in yards per second: half of [`DRIFT_YD_S`], which
+/// [`DRIFT_WRAP_SECS`] relies on.
+pub const DRIFT_UP_YD_S: f32 = 0.6;
+/// Each layer's sideways drift as a multiple of [`DRIFT_YD_S`]; its upward drift takes the
+/// absolute value. Every entry is a multiple of 0.5, and a layer past the end takes the last.
+pub const LAYER_DRIFT: [f32; 5] = [1.0, -0.5, 1.5, 0.5, -1.0];
+/// Seconds after which the drift clock wraps: every layer has then moved a whole number of noise
+/// periods, so the wrap never jumps.
+pub const DRIFT_WRAP_SECS: f64 = 4.0 * NOISE_PERIOD_YD as f64 / DRIFT_YD_S as f64;
+/// How far the billow noise lightens or darkens the colour, as a share of it.
+pub const BILLOW_LIGHT: f32 = 0.15;
+/// The solid band's alpha where the noise is lowest; it reaches 1 where the noise is highest.
+pub const BAND_FLOOR: f32 = 0.85;
 /// The domain warp: how far a second noise sample pushes the sample point, in yards.
 pub const WARP_YD: f32 = 8.0;
 /// How far the foot's colour moves from the fog colour towards its own grey (0 keeps the hue).
@@ -117,6 +134,27 @@ pub struct MistExt {
     /// multiplies into the alpha: 1 on every curtain but one fading out ([`open_fade`]).
     #[uniform(103)]
     pub(crate) rag: Vec4,
+    /// The scene's linear fog start and end in yards (`WowLighting::fog_start`, `fog_end`),
+    /// [`BILLOW_LIGHT`] and [`BAND_FLOOR`].
+    #[uniform(104)]
+    pub(crate) scene: Vec4,
+    /// [`LAYER_DRIFT`]: entries 0 to 3 in the first vector, entry 4 in the second's `x`.
+    #[uniform(105)]
+    pub(crate) drift: [Vec4; 2],
+}
+
+/// [`MistExt::scene`] for the scene fog from `start` to `end` yards.
+fn scene_lanes(start: f32, end: f32) -> Vec4 {
+    Vec4::new(start, end, BILLOW_LIGHT, BAND_FLOOR)
+}
+
+/// [`MistExt::drift`]: [`LAYER_DRIFT`] packed four to a vector.
+fn drift_lanes() -> [Vec4; 2] {
+    let d = LAYER_DRIFT;
+    [
+        Vec4::new(d[0], d[1], d[2], d[3]),
+        Vec4::new(d[4], 0.0, 0.0, 0.0),
+    ]
 }
 
 impl MaterialExtension for MistExt {
@@ -371,55 +409,78 @@ struct CurtainBuilder {
     positions: Vec<[f32; 3]>,
     uv0: Vec<[f32; 2]>,
     uv1: Vec<[f32; 2]>,
-    indices: Vec<u32>,
+    /// `x` is the vertex's layer number; `y`, `z` and `w` are 0.
+    colour: Vec<[f32; 4]>,
+    /// One index list per layer, joined in layer order at the end.
+    layers: Vec<Vec<u32>>,
 }
 
 impl CurtainBuilder {
-    fn vertex(&mut self, p: [f32; 3], uv0: [f32; 2], uv1: [f32; 2]) {
+    fn vertex(&mut self, p: [f32; 3], uv0: [f32; 2], uv1: [f32; 2], layer: u32) {
         self.positions.push(wow_to_bevy(p).to_array());
         self.uv0.push(uv0);
         self.uv1.push(uv1);
+        self.colour.push([layer as f32, 0.0, 0.0, 0.0]);
     }
 
-    /// The quads of the `lines` × 9 grid of vertices ending the buffer, 9 to a line.
-    fn grid(&mut self, lines: u32) {
+    /// The quads of the `lines` × 9 grid of vertices ending the buffer, 9 to a line, into
+    /// `layer`'s index list.
+    fn grid(&mut self, lines: u32, layer: u32) {
         let base = self.positions.len() as u32 - lines * 9;
+        let layer = layer as usize;
+        if self.layers.len() <= layer {
+            self.layers.resize(layer + 1, Vec::new());
+        }
         for l in 0..lines - 1 {
             for k in 0..8 {
                 let a = base + l * 9 + k;
                 let (b, c, d) = (a + 1, a + 10, a + 9);
-                self.indices.extend_from_slice(&[a, b, c, a, c, d]);
+                self.layers[layer].extend_from_slice(&[a, b, c, a, c, d]);
             }
         }
     }
 
-    /// A sheet standing on one terrain `row`, each column from `foot(ground)` up to `top`, under
-    /// the alpha ceiling `cap`.
-    fn sheet(&mut self, row: &[[f32; 3]; 9], foot: impl Fn(f32) -> f32, top: f32, cap: f32) {
+    /// A sheet of `layer` standing on one terrain `row`, each column from `foot(ground)` up to
+    /// `top`, under the alpha ceiling `cap`.
+    fn sheet(
+        &mut self,
+        row: &[[f32; 3]; 9],
+        foot: impl Fn(f32) -> f32,
+        top: f32,
+        cap: f32,
+        layer: u32,
+    ) {
         for &[x, y, ground] in row {
             let f = foot(ground);
-            self.vertex([x, y, f], [f - ground, top - ground], [cap, 0.0]);
+            self.vertex([x, y, f], [f - ground, top - ground], [cap, 0.0], layer);
         }
         for &[x, y, ground] in row {
             let f = foot(ground);
-            self.vertex([x, y, top], [top - ground, top - ground], [cap, top - f]);
+            self.vertex(
+                [x, y, top],
+                [top - ground, top - ground],
+                [cap, top - f],
+                layer,
+            );
         }
-        self.grid(2);
+        self.grid(2, layer);
     }
 }
 
-/// One mesh of `segments` in Bevy space, four pieces each: the backdrop on the side, two wisp
-/// sheets on the open chunk's next two rows, and a skirt over all three rows on the ground.
-/// `UV_0` is `(yards above the ground, the sheet top's yards above the ground)` in the vertex's
-/// column, which the shader's height band reads; the skirt's `(0, 1)` keeps it solid. `UV_1` is
-/// `(the piece's alpha ceiling, yards above the piece's own foot)`, which fades it in.
+/// One mesh of `segments` in Bevy space, four pieces each: the backdrop on the side (layer 0),
+/// two wisp sheets on the open chunk's next two rows (layers 1 and 2), and a skirt over all three
+/// rows on the ground (layer 3). `UV_0` is `(yards above the ground, the sheet top's yards above
+/// the ground)` in the vertex's column, which the shader's height band reads; the skirt's `(0, 1)`
+/// keeps it solid. `UV_1` is `(the piece's alpha ceiling, yards above the piece's own foot)`,
+/// which fades it in. `COLOR`'s `x` is the layer, which picks the piece's own noise and drift.
+/// The triangles draw layer by layer across every segment, back to front from the open side.
 fn curtain_mesh(segments: &[Segment]) -> Mesh {
     let mut b = CurtainBuilder::default();
     for s in segments {
         // The backdrop: from below every ground point on the side, so it seals the cut.
-        b.sheet(&s.rows[0], |_| s.bottom, s.top, 1.0);
-        for row in &s.rows[1..] {
-            b.sheet(row, |ground| ground - 1.0, s.top, WISP_CAP);
+        b.sheet(&s.rows[0], |_| s.bottom, s.top, 1.0, 0);
+        for (layer, row) in (1..).zip(&s.rows[1..]) {
+            b.sheet(row, |ground| ground - 1.0, s.top, WISP_CAP, layer);
         }
         // The skirt: strongest at the side, gone by row 2.
         for (row, ramp) in s.rows.iter().zip([FOOT_RAMP_YD, FOOT_RAMP_YD / 2.0, 0.0]) {
@@ -428,10 +489,11 @@ fn curtain_mesh(segments: &[Segment]) -> Mesh {
                     [x, y, ground + SKIRT_RAISE_YD],
                     [0.0, 1.0],
                     [SKIRT_CAP, ramp],
+                    3,
                 );
             }
         }
-        b.grid(3);
+        b.grid(3, 3);
     }
     let n = b.positions.len();
     let mut mesh = Mesh::new(
@@ -443,7 +505,8 @@ fn curtain_mesh(segments: &[Segment]) -> Mesh {
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 1.0, 0.0]; n]);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, b.uv0);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_1, b.uv1);
-    mesh.insert_indices(Indices::U32(b.indices));
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, b.colour);
+    mesh.insert_indices(Indices::U32(b.layers.concat()));
     mesh
 }
 
@@ -460,6 +523,8 @@ fn setup_mist(mut commands: Commands, mut materials: ResMut<Assets<MistMaterial>
             shape: Vec4::new(OPAQUE_YD, DRIFT_YD_S, DRIFT_UP_YD_S, WARP_YD),
             foot: Vec4::new(FOOT_DESAT, FOOT_VALUE, COLOUR_RAMP_YD, FOOT_RAMP_YD),
             rag: Vec4::new(RAG_YD, FADE_FLOOR, CAMERA_FADE_YD, 1.0),
+            scene: scene_lanes(0.0, 0.0),
+            drift: drift_lanes(),
         },
     });
     commands.insert_resource(Mist { material });
@@ -573,7 +638,9 @@ fn tick_fading_mist(
     mut materials: ResMut<Assets<MistMaterial>>,
     mut fading: Query<(Entity, &mut FadingMist, &MeshMaterial3d<MistMaterial>)>,
 ) {
-    let fog = materials.get(&mist.material).map(|m| m.extension.fog);
+    let shared = materials
+        .get(&mist.material)
+        .map(|m| (m.extension.fog, m.extension.scene));
     for (e, mut f, material) in &mut fading {
         f.secs += time.delta_secs();
         if f.secs >= OPEN_FADE_SECS {
@@ -581,15 +648,17 @@ fn tick_fading_mist(
             continue;
         }
         if let Some(m) = materials.get_mut(&material.0) {
-            if let Some(fog) = fog {
+            if let Some((fog, scene)) = shared {
                 m.extension.fog = fog;
+                m.extension.scene = scene;
             }
             m.extension.rag.w = open_fade(f.secs);
         }
     }
 }
 
-/// Keeps the mist the scene fog's colour, through day, night and weather, and drifts its noise.
+/// Keeps the mist the scene fog's colour and distance, through day, night and weather, and drifts
+/// its noise on a clock that wraps every [`DRIFT_WRAP_SECS`].
 fn tint_mist(
     lighting: Option<Res<WowLighting>>,
     time: Res<Time>,
@@ -601,7 +670,9 @@ fn tint_mist(
     };
     let [r, g, b] = lighting.fog_color;
     if let Some(m) = materials.get_mut(&mist.material) {
-        m.extension.fog = Vec4::new(r, g, b, time.elapsed_secs_wrapped());
+        let t = (time.elapsed_secs_f64() % DRIFT_WRAP_SECS) as f32;
+        m.extension.fog = Vec4::new(r, g, b, t);
+        m.extension.scene = scene_lanes(lighting.fog_start, lighting.fog_end);
     }
 }
 
@@ -844,6 +915,61 @@ mod tests {
                 assert_eq!(uv1[i], [SKIRT_CAP, ramp], "skirt {j}, {k}");
             }
         }
+    }
+
+    #[test]
+    fn every_piece_carries_its_layer_number() {
+        use bevy::mesh::VertexAttributeValues;
+        let found = segments(&[chunk(CX, CY)], |gx, gy| (gx, gy) == (CX, CY + 1));
+        let mesh = curtain_mesh(&found);
+        let Some(VertexAttributeValues::Float32x4(colour)) = mesh.attribute(Mesh::ATTRIBUTE_COLOR)
+        else {
+            panic!("no COLOR");
+        };
+        assert_eq!(colour.len(), 81);
+        // The backdrop's 18 vertices, each wisp sheet's 18, then the skirt's 27.
+        for (range, layer) in [(0..18, 0.0), (18..36, 1.0), (36..54, 2.0), (54..81, 3.0)] {
+            for i in range {
+                assert_eq!(colour[i], [layer, 0.0, 0.0, 0.0], "vertex {i}");
+            }
+        }
+    }
+
+    #[test]
+    fn indices_run_layer_by_layer_across_segments() {
+        let closed = |gx, gy| (gx, gy) == (CX + 1, CY) || (gx, gy) == (CX, CY + 1);
+        let found = segments(&[chunk(CX, CY)], closed);
+        assert_eq!(found.len(), 2);
+        let mesh = curtain_mesh(&found);
+        let indices: Vec<usize> = mesh.indices().expect("indices").iter().collect();
+        assert_eq!(indices.len(), 2 * 240);
+        // Each segment's 81 vertices: the backdrop's 18, two wisp sheets' 18, the skirt's 27.
+        let layer = |v: usize| match v % 81 {
+            0..18 => 0,
+            18..36 => 1,
+            36..54 => 2,
+            _ => 3,
+        };
+        let runs = [(0..96, 0), (96..192, 1), (192..288, 2), (288..480, 3)];
+        for (range, want) in runs {
+            for i in range {
+                assert_eq!(layer(indices[i]), want, "index {i}");
+            }
+        }
+    }
+
+    #[test]
+    fn the_drift_wraps_on_whole_noise_periods() {
+        let whole = |v: f64| (v - v.round()).abs() < 1e-3;
+        let period = NOISE_PERIOD_YD as f64;
+        for m in LAYER_DRIFT {
+            let m = m as f64;
+            let along = m * DRIFT_YD_S as f64 * DRIFT_WRAP_SECS / period;
+            let up = m.abs() * DRIFT_UP_YD_S as f64 * DRIFT_WRAP_SECS / period;
+            assert!(whole(along), "{m}: {along} periods along");
+            assert!(whole(up), "{m}: {up} periods up");
+        }
+        assert!(DRIFT_WRAP_SECS > 3600.0);
     }
 
     fn test_wall() -> MistWall {
