@@ -6,7 +6,9 @@
 //! following the Defias and the ogres' crates, Sven Yorgen's revenge on Morbent Fel; and four
 //! bounties. Band 40-45 (#613): Sirra asks the Watch about the night the dark came and sends
 //! her account to Lord Ello, Jitters follows the Surveyors' stakes to the crypt under Raven Hill,
-//! Calor's worgen and Fenros; and four bounties.
+//! Calor's worgen and Fenros; and four bounties. Band 45-50 (#618): the Grey Robes' camp in
+//! Twilight Grove and its Grey Captain, Mor'Ladim and the daughter who lived, Dodds' Rotting
+//! Orchard; and four bounties.
 
 mod common;
 
@@ -173,6 +175,53 @@ const MORGANTHS_NOTES: u32 = 980487;
 /// spot by the mausoleum, outside the spot's radius.
 const DEEPS_PORTAL: [f32; 3] = [-10418.6, 410.8, 47.8];
 const BY_THE_MAUSOLEUM: [f32; 3] = [-10440.0, 410.8, 47.8];
+
+const THE_AGENTS_CAMP: u32 = 98901;
+const THE_GREY_CAPTAIN: u32 = 98902;
+const MOR_LADIM: u32 = 98903;
+const THE_DAUGHTER_WHO_LIVED: u32 = 98904;
+const A_DAUGHTERS_LOVE: u32 = 98905;
+
+/// Every quest of band 45-50: `(id, giver, ender, after)`, the ender `None` when it is the giver.
+const BAND_45_50: [(u32, u32, Option<u32>, Option<u32>); 10] = [
+    (98901, ALTHEA, None, Some(98602)),
+    (98902, ALTHEA, None, Some(98901)),
+    (98903, SIRRA, None, Some(98801)),
+    (98904, SIRRA, Some(LADIMORE), Some(98903)),
+    (98905, LADIMORE, None, Some(98904)),
+    (98906, DODDS, None, None),
+    (98911, ALTHEA, None, None),
+    (98912, PAIGE, None, None),
+    (98913, 272, None, None),
+    (98914, JITTERS, None, None),
+];
+
+/// Each band 45-50 story quest's choices: greens from the band's Quest Lines (#615), and the
+/// named elites' item quests' blues.
+const CHOICES_45_50: [(u32, &[u32]); 6] = [
+    (98901, &[903275, 903277, 903279]),
+    (98902, &[903310, 903311, 903312]),
+    (98903, &[903316, 903317, 903318]),
+    (98904, &[903260, 903261, 903262, 903263]),
+    (98905, &[903271, 903272, 903273]),
+    (98906, &[903265, 903267, 903270]),
+];
+
+/// Watcher Ladimore (`content/duskwood.toml`), and where she stands.
+const LADIMORE: u32 = 576;
+const LADIMORE_AT: [f32; 3] = [-10581.6, -1172.89, 28.494];
+
+const GREY_CAPTAIN: u32 = 96053;
+const CROWNED_COMMISSION: u32 = 980432;
+const MOR_LADIMS_SKULL: u32 = 980433;
+
+/// The agents' camp's centre in Twilight Grove (`content/zones.toml`), and its three objects.
+const CAMP_AT: [f32; 2] = [-10460.0, -470.0];
+const CAMP_OBJECTS: [u32; 3] = [793011, 793012, 793013];
+
+/// Morgan Ladimore's grave at Raven Hill Cemetery's north edge, and a spot 10 yd short of it.
+const LADIMORES_GRAVE: [f32; 3] = [-10495.0, 431.0, 47.0];
+const SHORT_OF_THE_GRAVE: [f32; 3] = [-10505.0, 431.0, 47.0];
 
 fn duskwood_quests() -> toml::Table {
     include_str!("../content/quests_duskwood.toml")
@@ -896,4 +945,237 @@ fn every_band_40_45_story_quest_offers_the_choices_the_gear_table_names() {
             "bounty {id} offers a choice"
         );
     }
+}
+
+#[test]
+fn band_45_50_s_quests_load_with_their_givers_enders_and_zone() {
+    let rows = duskwood_quests();
+    let ids: Vec<u32> = rows["quest"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|q| int(q, "id").unwrap() as u32)
+        .filter(|id| (98901..=98914).contains(id))
+        .collect();
+    assert_eq!(ids, BAND_45_50.map(|q| q.0));
+    let mut realm = realm();
+    for (id, giver, ender, _) in BAND_45_50 {
+        let row = quest_row(id);
+        assert_eq!(int(&row, "giver"), Some(giver.into()), "quest {id}'s giver");
+        assert_eq!(
+            int(&row, "ender"),
+            ender.map(i64::from),
+            "quest {id}'s ender"
+        );
+        assert_eq!(int(&row, "zone_or_sort"), Some(10), "quest {id}");
+        let kind = row["kind"].as_str().unwrap();
+        let want = if id >= 98911 { "bounty" } else { "story" };
+        assert_eq!(kind, want, "quest {id}");
+        let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
+        assert_eq!(t.zone_or_sort, 10, "quest {id}");
+        assert_eq!(Some(t.title.as_str()), row["title"].as_str(), "quest {id}");
+    }
+}
+
+#[test]
+fn band_45_50_s_chains_hold() {
+    for (id, _, _, after) in BAND_45_50 {
+        assert_eq!(
+            int(&quest_row(id), "after"),
+            after.map(i64::from),
+            "quest {id}'s `after`"
+        );
+    }
+
+    // A newcomer gets Dodds' orchard, but neither the camp nor Mor'Ladim.
+    let mut party = in_darkshire(&[]);
+    let althea = up_to(&mut party, ALTHEA, ALTHEA_AT);
+    assert!(!offers(&mut party, althea).contains(&THE_AGENTS_CAMP));
+    let sirra = up_to(&mut party, SIRRA, SIRRA_AT);
+    assert!(!offers(&mut party, sirra).contains(&MOR_LADIM));
+    let dodds = up_to(&mut party, DODDS, DODDS_AT);
+    assert!(offers(&mut party, dodds).contains(&98906));
+
+    let mut party = in_darkshire(&[THE_NIGHT_WATCH, TWELVE_YEARS_AGO]);
+    let althea = up_to(&mut party, ALTHEA, ALTHEA_AT);
+    let offered = offers(&mut party, althea);
+    assert!(offered.contains(&THE_AGENTS_CAMP), "{offered:?}");
+    assert!(!offered.contains(&THE_GREY_CAPTAIN), "{offered:?}");
+    let sirra = up_to(&mut party, SIRRA, SIRRA_AT);
+    let offered = offers(&mut party, sirra);
+    assert!(offered.contains(&MOR_LADIM), "{offered:?}");
+    assert!(!offered.contains(&THE_DAUGHTER_WHO_LIVED), "{offered:?}");
+}
+
+#[test]
+fn the_grey_captain_s_corpse_gives_the_commission_while_the_grey_captain_wants_it() {
+    let mut party = in_darkshire(&[THE_AGENTS_CAMP]);
+    let althea = up_to(&mut party, ALTHEA, ALTHEA_AT);
+    assert!(offers(&mut party, althea).contains(&THE_GREY_CAPTAIN));
+    accept(&mut party, althea, THE_GREY_CAPTAIN);
+
+    let from = [ALTHEA_AT[0] + 10.0, ALTHEA_AT[1], ALTHEA_AT[2]];
+    let (events, loot) = slay(&mut party, GREY_CAPTAIN, from);
+    assert!(credited(&events, THE_GREY_CAPTAIN), "{events:?}");
+    assert!(
+        loot.contains(&CROWNED_COMMISSION),
+        "his corpse held {loot:?}"
+    );
+    assert_eq!(carries(&party, CROWNED_COMMISSION), 1);
+
+    let (_, again) = slay(&mut party, GREY_CAPTAIN, from);
+    assert!(
+        !again.contains(&CROWNED_COMMISSION),
+        "a second copy once the quest has the commission: {again:?}"
+    );
+
+    let althea = up_to(&mut party, ALTHEA, ALTHEA_AT);
+    let events = hand_in(&mut party, althea, THE_GREY_CAPTAIN);
+    assert!(completed(&events, THE_GREY_CAPTAIN), "{events:?}");
+    assert_eq!(
+        carries(&party, CROWNED_COMMISSION),
+        0,
+        "Althea keeps the commission"
+    );
+}
+
+#[test]
+fn the_crowned_commission_reads_one_page() {
+    let (first, next) = pages(&mut realm(), CROWNED_COMMISSION);
+    assert_ne!(first, 0, "the commission is not readable");
+    assert_eq!(next, [0], "one page");
+}
+
+#[test]
+fn the_daughter_who_lived_puts_the_skull_in_the_bag_and_ladimore_takes_it() {
+    let mut party = in_darkshire(&[MOR_LADIM]);
+    let sirra = up_to(&mut party, SIRRA, SIRRA_AT);
+    accept(&mut party, sirra, THE_DAUGHTER_WHO_LIVED);
+    assert_eq!(
+        carries(&party, MOR_LADIMS_SKULL),
+        1,
+        "Sirra hands over the skull"
+    );
+
+    let ladimore = up_to(&mut party, LADIMORE, LADIMORE_AT);
+    let events = hand_in(&mut party, ladimore, THE_DAUGHTER_WHO_LIVED);
+    assert!(completed(&events, THE_DAUGHTER_WHO_LIVED), "{events:?}");
+    assert_eq!(
+        carries(&party, MOR_LADIMS_SKULL),
+        0,
+        "the skull stays with Ladimore"
+    );
+}
+
+#[test]
+fn reaching_the_grave_credits_a_daughter_s_love() {
+    let mut party = in_darkshire(&[THE_DAUGHTER_WHO_LIVED]);
+    let ladimore = up_to(&mut party, LADIMORE, LADIMORE_AT);
+    accept(&mut party, ladimore, A_DAUGHTERS_LOVE);
+
+    let complete = |events: &[SessionEvent]| {
+        events.iter().any(|e| {
+            matches!(e, SessionEvent::QuestObjectivesComplete { quest_id } if *quest_id == A_DAUGHTERS_LOVE)
+        })
+    };
+    let events = walk(&mut party, SHORT_OF_THE_GRAVE);
+    assert!(!complete(&events), "explored short of the grave");
+    let events = walk(&mut party, LADIMORES_GRAVE);
+    assert!(complete(&events), "{events:?}");
+}
+
+#[test]
+fn every_band_45_50_story_quest_offers_the_choices_the_gear_table_names() {
+    let mut realm = realm();
+    for (id, want) in CHOICES_45_50 {
+        let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
+        let got: Vec<u32> = t
+            .choices
+            .iter()
+            .map(|c| c.0)
+            .filter(|&item| item != 0)
+            .collect();
+        assert_eq!(got, want, "quest {id}'s choices");
+    }
+    for id in 98911..=98914 {
+        let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
+        assert!(
+            t.choices.iter().all(|c| c.0 == 0),
+            "bounty {id} offers a choice"
+        );
+    }
+}
+
+#[test]
+fn the_agents_camp_has_two_tents_and_a_fire_round_the_captain() {
+    let rows = duskwood_quests();
+    let objects = rows["gameobject"].as_array().unwrap();
+    for guid in CAMP_OBJECTS {
+        let row = objects
+            .iter()
+            .find(|o| int(o, "guid") == Some(guid.into()))
+            .unwrap_or_else(|| panic!("gameobject {guid}"));
+        assert_eq!(int(row, "map"), Some(0), "gameobject {guid}'s map");
+        let at = row["position"].as_array().unwrap();
+        let (x, y) = (at[0].as_float().unwrap(), at[1].as_float().unwrap());
+        let off = (x - CAMP_AT[0] as f64).hypot(y - CAMP_AT[1] as f64);
+        assert!(
+            off < 25.0,
+            "gameobject {guid} stands {off} yd from the camp"
+        );
+    }
+    let displays: Vec<i64> = CAMP_OBJECTS
+        .iter()
+        .map(|&g| {
+            let row = objects
+                .iter()
+                .find(|o| int(o, "guid") == Some(g.into()))
+                .unwrap();
+            int(row, "display").unwrap()
+        })
+        .collect();
+    assert_eq!(displays, [6738, 6738, 192], "two tents and a campfire");
+}
+
+/// Spawns a level 1 `creature` 3 yd west of `from`, for this character alone, and fights it from
+/// `from` until it dies, then loots it into the bags: the events from the spawn on, and the items
+/// its corpse held.
+fn slay(party: &mut Party, creature: u32, from: [f32; 3]) -> (Vec<SessionEvent>, Vec<u32>) {
+    let me = party.guids[0];
+    let prey = [from[0] - 3.0, from[1], from[2]];
+    let before = party.seen(0).len();
+    let guid = party
+        .realm
+        .spawn_for(
+            party.host.as_ref(),
+            creature,
+            1,
+            prey,
+            0,
+            Audience::of(&[me]),
+        )
+        .unwrap_or_else(|| panic!("creature {creature}"));
+    party.go_facing(0, from, prey);
+    party.run(0.3);
+    party.cmd(0, RealmCommand::AttackSwing { guid });
+    assert!(
+        party.run_until(600.0, |got| died(&got[0], guid)),
+        "creature {creature} never died"
+    );
+    party.run(0.5);
+    party.cmd(0, RealmCommand::Loot { guid });
+    let items: Vec<u32> = since(party, before)
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::LootResponse { items, .. } => {
+                Some(items.iter().map(|l| l.item_id).collect())
+            }
+            _ => None,
+        })
+        .unwrap_or_default();
+    for slot in 0..items.len() {
+        party.cmd(0, RealmCommand::AutostoreLootItem { slot: slot as _ });
+    }
+    party.cmd(0, RealmCommand::LootRelease { guid });
+    (since(party, before), items)
 }

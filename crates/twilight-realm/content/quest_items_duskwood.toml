@@ -29,6 +29,15 @@ item = [
   { entry = 980421, name = "Sirra's Account", quality = 1, item_level = 41, class = 12, display_id = 3426, max_count = 1, description = "Six pages in Sirra's hand. The last line: 'Made by hands.'" },
   { entry = 980422, name = "Survey Stake", quality = 1, item_level = 42, class = 12, display_id = 16149, stackable = 20, description = "A grey ash stake, a crown burned into its head." },
   { entry = 980423, name = "Nightbane Pelt", quality = 1, item_level = 42, class = 12, display_id = 1421, stackable = 20, description = "Coarse and black, and it smells of wet dog and worse." },
+  # Duskwood 45-50 (#618, quests_duskwood.toml). Each shows a stock icon no other item does: the
+  # records INV_Scroll_08, the commission INV_Scroll_04, the skull INV_Misc_Bone_HumanSkull_01
+  # and the haunch INV_Misc_Food_15. The records are a 40% drop off the camp's Grey Robes; the
+  # Grey Captain always drops the commission, which reads one page; Mor'Ladim always drops the
+  # skull, which 98904 hands back on accept and Ladimore keeps; the haunch is a 50% bounty drop.
+  { entry = 980431, name = "Stolen Records", quality = 1, item_level = 46, class = 12, display_id = 1037, stackable = 20, description = "Pages in Sirra's hand, with someone else's notes in the margins." },
+  { entry = 980432, name = "Crowned Commission", quality = 1, item_level = 47, class = 12, display_id = 634, max_count = 1, pages = ["The bearer commands in the Master's name in the dark wood, and answers to the Master alone. Below it, a crown pressed into grey wax."] },
+  { entry = 980433, name = "Mor'Ladim's Skull", quality = 1, item_level = 48, class = 12, display_id = 2853, max_count = 1, description = "Heavy, and colder than it should be." },
+  { entry = 980434, name = "Worgen Haunch", quality = 1, item_level = 46, class = 12, display_id = 4112, stackable = 20, description = "Grual will not say what he does with these." },
   # The Deeps' quests of a later ticket collect the orders and the notes (99011, 99012); defined
   # here so that ticket touches no item file. No quest collects them yet.
   { entry = 980486, name = "Crowned Orders", quality = 1, item_level = 42, class = 12, display_id = 15274, max_count = 1, description = "Orders on grey paper, sealed with a crown.", pages = ["Dig to the grey and no further. What stands in it belongs to the Master. Touch nothing that stands still.", "Find the apprentice who reads M.'s hand. Bring him whole. Below it, a crown."] },

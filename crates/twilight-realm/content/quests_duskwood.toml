@@ -522,3 +522,201 @@ completion = "Ten. That's ten my riders won't meet on the road this week. The Wa
 money = 1290
 zone_or_sort = 10
 kill = [{ family = "Skeletons slain", entries = [785, 1110], count = 10 }]
+
+# ── Duskwood 45-50 (#595) ────────────────────────────────────────────────────────────────────────
+#
+# Althea's watchers track Sirra's stolen papers to the Grey Robes' camp in Twilight Grove and its
+# Grey Captain, who commands in the Master's name; Sirra wants Mor'Ladim laid down, and the
+# daughter who lived lays him in his own grave; Dodds and the bounties thin the Rotting Orchard's
+# worgen. The camp's Grey Robes are in content/zones.toml (#616). The quest items are in
+# content/quest_items_duskwood.toml.
+
+# The agents' camp round the Grey Captain: two tents (the excavation pavilion, 6738) and a
+# campfire (192), in the form of Keane's outpost (quests_elwynn.toml).
+[[gameobject]]
+guid = 793011
+entry = 980552
+display = 6738
+map = 0
+position = [-10448.0, -458.0, 46.68]
+orientation = 3.9
+respawn = 120.0
+
+[[gameobject]]
+guid = 793012
+entry = 980552
+display = 6738
+map = 0
+position = [-10474.0, -484.0, 50.21]
+orientation = 0.8
+respawn = 120.0
+
+[[gameobject]]
+guid = 793013
+entry = 980553
+display = 192
+map = 0
+position = [-10455.0, -477.0, 51.36]
+orientation = 0.0
+respawn = 120.0
+
+[[quest]]
+id = 98901
+kind = "story"
+giver = 264
+after = 98602
+level = 46
+title = "The Agents' Camp"
+objectives = "Kill 8 Grey Robe Agents and 4 Grey Robe Wardens at the camp in Twilight Grove, and recover 3 Stolen Records for Commander Althea Ebonlocke."
+details = "Someone broke into the hall of records a week ago and took nothing but paper. Sirra's papers, about the night the dark came. My watchers followed the tracks to a camp in Twilight Grove: tents, a fire, men in grey with a crown on their breasts, and not one of them asleep. They're not digging. They're reading. Get Sirra's papers back."
+progress = "Did you find the camp?"
+completion = "Sirra's hand, every page, with notes in the margins in someone else's. They underlined every line about the house on the hill. Where it was, how it went wrong, what it left behind. Whoever they serve is studying our night like a lesson."
+money = 1610
+choices = [903275, 903277, 903279]
+zone_or_sort = 10
+kill = [[96051, 8], [96052, 4]]
+collect = [{ item = 980431, count = 3, from = [96051, 96052], chance = 40 }]
+
+# The named elite's item quest: blue Quest Line rows (#615).
+[[quest]]
+id = 98902
+kind = "story"
+giver = 264
+after = 98901
+level = 47
+title = "The Grey Captain"
+objectives = "Kill the Grey Captain at the camp in Twilight Grove and bring his commission to Commander Althea Ebonlocke."
+details = "One of them gives the orders in that camp. My watchers call him the Grey Captain, for want of a name. He carries a sword and doesn't read. Kill him, and bring me whatever gives him the right to command."
+progress = "Is he dead?"
+completion = "A commission. 'The bearer commands in the Master's name in the dark wood, and answers to the Master alone.' Under it, the crown, and no name. They aren't from Duskwood. Where they are from, I don't know, and I don't like not knowing."
+money = 2115
+choices = [903310, 903311, 903312]
+zone_or_sort = 10
+kill = [[96053, 1]]
+collect = [{ item = 980432, count = 1, from = [96053], chance = 100 }]
+
+# The named elite's item quest: blue Quest Line rows (#615). Mor'Ladim (522) is level 48 by
+# level_overrides.toml.
+[[quest]]
+id = 98903
+kind = "story"
+giver = 268
+after = 98801
+level = 48
+title = "Mor'Ladim"
+objectives = "Kill Mor'Ladim in Raven Hill Cemetery and bring his skull to Sirra Von'Indi in Darkshire."
+details = "One of the dead on Raven Hill had a name I knew before he died. Morgan Ladimore. He was the best the Watch ever had, until a night twenty years ago when a madness took him and he killed his wife and his boys in their beds. They hanged him and buried him on the hill. The night the dark came, he got up with the rest. The hamlet calls him Mor'Ladim now. Lay him down for good, and bring me his skull, so I know it's done."
+progress = "Is Morgan Ladimore at rest?"
+completion = "That's him. I'd know that jaw anywhere. I drew it once, for the Watch's roll of honour, before any of it. There's something you should know. Not all of his children died that night. One of them hid, and lived, and still stands a post in Darkshire."
+money = 2160
+choices = [903316, 903317, 903318]
+zone_or_sort = 10
+kill = [[522, 1]]
+collect = [{ item = 980433, count = 1, from = [522], chance = 100 }]
+
+[[quest]]
+id = 98904
+kind = "story"
+giver = 268
+ender = 576
+after = 98903
+level = 48
+title = "The Daughter Who Lived"
+objectives = "Bring Mor'Ladim's Skull to Watcher Ladimore in Darkshire."
+details = "Sarah Ladimore was eight that night. She hid under the stairs while her father went through the house, and in the morning the Watch found her there, alive, and not a sound out of her. She joined the Watch the year she was old enough. For twenty years she's walked the road past that cemetery every night and never once looked in. She should have this. Not from me. Take it to her, at her post in Darkshire."
+progress = "You have something for me?"
+completion = "Give it to me. That's my father, what's left of him. They told me he was walking again, and I never went up to look. Twenty years I've walked past that hill with my eyes on the road. I'll hold it a while yet, if you don't mind."
+money = 0
+choices = [903260, 903261, 903262, 903263]
+zone_or_sort = 10
+gives = [[980433, 1]]
+collect = [{ item = 980433, count = 1 }]
+
+[[quest]]
+id = 98905
+kind = "story"
+giver = 576
+after = 98904
+level = 49
+title = "A Daughter's Love"
+objectives = "Lay Morgan Ladimore in his own grave at the north edge of Raven Hill Cemetery, then return to Watcher Ladimore in Darkshire."
+details = "He has a grave. They dug it after the hanging, at the north edge of Raven Hill, and he lay in it eight years before the dark got him up. It's still there. I've kept these flowers since we buried my mother, meaning to take them up one day. I can't. I've tried, and I get as far as the cemetery gate. Put him back where he belongs, and leave the flowers on him. I'd be grateful to the end of my days."
+progress = "Did you find his grave?"
+completion = "Then he's home. Twenty years of walking past that hill, and I never thought I'd hear anyone say so. Thank you. I'll go up myself one day, and sit with them both. Not yet. But one day."
+money = 1715
+choices = [903271, 903272, 903273]
+zone_or_sort = 10
+explore = { place = "Morgan Ladimore's grave", position = [-10495.0, 431.0], radius = 6.0, map = 0 }
+
+[[quest]]
+id = 98906
+kind = "story"
+giver = 888
+level = 46
+title = "The Rotting Orchard"
+objectives = "Kill 12 Nightbane Vile Fangs in the Rotting Orchard, then return to Watcher Dodds."
+details = "The worgen in the Rotting Orchard used to keep to the trees. Not any more. This month they've come out onto the south road three times, and the last time they took a carter and both his mules before my men could get there. Vile Fangs, the hunters call them, the lean ones with the yellow eyes. They hunt the road at dusk, which in Duskwood is all day. Go into the orchard and kill a dozen. Maybe the rest will remember to fear us."
+progress = "Is the road safe yet?"
+completion = "Twelve. My patrol walked the whole south road this morning and saw nothing bigger than a crow. It won't last, not with that orchard full of them, but every quiet day is a cart that gets through. Here, for your trouble."
+money = 1610
+choices = [903265, 903267, 903270]
+zone_or_sort = 10
+kill = [[206, 12]]
+
+# ── Darkshire's and Twilight Grove's bounties, 45-50 (#595) ──────────────────────────────────────
+
+[[quest]]
+id = 98911
+kind = "bounty"
+giver = 264
+level = 47
+title = "The Tainted Ones"
+objectives = "Kill 10 Nightbane Tainted Ones in the Rotting Orchard, then return to Commander Althea Ebonlocke in Darkshire."
+details = "The Tainted Ones in the Rotting Orchard are the worgen that were men not so long ago. Some of my watchers swear they've seen faces they knew. I don't care whose faces they wear. They come out of that orchard at night and drag off anyone they find on the road. The Watch pays a bounty on them, ten at a time. Collect it as often as you like."
+progress = "Any fewer of them?"
+completion = "Ten. I won't ask if you recognised any of them, and you needn't tell me. The Watch pays, as promised, and the bounty stands as long as the orchard keeps sending them."
+money = 1410
+zone_or_sort = 10
+kill = [[920, 10]]
+
+[[quest]]
+id = 98912
+kind = "bounty"
+giver = 499
+level = 47
+title = "Wanted: Nefaru"
+objectives = "Kill Nefaru and 6 Nightbane Vile Fangs in the Rotting Orchard, then return to Watcher Paige."
+details = "There's a worgen in the Rotting Orchard bigger than the others, black as pitch, and the Vile Fangs run with him. The hunters call him Nefaru. He's killed three of my men this year, and each time the pack was round him before anyone could swing. The Watch has put a price on him again. Kill him, and the Fangs that run at his side, and the Watch pays. If he comes back, and he always does, the price stands."
+progress = "Is Nefaru dead?"
+completion = "Nefaru's dead, and six of his pack with him. He'll be back. They always come back in that orchard, or something just like them does. Until then, the Watch pays, and my men sleep."
+money = 1410
+zone_or_sort = 10
+kill = [[534, 1], [206, 6]]
+
+[[quest]]
+id = 98913
+kind = "bounty"
+giver = 272
+level = 46
+title = "Worgen Haunches"
+objectives = "Bring 8 Worgen Haunches to Chef Grual in Darkshire."
+details = "Don't look at me like that. Meat is meat, and nothing walks into Darkshire with fresh meat any more. The worgen in the Rotting Orchard are big and lean and there are plenty of them, the Vile Fangs and the Tainted both. Bring me eight good haunches. I pay for every lot, and I don't tell anyone what's in the stew, and you shouldn't either."
+progress = "Got my haunches?"
+completion = "Good weight on these. The Watch eats tonight, and nobody asks. I'll take every eight you bring, as long as the orchard's full. Here's your coin, and not a word to the Watch."
+money = 1380
+zone_or_sort = 10
+collect = [{ item = 980434, count = 8, from = [206, 920], chance = 50 }]
+
+[[quest]]
+id = 98914
+kind = "bounty"
+giver = 288
+level = 48
+title = "Grey in the Grove"
+objectives = "Kill 8 Grey Robe Agents at the camp in Twilight Grove, then return to Jitters in Raven Hill."
+details = "The Grey Robes on Raven Hill come and go from somewhere, and now I know where. There's a camp in Twilight Grove full of them, in that same grey. Not diggers. These ones read, and write, and watch. One of them stood at my wall two nights ago and wrote something in a little book while he looked at my house. The hamlet's put some money together. Kill eight of them, and it's yours."
+progress = "Did you find their camp?"
+completion = "Eight. They'll send more, they always do, but now they'll know someone's watching them back. That's worth the hamlet's money, and then some. The bounty stands for as long as they keep coming."
+money = 1440
+zone_or_sort = 10
+kill = [[96051, 8]]
