@@ -98,6 +98,22 @@ $requeued = @{}
 $skippedOnce = @{}
 
 Write-Log "builder $Name in $Worktree (claude: $claude)"
+
+# Warm this worktree's target before the first ticket. A session may not run a command past the
+# Bash tool's 10 minutes, and a cold client build takes longer; once warm, an incremental client
+# test fits. The client part waits for the machine-wide client lock.
+Reset-Worktree
+Write-Log "warming the realm test build"
+cmd /c "cargo test -q -p twilight-realm --no-run 2>&1" | Out-Null
+if (Enter-ClientLock $holder $PID 120) {
+    Write-Log "warming the client test build"
+    cmd /c "cargo test -q -p benilla-app --lib --no-run 2>&1" | Out-Null
+    Exit-ClientLock $holder
+    Write-Log "warm-up done"
+} else {
+    Write-Log "client lock busy for 2 h; skipped the client warm-up"
+}
+
 while ($true) {
     if ($stopTime -and (Get-Date) -ge $stopTime) { Write-Log "stop time $StopAt reached"; break }
     if ($done -ge $Max) { Write-Log "reached -Max $Max"; break }

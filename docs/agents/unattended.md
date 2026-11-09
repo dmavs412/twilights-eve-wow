@@ -103,7 +103,11 @@ failed. With `-LingerMinutes`, a builder whose queue is empty checks again that 
   commit what it wrote. An interior unit takes its Z from the nearest existing row in the same
   building.
 - Run every cargo command in the foreground and wait, with a 600000 ms timeout. Never
-  `run_in_background`: background commands die at 10 minutes and leave corrupt rlibs.
+  `run_in_background`, not even for a benilla-app build: this overrides CLAUDE.md's advice to
+  background one. A headless session never receives the background notification and waits
+  forever (#633's session sat two hours after its last commit). The builder warms its target's
+  client and realm test builds before its first ticket, so an incremental client test fits in
+  the 10 minutes. If one still does not, block the ticket and say how long the build took.
 - One plain command per Bash call. Headless permission matching refuses chains (`;`, `&&`),
   `$(...)`, heredocs and redirects into files, even when each part is allowed; only a trailing
   `2>&1 | tail -40` or `| head` is safe. Write scripts and comment bodies with the Write tool

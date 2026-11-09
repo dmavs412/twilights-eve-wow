@@ -22,8 +22,10 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   `python3.15 tools/twilights-eve/icon_check.py`; a new icon clash is a failed gate. That is the whole gate; a commit needs nothing else. A full build or a game run
   happens only when Davis asks for one.
 - **Wait for every command to finish.** Commands run in the foreground, except a benilla-app
-  test or check build, which can pass the Bash tool's 10-minute cap: start it with
-  `run_in_background` and wait for its notification. A filtered client test takes `--lib`, so
+  test or check build in an interactive chat, which can pass the Bash tool's 10-minute cap:
+  start it with `run_in_background` and wait for its notification. A builder's headless
+  session never backgrounds anything; it never receives the notification
+  (`docs/agents/unattended.md`). A filtered client test takes `--lib`, so
   only the binary that holds the tests runs:
   `cargo test -q -p benilla-app --lib <filter> 2>&1 | grep -E "FAILED|panicked|test result"`. A cargo command stopped mid-compile leaves
   rlibs with corrupt MSVC debug info, and later links fail (`LNK1103`, or unresolved symbols) on
