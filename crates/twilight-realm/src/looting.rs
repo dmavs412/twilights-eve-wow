@@ -248,3 +248,24 @@ impl Looting {
         Looted::default()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_thousand_level_33_kills_drop_no_white_and_only_band_greens() {
+        let mut rng = Rng::new(33);
+        let mut greens = 0;
+        for _ in 0..1000 {
+            for (entry, _) in Loot::band(33, &mut rng).items.into_iter().flatten() {
+                assert!(
+                    (902100..=902119).contains(&entry),
+                    "{entry} is a 31-35 green"
+                );
+                greens += 1;
+            }
+        }
+        assert!((20..=60).contains(&greens), "{greens} greens");
+    }
+}

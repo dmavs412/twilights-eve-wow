@@ -30,7 +30,7 @@ The whole-body look a Chest carries: what the character's head, shoulders, back,
 _Avoid_: transmog, set (an item set with bonuses)
 
 **Loot Source**:
-Where a piece of Gear comes from: White, World, Quest or Dungeon. Each has its own quality. A White drops; no vendor sells Gear (ADR 0027). The word is never Tier. Spec #272.
+Where a piece of Gear comes from: White, World, Quest or Dungeon. Each has its own quality. A White drops; no vendor sells Gear (ADR 0027). No White drops from a mob above level 30 (spec #650). The word is never Tier. Spec #272.
 _Avoid_: tier, pool
 
 **Loot Band**:

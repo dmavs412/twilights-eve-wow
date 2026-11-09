@@ -9,7 +9,7 @@ use benilla_protocol::{SessionEvent, START_ELWYNN};
 use common::fight::unit_of_level;
 use common::*;
 use gear_common::last_health;
-use twilight_realm::rules::loot::{band_greens, band_of, bands};
+use twilight_realm::rules::loot::{band_greens, band_of, band_whites, bands};
 use twilight_realm::{Realm, RealmCommand};
 
 fn gear_rows() -> Vec<toml::Value> {
@@ -25,13 +25,26 @@ fn gear_row(rows: &[toml::Value], entry: u32) -> &toml::Value {
 }
 
 /// Each band after Northshire: its levels and the item level its rows sit at.
-const LATER_BANDS: [([u8; 2], i64); 5] = [
+const LATER_BANDS: [([u8; 2], i64); 9] = [
     ([11, 14], 12),
     ([15, 18], 15),
     ([19, 22], 19),
     ([23, 26], 23),
     ([27, 30], 28),
+    ([31, 35], 33),
+    ([36, 40], 38),
+    ([41, 45], 43),
+    ([46, 50], 48),
 ];
+
+/// A band from 31 lists no whites (spec #650); every band before it lists 21.
+fn white_count(levels: [u8; 2]) -> usize {
+    if levels[0] > 30 {
+        0
+    } else {
+        21
+    }
+}
 
 #[test]
 fn each_band_lists_its_whites_and_greens_from_the_gear_sheet() {
@@ -62,12 +75,12 @@ fn each_band_lists_its_whites_and_greens_from_the_gear_sheet() {
         );
     }
 
-    // Every later band: 21 Common and 20 Uncommon rows at the band's set level, wearable from
-    // its first level.
+    // Every later band: 21 Common rows up to 27-30 and none from 31, and 20 Uncommon rows, all at
+    // the band's set level and wearable from its first level.
     for (band, (levels, item_level)) in bands[1..].iter().zip(LATER_BANDS) {
         assert_eq!(band.levels, levels);
         let greens = band.green_rows();
-        assert_eq!(band.whites().len(), 21, "band {levels:?}");
+        assert_eq!(band.whites().len(), white_count(levels), "band {levels:?}");
         assert_eq!(greens.len(), 20, "band {levels:?}");
         let listed = band
             .whites()
@@ -93,17 +106,24 @@ fn each_band_lists_its_whites_and_greens_from_the_gear_sheet() {
 }
 
 #[test]
-fn a_level_35_mob_rolls_the_last_band() {
+fn a_level_55_mob_rolls_the_last_band() {
     let last = bands().last().unwrap();
-    assert_eq!(last.levels, [27, 30]);
-    assert!(std::ptr::eq(band_of(35), last));
+    assert_eq!(last.levels, [46, 50]);
+    assert!(std::ptr::eq(band_of(55), last));
     assert_eq!(
-        band_greens(35),
+        band_greens(55),
         last.green_rows()
             .iter()
             .map(|&(e, _)| e)
             .collect::<Vec<_>>()
     );
+}
+
+#[test]
+fn a_mob_past_30_drops_no_whites_and_its_bands_greens() {
+    assert!(band_whites(33).is_empty());
+    assert_eq!(band_greens(33), (902100..=902119).collect::<Vec<u32>>());
+    assert_eq!(band_greens(50), (902160..=902179).collect::<Vec<u32>>());
 }
 
 /// Kobold Laborer, level 6 to 7 in Echo Ridge Mine at Northshire's far end; the level of each

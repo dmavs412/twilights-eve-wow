@@ -3,8 +3,9 @@
 # rolls the last band. 8% of kills drop one of the band's `white`; 4% drop one of its `green`,
 # those whose `level` is within one of the mob's level clamped into the band's green levels. In
 # band 1 the greens run from 5 to 8; in every later band they sit at the band's set level, so
-# every green qualifies. Every entry is a row of data/twilights-eve/gear.csv; a green's `level` is
-# its item level. tests/northshire_loot.rs checks each band against the sheet.
+# every green qualifies. The bands from 31 list no whites (spec #650), so their kills roll only
+# the 4% green. Every entry is a row of data/twilights-eve/gear.csv; a green's `level` is its item
+# level. tests/northshire_loot.rs checks each band against the sheet.
 
 # Northshire: the 22 whites and the 21 World greens.
 [[band]]
@@ -185,4 +186,112 @@ green = [
   { entry = 902097, level = 28 },
   { entry = 902098, level = 28 },
   { entry = 902099, level = 28 },
+]
+
+# Redridge and Duskwood 31-35: 20 greens at item level 33, no whites (spec #650).
+[[band]]
+levels = [31, 35]
+white = []
+green = [
+  { entry = 902100, level = 33 },
+  { entry = 902101, level = 33 },
+  { entry = 902102, level = 33 },
+  { entry = 902103, level = 33 },
+  { entry = 902104, level = 33 },
+  { entry = 902105, level = 33 },
+  { entry = 902106, level = 33 },
+  { entry = 902107, level = 33 },
+  { entry = 902108, level = 33 },
+  { entry = 902109, level = 33 },
+  { entry = 902110, level = 33 },
+  { entry = 902111, level = 33 },
+  { entry = 902112, level = 33 },
+  { entry = 902113, level = 33 },
+  { entry = 902114, level = 33 },
+  { entry = 902115, level = 33 },
+  { entry = 902116, level = 33 },
+  { entry = 902117, level = 33 },
+  { entry = 902118, level = 33 },
+  { entry = 902119, level = 33 },
+]
+
+# Redridge and Duskwood 36-40: 20 greens at item level 38, no whites (spec #650).
+[[band]]
+levels = [36, 40]
+white = []
+green = [
+  { entry = 902120, level = 38 },
+  { entry = 902121, level = 38 },
+  { entry = 902122, level = 38 },
+  { entry = 902123, level = 38 },
+  { entry = 902124, level = 38 },
+  { entry = 902125, level = 38 },
+  { entry = 902126, level = 38 },
+  { entry = 902127, level = 38 },
+  { entry = 902128, level = 38 },
+  { entry = 902129, level = 38 },
+  { entry = 902130, level = 38 },
+  { entry = 902131, level = 38 },
+  { entry = 902132, level = 38 },
+  { entry = 902133, level = 38 },
+  { entry = 902134, level = 38 },
+  { entry = 902135, level = 38 },
+  { entry = 902136, level = 38 },
+  { entry = 902137, level = 38 },
+  { entry = 902138, level = 38 },
+  { entry = 902139, level = 38 },
+]
+
+# Redridge and Duskwood 41-45: 20 greens at item level 43, no whites (spec #650).
+[[band]]
+levels = [41, 45]
+white = []
+green = [
+  { entry = 902140, level = 43 },
+  { entry = 902141, level = 43 },
+  { entry = 902142, level = 43 },
+  { entry = 902143, level = 43 },
+  { entry = 902144, level = 43 },
+  { entry = 902145, level = 43 },
+  { entry = 902146, level = 43 },
+  { entry = 902147, level = 43 },
+  { entry = 902148, level = 43 },
+  { entry = 902149, level = 43 },
+  { entry = 902150, level = 43 },
+  { entry = 902151, level = 43 },
+  { entry = 902152, level = 43 },
+  { entry = 902153, level = 43 },
+  { entry = 902154, level = 43 },
+  { entry = 902155, level = 43 },
+  { entry = 902156, level = 43 },
+  { entry = 902157, level = 43 },
+  { entry = 902158, level = 43 },
+  { entry = 902159, level = 43 },
+]
+
+# Redridge and Duskwood 46-50: 20 greens at item level 48, no whites (spec #650).
+[[band]]
+levels = [46, 50]
+white = []
+green = [
+  { entry = 902160, level = 48 },
+  { entry = 902161, level = 48 },
+  { entry = 902162, level = 48 },
+  { entry = 902163, level = 48 },
+  { entry = 902164, level = 48 },
+  { entry = 902165, level = 48 },
+  { entry = 902166, level = 48 },
+  { entry = 902167, level = 48 },
+  { entry = 902168, level = 48 },
+  { entry = 902169, level = 48 },
+  { entry = 902170, level = 48 },
+  { entry = 902171, level = 48 },
+  { entry = 902172, level = 48 },
+  { entry = 902173, level = 48 },
+  { entry = 902174, level = 48 },
+  { entry = 902175, level = 48 },
+  { entry = 902176, level = 48 },
+  { entry = 902177, level = 48 },
+  { entry = 902178, level = 48 },
+  { entry = 902179, level = 48 },
 ]
