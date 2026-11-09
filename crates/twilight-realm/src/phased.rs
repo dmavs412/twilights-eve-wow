@@ -10,6 +10,7 @@ use benilla_protocol::messages::ObjectType;
 use benilla_protocol::{EntityKind, ObjectFields, SessionEvent};
 use serde::Deserialize;
 
+use crate::creature_spells::CreatureEffect;
 use crate::fields::{
     float, guid_pairs, OBJECT_FIELD_ENTRY, OBJECT_FIELD_SCALE_X, OBJECT_FIELD_TYPE,
 };
@@ -134,6 +135,12 @@ pub(crate) struct StopObject<'a> {
 /// left out), and thaws the first time the creature of `guid`, alive, has health at or below
 /// `pct`% of its maximum, then turns on the closest living player. If that creature dies first,
 /// it stays frozen for the rest of the Run.
+///
+/// `on_partner_death = { guid = 974350, spell = "enraged_partner" }` links it to its partner
+/// (#637): while the creature of `guid` is dead in the Run and this one is alive and engaged, it
+/// is in the `stance` Creature Spell `spell`, put up at once with no cast, cooldown or chance,
+/// any other stance coming down first. The stance's own rules end it, so one that leashes and is
+/// pulled again enrages again. Two rows may name each other.
 #[derive(Deserialize)]
 pub(crate) struct Creature {
     pub(crate) guid: u32,
@@ -174,6 +181,17 @@ pub(crate) struct Creature {
     /// It starts each Run frozen until another creature's health mark.
     #[serde(default)]
     pub(crate) frozen_until: Option<FrozenUntil>,
+    /// The stance it takes while its partner is dead.
+    #[serde(default)]
+    pub(crate) on_partner_death: Option<PartnerDeath>,
+}
+
+/// A creature's `on_partner_death`: while the creature of `guid` (the partner) is dead, it is in
+/// the stance of the Creature Spell `spell`.
+#[derive(Deserialize)]
+pub(crate) struct PartnerDeath {
+    pub(crate) guid: u32,
+    pub(crate) spell: String,
 }
 
 /// A creature's `frozen_until`: the creature of `guid` (the boss), alive at or below `pct`% of
@@ -585,6 +603,29 @@ impl Dungeon {
                 f.spell
             );
             assert!(!c.asleep, "{row} on a creature that starts asleep");
+        }
+    }
+
+    /// Refuses an `on_partner_death` whose `guid` names no creature of the dungeon or the row
+    /// itself, and one whose `spell` is no `stance` Creature Spell.
+    fn check_partners(&self) {
+        for c in &self.creature {
+            let Some(p) = &c.on_partner_death else {
+                continue;
+            };
+            let row = format!("{}: creature {}'s on_partner_death", self.name, c.guid);
+            assert_ne!(p.guid, c.guid, "{row} names itself");
+            assert!(
+                self.creature.iter().any(|b| b.guid == p.guid),
+                "{row} names {}, no creature of it",
+                p.guid
+            );
+            assert!(
+                crate::creature_spells::get(&p.spell)
+                    .is_some_and(|s| matches!(s.effect, CreatureEffect::Stance { .. })),
+                "{row} takes {}, no stance Creature Spell",
+                p.spell
+            );
         }
     }
 
@@ -1250,6 +1291,7 @@ pub(crate) fn content() -> &'static [Dungeon] {
                 }
                 d.check_levers();
                 d.check_frozen();
+                d.check_partners();
                 if let Some(tram) = &d.tram {
                     tram.check(&d.name);
                 }
@@ -1708,6 +1750,47 @@ frozen_until = {frozen_until}
     #[should_panic(expected = "starts asleep")]
     fn a_frozen_creature_that_starts_asleep_is_refused() {
         with_frozen("{ guid = 1, pct = 50 }", true).check_frozen();
+    }
+
+    /// The Lever Check with creature 4 linked to a partner by `on_partner_death`.
+    fn with_partner(on_partner_death: &str) -> Dungeon {
+        with_lever(&format!(
+            r#"
+[[creature]]
+guid = 4
+entry = 96003
+level = 1
+position = [0.0, 0.0, 0.0]
+orientation = 0.0
+on_partner_death = {on_partner_death}
+"#
+        ))
+    }
+
+    #[test]
+    fn an_on_partner_death_naming_a_creature_of_the_dungeon_and_a_stance_passes_the_check() {
+        let d = with_partner(r#"{ guid = 1, spell = "test_enrage" }"#);
+        d.check_partners();
+        let p = d.creature[1].on_partner_death.as_ref().unwrap();
+        assert_eq!((p.guid, p.spell.as_str()), (1, "test_enrage"));
+    }
+
+    #[test]
+    #[should_panic(expected = "names 7, no creature")]
+    fn an_on_partner_death_that_names_no_creature_of_the_dungeon_is_refused() {
+        with_partner(r#"{ guid = 7, spell = "test_enrage" }"#).check_partners();
+    }
+
+    #[test]
+    #[should_panic(expected = "names itself")]
+    fn an_on_partner_death_naming_its_own_row_is_refused() {
+        with_partner(r#"{ guid = 4, spell = "test_enrage" }"#).check_partners();
+    }
+
+    #[test]
+    #[should_panic(expected = "no stance Creature Spell")]
+    fn an_on_partner_death_whose_spell_is_no_stance_is_refused() {
+        with_partner(r#"{ guid = 1, spell = "frozen_in_the_mist" }"#).check_partners();
     }
 
     #[test]

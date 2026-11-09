@@ -24,6 +24,51 @@ const THINK_SECS: f32 = 1.0;
 const CLOCK_EPSILON: f32 = 1e-3;
 
 impl InWorld {
+    /// Mob `i`'s partner-death link (`on_partner_death`, #637): while its partner is dead in the
+    /// Run and it is alive and engaged, it is in the link's stance. The stance goes up at once,
+    /// with no cast, cooldown or chance roll, and any other stance it holds comes down first. The
+    /// spell's warning goes to the Phase as a cast's does. The stance's own rules end it.
+    pub(super) fn partner_stance(&mut self, i: usize, events: &mut Vec<SessionEvent>) {
+        let mob = &self.mobs[i];
+        let Some((partner, spell)) = mob.partner else {
+            return;
+        };
+        let CreatureEffect::Stance {
+            damage_dealt_pct,
+            damage_taken_pct,
+            duration_ms,
+        } = spell.effect
+        else {
+            return;
+        };
+        let in_it = mob.stance.is_some_and(|s| s.spell_id == spell.spell_id);
+        if mob.state != State::Engaged || !mob.alive() || in_it {
+            return;
+        }
+        // Its corpse may be gone, but the Run keeps its death.
+        let row = (partner & 0xFF_FFFF) as u32;
+        let widowed = self.run_dead.contains(&row)
+            || self.mobs.iter().any(|m| m.guid == partner && !m.alive());
+        if !widowed {
+            return;
+        }
+        let mob = &mut self.mobs[i];
+        let (guid, level) = (mob.guid, mob.level());
+        if let Some(old) = mob.stance.take() {
+            self.skills.hide_marker_on(guid, old.spell_id, events);
+        }
+        mob.stance = Some(Stance {
+            spell_id: spell.spell_id,
+            damage_dealt_pct,
+            damage_taken_pct,
+            secs_left: (duration_ms > 0).then(|| clock::secs(duration_ms)),
+        });
+        self.show_stance(guid, level, spell.spell_id, duration_ms, events);
+        if let Some(text) = &spell.warning {
+            self.warnings.push(text.clone());
+        }
+    }
+
     /// Mob `i`'s Creature Spells, in a fight with the player at `me`: the cast under way runs on
     /// or breaks, and one with none under way may start one. Whether it is casting, when it
     /// neither swings nor chases.

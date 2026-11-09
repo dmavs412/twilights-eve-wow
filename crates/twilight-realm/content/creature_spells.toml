@@ -57,7 +57,9 @@
 #                  range_max = 0: every swing and hit the caster lands changes by
 #                  damage_dealt_pct percent, and every damage it takes, any school, after armour
 #                  and absorbs, by damage_taken_pct percent; duration_ms 0 holds until it leaves
-#                  combat or dies; a stance already up blocks the cast), or
+#                  combat or dies; a stance already up blocks the cast; a Phased Dungeon
+#                  creature's on_partner_death may force a stance up instead, with no cast, and
+#                  then no template may name it and its chance and cast columns are 0), or
 #                  marker (an aura the realm puts up and takes off itself, such as a Run's
 #                  Sleeping; no creature casts it, a template that names one is refused when the
 #                  content loads, and its cast columns are 0)
@@ -1141,3 +1143,24 @@ range_max = 30.0
 chance = 100
 target = "random"
 effect = { kind = "ground_patch", radius = 5.0, duration_ms = 10000, tick_ms = 1000, tick = { base = 13 } }
+
+# ── Test rows: spell ids 1900100 up ──────────────────────────────────────────────────────────────
+# Rows only the realm's tests use, on the Ward Test (content/ward_test.toml).
+
+# The Ward Test partners' enrage (#637): forced up by on_partner_death while the partner is dead,
+# never cast. Looks like the creature Enrage (8599). Half again as much damage dealt, for the rest
+# of the fight.
+[[spell]]
+key = "test_enrage"
+spell_id = 1900100
+name = "Enraged"
+icon = 'Interface\Icons\Spell_Shadow_UnholyFrenzy'
+visual = 8599
+aura_description = "Damage dealt increased by 50%."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 0
+warning = "The survivor flies into a rage!"
+effect = { kind = "stance", damage_dealt_pct = 50, damage_taken_pct = 0, duration_ms = 0 }

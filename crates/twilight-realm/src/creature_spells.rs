@@ -196,7 +196,14 @@ pub(crate) fn charge_dest(from: [f32; 3], to: [f32; 3], stop: f32) -> [f32; 3] {
 
 #[cfg(test)]
 mod tests {
-    use super::{all, charge_dest, get, healed};
+    use super::{all, charge_dest, check_castable, get, healed};
+
+    #[test]
+    #[should_panic(expected = "a stance on_partner_death forces")]
+    fn a_template_that_casts_a_partner_death_stance_is_refused() {
+        // The Ward Test's partners force `test_enrage` (#637).
+        check_castable(&["test_enrage".to_string()], "a test template");
+    }
 
     #[test]
     fn each_30_50_dungeon_section_starts_with_its_first_row() {
@@ -243,11 +250,20 @@ pub(crate) fn get(key: &str) -> Option<&'static CreatureSpell> {
     all().iter().find(|s| s.key == key)
 }
 
-/// Refuses the template `name` when its `keys` name a marker, which no creature casts.
+/// Refuses the template `name` when its `keys` name a marker, which no creature casts, or a
+/// stance a Phased Dungeon creature's `on_partner_death` forces (#637), which is never cast.
 pub(crate) fn check_castable(keys: &[String], name: &str) {
     for k in keys {
         if get(k).is_some_and(|s| matches!(s.effect, CreatureEffect::Marker)) {
             panic!("{name} casts {k}, a marker the realm puts up itself");
+        }
+        let forced = crate::phased::content()
+            .iter()
+            .flat_map(|d| &d.creature)
+            .filter_map(|c| c.on_partner_death.as_ref())
+            .any(|p| p.spell == *k);
+        if forced {
+            panic!("{name} casts {k}, a stance on_partner_death forces");
         }
     }
 }

@@ -636,6 +636,187 @@ fn a_run_that_resets_freezes_them_again() {
     }
 }
 
+/// The two partners in the building's north-east corner (#637), each enraged while the other is
+/// dead; a spot beside them, and the enrage, `test_enrage` in `content/creature_spells.toml`.
+const PARTNER_A: u64 = 800020;
+const PARTNER_B: u64 = 800021;
+const PARTNERS_AT: [f32; 3] = [-9781.0, 572.0, 47.2];
+const BY_PARTNERS: [f32; 3] = [-9783.0, 572.0, 47.2];
+const ENRAGE: u32 = 1900100;
+const ENRAGE_WARNING: &str = "The survivor flies into a rage!";
+/// `UNIT_FIELD_AURA`, the first of a unit's 48 aura slots.
+const UNIT_FIELD_AURA: u16 = 47;
+/// `HITINFO_CRITICALHIT`.
+const CRIT: u32 = 0x80;
+
+/// Whether player `i`'s client last saw `guid` wearing the enrage in one of its aura slots.
+fn enraged(p: &Party, i: usize, guid: u64) -> bool {
+    let mut slots = [0u32; 48];
+    for e in p.seen(i) {
+        let fields = match e {
+            SessionEvent::ObjectCreate {
+                guid: g, fields, ..
+            } if *g == guid => {
+                // A create sends every slot afresh.
+                slots = [0; 48];
+                fields
+            }
+            SessionEvent::ObjectValues { guid: g, fields } if *g == guid => fields,
+            _ => continue,
+        };
+        for (f, v) in fields.raw_fields() {
+            if (UNIT_FIELD_AURA..UNIT_FIELD_AURA + 48).contains(&f) {
+                slots[usize::from(f - UNIT_FIELD_AURA)] = v;
+            }
+        }
+    }
+    slots.contains(&ENRAGE)
+}
+
+/// The raid warnings saying `text` that player `i` has been shown.
+fn warnings(p: &Party, i: usize, text: &str) -> usize {
+    p.seen(i)
+        .iter()
+        .filter(|e| matches!(e, SessionEvent::Chat(m) if m.text == text))
+        .count()
+}
+
+/// The damage of each swing of `attacker` that landed on player `i`, not a crit, in `seen`.
+fn landed(p: &Party, i: usize, seen: &[SessionEvent], attacker: u64) -> Vec<u32> {
+    let me = p.guids[i];
+    seen.iter()
+        .filter_map(|e| match e {
+            SessionEvent::AttackerState(a)
+                if a.attacker == attacker
+                    && a.victim == me
+                    && a.damage > 0
+                    && a.hit_info & CRIT == 0 =>
+            {
+                Some(a.damage)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+fn mean(of: &[u32]) -> f32 {
+    of.iter().sum::<u32>() as f32 / of.len() as f32
+}
+
+/// Player 0 stands by the partners and pulls their camp with one swing at `target`, then stops
+/// swinging, so both fight on.
+fn pull_partners(p: &mut Party, target: u64) {
+    p.go_facing(0, BY_PARTNERS, PARTNERS_AT);
+    p.run(0.5);
+    p.cmd(0, RealmCommand::AttackSwing { guid: unit(target) });
+    p.run(0.2);
+    p.cmd(0, RealmCommand::AttackStop);
+}
+
+#[test]
+fn a_partner_s_death_enrages_the_survivor_its_swings_land_half_again_as_hard_and_the_party_is_warned(
+) {
+    let mut p = party(2);
+    p.go(1, BY_INNER_FIRE, 0.0);
+    pull_partners(&mut p, PARTNER_A);
+    p.run(20.0);
+    let before = landed(&p, 0, p.seen(0), unit(PARTNER_B));
+    assert!(
+        !enraged(&p, 0, unit(PARTNER_B)),
+        "enraged with its partner alive"
+    );
+
+    p.realm.kill_creature(unit(PARTNER_A));
+    p.run(0.2);
+    assert!(
+        enraged(&p, 0, unit(PARTNER_B)),
+        "the survivor is not enraged"
+    );
+    for i in [0, 1] {
+        assert_eq!(warnings(&p, i, ENRAGE_WARNING), 1, "player {i}'s warning");
+    }
+    let from = p.seen(0).len();
+    p.run(20.0);
+    let after = landed(&p, 0, &p.seen(0)[from..], unit(PARTNER_B));
+    assert!(
+        before.len() >= 4 && after.len() >= 4,
+        "{before:?} {after:?}"
+    );
+    let ratio = mean(&after) / mean(&before);
+    assert!(
+        (1.3..=1.7).contains(&ratio),
+        "swings {ratio} as hard: {before:?} then {after:?}"
+    );
+    assert_eq!(warnings(&p, 0, ENRAGE_WARNING), 1, "warned again");
+}
+
+#[test]
+fn the_other_partner_enrages_when_it_is_the_survivor() {
+    let mut p = party(1);
+    pull_partners(&mut p, PARTNER_B);
+    p.run(1.0);
+    p.realm.kill_creature(unit(PARTNER_B));
+    p.run(0.2);
+    assert!(
+        enraged(&p, 0, unit(PARTNER_A)),
+        "the survivor is not enraged"
+    );
+}
+
+#[test]
+fn with_both_partners_alive_neither_enrages() {
+    let mut p = party(1);
+    pull_partners(&mut p, PARTNER_A);
+    p.run(20.0);
+    for g in [PARTNER_A, PARTNER_B] {
+        assert!(!enraged(&p, 0, unit(g)), "{g} enraged");
+    }
+    assert_eq!(warnings(&p, 0, ENRAGE_WARNING), 0);
+}
+
+#[test]
+fn a_survivor_that_leashes_calms_and_pulled_again_enrages_again() {
+    let mut p = party(1);
+    pull_partners(&mut p, PARTNER_A);
+    p.run(1.0);
+    p.realm.kill_creature(unit(PARTNER_A));
+    p.run(0.2);
+    assert!(
+        enraged(&p, 0, unit(PARTNER_B)),
+        "the survivor is not enraged"
+    );
+
+    // The player takes the portal to the water stop, 90 yd off; the survivor chases them past
+    // its leash, gives up the fight and walks home.
+    p.go(0, BY_INNER_WATER, 0.0);
+    p.run(0.2);
+    click(&mut p, 0, INNER_WATER);
+    ack(&mut p, 0);
+    p.run(30.0);
+    let stopped = p.seen(0).iter().any(
+        |e| matches!(e, SessionEvent::AttackStop { attacker, .. } if *attacker == unit(PARTNER_B)),
+    );
+    assert!(stopped, "the survivor never gave up the fight");
+    assert!(
+        !enraged(&p, 0, unit(PARTNER_B)),
+        "the rage outlived the fight"
+    );
+
+    let from = p.seen(0).len();
+    pull_partners(&mut p, PARTNER_B);
+    p.run(1.0);
+    let again = &p.seen(0)[from..];
+    assert!(
+        again
+            .iter()
+            .any(|e| matches!(e, SessionEvent::AttackStart { attacker, .. }
+            if *attacker == unit(PARTNER_B))),
+        "not pulled again"
+    );
+    assert!(enraged(&p, 0, unit(PARTNER_B)), "pulled again, no rage");
+    assert_eq!(warnings(&p, 0, ENRAGE_WARNING), 2, "the second warning");
+}
+
 #[test]
 fn a_run_that_resets_puts_the_lever_back() {
     let mut p = party(2);

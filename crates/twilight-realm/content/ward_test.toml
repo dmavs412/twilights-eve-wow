@@ -15,6 +15,9 @@
 # A creature with `frozen_until = { guid = <boss>, pct = <1 to 99> }` (#637) starts each Run frozen
 # in the grey, wearing `spell` (a Creature Spell key, "frozen_in_the_mist" when left out), and
 # thaws the first time the creature of `guid`, alive, is at or below `pct`% of its health.
+#
+# A creature with `on_partner_death = { guid = <partner>, spell = <stance key> }` (#637) is in that
+# stance while its partner is dead and it is alive and engaged: put up at once, no cast.
 
 id = 90
 name = "the Ward Test"
@@ -146,6 +149,26 @@ level = 5
 position = [-9812.0, 540.0, 47.2]
 orientation = 0.0
 frozen_until = { guid = 800010, pct = 40 }
+
+# Two level 5 Brothers in the building's north-east corner, one camp: each enrages while the
+# other is dead.
+[[creature]]
+guid = 800020
+entry = 96003
+level = 5
+position = [-9781.0, 574.0, 47.2]
+orientation = 3.14
+camp = 2
+on_partner_death = { guid = 800021, spell = "test_enrage" }
+
+[[creature]]
+guid = 800021
+entry = 96003
+level = 5
+position = [-9781.0, 570.0, 47.2]
+orientation = 3.14
+camp = 2
+on_partner_death = { guid = 800020, spell = "test_enrage" }
 
 # The ward stone at the water stop.
 [[gameobject]]

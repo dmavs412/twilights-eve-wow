@@ -37,9 +37,9 @@ const ID_KEYS: &[(&str, &str, Ids)] = &[
     ("equip_spells", "equip_spell_names", Ids::Parallel),
 ];
 
-/// Keys with "spell" in them that hold no spell id: `spells` lists Creature Spell keys, and
-/// `spell_power` is a stat.
-const NOT_IDS: &[&str] = &["client_spellmods", "spells", "spell_power"];
+/// Keys with "spell" in them that hold no spell id: `spells` lists Creature Spell keys, `spell`
+/// names one (`on_partner_death`, `frozen_until`), and `spell_power` is a stat.
+const NOT_IDS: &[&str] = &["client_spellmods", "spells", "spell", "spell_power"];
 
 /// Files whose rows are spells of their own (ADR 0011): a row's `spell_id` goes by its `name`,
 /// which the build script writes into the client row. The script refuses an id two rows share

@@ -402,6 +402,9 @@ pub(crate) struct Spawn {
     /// A dungeon creature's `frozen_until` (#637): its boss's mob guid, the percent of the boss's
     /// maximum health that thaws it, and the marker's spell id.
     pub(crate) frozen_until: Option<(u64, u32, u32)>,
+    /// A dungeon creature's `on_partner_death` (#637): its partner's mob guid and the stance it
+    /// takes while the partner is dead.
+    pub(crate) on_partner_death: Option<(u64, &'static crate::creature_spells::CreatureSpell)>,
     /// A creature an Encounter's wave brings in, not one the Population streams: the encounter's
     /// index in `content/encounters.toml` and the wave's.
     pub(crate) encounter: Option<(usize, usize)>,
@@ -1066,6 +1069,11 @@ pub(crate) fn content() -> &'static Mobs {
                             crate::creature_spells::get(&f.spell).map_or(0, |s| s.spell_id);
                         (unit_guid(entry, f.guid), f.pct, marker)
                     }),
+                    on_partner_death: c.on_partner_death.as_ref().and_then(|p| {
+                        let partner = d.creature.iter().find(|b| b.guid == p.guid)?;
+                        let stance = crate::creature_spells::get(&p.spell)?;
+                        Some((unit_guid(partner.entry, p.guid), stance))
+                    }),
                     encounter: None,
                     asleep: c.asleep,
                     wake_radius_mod: c.wake_radius_mod,
@@ -1439,6 +1447,9 @@ pub(crate) struct Mob {
     /// What thaws it while frozen (#637): the boss's mob guid in this Run, the percent of the
     /// boss's maximum health it waits for, and the marker's spell id. Cleared when it thaws.
     pub(crate) frozen_until: Option<(u64, u32, u32)>,
+    /// Its partner's mob guid in this Run and the stance it takes while the partner is dead
+    /// (`on_partner_death`, #637).
+    pub(crate) partner: Option<(u64, &'static crate::creature_spells::CreatureSpell)>,
 }
 
 /// A creature's stance (#473): the damage it deals and takes, each changed by a percent.
@@ -1612,6 +1623,7 @@ impl Mob {
             shed: Vec::new(),
             frozen: spawn.frozen_until.is_some(),
             frozen_until: spawn.frozen_until,
+            partner: spawn.on_partner_death,
         })
     }
 
@@ -1726,6 +1738,7 @@ impl Mob {
             shed: Vec::new(),
             frozen: false,
             frozen_until: None,
+            partner: None,
         }
     }
 

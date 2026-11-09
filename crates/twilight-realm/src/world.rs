@@ -1266,6 +1266,7 @@ impl InWorld {
         // A rooted mob stands where it is.
         let rooted = self.skills.rooted(self.mobs[i].guid);
         let incapacitated = self.skills.incapacitated(self.mobs[i].guid);
+        self.partner_stance(i, events);
         let mob = &mut self.mobs[i];
         if rooted {
             events.extend(mob.halt());
