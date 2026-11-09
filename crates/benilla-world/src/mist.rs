@@ -1,9 +1,11 @@
 //! The Closed Zones' mist curtain (ADR 0015): an animated fog wall on every edge between an open
 //! map chunk and a closed one (`benilla_formats::closed_zones`), so the player never sees the
-//! cut. Each loaded ADT tile builds the segments of its open chunks into one mesh, a child of the
-//! tile's terrain root that despawns with it. `shaders/mist.wgsl` colours it with the scene fog.
+//! cut. Each segment is five shells, one behind the other into the closed chunk, the front ones
+//! thin and the back one solid, each with its own noise and drift. Each loaded ADT tile builds the
+//! segments of its open chunks into one mesh, a child of the tile's terrain root that despawns
+//! with it. `shaders/mist.wgsl` colours it with the scene fog.
 //! A placed mist wall (`benilla_formats::mist_walls`, ADR 0033) stands where there is no closed
-//! chunk, as in the Deeprun Tram's tunnel: the same curtain on a straight line, and a solid box.
+//! chunk, as in the Deeprun Tram's tunnel: the same shells on a straight line, and a solid box.
 //! When a Milestone opens a gated zone during play ([`ZonesOpened`], ADR 0034), the curtain on
 //! its old border fades out over [`OPEN_FADE_SECS`] on a copy of its own; placed walls never fade.
 
@@ -32,10 +34,29 @@ use crate::schedule::WorldStage;
 use crate::terrain_stream::TerrainTileRoot;
 use crate::world_map::CurrentMap;
 
-/// Yards the curtain reaches below the lowest terrain vertex on its side.
+/// Yards the back shell reaches below the lowest ground under it, so it seals the cut; a segment's
+/// `bottom` is this far below the lowest terrain vertex on its side.
 pub const BELOW_YD: f32 = 10.0;
-/// Yards the curtain rises above the highest terrain vertex on its side.
+/// Yards the back shell rises above the highest ground under it; a segment's `top` is this far
+/// above the highest terrain vertex on its side.
 pub const ABOVE_YD: f32 = 120.0;
+/// Yards each shell stands past the edge line, front (0) to back (4): the closed chunk's outer
+/// vertex rows 0, 2, 4, 6 and 8.
+pub const SHELL_DEPTHS_YD: [f32; 5] = [
+    0.0,
+    CHUNK_SIZE / 4.0,
+    CHUNK_SIZE / 2.0,
+    CHUNK_SIZE * 3.0 / 4.0,
+    CHUNK_SIZE,
+];
+/// Each shell's alpha ceiling: the front ones thin, the back one solid.
+pub const SHELL_CAPS: [f32; 5] = [0.25, 0.35, 0.5, 0.7, 1.0];
+/// Yards each shell's top stands above the highest ground under it.
+pub const SHELL_TOP_YD: [f32; 5] = [35.0, 55.0, 75.0, 95.0, ABOVE_YD];
+/// Yards shells 0 to 3 reach under the ground at each column.
+pub const SHELL_SINK_YD: f32 = 4.0;
+/// Yards a placed wall's shells stand behind its line, away from its open side.
+pub const WALL_SHELL_DEPTHS_YD: [f32; 5] = [0.0, 1.5, 3.0, 4.5, 6.0];
 /// The fully opaque band above the ground, in yards, where the noise is middling; above it the
 /// mist fades to nothing.
 pub const OPAQUE_YD: f32 = 25.0;
@@ -73,14 +94,8 @@ pub const FOOT_VALUE: f32 = 0.35;
 pub const COLOUR_RAMP_YD: f32 = 60.0;
 /// Yards over which each sheet fades in above its own foot.
 pub const FOOT_RAMP_YD: f32 = 6.0;
-/// The alpha ceiling of the two wisp sheets on the open chunk's rows 1 and 2.
-pub const WISP_CAP: f32 = 0.5;
-/// The alpha ceiling of the ground skirt.
-pub const SKIRT_CAP: f32 = 0.6;
-/// Yards the ground skirt floats above the terrain vertices under it.
-pub const SKIRT_RAISE_YD: f32 = 1.5;
-/// Yards from the camera within which the wisp sheets and the skirt vanish, so the camera never
-/// crosses a hard sheet. The backdrop keeps its alpha at every distance.
+/// Yards from the camera within which shells 0 to 3 vanish, so the camera never crosses a hard
+/// sheet. The back shell keeps its alpha at every distance.
 pub const CAMERA_FADE_YD: f32 = 3.0;
 /// Seconds the curtain on a newly opened zone's border takes to fade to nothing.
 pub const OPEN_FADE_SECS: f32 = 6.0;
@@ -197,8 +212,21 @@ struct FadingMist {
     secs: f32,
 }
 
+/// How the edge goes on past one end of a segment, looking outward from that end.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Corner {
+    /// The edge runs on in line.
+    Straight,
+    /// The closed chunk ends here: the edge turns into the closed side, and the shells stop
+    /// inside the closed chunk.
+    ClosedOut,
+    /// The edge turns toward the open side, and the shells run on to the mitre point.
+    OpenOut,
+}
+
 /// One curtain segment, in WoW coordinates: along a chunk side from `from` to `to` (`[x, y]`),
-/// from `bottom` up to `top`, over the open chunk's terrain `rows`.
+/// from `bottom` up to `top`, over the open chunk's terrain `rows`. It carries everything its
+/// five shells need, so a curtain built from any subset of segments gets them whole.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct Segment {
     pub(crate) from: [f32; 2],
@@ -208,6 +236,17 @@ pub(crate) struct Segment {
     /// The open chunk's outer vertex rows 0, 1 and 2 counted inward from the side, each ordered
     /// from `from` to `to`. Row 0 lies on the side.
     pub(crate) rows: [[[f32; 3]; 9]; 3],
+    /// The unit vector from the edge line into the closed side.
+    pub(crate) inward: [f32; 2],
+    /// The corner at `from` and at `to`.
+    pub(crate) ends: [Corner; 2],
+    /// The closed neighbour's 9 outer vertex rows, row 0 on the shared side and row 8 on its far
+    /// side, each ordered from `from` to `to`; `None` when that chunk is in another tile.
+    pub(crate) closed: Option<[[[f32; 3]; 9]; 9]>,
+    /// Yards each shell stands past the edge line.
+    pub(crate) depths: [f32; 5],
+    /// A placed wall's segment: every shell runs from `bottom` to `top`.
+    pub(crate) wall: bool,
 }
 
 /// The chunk-grid line of index `i`, along either axis: grid index `i` starts there.
@@ -232,82 +271,137 @@ pub(crate) fn opened_segments(
     sides(chunks, &before, &|gx, gy| before(gx, gy) && !now(gx, gy))
 }
 
+/// A chunk's indices on the 1024 × 1024 grid, from its north-west corner (`positions[0]`, on the
+/// grid lines of its own indices); `None` for a chunk short of its 145 vertices or off the grid.
+fn grid_index(chunk: &ChunkMesh) -> Option<(u32, u32)> {
+    let &[x, y, _] = chunk.positions.first()?;
+    if chunk.positions.len() < 145 {
+        return None;
+    }
+    let index = |v: f32| ((32.0 * TILE_SIZE - v) / CHUNK_SIZE).round() as i64;
+    let (gx, gy) = (index(y), index(x));
+    let on = |i: i64| (0..CHUNKS as i64).contains(&i);
+    (on(gx) && on(gy)).then_some((gx as u32, gy as u32))
+}
+
+/// `N` rows of 9 outer-grid vertices of a chunk (rows of 17, the 9 outer ones first; columns run
+/// west to east, rows north to south) from index `start`, `step` apart, the rows `inward` apart.
+fn outer_rows<const N: usize>(
+    chunk: &ChunkMesh,
+    [start, step, inward]: [isize; 3],
+) -> [[[f32; 3]; 9]; N] {
+    std::array::from_fn(|j| {
+        std::array::from_fn(|k| {
+            chunk.positions[(start + k as isize * step + j as isize * inward) as usize]
+        })
+    })
+}
+
 /// One segment per side of a chunk `closed` leaves open whose neighbour `across` picks.
 fn sides(
     chunks: &[ChunkMesh],
     closed: &dyn Fn(u32, u32) -> bool,
     across: &dyn Fn(u32, u32) -> bool,
 ) -> Vec<Segment> {
+    // Off the grid counts as open.
+    let shut = |gx: i64, gy: i64| {
+        let on = |i: i64| (0..CHUNKS as i64).contains(&i);
+        on(gx) && on(gy) && closed(gx as u32, gy as u32)
+    };
     let mut out = Vec::new();
     for chunk in chunks {
-        // `positions[0]` is the north-west corner, on the grid lines of the chunk's own indices.
-        let Some(&[x, y, _]) = chunk.positions.first() else {
+        let Some((gx, gy)) = grid_index(chunk) else {
             continue;
         };
-        if chunk.positions.len() < 145 {
-            continue;
-        }
-        let index = |v: f32| ((32.0 * TILE_SIZE - v) / CHUNK_SIZE).round() as i64;
-        let (gx, gy) = (index(y), index(x));
-        if !(0..CHUNKS as i64).contains(&gx) || !(0..CHUNKS as i64).contains(&gy) {
-            continue;
-        }
-        let (gx, gy) = (gx as u32, gy as u32);
         if closed(gx, gy) {
             continue;
         }
         let (north, south) = (grid_line(gy), grid_line(gy + 1));
         let (west, east) = (grid_line(gx), grid_line(gx + 1));
-        // Each side: its neighbour, its two corners, its outer-grid vertices (rows of 17, the 9
-        // outer ones first; columns run west to east, rows north to south) and the index step to
-        // the next outer row or column inward.
-        let sides: [(Option<(u32, u32)>, [f32; 2], [f32; 2], [isize; 3]); 4] = [
+        // Each side: its neighbour, its two corners, the open chunk's outer rows from the side
+        // inward and the closed neighbour's from the side outward (start, step along, step to the
+        // next row), and the unit vector into the neighbour. WoW `x` runs north, `y` west.
+        let sides: [(
+            Option<(u32, u32)>,
+            [f32; 2],
+            [f32; 2],
+            [isize; 3],
+            [isize; 3],
+            [f32; 2],
+        ); 4] = [
             (
                 gy.checked_sub(1).map(|n| (gx, n)),
                 [north, west],
                 [north, east],
                 [0, 1, 17],
+                [136, 1, -17],
+                [1.0, 0.0],
             ),
             (
                 Some((gx, gy + 1)),
                 [south, west],
                 [south, east],
                 [136, 1, -17],
+                [0, 1, 17],
+                [-1.0, 0.0],
             ),
             (
                 gx.checked_sub(1).map(|w| (w, gy)),
                 [north, west],
                 [south, west],
                 [0, 17, 1],
+                [8, 17, -1],
+                [0.0, 1.0],
             ),
             (
                 Some((gx + 1, gy)),
                 [north, east],
                 [south, east],
                 [8, 17, -1],
+                [0, 17, 1],
+                [0.0, -1.0],
             ),
         ];
-        for (neighbour, from, to, [start, step, inward]) in sides {
+        for (neighbour, from, to, open_rows, closed_rows, inward) in sides {
             let Some((nx, ny)) = neighbour.filter(|&(nx, ny)| nx < CHUNKS && ny < CHUNKS) else {
                 continue;
             };
             if !across(nx, ny) {
                 continue;
             }
-            let rows: [[[f32; 3]; 9]; 3] = std::array::from_fn(|j| {
-                std::array::from_fn(|k| {
-                    chunk.positions[(start + k as isize * step + j as isize * inward) as usize]
-                })
-            });
+            let rows = outer_rows::<3>(chunk, open_rows);
             let zs = rows[0].iter().map(|p| p[2]);
             let low = zs.clone().fold(f32::INFINITY, f32::min);
             let high = zs.fold(f32::NEG_INFINITY, f32::max);
+            // The grid step from `from` toward `to`: east along a north or south side, south
+            // along a west or east one.
+            let (dx, dy) = if ny != gy { (1, 0) } else { (0, 1) };
+            // The two chunks beyond one end (`sign` -1 at `from`, +1 at `to`): on the open side
+            // and on the closed side.
+            let corner = |sign: i64| {
+                let open = shut(gx as i64 + sign * dx, gy as i64 + sign * dy);
+                let closed = shut(nx as i64 + sign * dx, ny as i64 + sign * dy);
+                match (open, closed) {
+                    (false, true) => Corner::Straight,
+                    (true, true) => Corner::OpenOut,
+                    _ => Corner::ClosedOut,
+                }
+            };
+            let closed = chunks
+                .iter()
+                .find(|c| grid_index(c) == Some((nx, ny)))
+                .map(|c| outer_rows::<9>(c, closed_rows));
             out.push(Segment {
                 from,
                 to,
                 bottom: low - BELOW_YD,
                 top: high + ABOVE_YD,
                 rows,
+                inward,
+                ends: [corner(-1), corner(1)],
+                closed,
+                depths: SHELL_DEPTHS_YD,
+                wall: false,
             });
         }
     }
@@ -319,7 +413,8 @@ const WALL_THICK_YD: f32 = 0.5;
 
 /// A placed wall's curtain segment: from `from` to `to`, from `bottom` to `top`, with row 0 nine
 /// points evenly along the wall at Z `floor` and rows 1 and 2 the same points moved 1 and 2 yards
-/// along the wall's normal toward `open_side`.
+/// along the wall's normal toward `open_side`. Its shells stand [`WALL_SHELL_DEPTHS_YD`] behind the
+/// line, away from `open_side`, with straight ends.
 pub(crate) fn wall_segment(wall: &MistWall) -> Segment {
     let (from, to) = (Vec2::from(wall.from), Vec2::from(wall.to));
     let along = (to - from).normalize_or_zero();
@@ -339,6 +434,11 @@ pub(crate) fn wall_segment(wall: &MistWall) -> Segment {
         bottom: wall.bottom,
         top: wall.top,
         rows,
+        inward: (-normal).to_array(),
+        ends: [Corner::Straight; 2],
+        closed: None,
+        depths: WALL_SHELL_DEPTHS_YD,
+        wall: true,
     }
 }
 
@@ -411,7 +511,7 @@ struct CurtainBuilder {
     uv1: Vec<[f32; 2]>,
     /// `x` is the vertex's layer number; `y`, `z` and `w` are 0.
     colour: Vec<[f32; 4]>,
-    /// One index list per layer, joined in layer order at the end.
+    /// One index list per layer, joined from the last layer to the first at the end.
     layers: Vec<Vec<u32>>,
 }
 
@@ -467,33 +567,82 @@ impl CurtainBuilder {
     }
 }
 
-/// One mesh of `segments` in Bevy space, four pieces each: the backdrop on the side (layer 0),
-/// two wisp sheets on the open chunk's next two rows (layers 1 and 2), and a skirt over all three
-/// rows on the ground (layer 3). `UV_0` is `(yards above the ground, the sheet top's yards above
-/// the ground)` in the vertex's column, which the shader's height band reads; the skirt's `(0, 1)`
-/// keeps it solid. `UV_1` is `(the piece's alpha ceiling, yards above the piece's own foot)`,
-/// which fades it in. `COLOR`'s `x` is the layer, which picks the piece's own noise and drift.
-/// The triangles draw layer by layer across every segment, back to front from the open side.
+/// Shell `k`'s two ends on `s` (`[x, y]`): the segment moved its depth `d` inward, each end moved
+/// `d` along it, inward at a [`Corner::ClosedOut`] and outward at a [`Corner::OpenOut`]. `None`
+/// when that leaves it shorter than a yard.
+pub(crate) fn shell_line(s: &Segment, k: usize) -> Option<(Vec2, Vec2)> {
+    let (from, to) = (Vec2::from(s.from), Vec2::from(s.to));
+    let u = (to - from).normalize_or_zero();
+    let n = Vec2::from(s.inward);
+    let d = s.depths[k];
+    let pull = |c: Corner| match c {
+        Corner::ClosedOut => 1.0,
+        Corner::Straight => 0.0,
+        Corner::OpenOut => -1.0,
+    };
+    let start = from + n * d + u * (pull(s.ends[0]) * d);
+    let end = to + n * d - u * (pull(s.ends[1]) * d);
+    ((end - start).dot(u) >= 1.0).then_some((start, end))
+}
+
+/// The ground at `p` behind `s`: bilinear in its closed neighbour's grid, `p` clamped into that
+/// chunk, or with no neighbour the height of `rows[0]`'s nearest column along the side.
+fn shell_ground(s: &Segment, p: Vec2) -> f32 {
+    let (from, to) = (Vec2::from(s.from), Vec2::from(s.to));
+    let step = from.distance(to) / 8.0;
+    if step <= 0.0 {
+        return s.rows[0][0][2];
+    }
+    // Grid steps along the side and inward from it.
+    let u = (to - from) / (8.0 * step);
+    let along = (p - from).dot(u) / step;
+    let Some(grid) = &s.closed else {
+        return s.rows[0][along.round().clamp(0.0, 8.0) as usize][2];
+    };
+    let (a, b) = (
+        along.clamp(0.0, 8.0),
+        ((p - from).dot(Vec2::from(s.inward)) / step).clamp(0.0, 8.0),
+    );
+    let (i, j) = (a.floor().min(7.0) as usize, b.floor().min(7.0) as usize);
+    let (fa, fb) = (a - i as f32, b - j as f32);
+    let z = |j: usize, i: usize| grid[j][i][2];
+    let near = z(j, i) + (z(j, i + 1) - z(j, i)) * fa;
+    let far = z(j + 1, i) + (z(j + 1, i + 1) - z(j + 1, i)) * fa;
+    near + (far - near) * fb
+}
+
+/// One mesh of `segments` in Bevy space, five shells each (layers 0 at the front to 4 at the
+/// back), [`shell_line`] apart, nine columns each. The back shell's feet stand [`BELOW_YD`] under
+/// the lowest ground under it, so it seals the cut; the others' sink [`SHELL_SINK_YD`] under their
+/// own ground. Each top is [`SHELL_TOP_YD`] over the highest ground under the shell; a placed
+/// wall's shells all run from its `bottom` to its `top`. `UV_0` is `(yards above the ground, the
+/// shell top's yards above the ground)` in the vertex's column, which the shader's height band
+/// reads. `UV_1` is `(the shell's alpha ceiling, yards above its own foot)`, which fades it in.
+/// `COLOR`'s `x` is the layer, which picks the shell's own noise and drift. The triangles draw
+/// shell by shell across every segment, the back shell first, so back to front from the open side.
 fn curtain_mesh(segments: &[Segment]) -> Mesh {
     let mut b = CurtainBuilder::default();
     for s in segments {
-        // The backdrop: from below every ground point on the side, so it seals the cut.
-        b.sheet(&s.rows[0], |_| s.bottom, s.top, 1.0, 0);
-        for (layer, row) in (1..).zip(&s.rows[1..]) {
-            b.sheet(row, |ground| ground - 1.0, s.top, WISP_CAP, layer);
-        }
-        // The skirt: strongest at the side, gone by row 2.
-        for (row, ramp) in s.rows.iter().zip([FOOT_RAMP_YD, FOOT_RAMP_YD / 2.0, 0.0]) {
-            for &[x, y, ground] in row {
-                b.vertex(
-                    [x, y, ground + SKIRT_RAISE_YD],
-                    [0.0, 1.0],
-                    [SKIRT_CAP, ramp],
-                    3,
-                );
+        for k in 0..SHELL_CAPS.len() {
+            let Some((start, end)) = shell_line(s, k) else {
+                continue;
+            };
+            let row: [[f32; 3]; 9] = std::array::from_fn(|i| {
+                let p = start.lerp(end, i as f32 / 8.0);
+                [p.x, p.y, shell_ground(s, p)]
+            });
+            let zs = row.iter().map(|p| p[2]);
+            let low = zs.clone().fold(f32::INFINITY, f32::min);
+            let top = zs.fold(f32::NEG_INFINITY, f32::max) + SHELL_TOP_YD[k];
+            let (cap, layer) = (SHELL_CAPS[k], k as u32);
+            if s.wall {
+                b.sheet(&row, |_| s.bottom, s.top, cap, layer);
+            } else if k == SHELL_CAPS.len() - 1 {
+                b.sheet(&row, |_| low - BELOW_YD, top, cap, layer);
+            } else {
+                b.sheet(&row, |ground| ground - SHELL_SINK_YD, top, cap, layer);
             }
         }
-        b.grid(3, 3);
     }
     let n = b.positions.len();
     let mut mesh = Mesh::new(
@@ -506,7 +655,7 @@ fn curtain_mesh(segments: &[Segment]) -> Mesh {
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, b.uv0);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_1, b.uv1);
     mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, b.colour);
-    mesh.insert_indices(Indices::U32(b.layers.concat()));
+    mesh.insert_indices(Indices::U32(b.layers.into_iter().rev().flatten().collect()));
     mesh
 }
 
@@ -877,84 +1026,226 @@ mod tests {
         let closed = |gx, gy| (gx, gy) == (CX + 1, CY) || (gx, gy) == (CX, CY + 1);
         let found = segments(&[chunk(CX, CY)], closed);
         assert_eq!(found[0].to, found[1].to, "the south-east corner");
+        // Both ends of each turn into the closed side, so only shells 0 and 1 are a yard long.
         let mesh = curtain_mesh(&found);
-        assert_eq!(mesh.count_vertices(), 162);
+        assert_eq!(mesh.count_vertices(), 2 * 2 * 18);
+    }
+
+    /// The mesh's positions back in WoW coordinates, its `UV_0`, `UV_1` and layer numbers.
+    #[allow(clippy::type_complexity)]
+    fn mesh_parts(mesh: &Mesh) -> (Vec<[f32; 3]>, Vec<[f32; 2]>, Vec<[f32; 2]>, Vec<f32>) {
+        use benilla_assets::coords::bevy_to_wow;
+        use bevy::mesh::VertexAttributeValues as V;
+        let Some(V::Float32x3(positions)) = mesh.attribute(Mesh::ATTRIBUTE_POSITION) else {
+            panic!("no positions");
+        };
+        let Some(V::Float32x2(uv0)) = mesh.attribute(Mesh::ATTRIBUTE_UV_0) else {
+            panic!("no UV_0");
+        };
+        let Some(V::Float32x2(uv1)) = mesh.attribute(Mesh::ATTRIBUTE_UV_1) else {
+            panic!("no UV_1");
+        };
+        let Some(V::Float32x4(colour)) = mesh.attribute(Mesh::ATTRIBUTE_COLOR) else {
+            panic!("no COLOR");
+        };
+        (
+            positions
+                .iter()
+                .map(|&p| bevy_to_wow(Vec3::from(p)))
+                .collect(),
+            uv0.clone(),
+            uv1.clone(),
+            colour.iter().map(|c| c[0]).collect(),
+        )
+    }
+
+    /// The open chunk at the centre with its south, south-west and south-east neighbours closed:
+    /// one south segment with straight ends.
+    fn closed_south_row(gx: u32, gy: u32) -> bool {
+        gy == CY + 1 && (CX - 1..=CX + 1).contains(&gx)
     }
 
     #[test]
-    fn a_segment_mesh_has_a_backdrop_two_wisp_sheets_and_a_skirt_on_the_ground() {
-        use bevy::mesh::VertexAttributeValues;
-        let found = segments(&[chunk(CX, CY)], |gx, gy| (gx, gy) == (CX, CY + 1));
+    fn shells_stand_at_their_depths_with_their_caps() {
+        let found = segments(&[chunk(CX, CY), chunk(CX, CY + 1)], closed_south_row);
         let [s] = found.as_slice() else {
             panic!("one segment, got {found:?}");
         };
+        assert_eq!(s.ends, [Corner::Straight; 2]);
+        assert_eq!(s.inward, [-1.0, 0.0]);
         let mesh = curtain_mesh(&found);
-        assert_eq!(mesh.count_vertices(), 81);
-        assert_eq!(mesh.indices().map(|i| i.len()), Some(240));
-        let Some(VertexAttributeValues::Float32x3(positions)) =
-            mesh.attribute(Mesh::ATTRIBUTE_POSITION)
-        else {
-            panic!("no positions");
-        };
-        let Some(VertexAttributeValues::Float32x2(uv1)) = mesh.attribute(Mesh::ATTRIBUTE_UV_1)
-        else {
-            panic!("no UV_1");
-        };
-        // The backdrop's 18 vertices, then each wisp sheet's 18, then the skirt's 27.
-        assert!(uv1[..18].iter().all(|uv| uv[0] == 1.0));
-        assert!(uv1[18..54].iter().all(|uv| uv[0] == WISP_CAP));
-        for (j, row) in s.rows.iter().enumerate() {
-            let ramp = [FOOT_RAMP_YD, FOOT_RAMP_YD / 2.0, 0.0][j];
-            for (k, &[x, y, ground]) in row.iter().enumerate() {
-                let i = 54 + j * 9 + k;
-                let raised = wow_to_bevy([x, y, ground + SKIRT_RAISE_YD]);
-                assert!(
-                    Vec3::from(positions[i]).abs_diff_eq(raised, 1e-3),
-                    "skirt {j}, {k}"
-                );
-                assert_eq!(uv1[i], [SKIRT_CAP, ramp], "skirt {j}, {k}");
+        assert_eq!(mesh.count_vertices(), 5 * 18);
+        let (positions, _, uv1, layers) = mesh_parts(&mesh);
+        let south = grid_line(CY + 1);
+        let depths = [0.0, 8.333, 16.667, 25.0, 33.333];
+        for k in 0..5 {
+            for i in k * 18..(k + 1) * 18 {
+                let past = south - positions[i][0];
+                assert!((past - depths[k]).abs() < 0.01, "shell {k}: {past} yd past");
+                assert_eq!(uv1[i][0], SHELL_CAPS[k], "shell {k}'s cap");
+                assert_eq!(layers[i], k as f32, "shell {k}'s layer");
             }
         }
-    }
-
-    #[test]
-    fn every_piece_carries_its_layer_number() {
-        use bevy::mesh::VertexAttributeValues;
-        let found = segments(&[chunk(CX, CY)], |gx, gy| (gx, gy) == (CX, CY + 1));
-        let mesh = curtain_mesh(&found);
-        let Some(VertexAttributeValues::Float32x4(colour)) = mesh.attribute(Mesh::ATTRIBUTE_COLOR)
-        else {
-            panic!("no COLOR");
-        };
-        assert_eq!(colour.len(), 81);
-        // The backdrop's 18 vertices, each wisp sheet's 18, then the skirt's 27.
-        for (range, layer) in [(0..18, 0.0), (18..36, 1.0), (36..54, 2.0), (54..81, 3.0)] {
-            for i in range {
-                assert_eq!(colour[i], [layer, 0.0, 0.0, 0.0], "vertex {i}");
-            }
-        }
-    }
-
-    #[test]
-    fn indices_run_layer_by_layer_across_segments() {
-        let closed = |gx, gy| (gx, gy) == (CX + 1, CY) || (gx, gy) == (CX, CY + 1);
-        let found = segments(&[chunk(CX, CY)], closed);
-        assert_eq!(found.len(), 2);
-        let mesh = curtain_mesh(&found);
         let indices: Vec<usize> = mesh.indices().expect("indices").iter().collect();
-        assert_eq!(indices.len(), 2 * 240);
-        // Each segment's 81 vertices: the backdrop's 18, two wisp sheets' 18, the skirt's 27.
-        let layer = |v: usize| match v % 81 {
-            0..18 => 0,
-            18..36 => 1,
-            36..54 => 2,
-            _ => 3,
+        assert_eq!(indices.len(), 5 * 48);
+        assert!(
+            indices[..48].iter().all(|&v| layers[v] == 4.0),
+            "shell 4 first"
+        );
+        // Back to front: the layers never rise along the index buffer.
+        let order: Vec<f32> = indices.iter().map(|&v| layers[v]).collect();
+        assert!(order.windows(2).all(|w| w[0] >= w[1]));
+    }
+
+    #[test]
+    fn shells_of_a_straight_edge_meet_end_to_end() {
+        let closed = |gx, gy| gy == CY + 1 && (CX..=CX + 1).contains(&gx);
+        let found = segments(&[chunk(CX, CY), chunk(CX + 1, CY)], closed);
+        let [a, b] = found.as_slice() else {
+            panic!("two segments, got {found:?}");
         };
-        let runs = [(0..96, 0), (96..192, 1), (192..288, 2), (288..480, 3)];
-        for (range, want) in runs {
-            for i in range {
-                assert_eq!(layer(indices[i]), want, "index {i}");
+        assert_eq!((a.ends[1], b.ends[0]), (Corner::Straight, Corner::Straight));
+        let mut met = 0;
+        for k in 0..5 {
+            match (shell_line(a, k), shell_line(b, k)) {
+                (Some((_, end)), Some((start, _))) => {
+                    assert!(end.distance(start) < 0.01, "shell {k}: {end} to {start}");
+                    met += 1;
+                }
+                (None, None) => {}
+                other => panic!("shell {k} on one side only: {other:?}"),
             }
+        }
+        // The outer ends turn into the closed side, so the back shell is too short on both.
+        assert_eq!(met, 4);
+    }
+
+    #[test]
+    fn closed_out_shells_stop_inside_the_closed_chunk() {
+        let found = segments(&[chunk(CX, CY)], |gx, gy| (gx, gy) == (CX + 1, CY));
+        let [s] = found.as_slice() else {
+            panic!("one segment, got {found:?}");
+        };
+        assert_eq!(s.ends, [Corner::ClosedOut; 2]);
+        let from = Vec2::from(s.from);
+        let u = (Vec2::from(s.to) - from).normalize();
+        let n = Vec2::from(s.inward);
+        for k in 0..2 {
+            let d = SHELL_DEPTHS_YD[k];
+            let (start, end) = shell_line(s, k).expect("shells 0 and 1");
+            for (p, along) in [(start, d), (end, CHUNK_SIZE - d)] {
+                assert!(((p - from).dot(u) - along).abs() < 0.01, "shell {k} along");
+                assert!(((p - from).dot(n) - d).abs() < 0.01, "shell {k} inward");
+            }
+        }
+        for k in 2..5 {
+            assert_eq!(shell_line(s, k), None, "shell {k} is left out");
+        }
+        assert_eq!(curtain_mesh(&found).count_vertices(), 2 * 18);
+    }
+
+    /// The open chunk at the centre with its east, north and north-east neighbours closed.
+    fn closed_north_east(gx: u32, gy: u32) -> bool {
+        [(CX + 1, CY), (CX, CY - 1), (CX + 1, CY - 1)].contains(&(gx, gy))
+    }
+
+    #[test]
+    fn open_out_shells_meet_at_the_mitre() {
+        let found = segments(&[chunk(CX, CY)], closed_north_east);
+        let [north, east] = found.as_slice() else {
+            panic!("north and east segments, got {found:?}");
+        };
+        assert_eq!(north.to, east.from, "the north-east corner");
+        assert_eq!(
+            (north.ends[1], east.ends[0]),
+            (Corner::OpenOut, Corner::OpenOut)
+        );
+        let corner = Vec2::from(north.to);
+        for k in 0..5 {
+            let d = SHELL_DEPTHS_YD[k];
+            let mitre = corner + Vec2::from(north.inward) * d + Vec2::from(east.inward) * d;
+            let (_, north_end) = shell_line(north, k).expect("north shell");
+            let (east_start, _) = shell_line(east, k).expect("east shell");
+            assert!(
+                north_end.distance(mitre) < 0.01,
+                "shell {k}: {north_end} vs {mitre}"
+            );
+            assert!(
+                east_start.distance(mitre) < 0.01,
+                "shell {k}: {east_start} vs {mitre}"
+            );
+        }
+    }
+
+    #[test]
+    fn no_shell_stands_on_open_land() {
+        let staircase = |gx: u32, gy: u32| gx as i64 - CX as i64 + gy as i64 - CY as i64 > 0;
+        let grid: Vec<ChunkMesh> = (0..5)
+            .flat_map(|dx| (0..5).map(move |dy| chunk(CX - 2 + dx, CY - 2 + dy)))
+            .collect();
+        let straight = |gx, gy| gy == CY + 1 && (CX..=CX + 1).contains(&gx);
+        let east = |gx, gy| (gx, gy) == (CX + 1, CY);
+        let cases: [(&str, Vec<ChunkMesh>, &dyn Fn(u32, u32) -> bool); 4] = [
+            (
+                "straight",
+                vec![chunk(CX, CY), chunk(CX + 1, CY)],
+                &straight,
+            ),
+            ("closed out", vec![chunk(CX, CY)], &east),
+            ("open out", vec![chunk(CX, CY)], &closed_north_east),
+            ("staircase", grid, &staircase),
+        ];
+        let index = |v: f32| (32.0 * TILE_SIZE - v) / CHUNK_SIZE;
+        let on_line = |i: f32| (i - i.round()).abs() * CHUNK_SIZE < 0.01;
+        for (name, chunks, closed) in cases {
+            let found = segments(&chunks, closed);
+            assert!(!found.is_empty(), "{name}");
+            let (positions, ..) = mesh_parts(&curtain_mesh(&found));
+            for [x, y, _] in positions {
+                let (gx, gy) = (index(y), index(x));
+                if on_line(gx) || on_line(gy) {
+                    continue;
+                }
+                let (gx, gy) = (gx.floor() as u32, gy.floor() as u32);
+                assert!(
+                    closed(gx, gy),
+                    "{name}: ({x}, {y}) on open chunk ({gx}, {gy})"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn shell_heights_come_from_the_closed_chunk() {
+        // The closed chunk's heights sit 1000 yd over the open one's, to tell them apart.
+        let mut south = chunk(CX, CY + 1);
+        for p in &mut south.positions {
+            p[2] += 1000.0;
+        }
+        // Shell 4's column grounds: each top vertex's height less its yards above the ground.
+        let back_grounds = |chunks: &[ChunkMesh]| {
+            let found = segments(chunks, closed_south_row);
+            let (positions, uv0, _, _) = mesh_parts(&curtain_mesh(&found));
+            (0..9)
+                .map(|k| positions[4 * 18 + 9 + k][2] - uv0[4 * 18 + 9 + k][0])
+                .collect::<Vec<f32>>()
+        };
+        // Row 8 of the closed chunk to the south is its south row, vertices 136..=144; the open
+        // chunk's row 0 is its own south row, the same indices.
+        let with = back_grounds(&[chunk(CX, CY), south]);
+        let without = back_grounds(&[chunk(CX, CY)]);
+        for k in 0..9 {
+            let row = 136.0 + k as f32;
+            assert!(
+                (with[k] - (1000.0 + row)).abs() < 0.01,
+                "with, column {k}: {}",
+                with[k]
+            );
+            assert!(
+                (without[k] - row).abs() < 0.01,
+                "without, column {k}: {}",
+                without[k]
+            );
         }
     }
 
@@ -997,7 +1288,26 @@ mod tests {
             }
         }
         let mesh = curtain_mesh(&[s]);
-        assert_eq!(mesh.indices().map(|i| i.len()), Some(240));
+        assert_eq!(mesh.indices().map(|i| i.len()), Some(5 * 48));
+    }
+
+    #[test]
+    fn a_placed_walls_shells_step_away_from_its_open_side() {
+        let wall = test_wall();
+        let s = wall_segment(&wall);
+        // The open side is north of the wall in `y`, so the shells step to negative `y`.
+        assert_eq!(s.inward, [0.0, -1.0]);
+        assert_eq!((s.ends, s.closed), ([Corner::Straight; 2], None));
+        let (positions, ..) = mesh_parts(&curtain_mesh(&[s]));
+        assert_eq!(positions.len(), 5 * 18);
+        for (k, depth) in [0.0, 1.5, 3.0, 4.5, 6.0].into_iter().enumerate() {
+            for (i, &[x, y, z]) in positions[k * 18..(k + 1) * 18].iter().enumerate() {
+                assert!((y + depth).abs() < 1e-4, "shell {k}: y {y}");
+                assert!((x - (i % 9) as f32).abs() < 1e-4, "shell {k}: x {x}");
+                let want = if i < 9 { wall.bottom } else { wall.top };
+                assert!((z - want).abs() < 1e-4, "shell {k}: z {z}");
+            }
+        }
     }
 
     #[test]

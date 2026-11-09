@@ -5,11 +5,11 @@
 // band, with faint billows, and fades to nothing at the top. A warped fractal of gradient noise,
 // drifting sideways and upward, moves the fade's start up and down and thins the fade, so the top
 // is ragged. The noise reads world coordinates, so neighbouring segments line up, and its lattice
-// wraps every `NOISE_PERIOD_YD`, so the drift clock can wrap without a jump. Each piece of the mesh
-// carries its layer number in the vertex colour's `x` (the backdrop 0, the two wisp sheets 1 and
-// 2, the ground skirt 3): each layer reads its own noise and drifts at its own speed and way. Each
-// piece fades in above its own foot under its own alpha ceiling, and the wisps and the skirt
-// vanish close to the camera.
+// wraps every `NOISE_PERIOD_YD`, so the drift clock can wrap without a jump. Each segment is five
+// shells reaching into the closed side, and each shell carries its layer number in the vertex
+// colour's `x` (0 at the front to 4 at the back): each layer reads its own noise and drifts at its
+// own speed and way, so the shells slide past each other. Each shell fades in above its own foot
+// under its own alpha ceiling, and the thin front shells 0 to 3 vanish close to the camera.
 
 #import bevy_pbr::{
     forward_io::VertexOutput,
@@ -25,7 +25,7 @@
 // w: the yards each piece takes to fade in above its own foot.
 @group(#{MATERIAL_BIND_GROUP}) @binding(102) var<uniform> foot: vec4<f32>;
 // x: the yards the noise moves the fade's start; y: the fade's alpha ceiling at the lowest noise;
-// z: the yards from the camera within which the wisps and the skirt vanish; w: the fade factor,
+// z: the yards from the camera within which shells 0 to 3 vanish; w: the fade factor,
 // 1 but on a curtain fading out because its zone opened.
 @group(#{MATERIAL_BIND_GROUP}) @binding(103) var<uniform> rag: vec4<f32>;
 // x, y: the scene's linear fog start and end in yards; z: `BILLOW_LIGHT`, the share the billows
@@ -144,8 +144,8 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let factor = clamp((scene.y - eye_z) / max(scene.y - scene.x, 0.001), 0.0, 1.0);
     colour = mix(fog.rgb, colour, factor);
     var alpha = band * cap * smoothstep(0.0, foot.w, ramp);
-    // Only the backdrop has the full ceiling; the wisps and the skirt fade out at the camera. The
-    // margin under 1 keeps an interpolated 0.99999 on the backdrop from counting.
+    // Only the back shell has the full ceiling; the others fade out at the camera. The margin
+    // under 1 keeps an interpolated 0.99999 on the back shell from counting.
     if cap < 0.99 {
         let to_camera = distance(in.world_position.xyz, view.world_position.xyz);
         alpha = alpha * smoothstep(0.5, rag.z, to_camera);
