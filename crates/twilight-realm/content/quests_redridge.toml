@@ -1,2 +1,222 @@
 # Story Quests and bounties in Redridge, 98101 to 98499 (spec #595): the same schema as
 # quests.toml, read after content/quests_stormwind.toml and before content/quests_duskwood.toml.
+
+# ── Redridge 30-35 (#595) ─────────────────────────────────────────────────────────────────────
+# Three Corners, then Lakeshire's three problems. Every giver and ender is a vanilla Redridge
+# spawn (content/redridge.toml). Worse Problems has no prerequisite, so a character who skipped
+# Three Corners starts at the magistrate.
+
+[[quest]]
+id = 98101
+kind = "story"
+giver = 464
+level = 30
+title = "Gnolls at Three Corners"
+objectives = "Kill 10 Redridge Poachers and 10 Redridge Mongrels near Three Corners, then return to Guard Parker."
+details = "This is the Lakeshire Watch's post at Three Corners. Me, a bell and a hut. Every day families come up this road from Elwynn, walking east with everything they own on their backs. And every day the gnolls come down off those hills to meet them. Poachers for the packs, mongrels for whoever falls behind. I ring the bell and I run at them, and I'm one man. Thin them out, and the road might stay open another week."
+progress = "Is the road clear?"
+completion = "I heard fewer of them on the hill last night. That's the first quiet night since spring. The families will never know your name, but they'll get to Lakeshire. That's worth something. Here, take this."
+money = 1050
+choices = [903215, 903217, 903219]
+zone_or_sort = 44
+kill = [[424, 10], [423, 10]]
+
+# Parker hands over his report on accepting; Feldon takes it in.
+[[quest]]
+id = 98102
+kind = "story"
+giver = 464
+ender = 1070
+after = 98101
+level = 31
+title = "Report to Lakeshire"
+objectives = "Carry Guard Parker's report to Deputy Feldon in Lakeshire."
+details = "Every week I send a report to Lakeshire. Every week it says the same thing: send more men. The last runner I sent never arrived. Nobody found him, and nobody found the report. So this one goes by hand, and yours is the hand I trust. Follow the road east along the river to Lakeshire and give it to Deputy Feldon. Tell him the bell still rings."
+progress = "You've come from Three Corners? Let me see that."
+completion = "Parker's hand. 'Send more men.' He always writes that, and there are never more men to send. You came up that road and you're still standing, which is more than the last runner managed. The magistrate wants to meet anyone who can fight. Go and see him."
+money = 0
+choices = [903204, 903206, 903209]
+zone_or_sort = 44
+gives = [[980301, 1]]
+collect = [{ item = 980301, count = 1 }]
+
+[[quest]]
+id = 98103
+kind = "story"
+giver = 344
+level = 31
+title = "Worse Problems"
+objectives = "Speak with Marshal Marris, Foreman Oslow and Dockmaster Baren in Lakeshire, then return to Magistrate Solomon."
+details = "Stormwind writes to me about wolves. I have wolves. I also have orcs on the hills, a bridge in the lake and barges that sink in calm water. I've written all of it down three times and sent it west, and the answers say the city has every confidence in me. If you're here to help, hear it from the people doing the work. Marris has the Watch. Oslow has the bridge. Baren has the docks. Then come back and tell me which you'll take first."
+progress = "Well?"
+completion = "Orcs counting, stone nobody ordered and crates nobody names. That's Redridge. Pick one, and I'll find you coin for the rest."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 44
+talk = [
+  { npc = 382, option = "What does the Watch need?", reply = "Men. I have eleven. The Blackrock have sent outrunners down the highway south of the lake twice this month, looking at our walls and counting. Orcs don't count unless someone is paying them to." },
+  { npc = 341, option = "What happened to the bridge?", reply = "The old one went in the spring flood, and my crew's tools went with it. Then a wagon of good cut stone turned up from the city, paid for, and nobody here ordered it. I'm not asking. I'm building." },
+  { npc = 381, option = "What's wrong with the barges?", reply = "Three barges this season, all heading east across Everstill, all loaded heavy, all gone down in flat water. The murlocs dive them before the crews are dry. I'd like to know what was in those crates. The crews won't say." },
+]
+
+[[quest]]
+id = 98104
+kind = "story"
+giver = 341
+after = 98103
+level = 31
+title = "The Lost Tools"
+objectives = "Bring 6 Mason's Tools from the Murloc Flesheaters and Murloc Scouts of Lake Everstill to Foreman Oslow in Lakeshire."
+details = "The spring flood took the old bridge, and it took my crew's tools with it. Chisels, mallets, levels, the lot, all at the bottom of the lake. You'd think they'd sit there and rust. They don't. The murlocs dive for anything that shines and carry it off to their huts on the shore. I've got stone and I've got men, and I've got nothing to cut it with. Get my tools back."
+progress = "Any tools?"
+completion = "That's my chisel. My father's mark is still on the handle, under the weed. A bit of oil and these will cut stone again. Now we can start on the bridge proper."
+money = 1085
+choices = [903204, 903206, 903208]
+zone_or_sort = 44
+collect = [{ item = 980302, count = 6, from = [422, 578], chance = 40 }]
+
+[[quest]]
+id = 98105
+kind = "story"
+giver = 341
+after = 98104
+level = 33
+title = "The Everstill Bridge"
+objectives = "Bring 6 Iron Pikes from Blackrock Outrunners and 6 Iron Rivets from Blackrock Grunts to Foreman Oslow in Lakeshire."
+details = "The new bridge is nearly done, but the last span won't hold on stone alone. It needs iron, and the iron's gone. The old footings were full of it, and the Blackrock have been prying it loose at night and hammering it into spearheads. Their outrunners carry the pikes, and their grunts keep the rivets for the next batch. Take it back from them. Bridge iron belongs in a bridge."
+progress = "Got that iron?"
+completion = "That'll hold the last span. You'll want to know about the stone. It came on a wagon from the city with a note: 'For the Lakeshire bridge, with the compliments of a friend.' A house's seal on the wax. Not the crown's, and not one I know. The magistrate didn't ask, and nor did I. I kept the wax, though."
+money = 1155
+choices = [903215, 903217, 903219]
+zone_or_sort = 44
+collect = [
+  { item = 980303, count = 6, from = [485], chance = 50 },
+  { item = 980304, count = 6, from = [440], chance = 50 },
+]
+
+[[quest]]
+id = 98106
+kind = "story"
+giver = 381
+after = 98103
+level = 33
+title = "What's on the Lakebed"
+objectives = "Kill 12 murlocs of Lake Everstill and bring 5 Marked Crate Lids to Dockmaster Baren in Lakeshire."
+details = "Three barges down, and every time the murlocs are on the wrecks before the crews are dry. They dive the lakebed and carry the cargo off to their camps on the shore. I don't care about the cargo. I care what it was. My crews won't tell me, and they were paid well enough not to. The crates had lids, and lids have marks. Kill the murlocs and bring me the lids."
+progress = "Find anything on them?"
+completion = "This is off one of mine. That mark, the hammer over a black sun, burned into every lid. I hear Elwynn has trouble with that mark. So the crates go east across my lake, and the barges carrying them go down. I've stopped believing in calm-water accidents."
+money = 1155
+choices = [903200, 903201, 903202, 903203]
+zone_or_sort = 44
+kill = [{ family = "Lake murlocs slain", entries = [1083, 548, 422, 578], count = 12 }]
+collect = [{ item = 980305, count = 5, from = [1083, 548, 422, 578], chance = 35 }]
+
+# The named elite's item quest: blue Quest Line rows (#600). The Thresher has two spawns on the
+# lake.
+[[quest]]
+id = 98107
+kind = "story"
+giver = 381
+after = 98106
+level = 34
+title = "The Thresher"
+objectives = "Kill the Lake Thresher in the deep water of Lake Everstill and bring its jaw to Dockmaster Baren in Lakeshire."
+details = "The murlocs dive the barges, but they don't sink them. Something else does that first. Something big, out in the deep water, that cracks a keel like kindling. The crews swear it follows the boats out from the dock and waits until they're halfway across. They call it the Thresher. I used to think it was a story to scare the new hands. Now I've seen the keels. Kill it."
+progress = "Is it dead?"
+completion = "That's a jaw. Look at the size of it, and the keel still stuck in the teeth. I'm glad it's dead. I am. But it was in that lake before there was a Lakeshire, and now it isn't. Here, you earned this."
+money = 1530
+choices = [903300, 903301, 903302]
+zone_or_sort = 44
+kill = [[14357, 1]]
+collect = [{ item = 980306, count = 1, from = [14357], chance = 100 }]
+
+[[quest]]
+id = 98108
+kind = "story"
+giver = 382
+after = 98103
+level = 33
+title = "Blackrock Menace"
+objectives = "Kill 10 Blackrock Outrunners and 6 Blackrock Renegades on the Lakeridge Highway, then return to Marshal Marris in Lakeshire."
+details = "The Blackrock have outrunners on the Lakeridge Highway, south of the lake. They sit on the rocks above the road and watch our walls. They count the men on them, they count the gates, they count the boats. I've lost two scouts trying to drive them off. I want them gone before they finish counting, and the renegades with them. Eleven men can't do it. You can."
+progress = "Still out there, counting?"
+completion = "Every one of them had a purse, and every purse had this. Coin I've never seen, with faces no king ever wore. I'm told the Defias in Elwynn are paid in the same. Orcs don't take wages. Somebody's paying them anyway."
+money = 1155
+choices = [903211, 903212, 903213]
+zone_or_sort = 44
+kill = [[485, 10], [437, 6]]
+
+# The door is the Tower of Ilgalar's portal (content/ilgalar.toml).
+[[quest]]
+id = 98109
+kind = "story"
+giver = 382
+after = 98108
+level = 34
+title = "The Tower on the Hill"
+objectives = "Find the door of the tower on the hill in eastern Redridge, then return to Marshal Marris in Lakeshire."
+details = "There's a tower on a hill past Stonewatch, as far east as Redridge goes. Gnolls hold the slope, and lately the Blackrock carry crates up it. My scouts say the ground up there hums. One of them won't go back. I need someone who can reach the door and tell me what they hear. Don't go in. Not yet."
+progress = "Did you reach it?"
+completion = "Gnolls on every path, crates at the door and a hum in the ground you could feel in your teeth. Whatever's in that tower, they're guarding it. I'll want more than eleven men before I knock."
+money = 1190
+choices = [903205, 903207, 903210]
+zone_or_sort = 44
+explore = { place = "The door of the Tower of Ilgalar", position = [-9282.2, -3327.6], radius = 15.0, map = 0 }
+
+# Bounties: money only, no choices.
+
+[[quest]]
+id = 98111
+kind = "bounty"
+giver = 464
+level = 30
+title = "Teeth in the Grass"
+objectives = "Kill 10 Redridge Thrashers or Tarantulas near Three Corners, then return to Guard Parker."
+details = "The gnolls aren't the only thing on this road. Thrashers come out of the long grass and tarantulas drop off the rocks, and neither of them cares who you are. A family lost their mule to a thrasher yesterday, right in front of my hut. The Watch pays a bounty for every one killed. Thrashers or tarantulas, ten at a time, and I'll pay."
+progress = "Road any quieter?"
+completion = "Ten fewer things with teeth between here and Lakeshire. They'll be back by the end of the week. They always are. My coin will be here when they are, so come back then."
+money = 900
+zone_or_sort = 44
+kill = [{ family = "Thrashers and tarantulas slain", entries = [712, 442], count = 10 }]
+
+[[quest]]
+id = 98112
+kind = "bounty"
+giver = 343
+level = 31
+title = "Flanks for the Pot"
+objectives = "Bring 8 Goretusk Flanks from the Great Goretusks of Redridge to Chef Breanna in Lakeshire."
+details = "Every barge that sinks is a barge of flour and salt pork I don't get, and every day there are more mouths in this town. Families from the west, workers for the bridge, Watchmen at all hours. I can't feed them on lake water. The great goretusks in the hills are tough old things, but I can make anything tender with enough time. Bring me flanks."
+progress = "Flanks? The pot's waiting."
+completion = "Tough as boots, just like I said. Give them a day in the pot with onions and nobody will know. That's supper for the bridge crew. Here's your coin, and come back when you have more."
+money = 930
+zone_or_sort = 44
+collect = [{ item = 980307, count = 8, from = [547], chance = 50 }]
+
+[[quest]]
+id = 98113
+kind = "bounty"
+giver = 415
+level = 32
+title = "Silk for Lashing"
+objectives = "Bring 8 Tarantula Silk from the Tarantulas of Redridge to Verner Osgood in Lakeshire."
+details = "Rope's gone the way of everything else out here. What came on the barges is at the bottom of the lake, and what's left in town is rotten. Tarantula silk is thick as twine and twice as strong, if you can get it off the spider. I need it for lashing, for nets and for the bridge crew's scaffold. Eight lengths at a time, and I'll pay a fair price. Mind the bites."
+progress = "Got that silk?"
+completion = "Sticky stuff, but it'll hold. That's another week of lashing for the scaffold and a net or two besides. Here's your coin. The spiders aren't going anywhere, and neither is my offer."
+money = 960
+zone_or_sort = 44
+collect = [{ item = 980308, count = 8, from = [442], chance = 50 }]
+
+[[quest]]
+id = 98114
+kind = "bounty"
+giver = 1070
+level = 33
+title = "Condors over Everstill"
+objectives = "Kill 10 Dire Condors over Lake Everstill, then return to Deputy Feldon in Lakeshire."
+details = "The condors used to stay up on the cliffs. Since the barges started going down, they've learned there's food floating on the lake. Now they take fish off the drying racks and dive at the children on the docks. The Watch has better things to do with its arrows. So do I. The magistrate has put a bounty on them. Ten at a time, and I'll pay each time."
+progress = "Still circling?"
+completion = "Ten fewer over the docks. The children can mend nets without looking up every minute. They'll be back once they've forgotten, and the bounty stands until then. Here's your pay."
+money = 990
+zone_or_sort = 44
+kill = [[428, 10]]

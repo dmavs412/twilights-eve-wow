@@ -1,4 +1,15 @@
 # Redridge's quest items, 980301 to 980399 (spec #595): the same schema as quest_items.toml, read
 # after it and before content/quest_items_duskwood.toml. An entry in two item files fails the load.
 
-item = []
+item = [
+  # Redridge 30-35 (#602). Displays from the vanilla item of the same or nearest name; where that
+  # icon is already shown by another item, the nearest free one (icon_check.py).
+  { entry = 980301, name = "Parker's Report", quality = 1, item_level = 31, class = 12, display_id = 3029, max_count = 1, description = "Three Corners. Two men, one bell, the road open. Send more men." },
+  { entry = 980302, name = "Mason's Tools", quality = 1, item_level = 31, class = 12, display_id = 31515, stackable = 20, description = "Chisels and a mallet, green with lake weed." },
+  { entry = 980303, name = "Iron Pike", quality = 1, item_level = 33, class = 12, display_id = 7481, stackable = 20, description = "Bridge iron, hammered into a spearhead." },
+  { entry = 980304, name = "Iron Rivet", quality = 1, item_level = 33, class = 12, display_id = 1236, stackable = 20, description = "A rivet as long as your hand, pulled from the old bridge." },
+  { entry = 980305, name = "Marked Crate Lid", quality = 1, item_level = 33, class = 12, display_id = 8928, stackable = 20, description = "Waterlogged pine with a hammer over a black sun burned into it." },
+  { entry = 980306, name = "Thresher's Jaw", quality = 1, item_level = 34, class = 12, display_id = 7135, max_count = 1, description = "Rows of teeth, and splinters of keel between them." },
+  { entry = 980307, name = "Goretusk Flank", quality = 1, item_level = 31, class = 12, display_id = 25467, stackable = 20, description = "Tough, but Breanna can make anything tender." },
+  { entry = 980308, name = "Tarantula Silk", quality = 1, item_level = 32, class = 12, display_id = 7717, stackable = 20, description = "Thick as twine and very sticky." },
+]

@@ -339,7 +339,11 @@ fn quest_creatures(quest: &toml::Value) -> Vec<u64> {
         .into_iter()
         .flatten()
     {
-        out.push(k[0].as_integer().unwrap() as u64);
+        // `[entry, count]`, or a family's `{ family, entries, count }`.
+        match k.get("entries").and_then(toml::Value::as_array) {
+            Some(entries) => out.extend(entries.iter().map(|e| e.as_integer().unwrap() as u64)),
+            None => out.push(k[0].as_integer().unwrap() as u64),
+        }
     }
     for c in quest
         .get("collect")
