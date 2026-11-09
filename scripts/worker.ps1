@@ -80,7 +80,9 @@ function Invoke-Land {
             }
             # Main moved under us: the rebased commits need the gate again.
             $gate = Invoke-Gate $base (git rev-parse HEAD).Trim() $holder
-            if (-not $gate.ok) { return @{ ok = $false; conflict = $false; what = "after rebase, $($gate.what) failed"; out = $gate.out } }
+            # The commits passed alone, so a failure now comes from what the other builder landed
+            # (two tickets taking one icon, #607): a conflict, worth one more try on the new main.
+            if (-not $gate.ok) { return @{ ok = $false; conflict = $true; what = "after rebase, $($gate.what) failed"; out = $gate.out } }
         }
         git push -q origin HEAD:main 2>$null
         if ($LASTEXITCODE -eq 0) {
@@ -223,6 +225,11 @@ while ($true) {
         if ($gate.ok -and $land.conflict -and -not $requeued.ContainsKey($n)) {
             # The other builder landed something on the same files. Run the ticket again on the new main.
             $requeued[$n] = $true
+            $note = Join-Path $script:LogDir "$n.requeued.md"
+            $fence = '```'
+            "Builder ${Name}: the commits passed their gate but did not land: $why. The ticket goes back in the queue for one more try on the new main; fix what this shows.`n`n${fence}text`n$out`n${fence}" |
+                Set-Content -Path $note -Encoding utf8
+            gh issue comment -R $Repo $n --body-file $note | Out-Null
             gh issue reopen -R $Repo $n 2>$null | Out-Null
             gh issue edit -R $Repo $n --remove-label in-progress --add-label $Label | Out-Null
             Clear-Claim $n
