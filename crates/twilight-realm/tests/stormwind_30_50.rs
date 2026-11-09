@@ -1,6 +1,7 @@
 //! Stormwind's quests from 30 to 50 (spec #595), walked on the shipped content
 //! (`content/quests_stormwind.toml`). Band 30-35 (#604): Commander Wray's two sets of orders, the
-//! poster beside the Writ Board, and Magistrate Solomon's request to the city gate.
+//! poster beside the Writ Board, and Magistrate Solomon's request to the city gate. Band 35-40
+//! (#609): Darkshire's thirteenth letter to the General and his answer.
 
 mod common;
 
@@ -17,9 +18,12 @@ const HANDS_WANTED_LAKESHIRE: u32 = 97403;
 const HANDS_WANTED_NIGHT_WATCH: u32 = 97404;
 const A_MAGISTRATES_REQUEST: u32 = 97405;
 const BLACKROCK_MENACE: u32 = 98108;
+const DARKSHIRES_THIRTEENTH_LETTER: u32 = 97406;
+const AN_ANSWER_FOR_DARKSHIRE: u32 = 97407;
+const DARKSHIRE_WAITS: u32 = 98601;
 
-/// The way in: `(id, level, giver, giver_object, ender, after)`.
-const BAND_30_35: [(u32, u32, Option<u32>, Option<u32>, u32, Option<u32>); 5] = [
+/// Each quest: `(id, level, giver, giver_object, ender, after)`.
+const BANDS: [(u32, u32, Option<u32>, Option<u32>, u32, Option<u32>); 7] = [
     (97401, 30, Some(WRAY), None, SOLOMON, None),
     (97402, 30, Some(WRAY), None, ELLO, None),
     (97403, 30, None, Some(POSTER_ENTRY), PARKER, None),
@@ -32,15 +36,26 @@ const BAND_30_35: [(u32, u32, Option<u32>, Option<u32>, u32, Option<u32>); 5] = 
         MARCUS,
         Some(BLACKROCK_MENACE),
     ),
+    (97406, 37, Some(ELLO), None, MARCUS, Some(DARKSHIRE_WAITS)),
+    (
+        97407,
+        37,
+        Some(MARCUS),
+        None,
+        ELLO,
+        Some(DARKSHIRES_THIRTEENTH_LETTER),
+    ),
 ];
 
 /// Each story quest's reward choices.
-const CHOICES: [(u32, &[u32]); 5] = [
+const CHOICES: [(u32, &[u32]); 7] = [
     (97401, &[903204, 903206, 903208]),
     (97402, &[903214, 903216, 903218]),
     (97403, &[903200, 903201, 903202, 903203]),
     (97404, &[903211, 903212, 903213]),
     (97405, &[903205, 903207, 903210]),
+    (97406, &[903224, 903226, 903228]),
+    (97407, &[903234, 903236, 903238]),
 ];
 
 /// The zones' first quests, which the way in must not gate.
@@ -70,6 +85,8 @@ const POSTER_AT: [f32; 3] = [-8823.0, 667.0, 95.43];
 const WRAYS_ORDERS: u32 = 980151;
 const WRAYS_LETTER: u32 = 980152;
 const SOLOMONS_REQUEST: u32 = 980153;
+const EBONLOCKES_LETTER: u32 = 980154;
+const JONATHANS_REPLY: u32 = 980155;
 
 fn quest_file(text: &str) -> Vec<toml::Value> {
     let file: toml::Table = text.parse().unwrap();
@@ -225,9 +242,9 @@ fn carries(party: &Party, entry: u32) -> u32 {
 }
 
 #[test]
-fn band_30_35_loads_with_its_givers_enders_and_zone() {
+fn every_band_loads_with_its_givers_enders_and_zone() {
     let mut realm = realm();
-    for (id, level, giver, giver_object, ender, after) in BAND_30_35 {
+    for (id, level, giver, giver_object, ender, after) in BANDS {
         let row = quest_row(id);
         assert_eq!(row["kind"].as_str(), Some("story"), "quest {id}'s kind");
         assert_eq!(entry(&row, "level"), Some(level), "quest {id}'s level");
@@ -360,4 +377,62 @@ fn solomon_asks_only_after_the_blackrock_menace() {
     let events = hand_in(&mut party, marcus, A_MAGISTRATES_REQUEST);
     assert!(completed(&events, A_MAGISTRATES_REQUEST), "{events:?}");
     assert_eq!(carries(&party, SOLOMONS_REQUEST), 0, "the General keeps it");
+}
+
+#[test]
+fn ebonlocke_writes_only_after_darkshire_waits_and_the_general_answers_his_letter() {
+    let mut early = questing_party("zealot", 37, &[]);
+    let ello = meet(&mut early, ELLO, ELLO_AT);
+    let offered = offers(&mut early, ello);
+    assert!(
+        !offered.contains(&DARKSHIRES_THIRTEENTH_LETTER),
+        "{offered:?}"
+    );
+
+    let mut party = questing_party("zealot", 37, &[DARKSHIRE_WAITS]);
+    let marcus = meet(&mut party, MARCUS, MARCUS_AT);
+    let offered = offers(&mut party, marcus);
+    assert!(!offered.contains(&AN_ANSWER_FOR_DARKSHIRE), "{offered:?}");
+
+    let ello = meet(&mut party, ELLO, ELLO_AT);
+    let offered = offers(&mut party, ello);
+    assert!(
+        offered.contains(&DARKSHIRES_THIRTEENTH_LETTER),
+        "{offered:?}"
+    );
+    accept(&mut party, ello, DARKSHIRES_THIRTEENTH_LETTER);
+    assert_eq!(
+        carries(&party, EBONLOCKES_LETTER),
+        1,
+        "Ebonlocke hands over his letter"
+    );
+
+    let marcus = meet(&mut party, MARCUS, MARCUS_AT);
+    let events = hand_in(&mut party, marcus, DARKSHIRES_THIRTEENTH_LETTER);
+    assert!(
+        completed(&events, DARKSHIRES_THIRTEENTH_LETTER),
+        "{events:?}"
+    );
+    assert_eq!(
+        carries(&party, EBONLOCKES_LETTER),
+        0,
+        "the General keeps the letter"
+    );
+    let offered = offers(&mut party, marcus);
+    assert!(offered.contains(&AN_ANSWER_FOR_DARKSHIRE), "{offered:?}");
+    accept(&mut party, marcus, AN_ANSWER_FOR_DARKSHIRE);
+    assert_eq!(
+        carries(&party, JONATHANS_REPLY),
+        1,
+        "the General hands over his reply"
+    );
+
+    let ello = meet(&mut party, ELLO, ELLO_AT);
+    let events = hand_in(&mut party, ello, AN_ANSWER_FOR_DARKSHIRE);
+    assert!(completed(&events, AN_ANSWER_FOR_DARKSHIRE), "{events:?}");
+    assert_eq!(
+        carries(&party, JONATHANS_REPLY),
+        0,
+        "Ebonlocke keeps the reply"
+    );
 }

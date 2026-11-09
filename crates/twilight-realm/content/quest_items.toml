@@ -132,6 +132,10 @@ item = [
   { entry = 980151, name = "Commander Wray's Orders", quality = 1, item_level = 30, class = 12, display_id = 3018, max_count = 1, description = "Sealed with the barracks' seal. For Magistrate Solomon, Lakeshire." },
   { entry = 980152, name = "Commander Wray's Letter", quality = 1, item_level = 30, class = 12, display_id = 3030, max_count = 1, description = "Sealed with the barracks' seal. For Lord Ebonlocke, Darkshire." },
   { entry = 980153, name = "Solomon's Request", quality = 1, item_level = 34, class = 12, display_id = 1013, max_count = 1, description = "A request for one company of soldiers, signed and sealed by the Magistrate of Lakeshire." },
+  # Darkshire's letter and the General's answer (#609, quests_stormwind.toml): Ebonlocke's letter
+  # shows INV_Letter_08, the reply INV_Letter_10, stock icons no other item does.
+  { entry = 980154, name = "Lord Ebonlocke's Letter", quality = 1, item_level = 37, class = 12, display_id = 3023, max_count = 1, description = "Sealed with the Ebonlocke seal. 'For the military. By hand.'" },
+  { entry = 980155, name = "General Jonathan's Reply", quality = 1, item_level = 37, class = 12, display_id = 3033, max_count = 1, description = "Sealed with the General's own seal, not the Keep's." },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye

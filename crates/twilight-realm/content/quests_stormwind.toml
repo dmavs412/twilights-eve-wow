@@ -254,7 +254,8 @@ kill = [[97218, 1]]
 # character to both zones. All four are level 30, so only a Tier 2 character is offered them, and
 # none is a prerequisite: each zone's first quests are offered without them. Solomon's request goes
 # the other way, from Lakeshire to General Marcus Jonathan at the city gate (stormwind.toml, vmangos
-# guid 79677). The quest items are in quest_items.toml. `money` is copper. `zone_or_sort` 1519 is
+# guid 79677), and from 37 Lord Ebonlocke's letter does the same (97406, 97407; #609). The quest
+# items are in quest_items.toml. `money` is copper. `zone_or_sort` 1519 is
 # Stormwind City's AreaTable id.
 
 # The poster beside the Writ Board. Display 17 is vanilla's Wanted Poster, a placeholder
@@ -349,3 +350,42 @@ choices = [903205, 903207, 903210]
 zone_or_sort = 1519
 gives = [[980153, 1]]
 collect = [{ item = 980153, count = 1 }]
+
+# Darkshire's court hand-off and the General's answer (#609, spec #595 decision 2), once Darkshire
+# Waits (quests_duskwood.toml) is done. The city answers no letters; who stops them is the court
+# spec's.
+[[quest]]
+id = 97406
+kind = "story"
+giver = 263
+ender = 466
+after = 98601
+level = 37
+title = "Darkshire's Thirteenth Letter"
+objectives = "Carry Lord Ebonlocke's letter to General Marcus Jonathan at the gate of Stormwind."
+details = "My letters to the Keep go up the hill and come back down to the barracks, I'm told, marked 'for the military'. Very well. Here is one for the military, by hand. Darkshire needs twenty men and a wagon of grain before the frost. Give it to General Jonathan himself. If he says no, I want to hear that he said it."
+progress = "From Darkshire?"
+completion = "Thirteen letters. I've read every one. They reach me in a bundle, opened, a month late, with a note saying the court is aware. I can't send twenty men. I can write back in my own hand under my own seal, and you'll carry it, so it doesn't go up the hill first."
+money = 0
+choices = [903224, 903226, 903228]
+zone_or_sort = 1519
+gives = [[980154, 1]]
+collect = [{ item = 980154, count = 1 }]
+
+[[quest]]
+id = 97407
+kind = "story"
+giver = 466
+ender = 263
+after = 97406
+level = 37
+title = "An Answer for Darkshire"
+objectives = "Carry General Jonathan's reply to Lord Ello Ebonlocke in Darkshire."
+details = "Tell him the truth before he reads it. The army is held at the walls by order, and I've argued the order twice. The letter says the same with more manners."
+progress = "You're back."
+completion = "'I have argued it twice.' A general who argues with the court and loses, and says so to my face. That's an answer, at least. It's the first one I've had in a year."
+money = 0
+choices = [903234, 903236, 903238]
+zone_or_sort = 1519
+gives = [[980155, 1]]
+collect = [{ item = 980155, count = 1 }]
