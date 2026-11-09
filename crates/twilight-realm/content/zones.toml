@@ -320,6 +320,8 @@ removed_guids = [
   # Blackrock Outrunners (485) and Renegades (437) within 45 yd of -9515,-3270. The rabbit (6146)
   # stays.
   6193, 6194, 6195, 6196, 6197, 6737, 6738,
+  # The Blackrock Pass Watch camp's ground (#632): the Great Goretusk at -8726,-2577.
+  10120,
 ]
 # Vanilla 14-27, the non-critter, non-friendly spawns, onto the lore bible's 30-50
 # (docs/lore-bible.md, "Zone arcs and dungeons"); spec #466 decision 2. Since #616
@@ -353,6 +355,283 @@ level_min = 47
 level_max = 47
 position = [-9123.0, -3236.0, 101.20]
 orientation = 3.65
+
+# The Blackrock Pass Watch camp (#632, spec #626): what walks out of the thinning mist once the
+# Ilgalar Anchor breaks, on Redridge land between the camp at -8735,-2590 and the mist (x below
+# -8670), at least 45 yd from Captain Sela Marrow: Blackrock Pass Raiders (97501), Blackrock
+# Flamecallers (97502), Pass Flamekin (97503), Ember Hounds (97504), Pass Broodlings (97505), and
+# the three elites the Writs name, Gorlak Ashfist (97506), Kindlemaw (97507) and Cindertooth
+# (97508). z is ground_check.py's.
+
+[[zone.added]]
+guid = 964001
+entry = 97501
+level_min = 48
+level_max = 49
+position = [-8690.0, -2560.0, 148.92]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964002
+entry = 97501
+level_min = 48
+level_max = 49
+position = [-8694.0, -2566.0, 145.22]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964003
+entry = 97501
+level_min = 48
+level_max = 49
+position = [-8690.0, -2520.0, 155.03]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964004
+entry = 97501
+level_min = 48
+level_max = 49
+position = [-8696.0, -2526.0, 154.46]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964005
+entry = 97501
+level_min = 48
+level_max = 49
+position = [-8760.0, -2660.0, 178.51]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964006
+entry = 97501
+level_min = 48
+level_max = 49
+position = [-8766.0, -2654.0, 173.86]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964007
+entry = 97501
+level_min = 48
+level_max = 49
+position = [-8705.0, -2540.0, 140.46]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964008
+entry = 97502
+level_min = 49
+level_max = 50
+position = [-8686.0, -2566.0, 144.52]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964009
+entry = 97502
+level_min = 49
+level_max = 50
+position = [-8686.0, -2516.0, 161.20]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964010
+entry = 97502
+level_min = 49
+level_max = 50
+position = [-8770.0, -2662.0, 183.56]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964011
+entry = 97502
+level_min = 49
+level_max = 50
+position = [-8700.0, -2545.0, 145.62]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964012
+entry = 97503
+level_min = 48
+level_max = 50
+position = [-8685.0, -2610.0, 141.60]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964013
+entry = 97503
+level_min = 48
+level_max = 50
+position = [-8681.0, -2616.0, 145.65]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964014
+entry = 97503
+level_min = 48
+level_max = 50
+position = [-8710.0, -2685.0, 170.53]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964015
+entry = 97503
+level_min = 48
+level_max = 50
+position = [-8690.0, -2600.0, 139.65]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964016
+entry = 97503
+level_min = 48
+level_max = 50
+position = [-8675.0, -2625.0, 171.66]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964017
+entry = 97504
+level_min = 48
+level_max = 49
+position = [-8689.0, -2604.0, 139.62]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964018
+entry = 97504
+level_min = 48
+level_max = 49
+position = [-8700.0, -2650.0, 170.38]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964019
+entry = 97504
+level_min = 48
+level_max = 49
+position = [-8706.0, -2646.0, 160.30]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964020
+entry = 97504
+level_min = 48
+level_max = 49
+position = [-8762.0, -2666.0, 185.12]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964021
+entry = 97504
+level_min = 48
+level_max = 49
+position = [-8680.0, -2640.0, 186.66]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964022
+entry = 97505
+level_min = 49
+level_max = 50
+position = [-8700.0, -2655.0, 162.51]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964023
+entry = 97505
+level_min = 49
+level_max = 50
+position = [-8714.0, -2690.0, 174.83]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964024
+entry = 97505
+level_min = 49
+level_max = 50
+position = [-8706.0, -2692.0, 172.91]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964025
+entry = 97505
+level_min = 49
+level_max = 50
+position = [-8720.0, -2680.0, 173.39]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964026
+entry = 97505
+level_min = 49
+level_max = 50
+position = [-8690.0, -2670.0, 149.89]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964027
+entry = 97505
+level_min = 49
+level_max = 50
+position = [-8696.0, -2676.0, 153.59]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964028
+entry = 97506
+level_min = 50
+level_max = 50
+position = [-8680.0, -2585.0, 132.53]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964029
+entry = 97507
+level_min = 50
+level_max = 50
+position = [-8695.0, -2635.0, 173.15]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
+
+[[zone.added]]
+guid = 964030
+entry = 97508
+level_min = 51
+level_max = 51
+position = [-8705.0, -2670.0, 150.15]
+orientation = 0.0
+after_milestone = "ilgalar_anchor_broken"
 
 [[zone]]
 file = "stormwind"

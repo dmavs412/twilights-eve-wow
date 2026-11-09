@@ -3,7 +3,9 @@
 #
 # A Writ is `kind = "writ"`. It names `levels`, 1 to 2: the levels a character of the Tier it is
 # offered from gains from its hand-in. Its `giver_object` is the board, and its `zone_or_sort`
-# names its pool: Elwynn 12, Redridge 44, Duskwood 10. Each pool shows one Writ per window, never
+# names its pool: Elwynn 12, Redridge 44, Duskwood 10 on the Stormwind board (980201), and Burning
+# Steppes 46, on the Blackrock Pass board (980601). A pool is one board and one zone, so the two
+# boards' pools never mix. Each pool shows one Writ per window, never
 # the one it showed in the window before; a pool of one shows its Writ every window. A Writ's band
 # is its rank by level within its pool (low, mid, high). A character can do each showing once, and
 # a Writ in the log stays there when the board changes.
@@ -29,12 +31,25 @@ position = [-8821.0, 663.0, 95.42]
 orientation = 0.0
 respawn = 60.0
 
+# The Blackrock Pass Watch camp's board (#632), on open ground beside Captain Sela Marrow, who takes
+# its Writs in. It comes when the Ilgalar Anchor breaks. Display 3053 is the Writ Board's
+# placeholder (docs/art-assets.md, the Burning Steppes opening). z is ground_check.py's.
+[[gameobject]]
+guid = 794001
+entry = 980601
+display = 3053
+map = 0
+position = [-8730.0, -2585.0, 132.61]
+orientation = 0.5
+respawn = 60.0
+after_milestone = "ilgalar_anchor_broken"
+
 # ── The seven Writs (#574) ───────────────────────────────────────────────────────────────────────
 #
 # Watch Officer Harlan Pike (mobs.toml, 96047) reads each one out and takes it back, whoever
 # issued it: the City Watch, the House of Nobles or Lady Prestor's office. Money is
 # 140 x levels x level copper. A sweep is two family lines; the named creatures are kill lines of
-# one. Burning Steppes' three wait for the spec that brings in that zone's mobs.
+# one. Burning Steppes' three are on the Blackrock Pass board, at the end of this file (#632).
 
 # Elwynn (12), level 24, from the City Watch.
 [[quest]]
@@ -186,4 +201,80 @@ kill = [
   { family = "Splinter Fist ogres slain", entries = [889, 891, 1251, 212], count = 40 },
   [1200, 1],
   [522, 1],
+]
+
+# ── The Blackrock Pass Writs (#626) ──────────────────────────────────────────────────────────────
+#
+# The Burning Steppes pool (46), on the Blackrock Pass Watch camp's board (980601), from the City
+# Watch. Captain Sela Marrow (hub.toml, 190090) takes each one in. They come when the Ilgalar Anchor
+# breaks, and each hand-in feeds `steppes_open`'s Tally 120 until the Steppes open
+# (milestones.toml). Money is 140 x levels x level copper.
+
+# Low band, level 48.
+[[quest]]
+id = 99521
+kind = "writ"
+giver_object = 980601
+ender = 190090
+zone_or_sort = 46
+after_milestone = "ilgalar_anchor_broken"
+level = 48
+levels = 1.0
+title = "Writ of the Watch: Blackrock Pass"
+objectives = "Slay 50 Blackrock and 50 flamekin and ember hounds in Blackrock Pass, and kill Gorlak Ashfist. Then return to Captain Sela Marrow at the Watch camp."
+details = "A writ of the City Watch, posted at the pass. Fifty Blackrock, fifty of the burning things, and the name at the bottom. Gorlak Ashfist leads the raiders down the road at dusk, and he's the reason the first camp we built here isn't standing. Bring him down."
+progress = "The writ's still open."
+completion = "Ashfist's dead? Then the road's quiet for a night. Here's the Watch's money, and the city's thanks, for what that's worth this far east."
+money = 6720
+kill = [
+  { family = "Blackrock slain", entries = [97501, 97502], count = 50 },
+  { family = "Flamekin and ember hounds slain", entries = [97503, 97504], count = 50 },
+  [97506, 1],
+]
+
+# Mid band, level 49.
+[[quest]]
+id = 99522
+kind = "writ"
+giver_object = 980601
+ender = 190090
+zone_or_sort = 46
+after_milestone = "ilgalar_anchor_broken"
+level = 49
+levels = 1.5
+title = "Writ of the Watch: The Burning Rocks"
+objectives = "Slay 60 flamekin and ember hounds and 40 Pass Broodlings in Blackrock Pass, and kill Kindlemaw. Then return to Captain Sela Marrow."
+details = "There's one flamekin bigger than the rest. The men call it Kindlemaw. It burned our first watchtower to the stones and walked back up the pass. The writ wants it put out, and everything that burns or hatches around it."
+progress = "Still burning out there?"
+completion = "Kindlemaw's gone out. The writ pays, and I'll buy the first round in Lakeshire myself."
+money = 10290
+kill = [
+  { family = "Flamekin and ember hounds slain", entries = [97503, 97504], count = 60 },
+  { family = "Pass Broodlings slain", entries = [97505], count = 40 },
+  [97507, 1],
+]
+
+# High band, level 50.
+[[quest]]
+id = 99523
+kind = "writ"
+giver_object = 980601
+ender = 190090
+zone_or_sort = 46
+after_milestone = "ilgalar_anchor_broken"
+level = 50
+# Level 50 is Tier 3's by default, and no Tier 3 Calling has a kit yet: offered from Tier 2.
+min_tier = 2
+levels = 2.0
+title = "Writ of the Watch: The Ridge"
+objectives = "Slay 50 Blackrock and 50 Pass Broodlings in Blackrock Pass, and kill Cindertooth and Gorlak Ashfist. Then return to Captain Sela Marrow."
+details = "The broodlings come from somewhere, and the scouts say it's the ridge where the grey is thickest. A black dragonspawn they call Cindertooth keeps the nest there, and Ashfist's raiders guard it as if it were theirs. The writ wants the ridge clear: Cindertooth, the orcs, and every hatchling."
+progress = "Did you reach the ridge?"
+completion = "Cindertooth and Ashfist both. I didn't think we'd hold this camp a month, and look at it now. The Watch pays in full."
+money = 14000
+kill = [
+  { family = "Blackrock slain", entries = [97501, 97502], count = 50 },
+  { family = "Pass Broodlings slain", entries = [97505], count = 50 },
+  [97508, 1],
+  [97506, 1],
 ]

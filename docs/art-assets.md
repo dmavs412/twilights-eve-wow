@@ -339,6 +339,7 @@ art. The station is vanilla's map 369. The mist wall uses the Closed Zones' mist
 | Asset | Where | Notes |
 |---|---|---|
 | The Ilgalar Anchor, whole and broken | two GameObject displays on Ilgalar's top floor | A humming stone in a Dark Iron casing with a forge stamp, and the same stone cracked open, its casing split. Until made, displays 1667 and 1687 (floating purple crystals). |
+| Blackrock Pass Watch board | a GameObject display for the camp's Writ board | A rough plank board on a post, Watch colours. Until made, the stock Alliance wanted board (display 3053), as the Writ Board. |
 
 ## Redridge and Duskwood 30-50 (spec #595)
 

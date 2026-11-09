@@ -1599,6 +1599,167 @@ speed_run = 1.0
 detection_range = 18.0
 spells = ["shadow_bolt_creature", "shadow_word_pain_creature", "void_shield_creature"]
 
+# The Blackrock Pass Watch camp (#632): what walks out of the thinning mist once the Anchor breaks,
+# in the Twilight Cultist's form (96024). Their spawns are in zones.toml. Displays and factions are
+# vanilla's Blackrock Soldier (7025), Sorcerer (7026) and Slayer (7027), Flamekin Spitter (9776),
+# Ember Worg (9690), Black Broodling (7047) and Black Dragonspawn (7040). Elites carry no `rolls`.
+
+# The camp's Blackrock raiders (#632). Melee.
+[[template]]
+entry = 97501
+name = "Blackrock Pass Raider"
+creature_type = 7
+rank = 0
+display_id = 6045
+faction_template = 40
+unit_class = "warrior"
+level_min = 48
+level_max = 49
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The raiders' casters (#632).
+[[template]]
+entry = 97502
+name = "Blackrock Flamecaller"
+creature_type = 7
+rank = 0
+display_id = 6046
+faction_template = 40
+unit_class = "mage"
+level_min = 49
+level_max = 50
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["fire_bolt_creature"]
+
+# The fire walking in the pass (#632).
+[[template]]
+entry = 97503
+name = "Pass Flamekin"
+creature_type = 4
+rank = 0
+display_id = 10815
+faction_template = 90
+unit_class = "warrior"
+level_min = 48
+level_max = 50
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The dogs made of embers (#632).
+[[template]]
+entry = 97504
+name = "Ember Hound"
+creature_type = 1
+rank = 0
+display_id = 9371
+faction_template = 38
+unit_class = "warrior"
+level_min = 48
+level_max = 49
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["bite_wolf"]
+
+# The black broodlings off the ridge (#632).
+[[template]]
+entry = 97505
+name = "Pass Broodling"
+creature_type = 2
+rank = 0
+display_id = 397
+faction_template = 103
+unit_class = "warrior"
+level_min = 49
+level_max = 50
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The raiders' leader, a Writ's named creature (#632): elite.
+[[template]]
+entry = 97506
+name = "Gorlak Ashfist"
+creature_type = 7
+rank = 1
+display_id = 6047
+faction_template = 40
+unit_class = "warrior"
+level_min = 50
+level_max = 50
+health_multiplier = 1.6
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The flamekin that burned the first watchtower, a Writ's named creature (#632): elite.
+[[template]]
+entry = 97507
+name = "Kindlemaw"
+creature_type = 4
+rank = 1
+display_id = 10815
+faction_template = 90
+unit_class = "warrior"
+level_min = 50
+level_max = 50
+health_multiplier = 1.6
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["flame_patch_creature"]
+
+# The black dragonspawn who keeps the broodlings' nest on the ridge, a Writ's named creature
+# (#632): elite.
+[[template]]
+entry = 97508
+name = "Cindertooth"
+creature_type = 2
+rank = 1
+display_id = 143
+faction_template = 103
+unit_class = "warrior"
+level_min = 51
+level_max = 51
+health_multiplier = 1.6
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
 # The lake's murlocs for the Vigil post's bounties; no stock Nestguard or Tidehunter exists in
 # Elwynn. Displays 617 (the Murloc's) and 527 (the Streamrunner's) and faction 18 are the lake
 # murlocs'. Spawns are in elwynn_overrides.toml.

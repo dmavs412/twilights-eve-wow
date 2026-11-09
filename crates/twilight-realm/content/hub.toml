@@ -1509,6 +1509,27 @@ progress = [
 ]
 reached = { text_id = 64317, text = "The pass is open. Follow the road up and you'll come to Morgan's Vigil. The orcs at Flame Crest fly Blackrock colours now, so give them a wide berth." }
 
+# The Blackrock Pass Watch camp's captain (#632), on open ground on the road below the border,
+# facing up the pass. She gives and takes the camp's bounties (quests_blackrock_pass.toml), takes
+# its Writs (writs.toml) and yells when the Steppes open (milestones.toml). The name is a
+# placeholder; display 3343 is the Stormwind guard body the readouts wear. z is ground_check.py's.
+[[npc]]
+guid = 9300091
+entry = 190090
+name = "Captain Sela Marrow"
+subname = "Blackrock Pass Watch"
+level = 52
+display_id = 3343
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-8738.0, -2592.0, 132.83]
+orientation = 0.0
+faces = [-8667.0, -2560.0]
+after_milestone = "ilgalar_anchor_broken"
+greeting = "The grey's thinning, and whatever lived behind it is walking down this road. Every one you put down is a stretch of the pass we get back. The Watch pays, and Stormwind keeps count."
+
 # ── Goldshire's townsfolk (#459) ─────────────────────────────────────────────────────────────────
 # Moved from their Goldshire spawns in content/elwynn.toml to the same x and y, under titles the
 # game has a use for: no class trainer, no trade it lacks. Each says one line. Smith Argus keeps

@@ -23,7 +23,16 @@ after = "ilgalar_anchor_broken"
 # Points are roughly solo minutes: a camp bounty 15, a camp Writ 120 (ticket 06). 540 is nine
 # hours of bounties alone (#626 decision 1: "about 8 to 10 hours").
 goal = 540
-feeds = []
+# The Blackrock Pass Watch camp's three bounties and three Writs (#632) are the only feeds.
+feeds = [
+  { quest = 99511, points = 15 },
+  { quest = 99512, points = 15 },
+  { quest = 99513, points = 15 },
+  { quest = 99521, points = 120 },
+  { quest = 99522, points = 120 },
+  { quest = 99523, points = 120 },
+]
 announce = "The mist has rolled off Blackrock Pass. The road into the Burning Steppes is open."
-# The yell is the Blackrock Pass camp captain's (Davis on #630, 2026-11-08: Toren is gone by
-# then); #632 adds the captain (Hub NPC entry 190090) and this row's `yell`.
+# The yell is the Blackrock Pass camp captain's, Captain Sela Marrow (hub.toml 9300091), not
+# Toren's (Davis on #630, 2026-11-08: Toren is gone by then).
+yell = { npc = 190090, text = "The pass is clear! The grey's gone off Blackrock Pass and the road's open to the Steppes. Twelve years it held. It doesn't hold now." }

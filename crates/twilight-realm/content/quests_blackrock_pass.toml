@@ -35,3 +35,55 @@ completion = "I felt it from here. The whole inn did; the cups jumped. It's done
 money = 2450
 zone_or_sort = 44
 kill = [[97513, 1]]
+
+# ── The Blackrock Pass Watch camp (#626) ─────────────────────────────────────────────────────────
+# Captain Sela Marrow (Hub NPC 190090, #632) gives and takes the camp's three bounties once the
+# Anchor breaks. Each hand-in feeds `steppes_open`'s Tally 15 until the Steppes open
+# (milestones.toml); after that it still pays. Money is 30 x level.
+
+[[quest]]
+id = 99511
+kind = "bounty"
+giver = 190090
+after_milestone = "ilgalar_anchor_broken"
+level = 48
+title = "Blackrock at the Pass"
+objectives = "Kill 12 Blackrock raiders and flamecallers coming down Blackrock Pass, then return to Captain Sela Marrow at the Watch camp."
+details = "The orcs were the first through. They must have sat behind the grey for years, waiting for it to lift. Twelve of them, and the road stays ours another night."
+progress = "Still coming, are they?"
+completion = "That's twelve fewer. Stormwind counts every one, and so do I."
+money = 1440
+zone_or_sort = 44
+kill = [{ family = "Blackrock slain", entries = [97501, 97502], count = 12 }]
+
+[[quest]]
+id = 99512
+kind = "bounty"
+giver = 190090
+after_milestone = "ilgalar_anchor_broken"
+level = 49
+title = "What Burns"
+objectives = "Kill 12 flamekin and ember hounds in Blackrock Pass, then return to Captain Sela Marrow."
+details = "There's fire walking in the pass, and dogs made of embers running with it. Whatever the mountain's doing beyond the grey, it's spilling over. Put twelve of them out."
+progress = "Mind your boots. The ground stays hot for an hour."
+completion = "Good. The grass on this side doesn't burn as easily as theirs, and I'd like to keep it that way."
+money = 1470
+zone_or_sort = 44
+kill = [{ family = "Flamekin and ember hounds slain", entries = [97503, 97504], count = 12 }]
+
+[[quest]]
+id = 99513
+kind = "bounty"
+giver = 190090
+after_milestone = "ilgalar_anchor_broken"
+level = 50
+# Level 50 is Tier 3's by default, and no Tier 3 Calling has a kit yet: offered from Tier 2.
+min_tier = 2
+title = "Wings Out of the Grey"
+objectives = "Kill 10 Pass Broodlings in Blackrock Pass, then return to Captain Sela Marrow."
+details = "Broodlings. Black ones, the size of a hound, coming down off the ridge as the mist thins. Something bigger is laying them somewhere up there. Ten of them, before they learn to fly properly."
+progress = "Any bigger ones?"
+completion = "Ten. I'll write it up. The city won't want to read it, but I'll write it up."
+money = 1500
+zone_or_sort = 44
+kill = [[97505, 10]]

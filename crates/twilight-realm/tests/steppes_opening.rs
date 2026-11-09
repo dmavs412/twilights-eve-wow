@@ -320,6 +320,199 @@ fn leaving_the_phase_with_the_waves_under_way_abandons_it() {
     );
 }
 
+// ── The Blackrock Pass Watch camp (#632) ─────────────────────────────────────────────────────────
+
+/// Captain Sela Marrow (`hub.toml` 9300091) and the camp's Writ board (`writs.toml` 794001).
+const CAPTAIN: u64 = HIGHGUID_UNIT << 48 | 190090 << 24 | 9300091;
+const CAMP_BOARD: u64 = HIGHGUID_GAMEOBJECT << 48 | 794001;
+/// Stormwind's Writ Board in the Trade District (`writs.toml` 791001), and a spot beside it.
+const CITY_BOARD: u64 = HIGHGUID_GAMEOBJECT << 48 | 791001;
+const BY_CITY_BOARD: [f32; 3] = [-8820.0, 662.0, 95.43];
+/// In the camp, a couple of yards from the captain, and a yard from the board.
+const IN_CAMP: [f32; 3] = [-8745.0, -2600.0, 133.0];
+const BY_CAPTAIN: [f32; 3] = [-8736.0, -2592.0, 132.83];
+const BY_CAMP_BOARD: [f32; 3] = [-8731.0, -2586.0, 132.61];
+/// The camp's eight creature templates (`mobs.toml`).
+const CAMP_CREATURES: std::ops::RangeInclusive<u32> = 97501..=97508;
+const BOUNTIES: [u32; 3] = [99511, 99512, 99513];
+const CAMP_WRITS: [u32; 3] = [99521, 99522, 99523];
+const STEPPES: &str = "steppes_open";
+/// An hour into the Writ Board's window 0 (2026-11-02T00:00Z), in Unix ms.
+const WRIT_WINDOW_0: u64 = 1_793_577_600_000 + 3_600_000;
+const WRIT_WINDOW_MS: u64 = 48 * 3_600_000;
+
+/// `levels.len()` level 50 Zealots from Northshire, each holding `held`: a quest and its kill
+/// counts, every objective met.
+fn camp_party(levels: &[u8], held: &'static [(u32, [u32; 4])]) -> Party {
+    let mut p = Party::edited(
+        Realm::with_seed(1),
+        levels,
+        START_ELWYNN,
+        Box::new(NoGround),
+        move |_, blob| {
+            let mut blob = blob.replace("calling = \"basic_warrior\"", "calling = \"zealot\"");
+            for (slot, (id, kills)) in held.iter().enumerate() {
+                blob.push_str(&format!(
+                    "\n[[quests]]\nid = {id}\nslot = {slot}\nkills = {kills:?}\n"
+                ));
+            }
+            blob
+        },
+    );
+    p.realm.set_wall_clock(WRIT_WINDOW_0);
+    p.run(0.5);
+    p
+}
+
+/// The quests player `i` is offered in answer to `command`.
+fn listed(p: &mut Party, i: usize, command: RealmCommand) -> Vec<u32> {
+    let from = p.seen(i).len();
+    p.cmd(i, command);
+    p.seen(i)[from..]
+        .iter()
+        .flat_map(|e| match e {
+            SessionEvent::QuestGreeting(list) => list.quests.iter().map(|q| q.quest_id).collect(),
+            SessionEvent::QuestDetail(d) => vec![d.quest_id],
+            _ => Vec::new(),
+        })
+        .collect()
+}
+
+/// Player `i` hands `quest` in to the captain; the money it paid. Panics if it did not go
+/// through.
+fn hand_in_to_captain(p: &mut Party, i: usize, quest: u32) -> u32 {
+    let from = p.seen(i).len();
+    for command in [
+        RealmCommand::QuestGiverCompleteQuest {
+            npc: CAPTAIN,
+            quest,
+        },
+        RealmCommand::QuestGiverRequestReward {
+            npc: CAPTAIN,
+            quest,
+        },
+        RealmCommand::QuestGiverChooseReward {
+            npc: CAPTAIN,
+            quest,
+            choice: 0,
+        },
+    ] {
+        p.cmd(i, command);
+    }
+    p.seen(i)[from..]
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::QuestComplete(c) if c.quest_id == quest => Some(c.money),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("{quest}: {:?}", &p.seen(i)[from..]))
+}
+
+/// The Milestones state files the realm handed the host since the last drain.
+fn milestone_blobs(p: &mut Party) -> Vec<String> {
+    p.realm
+        .drain_storage()
+        .into_iter()
+        .filter_map(|s| match s {
+            Storage::Milestones { blob } => Some(blob),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn the_camp_comes_when_the_anchor_breaks() {
+    let mut p = camp_party(&[50], &[]);
+    p.go(0, IN_CAMP, 0.0);
+    p.run(2.0);
+    let camp = |p: &Party| {
+        unit_creates(p.seen(0))
+            .into_iter()
+            .filter(|(_, e, _)| CAMP_CREATURES.contains(e))
+            .map(|(_, e, _)| e)
+            .collect::<HashSet<u32>>()
+    };
+    assert!(!shows(&p, 0, CAPTAIN), "the captain before the break");
+    assert!(!shows(&p, 0, CAMP_BOARD), "the board before the break");
+    assert!(camp(&p).is_empty(), "{:?} before the break", camp(&p));
+
+    p.realm.reach_milestone(BROKEN);
+    p.run(0.1);
+    assert!(shows(&p, 0, CAPTAIN), "the captain did not come");
+    assert!(shows(&p, 0, CAMP_BOARD), "the board did not come");
+    p.run(2.0);
+    // Every template has a spawn within sight (100 yd) of the camp.
+    assert_eq!(camp(&p), CAMP_CREATURES.collect::<HashSet<u32>>());
+}
+
+#[test]
+fn the_captain_offers_the_bounties_and_the_camp_board_one_writ() {
+    let mut p = camp_party(&[50], &[]);
+    p.realm.reach_milestone(BROKEN);
+    p.go(0, BY_CAPTAIN, 0.0);
+    p.run(0.5);
+    let bounties = listed(&mut p, 0, RealmCommand::QuestGiverHello { npc: CAPTAIN });
+    for id in BOUNTIES {
+        assert!(bounties.contains(&id), "{id} in {bounties:?}");
+    }
+
+    p.go(0, BY_CAMP_BOARD, 0.0);
+    p.run(0.5);
+    let mut seen = HashSet::new();
+    for window in 0..12 {
+        p.realm
+            .set_wall_clock(WRIT_WINDOW_0 + window * WRIT_WINDOW_MS);
+        let board = listed(&mut p, 0, RealmCommand::UseGameObject { guid: CAMP_BOARD });
+        assert_eq!(board.len(), 1, "window {window}: {board:?}");
+        assert!(CAMP_WRITS.contains(&board[0]), "window {window}: {board:?}");
+        seen.insert(board[0]);
+    }
+    assert_eq!(seen, HashSet::from(CAMP_WRITS), "in 12 windows");
+
+    p.go(0, BY_CITY_BOARD, 0.0);
+    p.run(0.5);
+    let city = listed(&mut p, 0, RealmCommand::UseGameObject { guid: CITY_BOARD });
+    assert!(!city.is_empty(), "the city board offered nothing");
+    assert!(city.iter().all(|id| !CAMP_WRITS.contains(id)), "{city:?}");
+}
+
+#[test]
+fn camp_hand_ins_feed_the_tally_until_the_steppes_open() {
+    const HELD: &[(u32, [u32; 4])] = &[(99511, [12, 0, 0, 0]), (99521, [50, 50, 1, 0])];
+    let mut p = camp_party(&[50, 50], HELD);
+    p.realm.reach_milestone(BROKEN);
+    for i in 0..2 {
+        p.go(i, BY_CAPTAIN, 0.0);
+    }
+    p.run(0.5);
+    milestone_blobs(&mut p);
+
+    let paid = hand_in_to_captain(&mut p, 0, 99511);
+    p.run(0.1);
+    let blobs = milestone_blobs(&mut p);
+    assert_eq!(blobs.len(), 1, "{blobs:?}");
+    assert!(
+        blobs[0].contains(&format!("[{STEPPES}]\ncount = 15\n")),
+        "{}",
+        blobs[0]
+    );
+    hand_in_to_captain(&mut p, 0, 99521);
+    p.run(0.1);
+    let blobs = milestone_blobs(&mut p);
+    assert!(
+        blobs.len() == 1 && blobs[0].contains(&format!("[{STEPPES}]\ncount = 135\n")),
+        "{blobs:?}"
+    );
+
+    p.realm.reach_milestone(STEPPES);
+    p.run(0.1);
+    milestone_blobs(&mut p);
+    assert_eq!(hand_in_to_captain(&mut p, 1, 99511), paid);
+    hand_in_to_captain(&mut p, 1, 99521);
+    p.run(0.1);
+    assert!(milestone_blobs(&mut p).is_empty(), "the Tally counted on");
+}
+
 #[test]
 fn toren_s_quest_text_keeps_to_the_bible() {
     let text = include_str!("../content/quests_blackrock_pass.toml");

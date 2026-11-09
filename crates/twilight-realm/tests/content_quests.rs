@@ -467,6 +467,14 @@ fn writs() -> Vec<toml::Value> {
         .clone()
 }
 
+/// The Writs posted on the board GameObject `entry`.
+fn writs_on(entry: u32) -> Vec<toml::Value> {
+    writs()
+        .into_iter()
+        .filter(|q| q["giver_object"].as_integer() == Some(i64::from(entry)))
+        .collect()
+}
+
 /// A TOML number, written as an integer or a float.
 fn number(v: &toml::Value) -> f64 {
     v.as_float()
@@ -500,7 +508,7 @@ fn zone_overrides(name: &str) -> toml::Value {
 
 #[test]
 fn the_seven_writs_load_with_their_pools_levels_and_pay() {
-    let writs = writs();
+    let writs = writs_on(WRIT_BOARD_ENTRY);
     assert_eq!(writs.len(), WRITS.len());
     let mut realm = realm();
     for (id, pool, level, levels, money) in WRITS {
@@ -615,9 +623,10 @@ fn the_writ_board_shows_one_writ_per_pool_and_every_writ_in_turn() {
     );
 }
 
-/// Every creature a Writ's kill lines count has a spawn in its pool's zone that the overrides
-/// keep: not one of their `removed` entries, and not one of their `removed_guids`, the creatures
-/// that stood inside a Phased Dungeon's footprint.
+/// Every creature a Stormwind Writ's kill lines count has a spawn in its pool's zone that the
+/// overrides keep: not one of their `removed` entries, and not one of their `removed_guids`, the
+/// creatures that stood inside a Phased Dungeon's footprint. The Blackrock Pass Writs' creatures
+/// are hand-placed; their test is below.
 #[test]
 fn every_writ_creature_spawns_in_its_zone_outside_the_removed_footprints() {
     let elwynn_overrides: toml::Value =
@@ -651,7 +660,7 @@ fn every_writ_creature_spawns_in_its_zone_outside_the_removed_footprints() {
         })
         .collect();
     let mut checked = 0;
-    for q in writs() {
+    for q in writs_on(WRIT_BOARD_ENTRY) {
         let id = q["id"].as_integer().unwrap();
         let pool = q["zone_or_sort"].as_integer().unwrap();
         let (_, rows, removed, removed_guids) = spawns
@@ -760,6 +769,214 @@ fn the_writ_officer_is_a_friendly_creature_with_one_spawn_in_stormwind() {
         );
     }
     assert!(creature_named(&mut realm, WRIT_OFFICER));
+}
+
+// ── The Blackrock Pass Watch camp (#632, spec #626) ──────────────────────────────────────────────
+
+/// The camp's board GameObject entry, its captain's Hub NPC entry, and where the camp stands.
+const CAMP_BOARD_ENTRY: u32 = 980601;
+const CAMP_CAPTAIN: u32 = 190090;
+const CAMP_AT: [f32; 2] = [-8735.0, -2590.0];
+/// Captain Sela Marrow's spot (`hub.toml` 9300091).
+const CAPTAIN_AT: [f32; 2] = [-8738.0, -2592.0];
+
+/// The camp's three Writs: `(id, level, levels, money)`, all in the Burning Steppes pool (46).
+const CAMP_WRITS: [(u32, u8, f64, u32); 3] = [
+    (99521, 48, 1.0, 6720),
+    (99522, 49, 1.5, 10290),
+    (99523, 50, 2.0, 14000),
+];
+
+/// The camp's three bounties: `(id, money, entries, count)` of each one's single kill line.
+const CAMP_BOUNTIES: [(u32, i32, &[i64], u32); 3] = [
+    (99511, 1440, &[97501, 97502], 12),
+    (99512, 1470, &[97503, 97504], 12),
+    (99513, 1500, &[97505], 10),
+];
+
+/// The camp's 30 creature rows in `zones.toml` are these guids.
+const CAMP_GUIDS: std::ops::RangeInclusive<i64> = 964001..=964030;
+
+fn quest_template(realm: &mut Realm, quest: u32) -> Box<benilla_protocol::messages::QuestTemplate> {
+    realm.handle(RealmCommand::QuestQuery { quest });
+    drain(realm)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::QuestTemplate(t) => Some(t),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("quest {quest}'s template"))
+}
+
+/// The bounties in `content/quests_blackrock_pass.toml` the camp's captain gives.
+fn camp_bounties() -> Vec<toml::Value> {
+    let file: toml::Value = toml::from_str(include_str!("../content/quests_blackrock_pass.toml"))
+        .expect("quests_blackrock_pass.toml parses");
+    file["quest"]
+        .as_array()
+        .expect("its quests")
+        .iter()
+        .filter(|q| q["giver"].as_integer() == Some(i64::from(CAMP_CAPTAIN)))
+        .cloned()
+        .collect()
+}
+
+/// Every creature entry `q`'s kill lines count: a family line's entries, or a plain line's one.
+fn kill_entries(q: &toml::Value) -> Vec<i64> {
+    q["kill"]
+        .as_array()
+        .expect("kill lines")
+        .iter()
+        .flat_map(|k| match k.as_array() {
+            Some(one) => vec![one[0].as_integer().unwrap()],
+            None => integers(k, "entries"),
+        })
+        .collect()
+}
+
+#[test]
+fn the_blackrock_pass_writs_and_bounties_load_with_their_lines_and_pay() {
+    let writs = writs_on(CAMP_BOARD_ENTRY);
+    assert_eq!(writs.len(), CAMP_WRITS.len());
+    let mut realm = realm();
+    for (id, level, levels, money) in CAMP_WRITS {
+        let q = writs
+            .iter()
+            .find(|q| q["id"].as_integer() == Some(i64::from(id)))
+            .unwrap_or_else(|| panic!("Writ {id} is on the camp board"));
+        assert_eq!(q["kind"].as_str(), Some("writ"), "Writ {id}");
+        assert_eq!(
+            q["ender"].as_integer(),
+            Some(i64::from(CAMP_CAPTAIN)),
+            "Writ {id}"
+        );
+        assert_eq!(number(&q["levels"]), levels, "Writ {id}");
+        assert_eq!(
+            f64::from(money),
+            140.0 * levels * f64::from(level),
+            "Writ {id}"
+        );
+        let t = quest_template(&mut realm, id);
+        assert_eq!(
+            (t.zone_or_sort, t.level, t.money),
+            (46, u32::from(level), money as i32),
+            "Writ {id}"
+        );
+    }
+
+    let bounties = camp_bounties();
+    assert_eq!(bounties.len(), CAMP_BOUNTIES.len());
+    for (id, money, entries, count) in CAMP_BOUNTIES {
+        let q = bounties
+            .iter()
+            .find(|q| q["id"].as_integer() == Some(i64::from(id)))
+            .unwrap_or_else(|| panic!("bounty {id} is the captain's"));
+        assert_eq!(q["kind"].as_str(), Some("bounty"), "bounty {id}");
+        assert_eq!(kill_entries(q), entries, "bounty {id}");
+        let t = quest_template(&mut realm, id);
+        assert_eq!(t.money, money, "bounty {id}");
+        // A family line sends its first entry.
+        let lines: Vec<(u32, u32)> = t
+            .objectives
+            .iter()
+            .filter(|o| o.creature_or_go != 0)
+            .map(|o| (o.creature_or_go, o.required_count))
+            .collect();
+        assert_eq!(lines, [(entries[0] as u32, count)], "bounty {id}");
+    }
+}
+
+#[test]
+fn the_camp_s_creatures_stand_on_open_redridge_land_near_the_camp() {
+    let rows: Vec<toml::Value> = zone_overrides("redridge")["added"]
+        .as_array()
+        .expect("Redridge's added rows")
+        .iter()
+        .filter(|a| CAMP_GUIDS.contains(&a["guid"].as_integer().unwrap()))
+        .cloned()
+        .collect();
+    assert_eq!(rows.len(), 30);
+    let at = |a: &toml::Value| {
+        let p = a["position"].as_array().unwrap();
+        [number(&p[0]) as f32, number(&p[1]) as f32]
+    };
+    for a in &rows {
+        let guid = a["guid"].as_integer().unwrap();
+        let [x, y] = at(a);
+        assert_eq!(
+            a["after_milestone"].as_str(),
+            Some("ilgalar_anchor_broken"),
+            "{guid}"
+        );
+        assert!(x < -8670.0, "{guid} stands past the border at {x}");
+        assert!(!twilight_realm::closed_for_good(0, x, y), "{guid}");
+        assert!(!twilight_realm::closed_at(0, x, y, &[]), "{guid} is gated");
+        let from_captain = (x - CAPTAIN_AT[0]).hypot(y - CAPTAIN_AT[1]);
+        assert!(
+            from_captain >= 45.0,
+            "{guid} is {from_captain} yd from the captain"
+        );
+    }
+
+    let quests = camp_bounties()
+        .into_iter()
+        .chain(writs_on(CAMP_BOARD_ENTRY));
+    let mut checked = 0;
+    for q in quests {
+        let id = q["id"].as_integer().unwrap();
+        for entry in kill_entries(&q) {
+            let near = rows.iter().any(|a| {
+                let [x, y] = at(a);
+                a["entry"].as_integer() == Some(entry)
+                    && (x - CAMP_AT[0]).hypot(y - CAMP_AT[1]) <= 200.0
+            });
+            assert!(
+                near,
+                "quest {id}: creature {entry} has no spawn near the camp"
+            );
+            checked += 1;
+        }
+    }
+    // The bounties' 2, 2 and 1 entries, then the Writs' 5, 4 and 5.
+    assert_eq!(checked, 2 + 2 + 1 + 5 + 4 + 5);
+}
+
+#[test]
+fn the_camp_s_eight_templates_have_their_levels_and_ranks() {
+    let mobs: toml::Value =
+        toml::from_str(include_str!("../content/mobs.toml")).expect("mobs.toml parses");
+    let templates = mobs["template"].as_array().unwrap();
+    let mut realm = realm();
+    // (entry, level_min, level_max, rank)
+    let table = [
+        (97501, 48, 49, 0),
+        (97502, 49, 50, 0),
+        (97503, 48, 50, 0),
+        (97504, 48, 49, 0),
+        (97505, 49, 50, 0),
+        (97506, 50, 50, 1),
+        (97507, 50, 50, 1),
+        (97508, 51, 51, 1),
+    ];
+    for (entry, min, max, want) in table {
+        let t = templates
+            .iter()
+            .find(|t| t["entry"].as_integer() == Some(entry))
+            .unwrap_or_else(|| panic!("template {entry} in mobs.toml"));
+        assert_eq!(
+            (t["level_min"].as_integer(), t["level_max"].as_integer()),
+            (Some(min), Some(max)),
+            "template {entry}"
+        );
+        assert!(t.get("rolls").is_none(), "template {entry} has rolls");
+        let entry = entry as u32;
+        realm.handle(RealmCommand::CreatureQuery { entry });
+        let rank = drain(&mut realm).into_iter().find_map(|e| match e {
+            SessionEvent::CreatureName { entry: e, rank, .. } if e == entry => Some(rank),
+            _ => None,
+        });
+        assert_eq!(rank, Some(want), "creature {entry}");
+    }
 }
 
 /// Redridge's and Duskwood's six quest and quest-item files (#598) load with the rest: a quest

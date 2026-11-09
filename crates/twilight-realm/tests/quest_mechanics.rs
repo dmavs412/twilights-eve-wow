@@ -433,14 +433,16 @@ fn a_use_without_a_quest_that_wants_it_leaves_the_object_standing() {
         .any(|e| matches!(e, SessionEvent::ObjectsRemoved(_))));
 }
 
+/// Its GameObject has a guid of its own: added content is process-wide and the first copy of a
+/// guid wins, so sharing ROOT's would race the respawn test for its 5 s respawn.
 #[test]
 #[should_panic(expected = "more than 4 kill, talk and use objectives")]
 fn more_than_four_kill_talk_and_use_objectives_fail_validation() {
     let _ = Realm::new().with_quests(
         r#"
 [[gameobject]]
-guid = 990001
-entry = 990001
+guid = 990003
+entry = 990003
 display = 1
 map = 0
 position = [-8911.0, -140.5, 82.0]
@@ -458,7 +460,7 @@ completion = "-"
 money = 0
 kill = [[6, 1], [38, 1]]
 talk = [{ npc = 197, option = "a", reply = "b" }]
-use = [[990001, 1], [990001, 2]]
+use = [[990003, 1], [990003, 2]]
 "#,
     );
 }

@@ -372,16 +372,24 @@ const BY_HERALD: [f32; 3] = [-8822.0, 666.0, 95.43];
 const PASS_OPEN: [f32; 3] = [-8690.0, -2560.0, 132.0];
 const PASS_STEPPES: [f32; 3] = [-8650.0, -2560.0, 132.0];
 
-/// The shipped catalogue with a goal of 30, fed 15 a hand-in of [`FED`], and Toren's yell.
+/// The shipped catalogue with a goal of 30, fed 15 a hand-in of [`FED`] alone, and Toren's yell in
+/// place of the camp captain's.
 fn tally_catalogue() -> String {
     let shipped = include_str!("../content/milestones.toml");
-    assert!(shipped.contains("goal = 540\nfeeds = []\n"), "{shipped}");
-    shipped.replace(
-        "goal = 540\nfeeds = []\n",
-        &format!(
-            "goal = 30\nfeeds = [{{ quest = {FED}, points = 15 }}]\n\
-             yell = {{ npc = 190083, text = \"{YELL}\" }}\n"
-        ),
+    let (head, rest) = shipped
+        .split_once("goal = 540\n")
+        .unwrap_or_else(|| panic!("{shipped}"));
+    let (_, rest) = rest
+        .split_once("\n]\n")
+        .unwrap_or_else(|| panic!("the shipped feeds: {shipped}"));
+    let rest: String = rest
+        .lines()
+        .filter(|l| !l.starts_with("yell = "))
+        .map(|l| format!("{l}\n"))
+        .collect();
+    format!(
+        "{head}goal = 30\nfeeds = [{{ quest = {FED}, points = 15 }}]\n\
+         yell = {{ npc = 190083, text = \"{YELL}\" }}\n{rest}"
     )
 }
 
