@@ -1209,10 +1209,12 @@ pub(crate) fn content() -> &'static Mobs {
                 }
             }
         }
-        // The creatures an Encounter's waves bring in: rows the Population never streams, each
-        // with a guid of its own above every called one.
+        // The creatures an Encounter's waves bring in: rows the Population never streams and a
+        // Run never starts with, each with a guid of its own above every called one. A Phased
+        // Dungeon's stand at their written heights, as its other interior rows do.
         let mut encounter_guids = 0;
         for (e, enc) in crate::encounters::content().iter().enumerate() {
+            let place = enc.place();
             for (w, wave) in enc.wave.iter().enumerate() {
                 for c in &wave.creatures {
                     let t = template
@@ -1226,11 +1228,11 @@ pub(crate) fn content() -> &'static Mobs {
                             level_min: c.level,
                             level_max: c.level,
                             position: c.position,
-                            grounded: true,
+                            grounded: place.phase == Phase::OpenWorld,
                             display_id: t.display_id,
                             camp: ENCOUNTER_GUID_BASE + encounter_guids,
-                            map: crate::content::EASTERN_KINGDOMS,
-                            phase: Phase::OpenWorld,
+                            map: place.map,
+                            phase: place.phase,
                             encounter: Some((e, w)),
                             ..Default::default()
                         });

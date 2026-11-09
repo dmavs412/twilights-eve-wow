@@ -1,0 +1,37 @@
+# The Burning Steppes opening (#626): Toren's break and the Blackrock Pass Watch camp. Same schema
+# as content/quests.toml.
+
+# ── The break (#631) ──────────────────────────────────────────────────────────────────────────────
+# Toren in Lakeshire's inn (Hub NPC 190083) gives both. Translation Complete stands in for 98521
+# (#626 decision 11) until ticket 10 deletes it. Bring It Down is offered while the Anchor stands;
+# a character who holds it after another group's break still finishes it. Holding it at the Anchor
+# on Ilgalar's top floor starts the encounter `ilgalar_anchor` (encounters.toml).
+
+[[quest]]
+id = 99501
+kind = "story"
+giver = 190083
+level = 48
+title = "Translation Complete"
+objectives = "Hear Toren out at the inn in Lakeshire."
+details = "It's done. Every page I have, read through twice. I know how his stones fail now: where the casing gives, what the core does when the tune slips, and how long the mist takes to notice. I didn't think I'd ever say this. I know how to break the one on the hill."
+progress = "Sit down. This will take a minute."
+completion = "He built them to hold forever, and he wrote down every way they don't. That's Morganth: careful about everything except what it was for. Listen, and I'll tell you how we bring it down."
+money = 0
+zone_or_sort = 44
+
+[[quest]]
+id = 99502
+kind = "story"
+giver = 190083
+after = [99501]
+until_milestone = "ilgalar_anchor_broken"
+level = 49
+title = "Bring It Down"
+objectives = "Climb the Tower of Ilgalar to the Anchor on its top floor, hold it while the cult comes to save it, kill the Anchorwarden, and return to Toren in Lakeshire."
+details = "The Anchor on the top floor still runs. Morganth's dead and it doesn't care. Here's how it breaks: you don't hit it, you make it work too hard. Stand at the stone and it pulls on everything near it to keep its tune. The cult will feel that the moment you start. They'll send tuners up the stair to steady it, and something worse after them. Kill them all, and the last one most of all. With no hands to hold the tune, the stone gives."
+progress = "Is it still humming? Some nights I can hear it from here. I want to stop hearing it."
+completion = "I felt it from here. The whole inn did; the cups jumped. It's done, then. It's really done. The grey won't go at once. He wrote that too. It thins, and what's been living behind it walks out first. Someone will have to hold the road while it goes."
+money = 2450
+zone_or_sort = 44
+kill = [[97513, 1]]

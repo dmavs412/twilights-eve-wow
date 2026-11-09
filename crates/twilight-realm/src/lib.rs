@@ -1758,38 +1758,48 @@ impl Realm {
         }
     }
 
-    /// The Encounters' tick: waves come at their points among the characters on the map, and
-    /// what they say is sent to the characters it concerns.
+    /// The Encounters' tick: at each place an encounter runs (the open world, or a Phased
+    /// Dungeon's Run), waves come at their points among the characters there, and what they say is
+    /// sent to the characters it concerns. A win that records a Milestone reaches it.
     fn tick_encounters(&mut self, dt: f32, host: &dyn Host) {
-        let place = shard::Place {
-            map: content::EASTERN_KINGDOMS,
-            phase: phased::Phase::OpenWorld,
-        };
-        let mut players = Vec::new();
-        let worlds = std::iter::once(&self.world).chain(self.parked.values().map(|s| &s.world));
-        for w in worlds.flatten() {
-            let (true, Some(c)) = (w.shard_place() == Some(place), self.characters.get(w.guid))
-            else {
-                continue;
-            };
-            players.push(encounters::Player {
-                guid: w.guid,
-                position: c.position,
-                alive: w.alive(),
-                quests: c
-                    .quests
-                    .active
-                    .iter()
-                    .map(|a| (a.id, quests::uses_done(a)))
-                    .collect(),
-            });
+        let mut places: Vec<shard::Place> = encounters::content()
+            .iter()
+            .map(encounters::Encounter::place)
+            .collect();
+        places.sort();
+        places.dedup();
+        let mut told = Vec::new();
+        let mut won = Vec::new();
+        for place in places {
+            let mut players = Vec::new();
+            let worlds = std::iter::once(&self.world).chain(self.parked.values().map(|s| &s.world));
+            for w in worlds.flatten() {
+                let (true, Some(c)) = (w.shard_place() == Some(place), self.characters.get(w.guid))
+                else {
+                    continue;
+                };
+                players.push(encounters::Player {
+                    guid: w.guid,
+                    position: c.position,
+                    alive: w.alive(),
+                    quests: c
+                        .quests
+                        .active
+                        .iter()
+                        .map(|a| (a.id, quests::uses_done(a)))
+                        .collect(),
+                });
+            }
+            // A place with no shard (a Phase no one stands in, its Run reset) lends an empty list.
+            let mut none = Vec::new();
+            let mobs = self
+                .shards
+                .get_mut(&place)
+                .map_or(&mut none, |s| &mut s.mobs);
+            let (said, ended) = self.encounters.tick(dt, place, &players, mobs, host);
+            told.extend(said);
+            won.extend(ended);
         }
-        let mut none = Vec::new();
-        let mobs = self
-            .shards
-            .get_mut(&place)
-            .map_or(&mut none, |s| &mut s.mobs);
-        let told = self.encounters.tick(dt, &players, mobs, host);
         let sessions = std::iter::once((&self.world, &mut self.events))
             .chain(self.parked.values_mut().map(|s| (&s.world, &mut s.events)));
         for (w, events) in sessions {
@@ -1799,6 +1809,9 @@ impl Realm {
                     .filter(|(g, _)| *g == w.guid)
                     .map(|(_, e)| e.clone()),
             );
+        }
+        for key in won.iter().filter_map(|e| e.records.as_deref()) {
+            self.reach_milestone(key);
         }
     }
 

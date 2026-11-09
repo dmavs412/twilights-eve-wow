@@ -1,7 +1,8 @@
 //! Encounters (`content/encounters.toml`): waves of creatures that come at a point in the open
-//! world when a quest step starts them, and that fail when the characters fighting them leave or
-//! die. The creatures are rows in [`crate::mobs`]' spawn list that no Population streams in; this
-//! module brings them into the shard's mobs, a wave at a time. Nothing here names a quest.
+//! world, or in a Phased Dungeon's Phase, when a quest step starts them, and that fail when the
+//! characters fighting them leave or die. The creatures are rows in [`crate::mobs`]' spawn list
+//! that no Population streams in; this module brings them into the shard's mobs, a wave at a
+//! time. Nothing here names a quest.
 
 use std::collections::HashSet;
 use std::sync::OnceLock;
@@ -11,6 +12,8 @@ use benilla_protocol::SessionEvent;
 use serde::Deserialize;
 
 use crate::mobs::{self, Mob, State};
+use crate::phased::Phase;
+use crate::shard::Place;
 use crate::space::flat_distance;
 use crate::Host;
 
@@ -47,6 +50,12 @@ pub(crate) struct Encounter {
     pub(crate) key: String,
     pub(crate) quest: u32,
     pub(crate) start: Start,
+    /// The Phased Dungeon whose Phase it runs in; none runs it in the open world.
+    #[serde(default)]
+    pub(crate) dungeon: Option<u32>,
+    /// The Milestone a win reaches, when it is not reached yet.
+    #[serde(default)]
+    pub(crate) records: Option<String>,
     pub(crate) anchor: [f32; 3],
     pub(crate) start_radius: f32,
     pub(crate) leash: f32,
@@ -62,21 +71,64 @@ struct File {
     encounter: Vec<Encounter>,
 }
 
+impl Encounter {
+    /// Where it runs: the open world of Eastern Kingdoms, or its dungeon's Phase on the dungeon's
+    /// map.
+    pub(crate) fn place(&self) -> Place {
+        match self.dungeon.and_then(crate::phased::dungeon) {
+            Some(d) => Place {
+                map: d.map,
+                phase: Phase::Dungeon(d.id),
+            },
+            None => Place {
+                map: crate::content::EASTERN_KINGDOMS,
+                phase: Phase::OpenWorld,
+            },
+        }
+    }
+}
+
 pub(crate) fn content() -> &'static [Encounter] {
     static ENCOUNTERS: OnceLock<Vec<Encounter>> = OnceLock::new();
-    ENCOUNTERS.get_or_init(|| {
-        let file: File = toml::from_str(include_str!("../content/encounters.toml"))
-            .expect("content/encounters.toml parses");
-        for (i, e) in file.encounter.iter().enumerate() {
+    ENCOUNTERS.get_or_init(|| parse(include_str!("../content/encounters.toml")))
+}
+
+/// The encounters of `text` (the shape of `content/encounters.toml`). A repeated key, an
+/// encounter with no wave, a `dungeon` that is no Phased Dungeon, an anchor outside that
+/// dungeon's footprint and a `records` the Milestone catalogue lacks panic.
+fn parse(text: &str) -> Vec<Encounter> {
+    let file: File = toml::from_str(text).expect("content/encounters.toml parses");
+    for (i, e) in file.encounter.iter().enumerate() {
+        assert!(
+            file.encounter[..i].iter().all(|o| o.key != e.key),
+            "encounter {} is declared twice",
+            e.key
+        );
+        assert!(!e.wave.is_empty(), "encounter {} has no wave", e.key);
+        if let Some(id) = e.dungeon {
+            let d = crate::phased::dungeon(id).unwrap_or_else(|| {
+                panic!(
+                    "encounter {} runs in dungeon {id}, which is no Phased Dungeon",
+                    e.key
+                )
+            });
             assert!(
-                file.encounter[..i].iter().all(|o| o.key != e.key),
-                "encounter {} is declared twice",
+                d.holds(d.map, e.anchor),
+                "encounter {}'s anchor {:?} is outside {}'s footprint",
+                e.key,
+                e.anchor,
+                d.name
+            );
+        }
+        if let Some(key) = &e.records {
+            assert!(
+                crate::milestones::listed(key),
+                "encounter {} records Milestone {key}, which content/milestones.toml does not list",
                 e.key
             );
-            assert!(!e.wave.is_empty(), "encounter {} has no wave", e.key);
         }
-        file.encounter
-    })
+    }
+    file.encounter
 }
 
 /// A character on the encounters' map, as a tick sees them.
@@ -155,19 +207,26 @@ fn say(chat_type: u8, text: &str) -> SessionEvent {
 }
 
 impl Encounters {
-    /// Advances every encounter by `dt` seconds among `players`, bringing creatures into `mobs`
-    /// (the open world's) and clearing them. What to tell characters, by guid.
+    /// Advances every encounter that runs at `place` by `dt` seconds among `players` (the
+    /// characters there), bringing creatures into `mobs` (that place's shard's) and clearing them.
+    /// With no one at the place, a run under way there is dropped. What to tell characters, by
+    /// guid, and the encounters won this tick.
     pub(crate) fn tick(
         &mut self,
         dt: f32,
+        place: Place,
         players: &[Player],
         mobs: &mut Vec<Mob>,
         host: &dyn Host,
-    ) -> Vec<(u64, SessionEvent)> {
+    ) -> (Vec<(u64, SessionEvent)>, Vec<&'static Encounter>) {
         let all = content();
         self.slots.resize_with(all.len(), Slot::default);
         let mut told = Vec::new();
+        let mut won = Vec::new();
         for (i, enc) in all.iter().enumerate() {
+            if enc.place() != place {
+                continue;
+            }
             let questers: Vec<&Player> = players.iter().filter(|p| p.holds(enc.quest)).collect();
             let alive: Vec<&Player> = questers.iter().copied().filter(|p| p.alive).collect();
             let slot = &mut self.slots[i];
@@ -288,8 +347,56 @@ impl Encounters {
             } else if run.waves.iter().flatten().all(dead) {
                 // The last wave is dead; its corpses stay until the next run clears them.
                 slot.run = None;
+                won.push(enc);
             }
         }
-        told
+        (told, won)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse;
+
+    const DUNGEON: &str = r#"
+[[encounter]]
+key = "anchor"
+quest = 99502
+start = "accepted"
+dungeon = 8
+records = "ilgalar_anchor_broken"
+anchor = [-9288.0, -3308.0, 150.09]
+start_radius = 10.0
+leash = 40.0
+first_wave_after_s = 10.0
+next_wave_after_s = 45.0
+
+[[encounter.wave]]
+creatures = [{ entry = 97511, level = 48, count = 1, position = [-9300.0, -3300.0, 150.09] }]
+"#;
+
+    #[test]
+    fn a_dungeon_encounter_that_records_a_milestone_loads() {
+        let all = parse(DUNGEON);
+        assert_eq!(all[0].dungeon, Some(8));
+        assert_eq!(all[0].records.as_deref(), Some("ilgalar_anchor_broken"));
+    }
+
+    #[test]
+    #[should_panic(expected = "which content/milestones.toml does not list")]
+    fn records_naming_no_milestone_panics() {
+        parse(&DUNGEON.replace("ilgalar_anchor_broken", "no_such_milestone"));
+    }
+
+    #[test]
+    #[should_panic(expected = "which is no Phased Dungeon")]
+    fn a_dungeon_that_is_no_phased_dungeon_panics() {
+        parse(&DUNGEON.replace("dungeon = 8", "dungeon = 9999"));
+    }
+
+    #[test]
+    #[should_panic(expected = "outside Tower of Ilgalar's footprint")]
+    fn an_anchor_outside_the_footprint_panics() {
+        parse(&DUNGEON.replace("[-9288.0, -3308.0, 150.09]", "[-9150.0, -3420.0, 100.0]"));
     }
 }

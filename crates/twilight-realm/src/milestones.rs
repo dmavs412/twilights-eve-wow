@@ -125,6 +125,11 @@ pub(crate) fn shipped_goal(key: &str) -> Option<u64> {
     shipped().iter().find(|m| m.key == key)?.goal
 }
 
+/// Whether the shipped catalogue lists Milestone `key`.
+pub(crate) fn listed(key: &str) -> bool {
+    shipped().iter().any(|m| m.key == key)
+}
+
 /// The shipped catalogue.
 fn shipped() -> &'static [Milestone] {
     static FILE: OnceLock<Vec<Milestone>> = OnceLock::new();
@@ -164,7 +169,7 @@ impl Gate {
             .flatten()
         {
             assert!(
-                shipped().iter().any(|m| m.key == *key),
+                listed(key),
                 "{row} names Milestone {key}, which content/milestones.toml does not list"
             );
         }

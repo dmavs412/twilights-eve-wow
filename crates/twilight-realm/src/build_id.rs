@@ -49,6 +49,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/quest_items_duskwood.toml"),
     include_str!("../content/quest_items_redridge.toml"),
     include_str!("../content/quests.toml"),
+    include_str!("../content/quests_blackrock_pass.toml"),
     include_str!("../content/quests_duskwood.toml"),
     include_str!("../content/quests_duskwood_dungeons.toml"),
     include_str!("../content/quests_elwynn.toml"),

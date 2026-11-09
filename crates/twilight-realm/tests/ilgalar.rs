@@ -25,10 +25,12 @@ const VALVE_USED: &str = "The valve groans shut. Something above stops answering
 const IN_THE_DOORWAY: [f32; 3] = [-9281.6, -3321.7, 115.67];
 const FAR_OUTSIDE: [f32; 3] = [-9150.0, -3420.0, 100.0];
 
-/// The Anchor, its display, and the Steppes spec's two wave points on the top floor.
+/// The Anchor, its display, the broken Anchor in its place after the break, and the break's two
+/// wave points on the top floor (#631 moved each onto the floor).
 const ANCHOR: i64 = 794101;
+const BROKEN_ANCHOR: i64 = 794102;
 const ANCHOR_DISPLAY: i64 = 1667;
-const WAVE_POINTS: [[f32; 3]; 2] = [[-9300.0, -3300.0, 150.09], [-9296.0, -3318.0, 150.09]];
+const WAVE_POINTS: [[f32; 3]; 2] = [[-9298.5, -3301.0, 150.14], [-9294.0, -3315.5, 150.14]];
 
 /// The first low guid of a creature a timed call has brought in.
 const TIMED_LIVE_BASE: u64 = 0xC0_0000;
@@ -192,7 +194,8 @@ fn nothing_stands_on_the_wave_points_or_against_the_anchor() {
                 "{label} at {at:?} is within 3 yd of {wave:?}"
             );
         }
-        if label != format!("GameObject {ANCHOR}") {
+        if label != format!("GameObject {ANCHOR}") && label != format!("GameObject {BROKEN_ANCHOR}")
+        {
             assert!(
                 distance(at, anchor) >= 4.0,
                 "{label} at {at:?} is within 4 yd of the Anchor"

@@ -1542,6 +1542,63 @@ speed_run = 0.857
 detection_range = 18.0
 spells = ["shadow_word_pain_creature"]
 
+# The break (#631): the cult's tuners in the Ilgalar Anchor's four waves (encounters.toml).
+[[template]]
+entry = 97511
+name = "Twilight Retuner"
+creature_type = 7
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 48
+level_max = 50
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["shadow_bolt_creature"]
+
+# The break (#631): the Anchor's voidwalkers, the dungeons prep's Servant of Ilgalar display.
+[[template]]
+entry = 97512
+name = "Anchor Servant"
+creature_type = 3
+display_id = 3916
+faction_template = 14
+unit_class = "warrior"
+level_min = 49
+level_max = 50
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The break (#631): the last wave's leader, elite, in the vanilla Twilight Emissary's body.
+[[template]]
+entry = 97513
+name = "The Anchorwarden"
+creature_type = 7
+rank = 1
+display_id = 8772
+faction_template = 14
+unit_class = "mage"
+level_min = 50
+level_max = 50
+health_multiplier = 2.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["shadow_bolt_creature", "shadow_word_pain_creature", "void_shield_creature"]
+
 # The lake's murlocs for the Vigil post's bounties; no stock Nestguard or Tidehunter exists in
 # Elwynn. Displays 617 (the Murloc's) and 527 (the Streamrunner's) and faction 18 are the lake
 # murlocs'. Spawns are in elwynn_overrides.toml.

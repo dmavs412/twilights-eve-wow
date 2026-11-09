@@ -1,5 +1,5 @@
-# Encounters (#238): waves of creatures that come at a point in the open world when a quest step
-# starts them. Hand-written. Nothing here is named after one quest; a quest's content points at an
+# Encounters (#238): waves of creatures that come at a point in the open world, or in a Phased
+# Dungeon's Phase, when a quest step starts them. Hand-written. Nothing here is named after one quest; a quest's content points at an
 # encounter by the `quest` id below. `src/encounters.rs` runs them.
 #
 # key               the encounter's name; one runs at a time per key
@@ -9,7 +9,16 @@
 #                   within); standing inside after a win or a fail starts nothing until they leave
 #                   and come back. "use_done": the moment a character's last use objective of the
 #                   quest completes, wherever they stand.
-# anchor            [x, y, z] on map 0 (Eastern Kingdoms), world coordinates
+# dungeon           optional: a Phased Dungeon id (#631). The encounter runs in that dungeon's
+#                   Phase: its characters are those in the Phase, its creatures go into the Run
+#                   and stand at their written heights on the dungeon's map, and the Head Count
+#                   scales them. With no one in the Phase it is idle, and a run under way is
+#                   dropped when the Run resets. The load fails on an id that is no Phased Dungeon
+#                   and on an anchor outside its footprint. Without it, the open world.
+# records           optional: a Milestone key in content/milestones.toml (#631). The first win
+#                   while it is not reached reaches it; a later win does nothing more. The load
+#                   fails on a key the catalogue lacks.
+# anchor            [x, y, z] on map 0 (Eastern Kingdoms), or the dungeon's map, world coordinates
 # start_radius      yards; used by "accepted" only
 # leash             yards from the anchor. The encounter fails on a tick when no living character
 #                   holding the quest is within it.
@@ -97,4 +106,42 @@ creatures = [
 creatures = [
   { entry = 96024, level = 18, count = 3, position = [-9290.0, -1120.0, 72.0] },
   { entry = 96025, level = 18, count = 1, position = [-9295.0, -1116.0, 72.0] },
+]
+
+# The break (#626): four waves come up the stair to save the Anchor on the top floor. The spec's
+# wave points, (-9300, -3300) and (-9296, -3318), are off the top floor's z 150 face
+# (wmo_floor.py lists 151.29 and no face near 150), so each moved toward the Anchor until group
+# 2's floor (z 150.14) was under it (#631).
+[[encounter]]
+key = "ilgalar_anchor"
+quest = 99502
+start = "accepted"
+dungeon = 8
+records = "ilgalar_anchor_broken"
+anchor = [-9288.0, -3308.0, 150.09]
+start_radius = 10.0
+leash = 40.0
+warning = "The Anchor shrieks as its tune slips. Footsteps on the stair!"
+first_wave_after_s = 10.0
+next_wave_after_s = 45.0
+
+[[encounter.wave]]
+creatures = [{ entry = 97511, level = 48, count = 3, position = [-9298.5, -3301.0, 150.14] }]
+
+[[encounter.wave]]
+creatures = [
+  { entry = 97511, level = 49, count = 2, position = [-9298.5, -3301.0, 150.14] },
+  { entry = 97512, level = 49, count = 2, position = [-9294.0, -3315.5, 150.14] },
+]
+
+[[encounter.wave]]
+creatures = [
+  { entry = 97512, level = 49, count = 3, position = [-9294.0, -3315.5, 150.14] },
+  { entry = 97511, level = 50, count = 1, position = [-9298.5, -3301.0, 150.14] },
+]
+
+[[encounter.wave]]
+creatures = [
+  { entry = 97513, level = 50, count = 1, position = [-9298.5, -3301.0, 150.14] },
+  { entry = 97512, level = 50, count = 2, position = [-9294.0, -3315.5, 150.14] },
 ]

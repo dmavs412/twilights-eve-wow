@@ -334,6 +334,12 @@ Every creature (Haulers, Listeners, Lampmen, porters, the Conductor and the pass
 tram cars, the crates, the lamps and the frozen passengers' ice are stock displays and need no
 art. The station is vanilla's map 369. The mist wall uses the Closed Zones' mist shader.
 
+## The Burning Steppes opening (#626)
+
+| Asset | Where | Notes |
+|---|---|---|
+| The Ilgalar Anchor, whole and broken | two GameObject displays on Ilgalar's top floor | A humming stone in a Dark Iron casing with a forge stamp, and the same stone cracked open, its casing split. Until made, displays 1667 and 1687 (floating purple crystals). |
+
 ## Redridge and Duskwood 30-50 (spec #595)
 
 | Asset | Where | Notes |

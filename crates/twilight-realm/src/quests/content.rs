@@ -555,7 +555,8 @@ fn friendly_spawn(entry: u32) -> bool {
 /// The shipped quests: `content/quests.toml`, then `content/quests_elwynn.toml`, then
 /// `content/quests_stormwind.toml`, then Redridge's and Duskwood's (`quests_redridge.toml`,
 /// `quests_duskwood.toml`, `quests_redridge_dungeons.toml`, `quests_duskwood_dungeons.toml`),
-/// then the Writs in `content/writs.toml`.
+/// then the Writs in `content/writs.toml`, then the Burning Steppes opening's
+/// (`quests_blackrock_pass.toml`).
 pub(crate) fn shipped() -> &'static [Quest] {
     static FILE: OnceLock<Vec<Quest>> = OnceLock::new();
     FILE.get_or_init(|| {
@@ -588,6 +589,10 @@ pub(crate) fn shipped() -> &'static [Quest] {
                 include_str!("../../content/quests_duskwood_dungeons.toml"),
             ),
             ("writs.toml", include_str!("../../content/writs.toml")),
+            (
+                "quests_blackrock_pass.toml",
+                include_str!("../../content/quests_blackrock_pass.toml"),
+            ),
         ] {
             let file: QuestFile =
                 toml::from_str(text).unwrap_or_else(|e| panic!("content/{name} parses: {e}"));

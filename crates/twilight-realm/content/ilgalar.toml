@@ -417,11 +417,20 @@ grounded = false
 orientation = 4.2
 sides = "inside"
 
-# The Anchor (#637). #631 gives this row `until_milestone =
-# "ilgalar_anchor_broken"` and adds the broken Anchor, 794102, beside it.
+# The Anchor (#637, #631): whole until the break, broken after, in every Run. Displays 1667
+# (FloatingPurpleCrystal01) and 1687 (FloatingPurpleCrystalBroken02) are placeholders.
 [[gameobject]]
 guid = 794101
 display = 1667
 position = [-9288.0, -3308.0, 150.09]
 orientation = 1.47
 sides = "inside"
+until_milestone = "ilgalar_anchor_broken"
+
+[[gameobject]]
+guid = 794102
+display = 1687
+position = [-9288.0, -3308.0, 150.09]
+orientation = 1.47
+sides = "inside"
+after_milestone = "ilgalar_anchor_broken"

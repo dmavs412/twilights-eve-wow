@@ -100,8 +100,9 @@ fn quests() -> Vec<Quest> {
 }
 
 /// The creature entries that give or take in a quest of the story quest files
-/// (`quests_elwynn.toml`, `quests_stormwind.toml` and Redridge's and Duskwood's), whose quests may
-/// instead name a GameObject or an item as the giver.
+/// (`quests_elwynn.toml`, `quests_stormwind.toml`, Redridge's and Duskwood's, and
+/// `quests_blackrock_pass.toml`), whose quests may instead name a GameObject or an item as the
+/// giver.
 fn elwynn_givers() -> Vec<u32> {
     [
         include_str!("../content/quests_elwynn.toml"),
@@ -110,6 +111,7 @@ fn elwynn_givers() -> Vec<u32> {
         include_str!("../content/quests_duskwood.toml"),
         include_str!("../content/quests_redridge_dungeons.toml"),
         include_str!("../content/quests_duskwood_dungeons.toml"),
+        include_str!("../content/quests_blackrock_pass.toml"),
     ]
     .into_iter()
     .flat_map(|text| {

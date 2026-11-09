@@ -929,7 +929,7 @@ pub(crate) fn creatures(phase: Phase) -> Vec<Mob> {
         .iter()
         .enumerate()
         .filter(|(_, s)| s.phase == phase && s.called_by.is_none() && s.timed_by.is_none())
-        .filter(|(_, s)| s.tram_of.is_none())
+        .filter(|(_, s)| s.tram_of.is_none() && s.encounter.is_none())
         .filter(|(_, s)| {
             s.appears
                 .is_none_or(|a| a.met(&[], &[], &[], &[] as &[&str]))

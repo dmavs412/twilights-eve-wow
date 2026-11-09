@@ -407,6 +407,7 @@ fn shipped_quests() -> Vec<toml::Value> {
         include_str!("../content/quests_duskwood.toml"),
         include_str!("../content/quests_redridge_dungeons.toml"),
         include_str!("../content/quests_duskwood_dungeons.toml"),
+        include_str!("../content/quests_blackrock_pass.toml"),
     ]
     .into_iter()
     .flat_map(|text| entries(&toml_file(text), "quest"))
