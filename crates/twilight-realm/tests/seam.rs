@@ -196,7 +196,9 @@ fn shipped_creatures() -> Creatures {
     let hand = toml_file(include_str!("../content/mobs.toml"));
     let overrides = toml_file(include_str!("../content/elwynn_overrides.toml"));
     let caverns = toml_file(include_str!("../content/wailing_caverns.toml"));
-    for file in [&barrens, &elwynn, &hand, &caverns] {
+    let duskwood = toml_file(include_str!("../content/duskwood.toml"));
+    let redridge = toml_file(include_str!("../content/redridge.toml"));
+    for file in [&barrens, &elwynn, &hand, &caverns, &duskwood, &redridge] {
         for t in entries(file, "template") {
             c.templates.insert(int(&t, "entry"));
         }
@@ -206,7 +208,12 @@ fn shipped_creatures() -> Creatures {
         .iter()
         .map(|v| v.as_integer().unwrap() as u64)
         .collect();
-    for (file, rows) in [("barrens.toml", &barrens), ("elwynn.toml", &elwynn)] {
+    for (file, rows) in [
+        ("barrens.toml", &barrens),
+        ("elwynn.toml", &elwynn),
+        ("duskwood.toml", &duskwood),
+        ("redridge.toml", &redridge),
+    ] {
         for row in entries(rows, "spawns") {
             let row = row.as_array().unwrap();
             let (guid, entry) = (

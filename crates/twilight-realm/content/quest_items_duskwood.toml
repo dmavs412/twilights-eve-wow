@@ -1,4 +1,17 @@
 # Duskwood's quest items, 980401 to 980499 (spec #595): the same schema as quest_items.toml, read
 # after content/quest_items_redridge.toml. An entry in two item files fails the load.
 
-item = []
+item = [
+  # Duskwood 30-35 (#603, quests_duskwood.toml). Each shows a stock icon no other item does: the
+  # log INV_Misc_Book_08 (vanilla's Crudely-written Log), the note INV_Misc_Note_05 (A Crumpled Up
+  # Note), the leg INV_Misc_Food_51 (White Spider Meat), the dust INV_Misc_Dust_01 (Gold Dust)
+  # and the record INV_Scroll_07 (Secret Note #1). The log and the note go in the bag on accept
+  # and leave it on hand-in; the leg and the dust are 50% bounty drops.
+  { entry = 980401, name = "The Night Watch Log", quality = 1, item_level = 32, class = 12, display_id = 1155, max_count = 1, description = "The Watch's log for the night the dark came. The last entry is in a shaking hand." },
+  { entry = 980402, name = "Backus's Note", quality = 1, item_level = 34, class = 12, display_id = 7695, max_count = 1, description = "For Sirra. 'The Mistmantle house. Tell them.'" },
+  { entry = 980403, name = "Gooey Spider Leg", quality = 1, item_level = 31, class = 12, display_id = 22193, stackable = 20, description = "Grual swears it tastes like crab." },
+  { entry = 980404, name = "Bone Dust", quality = 1, item_level = 33, class = 12, display_id = 7137, stackable = 20, description = "Mary says it keeps the dead from the door. Mary says a lot of things." },
+  # The Mistmantle quest of a later ticket collects the record (99001); defined here so that
+  # ticket touches no item file. No quest collects it yet.
+  { entry = 980481, name = "Surveyor's Site Record", quality = 1, item_level = 35, class = 12, display_id = 23201, max_count = 1, pages = ["Brightwood. The stone went under the cellar at the dark of the moon, untuned, as ordered. Result: night over the whole wood within the hour. The dead in two graveyards disturbed. The household lost. Recommend no stone be set again without the engineer.", "Next sites as surveyed: the hill of graves to the west, and the tower in Redridge. Below it, a hammer over a black sun."] },
+]

@@ -1,3 +1,189 @@
 # Story Quests and bounties in Duskwood, 98601 to 98999 (spec #595): the same schema as
 # quests.toml, read after content/quests_redridge.toml and before
 # content/quests_redridge_dungeons.toml.
+
+# ── Duskwood 30-35 (#595) ────────────────────────────────────────────────────────────────────────
+#
+# Darkshire waits on a city that never writes back. Lord Ello sends the player round the town;
+# the Night Watch's chain clears the north road and Tranquil Gardens, and Daltry's log leads
+# through Backus and Sirra to the silent house on the hill. Every giver is a Field Giver, a
+# vanilla Darkshire spawn (content/duskwood.toml). The quest items are in
+# content/quest_items_duskwood.toml.
+
+[[quest]]
+id = 98601
+kind = "story"
+giver = 263
+level = 30
+title = "Darkshire Waits"
+objectives = "Speak with Commander Althea Ebonlocke, Clerk Daltry and Madame Eva in Darkshire, then return to Lord Ello Ebonlocke."
+details = "I write to Stormwind on the first of every month. Twelve letters this year. Not one answer. Not a refusal, not a rebuke, nothing. Either the roads eat my riders or the city has decided Darkshire is already lost. You came, at least. Before you go off killing things, learn the town. My daughter runs the Night Watch. Daltry keeps our records. Madame Eva keeps everything else, whether we like it or not."
+progress = "Well?"
+completion = "Wolves at the gate, a night that never ended and a house with its candles lit. You've met Darkshire. Help my daughter first. She'll ask you anyway."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 10
+talk = [
+  { npc = 264, option = "What does the Night Watch need?", reply = "Three more men, and the north road clear. The wolves come right to the gate now, and the spiders take whatever the wolves leave. I lose a man a month out there." },
+  { npc = 267, option = "What do the records say?", reply = "That the dark came twelve years ago, in one night, and never lifted. Before that this was Brightwood, with farms and sun like anywhere. I have the Watch's log for that night. Nobody has ever asked to read it." },
+  { npc = 265, option = "What do you see, Madame Eva?", reply = "A house on the hill north of town where the candles have burned for twelve years and never once gone out. Nobody lights them. Nobody lives there. Ask yourself what kind of air lets a flame stand that still." },
+]
+
+[[quest]]
+id = 98602
+kind = "story"
+giver = 264
+level = 31
+title = "The Night Watch"
+objectives = "Kill 10 Starving Dire Wolves and 10 Pygmy Venom Web Spiders along the north road, then return to Commander Althea Ebonlocke in Darkshire."
+details = "The Night Watch should be twenty men. I have seventeen, and three of those are boys who lied about their age. The wolves have learned how thin we are. They come right up to the north gate at night, starving and bold, and the little web spiders nest in every ditch along the road behind them. I lose a man a month out there. Go up the north road and thin out both. Give my watchmen one quiet night."
+progress = "Is the north road any quieter?"
+completion = "Ten of each. My men on the gate will sleep tonight, or as near to it as anyone sleeps in Duskwood. The wolves will be back, hungrier than before. They always are. Take your pick of these, with the Watch's thanks."
+money = 1085
+choices = [903204, 903206, 903209]
+zone_or_sort = 10
+kill = [[213, 10], [539, 10]]
+
+[[quest]]
+id = 98603
+kind = "story"
+giver = 264
+after = 98602
+level = 33
+title = "The Gardens Rose"
+objectives = "Kill 10 Skeletal Warriors and 6 Skeletal Mages in Tranquil Gardens Cemetery, then return to Commander Althea Ebonlocke in Darkshire."
+details = "The north road is one front. Tranquil Gardens is the other. It's the cemetery south of town, where Darkshire buried its dead for two hundred years. Now those dead walk its paths every night in rusted mail, and some of them still remember their spells. My men won't stand watch there any more, and I can't blame them. Put the skeletons down, the warriors and the mages both, and give the gardens back to the people who grieve there."
+progress = "Are the gardens quiet?"
+completion = "The gardens' dead got up the same night the dark came. Twelve years, and nobody has ever told me why the two go together. I only know that they do."
+money = 1155
+choices = [903215, 903217, 903219]
+zone_or_sort = 10
+kill = [[48, 10], [203, 6]]
+
+[[quest]]
+id = 98604
+kind = "story"
+giver = 267
+ender = 840
+after = 98601
+level = 32
+title = "A Clerk's Records"
+objectives = "Take the Night Watch Log to Watcher Backus on the road north of Darkshire."
+details = "You asked what the records say, so here is the one that matters: the Watch's log for the night the dark came. Watcher Backus stood on the north gate that night. He still stands on the north road, twelve years on, and he has never once asked to see this. I want him to read it. Then I want him to tell you what isn't written in it. Every log leaves something out. This one leaves out the most."
+progress = "What's that you're holding?"
+completion = "Daltry sent you with this? Put it down. No, give it here. I wrote half these lines myself and I swore I'd never read them again. The last entry shakes because my hand shook. What isn't in it is the quiet. Every dog in town stopped barking at once, and none of us wrote it down."
+money = 0
+choices = [903204, 903206, 903208]
+zone_or_sort = 10
+gives = [[980401, 1]]
+collect = [{ item = 980401, count = 1 }]
+
+[[quest]]
+id = 98605
+kind = "story"
+giver = 840
+after = 98604
+level = 33
+title = "Candles That Don't Go Out"
+objectives = "Kill 8 Fetid Corpses in the yard of the house on the hill north of Darkshire, then return to Watcher Backus."
+details = "You want to know what else I left out of the log? Look up the hill. There's a farmhouse there with a fenced yard, and its candles have burned in the windows for twelve years. The dead walk in that yard, at the foot of the house, day and night, and nobody can get near the door for them. Put eight of them down. Then come back and tell me whether the candles are still lit."
+progress = "Are the candles still lit?"
+completion = "Farmhands. I knew two of them. They worked the house's fields the day before the dark, and they were lying in that yard the morning after, and then one night they weren't lying down any more. The candles in the windows were lit that morning too. Nobody has ever gone in to blow them out."
+money = 1155
+choices = [903214, 903216, 903218]
+zone_or_sort = 10
+kill = [[1270, 8]]
+
+[[quest]]
+id = 98606
+kind = "story"
+giver = 840
+ender = 268
+after = 98605
+level = 34
+title = "The Tutor's Name"
+objectives = "Take Backus's Note to Sirra Von'Indi in Darkshire."
+details = "I've told you what I saw. I can't tell you who they were, not properly. I was a gate guard, not a neighbour. Sirra Von'Indi can. She keeps the town's history, and she knew every family in the wood before the dark, the farmers and the gentry both. Take her this note. I've written the name of the house on it. She'll know what it means, and she'll tell you, if anyone will."
+progress = "You've come about the town's history?"
+completion = "The Mistmantle house. A family, six servants, and a tutor for the girl: Stalvan, a clever young man from the city. On the night the dark came the whole house stopped. No screams, no fire. In the morning the doors were barred from inside and the candles were lit, and nobody would go in. I've spent twelve years wondering why that house, of all houses."
+money = 0
+choices = [903200, 903201, 903202, 903203]
+zone_or_sort = 10
+gives = [[980402, 1]]
+collect = [{ item = 980402, count = 1 }]
+
+# The spot is the manor's front door (mistmantle_manor.toml), inside Mistmantle Manor's box:
+# walking in through its Portal is the way there.
+[[quest]]
+id = 98607
+kind = "story"
+giver = 265
+after = 98606
+level = 35
+title = "The Silent House"
+objectives = "Stand at the door of the house on the hill north of Darkshire, then return to Madame Eva."
+details = "Sirra has told you about the house. I can tell you the rest. The door isn't barred any more. It opened a week ago, on its own, and something inside has been waiting for someone to notice. Go and stand at the door. Listen. When you hear the quiet, come back to me before you go in."
+progress = "Did you listen?"
+completion = "You heard it. No wind, no crickets, not even your own feet on the step. That house is holding its breath, and it has held it for twelve years. When you go in, take friends."
+money = 1225
+choices = [903211, 903212, 903213]
+zone_or_sort = 10
+explore = { place = "The door of the house on the hill", position = [-10362.6, -1257.0], radius = 10.0, map = 0 }
+
+# ── Darkshire's bounties (#595) ──────────────────────────────────────────────────────────────────
+
+[[quest]]
+id = 98611
+kind = "bounty"
+giver = 272
+level = 31
+title = "Gooey Spider Legs"
+objectives = "Bring 8 Gooey Spider Legs to Chef Grual in Darkshire."
+details = "No carts come down the Stormwind road any more, and the Night Watch can't fight on turnips. So I cook what the wood gives me, and the spiders give me legs. Big, pale, gooey ones. Boil them long enough with salt and they taste almost like crab. Don't make that face. Bring me eight legs from the venom web spiders, the big ones or the pygmies, and I'll pay you for every batch."
+progress = "Got my legs?"
+completion = "Lovely and gooey. That's supper for the whole Watch tonight, and nobody will ask what's in it. They never do. Come back when the pot's empty again. In this town, it always is."
+money = 930
+zone_or_sort = 10
+collect = [{ item = 980403, count = 8, from = [217, 539], chance = 50 }]
+
+[[quest]]
+id = 98612
+kind = "bounty"
+giver = 2142
+level = 31
+title = "Foam at the Mouth"
+objectives = "Kill 10 Rabid Dire Wolves, then return to Watcher Callahan."
+details = "My post is this road, and my trouble is the wolves that foam at the mouth. A rabid dire wolf doesn't stop when it's hurt and doesn't run when it's beaten. One bit a carter's horse last week, and two days later we had to put the horse down. I can't stop them coming out of the trees. I can pay to have them put down before they bite anyone else. Ten at a time, as often as you like."
+progress = "Seen any of the foaming ones?"
+completion = "Ten. Good. Burn your gloves if any of that foam got on them, and I mean it. The bounty stands. There'll be more of them by the end of the week."
+money = 930
+zone_or_sort = 10
+kill = [[565, 10]]
+
+[[quest]]
+id = 98613
+kind = "bounty"
+giver = 270
+level = 32
+title = "The Council Votes on Spiders"
+objectives = "Kill 10 Venom Web Spiders, then return to Councilman Millstipe in Darkshire."
+details = "The council has voted, again, on the matter of the spiders. The vote was unanimous. The spiders were not consulted. The venom web spiders have spun across the old orchard paths, and a family can't walk to its own trees without a sword. The council has no swords, but it does have a small budget. Kill ten of the large ones and the council will pay you. Then I suspect it will vote again."
+progress = "Have you dealt with the spiders?"
+completion = "Ten fewer spiders. I'll put it in the minutes. The council thanks you, formally, and pays you, less formally. Come back when the webs are up again. They will be."
+money = 960
+zone_or_sort = 10
+kill = [[217, 10]]
+
+[[quest]]
+id = 98614
+kind = "bounty"
+giver = 302
+level = 33
+title = "Dust for the Doorstep"
+objectives = "Bring 8 Bone Dust to Blind Mary."
+details = "Who's there? Don't tell me, I know the sound of a sword belt. Listen, dear. The dead in the gardens are nothing but old bones now, and old bones grind to dust. Lay a line of bone dust across the doorstep and the dead won't cross it. Everyone in Darkshire laughs at me for it, and every one of them comes asking for a pinch. Bring me eight handfuls from the skeletons, and I'll see you're paid."
+progress = "Is that bone dust I smell?"
+completion = "That's the stuff. Fine and dry. I'll have every doorstep on my lane lined by dark, not that the dark ever ends here. Come back when you've ground some more. I'll always need more."
+money = 990
+zone_or_sort = 10
+collect = [{ item = 980404, count = 8, from = [48, 203], chance = 50 }]
