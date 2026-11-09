@@ -35,4 +35,7 @@ item = [
   { entry = 980381, name = "Morganth's Failure Notes", quality = 1, item_level = 38, class = 12, display_id = 1103, max_count = 1, description = "Cipher, page after page, in a small, proud hand. The cover says only: 'What went wrong.'" },
   { entry = 980382, name = "Letters Under a Crowned Seal", quality = 1, item_level = 38, class = 12, display_id = 3024, max_count = 1, description = "A bundle of letters, each sealed in grey wax.", pages = ["Engineer. They give you a tower and keep your name off every stone you set. I would give you the credit you are owed, and a name that outlasts every one of theirs. Consider it. You know how to reach my people.", "Below it, a crown pressed into grey wax, and one letter: S."] },
   { entry = 980383, name = "Toren's Translation", quality = 1, item_level = 38, class = 12, display_id = 7743, max_count = 1, description = "Three pages in Toren's careful hand. The first line reads: 'The Duskwood test.'" },
+  # ── Stonewatch Keep (#637) ──
+  # Singe always drops it. No quest collects it yet. Display 20914 is vanilla's Black Dragonscale.
+  { entry = 980701, name = "Singe's Scale", quality = 1, item_level = 48, class = 12, display_id = 20914, max_count = 1, description = "Black, as wide as a shield, and still warm. It came off something that flew." },
 ]

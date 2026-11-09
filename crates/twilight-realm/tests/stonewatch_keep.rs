@@ -155,6 +155,35 @@ fn gath_ilzogg_and_singe_are_the_two_boss_bars_one_camp_each_enraged_by_the_othe
     }
 }
 
+/// Singe's Scale (#648), the one proof of the dragons the player carries out.
+const SINGE_S_SCALE: u32 = 980701;
+
+#[test]
+fn singe_always_drops_her_scale_a_known_item() {
+    let file = file();
+    let singe = rows(&file, "creature")
+        .iter()
+        .find(|c| int(c, "guid") == Some(SINGE as i64))
+        .expect("Singe's row");
+    let drop: Vec<i64> = singe["drop"]
+        .as_array()
+        .expect("Singe has a drop list")
+        .iter()
+        .map(|v| v.as_integer().unwrap())
+        .collect();
+    assert_eq!(drop, [SINGE_S_SCALE as i64]);
+
+    let mut realm = realm();
+    realm.handle(RealmCommand::ItemQuery {
+        entry: SINGE_S_SCALE,
+    });
+    let name = drain(&mut realm).into_iter().find_map(|e| match e {
+        SessionEvent::ItemTemplate { info, .. } => info.map(|i| i.name),
+        _ => None,
+    });
+    assert_eq!(name.as_deref(), Some("Singe's Scale"));
+}
+
 #[test]
 fn the_envoy_s_call_stops_at_the_brood_cage_lever() {
     let file = file();
