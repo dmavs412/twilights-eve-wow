@@ -1,6 +1,7 @@
 //! The Quest Lines of the 30-50 arc (#600, spec #595): 20 green `quest-*` Lines and 16 blue
 //! `quest-elite-*` Lines that every later quest reward of the arc extends. Band 30-35 holds the
-//! greens 903200 to 903219 and The Thresher's blues 903300 to 903302. Each Line shows one icon that
+//! greens 903200 to 903219 and The Thresher's blues 903300 to 903302; band 35-40 (#605) the greens
+//! 903220 to 903239 and Sven's Revenge's blue rings 903303 to 903305. Each Line shows one icon that
 //! no other Line or unlined item shows. A row's icon here is its `icon` path, or its stock
 //! `display_id` when it has none; `icon_check.py` compares the DBC's icon names behind those.
 
@@ -41,6 +42,13 @@ const THRESHER: [(i64, &str); 3] = [
     (903300, "quest-elite-sword"),
     (903301, "quest-elite-dagger"),
     (903302, "quest-elite-staff"),
+];
+
+/// Sven's Revenge's blues (98706): entry and Line.
+const SVENS_REVENGE: [(i64, &str); 3] = [
+    (903303, "quest-elite-ring-might"),
+    (903304, "quest-elite-ring-swift"),
+    (903305, "quest-elite-ring-mind"),
 ];
 
 fn items() -> Vec<Value> {
@@ -104,10 +112,38 @@ fn band_30_35_greens_are_one_row_of_each_quest_line() {
 }
 
 #[test]
+fn band_35_40_greens_repeat_each_quest_line_with_its_icon() {
+    let items = items();
+    let mut seen = HashSet::new();
+    for (n, want) in GREEN_LINES.iter().enumerate() {
+        let i = item(&items, 903220 + n as i64);
+        assert_row(i, 2, 38, 36, want);
+        assert!(
+            seen.insert(line(i).unwrap()),
+            "{want} has two rows in band 35-40"
+        );
+        let first = item(&items, 903200 + n as i64);
+        assert_eq!(
+            icon(i),
+            icon(first),
+            "{want} changes its icon in band 35-40"
+        );
+    }
+}
+
+#[test]
 fn the_thresher_pays_three_quest_elite_blues() {
     let items = items();
     for (entry, want) in THRESHER {
         assert_row(item(&items, entry), 3, 33, 30, want);
+    }
+}
+
+#[test]
+fn svens_revenge_pays_three_quest_elite_rings() {
+    let items = items();
+    for (entry, want) in SVENS_REVENGE {
+        assert_row(item(&items, entry), 3, 38, 36, want);
     }
 }
 
@@ -122,7 +158,8 @@ fn every_quest_line_shows_one_icon_no_other_item_shows() {
             assert_eq!(*first, shown, "{l} shows two icons");
         }
     }
-    for want in GREEN_LINES.iter().chain(THRESHER.iter().map(|(_, l)| l)) {
+    let blues = THRESHER.iter().chain(SVENS_REVENGE.iter());
+    for want in GREEN_LINES.iter().chain(blues.map(|(_, l)| l)) {
         assert!(line_icon.contains_key(want), "{want} has no row");
     }
     let owner: HashMap<&String, &str> = line_icon.iter().map(|(l, s)| (s, *l)).collect();
