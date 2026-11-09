@@ -604,7 +604,7 @@ choices = [903271, 903272, 903273]
 zone_or_sort = 44
 kill = [{ family = "Shadowhide gnolls slain", entries = [432, 568], count = 12 }]
 
-# Ticket 29's 98511 "Gath'Ilzogg" follows this one.
+# 98511 "Gath'Ilzogg" (quests_redridge_dungeons.toml) follows this one.
 [[quest]]
 id = 98403
 kind = "story"

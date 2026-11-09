@@ -60,3 +60,44 @@ choices = [903235, 903237, 903239]
 zone_or_sort = 44
 gives = [[980383, 1]]
 collect = [{ item = 980383, count = 1 }]
+
+# ── Stonewatch Keep (#595) ───────────────────────────────────────────────────────────────────────
+
+# Gath'Ilzogg and Singe fight together on the keep's top storey (stonewatch_keep.toml), so the quest
+# kills both. Gath'Ilzogg always drops page three, so the collect row names no `from`. The choices
+# are the Stonewatch Keep set's four Chests (#648).
+[[quest]]
+id = 98511
+kind = "story"
+giver = 190084
+after = 98403
+level = 48
+title = "Gath'Ilzogg"
+objectives = "Go into Stonewatch Keep, kill Gath'Ilzogg and Singe on its roof, and bring Sergeant Crane what he keeps in his war chest."
+details = "Gath'Ilzogg keeps a war chest on the keep's roof, my scouts say, and sleeps beside it. Whatever is in it matters to him more than gold. Go in through the gate, up through the halls, all the way to the roof. Kill him. Bring me what's in that chest. And if the shapes in the yard are what I think they are, don't stop to argue with them."
+progress = "The roof?"
+completion = "Dead. And whatever came down on that roof after him wasn't an orc, was it. I can see it on you. This was in the chest: one page of cipher, wrapped in oilcloth like treasure, with a smith's stamp pressed into the corner. The lad at the inn will want it."
+money = 2160
+choices = [905200, 905201, 905202, 905203]
+zone_or_sort = 44
+kill = [[97287, 1], [97288, 1]]
+collect = [{ item = 980386, count = 1 }]
+
+# Crane hands the page back on accepting; Toren keeps it.
+[[quest]]
+id = 98512
+kind = "story"
+giver = 190084
+ender = 190083
+after = [98511, 98201]
+level = 48
+title = "Page Three"
+objectives = "Take the page from Gath'Ilzogg's war chest to Toren at the inn in Lakeshire."
+details = "Take it to Lakeshire. I'd rather it was on the lad's table than in my chest, with the keep's survivors looking for it."
+progress = "Another one?"
+completion = "The stamp. An anvil in a ring of fire. That's Dark Iron work, from the forges under the mountain past the pass. He never told me he bought his casings from them. And this page says where a casing gives, if you know where to strike. Three pages. There's one more. I can feel the shape of it, the way you know a sentence isn't finished."
+money = 0
+choices = [903274, 903276, 903278]
+zone_or_sort = 44
+gives = [[980386, 1]]
+collect = [{ item = 980386, count = 1 }]

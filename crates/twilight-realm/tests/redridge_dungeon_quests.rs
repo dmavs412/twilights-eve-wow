@@ -1,7 +1,8 @@
 //! Redridge's dungeon quests (spec #595, `content/quests_redridge_dungeons.toml`), walked on the
 //! shipped content. The Tower of Ilgalar (#622): Marshal Marris sends the character up the tower
 //! to kill Morganth and bring back his papers, Toren reads the cipher, and Toren's translation of
-//! page one goes to Sirra Von'Indi in Darkshire.
+//! page one goes to Sirra Von'Indi in Darkshire. Stonewatch Keep (#624): Sergeant Crane sends the
+//! character to the keep's roof for Gath'Ilzogg's war chest, and page three goes to Toren.
 
 mod common;
 
@@ -22,14 +23,35 @@ const ILGALAR: [(u32, i64, u32, Option<u32>, u32, i64); 3] = [
     (PAGE_ONE, 40, TOREN, Some(SIRRA), THE_CIPHER, 0),
 ];
 
-/// Each story quest's green choices, from the band's Quest Lines (#605).
-const CHOICES: [(u32, &[u32]); 2] = [
+const WANTED_GATH_ILZOGG: u32 = 98403;
+const GATH_ILZOGG_QUEST: u32 = 98511;
+const PAGE_THREE_QUEST: u32 = 98512;
+
+/// Every Stonewatch Keep quest, in the same shape as [`ILGALAR`].
+const STONEWATCH: [(u32, i64, u32, Option<u32>, u32, i64); 2] = [
+    (GATH_ILZOGG_QUEST, 48, CRANE, None, WANTED_GATH_ILZOGG, 2160),
+    (
+        PAGE_THREE_QUEST,
+        48,
+        CRANE,
+        Some(TOREN),
+        GATH_ILZOGG_QUEST,
+        0,
+    ),
+];
+
+/// Each story quest's green choices, from the band's Quest Lines (#605, #615).
+const CHOICES: [(u32, &[u32]); 3] = [
     (THE_CIPHER, &[903224, 903226, 903228]),
     (PAGE_ONE, &[903235, 903237, 903239]),
+    (PAGE_THREE_QUEST, &[903274, 903276, 903278]),
 ];
 
 /// The Tower of Ilgalar set's four Chests, cloth, leather, mail and plate (#644, `gear.csv`).
 const ILGALAR_CHESTS: [u32; 4] = [905160, 905161, 905162, 905163];
+
+/// The Stonewatch Keep set's four Chests, cloth, leather, mail and plate (#648, `gear.csv`).
+const STONEWATCH_CHESTS: [u32; 4] = [905200, 905201, 905202, 905203];
 
 /// The people the quests pass through: Marris and Toren in Lakeshire (`content/redridge.toml`,
 /// `content/hub.toml`), Sirra in Darkshire (`content/duskwood.toml`).
@@ -39,17 +61,29 @@ const TOREN: u32 = 190083;
 const TOREN_AT: [f32; 3] = [-9228.0, -2162.0, 63.73];
 const SIRRA: u32 = 268;
 const SIRRA_AT: [f32; 3] = [-10573.9, -1127.32, 29.167];
+/// Sergeant Crane at the Watch's camp on Stonewatch Falls (`content/hub.toml`).
+const CRANE: u32 = 190084;
+const CRANE_AT: [f32; 3] = [-9511.0, -3262.0, 49.52];
 
 /// Morganth, the tower's last boss, and his creature row (`content/ilgalar.toml`).
 const MORGANTH: u32 = 97244;
 const MORGANTH_GUID: i64 = 974114;
 
+/// The keep's roof: Gath'Ilzogg and Singe and their creature rows (`content/stonewatch_keep.toml`).
+const GATH_ILZOGG: u32 = 97287;
+const GATH_ILZOGG_GUID: i64 = 974316;
+const SINGE: u32 = 97288;
+
 const FAILURE_NOTES: u32 = 980381;
 const LETTERS: u32 = 980382;
 const TRANSLATION: u32 = 980383;
+const PAGE_THREE: u32 = 980386;
 
 /// The quest 98202 follows.
 const BEFORE_INTO_ILGALAR: u32 = 98109;
+/// The quest 98403 follows, and the quest that first meets Toren (98512 wants both).
+const STONEWATCH_FALLS: u32 = 98401;
+const TOREN_AT_THE_INN: u32 = 98201;
 
 fn dungeon_quests() -> toml::Table {
     include_str!("../content/quests_redridge_dungeons.toml")
@@ -59,6 +93,12 @@ fn dungeon_quests() -> toml::Table {
 
 fn tower() -> toml::Table {
     include_str!("../content/ilgalar.toml").parse().unwrap()
+}
+
+fn keep() -> toml::Table {
+    include_str!("../content/stonewatch_keep.toml")
+        .parse()
+        .unwrap()
 }
 
 fn quest_row(id: u32) -> toml::Value {
@@ -101,10 +141,15 @@ fn choices(realm: &mut Realm, quest: u32) -> Vec<u32> {
 /// A Zealot (Tier 2, so the quests are offered) at level 40 by Marshal Marris in Lakeshire,
 /// having handed in `done` and carrying nothing.
 fn in_lakeshire(done: &[u32]) -> Party {
+    at_level(40, done)
+}
+
+/// [`in_lakeshire`] at `level`.
+fn at_level(level: u8, done: &[u32]) -> Party {
     let done = done.to_vec();
     let mut party = Party::edited(
         Realm::with_seed(1),
-        &[40],
+        &[level],
         START_ELWYNN,
         Box::new(NoGround),
         move |_, blob| {
@@ -355,4 +400,133 @@ fn every_story_quest_offers_the_choices_the_gear_table_names() {
     for (id, want) in CHOICES {
         assert_eq!(choices(&mut realm, id), want, "quest {id}'s choices");
     }
+}
+
+/// The quests `row` follows, whether its `after` is one id or a list.
+fn afters(row: &toml::Value) -> Vec<i64> {
+    match row.get("after") {
+        Some(toml::Value::Integer(id)) => vec![*id],
+        Some(toml::Value::Array(ids)) => ids.iter().map(|i| i.as_integer().unwrap()).collect(),
+        _ => Vec::new(),
+    }
+}
+
+#[test]
+fn stonewatch_s_quests_load_with_their_givers_enders_and_zone() {
+    let mut realm = realm();
+    for (id, level, giver, ender, after, money) in STONEWATCH {
+        let row = quest_row(id);
+        assert_eq!(int(&row, "giver"), Some(giver.into()), "quest {id}'s giver");
+        assert_eq!(
+            int(&row, "ender"),
+            ender.map(i64::from),
+            "quest {id}'s ender"
+        );
+        assert_eq!(afters(&row)[0], i64::from(after), "quest {id}'s `after`");
+        assert_eq!(row["kind"].as_str(), Some("story"), "quest {id}");
+        assert_eq!(int(&row, "level"), Some(level), "quest {id}");
+        assert_eq!(int(&row, "money"), Some(money), "quest {id}");
+        assert_eq!(int(&row, "zone_or_sort"), Some(44), "quest {id}");
+        let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
+        assert_eq!(t.zone_or_sort, 44, "quest {id}");
+        assert_eq!(Some(t.title.as_str()), row["title"].as_str(), "quest {id}");
+    }
+    assert_eq!(
+        afters(&quest_row(PAGE_THREE_QUEST)),
+        [i64::from(GATH_ILZOGG_QUEST), i64::from(TOREN_AT_THE_INN)]
+    );
+}
+
+#[test]
+fn crane_offers_gath_ilzogg_only_once_wanted_is_handed_in() {
+    let mut party = at_level(48, &[STONEWATCH_FALLS]);
+    let crane = up_to(&mut party, CRANE, CRANE_AT);
+    let offered = offers(&mut party, crane);
+    assert!(!offered.contains(&GATH_ILZOGG_QUEST), "{offered:?}");
+
+    let mut party = at_level(48, &[STONEWATCH_FALLS, WANTED_GATH_ILZOGG]);
+    let crane = up_to(&mut party, CRANE, CRANE_AT);
+    let offered = offers(&mut party, crane);
+    assert!(offered.contains(&GATH_ILZOGG_QUEST), "{offered:?}");
+    assert!(!offered.contains(&PAGE_THREE_QUEST), "{offered:?}");
+}
+
+#[test]
+fn gath_ilzogg_s_corpse_holds_page_three_that_his_quest_wants() {
+    let keep = keep();
+    let row = keep["creature"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| int(c, "guid") == Some(GATH_ILZOGG_GUID))
+        .expect("Gath'Ilzogg's creature row");
+    assert_eq!(int(row, "entry"), Some(GATH_ILZOGG.into()));
+    let drop: Vec<i64> = row["drop"]
+        .as_array()
+        .expect("Gath'Ilzogg's drop")
+        .iter()
+        .map(|i| i.as_integer().unwrap())
+        .collect();
+    assert_eq!(drop, [i64::from(PAGE_THREE)]);
+    let others = keep["creature"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|c| int(c, "guid") != Some(GATH_ILZOGG_GUID))
+        .filter_map(|c| c.get("drop").and_then(|d| d.as_array()))
+        .flatten()
+        .filter(|i| i.as_integer() == Some(PAGE_THREE.into()))
+        .count();
+    assert_eq!(others, 0, "only Gath'Ilzogg holds the page");
+
+    let t = template(&mut realm(), GATH_ILZOGG_QUEST).expect("98511 is loaded");
+    let wants: Vec<(u32, u32, u32, u32)> = t
+        .objectives
+        .iter()
+        .map(|o| (o.creature_or_go, o.required_count, o.item_id, o.item_count))
+        .filter(|o| *o != (0, 0, 0, 0))
+        .collect();
+    assert_eq!(
+        wants,
+        [(GATH_ILZOGG, 1, PAGE_THREE, 1), (SINGE, 1, 0, 0)],
+        "both roof bosses, and the page"
+    );
+}
+
+#[test]
+fn gath_ilzogg_offers_exactly_the_stonewatch_keep_set_s_four_chests() {
+    assert_eq!(
+        choices(&mut realm(), GATH_ILZOGG_QUEST),
+        STONEWATCH_CHESTS,
+        "98511's choices"
+    );
+}
+
+#[test]
+fn page_three_wants_gath_ilzogg_and_toren_at_the_inn_and_toren_takes_the_page() {
+    let before = [STONEWATCH_FALLS, WANTED_GATH_ILZOGG];
+    for done in [GATH_ILZOGG_QUEST, TOREN_AT_THE_INN] {
+        let mut party = at_level(48, &[&before[..], &[done]].concat());
+        let crane = up_to(&mut party, CRANE, CRANE_AT);
+        let offered = offers(&mut party, crane);
+        assert!(
+            !offered.contains(&PAGE_THREE_QUEST),
+            "with only {done}: {offered:?}"
+        );
+    }
+
+    let mut party = at_level(
+        48,
+        &[&before[..], &[GATH_ILZOGG_QUEST, TOREN_AT_THE_INN]].concat(),
+    );
+    let crane = up_to(&mut party, CRANE, CRANE_AT);
+    let offered = offers(&mut party, crane);
+    assert!(offered.contains(&PAGE_THREE_QUEST), "{offered:?}");
+    accept(&mut party, crane, PAGE_THREE_QUEST);
+    assert_eq!(carries(&party, PAGE_THREE), 1, "Crane hands back the page");
+
+    let toren = up_to(&mut party, TOREN, TOREN_AT);
+    let events = hand_in(&mut party, toren, PAGE_THREE_QUEST);
+    assert!(completed(&events, PAGE_THREE_QUEST), "{events:?}");
+    assert_eq!(carries(&party, PAGE_THREE), 0, "Toren keeps the page");
 }
