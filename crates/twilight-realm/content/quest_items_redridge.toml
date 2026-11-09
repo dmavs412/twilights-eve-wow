@@ -17,6 +17,10 @@ item = [
   { entry = 980312, name = "Humming Ore", quality = 1, item_level = 38, class = 12, display_id = 4689, stackable = 20, description = "Dull ore with a hum you feel in your fingers." },
   { entry = 980313, name = "Greater Tarantula Fang", quality = 1, item_level = 36, class = 12, display_id = 1503, stackable = 20, description = "Osgood pays by the fang. Don't ask what for." },
   { entry = 980314, name = "Stolen Grain Sack", quality = 1, item_level = 37, class = 12, display_id = 1244, stackable = 20, description = "Martie's mark, stitched on the corner." },
+  # Redridge 40-45 (#612). Tharil'zun's Orders is given again by 97408 (ticket 19).
+  { entry = 980321, name = "Blackrock Champion's Badge", quality = 1, item_level = 41, class = 12, display_id = 898, stackable = 20, description = "A black iron badge, still warm from the forge it was struck in." },
+  { entry = 980322, name = "Tharil'zun's Orders", quality = 1, item_level = 44, class = 12, display_id = 8623, max_count = 1, description = "A folded letter, taken from Tharil'zun's body.", pages = ["To the warlord in Redridge. Hold the keep. Keep the road east open for the carts and closed to the Watch. Let nothing near the tower that the tower has not sent for. Below it, in the same small hand, a hammer over a black sun."] },
+  { entry = 980323, name = "Ranthal Seed Sack", quality = 1, item_level = 41, class = 12, display_id = 1471, stackable = 20, description = "Next year's barley, if there is a next year." },
   # Ilgalar's three items for the dungeon ticket's quests (98501 to 98503): defined here so that
   # ticket edits no item file. No quest uses them yet.
   { entry = 980381, name = "Morganth's Failure Notes", quality = 1, item_level = 38, class = 12, display_id = 1103, max_count = 1, description = "Cipher, page after page, in a small, proud hand. The cover says only: 'What went wrong.'" },

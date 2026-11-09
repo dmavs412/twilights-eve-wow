@@ -381,3 +381,149 @@ completion = "Ten grunts. The carters will try the highway again tomorrow, and t
 money = 1080
 zone_or_sort = 44
 kill = [[440, 10]]
+
+# ── Redridge 40-45 (#595) ─────────────────────────────────────────────────────────────────────
+# Render's Camp and Render's Rock, Kazon, Tharil'zun in Stonewatch's yard, and the Ranthal farm in
+# Render's Valley. Every giver and ender is a vanilla Redridge spawn (content/redridge.toml).
+# Keeshan's escort (98391, 98392) waits on the escort spec.
+
+[[quest]]
+id = 98301
+kind = "story"
+giver = 903
+level = 41
+title = "Blackrock Bounty"
+objectives = "Bring 8 Blackrock Champion's Badges from the Blackrock Champions at Render's Camp to Guard Howe in Lakeshire."
+details = "The Blackrock at Render's Camp have champions now. Big orcs in black iron, every one of them wearing a badge struck in the same forge. The Watch pays for proof of every champion killed, and the badge is the proof. Ears and heads are no use to me. I can't tell one orc's ear from another's. A badge, though, I can count. Eight at a time, and I'll pay for every eight."
+progress = "Got any badges?"
+completion = "Eight badges, still smelling of the forge. They go in the jar behind the gate with the rest. The jar's filling faster than I thought it would. Here's the Watch's coin, and the Watch's thanks."
+money = 1435
+choices = [903251, 903252, 903253]
+zone_or_sort = 44
+collect = [{ item = 980321, count = 8, from = [435], chance = 50 }]
+
+# Keeshan's "Missing in Action" (ticket 25) follows this one.
+[[quest]]
+id = 98302
+kind = "story"
+giver = 382
+after = 98202
+level = 42
+title = "Render's Rock"
+objectives = "Search Render's Rock for Corporal Keeshan and kill 8 Blackrock Trackers, then return to Marshal Marris in Lakeshire."
+details = "Corporal Keeshan is my best scout. A week ago he sent his last report from Render's Rock, north of the lake, where the Blackrock keep their camp. Since then, nothing. He's been late before, but never a week. The Blackrock have trackers out on the rocks, and trackers find things. Go up to Render's Rock and look for him. Kill the trackers while you're there. If they've found him, I want them to find nobody else."
+progress = "Any sign of Keeshan?"
+completion = "No body. That's something. But you say the trackers' trail runs straight down into Render's Camp. Keeshan knows those rocks better than any orc. I'd rather think he's hiding up there, waiting for his chance, than think the other thing. Here, for the search."
+money = 1470
+choices = [903245, 903247, 903250]
+zone_or_sort = 44
+explore = { place = "Render's Rock", position = [-8667.0, -2283.0], radius = 20.0, map = 0 }
+kill = [[615, 8]]
+
+[[quest]]
+id = 98303
+kind = "story"
+giver = 382
+after = 98302
+level = 43
+title = "Kazon's Camp"
+objectives = "Kill Kazon and 8 Blackrock Summoners at Render's Camp, then return to Marshal Marris in Lakeshire."
+details = "Render's Camp answers to an orc called Kazon. He holds the camp, and his summoners do the rest. My scouts have watched them cast, and they knock a stone on a rock before the fire comes, the same ringing stones the canyon gnolls carry. Gnolls and orcs with the same stones, from the same someone. Kill Kazon and his summoners. Without them the camp is just a camp."
+progress = "Is Kazon dead?"
+completion = "Kazon's dead, and he didn't think up any of this on his own. Orcs like him take orders. There's one in Redridge who gives them: Tharil'zun, at Stonewatch. If Kazon had a master, that's him."
+money = 1505
+choices = [903255, 903257, 903259]
+zone_or_sort = 44
+kill = [[584, 1], [4463, 8]]
+
+# The named elite's item quest: blue Quest Line rows (#610). Tharil'zun is level 44 by
+# level_overrides.toml's "Tharil'zun's post". Ticket 19's 97408 carries his orders to the city.
+[[quest]]
+id = 98304
+kind = "story"
+giver = 382
+after = 98303
+level = 44
+title = "Tharil'zun"
+objectives = "Kill Tharil'zun in the yard of Stonewatch Keep and bring his orders to Marshal Marris in Lakeshire."
+details = "Kazon took his orders from somewhere, and it wasn't his own head. The orc who gives the Blackrock in Redridge their orders is Tharil'zun. He stands in Stonewatch's yard with an honour guard, under the keep's walls. He'll have orders of his own on him. Kill him and bring them to me. I want to see who writes to an orc."
+progress = "Tharil'zun?"
+completion = "Look at the hand. Not orcish. Small and neat, like a clerk's, and that mark at the bottom: the hammer over a black sun, the same as on Baren's crates. The Blackrock and the cult take their orders from the same desk. The magistrate will want to see this, and then someone in Stormwind who can do something about it."
+money = 1980
+choices = [903306, 903307, 903308, 903309]
+zone_or_sort = 44
+kill = [[486, 1]]
+collect = [{ item = 980322, count = 1, from = [486], chance = 100 }]
+
+[[quest]]
+id = 98305
+kind = "story"
+giver = 2697
+level = 41
+title = "Render's Valley"
+objectives = "Kill Boulderheart and 8 Blackrock Renegades in Render's Valley, then return to Clyde Ranthal."
+details = "This farm has been Ranthal land for four generations, and I mean to make it five. Wilma and me hold it with a pitchfork and a dog. The renegades come up from the valley at night and burn what they can reach. And at the foot of the valley there's a great rock beast the size of a barn. Boulderheart, the old folks called it. It never used to move. Now it walks the fields. Put it down, and the renegades with it."
+progress = "Is the valley quiet?"
+completion = "Boulderheart, dead? I didn't think anything could crack that hide. Without it and the renegades, Wilma and me might get a crop in. The dog will miss the barking. Take this, with the Ranthals' thanks."
+money = 1435
+choices = [903244, 903246, 903249]
+zone_or_sort = 44
+kill = [[14273, 1], [437, 8]]
+
+# Bounties: money only, no choices.
+
+[[quest]]
+id = 98311
+kind = "bounty"
+giver = 903
+level = 42
+title = "Champions of Render's Camp"
+objectives = "Kill 12 Blackrock Champions at Render's Camp, then return to Guard Howe in Lakeshire."
+details = "The badges are proof of a champion killed, but the Watch pays a bounty on them as well, badge or no badge. The magistrate wants Render's Camp thinner every week, and so do I. Every champion in that camp is one fewer at our gate. Twelve at a time, and I'll pay for every twelve."
+progress = "The camp any thinner?"
+completion = "Twelve champions. Render's Camp will send for more, and they'll come. The bounty stands as long as they do. Here's your pay."
+money = 1260
+zone_or_sort = 44
+kill = [[435, 12]]
+
+[[quest]]
+id = 98312
+kind = "bounty"
+giver = 1070
+level = 42
+title = "Summoners at Render's Camp"
+objectives = "Kill 10 Blackrock Summoners at Render's Camp, then return to Deputy Feldon in Lakeshire."
+details = "The summoners at Render's Camp are the worst of them. They knock their stones, and fire comes down on whoever's closest. Two of the Watch came back burned last week, and they were the lucky ones. The magistrate has put a bounty on the summoners. Ten at a time. Bring me word and I'll pay."
+progress = "Any fewer summoners?"
+completion = "Ten summoners. That's ten fewer fires on the hill. They'll train more, and the bounty stands until they stop. Here's your pay."
+money = 1260
+zone_or_sort = 44
+kill = [[4463, 10]]
+
+[[quest]]
+id = 98313
+kind = "bounty"
+giver = 2697
+level = 41
+title = "Seed for Next Year"
+objectives = "Bring 8 Ranthal Seed Sacks from the Blackrock Outrunners and Blackrock Grunts to Clyde Ranthal."
+details = "The orcs raided the barn last week and took the seed. Not the grain we eat. The seed, next year's barley, every sack of it. They carry it off to their camps and feed it to their wolves, or sit on it, or I don't know what. Without seed there's no crop, and without a crop there's no farm. Bring me back my sacks, eight at a time."
+progress = "Found any of my seed?"
+completion = "That's our barley, Wilma's knot on every sack. Dry, too. Another field planted next spring. Here's your coin. If you find more of it, bring it home."
+money = 1230
+zone_or_sort = 44
+collect = [{ item = 980323, count = 8, from = [485, 440], chance = 50 }]
+
+[[quest]]
+id = 98314
+kind = "bounty"
+giver = 6295
+level = 41
+title = "Tidecallers on Everstill"
+objectives = "Kill 10 Murloc Tidecallers on the shore of Lake Everstill, then return to Wilma Ranthal."
+details = "The tidecallers on the lake shore have started calling up the water. Our lower field floods every night now, and it never flooded before. Clyde says it's the rain. It isn't the rain. I've watched them stand in the shallows and sing, and the lake comes up to meet them. Put them down, ten at a time, and I'll pay what I can."
+progress = "Is the water still rising?"
+completion = "The field was dry this morning. First time in a fortnight. Clyde says it was the weather. Let him. Here's your coin."
+money = 1230
+zone_or_sort = 44
+kill = [[545, 10]]

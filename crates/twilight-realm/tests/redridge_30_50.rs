@@ -2,13 +2,15 @@
 //! (`content/quests_redridge.toml`). Band 30-35 (#602): Three Corners, Lakeshire's three problems,
 //! the bridge, the lakebed, the Thresher and the tower on the hill, and four bounties. Band 35-40
 //! (#607): Toren in Lakeshire's inn, the tower's hill, the ringing stones, the Rethban diggers,
-//! the north farms' gnolls, and four bounties.
+//! the north farms' gnolls, and four bounties. Band 40-45 (#612): the Blackrock badges, Render's
+//! Rock, Kazon and Tharil'zun's orders, the Ranthal farm, and four bounties.
 
 mod common;
 
 use benilla_protocol::{SessionEvent, START_ELWYNN};
 use common::party::*;
 use common::*;
+use twilight_realm::Audience;
 
 /// `zone_or_sort` of a Redridge quest.
 const REDRIDGE: i32 = 44;
@@ -124,6 +126,46 @@ const TOREN_AT: [f32; 3] = [-9228.0, -2162.0, 63.73];
 /// Ilgalar's three items, defined for the dungeon ticket's quests.
 const ILGALAR_ITEMS: [u32; 3] = [980381, 980382, 980383];
 const LETTERS_UNDER_A_CROWNED_SEAL: u32 = 980382;
+
+const INTO_ILGALAR: u32 = 98202;
+const RENDERS_ROCK: u32 = 98302;
+const KAZONS_CAMP: u32 = 98303;
+const THARILZUN: u32 = 98304;
+
+/// Band 40-45's quests: `(id, giver)`; each giver takes its own quest in.
+const BAND_40_45: [(u32, u32); 9] = [
+    (98301, 903),
+    (98302, MARRIS),
+    (98303, MARRIS),
+    (98304, MARRIS),
+    (98305, CLYDE_RANTHAL),
+    (98311, 903),
+    (98312, FELDON),
+    (98313, CLYDE_RANTHAL),
+    (98314, 6295),
+];
+
+/// `(quest, the quest it follows)`; every other quest of band 40-45 has no `after`.
+const CHAINED_40_45: [(u32, u32); 3] = [(98302, 98202), (98303, 98302), (98304, 98303)];
+
+/// Each band 40-45 story quest's reward choices (#610's rows); the bounties offer none.
+const CHOICES_40_45: [(u32, &[u32]); 5] = [
+    (98301, &[903251, 903252, 903253]),
+    (98302, &[903245, 903247, 903250]),
+    (98303, &[903255, 903257, 903259]),
+    (98304, &[903306, 903307, 903308, 903309]),
+    (98305, &[903244, 903246, 903249]),
+];
+
+const CLYDE_RANTHAL: u32 = 2697;
+const BLACKROCK_TRACKER: u32 = 615;
+const THARILZUN_ENTRY: u32 = 486;
+const THARILZUNS_ORDERS: u32 = 980322;
+
+/// Render's Rock, the spot 98302 sends the player to, on the ground the test host gives (none).
+const RENDERS_ROCK_AT: [f32; 3] = [-8667.0, -2283.0, 0.0];
+/// Tharil'zun's spawn in Stonewatch's yard (`content/redridge.toml`).
+const THARILZUN_AT: [f32; 3] = [-9439.3, -3080.77, 0.0];
 
 fn redridge_quests() -> toml::Table {
     include_str!("../content/quests_redridge.toml")
@@ -474,6 +516,160 @@ fn ilgalar_s_three_items_exist_and_the_letters_have_two_pages() {
             .any(|e| matches!(e, SessionEvent::ItemTemplate { info: Some(_), .. }));
         assert!(known, "the realm knows item {id}");
     }
+}
+
+#[test]
+fn band_40_45_loads_with_its_givers_and_zone() {
+    let mut realm = realm();
+    for (id, giver) in BAND_40_45 {
+        let row = quest_row(id);
+        assert_eq!(entry(&row, "giver"), Some(giver), "quest {id}'s giver");
+        assert_eq!(entry(&row, "ender"), None, "quest {id}'s ender");
+        let want = if id >= 98311 { "bounty" } else { "story" };
+        assert_eq!(row["kind"].as_str(), Some(want), "quest {id}'s kind");
+        let t = template(&mut realm, id);
+        assert_eq!(Some(t.title.as_str()), row["title"].as_str(), "quest {id}");
+        assert_eq!(t.zone_or_sort, REDRIDGE, "quest {id}'s zone");
+    }
+}
+
+#[test]
+fn band_40_45_chains_as_the_ticket_names() {
+    for (id, _) in BAND_40_45 {
+        let want = CHAINED_40_45.iter().find(|c| c.0 == id).map(|c| c.1);
+        assert_eq!(entry(&quest_row(id), "after"), want, "quest {id}'s `after`");
+    }
+}
+
+#[test]
+fn every_band_40_45_story_quest_offers_the_choices_its_gear_row_names() {
+    let mut realm = realm();
+    for (id, _) in BAND_40_45 {
+        let want: Vec<u32> = CHOICES_40_45
+            .iter()
+            .find(|c| c.0 == id)
+            .map_or(Vec::new(), |c| c.1.to_vec());
+        let got: Vec<u32> = template(&mut realm, id)
+            .choices
+            .iter()
+            .map(|c| c.0)
+            .filter(|&item| item != 0)
+            .collect();
+        assert_eq!(got, want, "quest {id}'s choices");
+    }
+}
+
+#[test]
+fn reaching_render_s_rock_and_killing_8_trackers_meets_render_s_rock() {
+    let mut party = questing_party(42, &[INTO_ILGALAR]);
+    let marris = meet(&mut party, MARRIS, MARRIS_AT);
+    assert!(offered(&mut party, marris, RENDERS_ROCK));
+    accept(&mut party, marris, RENDERS_ROCK);
+
+    // The trackers fall 40 yd short of the rock, so the kills alone do not meet it.
+    let short = [RENDERS_ROCK_AT[0] + 40.0, RENDERS_ROCK_AT[1], 0.0];
+    walk(&mut party, short);
+    let mut credits = 0;
+    for _ in 0..8 {
+        let (events, _) = slay(&mut party, BLACKROCK_TRACKER, short);
+        if credited(&events, RENDERS_ROCK) {
+            credits += 1;
+        }
+        assert!(!met(&events, RENDERS_ROCK), "met short of the rock");
+    }
+    assert_eq!(credits, 8, "each tracker counts");
+
+    let there = walk(&mut party, RENDERS_ROCK_AT);
+    assert!(met(&there, RENDERS_ROCK), "{there:?}");
+}
+
+#[test]
+fn tharil_zun_drops_his_orders_while_the_quest_wants_them() {
+    let mut party = questing_party(44, &[KAZONS_CAMP]);
+    let marris = meet(&mut party, MARRIS, MARRIS_AT);
+    assert!(offered(&mut party, marris, THARILZUN));
+    accept(&mut party, marris, THARILZUN);
+
+    walk(&mut party, THARILZUN_AT);
+    let (events, loot) = slay(&mut party, THARILZUN_ENTRY, THARILZUN_AT);
+    assert!(credited(&events, THARILZUN), "{events:?}");
+    assert!(
+        loot.contains(&THARILZUNS_ORDERS),
+        "his corpse held {loot:?}"
+    );
+    assert_eq!(carries(&party, THARILZUNS_ORDERS), 1);
+
+    let (_, again) = slay(&mut party, THARILZUN_ENTRY, THARILZUN_AT);
+    assert!(
+        !again.contains(&THARILZUNS_ORDERS),
+        "a second copy once the quest has its orders: {again:?}"
+    );
+}
+
+#[test]
+fn tharil_zun_s_orders_read_one_page() {
+    let items: toml::Table = include_str!("../content/quest_items_redridge.toml")
+        .parse()
+        .unwrap();
+    let row = items["item"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["entry"].as_integer() == Some(THARILZUNS_ORDERS.into()))
+        .expect("Tharil'zun's Orders");
+    let pages = row.get("pages").and_then(|p| p.as_array()).map(Vec::len);
+    assert_eq!(pages, Some(1));
+    assert_eq!(row["max_count"].as_integer(), Some(1));
+}
+
+/// Spawns a level 1 `entry` 3 yd west of `from`, for this character alone, and fights it from
+/// `from` until it dies, then loots it into the bags: the events from the spawn on, and the
+/// items its corpse held. Level 1 keeps the fight short; a kill's quest credit and quest drops
+/// do not look at the creature's level.
+fn slay(party: &mut Party, creature: u32, from: [f32; 3]) -> (Vec<SessionEvent>, Vec<u32>) {
+    let me = party.guids[0];
+    let prey = [from[0] - 3.0, from[1], from[2]];
+    let before = party.seen(0).len();
+    let guid = party
+        .realm
+        .spawn_for(
+            party.host.as_ref(),
+            creature,
+            1,
+            prey,
+            0,
+            Audience::of(&[me]),
+        )
+        .unwrap_or_else(|| panic!("creature {creature}"));
+    party.go_facing(0, from, prey);
+    party.run(0.3);
+    party.cmd(0, RealmCommand::AttackSwing { guid });
+    assert!(
+        party.run_until(600.0, |got| died(&got[0], guid)),
+        "creature {creature} never died"
+    );
+    party.run(0.5);
+    party.cmd(0, RealmCommand::Loot { guid });
+    let items: Vec<u32> = since(party, before)
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::LootResponse { items, .. } => {
+                Some(items.iter().map(|l| l.item_id).collect())
+            }
+            _ => None,
+        })
+        .unwrap_or_default();
+    for slot in 0..items.len() {
+        party.cmd(0, RealmCommand::AutostoreLootItem { slot: slot as _ });
+    }
+    party.cmd(0, RealmCommand::LootRelease { guid });
+    (since(party, before), items)
+}
+
+fn credited(events: &[SessionEvent], quest: u32) -> bool {
+    events.iter().any(
+        |e| matches!(e, SessionEvent::QuestObjectiveKill { quest_id, .. } if *quest_id == quest),
+    )
 }
 
 fn met(events: &[SessionEvent], quest: u32) -> bool {
