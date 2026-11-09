@@ -1,3 +1,43 @@
 # Mistmantle Manor's and Raven Hill Deeps' boss quests, 99001 to 99099 (spec #595): the same
 # schema as quests.toml, read after content/quests_redridge_dungeons.toml and before
 # content/writs.toml.
+
+# ── Mistmantle Manor (#595) ──────────────────────────────────────────────────────────────────────
+
+# Stalvan always drops the Site Record (mistmantle_manor.toml), so its collect row names no
+# `from`. The choices are the Mistmantle set's four Chests (#642).
+[[quest]]
+id = 99001
+kind = "story"
+giver = 265
+after = 98607
+level = 36
+title = "Stalvan"
+objectives = "Go into the house on the hill, put its master to rest, and bring Madame Eva whatever he guards."
+details = "Stalvan taught the Mistmantle girl her letters. He was in the house the night it went quiet, and he's in it still. I see him at the cellar door, every night, standing over something. Whatever stopped that house is under it, and he guards it because nobody ever told him to stop. Go in. Put him to rest. Bring me what he stands over, if it can be carried."
+progress = "Is it over?"
+completion = "Papers, from the cellar. Not his hand. A surveyor's, with the hammer and the black sun at the foot, and 'the stone' written three times as if it were a name. Something was buried under that house on purpose, by people who wrote down what it did and went on to the next place. Take it to Sirra. She reads better than I see."
+money = 1620
+choices = [905140, 905141, 905142, 905143]
+zone_or_sort = 10
+kill = [[97229, 1]]
+collect = [{ item = 980481, count = 1 }]
+
+# Eva hands the record back on accepting; Sirra keeps it.
+[[quest]]
+id = 99002
+kind = "story"
+giver = 265
+ender = 268
+after = 99001
+level = 36
+title = "The Site Record"
+objectives = "Take the surveyor's site record to Sirra Von'Indi in Darkshire."
+details = "Sirra has spent twelve years on that house. She deserves to read this before anyone else does."
+progress = "From the house? Show me."
+completion = "'Untuned, as ordered. Night over the whole wood within the hour.' Twelve years I've called it a curse because I had no other word. It was an order, carried out badly. And there are other sites. The hill of graves, west of here. A tower in Redridge. They didn't stop at us."
+money = 0
+choices = [903205, 903207, 903210]
+zone_or_sort = 10
+gives = [[980481, 1]]
+collect = [{ item = 980481, count = 1 }]

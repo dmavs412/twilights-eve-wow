@@ -257,8 +257,8 @@ camp = 4
 rolls = [{ chance = 50, one_of = [905140, 905141, 905142, 905143, 905144, 905145, 905146, 905147, 905148, 905149, 905150, 905151, 905152, 905153, 905154, 905155, 905156, 905157, 905158, 905159] }]
 
 # ── Encounter 3, the house ───────────────────────────────────────────────────────────────────────
-# Stalvan at the room's south end, facing the door, there from the Run's start. His `drop` stays
-# empty for the arc's Surveyor's Site Record (ticket 26 of #637). The room's floor here is 35.88.
+# Stalvan at the room's south end, facing the door, there from the Run's start. He always drops
+# the Surveyor's Site Record that 99001 collects (#621). The room's floor here is 35.88.
 [[creature]]
 guid = 974014
 entry = 97229
@@ -266,6 +266,7 @@ level = 36
 position = [-10374.5, -1255.5, 35.88]
 grounded = false
 orientation = 0.0
+drop = [980481]
 rolls = [{ chance = 100, one_of = [905140, 905141, 905142, 905143, 905144, 905145, 905146, 905147, 905148, 905149, 905150, 905151, 905152, 905153, 905154, 905155, 905156, 905157, 905158, 905159] }]
 
 # The ore under the torn-up floorboards at Stalvan's feet: scenery, never named in any text.
