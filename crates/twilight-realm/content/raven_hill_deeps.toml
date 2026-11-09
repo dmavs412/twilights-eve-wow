@@ -394,8 +394,8 @@ sides = "inside"
 after_used = 983051
 
 # ── Encounter 3, the grey pocket ─────────────────────────────────────────────────────────────────
-# The Grey Deacon in vault06 (floor 20.87), facing the mist wall, there from the Run's start. His
-# `drop` stays empty for the arc's Crowned Orders and page two (ticket 28 of #637).
+# The Grey Deacon in vault06 (floor 20.87), facing the mist wall, there from the Run's start. He
+# always drops the Crowned Orders and Morganth's Notes, Page Two that 99011 collects (#623).
 [[creature]]
 guid = 974213
 entry = 97265
@@ -403,6 +403,7 @@ level = 44
 position = [-10207.0, 325.0, 20.87]
 grounded = false
 orientation = 4.7
+drop = [980486, 980487]
 rolls = [{ chance = 100, one_of = [905180, 905181, 905182, 905183, 905184, 905185, 905186, 905187, 905188, 905189, 905190, 905191, 905192, 905193, 905194, 905195, 905196, 905197, 905198, 905199] }]
 
 # Six Stilled Dead along the mist wall, facing into the room, frozen until the Deacon's 75%, 50%

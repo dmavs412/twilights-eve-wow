@@ -198,11 +198,12 @@ fn shipped_creatures() -> Creatures {
     let caverns = toml_file(include_str!("../content/wailing_caverns.toml"));
     let duskwood = toml_file(include_str!("../content/duskwood.toml"));
     let redridge = toml_file(include_str!("../content/redridge.toml"));
-    // Phased Dungeons that define their own creatures (#641, #622).
+    // Phased Dungeons that define their own creatures (#641, #622, #623).
     let manor = toml_file(include_str!("../content/mistmantle_manor.toml"));
     let ilgalar = toml_file(include_str!("../content/ilgalar.toml"));
+    let deeps = toml_file(include_str!("../content/raven_hill_deeps.toml"));
     for file in [
-        &barrens, &elwynn, &hand, &caverns, &duskwood, &redridge, &manor, &ilgalar,
+        &barrens, &elwynn, &hand, &caverns, &duskwood, &redridge, &manor, &ilgalar, &deeps,
     ] {
         for t in entries(file, "template") {
             c.templates.insert(int(&t, "entry"));
@@ -297,6 +298,10 @@ fn shipped_creatures() -> Creatures {
             include_str!("../content/mistmantle_manor.toml"),
         ),
         ("ilgalar.toml", include_str!("../content/ilgalar.toml")),
+        (
+            "raven_hill_deeps.toml",
+            include_str!("../content/raven_hill_deeps.toml"),
+        ),
     ] {
         for s in entries(&toml_file(src), "creature") {
             c.spawns

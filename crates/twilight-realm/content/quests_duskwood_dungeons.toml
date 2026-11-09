@@ -41,3 +41,44 @@ choices = [903205, 903207, 903210]
 zone_or_sort = 10
 gives = [[980481, 1]]
 collect = [{ item = 980481, count = 1 }]
+
+# ── Raven Hill Deeps (#595) ──────────────────────────────────────────────────────────────────────
+
+# The Grey Deacon always drops the Crowned Orders and Page Two (raven_hill_deeps.toml), so the
+# collect rows name no `from`. The choices are the Raven Hill Deeps set's four Chests (#646).
+[[quest]]
+id = 99011
+kind = "story"
+giver = 288
+after = 98804
+level = 44
+title = "The Deacon"
+objectives = "Go down into the crypt beneath Raven Hill, kill the one who leads the Grey Robes there, and bring what he carries to Jitters."
+details = "The Grey Robes come up out of that crypt fewer every night, and the ones who come up don't talk. Lars went to the top of the stair and came back white. He says there's a man down there in a deacon's robe giving orders, and past him the air goes grey and nothing moves. Nothing. Kill him. Bring me what he carries. I want to know what they found down there."
+progress = "You went down?"
+completion = "Orders, under that crown. 'Dig to the grey and no further. What stands in it belongs to the Master.' What stands in it. You saw them, didn't you? The dead, standing in the grey, stopped mid-step. Not gone. Just stopped. And this page, all cipher, torn out of a book. And the second order: 'Find the apprentice who reads M.'s hand.' That's somebody's death warrant. Whose?"
+money = 1980
+choices = [905180, 905181, 905182, 905183]
+zone_or_sort = 10
+kill = [[97265, 1]]
+collect = [{ item = 980486, count = 1 }, { item = 980487, count = 1 }]
+
+# Jitters hands both papers back on accepting; Toren keeps them. 98201 is the character meeting
+# Toren.
+[[quest]]
+id = 99012
+kind = "story"
+giver = 288
+ender = 190083
+after = [99011, 98201]
+level = 44
+title = "Page Two"
+objectives = "Take the torn page and the crowned orders to Toren at the inn in Lakeshire."
+details = "There's a lad at the Lakeshire inn the Watch says reads ciphers. I'd guess he's the apprentice in those orders. Take him both. He'd better see what they say about him before they find him."
+progress = "Another page?"
+completion = "His hand. A page of the failures, torn out by someone who couldn't read it and knew it mattered. It says how one of his stones holds its stretch of grey, and why anything dead that walks into it doesn't fall. It stops. They don't die in there. They wait. And these orders want me whole. Let them come. Marris has a man on my stair, and I've run from a cellar once already. I'm not running again."
+money = 0
+choices = [903244, 903246, 903249]
+zone_or_sort = 10
+gives = [[980487, 1], [980486, 1]]
+collect = [{ item = 980487, count = 1 }, { item = 980486, count = 1 }]
