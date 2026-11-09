@@ -3,9 +3,9 @@
 //! nine epics 905900 to 905908; then the Stockade's two sets (#579): the riot (905060 to 905079)
 //! and the quiet wing (905080 to 905099); then the Deeprun Tram's two (#592): the Conductor's blues
 //! (905100 to 905119) and the Platform greens (905120 to 905139); then Mistmantle Manor's set
-//! (#642, 905140 to 905159). The phased harness of
-//! `northshire_abbey.rs` cannot kill a boss in a dungeon cheaply, so these assert the `rolls` data:
-//! chances, lists, no stand-in.
+//! (#642, 905140 to 905159); then the Tower of Ilgalar's (#644, 905160 to 905179). The phased
+//! harness of `northshire_abbey.rs` cannot kill a boss in a dungeon cheaply, so these assert the
+//! `rolls` data: chances, lists, no stand-in.
 
 use std::collections::HashMap;
 
@@ -18,6 +18,7 @@ const STOCKADE_RIOT: &str = include_str!("../content/stockade_riot.toml");
 const STOCKADE_QUIET_WING: &str = include_str!("../content/stockade_quiet_wing.toml");
 const DEEPRUN_TRAM: &str = include_str!("../content/deeprun_tram.toml");
 const MISTMANTLE_MANOR: &str = include_str!("../content/mistmantle_manor.toml");
+const ILGALAR: &str = include_str!("../content/ilgalar.toml");
 const MOBS: &str = include_str!("../content/mobs.toml");
 const GEAR: &str = include_str!("../content/gear.toml");
 
@@ -107,6 +108,7 @@ const QUIET20: (i64, i64) = (905080, 905099);
 const CONDUCTOR20: (i64, i64) = (905100, 905119);
 const PLATFORM20: (i64, i64) = (905120, 905139);
 const MISTMANTLE20: (i64, i64) = (905140, 905159);
+const ILGALAR20: (i64, i64) = (905160, 905179);
 
 fn hogger_pool() -> Vec<i64> {
     let mut v = range(905040, 905059);
@@ -438,6 +440,53 @@ fn the_mistmantle_bosses_roll_the_twenty_and_no_stand_in() {
         assert!(
             !MISTMANTLE_MANOR.contains(&id.to_string()),
             "the manor still names the stand-in {id}"
+        );
+    }
+}
+
+#[test]
+fn the_ilgalar_set_is_twenty_blues_at_38_with_one_chest_of_each_armour() {
+    let gear = parse(GEAR);
+    let mut chests = Vec::new();
+    for id in range(ILGALAR20.0, ILGALAR20.1) {
+        let row = item(&gear, id).unwrap_or_else(|| panic!("row {id} missing"));
+        assert_eq!(
+            (
+                int(row, "quality"),
+                int(row, "item_level"),
+                int(row, "required_level")
+            ),
+            (3, 38, 35),
+            "row {id}"
+        );
+        if int(row, "inventory_type") == 5 {
+            chests.push(int(row, "subclass"));
+        }
+    }
+    // Cloth, leather, mail and plate.
+    chests.sort();
+    assert_eq!(chests, vec![1, 2, 3, 4]);
+}
+
+#[test]
+fn the_ilgalar_bosses_roll_the_twenty_and_no_stand_in() {
+    let tower = parse(ILGALAR);
+    // The Blackrock Overseer half the time, Morganth always.
+    for (guid, chance) in [(974111, 50), (974114, 100)] {
+        let b = creatures(&tower)
+            .into_iter()
+            .find(|c| c["guid"].as_integer() == Some(guid))
+            .unwrap_or_else(|| panic!("boss {guid}"));
+        assert_eq!(
+            rolls(b),
+            vec![(chance, range(ILGALAR20.0, ILGALAR20.1))],
+            "boss {guid}"
+        );
+    }
+    for id in range(QUIET20.0, QUIET20.1) {
+        assert!(
+            !ILGALAR.contains(&id.to_string()),
+            "the tower still names the stand-in {id}"
         );
     }
 }
