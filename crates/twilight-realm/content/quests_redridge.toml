@@ -527,3 +527,207 @@ completion = "The field was dry this morning. First time in a fortnight. Clyde s
 money = 1230
 zone_or_sort = 44
 kill = [[545, 10]]
+
+# ── Redridge 45-50 (#595) ─────────────────────────────────────────────────────────────────────
+# The Lakeshire Watch's camp at Stonewatch Falls (decision 16): Sergeant Crane (hub.toml 190084)
+# gives and takes the band's quests, and the camp's poster gives Wanted: Gath'Ilzogg. Clyde Ranthal
+# (2697) is a vanilla spawn. Stonewatch Keep owns the dragons: from the gate a character sees
+# only "big shapes". Keeshan joins the camp after his rescue (ticket 25).
+
+# Gath'Ilzogg's poster beside Crane, the camp's two tents (the excavation pavilion, 6738) and its
+# campfire (192), in the form of Keane's outpost (quests_elwynn.toml). Display 2 is vanilla's
+# Gath'Ilzogg poster.
+[[gameobject]]
+guid = 792011
+entry = 980502
+display = 2
+map = 0
+position = [-9508.0, -3266.0, 49.32]
+orientation = 1.0
+
+[[gameobject]]
+guid = 792012
+entry = 980503
+display = 6738
+map = 0
+position = [-9525.0, -3285.0, 49.57]
+orientation = 1.0
+respawn = 120.0
+
+[[gameobject]]
+guid = 792013
+entry = 980503
+display = 6738
+map = 0
+position = [-9505.0, -3285.0, 45.26]
+orientation = 1.0
+respawn = 120.0
+
+[[gameobject]]
+guid = 792014
+entry = 980504
+display = 192
+map = 0
+position = [-9515.0, -3272.0, 49.34]
+orientation = 0.0
+respawn = 120.0
+
+[[quest]]
+id = 98401
+kind = "story"
+giver = 382
+ender = 190084
+after = 98304
+level = 45
+title = "Stonewatch Falls"
+objectives = "Report to Sergeant Willa Crane at the Lakeshire Watch's camp at Stonewatch Falls."
+details = "Solomon found me eight more men. Eight. I've sent them east with Sergeant Crane to take the falls below Stonewatch back from the Blackrock and hold them, so we can see what goes in and out of that keep. Crane will want every blade she can get. So do I, but she's closer to the trouble."
+progress = "You're from Lakeshire?"
+completion = "Marris sent you. Good. We took the falls two days ago and we've held them since, which is more than anyone expected. From here you can see the keep's gate. Carts go in at night. Nothing comes out but orcs."
+money = 0
+choices = [903260, 903261, 903262, 903263]
+zone_or_sort = 44
+
+[[quest]]
+id = 98402
+kind = "story"
+giver = 190084
+after = 98401
+level = 46
+title = "Hold the Falls"
+objectives = "Kill 12 Shadowhide Brutes or Shadowhide Warriors in Galardell Valley, then return to Sergeant Crane at Stonewatch Falls."
+details = "Taking the falls was the easy part. Holding them is the work. Every night the gnolls of Galardell Valley come at us from the north-east, down out of the trees, brutes in front and warriors behind. They don't want the falls. They want us off them, and they don't much care how. Eight men can hold a camp for a night. Not every night. Go up into the valley and thin them before dark, and maybe my men get to sleep."
+progress = "Quiet out there yet?"
+completion = "Twelve fewer. My men slept last night, all of them, for the first time since we came. The gnolls will be back, but slower, and slower is what I need. Take this, from the Watch's chest."
+money = 1610
+choices = [903271, 903272, 903273]
+zone_or_sort = 44
+kill = [{ family = "Shadowhide gnolls slain", entries = [432, 568], count = 12 }]
+
+# Ticket 29's 98511 "Gath'Ilzogg" follows this one.
+[[quest]]
+id = 98403
+kind = "story"
+giver_object = 980502
+ender = 190084
+after = 98401
+level = 46
+title = "Wanted: Gath'Ilzogg"
+objectives = "Look through the gate of Stonewatch Keep, then report to Sergeant Crane."
+details = "WANTED: GATH'ILZOGG, warlord of the Blackrock in Redridge, for raids on Lakeshire and the murder of the Watch. Last seen at Stonewatch Keep. The Lakeshire Watch pays on proof. Below, in another hand: Look before you go in. Sgt. W. Crane."
+progress = "Did you see the gate?"
+completion = "You saw it too, then. Big shapes in the yard that move like no orc I know. I've written it to Marris and nobody else, because nobody in Stormwind would believe it. Gath'Ilzogg is in there with them. If you go in, bring back proof, and anything he keeps in that war chest of his."
+money = 1610
+choices = [903265, 903267, 903270]
+zone_or_sort = 44
+explore = { place = "The gate of Stonewatch Keep", position = [-9386.3, -3046.8], radius = 15.0, map = 0 }
+
+# The named elite's item quest: blue Quest Line rows (#615). The Twilight Courier (96054) and his
+# two outriders stand on the Galardell Valley path (zones.toml, #616). Ticket 30's 98521 "The
+# Unsent Letter" follows this one.
+[[quest]]
+id = 98404
+kind = "story"
+giver = 190084
+after = 98402
+level = 48
+title = "The Last Courier"
+objectives = "Kill the Twilight Courier in Galardell Valley and bring his satchel to Sergeant Crane."
+details = "My scouts have watched a rider in a hooded cloak come up out of the south three times this week, always to the same place in Galardell, always with two outriders. He carries one satchel and guards it like his life. He isn't Blackrock. He wears the hammer and the black sun on his cloak. Take that satchel off him before he reaches the tower."
+progress = "The courier?"
+completion = "Papers. Cipher, like the scribble Marris says the lad at the inn can read. And a folded letter that isn't cipher at all. I'll keep the satchel locked in my chest. When the lad's ready for it, it's his."
+money = 2160
+choices = [903313, 903314, 903315]
+zone_or_sort = 44
+kill = [[96054, 1]]
+collect = [{ item = 980331, count = 1, from = [96054], chance = 100 }]
+
+[[quest]]
+id = 98405
+kind = "story"
+giver = 190084
+after = 98401
+level = 46
+title = "Wanted: Lieutenant Fangore"
+objectives = "Kill Lieutenant Fangore and 8 Shadowhide Darkweavers in Galardell Valley, then return to Sergeant Crane at Stonewatch Falls."
+details = "The gnolls in Galardell don't come at us in a mob. They come in order, and that's Fangore's doing. He's a big one, scarred, and he calls himself a lieutenant as if he's seen an army. He sends the brutes in front and keeps his darkweavers behind, throwing shadow at anyone who holds the line. Kill Fangore, and the darkweavers with him, and the next attack comes as a mob again. I can beat a mob."
+progress = "Is Fangore dead?"
+completion = "Fangore's dead, and his darkweavers with him. Last night they came at us in a crowd, no order to it at all, and we sent them running. That's the difference one gnoll makes. Here's the Watch's pay."
+money = 1610
+choices = [903275, 903277, 903279]
+zone_or_sort = 44
+kill = [[703, 1], [429, 8]]
+
+[[quest]]
+id = 98406
+kind = "story"
+giver = 190084
+after = 98405
+level = 47
+title = "Rohh the Silent"
+objectives = "Kill Rohh the Silent and 8 Shadowhide Slayers in Galardell Valley, then return to Sergeant Crane at Stonewatch Falls."
+details = "I've lost two pickets this week. No shout, no struggle. In the morning they were gone, and the gnoll tracks led back into the valley. The men say it's Rohh, the one they call the Silent, who walks with the slayers and kills without a sound. I don't believe in ghosts, but I believe in that gnoll. Go into the valley and find him. Kill his slayers too. I want my pickets to see the morning."
+progress = "Any sign of Rohh?"
+completion = "Rohh. Smaller than I thought. The men won't believe it's him until they've seen the body, so I'll leave him at the edge of camp for a day. Every picket came back this morning. Here, you've earned it."
+money = 1645
+choices = [903264, 903266, 903269]
+zone_or_sort = 44
+kill = [[947, 1], [431, 8]]
+
+# Bounties: money only, no choices.
+
+[[quest]]
+id = 98411
+kind = "bounty"
+giver = 190084
+level = 46
+title = "Brutes at the Fence"
+objectives = "Kill 10 Shadowhide Brutes in Galardell Valley, then return to Sergeant Crane at Stonewatch Falls."
+details = "The brutes are the ones that reach the fence. Big, stupid and hard to stop. Every one that dies up the valley is one my men don't have to stop at the stakes in the dark. The Watch pays a bounty on them, ten at a time, as long as they keep coming."
+progress = "Fewer brutes?"
+completion = "Ten brutes. The fence will hold another night. The bounty stands as long as they come. Here's your pay."
+money = 1380
+zone_or_sort = 44
+kill = [[432, 10]]
+
+[[quest]]
+id = 98412
+kind = "bounty"
+giver = 2697
+level = 46
+title = "Pelts for Wilma"
+objectives = "Bring 8 Shadowhide Pelts from the Shadowhide Warriors and Brutes in Galardell Valley to Clyde Ranthal."
+details = "The gnolls up in Galardell wear the best hides in Redridge, and they don't deserve them. Wilma makes rugs of them. She sells them in Lakeshire and sends one to her sister in Goldshire every winter. She says a good Shadowhide pelt keeps a stone floor warm all season. If you're up that way, bring me back eight. I'll pay fair."
+progress = "Any pelts?"
+completion = "Good thick ones. Wilma will be pleased. She says the last of them went to a fine house in Stormwind, which I doubt. Here's your coin."
+money = 1380
+zone_or_sort = 44
+collect = [{ item = 980332, count = 8, from = [568, 432], chance = 50 }]
+
+[[quest]]
+id = 98413
+kind = "bounty"
+giver = 190084
+level = 47
+title = "Slayers and Darkweavers"
+objectives = "Kill 10 Shadowhide Slayers or Shadowhide Darkweavers in Galardell Valley, then return to Sergeant Crane at Stonewatch Falls."
+details = "The slayers take my pickets in the dark, and the darkweavers throw shadow at the fence. Between them they've hurt more of my men than all the brutes together. The Watch has put a bounty on both. Ten at a time, slayers or darkweavers, I don't care which."
+progress = "Any fewer of them?"
+completion = "Ten. My men can stand a watch without looking over their shoulders, for a night or two. The bounty stands. Here's your pay."
+money = 1410
+zone_or_sort = 44
+kill = [{ family = "Shadowhide slain", entries = [431, 429], count = 10 }]
+
+[[quest]]
+id = 98414
+kind = "bounty"
+giver = 190084
+level = 47
+title = "Warriors of Galardell"
+objectives = "Kill 10 Shadowhide Warriors in Galardell Valley, then return to Sergeant Crane at Stonewatch Falls."
+details = "The warriors hold the valley between our camp and the hill to the east. While they're thick on the path, no scout of mine gets far enough to see what goes up it. Thin them, ten at a time, and the Watch will pay for every ten."
+progress = "Is the path any clearer?"
+completion = "Ten warriors. My scout got halfway up the valley this morning before he had to turn back. Halfway is further than yesterday. Here's your pay."
+money = 1410
+zone_or_sort = 44
+kill = [[568, 10]]

@@ -3,7 +3,9 @@
 //! the bridge, the lakebed, the Thresher and the tower on the hill, and four bounties. Band 35-40
 //! (#607): Toren in Lakeshire's inn, the tower's hill, the ringing stones, the Rethban diggers,
 //! the north farms' gnolls, and four bounties. Band 40-45 (#612): the Blackrock badges, Render's
-//! Rock, Kazon and Tharil'zun's orders, the Ranthal farm, and four bounties.
+//! Rock, Kazon and Tharil'zun's orders, the Ranthal farm, and four bounties. Band 45-50 (#617):
+//! the Lakeshire Watch's camp at Stonewatch Falls, Gath'Ilzogg's poster, the last courier, and
+//! four bounties.
 
 mod common;
 
@@ -166,6 +168,73 @@ const THARILZUNS_ORDERS: u32 = 980322;
 const RENDERS_ROCK_AT: [f32; 3] = [-8667.0, -2283.0, 0.0];
 /// Tharil'zun's spawn in Stonewatch's yard (`content/redridge.toml`).
 const THARILZUN_AT: [f32; 3] = [-9439.3, -3080.77, 0.0];
+
+const STONEWATCH_FALLS: u32 = 98401;
+const HOLD_THE_FALLS: u32 = 98402;
+const WANTED_GATH_ILZOGG: u32 = 98403;
+const THE_LAST_COURIER: u32 = 98404;
+
+/// Band 45-50's quests: `(id, giver, giver_object, ender)`, the ender when it is not the giver.
+const BAND_45_50: [(u32, Option<u32>, Option<u32>, Option<u32>); 10] = [
+    (98401, Some(MARRIS), None, Some(CRANE)),
+    (98402, Some(CRANE), None, None),
+    (98403, None, Some(POSTER_ENTRY), Some(CRANE)),
+    (98404, Some(CRANE), None, None),
+    (98405, Some(CRANE), None, None),
+    (98406, Some(CRANE), None, None),
+    (98411, Some(CRANE), None, None),
+    (98412, Some(CLYDE_RANTHAL), None, None),
+    (98413, Some(CRANE), None, None),
+    (98414, Some(CRANE), None, None),
+];
+
+/// `(quest, the quest it follows)`; every other quest of band 45-50 has no `after`.
+const CHAINED_45_50: [(u32, u32); 6] = [
+    (98401, 98304),
+    (98402, 98401),
+    (98403, 98401),
+    (98404, 98402),
+    (98405, 98401),
+    (98406, 98405),
+];
+
+/// Each band 45-50 story quest's reward choices (#615's rows); the bounties offer none.
+const CHOICES_45_50: [(u32, &[u32]); 6] = [
+    (98401, &[903260, 903261, 903262, 903263]),
+    (98402, &[903271, 903272, 903273]),
+    (98403, &[903265, 903267, 903270]),
+    (98404, &[903313, 903314, 903315]),
+    (98405, &[903275, 903277, 903279]),
+    (98406, &[903264, 903266, 903269]),
+];
+
+/// The camp's Hub NPCs (`content/hub.toml`): `(guid, entry)`.
+const CAMP_NPCS: [(u32, u32); 4] = [
+    (9300084, CRANE),
+    (9300085, TULLER),
+    (9300086, WATCHMAN),
+    (9300087, WATCHMAN),
+];
+const CAMP_AT: [f32; 3] = [-9515.0, -3270.0, 49.4];
+const CRANE: u32 = 190084;
+const CRANE_AT: [f32; 3] = [-9511.0, -3262.0, 49.52];
+const TULLER: u32 = 190085;
+const WATCHMAN: u32 = 190086;
+
+/// The camp's "Wanted: Gath'Ilzogg" poster.
+const POSTER_ENTRY: u32 = 980502;
+const POSTER: u64 = 0xF110 << 48 | 792011;
+const POSTER_AT: [f32; 3] = [-9508.0, -3266.0, 49.32];
+
+/// Stonewatch Keep's gate (`content/stonewatch_keep.toml`'s portal).
+const KEEP_GATE: [f32; 3] = [-9386.3, -3046.8, 0.0];
+
+const TWILIGHT_COURIER: u32 = 96054;
+const CULT_COURIERS_SATCHEL: u32 = 980331;
+
+/// The items tickets 29 and 30 use, defined by #617; the letter reads three pages.
+const LATER_ITEMS: [u32; 3] = [980386, 980391, 980392];
+const MORGANTHS_UNSENT_LETTER: u32 = 980392;
 
 fn redridge_quests() -> toml::Table {
     include_str!("../content/quests_redridge.toml")
@@ -620,6 +689,201 @@ fn tharil_zun_s_orders_read_one_page() {
     let pages = row.get("pages").and_then(|p| p.as_array()).map(Vec::len);
     assert_eq!(pages, Some(1));
     assert_eq!(row["max_count"].as_integer(), Some(1));
+}
+
+#[test]
+fn band_45_50_loads_with_its_givers_enders_and_zone() {
+    let mut realm = realm();
+    for (id, giver, giver_object, ender) in BAND_45_50 {
+        let row = quest_row(id);
+        assert_eq!(entry(&row, "giver"), giver, "quest {id}'s giver");
+        assert_eq!(
+            entry(&row, "giver_object"),
+            giver_object,
+            "quest {id}'s giver_object"
+        );
+        assert_eq!(entry(&row, "ender"), ender, "quest {id}'s ender");
+        let want = if id >= 98411 { "bounty" } else { "story" };
+        assert_eq!(row["kind"].as_str(), Some(want), "quest {id}'s kind");
+        let t = template(&mut realm, id);
+        assert_eq!(Some(t.title.as_str()), row["title"].as_str(), "quest {id}");
+        assert_eq!(t.zone_or_sort, REDRIDGE, "quest {id}'s zone");
+    }
+}
+
+#[test]
+fn band_45_50_chains_as_the_ticket_names() {
+    for (id, ..) in BAND_45_50 {
+        let want = CHAINED_45_50.iter().find(|c| c.0 == id).map(|c| c.1);
+        assert_eq!(entry(&quest_row(id), "after"), want, "quest {id}'s `after`");
+    }
+}
+
+#[test]
+fn every_band_45_50_story_quest_offers_the_choices_its_gear_row_names() {
+    let mut realm = realm();
+    for (id, ..) in BAND_45_50 {
+        let want: Vec<u32> = CHOICES_45_50
+            .iter()
+            .find(|c| c.0 == id)
+            .map_or(Vec::new(), |c| c.1.to_vec());
+        let got: Vec<u32> = template(&mut realm, id)
+            .choices
+            .iter()
+            .map(|c| c.0)
+            .filter(|&item| item != 0)
+            .collect();
+        assert_eq!(got, want, "quest {id}'s choices");
+    }
+}
+
+#[test]
+fn the_watch_s_camp_stands_at_stonewatch_falls() {
+    let hub: toml::Table = include_str!("../content/hub.toml").parse().unwrap();
+    let rows = hub["npc"].as_array().unwrap();
+    for (guid, npc) in CAMP_NPCS {
+        let row = rows
+            .iter()
+            .find(|n| n["guid"].as_integer() == Some(guid.into()))
+            .unwrap_or_else(|| panic!("hub row {guid}"));
+        assert_eq!(entry(row, "entry"), Some(npc), "hub row {guid}'s entry");
+        assert_eq!(row["map"].as_integer(), Some(0), "hub row {guid}'s map");
+        assert_eq!(entry(row, "faction_template"), Some(35));
+        let at = row["position"].as_array().unwrap();
+        let (x, y) = (at[0].as_float().unwrap(), at[1].as_float().unwrap());
+        let off = ((x - CAMP_AT[0] as f64).powi(2) + (y - CAMP_AT[1] as f64).powi(2)).sqrt();
+        assert!(off < 25.0, "hub row {guid} stands {off} yd from the camp");
+    }
+    let row = |npc: u32| {
+        rows.iter()
+            .find(|n| entry(n, "entry") == Some(npc))
+            .unwrap()
+    };
+    assert_eq!(row(CRANE)["role"].as_str(), Some("giver"));
+    assert_eq!(
+        entry(row(CRANE), "npc_flags"),
+        Some(0x2),
+        "Crane gives quests"
+    );
+    assert_eq!(row(TULLER)["role"].as_str(), Some("repairer"));
+    assert_eq!(
+        entry(row(TULLER), "npc_flags"),
+        Some(0x4004),
+        "Tuller repairs"
+    );
+
+    let mut party = questing_party(46, &[]);
+    walk(&mut party, [CAMP_AT[0] + 1.5, CAMP_AT[1], CAMP_AT[2]]);
+    for (_, npc) in CAMP_NPCS {
+        let (_, at) = party.unit(0, npc, CAMP_AT);
+        let off = ((at[0] - CAMP_AT[0]).powi(2) + (at[1] - CAMP_AT[1]).powi(2)).sqrt();
+        assert!(off < 25.0, "{npc} shown {off} yd from the camp");
+    }
+}
+
+#[test]
+fn the_poster_offers_wanted_once_stonewatch_falls_is_in_and_the_gate_credits_it() {
+    let mut early = questing_party(46, &[THARILZUN]);
+    walk(&mut early, [POSTER_AT[0] + 1.5, POSTER_AT[1], POSTER_AT[2]]);
+    assert!(
+        !poster_offers(&mut early).contains(&WANTED_GATH_ILZOGG),
+        "offered before Stonewatch Falls"
+    );
+
+    let mut party = questing_party(46, &[THARILZUN, STONEWATCH_FALLS]);
+    walk(&mut party, [POSTER_AT[0] + 1.5, POSTER_AT[1], POSTER_AT[2]]);
+    let offered = poster_offers(&mut party);
+    assert!(offered.contains(&WANTED_GATH_ILZOGG), "{offered:?}");
+    accept(&mut party, POSTER, WANTED_GATH_ILZOGG);
+
+    let short = walk(&mut party, [KEEP_GATE[0] - 40.0, KEEP_GATE[1], 0.0]);
+    assert!(!met(&short, WANTED_GATH_ILZOGG), "met short of the gate");
+    let there = walk(&mut party, KEEP_GATE);
+    assert!(met(&there, WANTED_GATH_ILZOGG), "{there:?}");
+
+    let crane = meet(&mut party, CRANE, CRANE_AT);
+    let events = hand_in(&mut party, crane, WANTED_GATH_ILZOGG);
+    assert!(completed(&events, WANTED_GATH_ILZOGG), "{events:?}");
+}
+
+#[test]
+fn marris_sends_the_player_to_crane() {
+    let mut party = questing_party(45, &[THARILZUN]);
+    let marris = meet(&mut party, MARRIS, MARRIS_AT);
+    assert!(offered(&mut party, marris, STONEWATCH_FALLS));
+    accept(&mut party, marris, STONEWATCH_FALLS);
+
+    let crane = meet(&mut party, CRANE, CRANE_AT);
+    let events = hand_in(&mut party, crane, STONEWATCH_FALLS);
+    assert!(completed(&events, STONEWATCH_FALLS), "{events:?}");
+}
+
+#[test]
+fn the_courier_drops_his_satchel_while_the_last_courier_wants_it() {
+    let mut party = questing_party(48, &[STONEWATCH_FALLS, HOLD_THE_FALLS]);
+    let crane = meet(&mut party, CRANE, CRANE_AT);
+    assert!(offered(&mut party, crane, THE_LAST_COURIER));
+    accept(&mut party, crane, THE_LAST_COURIER);
+
+    let (events, loot) = slay(&mut party, TWILIGHT_COURIER, CAMP_AT);
+    assert!(credited(&events, THE_LAST_COURIER), "{events:?}");
+    assert!(
+        loot.contains(&CULT_COURIERS_SATCHEL),
+        "his corpse held {loot:?}"
+    );
+    assert_eq!(carries(&party, CULT_COURIERS_SATCHEL), 1);
+
+    let (_, again) = slay(&mut party, TWILIGHT_COURIER, CAMP_AT);
+    assert!(
+        !again.contains(&CULT_COURIERS_SATCHEL),
+        "a second copy once the quest has the satchel: {again:?}"
+    );
+
+    let crane = meet(&mut party, CRANE, CRANE_AT);
+    let events = hand_in(&mut party, crane, THE_LAST_COURIER);
+    assert!(completed(&events, THE_LAST_COURIER), "{events:?}");
+    assert_eq!(carries(&party, CULT_COURIERS_SATCHEL), 0, "Crane keeps it");
+}
+
+#[test]
+fn the_later_tickets_items_exist_and_the_letter_reads_three_pages() {
+    let items: toml::Table = include_str!("../content/quest_items_redridge.toml")
+        .parse()
+        .unwrap();
+    let rows = items["item"].as_array().unwrap();
+    for id in LATER_ITEMS {
+        let row = rows
+            .iter()
+            .find(|i| i["entry"].as_integer() == Some(id.into()))
+            .unwrap_or_else(|| panic!("item {id}"));
+        let pages = row.get("pages").and_then(|p| p.as_array()).map(Vec::len);
+        let want = (id == MORGANTHS_UNSENT_LETTER).then_some(3);
+        assert_eq!(pages, want, "item {id}'s pages");
+    }
+
+    let mut realm = realm();
+    for id in LATER_ITEMS {
+        realm.handle(RealmCommand::ItemQuery { entry: id });
+        let known = drain(&mut realm)
+            .iter()
+            .any(|e| matches!(e, SessionEvent::ItemTemplate { info: Some(_), .. }));
+        assert!(known, "the realm knows item {id}");
+    }
+}
+
+/// The quests the camp's poster offers, as using it shows them.
+fn poster_offers(party: &mut Party) -> Vec<u32> {
+    let from = party.seen(0).len();
+    party.cmd(0, RealmCommand::UseGameObject { guid: POSTER });
+    party.run(0.2);
+    since(party, from)
+        .into_iter()
+        .flat_map(|e| match e {
+            SessionEvent::QuestGreeting(list) => list.quests.iter().map(|q| q.quest_id).collect(),
+            SessionEvent::QuestDetail(d) => vec![d.quest_id],
+            _ => Vec::new(),
+        })
+        .collect()
 }
 
 /// Spawns a level 1 `entry` 3 yd west of `from`, for this character alone, and fights it from
