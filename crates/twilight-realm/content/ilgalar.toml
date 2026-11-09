@@ -360,8 +360,8 @@ sides = "inside"
 
 # ── Encounter 3: the top floor ───────────────────────────────────────────────────────────────────
 # Morganth, facing the Anchor, there from the Run's start. Every 20 s of his fight he calls a
-# Servant of Ilgalar for each valve still open, in from the top floor's far side. ticket 27 of the
-# arc fills his `drop`.
+# Servant of Ilgalar for each valve still open, in from the top floor's far side. He carries his
+# Failure Notes and the Letters Under a Crowned Seal for 98501 (#622).
 [[creature]]
 guid = 974114
 entry = 97244
@@ -374,6 +374,7 @@ every = [
     { every_s = 20, entry = 97241, level = 37, count = 1, position = [-9285.0, -3285.0, 150.13], until_used = 983042 },
     { every_s = 20, entry = 97241, level = 37, count = 1, position = [-9285.0, -3285.0, 150.13], until_used = 983043 },
 ]
+drop = [980381, 980382]
 rolls = [{ chance = 100, one_of = [905160, 905161, 905162, 905163, 905164, 905165, 905166, 905167, 905168, 905169, 905170, 905171, 905172, 905173, 905174, 905175, 905176, 905177, 905178, 905179] }]
 
 # Cover from Tuning Pulse: three pylons about 7 yd round the Anchor, each shown by vanilla's

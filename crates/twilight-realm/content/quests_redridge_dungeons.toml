@@ -1,3 +1,62 @@
 # Ilgalar's and Stonewatch Keep's boss quests, Toren's page translations and The Unsent Letter,
 # 98501 to 98599 (spec #595): the same schema as quests.toml, read after
 # content/quests_duskwood.toml and before content/quests_duskwood_dungeons.toml.
+
+# ── The Tower of Ilgalar (#595) ──────────────────────────────────────────────────────────────────
+
+# Morganth always drops the Failure Notes and the Letters (ilgalar.toml), so the collect rows name
+# no `from`. The choices are the Tower of Ilgalar set's four Chests (#644).
+[[quest]]
+id = 98501
+kind = "story"
+giver = 382
+after = 98202
+level = 38
+title = "Morganth"
+objectives = "Kill Morganth at the top of the Tower of Ilgalar and bring Marshal Marris whatever he was writing."
+details = "You found who's ringing the bell. A mage the gnolls call Morganth, who keeps the Blackrock carrying and the tower humming. He's at the top. I can't send the Watch up there, and you know it. Kill him, and bring me his papers. A man who builds something like that writes it down."
+progress = "Is he dead?"
+completion = "Dead, and the hill still hums. Listen to it. Whatever he built doesn't need him to keep running. And this, all of it cipher. A book of it, and letters under a seal I've never seen. There's a lad at the inn who goes white when anyone says 'tower'. I'd bet a month's pay he can read this."
+money = 1710
+choices = [905160, 905161, 905162, 905163]
+zone_or_sort = 44
+kill = [[97244, 1]]
+collect = [{ item = 980381, count = 1 }, { item = 980382, count = 1 }]
+
+# Marris hands both papers back on accepting; Toren keeps them.
+[[quest]]
+id = 98502
+kind = "story"
+giver = 382
+ender = 190083
+after = 98501
+level = 39
+title = "The Cipher"
+objectives = "Take Morganth's notes and letters to Toren at the inn in Lakeshire."
+details = "Howe will be on the inn's stair tonight, and every night after, for as long as the lad is reading. Nobody goes up without my word. Take him these. If he can't read them, nobody can, and we've a tower humming on a hill and no idea why."
+progress = "What have you brought me?"
+completion = "He's dead, then. I knew it when you came in. This is his hand, and our cipher, the one we made up as apprentices so the master couldn't read our notes. I can read a page a night, no faster. The first lines are enough. The tower is a machine. An Anchor, he calls it, and it pulls the grey in. The grey that took Westfall comes from things like this. He built it, and it doesn't stop because he did. And these letters, under the crown. Someone offered him the one thing nobody ever gave him. Credit. Let me read. Come back when you've slept."
+money = 0
+choices = [903224, 903226, 903228]
+zone_or_sort = 44
+gives = [[980381, 1], [980382, 1]]
+collect = [{ item = 980381, count = 1 }, { item = 980382, count = 1 }]
+
+# Toren gives his translation on accepting; Sirra keeps it.
+[[quest]]
+id = 98503
+kind = "story"
+giver = 190083
+ender = 268
+after = 98502
+level = 40
+title = "Page One"
+objectives = "Carry Toren's translation of the first page to Sirra Von'Indi in Darkshire."
+details = "The first page of the failures isn't Redridge. It's Duskwood. 'The Duskwood test', he calls it. A stone set without its tuning, twelve years ago, to see what an untuned one would do. It made night. It woke the dead. He wrote it down as a lesson. There's a historian in Darkshire who'll have records of that night. Take her my translation. She should know what was done to her town, and by whom."
+progress = "From Lakeshire?"
+completion = "'The Duskwood test.' Twelve years of my life, explained on three pages by a boy in Lakeshire and a dead man's notes. It was an experiment, and we were it. Thank him for me. And tell him I'm sorry for whatever it costs him to read his friend's hand."
+money = 0
+choices = [903235, 903237, 903239]
+zone_or_sort = 44
+gives = [[980383, 1]]
+collect = [{ item = 980383, count = 1 }]
