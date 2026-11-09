@@ -255,7 +255,8 @@ kill = [[97218, 1]]
 # none is a prerequisite: each zone's first quests are offered without them. Solomon's request goes
 # the other way, from Lakeshire to General Marcus Jonathan at the city gate (stormwind.toml, vmangos
 # guid 79677), and from 37 Lord Ebonlocke's letter does the same (97406, 97407; #609). From 42 the
-# evidence goes on to Marshal Dughan in Goldshire (97408 to 97410; #614). The quest
+# evidence goes on to Marshal Dughan in Goldshire (97408 to 97410; #614), and from 46 Darkshire's
+# relief letter follows it (97411; #619). The quest
 # items are in quest_items.toml. `money` is copper. `zone_or_sort` 1519 is
 # Stormwind City's AreaTable id.
 
@@ -393,7 +394,7 @@ collect = [{ item = 980155, count = 1 }]
 
 # The evidence for Goldshire (#614, spec #595 decision 2): Tharil'zun's orders (quests_redridge.toml
 # 98304) go to the General and on to Marshal Dughan, and Oslow's bridge seal (98105) goes straight
-# to him. Dughan keeps both; the court chain spec's first quest names 97409 or 97410 in `after`.
+# to him. Dughan keeps both; the court chain spec's first quest names 97411 in `after`.
 [[quest]]
 id = 97408
 kind = "story"
@@ -447,3 +448,22 @@ choices = [903240, 903241, 903242, 903243]
 zone_or_sort = 1519
 gives = [[980156, 1]]
 collect = [{ item = 980156, count = 1 }]
+
+# The last hand-off (#619): Darkshire's relief letter carries the bridge's seal to Dughan.
+[[quest]]
+id = 97411
+kind = "story"
+giver = 263
+ender = 240
+after = [97407, 97410]
+level = 46
+title = "Relief That Never Came"
+objectives = "Carry the letter that promised Darkshire relief to Marshal Dughan in Goldshire."
+details = "Two winters ago a noble house in the city sent Darkshire charity: twenty wagons of grain and blankets, paid for and promised in writing. Not one wagon came. I have the letter that promised them, and the seal on it. General Jonathan tells me there's a marshal in Goldshire who keeps seals that turn up where they shouldn't. Take him this. Charity that never arrives is still somebody's money."
+progress = "From Darkshire, now?"
+completion = "That seal. I've had its twin on my desk a fortnight, off a bridge in Lakeshire. A noble house that pays for bridges it never visits and wagons that never arrive. Somebody's money moves east under that seal, and it isn't buying bread. I know where to start asking now."
+money = 0
+choices = [903264, 903266, 903268]
+zone_or_sort = 1519
+gives = [[980157, 1]]
+collect = [{ item = 980157, count = 1 }]

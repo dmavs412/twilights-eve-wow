@@ -139,6 +139,9 @@ item = [
   # Oslow's bridge seal (#614, quests_stormwind.toml 97410): INV_Misc_Rune_06, a stock icon no
   # other item shows.
   { entry = 980156, name = "Wax Seal Impression", quality = 1, item_level = 42, class = 12, display_id = 20984, max_count = 1, description = "Grey-green wax with a house's crest pressed into it. Not the crown's." },
+  # Darkshire's missing charity (#619, quests_stormwind.toml 97411): INV_Letter_11, a stock icon
+  # no other item shows.
+  { entry = 980157, name = "Darkshire's Relief Letter", quality = 1, item_level = 46, class = 12, display_id = 9467, max_count = 1, description = "'Twenty wagons, for the people of Darkshire, with the compliments of a friend.' The same grey-green wax." },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye

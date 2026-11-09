@@ -2,7 +2,8 @@
 //! (`content/quests_stormwind.toml`). Band 30-35 (#604): Commander Wray's two sets of orders, the
 //! poster beside the Writ Board, and Magistrate Solomon's request to the city gate. Band 35-40
 //! (#609): Darkshire's thirteenth letter to the General and his answer. Band 40-45 (#614):
-//! Tharil'zun's orders to the General and on to Marshal Dughan, and Oslow's bridge seal.
+//! Tharil'zun's orders to the General and on to Marshal Dughan, and Oslow's bridge seal. Band
+//! 45-50 (#619): Darkshire's relief letter to Dughan.
 
 mod common;
 
@@ -27,6 +28,7 @@ const EVIDENCE_FOR_GOLDSHIRE: u32 = 97409;
 const THE_BRIDGE_SEAL: u32 = 97410;
 const THARILZUN: u32 = 98304;
 const THE_EVERSTILL_BRIDGE: u32 = 98105;
+const RELIEF_THAT_NEVER_CAME: u32 = 97411;
 
 /// Each quest: `(id, level, giver, giver_object, ender, after)`.
 const BANDS: [(u32, u32, Option<u32>, Option<u32>, u32, Option<u32>); 10] = [
@@ -64,7 +66,7 @@ const BANDS: [(u32, u32, Option<u32>, Option<u32>, u32, Option<u32>); 10] = [
 ];
 
 /// Each story quest's reward choices.
-const CHOICES: [(u32, &[u32]); 10] = [
+const CHOICES: [(u32, &[u32]); 11] = [
     (97401, &[903204, 903206, 903208]),
     (97402, &[903214, 903216, 903218]),
     (97403, &[903200, 903201, 903202, 903203]),
@@ -75,6 +77,7 @@ const CHOICES: [(u32, &[u32]); 10] = [
     (97408, &[903244, 903246, 903248]),
     (97409, &[903254, 903256, 903258]),
     (97410, &[903240, 903241, 903242, 903243]),
+    (97411, &[903264, 903266, 903268]),
 ];
 
 /// The zones' first quests, which the way in must not gate.
@@ -115,6 +118,7 @@ const EBONLOCKES_LETTER: u32 = 980154;
 const JONATHANS_REPLY: u32 = 980155;
 const THARILZUNS_ORDERS: u32 = 980322;
 const WAX_SEAL_IMPRESSION: u32 = 980156;
+const DARKSHIRES_RELIEF_LETTER: u32 = 980157;
 
 fn quest_file(text: &str) -> Vec<toml::Value> {
     let file: toml::Table = text.parse().unwrap();
@@ -539,5 +543,58 @@ fn oslow_sends_the_bridge_seal_to_dughan_only_after_the_everstill_bridge() {
         carries(&party, WAX_SEAL_IMPRESSION),
         0,
         "Dughan keeps the seal"
+    );
+}
+
+#[test]
+fn ebonlocke_sends_the_relief_letter_to_dughan_only_after_the_answer_and_the_bridge_seal() {
+    let row = quest_row(RELIEF_THAT_NEVER_CAME);
+    assert_eq!(row["kind"].as_str(), Some("story"));
+    assert_eq!(entry(&row, "level"), Some(46));
+    assert_eq!(entry(&row, "giver"), Some(ELLO));
+    assert_eq!(entry(&row, "ender"), Some(DUGHAN));
+    let after: Vec<i64> = row["after"]
+        .as_array()
+        .expect("`after` lists both quests")
+        .iter()
+        .filter_map(|v| v.as_integer())
+        .collect();
+    assert_eq!(
+        after,
+        [AN_ANSWER_FOR_DARKSHIRE as i64, THE_BRIDGE_SEAL as i64]
+    );
+    assert_eq!(
+        template(&mut realm(), RELIEF_THAT_NEVER_CAME).zone_or_sort,
+        STORMWIND
+    );
+
+    for done in [&[AN_ANSWER_FOR_DARKSHIRE][..], &[THE_BRIDGE_SEAL]] {
+        let mut early = questing_party("zealot", 46, done);
+        let ello = meet(&mut early, ELLO, ELLO_AT);
+        let offered = offers(&mut early, ello);
+        assert!(
+            !offered.contains(&RELIEF_THAT_NEVER_CAME),
+            "{done:?}: {offered:?}"
+        );
+    }
+
+    let mut party = questing_party("zealot", 46, &[AN_ANSWER_FOR_DARKSHIRE, THE_BRIDGE_SEAL]);
+    let ello = meet(&mut party, ELLO, ELLO_AT);
+    let offered = offers(&mut party, ello);
+    assert!(offered.contains(&RELIEF_THAT_NEVER_CAME), "{offered:?}");
+    accept(&mut party, ello, RELIEF_THAT_NEVER_CAME);
+    assert_eq!(
+        carries(&party, DARKSHIRES_RELIEF_LETTER),
+        1,
+        "Ebonlocke hands over the letter"
+    );
+
+    let dughan = meet(&mut party, DUGHAN, DUGHAN_AT);
+    let events = hand_in(&mut party, dughan, RELIEF_THAT_NEVER_CAME);
+    assert!(completed(&events, RELIEF_THAT_NEVER_CAME), "{events:?}");
+    assert_eq!(
+        carries(&party, DARKSHIRES_RELIEF_LETTER),
+        0,
+        "Dughan keeps the letter"
     );
 }
