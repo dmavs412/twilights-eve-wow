@@ -105,8 +105,8 @@ collect = [{ item = 980386, count = 1 }]
 # ── The Unsent Letter (#595) ─────────────────────────────────────────────────────────────────────
 
 # The arc's last quest: Crane hands over the last page and the letter from the courier's satchel
-# (98404) once Toren has pages one to three; Toren keeps both. The break quest that follows is the
-# Steppes opening spec's.
+# (98404) once Toren has pages one to three; Toren keeps both. The break quest that follows, 99502
+# "Bring It Down", is in quests_blackrock_pass.toml.
 [[quest]]
 id = 98521
 kind = "story"

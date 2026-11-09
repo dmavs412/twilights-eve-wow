@@ -1,4 +1,5 @@
-//! The break (#631, spec #626): Toren's two quests in Lakeshire's inn, and the encounter at the
+//! The break (#631, spec #626): Toren's quest in Lakeshire's inn after The Unsent Letter (#636),
+//! with the stand-in it replaced gone from the content and from saves, and the encounter at the
 //! Ilgalar Anchor that runs in the tower's Phase and reaches `ilgalar_anchor_broken` when its last
 //! wave is dead. The load check on an encounter's `records` is in `src/encounters.rs`, which no
 //! test seam reaches.
@@ -18,7 +19,9 @@ const HIGHGUID_GAMEOBJECT: u64 = 0xF110;
 /// Toren in Lakeshire's inn (`hub.toml` 9300083), and a spot a couple of yards east of him.
 const TOREN: u64 = HIGHGUID_UNIT << 48 | 190083 << 24 | 9300083;
 const BY_TOREN: [f32; 3] = [-9226.0, -2162.0, 63.73];
+/// The stand-in ticket 05 shipped before The Unsent Letter existed; gone from the content.
 const TRANSLATION: u32 = 99501;
+const THE_UNSENT_LETTER: u32 = 98521;
 const BRING_IT_DOWN: u32 = 99502;
 const BROKEN: &str = "ilgalar_anchor_broken";
 
@@ -198,27 +201,88 @@ fn credited(p: &Party, i: usize) -> bool {
 }
 
 #[test]
-fn toren_offers_the_translation_then_the_break_until_the_anchor_is_broken() {
-    let mut p = party(&[48], &[]);
-    p.go(0, BY_TOREN, std::f32::consts::PI);
-    p.run(0.5);
-    let first = offered(&mut p, 0);
-    assert!(first.contains(&TRANSLATION), "{first:?}");
-    assert!(!first.contains(&BRING_IT_DOWN), "{first:?}");
-
-    p.cmd(
-        0,
-        RealmCommand::QuestGiverAcceptQuest {
-            npc: TOREN,
-            quest: TRANSLATION,
+fn toren_offers_the_break_after_the_unsent_letter_until_the_anchor_is_broken() {
+    // Player 0 has handed The Unsent Letter in to Toren; player 1 has not.
+    let mut p = Party::edited(
+        Realm::with_seed(1),
+        &[49, 49],
+        START_ELWYNN,
+        Box::new(NoGround),
+        |i, blob| {
+            let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"zealot\"");
+            if i == 0 {
+                blob.replace(
+                    "xp = 0\n",
+                    &format!("xp = 0\ncompleted = [{THE_UNSENT_LETTER}]\n"),
+                )
+            } else {
+                blob
+            }
         },
     );
-    hand_in(&mut p, 0, TRANSLATION);
-    assert!(offered(&mut p, 0).contains(&BRING_IT_DOWN));
+    p.run(0.5);
+    for i in 0..2 {
+        p.go(i, BY_TOREN, std::f32::consts::PI);
+    }
+    p.run(0.5);
+    let without = offered(&mut p, 1);
+    assert!(!without.contains(&BRING_IT_DOWN), "{without:?}");
+    let with = offered(&mut p, 0);
+    assert!(with.contains(&BRING_IT_DOWN), "{with:?}");
 
     p.realm.reach_milestone(BROKEN);
     p.run(0.1);
     assert!(!offered(&mut p, 0).contains(&BRING_IT_DOWN));
+}
+
+#[test]
+fn the_stand_in_quest_is_gone() {
+    let mut realm = realm();
+    realm.handle(RealmCommand::QuestQuery { quest: TRANSLATION });
+    realm.handle(RealmCommand::QuestQuery {
+        quest: BRING_IT_DOWN,
+    });
+    let templates: Vec<u32> = drain(&mut realm)
+        .into_iter()
+        .filter_map(|e| match e {
+            SessionEvent::QuestTemplate(t) => Some(t.quest_id),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(templates, [BRING_IT_DOWN]);
+    let text = include_str!("../content/quests_blackrock_pass.toml");
+    assert!(!text.contains(&format!("id = {TRANSLATION}")));
+}
+
+#[test]
+fn a_save_holding_the_stand_in_loads_and_enters_the_world() {
+    let mut p = Party::edited(
+        Realm::with_seed(1),
+        &[49],
+        START_ELWYNN,
+        Box::new(NoGround),
+        |_, blob| {
+            blob.replace(
+                "xp = 0\n",
+                &format!("xp = 0\ncompleted = [{TRANSLATION}]\n"),
+            ) + &format!("\n[[quests]]\nid = {TRANSLATION}\nslot = 0\nkills = [0, 0, 0, 0]\n")
+        },
+    );
+    p.run(0.5);
+    let me = p.guids[0];
+    let entered = p
+        .seen(0)
+        .iter()
+        .any(|e| matches!(e, SessionEvent::ObjectCreate { guid, .. } if *guid == me));
+    assert!(entered, "the character did not enter the world");
+    let log = p.realm.drain_log();
+    assert!(
+        log.iter()
+            .any(|l| l.contains(&format!("dropped quest {TRANSLATION}"))),
+        "{log:?}"
+    );
+    let saved = p.realm.export_character(me).unwrap();
+    assert!(!saved.contains(&TRANSLATION.to_string()), "{saved}");
 }
 
 #[test]

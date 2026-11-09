@@ -2,29 +2,16 @@
 # as content/quests.toml.
 
 # ── The break (#631) ──────────────────────────────────────────────────────────────────────────────
-# Toren in Lakeshire's inn (Hub NPC 190083) gives both. Translation Complete stands in for 98521
-# (#626 decision 11) until ticket 10 deletes it. Bring It Down is offered while the Anchor stands;
-# a character who holds it after another group's break still finishes it. Holding it at the Anchor
-# on Ilgalar's top floor starts the encounter `ilgalar_anchor` (encounters.toml).
-
-[[quest]]
-id = 99501
-kind = "story"
-giver = 190083
-level = 48
-title = "Translation Complete"
-objectives = "Hear Toren out at the inn in Lakeshire."
-details = "It's done. Every page I have, read through twice. I know how his stones fail now: where the casing gives, what the core does when the tune slips, and how long the mist takes to notice. I didn't think I'd ever say this. I know how to break the one on the hill."
-progress = "Sit down. This will take a minute."
-completion = "He built them to hold forever, and he wrote down every way they don't. That's Morganth: careful about everything except what it was for. Listen, and I'll tell you how we bring it down."
-money = 0
-zone_or_sort = 44
+# Toren in Lakeshire's inn (Hub NPC 190083) gives Bring It Down once The Unsent Letter (98521,
+# quests_redridge_dungeons.toml) is handed in to him (#626 decision 11). It is offered while the
+# Anchor stands; a character who holds it after another group's break still finishes it. Holding it
+# at the Anchor on Ilgalar's top floor starts the encounter `ilgalar_anchor` (encounters.toml).
 
 [[quest]]
 id = 99502
 kind = "story"
 giver = 190083
-after = [99501]
+after = [98521]
 until_milestone = "ilgalar_anchor_broken"
 level = 49
 title = "Bring It Down"
