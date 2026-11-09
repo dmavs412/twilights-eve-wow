@@ -1,13 +1,17 @@
 //! Duskwood's quests for levels 30 to 50 (spec #595), walked on the shipped content. Band 30-35
 //! (#603, `content/quests_duskwood.toml`): Lord Ello's round of Darkshire, the Night Watch's
 //! chain on the north road and in Tranquil Gardens, and Daltry's log, which leads through Backus
-//! and Sirra to the silent house on the hill; and four bounties.
+//! and Sirra to the silent house on the hill; and four bounties. Band 35-40 (#608): Jitters'
+//! watch on Raven Hill Cemetery and the Grey Robes' crown, the Night Watch on the south road
+//! following the Defias and the ogres' crates, Sven Yorgen's revenge on Morbent Fel; and four
+//! bounties.
 
 mod common;
 
 use benilla_protocol::{SessionEvent, START_ELWYNN};
 use common::party::*;
 use common::*;
+use twilight_realm::Audience;
 
 const DARKSHIRE_WAITS: u32 = 98601;
 const THE_NIGHT_WATCH: u32 = 98602;
@@ -40,6 +44,55 @@ const CHOICES: [(u32, &[u32]); 7] = [
     (98606, &[903200, 903201, 903202, 903203]),
     (98607, &[903211, 903212, 903213]),
 ];
+
+const RAVEN_HILLS_WATCH: u32 = 98701;
+const THE_GRAVE_ROBBERS: u32 = 98702;
+const NIGHT_RUNNERS: u32 = 98703;
+const OGRES_THE_WRONG_WAY: u32 = 98704;
+const SVENS_CAMP: u32 = 98705;
+const SVENS_REVENGE: u32 = 98706;
+
+/// Every quest of band 35-40: `(id, giver, after)`; each is handed in to its giver.
+const BAND_35_40: [(u32, u32, Option<u32>); 10] = [
+    (98701, JITTERS, None),
+    (98702, JITTERS, Some(98701)),
+    (98703, DODDS, None),
+    (98704, PAIGE, Some(98703)),
+    (98705, SVEN, None),
+    (98706, SVEN, Some(98705)),
+    (98711, JITTERS, None),
+    (98712, PAIGE, None),
+    (98713, 893, None),
+    (98714, 273, None),
+];
+
+/// Each story quest's choices: greens from the band's Quest Lines (#605), and Sven's Revenge's
+/// blues.
+const CHOICES_35_40: [(u32, &[u32]); 6] = [
+    (98701, &[903220, 903221, 903222, 903223]),
+    (98702, &[903231, 903232, 903233]),
+    (98703, &[903225, 903227, 903230]),
+    (98704, &[903234, 903236, 903238]),
+    (98705, &[903224, 903226, 903229]),
+    (98706, &[903303, 903304, 903305]),
+];
+
+/// Band 35-40's givers (`content/duskwood.toml`): entries and where each stands.
+const JITTERS: u32 = 288;
+const DODDS: u32 = 888;
+const PAIGE: u32 = 499;
+const SVEN: u32 = 311;
+const JITTERS_AT: [f32; 3] = [-10732.2, 337.197, 38.638];
+const DODDS_AT: [f32; 3] = [-10923.2, -384.928, 39.434];
+const PAIGE_AT: [f32; 3] = [-10934.5, -381.813, 40.198];
+const SVEN_AT: [f32; 3] = [-10329.9, 623.241, 26.874];
+
+/// Raven Hill's Watch's two spots, Grey Robe camps in the cemetery (`content/zones.toml`).
+const WEST_GRAVES: [f32; 3] = [-10470.0, 250.0, 31.0];
+const NORTH_EARTH: [f32; 3] = [-10500.0, 320.0, 31.0];
+
+const GREY_ROBE_DIGGER: u32 = 96048;
+const CROWNED_TOKEN: u32 = 980411;
 
 /// Darkshire's people (`content/duskwood.toml`): entries and where each stands.
 const ELLO: u32 = 263;
@@ -416,6 +469,188 @@ fn every_story_quest_offers_the_choices_the_gear_table_names() {
         assert_eq!(got, want, "quest {id}'s choices");
     }
     for id in 98611..=98614 {
+        let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
+        assert!(
+            t.choices.iter().all(|c| c.0 == 0),
+            "bounty {id} offers a choice"
+        );
+    }
+}
+
+#[test]
+fn band_35_40_s_quests_load_with_their_givers_and_zone() {
+    let rows = duskwood_quests();
+    let ids: Vec<u32> = rows["quest"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|q| int(q, "id").unwrap() as u32)
+        .filter(|id| (98701..=98714).contains(id))
+        .collect();
+    assert_eq!(ids, BAND_35_40.map(|q| q.0));
+    let mut realm = realm();
+    for (id, giver, _) in BAND_35_40 {
+        let row = quest_row(id);
+        assert_eq!(int(&row, "giver"), Some(giver.into()), "quest {id}'s giver");
+        assert_eq!(int(&row, "ender"), None, "quest {id}'s ender");
+        assert_eq!(int(&row, "zone_or_sort"), Some(10), "quest {id}");
+        let kind = row["kind"].as_str().unwrap();
+        let want = if id >= 98711 { "bounty" } else { "story" };
+        assert_eq!(kind, want, "quest {id}");
+        let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
+        assert_eq!(t.zone_or_sort, 10, "quest {id}");
+        assert_eq!(Some(t.title.as_str()), row["title"].as_str(), "quest {id}");
+    }
+}
+
+#[test]
+fn band_35_40_s_chains_hold() {
+    for (id, _, after) in BAND_35_40 {
+        assert_eq!(
+            int(&quest_row(id), "after"),
+            after.map(i64::from),
+            "quest {id}'s `after`"
+        );
+    }
+
+    // Each chain's first step is on offer to a newcomer, its second held back.
+    let mut party = in_darkshire(&[]);
+    for (entry, at, first, second) in [
+        (JITTERS, JITTERS_AT, RAVEN_HILLS_WATCH, THE_GRAVE_ROBBERS),
+        (DODDS, DODDS_AT, NIGHT_RUNNERS, 0),
+        (PAIGE, PAIGE_AT, 0, OGRES_THE_WRONG_WAY),
+        (SVEN, SVEN_AT, SVENS_CAMP, SVENS_REVENGE),
+    ] {
+        let npc = up_to(&mut party, entry, at);
+        let offered = offers(&mut party, npc);
+        assert!(
+            first == 0 || offered.contains(&first),
+            "{entry}: {offered:?}"
+        );
+        assert!(!offered.contains(&second), "{entry}: {offered:?}");
+    }
+
+    // With each first step handed in, the second is on offer.
+    let mut party = in_darkshire(&[RAVEN_HILLS_WATCH, NIGHT_RUNNERS, SVENS_CAMP]);
+    for (entry, at, second) in [
+        (JITTERS, JITTERS_AT, THE_GRAVE_ROBBERS),
+        (PAIGE, PAIGE_AT, OGRES_THE_WRONG_WAY),
+        (SVEN, SVEN_AT, SVENS_REVENGE),
+    ] {
+        let npc = up_to(&mut party, entry, at);
+        let offered = offers(&mut party, npc);
+        assert!(offered.contains(&second), "{entry}: {offered:?}");
+    }
+}
+
+#[test]
+fn reaching_both_cemetery_spots_credits_raven_hill_s_watch_each_on_its_own_row() {
+    let mut party = in_darkshire(&[]);
+    let jitters = up_to(&mut party, JITTERS, JITTERS_AT);
+    accept(&mut party, jitters, RAVEN_HILLS_WATCH);
+
+    let spot_credits = |events: &[SessionEvent]| -> Vec<u32> {
+        events
+            .iter()
+            .filter_map(|e| match e {
+                SessionEvent::QuestObjectiveKill {
+                    quest_id, entry, ..
+                } if *quest_id == RAVEN_HILLS_WATCH => Some(*entry),
+                _ => None,
+            })
+            .collect()
+    };
+    let complete = |events: &[SessionEvent]| {
+        events.iter().any(|e| {
+            matches!(e, SessionEvent::QuestObjectivesComplete { quest_id } if *quest_id == RAVEN_HILLS_WATCH)
+        })
+    };
+
+    let west = walk(&mut party, WEST_GRAVES);
+    let first = spot_credits(&west);
+    assert_eq!(first.len(), 1, "{west:?}");
+    assert!(!complete(&west), "one spot completed the quest");
+    let north = walk(&mut party, NORTH_EARTH);
+    let second = spot_credits(&north);
+    assert_eq!(second.len(), 1, "{north:?}");
+    assert_ne!(first, second, "both spots credit one log row");
+    assert!(complete(&north), "{north:?}");
+}
+
+#[test]
+fn killing_a_grey_robe_digger_credits_the_grave_robbers_and_can_drop_a_crowned_token() {
+    let mut party = in_darkshire(&[RAVEN_HILLS_WATCH]);
+    let jitters = up_to(&mut party, JITTERS, JITTERS_AT);
+    accept(&mut party, jitters, THE_GRAVE_ROBBERS);
+
+    let me = party.guids[0];
+    let from = [JITTERS_AT[0] - 10.0, JITTERS_AT[1], JITTERS_AT[2]];
+    let prey = [from[0] - 3.0, from[1], from[2]];
+    let mut credits = 0;
+    for _ in 0..12 {
+        let digger = party
+            .realm
+            .spawn_for(
+                party.host.as_ref(),
+                GREY_ROBE_DIGGER,
+                30,
+                prey,
+                0,
+                Audience::of(&[me]),
+            )
+            .expect("a Grey Robe Digger");
+        let before = party.seen(0).len();
+        party.go_facing(0, from, prey);
+        party.run(0.3);
+        party.cmd(0, RealmCommand::AttackSwing { guid: digger });
+        assert!(
+            party.run_until(600.0, |got| died(&got[0], digger)),
+            "the Digger never died"
+        );
+        party.run(0.5);
+        if credited(&since(&party, before), THE_GRAVE_ROBBERS) {
+            credits += 1;
+        }
+        party.cmd(0, RealmCommand::Loot { guid: digger });
+        let items: Vec<u32> = since(&party, before)
+            .iter()
+            .find_map(|e| match e {
+                SessionEvent::LootResponse { items, .. } => {
+                    Some(items.iter().map(|l| l.item_id).collect())
+                }
+                _ => None,
+            })
+            .unwrap_or_default();
+        for slot in 0..items.len() {
+            party.cmd(0, RealmCommand::AutostoreLootItem { slot: slot as _ });
+        }
+        party.cmd(0, RealmCommand::LootRelease { guid: digger });
+        if items.contains(&CROWNED_TOKEN) {
+            break;
+        }
+    }
+    assert!(credits >= 1, "no Digger credited the quest");
+    assert_eq!(
+        carries(&party, CROWNED_TOKEN),
+        1,
+        "no Crowned Token dropped"
+    );
+}
+
+#[test]
+fn every_band_35_40_story_quest_offers_the_choices_the_gear_table_names() {
+    let mut realm = realm();
+    for (id, want) in CHOICES_35_40 {
+        let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
+        let got: Vec<u32> = t
+            .choices
+            .iter()
+            .map(|c| c.0)
+            .filter(|&item| item != 0)
+            .collect();
+        assert_eq!(got, want, "quest {id}'s choices");
+    }
+    for id in 98711..=98714 {
         let t = template(&mut realm, id).unwrap_or_else(|| panic!("quest {id} is not loaded"));
         assert!(
             t.choices.iter().all(|c| c.0 == 0),

@@ -251,6 +251,16 @@ fn shipped_creatures() -> Creatures {
                 .push((format!("{file} guid {}", int(&s, "guid")), int(&s, "entry")));
         }
     }
+    // A zone's hand-placed creatures, laid over its generated file (zones.toml, #606).
+    let zones = toml_file(include_str!("../content/zones.toml"));
+    for zone in entries(&zones, "zone") {
+        for s in entries(zone.as_table().unwrap(), "added") {
+            c.spawns.push((
+                format!("zones.toml guid {}", int(&s, "guid")),
+                int(&s, "entry"),
+            ));
+        }
+    }
     for (file, src) in [
         (
             "northshire_abbey.toml",

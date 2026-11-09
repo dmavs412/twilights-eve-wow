@@ -14,4 +14,12 @@ item = [
   # The Mistmantle quest of a later ticket collects the record (99001); defined here so that
   # ticket touches no item file. No quest collects it yet.
   { entry = 980481, name = "Surveyor's Site Record", quality = 1, item_level = 35, class = 12, display_id = 23201, max_count = 1, pages = ["Brightwood. The stone went under the cellar at the dark of the moon, untuned, as ordered. Result: night over the whole wood within the hour. The dead in two graveyards disturbed. The household lost. Recommend no stone be set again without the engineer.", "Next sites as surveyed: the hill of graves to the west, and the tower in Redridge. Below it, a hammer over a black sun."] },
+  # Duskwood 35-40 (#608, quests_duskwood.toml). Each shows a stock icon no other item does: the
+  # token INV_Misc_Coin_06, the seal INV_Misc_Coin_09, the ledger INV_Misc_Book_11 and the haunch
+  # INV_Misc_Food_17. The token, the seal and the haunch are drops while their quest wants more;
+  # Morbent Fel always drops the ledger, which reads one page.
+  { entry = 980411, name = "Crowned Token", quality = 1, item_level = 37, class = 12, display_id = 4280, stackable = 20, description = "A grey wooden token, a plain crown cut into one face." },
+  { entry = 980412, name = "Crate Seal", quality = 1, item_level = 39, class = 12, display_id = 32278, stackable = 20, description = "Grey wax off a crate lid, pressed with a crown." },
+  { entry = 980413, name = "Morbent's Ledger", quality = 1, item_level = 40, class = 12, display_id = 1317, max_count = 1, pages = ["Spades, twelve. Lamps, twenty. Timber, three carts, by the ogres. Men, fourteen. All to the hill, as ordered. At the top, a crown."] },
+  { entry = 980414, name = "Ravager Haunch", quality = 1, item_level = 37, class = 12, display_id = 3397, stackable = 20, description = "Smitts says it stews well. Smitts has never been wrong about a stew." },
 ]

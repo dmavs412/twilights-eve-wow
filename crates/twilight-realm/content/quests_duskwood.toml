@@ -187,3 +187,169 @@ completion = "That's the stuff. Fine and dry. I'll have every doorstep on my lan
 money = 990
 zone_or_sort = 10
 collect = [{ item = 980404, count = 8, from = [48, 203], chance = 50 }]
+
+# ── Duskwood 35-40 (#595) ────────────────────────────────────────────────────────────────────────
+#
+# West of Darkshire, Raven Hill's cemetery is dug every night. Jitters sends the player to look and
+# finds men in grey under a crown, not the cult's hammer; the Night Watch on the south road follows
+# the Defias and the ogres hauling crates into the cemetery; and Sven Yorgen, burned out the night
+# the dark came, wants Morbent Fel dead and his ledger read. The Grey Robes' camps are in
+# content/zones.toml (#606); Morbent's level is in content/level_overrides.toml. The quest items
+# are in content/quest_items_duskwood.toml.
+
+# The two spots are two of the Grey Robes' dig camps in Raven Hill Cemetery.
+[[quest]]
+id = 98701
+kind = "story"
+giver = 288
+level = 36
+title = "Raven Hill's Watch"
+objectives = "Look at the open graves by the west wall and the fresh earth by the north wall of Raven Hill Cemetery, then return to Jitters in Raven Hill."
+details = "You hear it too? No? You will, after dark. Spades. Every night, out in the cemetery, the scrape of spades on stone. Somebody is digging up our dead, or the dead are digging themselves out, and I don't know which I'd rather. Everyone in the hamlet says go and look, Jitters. I jump at my own shadow. I know it. You don't. Go and look at the west wall and the north wall, where the earth is fresh, and tell me what's out there."
+progress = "Well? What did you see?"
+completion = "Men. Not the dead. Men in grey, with lanterns, digging."
+money = 1260
+choices = [903220, 903221, 903222, 903223]
+zone_or_sort = 10
+explore = [
+  { place = "The open graves by the west wall", position = [-10470.0, 250.0], radius = 15.0, map = 0 },
+  { place = "The fresh earth by the north wall", position = [-10500.0, 320.0], radius = 15.0, map = 0 },
+]
+
+[[quest]]
+id = 98702
+kind = "story"
+giver = 288
+after = 98701
+level = 37
+title = "The Grave Robbers"
+objectives = "Kill 8 Grey Robe Diggers and 4 Grey Robe Lantern-bearers in Raven Hill Cemetery, and bring 4 Crowned Tokens to Jitters."
+details = "Every night, lanterns in the cemetery and the sound of spades. I went close enough to see, once. Men in grey robes, working like a farm crew, and the dead standing all around them and not touching them. Not touching them. Get me something off one of them, something with a mark on it. I want to know who sends men to dig among the dead and lets them come home whole."
+progress = "Did you get close?"
+completion = "That's not the cult's mark. I've seen theirs, a hammer over a black sun, on crates in Darkshire's square. This is a crown. Different men, a different master, digging in our dead. I don't know which is worse."
+money = 1295
+choices = [903231, 903232, 903233]
+zone_or_sort = 10
+kill = [[96048, 8], [96049, 4]]
+collect = [{ item = 980411, count = 4, from = [96048, 96049], chance = 50 }]
+
+[[quest]]
+id = 98703
+kind = "story"
+giver = 888
+level = 38
+title = "Night Runners"
+objectives = "Kill 10 Defias Night Runners and 6 Defias Night Blades around Addle's Stead, then return to Watcher Dodds on the south road."
+details = "The west road should carry farm carts and the odd brave pedlar. After dark it carries nothing at all, because the Defias at Addle's Stead won't let it. Night Runners on the fences, Night Blades in the barn, and anyone who walks past ends up in a ditch. That isn't banditry. Bandits want travellers. These want the road empty, so nobody sees what moves on it. Go out to the Stead and thin them. Bring back anything they carry."
+progress = "Is the west road open?"
+completion = "Sixteen fewer. And look at this, out of their purses. Coins, but not Stormwind's, not anybody's I know. Fresh-struck, no king's head, no mint. Somebody is paying the Defias in money nobody has ever seen. I'll show Paige."
+money = 1330
+choices = [903225, 903227, 903230]
+zone_or_sort = 10
+kill = [[215, 10], [909, 6]]
+
+[[quest]]
+id = 98704
+kind = "story"
+giver = 499
+after = 98703
+level = 39
+title = "Ogres the Wrong Way"
+objectives = "Bring 6 Crate Seals from the Splinter Fist ogres to Watcher Paige on the south road."
+details = "Dodds found the coin. I found the ogres. The Splinter Fists of Vul'Gol never leave their mound except to raid, and they never carry anything but clubs. Now they walk the old road north every night, two by two, with crates on their backs. Ogres don't haul for themselves. Somebody pays them. I want to know what is in those crates and where they go. Every lid has a seal on it. Bring me six."
+progress = "Got the seals?"
+completion = "They carry the crates into the cemetery. Not out of it. Into it. Somebody is paying ogres to haul timber and iron to men who dig among graves. And this seal on the lids is a crown. Somebody is building something out there."
+money = 1365
+choices = [903234, 903236, 903238]
+zone_or_sort = 10
+collect = [{ item = 980412, count = 6, from = [889, 212, 891, 892, 1251], chance = 40 }]
+
+[[quest]]
+id = 98705
+kind = "story"
+giver = 311
+level = 37
+title = "Sven's Camp"
+objectives = "Kill 8 Skeletal Fiends and 6 Carrion Recluses on the west side of Raven Hill Cemetery, then return to Sven Yorgen at his camp."
+details = "This is all I have now. A tent, a fire and my boy. I had a farm once, up the hill, until the night the dark came. We ran and never went back. The river was the only place the dead didn't follow. They follow now. Skeletons come down off the cemetery's west side to stand at the edge of my firelight, and the spiders come with them. My boy doesn't sleep. Clear the west side for me, the bones and the spiders both."
+progress = "Are they still coming?"
+completion = "Quiet, for once. My boy is asleep. You don't know what that's worth. Sit a moment. There's something else I've wanted to ask of someone for a long time, and I think you might be the one."
+money = 1295
+choices = [903224, 903226, 903229]
+zone_or_sort = 10
+kill = [[531, 8], [949, 6]]
+
+[[quest]]
+id = 98706
+kind = "story"
+giver = 311
+after = 98705
+level = 40
+title = "Sven's Revenge"
+objectives = "Kill Morbent Fel at Forlorn Rowe, at the north end of Raven Hill Cemetery, and bring his ledger to Sven Yorgen."
+details = "Twelve years ago the night came down on my farm and I ran with my boy and nothing else. Since then I've watched a man walk that cemetery like he owns it. Morbent Fel, he calls himself. He keeps the grey robes digging, and the dead step aside for him. He lives in the old house at Forlorn Rowe, at the cemetery's north end. Kill him. Bring me whatever he writes in. I want to read what my farm was traded for."
+progress = "Is he dead?"
+completion = "A ledger. Spades, lamps, timber and men, column after column, and at the top of every page that crown. No name. Whoever he answered to doesn't sign. Thank you. My boy and I can sleep tonight, I think. First time in twelve years."
+money = 1800
+choices = [903303, 903304, 903305]
+zone_or_sort = 10
+kill = [[1200, 1]]
+collect = [{ item = 980413, count = 1, from = [1200], chance = 100 }]
+
+# ── Raven Hill's and the south road's bounties (#595) ────────────────────────────────────────────
+
+[[quest]]
+id = 98711
+kind = "bounty"
+giver = 288
+level = 38
+title = "The Hungry Dead"
+objectives = "Kill 10 Flesh Eaters in Raven Hill Cemetery, then return to Jitters."
+details = "The grey men are one thing. The flesh eaters are another. They crawl out of the cemetery on all fours and come sniffing at the hamlet's back doors, and one got into Widow Harlan's pantry last week. She hasn't stopped screaming since, and neither have I, inside. The hamlet put a little money together. Kill ten of the hungry ones and it's yours. Kill ten more and we'll find more money."
+progress = "Did you kill the hungry ones?"
+completion = "Ten. I'll tell the widow. She'll go on screaming, but quieter. The hamlet's money is yours, and the bounty stands as long as the cemetery keeps them coming."
+money = 1140
+zone_or_sort = 10
+kill = [[3, 10]]
+
+[[quest]]
+id = 98712
+kind = "bounty"
+giver = 499
+level = 39
+title = "Clubs at Vul'Gol"
+objectives = "Kill 10 Splinter Fist Warriors at Vul'Gol, then return to Watcher Paige."
+details = "The Splinter Fist warriors are the ones with the clubs, and the clubs are the ones that crack Watch helmets. Every warrior we put down at Vul'Gol is one fewer standing guard over those crates, and one fewer coming down the road on a raid. The Watch pays by the ten. Go to the mound and earn it."
+progress = "How many warriors?"
+completion = "Ten. That's ten clubs that won't land on my men. The Watch pays, as promised. Vul'Gol breeds more of them every month, so come back."
+money = 1170
+zone_or_sort = 10
+kill = [[212, 10]]
+
+[[quest]]
+id = 98713
+kind = "bounty"
+giver = 893
+level = 36
+title = "Hatchlings in the Grove"
+objectives = "Kill 10 Black Widow Hatchlings in Twilight Grove, then return to Lars."
+details = "Sven doesn't like me going near the grove, so I don't. But I've seen it from the riverbank. Spiders, little black ones, hundreds of them, hatching out of the trees. Little ones grow into big ones. Big ones come down to the river. I've saved some coin from fishing. Kill ten of the hatchlings for me before they grow up, and don't tell Sven I paid you."
+progress = "Did you go to the grove?"
+completion = "Ten! That's ten that won't ever be big. Here, it's all fish money, but it's real. Don't tell Sven. And come back if they hatch again. They always hatch again."
+money = 1080
+zone_or_sort = 10
+kill = [[930, 10]]
+
+[[quest]]
+id = 98714
+kind = "bounty"
+giver = 273
+level = 37
+title = "Ravager Stew"
+objectives = "Bring 8 Ravager Haunches to Tavernkeep Smitts in Darkshire."
+details = "No meat comes down the Stormwind road these days, and the Watch eats more than a herd of cattle. So I make do. The young ravagers out at the Yorgen Farmstead are tough and lean, but a ravager haunch stews well if you give it the whole night. Bring me eight haunches and I'll pay for every one. The stew pot doesn't wait."
+progress = "Got my haunches?"
+completion = "Good meat, that. Into the pot by sundown, not that we get a sundown here, and on the Watch's plates by morning. Come back when the pot's low. It's always low."
+money = 1110
+zone_or_sort = 10
+collect = [{ item = 980414, count = 8, from = [923], chance = 50 }]
