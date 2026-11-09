@@ -96,6 +96,7 @@ $rules = Join-Path $Worktree "docs\agents\unattended.md"
 $done = 0
 $requeued = @{}
 $skippedOnce = @{}
+$finished = @{}
 
 Write-Log "builder $Name in $Worktree (claude: $claude)"
 
@@ -130,6 +131,13 @@ while ($true) {
             }
             continue
         }
+        # The list comes from GitHub's search index, which lags a minute or two behind: a ticket
+        # closed just now can still show as open and ready (#633 was built twice). Skip what this
+        # builder finished, and confirm the rest through a direct read before claiming.
+        if ($finished.ContainsKey($c.number)) { continue }
+        $live = (gh issue view -R $Repo $c.number --json state,labels) -join "`n" | ConvertFrom-Json
+        $liveLabels = @($live.labels | ForEach-Object { $_.name })
+        if ($live.state -ne "OPEN" -or $liveLabels -notcontains $Label -or $liveLabels -contains "in-progress" -or $liveLabels -contains "blocked") { continue }
         if (Request-Claim $c.number $Name) { $t = $c; break }
     }
     if (-not $t) {
@@ -235,6 +243,7 @@ while ($true) {
     }
     Remove-WorkflowLabels $n
     Clear-Claim $n
+    $finished[$n] = $true
     $spec = Close-SpecIfDone $n $t.title
     if ($spec) { Add-Content $specFile "$spec" -Encoding utf8; Write-Log "#${n} was the last ticket of spec #${spec}: closed, unplayed" }
     Write-Log "#${n}: landed ($($land.shas)); gate: $($gate.what)"
