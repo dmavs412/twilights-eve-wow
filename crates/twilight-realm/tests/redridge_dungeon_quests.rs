@@ -2,7 +2,9 @@
 //! shipped content. The Tower of Ilgalar (#622): Marshal Marris sends the character up the tower
 //! to kill Morganth and bring back his papers, Toren reads the cipher, and Toren's translation of
 //! page one goes to Sirra Von'Indi in Darkshire. Stonewatch Keep (#624): Sergeant Crane sends the
-//! character to the keep's roof for Gath'Ilzogg's war chest, and page three goes to Toren.
+//! character to the keep's roof for Gath'Ilzogg's war chest, and page three goes to Toren. The
+//! Unsent Letter (#625): once Toren has pages one to three, Crane hands over page four and
+//! Morganth's letter from the courier's satchel, and Toren takes both.
 
 mod common;
 
@@ -40,11 +42,25 @@ const STONEWATCH: [(u32, i64, u32, Option<u32>, u32, i64); 2] = [
     ),
 ];
 
+const THE_LAST_COURIER: u32 = 98404;
+const PAGE_TWO_QUEST: u32 = 99012;
+const THE_UNSENT_LETTER: u32 = 98521;
+
+/// The quests The Unsent Letter wants handed in: the courier's satchel taken, and pages one, two
+/// and three already with Toren.
+const BEFORE_THE_UNSENT_LETTER: [u32; 4] = [
+    THE_LAST_COURIER,
+    THE_CIPHER,
+    PAGE_TWO_QUEST,
+    PAGE_THREE_QUEST,
+];
+
 /// Each story quest's green choices, from the band's Quest Lines (#605, #615).
-const CHOICES: [(u32, &[u32]); 3] = [
+const CHOICES: [(u32, &[u32]); 4] = [
     (THE_CIPHER, &[903224, 903226, 903228]),
     (PAGE_ONE, &[903235, 903237, 903239]),
     (PAGE_THREE_QUEST, &[903274, 903276, 903278]),
+    (THE_UNSENT_LETTER, &[903264, 903266, 903268]),
 ];
 
 /// The Tower of Ilgalar set's four Chests, cloth, leather, mail and plate (#644, `gear.csv`).
@@ -78,6 +94,8 @@ const FAILURE_NOTES: u32 = 980381;
 const LETTERS: u32 = 980382;
 const TRANSLATION: u32 = 980383;
 const PAGE_THREE: u32 = 980386;
+const PAGE_FOUR: u32 = 980391;
+const UNSENT_LETTER: u32 = 980392;
 
 /// The quest 98202 follows.
 const BEFORE_INTO_ILGALAR: u32 = 98109;
@@ -529,4 +547,87 @@ fn page_three_wants_gath_ilzogg_and_toren_at_the_inn_and_toren_takes_the_page() 
     let events = hand_in(&mut party, toren, PAGE_THREE_QUEST);
     assert!(completed(&events, PAGE_THREE_QUEST), "{events:?}");
     assert_eq!(carries(&party, PAGE_THREE), 0, "Toren keeps the page");
+}
+
+#[test]
+fn the_unsent_letter_loads_with_its_giver_ender_and_zone() {
+    let row = quest_row(THE_UNSENT_LETTER);
+    assert_eq!(int(&row, "giver"), Some(CRANE.into()));
+    assert_eq!(int(&row, "ender"), Some(TOREN.into()));
+    assert_eq!(afters(&row), BEFORE_THE_UNSENT_LETTER.map(i64::from));
+    assert_eq!(row["kind"].as_str(), Some("story"));
+    assert_eq!(int(&row, "level"), Some(49));
+    assert_eq!(int(&row, "money"), Some(0));
+    assert_eq!(int(&row, "zone_or_sort"), Some(44));
+    let t = template(&mut realm(), THE_UNSENT_LETTER).expect("98521 is loaded");
+    assert_eq!(t.zone_or_sort, 44);
+    assert_eq!(t.title, "The Unsent Letter");
+}
+
+#[test]
+fn crane_offers_the_unsent_letter_only_once_all_four_are_handed_in() {
+    for missing in BEFORE_THE_UNSENT_LETTER {
+        let done: Vec<u32> = BEFORE_THE_UNSENT_LETTER
+            .into_iter()
+            .filter(|&q| q != missing)
+            .collect();
+        let mut party = at_level(49, &done);
+        let crane = up_to(&mut party, CRANE, CRANE_AT);
+        let offered = offers(&mut party, crane);
+        assert!(
+            !offered.contains(&THE_UNSENT_LETTER),
+            "without {missing}: {offered:?}"
+        );
+    }
+
+    let mut party = at_level(49, &BEFORE_THE_UNSENT_LETTER);
+    let crane = up_to(&mut party, CRANE, CRANE_AT);
+    let offered = offers(&mut party, crane);
+    assert!(offered.contains(&THE_UNSENT_LETTER), "{offered:?}");
+}
+
+#[test]
+fn the_unsent_letter_puts_page_four_and_the_letter_in_the_bag_and_toren_takes_both() {
+    let mut party = at_level(49, &BEFORE_THE_UNSENT_LETTER);
+    let crane = up_to(&mut party, CRANE, CRANE_AT);
+    accept(&mut party, crane, THE_UNSENT_LETTER);
+    assert_eq!(carries(&party, PAGE_FOUR), 1, "Crane hands over page four");
+    assert_eq!(
+        carries(&party, UNSENT_LETTER),
+        1,
+        "Crane hands over the letter"
+    );
+
+    let toren = up_to(&mut party, TOREN, TOREN_AT);
+    let events = hand_in(&mut party, toren, THE_UNSENT_LETTER);
+    assert!(completed(&events, THE_UNSENT_LETTER), "{events:?}");
+    assert_eq!(carries(&party, PAGE_FOUR), 0, "Toren keeps page four");
+    assert_eq!(carries(&party, UNSENT_LETTER), 0, "Toren keeps the letter");
+}
+
+#[test]
+fn the_unsent_letter_reads_three_pages() {
+    let mut realm = realm();
+    realm.handle(RealmCommand::ItemQuery {
+        entry: UNSENT_LETTER,
+    });
+    let first = drain(&mut realm)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::ItemTemplate {
+                info: Some(info), ..
+            } => Some(info.page_text),
+            _ => None,
+        })
+        .expect("980392 is an item");
+    assert_ne!(first, 0, "the letter is not readable");
+    realm.handle(RealmCommand::PageTextQuery { page_id: first });
+    let next: Vec<u32> = drain(&mut realm)
+        .into_iter()
+        .filter_map(|e| match e {
+            SessionEvent::PageText { next_page_id, .. } => Some(next_page_id),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(next, [first + 1, first + 2, 0], "three pages");
 }

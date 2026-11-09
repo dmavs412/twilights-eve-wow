@@ -101,3 +101,26 @@ choices = [903274, 903276, 903278]
 zone_or_sort = 44
 gives = [[980386, 1]]
 collect = [{ item = 980386, count = 1 }]
+
+# ── The Unsent Letter (#595) ─────────────────────────────────────────────────────────────────────
+
+# The arc's last quest: Crane hands over the last page and the letter from the courier's satchel
+# (98404) once Toren has pages one to three; Toren keeps both. The break quest that follows is the
+# Steppes opening spec's.
+[[quest]]
+id = 98521
+kind = "story"
+giver = 190084
+ender = 190083
+after = [98404, 98502, 99012, 98512]
+level = 49
+title = "The Unsent Letter"
+objectives = "Take the courier's last page and the letter folded inside it to Toren at the inn in Lakeshire."
+details = "I said the lad could have the satchel when he was ready. Word from Lakeshire is he's had three pages off you already and sits up nights with them. Here: the last page, and the letter that was folded inside it. I didn't read the letter. Much. It isn't mine to read."
+progress = "Is that from the courier?"
+completion = "The last page. That's all of it, then: every way his stones can fail, start to end. I could tell you how to break one now. The one on the hill, even. And this. His own hand, without the cipher. He never once wrote to me plainly. Give me tonight with it. When you're ready to climb that tower again, come back, and I'll tell you how to bring it down."
+money = 0
+choices = [903264, 903266, 903268]
+zone_or_sort = 44
+gives = [[980391, 1], [980392, 1]]
+collect = [{ item = 980391, count = 1 }, { item = 980392, count = 1 }]
