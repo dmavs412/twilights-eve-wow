@@ -16,7 +16,7 @@ land. The grill is required: an escort is a new ECS component family and a new o
   68 points, from his hideout through Render's Camp, south down the canyon road and over the
   bridge to Marris at (-9277.2, -2296.2). Point 25 waits 45 s (in vanilla he recovers his gear
   there) and point 43 runs a script (an ambush). The sqlite dump is at
-  `C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite`.
+  `C:\Users\davis\wow-data\vmangos\mangos.sqlite`.
 - **The fights on the way.** Blackrock come after him: at least one ambush of 3 Blackrock
   Champions (435) or Trackers (615) near point 43, at the band's levels (41-44).
 - **The end.** The quest is met when Keeshan reaches Marris alive. It fails if he dies.

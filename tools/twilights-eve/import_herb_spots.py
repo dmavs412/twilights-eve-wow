@@ -38,7 +38,7 @@ LOCK_TYPE_SKILL = 2  # Lock.dbc Type: the slot names a LockType
 LOCK_HERBALISM = 2  # LockType.dbc: Herbalism
 GO_TYPE_CHEST = 3
 SPAWN_FLAG_DISABLED = 0x02
-DEFAULT_DB = r"C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite"
+DEFAULT_DB = r"C:\Users\davis\wow-data\vmangos\mangos.sqlite"
 DEFAULT_DATA = r"C:\Users\davis\wow-data\Data"
 
 ZONE_HEADER = re.compile(r"^\[\[zone\]\]\s*$")

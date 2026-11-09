@@ -60,7 +60,7 @@ from icon_check import read_icons  # noqa: E402
 from sheet import Sheet, SheetError, pairs  # noqa: E402
 
 DEFAULT_CSV = os.path.join(HERE, "..", "..", "data", "twilights-eve", "gear.csv")
-DEFAULT_DB = r"C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite"
+DEFAULT_DB = r"C:\Users\davis\wow-data\vmangos\mangos.sqlite"
 DEFAULT_DATA = r"C:\Users\davis\wow-data\Data"
 
 STATS = ("str", "agi", "sta", "int", "spi")

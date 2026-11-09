@@ -12,7 +12,7 @@ the cave/mine WMO lookup.
 From the repo root, with the vmangos sqlite dump and the game data (CLAUDE.md, "This machine"):
 
 ```bash
-DB="C:/Users/davis/AppData/Local/Temp/vmangos/sqlite-dump/mangos.sqlite"
+DB="C:/Users/davis/wow-data/vmangos/mangos.sqlite"
 DATA="C:/Users/davis/wow-data/Data"
 python3.15 -I tools/twilights-eve/import_barrens_spawns.py --db "$DB" --data "$DATA" --source-asset db-sqlite-4641790.zip --map 0 --zone 10 --box -12000 -9500 -2500 1500 --all-creatures --out data/twilights-eve/duskwood_spawns.json
 python3.15 -I tools/twilights-eve/import_barrens_spawns.py --db "$DB" --data "$DATA" --source-asset db-sqlite-4641790.zip --map 0 --zone 44 --box -10500 -8300 -4500 -1000 --all-creatures --out data/twilights-eve/redridge_spawns.json

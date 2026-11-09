@@ -52,7 +52,7 @@ yard. The Unseen (3094) inside it go by entry already. The `lore_bible_dungeons`
 In `mistmantle_manor.toml` itself (ticket 01), entries 97225 to 97229, each in `mobs.toml`'s form
 (Captain Rook's row, `mobs.toml` line 1899, is the model). Displays and factions are vanilla's
 (`creature_template` in the vmangos dump,
-`C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite`). Multipliers 1.0 unless
+`C:\Users\davis\wow-data\vmangos\mangos.sqlite`). Multipliers 1.0 unless
 said. No template has an aggro line except Stalvan's: the house is silent.
 
 | Entry | Name | Type, rank | Class | Levels | Display, faction | Spells |

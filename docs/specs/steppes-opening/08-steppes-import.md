@@ -19,7 +19,7 @@ Vigil's eight NPCs Hub NPCs.
 1. Run the importer with Redridge's flags (`docs/reference/zone-spawns.md` line 18), for zone 46:
 
    ```
-   python3.15 -I tools/twilights-eve/import_barrens_spawns.py --db C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite --data C:\Users\davis\wow-data\Data --source-asset db-sqlite-4641790.zip --map 0 --zone 46 --box -9000 -6800 -4300 1100 --all-creatures --out data/twilights-eve/burning_steppes_spawns.json
+   python3.15 -I tools/twilights-eve/import_barrens_spawns.py --db C:\Users\davis\wow-data\vmangos\mangos.sqlite --data C:\Users\davis\wow-data\Data --source-asset db-sqlite-4641790.zip --map 0 --zone 46 --box -9000 -6800 -4300 1100 --all-creatures --out data/twilights-eve/burning_steppes_spawns.json
    ```
 
    The prep's dry run (2026-11-07) found 500 spawns of 67 entries (418 hostile, 64 neutral, 18

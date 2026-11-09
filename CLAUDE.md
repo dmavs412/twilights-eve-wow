@@ -105,9 +105,10 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   `third_party/kira` keeps CRLF. Make edits with the Edit tool. A bulk or many-file edit is a
   Python script written with the Write tool and run by path (a heredoc or a `-c` string mangles
   `\r\n` and quotes), and it writes files with `write_bytes`: `write_text` writes `\r\n` here.
-- The vmangos world DB is a sqlite dump at
-  `C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite`; Python opens that
-  path, never the Git Bash `/tmp/vmangos/...` form.
+- The vmangos world DB is a sqlite dump at `C:\Users\davis\wow-data\vmangos\mangos.sqlite`
+  (moved out of Temp on 2026-11-09, after Windows cleaned Temp and lost it). Re-fetch it with
+  `gh release download db_latest -R vmangos/core -p "db-sqlite-*.zip"` and unzip
+  `sqlite-dump/mangos.sqlite` there. Python opens the Windows path, never a Git Bash form.
 
 ## Issue tracker
 

@@ -54,7 +54,7 @@ python3.15 tools/twilights-eve/gear_sheet.py look-check <entry or a-b> [...] [--
     `icon_check.py`'s `read_icons`, line 53), so the row keeps its Line's icon. Game data comes
     from `$WOW_DATA` or `--data`.
 - **looks** lists vanilla items for a new model or Wardrobe. It reads the vmangos `item_template`
-  table (default `C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite`, the
+  table (default `C:\Users\davis\wow-data\vmangos\mangos.sqlite`, the
   Windows path; `--db` overrides). It maps the slot and type to class, subclass and inventory
   type with `classify`, and keeps items of quality 2 or better whose `item_level` is within
   `--spread` of the level asked and whose `display_id` no `gear.csv` row uses, as `display_id`

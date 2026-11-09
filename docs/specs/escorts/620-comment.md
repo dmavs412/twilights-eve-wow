@@ -34,7 +34,7 @@ quests' rows and text, the camp Keeshan's Hub row, the gear choices).
 - `wait_yd = 20.0`, `leash_yd = 60.0`, `leash_s = 10.0`, `reset_s = 10.0`, `linger_s = 10.0`,
   `assist_yd = 20.0`.
 - **The path.** vmangos's `creature_movement_template` rows for entry 349 (68 points) in the sqlite
-  dump (`C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite`), thinned to about 30
+  dump (`C:\Users\davis\wow-data\vmangos\mangos.sqlite`), thinned to about 30
   `[[escort.point]]` tables with `at = [x, y]` (no Z). Keep a point wherever the vanilla path turns
   by more than about 20 degrees, and keep these four with their extras:
   - vanilla point 25: `wait_s = 10.0`, `say = "I need a moment to rest."` (vanilla sat 45 s here);

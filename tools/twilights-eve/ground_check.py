@@ -63,7 +63,7 @@ import wowmpq  # noqa: E402
 
 CONTENT = os.path.normpath(os.path.join(HERE, "..", "..", "crates", "twilight-realm", "content"))
 DEFAULT_DATA = r"C:\Users\davis\wow-data\Data"
-DEFAULT_VMANGOS = r"C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite"
+DEFAULT_VMANGOS = r"C:\Users\davis\wow-data\vmangos\mangos.sqlite"
 # Same table as import_barrens_spawns.MAP_DIRS (that module runs its import on load).
 MAP_DIRS = {0: "Azeroth", 1: "Kalimdor"}
 # Files whose rows stand on Kalimdor unless the row says otherwise (hub.rs and mobs.rs default
