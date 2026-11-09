@@ -7,9 +7,18 @@
 # bounding box in that frame, z widened by a yard each way; the comment above it names the group.
 # The portal stands on the mausoleum floor beside the stairwell that the WMO's portal 9 cuts.
 #
-# A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the first vault
-# below the stairs so a character can see the Phase, and the open-world creatures that stood
-# inside the boxes are deleted. Guids: creatures 971001 up, one a dungeon.
+# The Grey Robes dig the seam under the cemetery and break into an old pocket of grey, and the dead
+# in it stand still (#645, spec #637). A run of about 15 minutes, three encounters along the
+# crypt's first half: the upper vaults and Commander Felstrom, the dig face in the hall and vault01,
+# and the grey pocket in vault06, where the Grey Deacon wakes the Stilled Dead as he weakens. The
+# dead here speak. The mist wall `raven_hill_grey` (data/twilights-eve/mist_walls.json) closes the
+# rest of the crypt across vault06's south end, where the way down to XBox begins.
+#
+# Every row is interior, `grounded = false`, with the floor's Z from wmo_floor.py: the upper vaults
+# (group 12) 29.08 and 24.39, the hall (group 1) 25.43, vault01 (group 2) 25.25, vault06 (group 4)
+# 20.87.
+#
+# Guids: creatures 974201 to 974219, GameObjects 983051 to 983055. Templates 97260 to 97266 below.
 
 id = 11
 name = "Raven Hill Deeps"
@@ -92,10 +101,405 @@ z = [-25.0, -7.0]
 position = [-10418.6, 410.8, 47.8]
 orientation = 1.32
 
-# The Phase Tester: friendly, no quests.
+# ── Templates ────────────────────────────────────────────────────────────────────────────────────
+# Displays and factions are vanilla's (creature_template in the vmangos dump). "The Dig Overseer"
+# and "The Grey Deacon" are placeholder names. No text here names the Grey Robes' master but as
+# "the Master".
+
+# The crypt's old guard: melee only. Vanilla Skeletal Warder's display and faction.
+[[template]]
+entry = 97260
+name = "Skeletal Warder"
+creature_type = 6
+display_id = 612
+faction_template = 21
+unit_class = "warrior"
+level_min = 40
+level_max = 41
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+say = { aggro = ["You walk where we were buried."], aggro_chance = 30 }
+
+# The Grey Robes guarding the way down: Shadow Bolt. The arc's Grey Robes' display.
+[[template]]
+entry = 97261
+name = "Grey Robe Gravecaller"
+creature_type = 7
+display_id = 2492
+faction_template = 14
+unit_class = "mage"
+level_min = 41
+level_max = 41
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["shadow_bolt_creature"]
+say = { aggro = ["This ground is the Master's."], aggro_chance = 50 }
+
+# The commander still holding the stair: Terrify and, below half health, Last Stand. Vanilla
+# Commander Felstrom's display and faction.
+[[template]]
+entry = 97262
+name = "Commander Felstrom"
+creature_type = 6
+rank = 1
+display_id = 7848
+faction_template = 21
+unit_class = "warrior"
+level_min = 42
+level_max = 42
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["terrify_creature", "last_stand_felstrom"]
+say = { aggro = ["I held this stair for the king. I hold it still."], aggro_chance = 100 }
+
+# The ghouls the Grey Robes set to dig: melee only. Vanilla Ghoul's display and faction.
+[[template]]
+entry = 97263
+name = "Ghoul Digger"
+creature_type = 6
+display_id = 646
+faction_template = 21
+unit_class = "warrior"
+level_min = 41
+level_max = 42
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+say = { aggro = ["Dig... deeper..."], aggro_chance = 30 }
+
+# The dig face's master: Feast on a fallen ghoul, Blight and Shadow Bolt. The robed Necromancer's
+# display (10427, creature 8553), a human male.
+[[template]]
+entry = 97264
+name = "The Dig Overseer"
+creature_type = 7
+rank = 1
+display_id = 10427
+faction_template = 14
+unit_class = "mage"
+level_min = 43
+level_max = 43
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["feast_overseer", "blight_overseer", "shadow_bolt_creature"]
+say = { aggro = ["Back to the face! The seam won't open itself."], aggro_chance = 100 }
+
+# The last boss and its Boss Bar, in the grey pocket from the Run's start: Crowned Shadow, Bone
+# Armor and Shadow Bolt. The Scarlet Chaplain's male display (2502, creature 4299), a robed priest.
+[[template]]
+entry = 97265
+name = "The Grey Deacon"
+creature_type = 7
+rank = 1
+boss = true
+display_id = 2502
+faction_template = 14
+unit_class = "mage"
+level_min = 44
+level_max = 44
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["crowned_shadow_deacon", "bone_armor_deacon", "shadow_bolt_creature"]
+say = { aggro = ["What stands in the grey belongs to the Master."], aggro_chance = 100 }
+
+# The dead of the grey pocket, frozen until the Deacon weakens: melee only, silent. Vanilla
+# Skeletal Fiend's display and faction.
+[[template]]
+entry = 97266
+name = "Stilled Dead"
+creature_type = 6
+display_id = 7550
+faction_template = 21
+unit_class = "warrior"
+level_min = 43
+level_max = 43
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# ── Encounter 1, the upper vaults ────────────────────────────────────────────────────────────────
+# Two Skeletal Warders and a Gravecaller below the stairs (floor 29.08), facing up toward them.
+
 [[creature]]
-guid = 971004
-entry = 97100
+guid = 974201
+entry = 97260
 level = 40
-position = [-10377.3, 427.4, 29.08]
-orientation = 1.32
+position = [-10381.0, 403.0, 29.08]
+grounded = false
+orientation = 2.97
+camp = 1
+
+[[creature]]
+guid = 974202
+entry = 97260
+level = 41
+position = [-10381.0, 398.0, 29.08]
+grounded = false
+orientation = 2.97
+camp = 1
+
+[[creature]]
+guid = 974203
+entry = 97261
+level = 41
+position = [-10384.0, 400.5, 29.08]
+grounded = false
+orientation = 2.97
+camp = 1
+
+# Commander Felstrom at vanilla's spot on the lower vault floor (24.39), two Warders beside him,
+# facing back up the vaults.
+[[creature]]
+guid = 974204
+entry = 97262
+level = 42
+position = [-10399.0, 347.0, 24.39]
+grounded = false
+orientation = 1.31
+camp = 2
+rolls = [{ chance = 50, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
+
+[[creature]]
+guid = 974205
+entry = 97260
+level = 41
+position = [-10396.0, 350.0, 24.39]
+grounded = false
+orientation = 1.31
+camp = 2
+
+[[creature]]
+guid = 974206
+entry = 97260
+level = 41
+position = [-10402.0, 350.0, 24.39]
+grounded = false
+orientation = 1.31
+camp = 2
+
+# ── Encounter 2, the dig face ────────────────────────────────────────────────────────────────────
+# Three Ghoul Diggers in the hall (upper floor 25.43), facing back toward the upper vaults.
+
+[[creature]]
+guid = 974207
+entry = 97263
+level = 41
+position = [-10335.0, 440.0, 25.43]
+grounded = false
+orientation = 3.87
+camp = 3
+
+[[creature]]
+guid = 974208
+entry = 97263
+level = 41
+position = [-10332.0, 443.0, 25.43]
+grounded = false
+orientation = 3.87
+camp = 3
+
+[[creature]]
+guid = 974209
+entry = 97263
+level = 42
+position = [-10338.0, 443.0, 25.43]
+grounded = false
+orientation = 3.87
+camp = 3
+
+# The shoring lever on the hall's floor near its east end. It pulls from the Run's start.
+# G_LeverMetal.
+[[gameobject]]
+guid = 983051
+display = 295
+position = [-10322.0, 446.0, 25.43]
+grounded = false
+orientation = 3.87
+sides = "inside"
+use = "lever"
+lever = { used_text = "The props give way. Rock fills the side tunnel." }
+
+# The Dig Overseer in vault01 (upper floor 25.25), two Diggers beside him, facing the hall. Every
+# 20 s of his fight two level-42 Diggers come out of the side tunnel until the lever drops it.
+[[creature]]
+guid = 974210
+entry = 97264
+level = 43
+position = [-10265.0, 385.0, 25.25]
+grounded = false
+orientation = 2.32
+camp = 4
+every = [{ every_s = 20, entry = 97263, level = 42, count = 2, position = [-10255.0, 372.0, 25.25], until_used = 983051 }]
+rolls = [{ chance = 50, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
+
+[[creature]]
+guid = 974211
+entry = 97263
+level = 42
+position = [-10262.0, 388.0, 25.25]
+grounded = false
+orientation = 2.32
+camp = 4
+
+[[creature]]
+guid = 974212
+entry = 97263
+level = 41
+position = [-10268.0, 388.0, 25.25]
+grounded = false
+orientation = 2.32
+camp = 4
+
+# The fallen side tunnel across its mouth in vault01, once the lever is pulled. G_CaveIn.
+[[gameobject]]
+guid = 983052
+display = 2230
+position = [-10255.0, 372.0, 25.25]
+grounded = false
+orientation = 2.32
+sides = "inside"
+after_used = 983051
+
+# ── Encounter 3, the grey pocket ─────────────────────────────────────────────────────────────────
+# The Grey Deacon in vault06 (floor 20.87), facing the mist wall, there from the Run's start. His
+# `drop` stays empty for the arc's Crowned Orders and page two (ticket 28 of #637).
+[[creature]]
+guid = 974213
+entry = 97265
+level = 44
+position = [-10207.0, 325.0, 20.87]
+grounded = false
+orientation = 4.7
+rolls = [{ chance = 100, one_of = [905080, 905081, 905082, 905083, 905084, 905085, 905086, 905087, 905088, 905089, 905090, 905091, 905092, 905093, 905094, 905095, 905096, 905097, 905098, 905099] }]
+
+# Six Stilled Dead along the mist wall, facing into the room, frozen until the Deacon's 75%, 50%
+# and 25% marks, two at each. Frozen in the Mist marks them. The room's west wall runs at a slant,
+# so the first and the last stand a few yards east of the ticket's points, on the floor.
+
+[[creature]]
+guid = 974214
+entry = 97266
+level = 43
+position = [-10219.0, 311.0, 20.87]
+grounded = false
+orientation = 1.57
+frozen_until = { guid = 974213, pct = 75 }
+
+[[creature]]
+guid = 974215
+entry = 97266
+level = 43
+position = [-10214.0, 307.0, 20.87]
+grounded = false
+orientation = 1.57
+frozen_until = { guid = 974213, pct = 75 }
+
+[[creature]]
+guid = 974216
+entry = 97266
+level = 43
+position = [-10206.0, 306.0, 20.87]
+grounded = false
+orientation = 1.57
+frozen_until = { guid = 974213, pct = 50 }
+
+[[creature]]
+guid = 974217
+entry = 97266
+level = 43
+position = [-10198.0, 307.0, 20.87]
+grounded = false
+orientation = 1.57
+frozen_until = { guid = 974213, pct = 50 }
+
+[[creature]]
+guid = 974218
+entry = 97266
+level = 43
+position = [-10192.0, 310.0, 20.87]
+grounded = false
+orientation = 1.57
+frozen_until = { guid = 974213, pct = 25 }
+
+[[creature]]
+guid = 974219
+entry = 97266
+level = 43
+position = [-10224.0, 316.0, 20.87]
+grounded = false
+orientation = 1.57
+frozen_until = { guid = 974213, pct = 25 }
+
+# Cover from Crowned Shadow: three rubble heaps from the dig (G_CaveIn) within 20 yd of the Deacon.
+
+[[cover]]
+position = [-10215.0, 335.0, 20.87]
+radius = 2.5
+height = 6.0
+
+[[gameobject]]
+guid = 983053
+display = 2230
+position = [-10215.0, 335.0, 20.87]
+grounded = false
+orientation = 0.0
+sides = "inside"
+
+[[cover]]
+position = [-10198.0, 330.0, 20.87]
+radius = 2.5
+height = 6.0
+
+[[gameobject]]
+guid = 983054
+display = 2230
+position = [-10198.0, 330.0, 20.87]
+grounded = false
+orientation = 1.6
+sides = "inside"
+
+[[cover]]
+position = [-10226.0, 325.0, 20.87]
+radius = 2.5
+height = 6.0
+
+[[gameobject]]
+guid = 983055
+display = 2230
+position = [-10226.0, 325.0, 20.87]
+grounded = false
+orientation = 3.1
+sides = "inside"

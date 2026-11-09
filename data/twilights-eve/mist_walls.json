@@ -1,3 +1,4 @@
 {"walls": [
-{"key": "deeprun_tunnel", "map": 369, "from": [-75.0, 2400.0], "to": [35.0, 2400.0], "bottom": -20.0, "top": 30.0, "floor": -4.3, "open_side": [-20.0, 2460.0]}
+{"key": "deeprun_tunnel", "map": 369, "from": [-75.0, 2400.0], "to": [35.0, 2400.0], "bottom": -20.0, "top": 30.0, "floor": -4.3, "open_side": [-20.0, 2460.0]},
+{"key": "raven_hill_grey", "map": 0, "from": [-10232.0, 305.0], "to": [-10162.0, 305.0], "bottom": 15.0, "top": 35.0, "floor": 20.87, "open_side": [-10207.0, 325.0]}
 ]}
