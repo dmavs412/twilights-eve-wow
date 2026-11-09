@@ -41,7 +41,9 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   session per `ready-for-agent` ticket in its own worktree (`..\twilights-eve-w1`, `-w2`) with
   its own `target`; a builder lands each ticket on `origin/main` after its gate. Only one client
   build runs at a time on the machine (`scripts/client-lock.ps1`). `-LingerMinutes` keeps them
-  polling for tickets a grill files during the day. Rules in `docs/agents/unattended.md`.
+  polling for tickets a grill files during the day. A chat starts them with
+  `scripts/start-builders.ps1 <overnight.ps1 args>`, never `Start-Process`: a process a chat
+  starts dies when the chat or VS Code restarts. Rules in `docs/agents/unattended.md`.
   Every grill ends by writing tickets: each one fully specified, with its assumptions allowed
   and its acceptance stated, so a builder can pick a reading and record it instead of asking.
   Tickets that would edit the same file get a "Blocked by" between them.
