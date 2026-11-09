@@ -2,7 +2,8 @@
 //! (905020 to 905039) and Hogger's camp (905040 to 905059 and the four Capstone Chests), and the
 //! nine epics 905900 to 905908; then the Stockade's two sets (#579): the riot (905060 to 905079)
 //! and the quiet wing (905080 to 905099); then the Deeprun Tram's two (#592): the Conductor's blues
-//! (905100 to 905119) and the Platform greens (905120 to 905139). The phased harness of
+//! (905100 to 905119) and the Platform greens (905120 to 905139); then Mistmantle Manor's set
+//! (#642, 905140 to 905159). The phased harness of
 //! `northshire_abbey.rs` cannot kill a boss in a dungeon cheaply, so these assert the `rolls` data:
 //! chances, lists, no stand-in.
 
@@ -16,6 +17,7 @@ const FOREST_EDGE: &str = include_str!("../content/forest_edge.toml");
 const STOCKADE_RIOT: &str = include_str!("../content/stockade_riot.toml");
 const STOCKADE_QUIET_WING: &str = include_str!("../content/stockade_quiet_wing.toml");
 const DEEPRUN_TRAM: &str = include_str!("../content/deeprun_tram.toml");
+const MISTMANTLE_MANOR: &str = include_str!("../content/mistmantle_manor.toml");
 const MOBS: &str = include_str!("../content/mobs.toml");
 const GEAR: &str = include_str!("../content/gear.toml");
 
@@ -104,6 +106,7 @@ const RIOT20: (i64, i64) = (905060, 905079);
 const QUIET20: (i64, i64) = (905080, 905099);
 const CONDUCTOR20: (i64, i64) = (905100, 905119);
 const PLATFORM20: (i64, i64) = (905120, 905139);
+const MISTMANTLE20: (i64, i64) = (905140, 905159);
 
 fn hogger_pool() -> Vec<i64> {
     let mut v = range(905040, 905059);
@@ -377,4 +380,64 @@ fn the_conductor_rolls_the_twenty_blues_and_the_chests_hold_their_sets() {
 
 fn rolls_of_template(entry: i64) -> Vec<(i64, Vec<i64>)> {
     rolls(template(&parse(MOBS), entry))
+}
+
+/// The sheet row of `entry` in `gear.toml`.
+fn item(gear: &Value, entry: i64) -> Option<&Value> {
+    gear["item"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["entry"].as_integer() == Some(entry))
+}
+
+fn int(v: &Value, key: &str) -> i64 {
+    v.get(key).and_then(Value::as_integer).unwrap_or(0)
+}
+
+#[test]
+fn the_mistmantle_set_is_twenty_blues_at_36_with_one_chest_of_each_armour() {
+    let gear = parse(GEAR);
+    let mut chests = Vec::new();
+    for id in range(MISTMANTLE20.0, MISTMANTLE20.1) {
+        let row = item(&gear, id).unwrap_or_else(|| panic!("row {id} missing"));
+        assert_eq!(
+            (
+                int(row, "quality"),
+                int(row, "item_level"),
+                int(row, "required_level")
+            ),
+            (3, 36, 33),
+            "row {id}"
+        );
+        if int(row, "inventory_type") == 5 {
+            chests.push(int(row, "subclass"));
+        }
+    }
+    // Cloth, leather, mail and plate.
+    chests.sort();
+    assert_eq!(chests, vec![1, 2, 3, 4]);
+}
+
+#[test]
+fn the_mistmantle_bosses_roll_the_twenty_and_no_stand_in() {
+    let manor = parse(MISTMANTLE_MANOR);
+    // Steward Aldric and Lady Corrine half the time, Stalvan always.
+    for (guid, chance) in [(974010, 50), (974013, 50), (974014, 100)] {
+        let b = creatures(&manor)
+            .into_iter()
+            .find(|c| c["guid"].as_integer() == Some(guid))
+            .unwrap_or_else(|| panic!("boss {guid}"));
+        assert_eq!(
+            rolls(b),
+            vec![(chance, range(MISTMANTLE20.0, MISTMANTLE20.1))],
+            "boss {guid}"
+        );
+    }
+    for id in range(QUIET20.0, QUIET20.1) {
+        assert!(
+            !MISTMANTLE_MANOR.contains(&id.to_string()),
+            "the manor still names the stand-in {id}"
+        );
+    }
 }
