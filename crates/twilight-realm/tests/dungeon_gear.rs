@@ -3,9 +3,9 @@
 //! nine epics 905900 to 905908; then the Stockade's two sets (#579): the riot (905060 to 905079)
 //! and the quiet wing (905080 to 905099); then the Deeprun Tram's two (#592): the Conductor's blues
 //! (905100 to 905119) and the Platform greens (905120 to 905139); then Mistmantle Manor's set
-//! (#642, 905140 to 905159); then the Tower of Ilgalar's (#644, 905160 to 905179). The phased
-//! harness of `northshire_abbey.rs` cannot kill a boss in a dungeon cheaply, so these assert the
-//! `rolls` data: chances, lists, no stand-in.
+//! (#642, 905140 to 905159); then the Tower of Ilgalar's (#644, 905160 to 905179); then Raven Hill
+//! Deeps' (#646, 905180 to 905199). The phased harness of `northshire_abbey.rs` cannot kill a boss
+//! in a dungeon cheaply, so these assert the `rolls` data: chances, lists, no stand-in.
 
 use std::collections::HashMap;
 
@@ -19,6 +19,7 @@ const STOCKADE_QUIET_WING: &str = include_str!("../content/stockade_quiet_wing.t
 const DEEPRUN_TRAM: &str = include_str!("../content/deeprun_tram.toml");
 const MISTMANTLE_MANOR: &str = include_str!("../content/mistmantle_manor.toml");
 const ILGALAR: &str = include_str!("../content/ilgalar.toml");
+const RAVEN_HILL_DEEPS: &str = include_str!("../content/raven_hill_deeps.toml");
 const MOBS: &str = include_str!("../content/mobs.toml");
 const GEAR: &str = include_str!("../content/gear.toml");
 
@@ -109,6 +110,7 @@ const CONDUCTOR20: (i64, i64) = (905100, 905119);
 const PLATFORM20: (i64, i64) = (905120, 905139);
 const MISTMANTLE20: (i64, i64) = (905140, 905159);
 const ILGALAR20: (i64, i64) = (905160, 905179);
+const RAVEN_HILL20: (i64, i64) = (905180, 905199);
 
 fn hogger_pool() -> Vec<i64> {
     let mut v = range(905040, 905059);
@@ -487,6 +489,53 @@ fn the_ilgalar_bosses_roll_the_twenty_and_no_stand_in() {
         assert!(
             !ILGALAR.contains(&id.to_string()),
             "the tower still names the stand-in {id}"
+        );
+    }
+}
+
+#[test]
+fn the_raven_hill_set_is_twenty_blues_at_44_with_one_chest_of_each_armour() {
+    let gear = parse(GEAR);
+    let mut chests = Vec::new();
+    for id in range(RAVEN_HILL20.0, RAVEN_HILL20.1) {
+        let row = item(&gear, id).unwrap_or_else(|| panic!("row {id} missing"));
+        assert_eq!(
+            (
+                int(row, "quality"),
+                int(row, "item_level"),
+                int(row, "required_level")
+            ),
+            (3, 44, 41),
+            "row {id}"
+        );
+        if int(row, "inventory_type") == 5 {
+            chests.push(int(row, "subclass"));
+        }
+    }
+    // Cloth, leather, mail and plate.
+    chests.sort();
+    assert_eq!(chests, vec![1, 2, 3, 4]);
+}
+
+#[test]
+fn the_raven_hill_bosses_roll_the_twenty_and_no_stand_in() {
+    let deeps = parse(RAVEN_HILL_DEEPS);
+    // Commander Felstrom and the Dig Overseer half the time, the Grey Deacon always.
+    for (guid, chance) in [(974204, 50), (974210, 50), (974213, 100)] {
+        let b = creatures(&deeps)
+            .into_iter()
+            .find(|c| c["guid"].as_integer() == Some(guid))
+            .unwrap_or_else(|| panic!("boss {guid}"));
+        assert_eq!(
+            rolls(b),
+            vec![(chance, range(RAVEN_HILL20.0, RAVEN_HILL20.1))],
+            "boss {guid}"
+        );
+    }
+    for id in range(QUIET20.0, QUIET20.1) {
+        assert!(
+            !RAVEN_HILL_DEEPS.contains(&id.to_string()),
+            "the deeps still name the stand-in {id}"
         );
     }
 }
