@@ -286,6 +286,16 @@ The Bloodletter (#687): a Calling's `bleed_drop` row, the aura its `pickup` gran
 `damage_pct_vs_aura` names are found among the caster's own Calling's rows first, so a Tier 2 copy
 of the Cutthroat's `aura_blood_droplet` and `aura_bloodlust` under the same keys spills and grants
 its own, and Red Frenzy's `consume_self_stacks` finds the Bloodlust a droplet gave.
+The Nightblade (#688): `school_damage` takes the pair `below_health_pct=H;below_bonus_pct=N` as
+`weapon_strike` does (N% more on a target under H% health, summed with `controlled_pct` and
+`bleeding_pct`), without `below_instant` (Fatal Edge). A skill's `requires: position=behind`
+builds into `requires_behind`, and the realm refuses the cast (`SPELL_FAILED_NOT_BEHIND`, before
+the cost) while the caster stands in the target's front arc (Backstab, Ambush); `position=front`
+is still not enforced. Breaking Stealth takes off every effect of the aura row that stealthed the
+caster, so a stealth row's second effect (Shadow Speed's `mod_run_speed`, Stalker's `skill_cost`)
+lasts as long as the Stealth, and the run speed falls back at once. A set Talent's flat `COOLDOWN`
+spellmod now moves its skill's cooldown in the realm too, never below 0, as it moves the client's
+button (Shadow Dance's -40000 on Vanish).
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

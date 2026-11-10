@@ -538,6 +538,17 @@ pub(crate) fn power_cost_from(c: &Char, skill: &callings::Skill, base: u32) -> u
     crate::rules::talents::scaled(base, more).saturating_sub(less)
 }
 
+/// The milliseconds the set Talents' flat `COOLDOWN` spellmods move `skill`'s cooldown by, the
+/// cells the client's button reads too (Shadow Dance's -40000): negative is shorter.
+pub(crate) fn cooldown_change_ms(c: &Char, skill: &str) -> i32 {
+    set_talents(c)
+        .flat_map(|t| t.rank_spellmods.first().into_iter().flatten())
+        .filter(|m| m.kind == "flat" && m.op == "COOLDOWN")
+        .filter(|m| m.target.iter().any(|t| answers(c, skill, t)))
+        .map(|m| m.value as i32)
+        .sum()
+}
+
 /// The percent of the shield's Block Value a skill's strike adds.
 pub(crate) fn block_value_pct(c: &Char, skill: &str) -> u32 {
     sum(

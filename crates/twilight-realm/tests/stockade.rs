@@ -709,9 +709,10 @@ fn every_hostile_creature_of_the_riot_has_an_aggro_line() {
         .iter()
         .map(|c| int(c, "entry").unwrap() as u32)
         .collect();
+    // With the Nightblade's trainer, Silas Dunmere (#688).
     assert_eq!(
         entries.iter().copied().collect::<Vec<_>>(),
-        RIOT_TEMPLATES.collect::<Vec<_>>()
+        RIOT_TEMPLATES.chain([97290]).collect::<Vec<_>>()
     );
     for entry in entries {
         let t = mob_template(entry);

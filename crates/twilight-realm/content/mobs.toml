@@ -2157,6 +2157,28 @@ speed_walk = 1.0
 speed_run = 1.143
 detection_range = 10.0
 
+# The Nightblade's trainer (#688), in the round room's cell that was never locked: friendly, the
+# giver of the Advancement Quest 64402 and its trial. Osborne the Night Man's look, a placeholder.
+[[template]]
+entry = 97290
+name = "Silas Dunmere"
+subname = "Nightblade"
+creature_type = 7
+display_id = 1507
+faction_template = 35
+hostile = false
+friendly = true
+unit_class = "warrior"
+level_min = 50
+level_max = 50
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 10.0
+
 # The Quiet Wing (#582, stockade_quiet_wing.toml), the Stockade's west wing, levels 36 to 40.
 # Displays and factions are vanilla's (`creature_template` in the vmangos dump): the Writ Warder
 # wears the Stockade Guard's (2989), the Twilight Listener and the Hush the Twilight Acolyte's

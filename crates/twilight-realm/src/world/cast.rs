@@ -82,6 +82,7 @@ const SPELL_FAILED_TARGET_AFFECTING_COMBAT: u8 = 0x66;
 const SPELL_FAILED_TARGET_AURASTATE: u8 = 0x67;
 const SPELL_FAILED_TARGETS_DEAD: u8 = 0x65;
 const SPELL_FAILED_TARGET_NOT_DEAD: u8 = 0x6e;
+const SPELL_FAILED_NOT_BEHIND: u8 = 0x33;
 const SPELL_FAILED_TOO_CLOSE: u8 = 0x76;
 const SPELL_FAILED_UNIT_NOT_INFRONT: u8 = 0x7c;
 
@@ -1232,28 +1233,21 @@ impl Skills {
         })
     }
 
-    /// Takes the player's stealth off (an attack, a cast, a blow taken). `Some(opener_crit)` when
-    /// they were stealthed, whether the attack that broke it is a guaranteed critical strike.
-    pub(super) fn break_stealth(&mut self, events: &mut Vec<SessionEvent>) -> Option<bool> {
+    /// Takes the player's stealth off (an attack, a cast, a blow taken), and with it the other
+    /// effects of the aura row that stealthed them (Shadow Speed's run speed, Stalker's free
+    /// Backstab): every aura that went.
+    pub(super) fn take_stealth(&mut self, events: &mut Vec<SessionEvent>) -> Vec<Aura> {
         let me = self.me;
-        let gone = self.remove_where(
-            |a| a.unit == me && matches!(a.kind, AuraKind::Stealth { .. }),
-            events,
-        );
-        gone.iter().find_map(|a| match a.kind {
-            AuraKind::Stealth { opener_crit } => Some(opener_crit),
-            _ => None,
-        })
-    }
-
-    /// Whether `skill` is the first blow from stealth with an opener crit; a skill that breaks
-    /// stealth takes it off either way.
-    pub(super) fn opens_from_stealth(
-        &mut self,
-        skill: &Skill,
-        events: &mut Vec<SessionEvent>,
-    ) -> bool {
-        skill.meta.shape.on_cast.breaks_stealth && self.break_stealth(events) == Some(true)
+        let rows: Vec<u32> = self
+            .auras
+            .iter()
+            .filter(|a| a.unit == me && matches!(a.kind, AuraKind::Stealth { .. }))
+            .map(|a| a.spell_id)
+            .collect();
+        if rows.is_empty() {
+            return Vec::new();
+        }
+        self.remove_where(|a| a.unit == me && rows.contains(&a.spell_id), events)
     }
 
     /// The percent the player's buffs raise the damage they deal by.
@@ -3237,7 +3231,7 @@ impl InWorld {
         self.skills.cast_healed = 0;
         self.skills.cast_full_healed = 0;
         // A cast that breaks stealth does so as it goes; its first blow from stealth is a crit.
-        let opener = self.skills.opens_from_stealth(skill, events);
+        let opener = self.opens_from_stealth(skill, events);
 
         // Flurry of Blades: a chance of one more enemy in melee reach in front of the caster.
         let chance = crate::talents::extra_target_pct(c, &skill.key);
@@ -4175,6 +4169,10 @@ impl InWorld {
                 if !in_front(c.orientation, c.position, mob.position) {
                     return Err(SPELL_FAILED_UNIT_NOT_INFRONT);
                 }
+                // Backstab and Ambush: the caster stands outside the target's front arc.
+                if skill.requires_behind && in_front(mob.orientation, mob.position, c.position) {
+                    return Err(SPELL_FAILED_NOT_BEHIND);
+                }
                 if skill.requires_target_dodged
                     && !self.skills.dodged.is_some_and(|(m, _)| m == guid)
                 {
@@ -4260,9 +4258,11 @@ impl InWorld {
         p.health = p.health.saturating_sub(health_cost).max(1);
         let s = &mut self.skills;
         if skill.cooldown_ms > 0 {
+            // A Talent's flat COOLDOWN spellmod moves it, as it moves the client's button.
+            let change = crate::talents::cooldown_change_ms(c, &skill.key);
+            let cooldown_ms = skill.cooldown_ms.saturating_add_signed(change);
             s.cooldowns.retain(|(id, _)| *id != skill.spell_id);
-            s.cooldowns
-                .push((skill.spell_id, clock::secs(skill.cooldown_ms)));
+            s.cooldowns.push((skill.spell_id, clock::secs(cooldown_ms)));
         }
         if gcd && skill.gcd_ms > 0 {
             s.gcd = clock::secs(skill.gcd_ms);
@@ -4585,6 +4585,8 @@ impl InWorld {
                 vs_type_pct,
                 pct_at_full_mana,
                 per_mana_pct,
+                below_health_pct,
+                below_bonus_pct,
                 ..
             } => {
                 // A share of the mana the cast spent, its `all_remaining` extra included.
@@ -4609,8 +4611,13 @@ impl InWorld {
                     Some(id) if self.skills.on(target, id) => vs_aura_pct,
                     _ => 0,
                 };
-                let cond = self.condition_pct(target, controlled_pct, 0, 0, bleeding_pct)
-                    + worn
+                let cond = self.condition_pct(
+                    target,
+                    controlled_pct,
+                    below_health_pct,
+                    below_bonus_pct,
+                    bleeding_pct,
+                ) + worn
                     + self.type_pct(target, vs_type, vs_type_pct)
                     + fill_pct;
                 let raw = scaled(raw, cond);
@@ -6645,7 +6652,7 @@ impl InWorld {
             return false;
         };
         self.pay(skill, true, c, events);
-        let opener = self.skills.opens_from_stealth(skill, events);
+        let opener = self.opens_from_stealth(skill, events);
         // A next-swing strike rolls exactly as the white swing it replaces, its bonus added.
         let mut stats = buffed(&self.player.stats, &self.skills);
         // A yellow attack: the main hand's, with no dual-wield miss penalty.
@@ -7370,6 +7377,28 @@ impl InWorld {
             .skills
             .remove_where(|a| a.unit == g.caster && a.spell_id == def.spell_id, events);
         self.faded(&gone, events);
+    }
+
+    /// Takes the player's stealth off (an attack, a cast, a blow taken), undoing what went with it.
+    /// `Some(opener_crit)` when they were stealthed, whether the attack that broke it is a
+    /// guaranteed critical strike.
+    pub(super) fn break_stealth(&mut self, events: &mut Vec<SessionEvent>) -> Option<bool> {
+        let gone = self.skills.take_stealth(events);
+        self.faded(&gone, events);
+        gone.iter().find_map(|a| match a.kind {
+            AuraKind::Stealth { opener_crit } => Some(opener_crit),
+            _ => None,
+        })
+    }
+
+    /// Whether `skill` is the first blow from stealth with an opener crit; a skill that breaks
+    /// stealth takes it off either way.
+    pub(super) fn opens_from_stealth(
+        &mut self,
+        skill: &Skill,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        skill.meta.shape.on_cast.breaks_stealth && self.break_stealth(events) == Some(true)
     }
 
     /// What an aura's going undoes.

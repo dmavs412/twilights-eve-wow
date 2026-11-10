@@ -19643,5 +19643,2153 @@
    "spirit": 6
   },
   "shapeshift_form": 0
+ },
+ {
+  "key": "nightblade",
+  "power": "energy",
+  "stat_profile": "rogue",
+  "item_class": "warrior",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "energy_per_tick": 25,
+  "armour": [
+   "cloth",
+   "leather"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole",
+   "dual_wield"
+  ],
+  "icon": "Interface\\Icons\\Ability_Stealth",
+  "spellbook": "Nightblade",
+  "blurb": "Strikes from the dark, slips back into it, and strikes again before the body falls.",
+  "skills": [
+   {
+    "key": "eviscerate",
+    "name": "Eviscerate",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000773,
+    "realm_cost": 35,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 49,
+        "per_level": 1.3
+       },
+       "per_combo": {
+        "base": 50,
+        "per_level": 1.3
+       },
+       "melee_hit_table": true
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Finishing move: Physical damage that grows with each combo point."
+   },
+   {
+    "key": "backstab",
+    "name": "Backstab",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000774,
+    "realm_cost": 40,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "requires": {
+     "position": "behind"
+    },
+    "requires_behind": true,
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "normal",
+       "weapon_pct": 150,
+       "bonus": {
+        "base": 20,
+        "per_level": 2,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_combo_points",
+      "params": {
+       "amount": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "A 40-Energy combo point builder from behind the target: 150% weapon damage plus a bonus, and 1 combo point."
+   },
+   {
+    "key": "stealth",
+    "name": "Stealth",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000775,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 9000,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires": {
+     "combat": "out"
+    },
+    "requires_out_of_combat": true,
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": false,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stealth",
+      "params": {
+       "apply_aura": "aura_stealth"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it."
+   },
+   {
+    "key": "ambush",
+    "name": "Ambush",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000776,
+    "realm_cost": 60,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "requires": {
+     "stealth": true,
+     "position": "behind"
+    },
+    "requires_stealth": true,
+    "requires_behind": true,
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "normal",
+       "weapon_pct": 250,
+       "bonus": {
+        "base": 40,
+        "per_level": 3,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_combo_points",
+      "params": {
+       "amount": 2
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "From Stealth and from behind the target: 250% weapon damage plus a bonus, and 2 combo points."
+   },
+   {
+    "key": "vanish",
+    "name": "Vanish",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000777,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 120000,
+    "learn_level": 10,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": false,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "drop_threat",
+      "params": {},
+      "realm_only": false
+     },
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_stealth"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Every enemy forgets you: you leave combat and slip into Stealth."
+   },
+   {
+    "key": "kick",
+    "name": "Kick",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000778,
+    "realm_cost": 25,
+    "realm_cooldown_ms": 10000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 5500
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_combo_points",
+      "params": {
+       "amount": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 1 combo point."
+   },
+   {
+    "key": "cold_blood",
+    "name": "Cold Blood",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000779,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 60000,
+    "learn_level": 20,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": false,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_cold_blood"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next skill hit within 20 sec is a sure critical strike."
+   },
+   {
+    "key": "kidney_shot",
+    "name": "Kidney Shot",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000781,
+    "realm_cost": 25,
+    "realm_cooldown_ms": 20000,
+    "realm_range_max": 5,
+    "learn_level": 30,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "apply_aura": "aura_kidney_shot",
+       "per_combo": {
+        "base": 1000,
+        "per_level": 0
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Finishing move: stuns the target for 1 sec per combo point."
+   }
+  ],
+  "auras": [
+   {
+    "key": "aura_stealth",
+    "name": "Stealth",
+    "spell_id": 1000775,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stealth",
+      "params": {
+       "opener_crit": true
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stealthed."
+   },
+   {
+    "key": "aura_cold_blood",
+    "name": "Cold Blood",
+    "spell_id": 1000780,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 20000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "any",
+       "pct": 100
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next skill hit is a critical strike."
+   },
+   {
+    "key": "aura_kidney_shot",
+    "name": "Kidney Shot",
+    "spell_id": 1000782,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "stun",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "aura_spell_id": 408,
+       "duration_ms": 0
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stunned."
+   },
+   {
+    "key": "aura_shadow_speed",
+    "name": "Stealth",
+    "spell_id": 1000790,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stealth",
+      "params": {
+       "opener_crit": true
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": 30
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stealthed. Run speed increased by 30%."
+   },
+   {
+    "key": "aura_stalker",
+    "name": "Stealth",
+    "spell_id": 1000792,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stealth",
+      "params": {
+       "opener_crit": true
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "backstab",
+       "amount": 40
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stealthed. Your first Backstab costs nothing."
+   },
+   {
+    "key": "aura_lingering_ambush",
+    "name": "Lingering Ambush",
+    "spell_id": 1000796,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 9000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 3000,
+       "tick": {
+        "base": 10,
+        "per_level": 1
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding."
+   },
+   {
+    "key": "aura_fleeting_vanish",
+    "name": "Fleeting Vanish",
+    "spell_id": 1000798,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 4000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": 40
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Run speed increased by 40%."
+   },
+   {
+    "key": "aura_two_charges",
+    "name": "Cold Blood",
+    "spell_id": 1000807,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 20000,
+    "charges": 2,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "any",
+       "pct": 100
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next two skill hits are critical strikes."
+   }
+  ],
+  "rows": [
+   {
+    "key": "eviscerate",
+    "level": 5,
+    "kind": "skill_choice",
+    "skill": "eviscerate",
+    "choices": [
+     {
+      "key": "gutting",
+      "name": "Gutting",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000783,
+      "realm_cost": 35,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 49,
+          "per_level": 1.3
+         },
+         "per_combo": {
+          "base": 62.5,
+          "per_level": 1.625
+         },
+         "melee_hit_table": true
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: Physical damage that grows with each combo point. Each combo point adds 25% more.",
+      "change": "Each combo point deals {amount:62.5:1.625:0:0} more instead of {amount:50:1.3:0:0}.",
+      "variant_of": "eviscerate"
+     },
+     {
+      "key": "relentless",
+      "name": "Relentless",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000784,
+      "realm_cost": 35,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 49,
+          "per_level": 1.3
+         },
+         "per_combo": {
+          "base": 50,
+          "per_level": 1.3
+         },
+         "melee_hit_table": true,
+         "kill_energize": 20
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: Physical damage that grows with each combo point. A killing blow on an enemy that yields experience gives you 20 Energy.",
+      "change": "A killing blow on an enemy that yields experience gives you 20 Energy.",
+      "variant_of": "eviscerate"
+     },
+     {
+      "key": "fatal_edge",
+      "name": "Fatal Edge",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000785,
+      "realm_cost": 35,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 49,
+          "per_level": 1.3
+         },
+         "per_combo": {
+          "base": 50,
+          "per_level": 1.3
+         },
+         "melee_hit_table": true,
+         "below_health_pct": 35,
+         "below_bonus_pct": 50
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: Physical damage that grows with each combo point. It deals 50% more to a target under 35% health.",
+      "change": "Deals 50% more to a target under 35% health.",
+      "variant_of": "eviscerate"
+     }
+    ]
+   },
+   {
+    "key": "backstab",
+    "level": 10,
+    "kind": "skill_choice",
+    "skill": "backstab",
+    "choices": [
+     {
+      "key": "deep_backstab",
+      "name": "Deep Backstab",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000786,
+      "realm_cost": 40,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "requires": {
+       "position": "behind"
+      },
+      "requires_behind": true,
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 180,
+         "bonus": {
+          "base": 20,
+          "per_level": 2,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A 40-Energy combo point builder from behind the target: 180% weapon damage plus a bonus, and 1 combo point.",
+      "change": "Deals 180% weapon damage instead of 150%.",
+      "variant_of": "backstab"
+     },
+     {
+      "key": "cruel_backstab",
+      "name": "Cruel Backstab",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000787,
+      "realm_cost": 40,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "requires": {
+       "position": "behind"
+      },
+      "requires_behind": true,
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 150,
+         "bonus": {
+          "base": 20,
+          "per_level": 2,
+          "per_ap": 0
+         },
+         "crit_damage_pct": 30
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A 40-Energy combo point builder from behind the target: 150% weapon damage plus a bonus, and 1 combo point. Its critical strikes deal 30% more.",
+      "change": "Its critical strikes deal 30% more.",
+      "variant_of": "backstab"
+     },
+     {
+      "key": "swift_backstab",
+      "name": "Swift Backstab",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000788,
+      "realm_cost": 30,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "requires": {
+       "position": "behind"
+      },
+      "requires_behind": true,
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 150,
+         "bonus": {
+          "base": 20,
+          "per_level": 2,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A 30-Energy combo point builder from behind the target: 150% weapon damage plus a bonus, and 1 combo point.",
+      "change": "Costs 30 Energy instead of 40.",
+      "variant_of": "backstab"
+     }
+    ]
+   },
+   {
+    "key": "stealth",
+    "level": 15,
+    "kind": "skill_choice",
+    "skill": "stealth",
+    "choices": [
+     {
+      "key": "quick_shadows",
+      "name": "Quick Shadows",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000789,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 4000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires": {
+       "combat": "out"
+      },
+      "requires_out_of_combat": true,
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": false,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "stealth",
+        "params": {
+         "apply_aura": "aura_stealth"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it. Cooldown 4 sec.",
+      "change": "Its cooldown is 4 sec instead of 9 sec.",
+      "variant_of": "stealth"
+     },
+     {
+      "key": "shadow_speed",
+      "name": "Shadow Speed",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000791,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 9000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires": {
+       "combat": "out"
+      },
+      "requires_out_of_combat": true,
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": false,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_shadow_speed"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it. You run 30% faster while stealthed.",
+      "change": "You run 30% faster while stealthed.",
+      "variant_of": "stealth"
+     },
+     {
+      "key": "stalker",
+      "name": "Stalker",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000793,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 9000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires": {
+       "combat": "out"
+      },
+      "requires_out_of_combat": true,
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": false,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_stalker"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it. Your first Backstab out of Stealth costs nothing.",
+      "change": "Your first Backstab out of Stealth costs no Energy.",
+      "variant_of": "stealth"
+     }
+    ]
+   },
+   {
+    "key": "ambush",
+    "level": 20,
+    "kind": "skill_choice",
+    "skill": "ambush",
+    "choices": [
+     {
+      "key": "brutal_ambush",
+      "name": "Brutal Ambush",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000794,
+      "realm_cost": 60,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "requires": {
+       "stealth": true,
+       "position": "behind"
+      },
+      "requires_stealth": true,
+      "requires_behind": true,
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 300,
+         "bonus": {
+          "base": 40,
+          "per_level": 3,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "From Stealth and from behind the target: 300% weapon damage plus a bonus, and 2 combo points.",
+      "change": "Deals 300% weapon damage instead of 250%.",
+      "variant_of": "ambush"
+     },
+     {
+      "key": "ambush_and_run",
+      "name": "Ambush and Run",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000795,
+      "realm_cost": 60,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "requires": {
+       "stealth": true,
+       "position": "behind"
+      },
+      "requires_stealth": true,
+      "requires_behind": true,
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 250,
+         "bonus": {
+          "base": 40,
+          "per_level": 3,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 3
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "From Stealth and from behind the target: 250% weapon damage plus a bonus, and 3 combo points.",
+      "change": "Awards 3 combo points instead of 2.",
+      "variant_of": "ambush"
+     },
+     {
+      "key": "lingering_ambush",
+      "name": "Lingering Ambush",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000797,
+      "realm_cost": 60,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "requires": {
+       "stealth": true,
+       "position": "behind"
+      },
+      "requires_stealth": true,
+      "requires_behind": true,
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 250,
+         "bonus": {
+          "base": 40,
+          "per_level": 3,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 2
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_lingering_ambush"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "From Stealth and from behind the target: 250% weapon damage plus a bonus, and 2 combo points. The target also bleeds every 3 sec for 9 sec.",
+      "change": "The target also bleeds for 9 sec.",
+      "variant_of": "ambush"
+     }
+    ]
+   },
+   {
+    "key": "nightblade_shadowcraft",
+    "level": 25,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "shadow_dance",
+      "name": "Shadow Dance",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000812,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [],
+      "description": "Vanish's cooldown is 40 sec shorter.",
+      "spellmods": [
+       {
+        "type": "flat",
+        "op": "COOLDOWN",
+        "family_bit": 37,
+        "value": -40000,
+        "target": [
+         "vanish"
+        ]
+       }
+      ]
+     },
+     {
+      "key": "assassins_mark",
+      "name": "Assassin's Mark",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000813,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_crit_pct",
+        "params": {
+         "skill": "ambush",
+         "pct": 10
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "skill_crit_pct",
+        "params": {
+         "skill": "backstab",
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Ambush and Backstab are 10% more likely to be critical strikes."
+     },
+     {
+      "key": "quick_recovery",
+      "name": "Quick Recovery",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000814,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "finisher",
+         "chance": 100,
+         "energize": 15
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Each finishing move gives you back 15 Energy."
+     }
+    ]
+   },
+   {
+    "key": "vanish",
+    "level": 30,
+    "kind": "skill_choice",
+    "skill": "vanish",
+    "choices": [
+     {
+      "key": "fleeting_vanish",
+      "name": "Fleeting Vanish",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000799,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 120000,
+      "learn_level": 10,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": false,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "drop_threat",
+        "params": {},
+        "realm_only": false
+       },
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_stealth"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_fleeting_vanish"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Every enemy forgets you: you leave combat and slip into Stealth. You also run 40% faster for 4 sec.",
+      "change": "You also run 40% faster for 4 sec.",
+      "variant_of": "vanish"
+     },
+     {
+      "key": "ready_vanish",
+      "name": "Ready Vanish",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000800,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 120000,
+      "learn_level": 10,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": false,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "drop_threat",
+        "params": {},
+        "realm_only": false
+       },
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_stealth"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "reset_cooldowns",
+        "params": {
+         "spell_ids": [
+          1000781,
+          1000779
+         ]
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Every enemy forgets you: you leave combat and slip into Stealth. It also finishes the cooldowns of Kidney Shot and Cold Blood.",
+      "change": "Also finishes the cooldowns of Kidney Shot and Cold Blood.",
+      "variant_of": "vanish"
+     },
+     {
+      "key": "shadow_heal",
+      "name": "Shadow Heal",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000801,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 120000,
+      "learn_level": 10,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": false,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "drop_threat",
+        "params": {},
+        "realm_only": false
+       },
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_stealth"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "heal",
+        "params": {
+         "amount": {
+          "base": 60,
+          "per_level": 6
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Every enemy forgets you: you leave combat and slip into Stealth. It also heals you.",
+      "change": "Also heals you for {amount:60:6:0:0}.",
+      "variant_of": "vanish"
+     }
+    ]
+   },
+   {
+    "key": "kick",
+    "level": 35,
+    "kind": "skill_choice",
+    "skill": "kick",
+    "choices": [
+     {
+      "key": "long_kick",
+      "name": "Long Kick",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000802,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 10000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 7500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 7.5 seconds. When it stops a cast, you gain 1 combo point.",
+      "change": "Locks the school out for 7.5 sec instead of 5.5 sec.",
+      "variant_of": "kick"
+     },
+     {
+      "key": "kick_from_the_dark",
+      "name": "Kick from the Dark",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000803,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 10000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": false,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 5500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 1 combo point. It does not break Stealth.",
+      "change": "Does not break Stealth.",
+      "variant_of": "kick"
+     },
+     {
+      "key": "double_kick",
+      "name": "Double Kick",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000804,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 10000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 5500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 2 combo points.",
+      "change": "A stopped cast gives 2 combo points instead of 1.",
+      "variant_of": "kick"
+     }
+    ]
+   },
+   {
+    "key": "cold_blood",
+    "level": 40,
+    "kind": "skill_choice",
+    "skill": "cold_blood",
+    "choices": [
+     {
+      "key": "second_wind",
+      "name": "Second Wind",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000805,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 60000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": false,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_cold_blood"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "energy",
+         "amount": {
+          "base": 30,
+          "per_level": 0
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your next skill hit within 20 sec is a sure critical strike. It also gives you 30 Energy.",
+      "change": "Also gives you {amount:30:0:0:0} Energy.",
+      "variant_of": "cold_blood"
+     },
+     {
+      "key": "quick_blood",
+      "name": "Quick Blood",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000806,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 40000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": false,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_cold_blood"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your next skill hit within 20 sec is a sure critical strike. Cooldown 40 sec.",
+      "change": "Its cooldown is 40 sec instead of 60 sec.",
+      "variant_of": "cold_blood"
+     },
+     {
+      "key": "two_charges",
+      "name": "Two Charges",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000808,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 60000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": false,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_two_charges"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your next two skill hits within 20 sec are sure critical strikes.",
+      "change": "Lasts 2 skill hits instead of 1.",
+      "variant_of": "cold_blood"
+     }
+    ]
+   },
+   {
+    "key": "kidney_shot",
+    "level": 45,
+    "kind": "skill_choice",
+    "skill": "kidney_shot",
+    "choices": [
+     {
+      "key": "long_kidney",
+      "name": "Long Kidney",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000809,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 20000,
+      "realm_range_max": 5,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "aura_kidney_shot",
+         "per_combo": {
+          "base": 1500,
+          "per_level": 0
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: stuns the target for 1.5 sec per combo point.",
+      "change": "Stuns half again as long for each combo point.",
+      "variant_of": "kidney_shot"
+     },
+     {
+      "key": "bruising_kidney",
+      "name": "Bruising Kidney",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000810,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 20000,
+      "realm_range_max": 5,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "aura_kidney_shot",
+         "per_combo": {
+          "base": 1000,
+          "per_level": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 0,
+          "per_level": 0
+         },
+         "per_combo": {
+          "base": 10,
+          "per_level": 1
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: stuns the target for 1 sec per combo point. It also deals Physical damage for each combo point.",
+      "change": "Also deals Physical damage for each combo point.",
+      "variant_of": "kidney_shot"
+     },
+     {
+      "key": "quick_kidney",
+      "name": "Quick Kidney",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000811,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 15000,
+      "realm_range_max": 5,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "aura_kidney_shot",
+         "per_combo": {
+          "base": 1000,
+          "per_level": 0
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: stuns the target for 1 sec per combo point. Cooldown 15 sec.",
+      "change": "Its cooldown is 15 sec instead of 20 sec.",
+      "variant_of": "kidney_shot"
+     }
+    ]
+   },
+   {
+    "key": "nightblade_deathmark",
+    "level": 50,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "executioner",
+      "name": "Executioner",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000815,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_crit_pct",
+        "params": {
+         "skill": "eviscerate",
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Eviscerate is 10% more likely to be a critical strike."
+     },
+     {
+      "key": "ruthless",
+      "name": "Ruthless",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000816,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "finisher",
+         "chance": 20,
+         "add_combo_points": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your finishing moves leave a combo point on the target 20% of the time."
+     },
+     {
+      "key": "cheat_death",
+      "name": "Cheat Death",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000817,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "healing_taken_pct",
+        "params": {
+         "pct": 40,
+         "below_health_pct": 30
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Healing on you is 40% stronger while you are below 30% health."
+     }
+    ]
+   }
+  ],
+  "name": "Nightblade",
+  "tier": 2,
+  "tier_cap": 50,
+  "row_levels": [
+   5,
+   10,
+   15,
+   20,
+   25,
+   30,
+   35,
+   40,
+   45,
+   50
+  ],
+  "tier_bonus": {
+   "strength": 12,
+   "agility": 24,
+   "stamina": 24,
+   "intellect": 0,
+   "spirit": 6
+  },
+  "shapeshift_form": 0
  }
 ]

@@ -325,10 +325,17 @@ fn every_ender_is_a_quest_giver_with_a_name() {
     let mut realm = realm();
     for q in content().quest {
         let ender = q.ender.unwrap_or(q.giver);
+        // Or a friendly creature of a Phased Dungeon, as the Nightblade's Silas Dunmere (#688).
+        let dungeon_giver = || {
+            mob_template(ender)
+                .get("friendly")
+                .and_then(|f| f.as_bool())
+        };
         assert!(
             hub.npc
                 .iter()
-                .any(|n| n.entry == ender && n.npc_flags & 0x2 != 0),
+                .any(|n| n.entry == ender && n.npc_flags & 0x2 != 0)
+                || dungeon_giver() == Some(true),
             "quest {}: ender {ender} is no quest giver in hub.toml",
             q.id
         );
@@ -380,10 +387,11 @@ fn the_calling_choices_are_the_five_northshire_advancement_quests_and_the_tier_2
         .map(|q| q.id)
         .collect();
     // With the Zealot, each Tier 2 Calling of #674 as it lands: the Ironclad (#685), kept in
-    // file order before the Zealot, the Sharpshooter (#684) and the Bloodletter (#687).
+    // file order before the Zealot, the Sharpshooter (#684), the Bloodletter (#687) and the
+    // Nightblade (#688).
     assert_eq!(
         chosen,
-        [64002, 64003, 64009, 64010, 64011, 64012, 64013, 64405, 64401]
+        [64002, 64003, 64009, 64010, 64011, 64012, 64013, 64405, 64401, 64402]
     );
 }
 

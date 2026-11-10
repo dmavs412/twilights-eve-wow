@@ -1385,6 +1385,9 @@ pub struct Skill {
     /// Only while stealthed (Sap).
     #[serde(default)]
     pub requires_stealth: bool,
+    /// Only from behind the target, outside its front arc (Backstab, from `position=behind`).
+    #[serde(default)]
+    pub requires_behind: bool,
     /// Only on a target that is not in combat (Sap).
     #[serde(default)]
     pub requires_target_out_of_combat: bool,
@@ -1614,6 +1617,12 @@ pub enum Effect {
         /// That percent more on a target bleeding from the caster at the hit (Open Wounds).
         #[serde(default)]
         bleeding_pct: u32,
+        /// As a [`Effect::WeaponStrike`]'s: `below_bonus_pct` more on a target under
+        /// `below_health_pct` of its health before the hit (Fatal Edge).
+        #[serde(default)]
+        below_health_pct: u32,
+        #[serde(default)]
+        below_bonus_pct: u32,
         /// As a [`Effect::WeaponStrike`]'s: a heal and power after a kill that yields experience.
         #[serde(default)]
         kill_heal_pct: u32,

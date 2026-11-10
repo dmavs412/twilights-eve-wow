@@ -129,6 +129,19 @@
    "weapon_mask": 1435135,
    "armor_mask": 6,
    "dual_wield": true
+  },
+  {
+   "key": "nightblade",
+   "name": "Nightblade",
+   "icon": "Interface\\Icons\\Ability_Stealth",
+   "spellbook": "Nightblade",
+   "power_type": 3,
+   "class": 4,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 6,
+   "dual_wield": true
   }
  ],
  "spells": [
@@ -11555,6 +11568,1368 @@
    }
   },
   {
+   "spell_id": 1000773,
+   "calling": "nightblade",
+   "key": "eviscerate",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Eviscerate",
+    "cost": 35.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: Physical damage that grows with each combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Rogue_Eviscerate",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 49,
+      "per_level": 1.3
+     }
+    ],
+    "visual": 671,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000774,
+   "calling": "nightblade",
+   "key": "backstab",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Backstab",
+    "cost": 40,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A 40-Energy combo point builder from behind the target: 150% weapon damage plus a bonus, and 1 combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Weapon_ShortBlade_14",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 155,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000775,
+   "calling": "nightblade",
+   "key": "stealth",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Stealth",
+    "cost": 0.0,
+    "cooldown_ms": 9000,
+    "gcd_ms": 0,
+    "not_in_combat": true,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Stealth",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Stealthed.",
+    "visual": 184
+   }
+  },
+  {
+   "spell_id": 1000776,
+   "calling": "nightblade",
+   "key": "ambush",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Ambush",
+    "cost": 60,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "From Stealth and from behind the target: 250% weapon damage plus a bonus, and 2 combo points.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Ambush",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 40,
+      "per_level": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 155,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000777,
+   "calling": "nightblade",
+   "key": "vanish",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Vanish",
+    "cost": 0,
+    "cooldown_ms": 120000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Every enemy forgets you: you leave combat and slip into Stealth.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Vanish",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 255
+   }
+  },
+  {
+   "spell_id": 1000778,
+   "calling": "nightblade",
+   "key": "kick",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Kick",
+    "cost": 25.0,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 1 combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Kick",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 90,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000779,
+   "calling": "nightblade",
+   "key": "cold_blood",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Cold Blood",
+    "cost": 0,
+    "cooldown_ms": 60000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your next skill hit within 20 sec is a sure critical strike.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Ice_Lament",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 4371
+   }
+  },
+  {
+   "spell_id": 1000781,
+   "calling": "nightblade",
+   "key": "kidney_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Kidney Shot",
+    "cost": 25,
+    "cooldown_ms": 20000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: stuns the target for 1 sec per combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Rogue_KidneyShot",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 679,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000783,
+   "calling": "nightblade",
+   "key": "gutting",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Gutting",
+    "cost": 35.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: Physical damage that grows with each combo point. Each combo point adds 25% more.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Rogue_Eviscerate",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 49,
+      "per_level": 1.3
+     }
+    ],
+    "visual": 671,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000784,
+   "calling": "nightblade",
+   "key": "relentless",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Relentless",
+    "cost": 35.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: Physical damage that grows with each combo point. A killing blow on an enemy that yields experience gives you 20 Energy.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Rogue_Eviscerate",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 49,
+      "per_level": 1.3
+     }
+    ],
+    "visual": 671,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000785,
+   "calling": "nightblade",
+   "key": "fatal_edge",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Fatal Edge",
+    "cost": 35.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: Physical damage that grows with each combo point. It deals 50% more to a target under 35% health.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Rogue_Eviscerate",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 49,
+      "per_level": 1.3
+     }
+    ],
+    "visual": 671,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000786,
+   "calling": "nightblade",
+   "key": "deep_backstab",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Deep Backstab",
+    "cost": 40,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A 40-Energy combo point builder from behind the target: 180% weapon damage plus a bonus, and 1 combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Weapon_ShortBlade_14",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 155,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000787,
+   "calling": "nightblade",
+   "key": "cruel_backstab",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Cruel Backstab",
+    "cost": 40,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A 40-Energy combo point builder from behind the target: 150% weapon damage plus a bonus, and 1 combo point. Its critical strikes deal 30% more.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Weapon_ShortBlade_14",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 155,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000788,
+   "calling": "nightblade",
+   "key": "swift_backstab",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Swift Backstab",
+    "cost": 30,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A 30-Energy combo point builder from behind the target: 150% weapon damage plus a bonus, and 1 combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Weapon_ShortBlade_14",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 155,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000789,
+   "calling": "nightblade",
+   "key": "quick_shadows",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Quick Shadows",
+    "cost": 0.0,
+    "cooldown_ms": 4000,
+    "gcd_ms": 0,
+    "not_in_combat": true,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it. Cooldown 4 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Stealth",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 184
+   }
+  },
+  {
+   "spell_id": 1000791,
+   "calling": "nightblade",
+   "key": "shadow_speed",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Shadow Speed",
+    "cost": 0.0,
+    "cooldown_ms": 9000,
+    "gcd_ms": 0,
+    "not_in_combat": true,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it. You run 30% faster while stealthed.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Stealth",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 184
+   }
+  },
+  {
+   "spell_id": 1000793,
+   "calling": "nightblade",
+   "key": "stalker",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Stalker",
+    "cost": 0.0,
+    "cooldown_ms": 9000,
+    "gcd_ms": 0,
+    "not_in_combat": true,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it. Your first Backstab out of Stealth costs nothing.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Stealth",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 184
+   }
+  },
+  {
+   "spell_id": 1000794,
+   "calling": "nightblade",
+   "key": "brutal_ambush",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Brutal Ambush",
+    "cost": 60,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "From Stealth and from behind the target: 300% weapon damage plus a bonus, and 2 combo points.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Ambush",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 40,
+      "per_level": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 155,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000795,
+   "calling": "nightblade",
+   "key": "ambush_and_run",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Ambush and Run",
+    "cost": 60,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "From Stealth and from behind the target: 250% weapon damage plus a bonus, and 3 combo points.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Ambush",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 40,
+      "per_level": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 155,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000797,
+   "calling": "nightblade",
+   "key": "lingering_ambush",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Lingering Ambush",
+    "cost": 60,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "From Stealth and from behind the target: 250% weapon damage plus a bonus, and 2 combo points. The target also bleeds every 3 sec for 9 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Ambush",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 40,
+      "per_level": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 155,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000799,
+   "calling": "nightblade",
+   "key": "fleeting_vanish",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Fleeting Vanish",
+    "cost": 0,
+    "cooldown_ms": 120000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Every enemy forgets you: you leave combat and slip into Stealth. You also run 40% faster for 4 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Vanish",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 255
+   }
+  },
+  {
+   "spell_id": 1000800,
+   "calling": "nightblade",
+   "key": "ready_vanish",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Ready Vanish",
+    "cost": 0,
+    "cooldown_ms": 120000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Every enemy forgets you: you leave combat and slip into Stealth. It also finishes the cooldowns of Kidney Shot and Cold Blood.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Vanish",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 255
+   }
+  },
+  {
+   "spell_id": 1000801,
+   "calling": "nightblade",
+   "key": "shadow_heal",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Shadow Heal",
+    "cost": 0,
+    "cooldown_ms": 120000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Every enemy forgets you: you leave combat and slip into Stealth. It also heals you.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Vanish",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 10,
+      "base": 60,
+      "per_level": 6
+     }
+    ],
+    "visual": 255
+   }
+  },
+  {
+   "spell_id": 1000802,
+   "calling": "nightblade",
+   "key": "long_kick",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Long Kick",
+    "cost": 25.0,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 7.5 seconds. When it stops a cast, you gain 1 combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Kick",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 90,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000803,
+   "calling": "nightblade",
+   "key": "kick_from_the_dark",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Kick from the Dark",
+    "cost": 25.0,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 1 combo point. It does not break Stealth.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Kick",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 90,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000804,
+   "calling": "nightblade",
+   "key": "double_kick",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Double Kick",
+    "cost": 25.0,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 2 combo points.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Kick",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 90,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000805,
+   "calling": "nightblade",
+   "key": "second_wind",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Second Wind",
+    "cost": 0,
+    "cooldown_ms": 60000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your next skill hit within 20 sec is a sure critical strike. It also gives you 30 Energy.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Ice_Lament",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 30,
+      "per_level": 0
+     }
+    ],
+    "visual": 4371
+   }
+  },
+  {
+   "spell_id": 1000806,
+   "calling": "nightblade",
+   "key": "quick_blood",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Quick Blood",
+    "cost": 0,
+    "cooldown_ms": 40000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your next skill hit within 20 sec is a sure critical strike. Cooldown 40 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Ice_Lament",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 4371
+   }
+  },
+  {
+   "spell_id": 1000808,
+   "calling": "nightblade",
+   "key": "two_charges",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Two Charges",
+    "cost": 0,
+    "cooldown_ms": 60000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your next two skill hits within 20 sec are sure critical strikes.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Ice_Lament",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 4371
+   }
+  },
+  {
+   "spell_id": 1000809,
+   "calling": "nightblade",
+   "key": "long_kidney",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Long Kidney",
+    "cost": 25,
+    "cooldown_ms": 20000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: stuns the target for 1.5 sec per combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Rogue_KidneyShot",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 679,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000810,
+   "calling": "nightblade",
+   "key": "bruising_kidney",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Bruising Kidney",
+    "cost": 25,
+    "cooldown_ms": 20000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: stuns the target for 1 sec per combo point. It also deals Physical damage for each combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Rogue_KidneyShot",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     },
+     {
+      "effect": 2,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 679,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000811,
+   "calling": "nightblade",
+   "key": "quick_kidney",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Quick Kidney",
+    "cost": 25,
+    "cooldown_ms": 15000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: stuns the target for 1 sec per combo point. Cooldown 15 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Rogue_KidneyShot",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 679,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000812,
+   "calling": "nightblade",
+   "key": "shadow_dance",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Shadow Dance",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Vanish's cooldown is 40 sec shorter.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_Twilight"
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COOLDOWN",
+     "family_bit": 37,
+     "value": -40000
+    }
+   ]
+  },
+  {
+   "spell_id": 1000813,
+   "calling": "nightblade",
+   "key": "assassins_mark",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Assassin's Mark",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Ambush and Backstab are 10% more likely to be critical strikes.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_Curse",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000814,
+   "calling": "nightblade",
+   "key": "quick_recovery",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Quick Recovery",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Each finishing move gives you back 15 Energy.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_UnholyStrength",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000815,
+   "calling": "nightblade",
+   "key": "executioner",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Executioner",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Eviscerate is 10% more likely to be a critical strike.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_DeathScream",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000816,
+   "calling": "nightblade",
+   "key": "ruthless",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Ruthless",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your finishing moves leave a combo point on the target 20% of the time.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_Possession",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000817,
+   "calling": "nightblade",
+   "key": "cheat_death",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Cheat Death",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Healing on you is 40% stronger while you are below 30% health.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Ability_Rogue_FeignDeath",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
    "spell_id": 1000009,
    "calling": "vanguard",
    "key": "aura_seal_of_iron_armor",
@@ -13880,6 +15255,182 @@
     "name": "Red Frenzy",
     "aura_description": "Melee swings 6% faster and physical damage 3% higher a stack.",
     "visual": 3260
+   }
+  },
+  {
+   "spell_id": 1000780,
+   "calling": "nightblade",
+   "key": "aura_cold_blood",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Ice_Lament",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Cold Blood",
+    "aura_description": "Your next skill hit is a critical strike.",
+    "visual": 4371
+   }
+  },
+  {
+   "spell_id": 1000782,
+   "calling": "nightblade",
+   "key": "aura_kidney_shot",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Rogue_KidneyShot",
+    "mechanic": 12,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "name": "Kidney Shot",
+    "aura_description": "Stunned.",
+    "visual": 679
+   }
+  },
+  {
+   "spell_id": 1000790,
+   "calling": "nightblade",
+   "key": "aura_shadow_speed",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Stealth",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Stealth",
+    "aura_description": "Stealthed. Run speed increased by 30%.",
+    "visual": 184
+   }
+  },
+  {
+   "spell_id": 1000792,
+   "calling": "nightblade",
+   "key": "aura_stalker",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Stealth",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Stealth",
+    "aura_description": "Stealthed. Your first Backstab costs nothing.",
+    "visual": 184
+   }
+  },
+  {
+   "spell_id": 1000796,
+   "calling": "nightblade",
+   "key": "aura_lingering_ambush",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Ambush",
+    "mechanic": 15,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "name": "Lingering Ambush",
+    "aura_description": "Bleeding.",
+    "visual": 155
+   }
+  },
+  {
+   "spell_id": 1000798,
+   "calling": "nightblade",
+   "key": "aura_fleeting_vanish",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Vanish",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Fleeting Vanish",
+    "aura_description": "Run speed increased by 40%.",
+    "visual": 255
+   }
+  },
+  {
+   "spell_id": 1000807,
+   "calling": "nightblade",
+   "key": "aura_two_charges",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Ice_Lament",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Cold Blood",
+    "aura_description": "Your next two skill hits are critical strikes.",
+    "visual": 4371
    }
   },
   {

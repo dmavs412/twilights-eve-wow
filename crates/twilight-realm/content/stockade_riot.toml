@@ -26,8 +26,8 @@
 # content/milestones.toml (ADR 0034) the same way, for every Run: in from the tick the Milestone
 # is reached, or gone from then. No row here names one yet.
 #
-# Guids: creatures 973001 and 973003 to 973027 (973002 is the quiet wing's), GameObjects 983001
-# to 983004 (the entry is the guid). Templates 97200 to 97205 in mobs.toml.
+# Guids: creatures 973001 and 973003 to 973028 (973002 is the quiet wing's), GameObjects 983001
+# to 983004 (the entry is the guid). Templates 97200 to 97205 and 97290 in mobs.toml.
 #
 # The quests' items (#580, quests_stormwind.toml) are on the corpses through `drop`: a Twilight
 # Coin on every Ringleader, Bought Watchman, Cutter and Rook (a Rioter carries one a third of the
@@ -370,3 +370,15 @@ position = [87.2, -138.9, -33.9396]
 grounded = false
 orientation = 1.30
 drop = [980125]
+
+# ── The cell nobody ever locked, at the round room's back ───────────────────────────────────────
+# Silas Dunmere, the Nightblade's trainer (#688), friendly, facing the room's mouth: 10 yd from
+# Rook and 9 from the nearer Bought Watchman. Z: Bazil Thredd 79124 (94.5, -125.8, -33.94), as
+# every row of the room.
+[[creature]]
+guid = 973028
+entry = 97290
+level = 50
+position = [83.5, -147.0, -33.9396]
+grounded = false
+orientation = 1.11

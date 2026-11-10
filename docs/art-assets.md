@@ -397,6 +397,14 @@ one is a placeholder.
 | Blood Pool (#687) | master CSV | `Spell_Shadow_BloodBoil` |
 | The Bloodletter's Talents (#687) | master CSV, rows 25 and 50 | `Spell_Shadow_SiphonMana`, `Ability_Rogue_Sprint`, `Ability_BackStab`, `Ability_Druid_Rake`, `Ability_CriticalStrike`, `Spell_Shadow_DeathPact` |
 | Torn Mongrel Hide, the trial's quest item (#687) | `content/quest_items.toml`, entry 980831 | display 8952, `INV_Misc_Pelt_Bear_Ruin_01` |
+| Silas Dunmere, the Nightblade trainer (#688) | `content/mobs.toml`, template 97290 | display 1507, Osborne the Night Man's look. Wanted: a thin man in dark leathers sitting on the bunk of an open cell, half in shadow, a knife turning in his fingers. |
+| Nightblade Calling icon (#688) | `callings.csv` | `Ability_Stealth` |
+| Backstab (#688) | master CSV | `INV_Weapon_ShortBlade_14` (`Ability_BackStab` is the Bloodletter's Deep Wounds) |
+| Ambush and Lingering Ambush's bleed (#688) | master CSV | `Ability_Ambush` |
+| Vanish and Fleeting Vanish's sprint (#688) | master CSV | `Ability_Vanish` |
+| Cold Blood and its buffs (#688) | master CSV | `Spell_Ice_Lament` |
+| Kidney Shot and its stun (#688) | master CSV | `Ability_Rogue_KidneyShot` |
+| The Nightblade's Talents (#688) | master CSV, rows 25 and 50 | `Spell_Shadow_Twilight`, `Spell_Shadow_Curse`, `Spell_Shadow_UnholyStrength`, `Spell_Shadow_DeathScream`, `Spell_Shadow_Possession`, `Ability_Rogue_FeignDeath` |
 
 The Sharpshooter's carried skills (Auto Shot, Puncturing Shaft, Rapid Fire, Silencing Shot) keep
 the Ranger's icons. Its trial has no quest items. The Ironclad's carried skills (Righteous Smash,
@@ -404,4 +412,6 @@ Shield of the Penitent, Rebuke) keep the Vanguard's icons, and Shield Rebuke's s
 `Ability_Warrior_ShieldBash`. The Zealot's carried skills (Bulwark Charge and its Consecration,
 Seal of Iron and its armour spike, Rebuke) keep the Vanguard's icons. The Bloodletter's carried
 skills (Rupture, Garrote and its bleeds, Kick, and Bleeding Kick's bleed) keep the Cutthroat's
-icons, as do its copies of Bloodlust and the blood droplet.
+icons, as do its copies of Bloodlust and the blood droplet. The Nightblade's carried skills
+(Eviscerate, Stealth and its stealth auras, Kick) keep the Cutthroat's icons, and its trial has no
+quest items.

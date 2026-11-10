@@ -1273,12 +1273,18 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
         if ("below_health_pct" in params) != ("below_bonus_pct" in params or "below_instant" in params):
             raise BuildError(f"{where}: below_health_pct and below_bonus_pct go together, or below_health_pct "
                              "and below_instant")
-        if "below_health_pct" in params:
-            health, bonus = params["below_health_pct"], params.get("below_bonus_pct", 1)
-            if isinstance(health, bool) or not isinstance(health, int) or not 1 <= health <= 100:
-                raise BuildError(f"{where}: below_health_pct needs a whole number from 1 to 100, has {health!r}")
-            if isinstance(bonus, bool) or not isinstance(bonus, int) or bonus <= 0:
-                raise BuildError(f"{where}: below_bonus_pct needs a positive whole number, has {bonus!r}")
+    # A finisher's bonus under a health share (Fatal Edge, #688): the pair, no cast-bar rule.
+    if kind == "school_damage" and ("below_health_pct" in params or "below_bonus_pct" in params):
+        if "below_instant" in params:
+            raise BuildError(f"{where}: below_instant is a weapon_strike param")
+        if ("below_health_pct" in params) != ("below_bonus_pct" in params):
+            raise BuildError(f"{where}: below_health_pct and below_bonus_pct go together")
+    if kind in ("school_damage", "weapon_strike") and "below_health_pct" in params:
+        health, bonus = params["below_health_pct"], params.get("below_bonus_pct", 1)
+        if isinstance(health, bool) or not isinstance(health, int) or not 1 <= health <= 100:
+            raise BuildError(f"{where}: below_health_pct needs a whole number from 1 to 100, has {health!r}")
+        if isinstance(bonus, bool) or not isinstance(bonus, int) or bonus <= 0:
+            raise BuildError(f"{where}: below_bonus_pct needs a positive whole number, has {bonus!r}")
     # The holy tank kinds (#677): a hit's bonus on a creature type, a control only on one, a
     # threat aura, stacks once per enemy hit, and a judgement of a sheet Seal.
     if kind in ("school_damage", "weapon_strike"):
@@ -1507,6 +1513,8 @@ def build_gates(row: dict, kind: str, where: str) -> dict:
         out["requires_out_of_combat"] = True
     if requires.get("stealth") is True:
         out["requires_stealth"] = True
+    if requires.get("position") == "behind":
+        out["requires_behind"] = True
     if requires.get("target_combat") == "out":
         out["requires_target_out_of_combat"] = True
     return out

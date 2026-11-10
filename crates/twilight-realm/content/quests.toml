@@ -1724,7 +1724,8 @@ money = 0
 
 # ── Tier 2 Advancement Quests and trials (#674) ──
 # Each Tier 2 Calling's Advancement Quest, offered at its Tier 1 Calling's cap through the Calling
-# Choice (`calling_choice`), is given by its Hidden Trainer (content/hub.toml). Its `hint` rows
+# Choice (`calling_choice`), is given by its Hidden Trainer (content/hub.toml, or a friendly
+# creature of a Phased Dungeon: the Nightblade's Silas Dunmere). Its `hint` rows
 # point the way there, and its `trial` is the last quest of the three the trainer then sets, each
 # `after` the one before; the first is `after_taken` the Advancement Quest (#676).
 
@@ -1980,6 +1981,61 @@ progress = "Well?"
 completion = "Green and slow. Everything bleeds, $N. Sit down."
 money = 5000
 kill = [[442, 8]]
+
+# The Nightblade (#688): Silas Dunmere, a friendly creature of the Riot (stockade_riot.toml) in the
+# round room's unlocked cell, not a Hub NPC, so the Phased Dungeon hides him from the Living Map.
+# Jorik Vane, Innkeeper Farley and Warden Thelwater give the hints.
+[[quest]]
+id = 64402
+kind = "advancement"
+giver = 97290
+level = 30
+zone_or_sort = -162
+advancement = { from = "cutthroat", to = "nightblade", trial = 64427 }
+calling_choice = true
+title = "The Unlocked Cell"
+objectives = "Find the Nightblade in the cell that was never locked, and pass his trial."
+details = "There's a kind of Cutthroat who doesn't run when the fight starts. He leaves, and then he's back, behind you.$B$BWhere the city keeps the men it forgot, below the street and past the riot, one cell was never locked. Ask the one who taught you to hide. He knows who pours the drinks for the Watch."
+progress = "You got in. Most don't. Did you get out again?"
+completion = "Then you know the trick: be gone, then be back. You start over, Nightblade. The dark stays."
+money = 0
+hint = [
+  { npc = 190051, option = "Who teaches what comes after the knife?", reply = "Not me. Ask Farley at the Lion's Pride in Goldshire who pours for the Watch on their nights off." },
+  { npc = 295, option = "Who drinks with the Stockade's Watch?", reply = "The warden himself, Thelwater, when he can get away. He says one cell in the riot wing never locked. He says it like it's a joke." },
+  { npc = 1719, option = "Which cell never locked?", reply = "The last one. Past the riot, past Rook, in the round room at the end of the east wing. Whoever sits in it never asked to be let out, and nobody I send in comes back with a description." },
+]
+
+[[quest]]
+id = 64426
+kind = "once"
+giver = 97290
+after_taken = 64402
+level = 30
+min_tier = 1
+zone_or_sort = 717
+title = "Out the Way You Came"
+objectives = "Kill 6 Defias Rioters in the Riot."
+details = "You crept in. Now go back up the hall and make six of them never know you were there."
+progress = "Six?"
+completion = "Six, and nobody screamed. Good."
+money = 2500
+kill = [[97200, 6]]
+
+[[quest]]
+id = 64427
+kind = "once"
+giver = 97290
+after = 64426
+level = 30
+min_tier = 1
+zone_or_sort = 717
+title = "The Ringleaders"
+objectives = "Kill 3 Defias Ringleaders in the Riot."
+details = "Three ringleaders, one at a time. Strike, step back into the dark, strike again. If they see you twice, you did it wrong."
+progress = "Did they see you?"
+completion = "Once each. Close enough. Sit."
+money = 5000
+kill = [[97201, 3]]
 
 # ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
 # The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the

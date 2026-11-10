@@ -1388,6 +1388,10 @@ effects = []
         plain = self.built_skill(requires="position=behind")
         self.assertNotIn("requires_stealth", plain)
         self.assertNotIn("requires_target_out_of_combat", plain)
+        # From behind the target (Backstab, #688); the front asks nothing of the realm.
+        self.assertTrue(plain["requires_behind"])
+        self.assertNotIn("requires_behind", self.built_skill(requires="position=front"))
+        self.assertNotIn("requires_behind", skill)
         self.assert_fails([{**STRIKE, "requires": "target_combat=in"}], "target_combat is 'in'")
 
     def test_client_not_in_combat_needs_combat_out(self):
@@ -2277,6 +2281,17 @@ class TalentRows(BuildSpells):
         self.assert_each_fails([], STRIKE, "below_instant is yes or no, has",
                                "below_health_pct=30;below_instant=2")
 
+    def test_a_school_hits_health_pair_goes_together_without_below_instant(self):
+        hit = {**STRIKE, "effect1_kind": "school_damage", "effect1_params": "amount.base=5;amount.per_level=1"}
+        params = self.built_params([], hit, "below_health_pct=35;below_bonus_pct=50")
+        self.assertEqual((params["below_health_pct"], params["below_bonus_pct"]), (35, 50))
+        self.assert_each_fails([], hit, "below_health_pct and below_bonus_pct go together",
+                               "below_health_pct=35", "below_bonus_pct=50")
+        self.assert_each_fails([], hit, "below_instant is a weapon_strike param",
+                               "below_health_pct=35;below_instant=yes")
+        self.assert_each_fails([], hit, "below_health_pct needs a whole number from 1 to 100",
+                               "below_health_pct=0;below_bonus_pct=50")
+
     def test_cast_skill_names_a_skill_of_the_calling_and_resolves_to_its_spell_id(self):
         row = {**self.LEAP, "effect2_kind": "cast_skill", "effect2_params": "skill=strike"}
         done, data = self.run_build([STRIKE, row])
@@ -2632,6 +2647,18 @@ class TalentRows(BuildSpells):
         self.assertEqual(next(a for a in cutthroat["auras"] if a["key"] == "aura_phantom_guile")["spell_id"],
                          1000478)
         self.assert_committed_icons("cutthroat")
+
+    def test_the_committed_nightblade_has_ten_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            nightblade = next(c for c in json.load(f) if c["key"] == "nightblade")
+        self.assertEqual(nightblade["row_levels"], [5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
+        self.assertEqual([(r["key"], r["level"]) for r in nightblade["rows"]],
+                         [("eviscerate", 5), ("backstab", 10), ("stealth", 15), ("ambush", 20),
+                          ("nightblade_shadowcraft", 25), ("vanish", 30), ("kick", 35),
+                          ("cold_blood", 40), ("kidney_shot", 45), ("nightblade_deathmark", 50)])
+        self.assertTrue(all(len(r["choices"]) == 3 for r in nightblade["rows"]))
+        self.assert_committed_icons("nightblade")
 
     def test_the_committed_bloodletter_has_ten_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),

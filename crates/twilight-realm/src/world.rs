@@ -1157,7 +1157,7 @@ impl InWorld {
         } else {
             cast::white(&self.player.stats, &self.skills)
         };
-        let opener = self.skills.break_stealth(events) == Some(true);
+        let opener = self.break_stealth(events) == Some(true);
         // The armour the player's debuffs took off it (Sundered).
         let mut stats = stats;
         stats.armor_pen += self.skills.armor_loss(target);
@@ -1644,7 +1644,7 @@ impl InWorld {
             // A blow wakes a sleeper, and ends what heals them in their sleep.
             self.woken_by_damage(self.guid, events);
         }
-        self.skills.break_stealth(events);
+        self.break_stealth(events);
         let damage = self.fed_damage_taken(from, level, damage, school);
         // The player's own damage-taken auras: less inside their Consecration.
         let damage = crate::rules::talents::changed_by(

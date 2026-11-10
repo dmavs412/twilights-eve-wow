@@ -210,7 +210,15 @@ fn every_quest_target_spawns() {
             .iter()
             .map(|s| s["entry"].as_integer().unwrap() as u64),
     );
-    // The Tier 2 trials (#674) also live here, and send the character to the eastern zones.
+    // The Tier 2 trials (#674) also live here, and send the character to the eastern zones, or
+    // into the Riot (the Nightblade's, #688).
+    spawned.extend(
+        toml_file("stockade_riot.toml")["creature"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|s| s["entry"].as_integer().unwrap() as u64),
+    );
     for zone in [
         "redridge.toml",
         "duskwood.toml",
