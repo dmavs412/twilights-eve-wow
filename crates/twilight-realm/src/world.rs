@@ -147,12 +147,20 @@ pub(crate) enum Help {
         to: u64,
         aura: cast::Aura,
     },
+    /// A resurrection offered the dead `to`: an accept stands them up with `health_pct` percent of
+    /// their maximum health plus `health`.
+    Resurrect {
+        to: u64,
+        caster: u64,
+        health_pct: u32,
+        health: u32,
+    },
 }
 
 impl Help {
     pub(crate) fn to(&self) -> u64 {
         match self {
-            Help::Heal { to, .. } | Help::Aura { to, .. } => *to,
+            Help::Heal { to, .. } | Help::Aura { to, .. } | Help::Resurrect { to, .. } => *to,
         }
     }
 }
@@ -236,6 +244,9 @@ struct Player {
     in_combat: bool,
     /// Killed, and the toll taken: lying dead until Release Spirit.
     dead: bool,
+    /// The resurrection offered the dead player and not yet answered: the caster, and the health
+    /// an accept stands them up with.
+    offer: Option<(u64, u32)>,
 }
 
 impl Player {
@@ -282,6 +293,9 @@ pub(crate) struct InWorld {
     /// The other living players sharing this player's mobs, where they stand and the share of
     /// their health left, as of the tick's start.
     pub(crate) others: Vec<(u64, [f32; 3], f32)>,
+    /// The other players on this player's shard who lie dead, not yet released, and where they
+    /// lie, as of the tick's start: whom a resurrection may reach.
+    pub(crate) fallen: Vec<(u64, [f32; 3])>,
     /// The lent mobs this session killed, for the realm to share out (#148).
     pub(crate) kills: Vec<Kill>,
     /// This player's parts in kills nearby, paid on the next tick.
@@ -503,6 +517,7 @@ impl InWorld {
                 regen: 0.0,
                 in_combat: false,
                 dead: false,
+                offer: None,
             },
             mobs: Vec::new(),
             lent: false,
@@ -515,6 +530,7 @@ impl InWorld {
             runs: Default::default(),
             died: Vec::new(),
             others: Vec::new(),
+            fallen: Vec::new(),
             kills: Vec::new(),
             credits: Vec::new(),
             helps: Vec::new(),
@@ -847,6 +863,12 @@ impl InWorld {
                     );
                 }
                 Help::Aura { aura, .. } => self.wear(aura, events),
+                Help::Resurrect {
+                    caster,
+                    health_pct,
+                    health,
+                    ..
+                } => self.offered(caster, health_pct, health, events),
             }
         }
         self.land_charge(host, c, events);

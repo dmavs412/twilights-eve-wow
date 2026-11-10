@@ -2464,6 +2464,36 @@ class TalentRows(BuildSpells):
             with self.subTest(params=params):
                 self.assert_fails([{**row, "effect1_params": params}], "detonate_traps needs a positive radius_yd, has")
 
+    # Resurrection (#682).
+    RESURRECT = {**STRIKE, "target": "ally", "requires": "combat=out", "effect1_kind": "resurrect",
+                 "effect1_params": "health_pct=30", "effect4_kind": "", "effect4_params": ""}
+
+    def test_a_resurrect_takes_health_pct_or_a_share_of_the_health_cost(self):
+        for params, want in (("health_pct=30", {"health_pct": 30}),
+                             ("pct_of=health_cost;pct=200", {"pct_of": "health_cost", "pct": 200})):
+            with self.subTest(params=params):
+                done, data = self.run_build([{**self.RESURRECT, "effect1_params": params}])
+                self.assertEqual(done.returncode, 0, done.stderr)
+                self.assertEqual(data[0]["skills"][0]["effects"][0]["params"], want)
+        for params in ("", "health_pct=30;pct_of=health_cost;pct=200"):
+            with self.subTest(params=params):
+                self.assert_fails([{**self.RESURRECT, "effect1_params": params}],
+                                  "resurrect takes health_pct, or pct_of=health_cost;pct=N")
+        for params in ("health_pct=0", "health_pct=101", "health_pct=yes"):
+            with self.subTest(params=params):
+                self.assert_fails([{**self.RESURRECT, "effect1_params": params}],
+                                  "resurrect health_pct is a whole number from 1 to 100, has")
+        self.assert_fails([{**self.RESURRECT, "effect1_params": "pct_of=hit;pct=200"}],
+                          "resurrect pct_of is 'hit', want health_cost")
+        self.assert_fails([{**self.RESURRECT, "effect1_params": "pct_of=health_cost"}],
+                          "resurrect pct is a whole number of at least 1, has")
+
+    def test_a_resurrect_needs_a_friendly_target_and_no_combat(self):
+        for changed in ({"target": "enemy"}, {"requires": ""}):
+            with self.subTest(changed=changed):
+                self.assert_fails([{**self.RESURRECT, **changed}],
+                                  "resurrect needs target=ally and requires: combat=out")
+
     def test_rows_with_a_blank_row_levels_fail(self):
         self.assert_fails([CALLING, {**STRIKE, "row_level": "3"}, *self.three()], "do not fill row_levels")
 

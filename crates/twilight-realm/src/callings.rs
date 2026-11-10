@@ -1722,6 +1722,18 @@ pub enum Effect {
         #[serde(default)]
         overheal_burst_school: School,
     },
+    /// Offers the dead friendly player the cast targets a resurrection: on an accept they stand
+    /// up where they lie with `health_pct` percent of their maximum health, or with `pct` percent
+    /// of what this cast cost (`pct_of`), at most their maximum and at least 1. A living target,
+    /// a released one or an enemy is refused.
+    Resurrect {
+        #[serde(default)]
+        health_pct: u32,
+        #[serde(default)]
+        pct_of: Option<PctOf>,
+        #[serde(default)]
+        pct: u32,
+    },
     /// Deals `amount` in `school` to the target and heals the caster `heal_pct` percent of what
     /// it dealt (Siphon Life's tick).
     Drain {
@@ -2290,6 +2302,13 @@ impl Skill {
     /// Whether it answers to `key`: its own, or the skill it is a Skill Choice of.
     pub fn is(&self, key: &str) -> bool {
         self.key == key || self.replaces.as_deref() == Some(key)
+    }
+
+    /// A resurrection: it lands on a dead friendly player, never a living one.
+    pub fn resurrects(&self) -> bool {
+        self.effects
+            .iter()
+            .any(|e| matches!(e, Effect::Resurrect { .. }))
     }
 
     /// A shot: it needs a bow, gun, crossbow or thrown weapon in the ranged slot

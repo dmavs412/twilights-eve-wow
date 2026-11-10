@@ -53,7 +53,7 @@ KNOWN_KINDS = {
     "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike", "pickup",
     "refund_cost", "cast_skill", "cast_while_moving", "mod_threat_pct",
     "mod_periodic_taken_pct", "tick_now", "consume_self_stacks", "spill_droplets", "drop_threat",
-    "copy_aura", "detonate_traps",
+    "copy_aura", "detonate_traps", "resurrect",
 }
 # 1.12's CreatureType names, ids 1 to 9 in this order: a hit's `vs_type` and a control's
 # `only_type`.
@@ -1345,6 +1345,19 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
         radius = params.get("radius_yd")
         if isinstance(radius, bool) or not isinstance(radius, (int, float)) or radius <= 0:
             raise BuildError(f"{where}: detonate_traps needs a positive radius_yd, has {radius!r}")
+    # A dead friend stands up with a share of their health, or of what the cast cost (#682).
+    if kind == "resurrect":
+        by_pct, by_cost = "health_pct" in params, "pct_of" in params or "pct" in params
+        if by_pct == by_cost:
+            raise BuildError(f"{where}: resurrect takes health_pct, or pct_of=health_cost;pct=N, not both "
+                             "and not neither")
+        if by_pct and not is_whole(params["health_pct"], 100):
+            raise BuildError(f"{where}: resurrect health_pct is a whole number from 1 to 100, has "
+                             f"{params['health_pct']!r}")
+        if by_cost and params.get("pct_of") != "health_cost":
+            raise BuildError(f"{where}: resurrect pct_of is {params.get('pct_of')!r}, want health_cost")
+        if by_cost and not is_whole(params.get("pct")):
+            raise BuildError(f"{where}: resurrect pct is a whole number of at least 1, has {params.get('pct')!r}")
     if kind == "skill_crit_pct" and not isinstance(params.get("skill", "any"), str):
         raise BuildError(f"{where}: skill_crit_pct skill is one skill key or any, has {params['skill']!r}")
     for block in ("per_combo", "duration_per_combo"):
@@ -1926,6 +1939,8 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
                 raise BuildError(f"{here}: {param} {parsed[param]!r} is not an aura row of this Calling")
             if "periodic_damage" not in auras[parsed[param]]:
                 raise BuildError(f"{here}: {param} {parsed[param]!r} has no periodic_damage effect to grow")
+        if kind == "resurrect" and (row["target"] != "ally" or not out.get("requires_out_of_combat")):
+            raise BuildError(f"{here}: resurrect needs target=ally and requires: combat=out")
         if kind == "ground_area" and parsed.get("follow_caster") is True and (
                 row["target"] == "dest" or row["area_center"] == "ground"):
             raise BuildError(f"{here}: follow_caster needs a caster-centred area, not target=dest or "

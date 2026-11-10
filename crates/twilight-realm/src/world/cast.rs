@@ -81,6 +81,7 @@ pub(super) const SPELL_FAILED_STUNNED: u8 = 0x64;
 const SPELL_FAILED_TARGET_AFFECTING_COMBAT: u8 = 0x66;
 const SPELL_FAILED_TARGET_AURASTATE: u8 = 0x67;
 const SPELL_FAILED_TARGETS_DEAD: u8 = 0x65;
+const SPELL_FAILED_TARGET_NOT_DEAD: u8 = 0x6e;
 const SPELL_FAILED_TOO_CLOSE: u8 = 0x76;
 const SPELL_FAILED_UNIT_NOT_INFRONT: u8 = 0x7c;
 
@@ -3857,6 +3858,26 @@ impl InWorld {
         Ok(g)
     }
 
+    /// The dead friendly player a resurrection's `target` names, not yet released and within the
+    /// skill's range. The caster, a living player or anything not a player is refused.
+    fn fallen_ally(&self, skill: &Skill, target: Option<u64>, c: &Char) -> Result<u64, u8> {
+        let g = target
+            .filter(|&g| g != self.guid && crate::shard::is_player(g))
+            .ok_or(SPELL_FAILED_BAD_TARGETS)?;
+        let Some(&(_, at)) = self.fallen.iter().find(|o| o.0 == g) else {
+            return Err(if self.others.iter().any(|o| o.0 == g) {
+                SPELL_FAILED_TARGET_NOT_DEAD
+            } else {
+                SPELL_FAILED_BAD_TARGETS
+            });
+        };
+        let [_, hi] = skill.range_yd;
+        if hi > 0.0 && distance(c.position, at) > hi {
+            return Err(SPELL_FAILED_OUT_OF_RANGE);
+        }
+        Ok(g)
+    }
+
     /// The auras this session put on other players since it was last asked.
     pub(crate) fn take_sent(&mut self) -> Vec<Aura> {
         std::mem::take(&mut self.skills.sent)
@@ -4093,6 +4114,9 @@ impl InWorld {
         }
         match skill.target {
             Target::Caster => Ok(vec![self.guid]),
+            Target::Ally if skill.resurrects() => {
+                self.fallen_ally(skill, target, c).map(|g| vec![g])
+            }
             Target::Ally => self.ally(skill, target, c).map(|g| vec![g]),
             // A point on the ground, within the skill's range.
             Target::Ground => {
@@ -5440,6 +5464,22 @@ impl InWorld {
                         spell_id: skill.spell_id,
                         amount,
                         burst,
+                    });
+                }
+            }
+            // Their session offers it, and sizes a share of their maximum health.
+            Effect::Resurrect {
+                health_pct,
+                pct_of,
+                pct,
+            } => {
+                if target != self.guid && crate::shard::is_player(target) {
+                    let health = pct_of.map_or(0, |of| scaled_share(self.of_pct(of), pct));
+                    self.helps.push(super::Help::Resurrect {
+                        to: target,
+                        caster: self.guid,
+                        health_pct,
+                        health,
                     });
                 }
             }

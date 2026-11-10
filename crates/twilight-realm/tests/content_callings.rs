@@ -502,6 +502,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::DetonateTraps { .. } => {
             panic!("{key}: the reference has no realm half for a trap detonation")
         }
+        // A resurrection lives in the master CSV only (#682); tests/resurrect.rs reads it.
+        Effect::Resurrect { .. } => {
+            panic!("{key}: the reference has no realm half for a resurrection")
+        }
     }
 }
 

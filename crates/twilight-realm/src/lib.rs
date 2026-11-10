@@ -452,6 +452,12 @@ pub enum RealmCommand {
     },
     /// Release Spirit: the dead player comes back at the respawn point.
     RepopRequest,
+    /// The dead player's answer to `caster`'s resurrection offer
+    /// ([`SessionEvent::ResurrectRequest`]).
+    ResurrectResponse {
+        caster: u64,
+        accept: bool,
+    },
     /// The `!` or `?` over a quest giver, answered with [`SessionEvent::QuestGiverStatus`].
     QuestGiverStatusQuery {
         npc: u64,
@@ -1625,6 +1631,11 @@ impl Realm {
                     .filter(|o| o.alive && o.guid != w.guid)
                     .map(|o| (o.guid, o.position, o.health))
                     .collect();
+                w.fallen = players
+                    .iter()
+                    .filter(|o| !o.alive && o.guid != w.guid)
+                    .map(|o| (o.guid, o.position))
+                    .collect();
             }
         }
     }
@@ -2458,6 +2469,9 @@ impl Realm {
                 traded = vendor::repair(vendor, item, c, &reached, events);
             }
             RealmCommand::RepopRequest => traded.changed = w.release(c, events),
+            RealmCommand::ResurrectResponse { caster, accept } => {
+                traded.changed = w.answer_resurrect(caster, accept, c, events);
+            }
             _ => return,
         }
         // A chest keeps what is left in it; the last item taken removes it.

@@ -652,6 +652,9 @@ mod tests {
              "effects": [{"kind": "incapacitate", "params": {}}]},
             {"key": "unbuilt", "spell_id": 1, "duration_ms": 1000, "modelled": false,
              "effects": [{"kind": "stun", "params": {"aura_spell_id": 1}}]},
+            {"key": "blood_renew", "spell_id": 1000900, "duration_ms": 6000, "modelled": true,
+             "effects": [{"kind": "periodic_heal",
+                          "params": {"tick_ms": 2000, "pct_of": "health_cost", "pct": 150}}]},
         ]))
         .expect("auras read")
     }
@@ -693,6 +696,27 @@ mod tests {
                 duration_ms: 4000,
                 break_on_damage: true,
                 only_type: None,
+            }]
+        );
+    }
+
+    /// A skill's `periodic_heal` naming an aura row of `pct_of=health_cost` heals that share of
+    /// the cast's health cost over the row's duration, under the row's spell id (#682).
+    #[test]
+    fn an_applied_heal_over_time_keeps_its_share_of_the_health_cost() {
+        let mend = skill_applying("blood_renew", "periodic_heal").expect("it loads");
+        assert_eq!(
+            mend.effects,
+            [Effect::PeriodicHeal {
+                tick_ms: 2000,
+                duration_ms: 6000,
+                tick: None,
+                pct_of: Some(crate::callings::PctOf::HealthCost),
+                pct: 150,
+                aura_spell_id: Some(1000900),
+                ally: None,
+                radius_yd: 0.0,
+                center: Default::default(),
             }]
         );
     }

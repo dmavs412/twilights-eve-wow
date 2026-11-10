@@ -1,6 +1,7 @@
 //! Death and the way back (spec #1, "Death"): a killed player pays a tenth of their money and of
 //! each worn item's durability, lies dead until Release Spirit, and then stands at the respawn
-//! point at full health. There is no ghost run and no corpse to reclaim.
+//! point at full health. There is no ghost run and no corpse to reclaim. A friend's
+//! resurrection, accepted before release, stands them up where they lie (#682).
 
 use benilla_protocol::SessionEvent;
 
@@ -118,15 +119,9 @@ impl InWorld {
             return false;
         }
         let to = self.respawn;
-        let p = &mut self.player;
-        p.dead = false;
-        p.health = p.stats.max_health;
-        let def = crate::callings::of(c.calling);
-        p.power = Power::fresh(&p.stats, def.power, def.energy_regen());
-        p.swing_timer = 0.0;
-        p.off_swing_timer = 0.0;
-        p.refused = None;
-        let health = p.health;
+        let max = self.player.stats.max_health;
+        self.come_back(max, c);
+        let health = self.player.health;
         // Another map is a worldport, after which the player is created again at full health.
         self.move_to(
             c,
@@ -140,6 +135,73 @@ impl InWorld {
         if !self.transferring() {
             events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, health)]));
         }
+        true
+    }
+
+    /// The dead player comes back to life with `health` and a fresh power bar; an offer they
+    /// had not answered goes.
+    fn come_back(&mut self, health: u32, c: &Char) {
+        let p = &mut self.player;
+        p.dead = false;
+        p.offer = None;
+        p.health = health;
+        let def = crate::callings::of(c.calling);
+        p.power = Power::fresh(&p.stats, def.power, def.energy_regen());
+        p.swing_timer = 0.0;
+        p.off_swing_timer = 0.0;
+        p.refused = None;
+    }
+
+    /// `caster` offers the dead player a resurrection with `health_pct` percent of their maximum
+    /// health plus `health`: the client shows the stock popup. A living player, or one already
+    /// released, is offered nothing.
+    pub(super) fn offered(
+        &mut self,
+        caster: u64,
+        health_pct: u32,
+        health: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        if !self.player.dead {
+            return;
+        }
+        let max = self.player.stats.max_health;
+        let health = (u64::from(max) * u64::from(health_pct) / 100) as u32 + health;
+        self.player.offer = Some((caster, health));
+        events.push(SessionEvent::ResurrectRequest {
+            caster,
+            name: String::new(),
+            sickness: false,
+            has_timer: true,
+        });
+    }
+
+    /// `CMSG_RESURRECT_RESPONSE`: on an accept of `caster`'s offer the dead player stands up
+    /// where they lie with its health; a decline drops the offer. Whether they came back, so the
+    /// character must be saved.
+    pub(crate) fn answer_resurrect(
+        &mut self,
+        caster: u64,
+        accept: bool,
+        c: &Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        let Some((by, health)) = self.player.offer.filter(|_| self.player.dead) else {
+            return false;
+        };
+        if by != caster {
+            return false;
+        }
+        if !accept {
+            self.player.offer = None;
+            return false;
+        }
+        let health = health.clamp(1, self.player.stats.max_health);
+        self.come_back(health, c);
+        events.push(values(
+            self.guid,
+            &[(UNIT_FIELD_HEALTH, health), self.player.power.field()],
+        ));
         true
     }
 }

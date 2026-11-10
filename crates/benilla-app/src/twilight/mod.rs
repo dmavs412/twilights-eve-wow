@@ -881,6 +881,9 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             slot,
         }),
         ClientCommand::RepopRequest => Some(RealmCommand::RepopRequest),
+        ClientCommand::ResurrectResponse { caster, accept } => {
+            Some(RealmCommand::ResurrectResponse { caster, accept })
+        }
         ClientCommand::TeleportAck { counter, .. } => Some(RealmCommand::TeleportAck { counter }),
         ClientCommand::QuestgiverStatusQuery { npc } => {
             Some(RealmCommand::QuestGiverStatusQuery { npc })
@@ -1054,6 +1057,23 @@ mod tests {
         assert!(matches!(
             mapped,
             Some(RealmCommand::PageTextQuery { page_id: 15840 })
+        ));
+    }
+
+    #[test]
+    fn a_resurrect_answer_maps_to_the_realm_command_with_its_caster_and_answer() {
+        use crate::net::ClientCommand;
+        use twilight_realm::RealmCommand;
+        let mapped = super::realm_command(ClientCommand::ResurrectResponse {
+            caster: 42,
+            accept: true,
+        });
+        assert!(matches!(
+            mapped,
+            Some(RealmCommand::ResurrectResponse {
+                caster: 42,
+                accept: true
+            })
         ));
     }
 
