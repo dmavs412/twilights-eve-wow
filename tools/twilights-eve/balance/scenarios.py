@@ -19,6 +19,9 @@ import multi
 DAMAGE_CALLINGS = ("cutthroat", "ranger", "initiate")
 TANK_CALLINGS = ("vanguard", "acolyte")
 GENERIC_BOSS = (2.0, 1.1)   # rank 1 with these template multipliers and no spells
+# The highest level the Calling rules run. docs/balance/rules.md words them for 10 to 30; past 30
+# a run is for reading, not a gate (#661).
+TOP_LEVEL = 50
 
 # Rule -> (who, gear, against, what it must show), as docs/balance/rules.md words them.
 RULES = {
@@ -219,12 +222,12 @@ def t0_2(levels, fights, callings, run):
 
 
 def p_2(levels, fights, callings, run):
-    cells = [cell(c, lv, "green", normals(lv, 2), fights) for lv in _levels(levels, 10, 30) for c in callings]
+    cells = [cell(c, lv, "green", normals(lv, 2), fights) for lv in _levels(levels, 10, TOP_LEVEL) for c in callings]
     return _rows("P-2", cells, run, lambda r: r["win"] >= 0.80 and r["health_left"] >= 0.20)
 
 
 def p_3(levels, fights, callings, run):
-    cells = [cell(c, lv, "green", normals(lv, 3), fights) for lv in _levels(levels, 10, 30) for c in callings]
+    cells = [cell(c, lv, "green", normals(lv, 3), fights) for lv in _levels(levels, 10, TOP_LEVEL) for c in callings]
     return _rows("P-3", cells, run, lambda r: 0.15 <= r["win"] <= 0.50)
 
 
@@ -232,7 +235,7 @@ def dps(levels, fights, callings, run):
     """The damage Callings asked for, each against the Vanguard and the Acolyte, who are run
     whatever `callings` says and shown with no verdict of their own."""
     who = _pick(callings, DAMAGE_CALLINGS) + list(TANK_CALLINGS)
-    cells = [cell(c, lv, "green", normals(lv, 1), fights) for lv in _levels(levels, 10, 30) for c in who]
+    cells = [cell(c, lv, "green", normals(lv, 1), fights) for lv in _levels(levels, 10, TOP_LEVEL) for c in who]
     rows = _rows("DPS", cells, run, lambda r: None)
     tanks = defaultdict(list)
     for r in rows:
@@ -246,7 +249,7 @@ def dps(levels, fights, callings, run):
 
 def e_dmg(levels, fights, callings, run):
     cells = [cell(c, lv, "green", elites(lv, 1), fights)
-             for lv in _levels(levels, 10, 30) for c in _pick(callings, DAMAGE_CALLINGS)]
+             for lv in _levels(levels, 10, TOP_LEVEL) for c in _pick(callings, DAMAGE_CALLINGS)]
     return _rows("E-dmg", cells, run, lambda r: 0.35 <= r["win"] <= 0.65)
 
 
@@ -254,7 +257,7 @@ def e_tank(levels, fights, callings, run):
     """The Vanguard and Acolyte asked for, against every damage Calling's elite win at the level
     (those are run here too, shown with no verdict)."""
     who = _pick(callings, TANK_CALLINGS) + list(DAMAGE_CALLINGS)
-    cells = [cell(c, lv, "green", elites(lv, 1), fights) for lv in _levels(levels, 10, 30) for c in who]
+    cells = [cell(c, lv, "green", elites(lv, 1), fights) for lv in _levels(levels, 10, TOP_LEVEL) for c in who]
     rows = _rows("E-tank", cells, run, lambda r: None)
     dealers = defaultdict(list)
     for r in rows:
@@ -267,12 +270,12 @@ def e_tank(levels, fights, callings, run):
 
 
 def b_2e(levels, fights, callings, run):
-    cells = [cell(c, lv, "blue", elites(lv, 2), fights) for lv in _levels(levels, 10, 30) for c in callings]
+    cells = [cell(c, lv, "blue", elites(lv, 2), fights) for lv in _levels(levels, 10, TOP_LEVEL) for c in callings]
     return _rows("B-2E", cells, run, lambda r: r["win"] >= 0.80)
 
 
 def b_boss(levels, fights, callings, run):
-    cells = [cell(c, lv, "blue", generic_boss(lv), fights) for lv in _levels(levels, 10, 30) for c in callings]
+    cells = [cell(c, lv, "blue", generic_boss(lv), fights) for lv in _levels(levels, 10, TOP_LEVEL) for c in callings]
     return _rows("B-boss", cells, run, lambda r: r["win"] >= 0.80)
 
 
@@ -297,7 +300,7 @@ def b_named(levels, fights, callings, run):
 
 
 def g_5(levels, fights, callings, run):
-    cells = [cell(c, lv, "green", generic_boss(lv - 5), fights) for lv in _levels(levels, 15, 30) for c in callings]
+    cells = [cell(c, lv, "green", generic_boss(lv - 5), fights) for lv in _levels(levels, 15, TOP_LEVEL) for c in callings]
     return _rows("G+5", cells, run, lambda r: r["win"] >= 0.75)
 
 

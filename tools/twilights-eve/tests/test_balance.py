@@ -157,6 +157,16 @@ class BalanceModel(unittest.TestCase):
                 self.assertEqual(at_35["rows"], at_30["rows"])
                 self.assertGreater(at_35["stats"].max_hp, at_30["stats"].max_hp)
 
+    def test_calling_rules_run_past_30(self):
+        # #661: the Calling rules run up to 50, and a run of 1 to 30 keeps its old cells.
+        def levels_of(levels):
+            seen = []
+            scenarios.p_2(levels, 1, ["vanguard"], lambda cells: seen.extend(cells) or [])
+            return sorted({c["level"] for c in seen})
+
+        self.assertEqual(levels_of([33, 48]), [33, 48])
+        self.assertEqual(levels_of(range(1, 31)), list(range(10, 31)))
+
     def test_rows_open_at_the_calling_level(self):
         for calling in model.CALLINGS:
             for level in (10, 20, 30):
