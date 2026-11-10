@@ -123,6 +123,16 @@ pub(crate) const PROBE_VARS: &[ProbeVar] = &[
         wall_clock: false,
     },
     ProbeVar {
+        name: "WOW_PROBE_SPELLS_SETUP",
+        purpose: "<spell id>:<setup id>,… — when WOW_PROBE_SPELLS's cast of a spell is refused for a precondition (combo points, an aura state), it casts the setup spell, unreported, and the spell again",
+        wall_clock: false,
+    },
+    ProbeVar {
+        name: "WOW_PROBE_SPELLS_SKIP",
+        purpose: "<spell id>=<reason>;… — a reactive spell WOW_PROBE_SPELLS finds still refused for its aura state at the end is reported as skipped with the reason, not failed",
+        wall_clock: false,
+    },
+    ProbeVar {
         name: "WOW_PROBE_HOVER",
         purpose: "\"<frame>[;<frame>…]\" — sweep the real pointer across the named frames' centres, pressing nothing",
         // Starts at `_AT`, one move per `_STEP` seconds, alternating on `_DUTY`, in wall seconds.

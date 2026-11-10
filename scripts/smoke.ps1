@@ -92,11 +92,13 @@ function Invoke-Game([hashtable]$vars, [string]$name) {
 function Get-OpeningOrder($calling) {
     $all = @($calling.skills) + @($calling.rows | ForEach-Object { $_.choices })
     $hasEffect = { param($s, $kind) @($s.effects | ForEach-Object { $_.kind }) -contains $kind }
+    # A Seal is a `seal` effect, or a granted aura some Judgement of the Calling judges (#703).
+    $sealAuras = @(Get-SealAuras $calling)
     $groups = @(
         { param($s) $s.requires_out_of_combat },
         { param($s) $s.requires_stealth -and $s.requires_target_out_of_combat },
         { param($s) $s.requires_stealth },
-        { param($s) & $hasEffect $s 'seal' },
+        { param($s) (& $hasEffect $s 'seal') -or (Test-Grants $s $sealAuras) },
         { param($s) & $hasEffect $s 'judgement' }
     )
     $ids = @()
@@ -108,12 +110,106 @@ function Get-OpeningOrder($calling) {
     return ($ids -join ',')
 }
 
+# The aura keys the Calling's Judgements judge.
+function Get-SealAuras($calling) {
+    $all = @($calling.skills) + @($calling.rows | ForEach-Object { $_.choices })
+    @($all | ForEach-Object { $_.effects } | Where-Object { $_.kind -eq 'judgement' } |
+        ForEach-Object { $_.params.seal } | Where-Object { $_ } | Select-Object -Unique)
+}
+
+# Whether the skill puts one of these aura keys on the caster or its target.
+function Test-Grants($skill, $auras) {
+    foreach ($e in @($skill.effects)) {
+        foreach ($key in @($e.params.aura, $e.params.apply_aura)) {
+            if ($key -and $e.kind -ne 'copy_aura' -and $e.kind -notlike 'consume*' -and $auras -contains $key) {
+                return $true
+            }
+        }
+    }
+    return $false
+}
+
+# For each skill refused until another skill has been cast, that other skill: a combo point
+# builder for a finisher (#706, #709, #710), the skill that puts the aura on the target for one
+# that copies it (#711, #712), a Seal for a Judgement (#703). The probe casts it, unreported,
+# when the skill is refused for want of it. Only skills: the probe's spellbook holds no Talent Row
+# choice. Read from the sheet's fields, never from spell names or ids.
+function Get-Setups($calling) {
+    $skills = @($calling.skills | Where-Object { $_ })
+    $isFinisher = {
+        param($s)
+        @($s.effects | Where-Object {
+            $_.params.per_combo -or $_.params.duration_per_combo -or $_.params.ticks_per_combo -gt 0
+        }).Count -gt 0
+    }
+    # A builder adds combo points with no condition: not a Kick's (on a stopped cast), and not a
+    # stealth opener's (Stealth is gone by then).
+    $builder = $skills | Where-Object {
+        $kinds = @($_.effects | ForEach-Object { $_.kind })
+        ($kinds -contains 'add_combo_points') -and ($kinds -notcontains 'interrupt') -and
+            -not $_.requires_stealth -and -not $_.requires_out_of_combat -and
+            -not $_.requires_target_out_of_combat
+    } | Select-Object -First 1
+    $sealAuras = @(Get-SealAuras $calling)
+    $pairs = @()
+    foreach ($s in $skills) {
+        $by = $null
+        if ($builder -and (& $isFinisher $s)) { $by = $builder }
+        foreach ($e in @($s.effects)) {
+            if ($e.kind -eq 'copy_aura') {
+                $key = $e.params.aura
+                $by = $skills | Where-Object { $_ -ne $s -and (Test-Grants $_ @($key)) } | Select-Object -First 1
+            }
+            if ($e.kind -eq 'judgement') {
+                $by = $skills | Where-Object { Test-Grants $_ $sealAuras } | Select-Object -First 1
+            }
+        }
+        if ($by -and $by.spell_id -ne $s.spell_id) { $pairs += "{0}:{1}" -f $s.spell_id, $by.spell_id }
+    }
+    return ($pairs -join ',')
+}
+
+# The reactive skills whose event the inert Training Dummy never makes, with the reason: one
+# usable only after the caster blocks (#704), one only on a target that dodged, and one that spends
+# the caster's own stacks of an aura no skill gives (Red Frenzy's Bloodlust comes from blood
+# droplets walked over, #705). The probe reports one still refused at the end as skipped.
+function Get-Skips($calling) {
+    $skills = @($calling.skills | Where-Object { $_ })
+    $auraName = @{}
+    foreach ($a in @($calling.auras)) { if ($a) { $auraName[$a.key] = $a.name } }
+    $pairs = @()
+    foreach ($s in $skills) {
+        $reason = $null
+        $state = if ($s.requires) { $s.requires.caster_state } else { $null }
+        if ($state) {
+            $reason = "usable only {0}, which the inert dummy never causes" -f ($state -replace '^after_', 'after a ' -replace '_', ' ')
+        } elseif ($s.requires_target_dodged) {
+            $reason = "usable only after the target dodges, which the inert dummy never does"
+        }
+        foreach ($e in @($s.effects | Where-Object { $_.kind -eq 'consume_self_stacks' })) {
+            $key = $e.params.aura
+            $given = @($skills | Where-Object { Test-Grants $_ @($key) }).Count -gt 0
+            if (-not $given) {
+                $name = if ($auraName[$key]) { $auraName[$key] } else { $key }
+                $from = @($calling.auras | Where-Object {
+                    @($_.effects | Where-Object { $_.kind -eq 'pickup' -and $_.params.grants -eq $key }).Count
+                } | ForEach-Object { $_.name }) | Select-Object -First 1
+                $reason = if ($from) { "needs $name stacks, which come from picking up a $from" }
+                          else { "needs $name stacks, which no skill gives" }
+            }
+        }
+        if ($reason) { $pairs += "{0}={1}" -f $s.spell_id, ($reason -replace '[;=]', ' ') }
+    }
+    return ($pairs -join ';')
+}
+
 # ---- the batches: one launch per Calling of the sheet --------------------------------------------
 $spells = Get-Content (Join-Path $Root 'data\twilights-eve\server_spells.json') -Raw | ConvertFrom-Json
 $batches = @()
 foreach ($c in $spells) {
     if ($Callings -and $Callings -notcontains $c.key) { continue }
-    $batches += , @{ calling = $c.key; first = (Get-OpeningOrder $c) }
+    $batches += , @{ calling = $c.key; first = (Get-OpeningOrder $c); setup = (Get-Setups $c)
+                     skip = (Get-Skips $c) }
 }
 Write-Log ("{0} batch(es) over {1} Calling(s), {2} min budget, {3}" -f $batches.Count,
     @($batches | ForEach-Object { $_.calling } | Select-Object -Unique).Count, $BudgetMin, $exe)
@@ -146,7 +242,9 @@ foreach ($b in $batches) {
     [IO.File]::WriteAllText($save.FullName, $text, (New-Object Text.UTF8Encoding $false))
 
     $name = "{0:D2}-{1}" -f $n, $b.calling
-    Write-Log ("batch {0}, first {1}" -f $name, $(if ($b.first) { $b.first } else { "none" }))
+    Write-Log ("batch {0}, first {1}, setups {2}, skips {3}" -f $name,
+        $(if ($b.first) { $b.first } else { "none" }), $(if ($b.setup) { $b.setup } else { "none" }),
+        $(if ($b.skip) { $b.skip } else { "none" }))
     $before = if (Test-Path $report) { @(Get-Content $report).Count } else { 0 }
     $ran = Invoke-Game @{
         WOW_CHAR = $CharName
@@ -154,6 +252,8 @@ foreach ($b in $batches) {
         WOW_PROBE_SPELLS = $report
         WOW_PROBE_SPELLS_CALLING = $b.calling
         WOW_PROBE_SPELLS_FIRST = $b.first
+        WOW_PROBE_SPELLS_SETUP = $b.setup
+        WOW_PROBE_SPELLS_SKIP = $b.skip
         WOW_LIVE_SHOT = (Join-Path $out "$name.png")
         WOW_LIVE_SHOT_AT = "30"
     } $name
@@ -165,6 +265,10 @@ foreach ($b in $batches) {
 # ---- the verdict -------------------------------------------------------------------------------
 $lines = if (Test-Path $report) { @(Get-Content $report | ForEach-Object { $_ | ConvertFrom-Json }) } else { @() }
 $failed = @($lines | Where-Object { -not $_.ok })
+# A reactive spell whose event the dummy never made is skipped, not failed.
+foreach ($s in @($lines | Where-Object { $_.skipped })) {
+    Write-Log ("skipped {0} {1} ({2}): {3}" -f $s.calling, $s.name, $s.spell_id, $s.skipped)
+}
 foreach ($f in $failed) {
     Write-Log ("FAILED {0} {1} ({2}): {3}" -f $f.calling, $f.name, $f.spell_id, $f.error)
 }

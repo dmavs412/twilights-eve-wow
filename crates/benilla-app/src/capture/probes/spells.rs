@@ -9,13 +9,19 @@
 //! - an error (`UI_ERROR_MESSAGE`, `SPELLCAST_FAILED`, `SPELLCAST_INTERRUPTED`) fails the cast;
 //! - otherwise the cast counts as through once [`QUIET_SECS`] pass with no cast bar running.
 //!
-//! Some errors are the situation's, not the spell's, and earn a retry: no resource yet (wait),
-//! out of range or too close (move, through the dev goto), a friendly-only spell at the dummy
-//! (cast on self), and a "requires" error such as combo points (once more, at the end).
+//! Some errors are the situation's, not the spell's, and earn a retry: no resource yet (wait; for
+//! rage, with the swing that builds it), out of range, too close or not behind (move, through
+//! the dev goto), a friendly-only spell at the dummy (cast on self), and a missing precondition
+//! such as combo points or an aura state (its setup spell first, else once more at the end).
 //!
 //! `WOW_PROBE_SPELLS_FIRST=<spell id>,...` names spells to cast first, in that order, before the
 //! probe's melee swing starts combat: Stealth, the stealth openers, the Seals a Judgement needs
-//! (#523). `scripts/smoke.ps1` builds the list from `server_spells.json`.
+//! (#523). `WOW_PROBE_SPELLS_SETUP=<spell id>:<setup id>,...` names the spell that makes each
+//! one's precondition (a combo point builder for a finisher, the aura a copier copies); it is
+//! cast, unreported, when the spell is refused for want of it. `WOW_PROBE_SPELLS_SKIP=<spell
+//! id>=<reason>;...` names reactive spells whose event the dummy never makes (a block): one
+//! still refused for its aura state at the end is reported as skipped, with the reason, not
+//! failed. `scripts/smoke.ps1` builds all three from `server_spells.json`.
 
 use std::io::Write;
 
@@ -48,6 +54,21 @@ const SWING_ERRORS: [&str; 3] = [
 ];
 const CLOSE: (f32, f32) = (-9642.0, 264.0);
 const FAR: (f32, f32) = (-9655.0, 264.0);
+/// In melee behind the dummy, which faces west (`test_grounds.toml`), facing it.
+const BEHIND: (f32, f32) = (-9638.0, 264.0);
+/// The realm's aura-state refusal (`SPELL_FAILED_CASTER_AURASTATE`, `_TARGET_AURASTATE`): the
+/// spell's precondition is missing, as `GlobalStrings.lua` words it.
+const PRECONDITION_ERROR: &str = "can't do that yet";
+
+/// Which way the player faces at a move's spot: east at the dummy from in front, west at it from
+/// behind.
+fn facing_at(spot: (f32, f32)) -> f32 {
+    if spot == BEHIND {
+        std::f32::consts::PI
+    } else {
+        0.0
+    }
+}
 
 pub(crate) struct ProbeSpellsPlugin;
 
@@ -67,10 +88,22 @@ impl Plugin for ProbeSpellsPlugin {
         if first.is_empty() && !first_value.trim().is_empty() {
             warn!("probe-spells: WOW_PROBE_SPELLS_FIRST={first_value:?} is not a list of spell ids — ignored");
         }
+        let setup_value = std::env::var("WOW_PROBE_SPELLS_SETUP").unwrap_or_default();
+        let setup = setup_pairs(&setup_value);
+        if setup.is_empty() && !setup_value.trim().is_empty() {
+            warn!("probe-spells: WOW_PROBE_SPELLS_SETUP={setup_value:?} is not a list of <id>:<id> — ignored");
+        }
+        let skip_value = std::env::var("WOW_PROBE_SPELLS_SKIP").unwrap_or_default();
+        let skip = skip_reasons(&skip_value);
+        if skip.is_empty() && !skip_value.trim().is_empty() {
+            warn!("probe-spells: WOW_PROBE_SPELLS_SKIP={skip_value:?} is not a list of <id>=<reason> — ignored");
+        }
         app.insert_resource(ProbeSpells {
             path: path.into(),
             calling,
             first,
+            setup,
+            skip,
             ..default()
         })
         .add_systems(Update, drive_probe_spells);
@@ -84,6 +117,46 @@ struct Entry {
     spell_id: u32,
     name: String,
     rank: String,
+    /// Cast only to set up the next spell's precondition: logged, never reported.
+    setup: bool,
+}
+
+/// `WOW_PROBE_SPELLS_SETUP`'s pairs, spell id to the id of the spell that sets it up. A value
+/// that is not a comma list of `<id>:<id>` gives none.
+fn setup_pairs(value: &str) -> std::collections::HashMap<u32, u32> {
+    if value.trim().is_empty() {
+        return Default::default();
+    }
+    value
+        .split(',')
+        .map(|pair| {
+            let (spell, setup) = pair.split_once(':').ok_or(())?;
+            let id = |s: &str| s.trim().parse::<u32>().map_err(|_| ());
+            Ok((id(spell)?, id(setup)?))
+        })
+        .collect::<Result<_, ()>>()
+        .unwrap_or_default()
+}
+
+/// `WOW_PROBE_SPELLS_SKIP`'s reasons by spell id. A value that is not a `;` list of
+/// `<id>=<reason>` with a reason gives none.
+fn skip_reasons(value: &str) -> std::collections::HashMap<u32, String> {
+    if value.trim().is_empty() {
+        return Default::default();
+    }
+    value
+        .split(';')
+        .map(|pair| {
+            let (spell, reason) = pair.split_once('=').ok_or(())?;
+            let spell = spell.trim().parse::<u32>().map_err(|_| ())?;
+            let reason = reason.trim();
+            if reason.is_empty() {
+                return Err(());
+            }
+            Ok((spell, reason.to_string()))
+        })
+        .collect::<Result<_, ()>>()
+        .unwrap_or_default()
 }
 
 /// `WOW_PROBE_SPELLS_FIRST`'s spell ids, in order. A value that is not a comma list of ids gives
@@ -127,6 +200,7 @@ enum Retry {
     Resource,
     MoveClose,
     MoveFar,
+    MoveBehind,
     OnSelf,
     Later,
 }
@@ -136,7 +210,7 @@ fn retry_for(error: &str) -> Option<Retry> {
     let e = error.to_ascii_lowercase();
     if e.starts_with("not enough")
         || e.contains("not ready yet")
-        || e.contains("can't do that yet")
+        || e.contains("not yet recovered")
         || e.contains("another action is in progress")
     {
         // A resource, a cooldown or a repeating shot in the way: all pass with time.
@@ -145,16 +219,35 @@ fn retry_for(error: &str) -> Option<Retry> {
         Some(Retry::MoveFar)
     } else if e.contains("out of range") || e.contains("too far") {
         Some(Retry::MoveClose)
+    } else if e.contains("behind") {
+        Some(Retry::MoveBehind)
     } else if e.contains("invalid target")
         || e.contains("target is friendly")
         || e.contains("can only use") && e.contains("friendly")
     {
         Some(Retry::OnSelf)
-    } else if e.contains("requires") || e.contains("must be") {
+    } else if e.contains("requires") || e.contains("must be") || e.contains(PRECONDITION_ERROR) {
         Some(Retry::Later)
     } else {
         None
     }
+}
+
+/// What the probe does after an attempt that did not go through.
+#[derive(Debug, Clone, PartialEq)]
+enum Next {
+    /// Wait and try again; `swing` starts the melee swing first, since rage comes from it.
+    Wait { swing: bool },
+    /// Go to the spot and try again.
+    Move((f32, f32)),
+    /// Try again on the player.
+    OnSelf,
+    /// Cast this setup spell, unreported, then the spell again.
+    SetUp(u32),
+    /// Put the spell at the back of the queue.
+    Defer,
+    /// Write its line: a failure, or a skip with its reason.
+    Report { skipped: Option<String> },
 }
 
 /// Watches one attempt's events to a verdict.
@@ -248,9 +341,16 @@ fn damage_in(line: &str) -> u32 {
 }
 
 /// The report's JSON line; hand-written, since the shipped app carries no serde_json.
-fn report_line(calling: &str, e: &Entry, passive: bool, o: &Outcome) -> String {
+/// `skipped` is the reason a reactive spell was not judged.
+fn report_line(
+    calling: &str,
+    e: &Entry,
+    passive: bool,
+    o: &Outcome,
+    skipped: Option<&str>,
+) -> String {
     format!(
-        "{{\"calling\":{},\"spell_id\":{},\"name\":{},\"rank\":{},\"passive\":{},\"ok\":{},\"error\":{},\"damage\":{},\"aura\":{}}}",
+        "{{\"calling\":{},\"spell_id\":{},\"name\":{},\"rank\":{},\"passive\":{},\"ok\":{},\"error\":{},\"damage\":{},\"aura\":{},\"skipped\":{}}}",
         json_str(calling),
         e.spell_id,
         json_str(&e.name),
@@ -260,6 +360,7 @@ fn report_line(calling: &str, e: &Entry, passive: bool, o: &Outcome) -> String {
         o.error.as_deref().map_or("null".into(), json_str),
         o.damage,
         o.aura,
+        skipped.map_or("null".into(), json_str),
     )
 }
 
@@ -302,10 +403,20 @@ struct ProbeSpells {
     calling: String,
     /// The spells cast first, before the swing starts combat (`WOW_PROBE_SPELLS_FIRST`).
     first: Vec<u32>,
+    /// The spell that sets up each spell's precondition (`WOW_PROBE_SPELLS_SETUP`).
+    setup: std::collections::HashMap<u32, u32>,
+    /// Why each reactive spell may go unjudged (`WOW_PROBE_SPELLS_SKIP`).
+    skip: std::collections::HashMap<u32, String>,
     entered_at: Option<f32>,
+    /// The castable spellbook, for the setup casts.
+    book: Vec<Entry>,
     queue: std::collections::VecDeque<Entry>,
     /// Spells already put back once for a "requires" error.
     deferred: std::collections::HashSet<u32>,
+    /// Spells whose setup has been cast once.
+    set_up: std::collections::HashSet<u32>,
+    /// Opening spells that ran short of rage: they get the swing after all.
+    swing: std::collections::HashSet<u32>,
     /// Spells already moved for once, for a range error.
     moved: std::collections::HashSet<u32>,
     /// Attempts per spell, for the resource retries.
@@ -328,6 +439,41 @@ impl ProbeSpells {
                 self.written += 1;
             }
             Err(e) => error!("probe-spells: writing {}: {e}", self.path.display()),
+        }
+    }
+
+    /// What follows an attempt at `spell` (a setup cast when `setup`) that ended in `error`, on
+    /// its `tries`-th attempt; `on_self` when that attempt already went at the player.
+    fn next_step(&self, spell: u32, setup: bool, error: &str, tries: u32, on_self: bool) -> Next {
+        let report = Next::Report { skipped: None };
+        match retry_for(error) {
+            Some(Retry::Resource) if tries < RESOURCE_TRIES => Next::Wait {
+                swing: error.to_ascii_lowercase().contains("rage"),
+            },
+            Some(retry @ (Retry::MoveClose | Retry::MoveFar | Retry::MoveBehind))
+                if !self.moved.contains(&spell) =>
+            {
+                Next::Move(match retry {
+                    Retry::MoveFar => FAR,
+                    Retry::MoveBehind => BEHIND,
+                    _ => CLOSE,
+                })
+            }
+            Some(Retry::OnSelf) if !on_self => Next::OnSelf,
+            // A setup cast that cannot go is dropped; the spell it was for tries anyway.
+            Some(Retry::Later) if setup => report,
+            Some(Retry::Later) => match self.setup.get(&spell) {
+                Some(&by) if !self.set_up.contains(&spell) => Next::SetUp(by),
+                _ if !self.deferred.contains(&spell) => Next::Defer,
+                _ => Next::Report {
+                    skipped: error
+                        .to_ascii_lowercase()
+                        .contains(PRECONDITION_ERROR)
+                        .then(|| self.skip.get(&spell).cloned())
+                        .flatten(),
+                },
+            },
+            _ => report,
         }
     }
 }
@@ -383,17 +529,23 @@ fn drive_probe_spells(
                     spell_id: slot.spell_id,
                     name: slot.name.clone(),
                     rank: slot.rank.clone().unwrap_or_default(),
+                    setup: false,
                 };
                 if slot.passive {
                     let ok = Outcome {
                         ok: true,
                         ..default()
                     };
-                    probe.write(&report_line(&calling, &entry, true, &ok));
+                    probe.write(&report_line(&calling, &entry, true, &ok, None));
                 } else {
                     castable.push(entry);
                 }
             }
+            // A setup the book lacks cannot be cast.
+            probe
+                .setup
+                .retain(|_, by| castable.iter().any(|e| e.spell_id == *by));
+            probe.book = castable.clone();
             probe.queue = cast_order(castable, &probe.first);
             info!(
                 "probe-spells: {} spells to cast, {} passive",
@@ -421,7 +573,8 @@ fn drive_probe_spells(
             run_lua(&script, &format!("TargetByName({})", lua_str(DUMMY_NAME)));
             // Melee swings build rage for the Warrior Callings; a no-op once swinging. The
             // opening spells go without: the swing puts the player in combat and breaks Stealth.
-            if !probe.first.contains(&entry.spell_id) {
+            // An opening spell short of rage (a Seal) gets it after all: no swing, no rage.
+            if !probe.first.contains(&entry.spell_id) || probe.swing.contains(&entry.spell_id) {
                 run_lua(&script, "AttackTarget()");
             }
             script.take_tapped_events();
@@ -454,21 +607,27 @@ fn drive_probe_spells(
             let tries = probe.tries.entry(entry.spell_id).or_insert(0);
             *tries += 1;
             let tries = *tries;
-            match outcome.error.as_deref().and_then(retry_for) {
-                Some(Retry::Resource) if tries < RESOURCE_TRIES => {
+            let next = match outcome.error.as_deref() {
+                Some(error) if !outcome.ok => {
+                    probe.next_step(entry.spell_id, entry.setup, error, tries, on_self)
+                }
+                _ => Next::Report { skipped: None },
+            };
+            match next {
+                Next::Wait { swing } => {
+                    if swing {
+                        probe.swing.insert(entry.spell_id);
+                    }
                     probe.queue.push_front(entry);
                     probe.phase = Phase::Next {
                         at: now + RESOURCE_WAIT_SECS,
                     };
                 }
-                Some(retry @ (Retry::MoveClose | Retry::MoveFar))
-                    if !probe.moved.contains(&entry.spell_id) =>
-                {
-                    let (x, y) = if retry == Retry::MoveFar { FAR } else { CLOSE };
+                Next::Move(spot) => {
                     goto.write(DevGoto {
-                        x,
-                        y,
-                        facing: Some(0.0),
+                        x: spot.0,
+                        y: spot.1,
+                        facing: Some(facing_at(spot)),
                     });
                     probe.moved.insert(entry.spell_id);
                     probe.queue.push_front(entry);
@@ -476,7 +635,7 @@ fn drive_probe_spells(
                         at: now + MOVE_WAIT_SECS,
                     };
                 }
-                Some(Retry::OnSelf) if !on_self => {
+                Next::OnSelf => {
                     script.take_tapped_events();
                     run_lua(&script, &format!("CastSpell({}, \"spell\", 1)", entry.slot));
                     probe.phase = Phase::Casting {
@@ -485,11 +644,48 @@ fn drive_probe_spells(
                         on_self: true,
                     };
                 }
-                Some(Retry::Later) if probe.deferred.insert(entry.spell_id) => {
+                Next::SetUp(by) => {
+                    // The setup cast gets a fresh run of retries, then the spell goes again.
+                    let setup = probe.book.iter().find(|e| e.spell_id == by).cloned();
+                    probe.set_up.insert(entry.spell_id);
+                    probe.queue.push_front(entry);
+                    if let Some(setup) = setup {
+                        probe.tries.remove(&by);
+                        probe.moved.remove(&by);
+                        probe.queue.push_front(Entry {
+                            setup: true,
+                            ..setup
+                        });
+                    }
+                    probe.phase = Phase::Next { at: now + 0.5 };
+                }
+                Next::Defer => {
+                    probe.deferred.insert(entry.spell_id);
                     probe.queue.push_back(entry);
                     probe.phase = Phase::Next { at: now + 0.5 };
                 }
-                _ => {
+                Next::Report { .. } if entry.setup => {
+                    info!(
+                        "probe-spells: setup {} ({}): {}",
+                        entry.name,
+                        entry.spell_id,
+                        outcome.error.as_deref().unwrap_or("went through")
+                    );
+                    probe.phase = Phase::Next { at: now + 0.2 };
+                }
+                Next::Report { skipped } => {
+                    let outcome = if let Some(reason) = &skipped {
+                        info!(
+                            "probe-spells: {} ({}) skipped: {reason}",
+                            entry.name, entry.spell_id
+                        );
+                        Outcome {
+                            ok: true,
+                            ..outcome
+                        }
+                    } else {
+                        outcome
+                    };
                     if !outcome.ok {
                         probe.failed += 1;
                         warn!(
@@ -500,7 +696,13 @@ fn drive_probe_spells(
                         );
                     }
                     let calling = probe.calling.clone();
-                    probe.write(&report_line(&calling, &entry, false, &outcome));
+                    probe.write(&report_line(
+                        &calling,
+                        &entry,
+                        false,
+                        &outcome,
+                        skipped.as_deref(),
+                    ));
                     probe.phase = Phase::Next { at: now + 0.2 };
                 }
             }
@@ -627,6 +829,122 @@ mod tests {
             Some(Retry::Later)
         );
         assert_eq!(retry_for("SPELLCAST_FAILED"), None);
+        // The realm's aura-state refusal (a Judgement with no Seal, a Kindle with no Ember on
+        // the target) is a missing precondition, not a cooldown; a cooldown is "Not yet
+        // recovered".
+        assert_eq!(retry_for("You can't do that yet"), Some(Retry::Later));
+        assert_eq!(retry_for("Not yet recovered"), Some(Retry::Resource));
+        assert_eq!(
+            retry_for("You must be behind your target"),
+            Some(Retry::MoveBehind)
+        );
+    }
+
+    #[test]
+    fn the_setups_and_skips_parse_and_a_bad_value_gives_none() {
+        assert_eq!(
+            setup_pairs("1000773:1000774, 1000822:1000818"),
+            [(1000773, 1000774), (1000822, 1000818)]
+                .into_iter()
+                .collect()
+        );
+        assert!(setup_pairs("").is_empty());
+        assert!(setup_pairs("1000773").is_empty());
+        assert!(setup_pairs("1000773:x").is_empty());
+        assert_eq!(
+            skip_reasons("1000625=usable only after a block; 1000731=needs Bloodlust stacks"),
+            [
+                (1000625, "usable only after a block".to_string()),
+                (1000731, "needs Bloodlust stacks".to_string())
+            ]
+            .into_iter()
+            .collect()
+        );
+        assert!(skip_reasons("").is_empty());
+        assert!(skip_reasons("1000625").is_empty());
+        assert!(skip_reasons("x=reason").is_empty());
+        assert!(skip_reasons("1000625=").is_empty());
+    }
+
+    fn probe() -> ProbeSpells {
+        ProbeSpells {
+            setup: [(73, 74)].into_iter().collect(),
+            skip: [(25, "usable only after a block".to_string())]
+                .into_iter()
+                .collect(),
+            ..default()
+        }
+    }
+
+    #[test]
+    fn a_missing_precondition_casts_its_setup_once_then_defers_once_then_fails() {
+        let mut p = probe();
+        let combo = "That ability requires combo points";
+        assert_eq!(p.next_step(73, false, combo, 1, false), Next::SetUp(74));
+        p.set_up.insert(73);
+        assert_eq!(p.next_step(73, false, combo, 2, false), Next::Defer);
+        p.deferred.insert(73);
+        assert_eq!(
+            p.next_step(73, false, combo, 3, false),
+            Next::Report { skipped: None }
+        );
+        // A setup's own failure is never set up or deferred: it is dropped.
+        assert_eq!(
+            p.next_step(74, true, "You must be behind your target", 1, false),
+            Next::Move(BEHIND)
+        );
+        assert_eq!(
+            p.next_step(74, true, combo, 1, false),
+            Next::Report { skipped: None }
+        );
+    }
+
+    #[test]
+    fn a_reactive_spell_whose_event_never_came_is_skipped_with_its_reason() {
+        let mut p = probe();
+        let state = "You can't do that yet";
+        assert_eq!(p.next_step(25, false, state, 1, false), Next::Defer);
+        p.deferred.insert(25);
+        assert_eq!(
+            p.next_step(25, false, state, 2, false),
+            Next::Report {
+                skipped: Some("usable only after a block".into())
+            }
+        );
+        // Any other error still fails it.
+        assert_eq!(
+            p.next_step(25, false, "SPELLCAST_FAILED", 3, false),
+            Next::Report { skipped: None }
+        );
+    }
+
+    #[test]
+    fn a_rage_short_cast_waits_with_the_swing_and_others_wait_without() {
+        let p = probe();
+        assert_eq!(
+            p.next_step(1, false, "Not enough rage", 1, false),
+            Next::Wait { swing: true }
+        );
+        assert_eq!(
+            p.next_step(1, false, "Not enough energy", 1, false),
+            Next::Wait { swing: false }
+        );
+        assert_eq!(
+            p.next_step(1, false, "Not enough rage", RESOURCE_TRIES, false),
+            Next::Report { skipped: None }
+        );
+        assert_eq!(
+            p.next_step(1, false, "Out of range.", 1, false),
+            Next::Move(CLOSE)
+        );
+        assert_eq!(
+            p.next_step(1, false, "Invalid target", 1, false),
+            Next::OnSelf
+        );
+        assert_eq!(
+            p.next_step(1, false, "Invalid target", 1, true),
+            Next::Report { skipped: None }
+        );
     }
 
     #[test]
@@ -651,6 +969,7 @@ mod tests {
             spell_id,
             name: format!("Spell {spell_id}"),
             rank: String::new(),
+            setup: false,
         };
         let book: Vec<Entry> = [10, 20, 30, 40, 50]
             .iter()
@@ -674,6 +993,7 @@ mod tests {
             spell_id: 78,
             name: "Heroic \"Strike\"".into(),
             rank: "Rank 1".into(),
+            setup: false,
         };
         let o = Outcome {
             ok: false,
@@ -682,8 +1002,24 @@ mod tests {
             aura: false,
         };
         assert_eq!(
-            report_line("vanguard", &e, false, &o),
-            r#"{"calling":"vanguard","spell_id":78,"name":"Heroic \"Strike\"","rank":"Rank 1","passive":false,"ok":false,"error":"Not enough rage","damage":0,"aura":false}"#
+            report_line("vanguard", &e, false, &o, None),
+            r#"{"calling":"vanguard","spell_id":78,"name":"Heroic \"Strike\"","rank":"Rank 1","passive":false,"ok":false,"error":"Not enough rage","damage":0,"aura":false,"skipped":null}"#
+        );
+        // A skip is no failure: it goes through as ok, with its reason.
+        let skip = Outcome {
+            ok: true,
+            error: Some("You can't do that yet".into()),
+            ..o
+        };
+        assert_eq!(
+            report_line(
+                "ironclad",
+                &e,
+                false,
+                &skip,
+                Some("usable only after a block")
+            ),
+            r#"{"calling":"ironclad","spell_id":78,"name":"Heroic \"Strike\"","rank":"Rank 1","passive":false,"ok":true,"error":"You can't do that yet","damage":0,"aura":false,"skipped":"usable only after a block"}"#
         );
         assert_eq!(damage_in("Your Rend hits X for 9."), 9);
         assert_eq!(damage_in("Your Rend was dodged."), 0);
