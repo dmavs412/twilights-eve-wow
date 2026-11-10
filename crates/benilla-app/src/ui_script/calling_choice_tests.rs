@@ -116,6 +116,64 @@ fn close_hides_the_frame_and_queues_nothing() {
     assert!(!shown(&s, "BenillaCallingChoice"));
 }
 
+/// A stand-in `UnitClass` that answers `calling` for the player, since these tests have no player
+/// record.
+fn stub_unit_class(s: &UiScript, calling: &str) {
+    s.run(&format!(
+        "function UnitClass(unit) return '{calling}', 'WARRIOR' end"
+    ))
+    .unwrap();
+}
+
+/// The popup shown over `view` for a player whose Calling is `calling`.
+fn shown_as(calling: &str, view: CallingChoiceView) -> UiScript {
+    let mut s = popup();
+    stub_unit_class(&s, calling);
+    s.set_calling_choice(Some(view));
+    frame(&mut s);
+    s
+}
+
+fn five_options() -> CallingChoiceView {
+    CallingChoiceView {
+        options: vec![
+            option(64010, "Vanguard", "Rage"),
+            option(64011, "Ranger", "Focus"),
+            option(64012, "Cutthroat", "Energy"),
+            option(64013, "Acolyte", "Mana"),
+            option(64014, "Initiate", "Mana"),
+        ],
+    }
+}
+
+fn height(s: &UiScript) -> f64 {
+    s.eval::<f64>("return BenillaCallingChoice:GetHeight()")
+        .unwrap()
+}
+
+#[test]
+fn the_subtitle_names_the_players_calling() {
+    let s = shown_as("Vanguard", two_options());
+    assert_eq!(
+        text(&s, "BenillaCallingChoiceSubtitle"),
+        "You have learned all a Vanguard can learn. Choose the path you will take."
+    );
+    let s = shown_as("Basic Warrior", five_options());
+    assert_eq!(
+        text(&s, "BenillaCallingChoiceSubtitle"),
+        "You have learned all a Basic Warrior can learn. Choose the path you will take."
+    );
+}
+
+#[test]
+fn the_frame_is_as_tall_as_the_rows_shown() {
+    let five = shown_as("Basic Warrior", five_options());
+    assert_eq!(height(&five), 690.0);
+    assert!(shown(&five, "BenillaCallingChoiceRow5"));
+    let two = shown_as("Vanguard", two_options());
+    assert_eq!(height(&two), 690.0 - 3.0 * 118.0);
+}
+
 #[test]
 fn hovering_a_skill_icon_shows_its_name_and_description() {
     let mut s = shown_popup();

@@ -8,15 +8,25 @@
 
         The border and backdrop are the stock DialogBoxFrame art, set here as a <Backdrop> so the
         frame needs no stock template. There are five rows of 118 px, each with up to eight skill
-        icons; a row past the option count stays hidden.
+        icons; a row past the option count stays hidden, and the frame shrinks to the rows shown
+        (two at Tier 1's cap, spec #674). The subtitle names the player's Calling from UnitClass.
     -->
     <Script><![CDATA[
         BENILLA_CALLING_ROWS = 5
         BENILLA_CALLING_SKILLS = 8
+        BENILLA_CALLING_ROW_HEIGHT = 118
+        BENILLA_CALLING_TOP = 80
+        BENILLA_CALLING_BOTTOM = 20
+        BENILLA_CALLING_SUBTITLE = "You have learned all a %s can learn. Choose the path you will take."
 
-        -- Paint every row from the getters, and hide the ones past the option count.
+        -- Paint every row from the getters, hide the ones past the option count, name the
+        -- player's Calling in the subtitle and size the frame to the rows shown.
         function BenillaCallingChoice_Paint()
             local count = GetNumCallingChoices()
+            local calling = UnitClass("player") or "Basic Warrior"
+            BenillaCallingChoiceSubtitle:SetText(format(BENILLA_CALLING_SUBTITLE, calling))
+            local rows = math.min(count, BENILLA_CALLING_ROWS)
+            BenillaCallingChoice:SetHeight(BENILLA_CALLING_TOP + rows * BENILLA_CALLING_ROW_HEIGHT + BENILLA_CALLING_BOTTOM)
             for i = 1, BENILLA_CALLING_ROWS do
                 local row = getglobal("BenillaCallingChoiceRow" .. i)
                 if i <= count then

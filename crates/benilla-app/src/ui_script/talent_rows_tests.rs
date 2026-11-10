@@ -260,6 +260,52 @@ fn the_eleventh_row_is_inside_the_scroll_child() {
     );
 }
 
+/// `frame`'s top and bottom edges.
+fn rise(s: &UiScript, frame: &str) -> (f64, f64) {
+    s.eval::<(f64, f64)>(&format!("return {frame}:GetTop(), {frame}:GetBottom()"))
+        .unwrap()
+}
+
+#[test]
+fn ten_rows_paint_and_the_tenth_scrolls_into_view() {
+    // A Tier 2 Calling: rows at levels 5 to 50, the first three open.
+    let rows = (1..=10u8)
+        .map(|n| row(&format!("row{n}"), n * 5, n <= 3, "", u32::from(n) * 100, 0))
+        .collect();
+    let mut s = open(TalentRowsView {
+        calling: "Vanguard".into(),
+        at_innkeeper: false,
+        rows,
+    });
+    for i in 1..=10u8 {
+        let strip = format!("BenillaTalentsRow{i}");
+        assert!(shown(&s, &strip), "{strip} is shown");
+        assert_eq!(
+            plain(&s, &format!("{strip}Level")),
+            (u32::from(i) * 5).to_string()
+        );
+        assert_eq!(plain(&s, &format!("{strip}Cell1Name")), format!("row{i} 1"));
+    }
+    assert!(
+        s.eval::<bool>("return BenillaTalentsRow11 == nil").unwrap(),
+        "no eleventh strip"
+    );
+    // The tenth strip starts below the scroll frame's bottom edge, and the wheel brings it in.
+    let (top, bottom) = rise(&s, "BenillaTalentsScroll");
+    assert!(rise(&s, "BenillaTalentsRow10").1 < bottom);
+    for _ in 0..10 {
+        s.run("BenillaTalents_Wheel(BenillaTalentsScroll, -1)")
+            .unwrap();
+    }
+    s.resolve();
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+    let (row_top, row_bottom) = rise(&s, "BenillaTalentsRow10");
+    assert!(
+        row_top <= top && row_bottom >= bottom - 0.5,
+        "the tenth strip runs {row_top} to {row_bottom}, the scroll frame {top} to {bottom}"
+    );
+}
+
 #[test]
 fn a_calling_with_no_rows_says_so_and_hides_the_footer() {
     let mut s = open(warrior(false));
