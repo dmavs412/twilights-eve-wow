@@ -194,6 +194,19 @@
    "weapon_mask": 1435135,
    "armor_mask": 2,
    "dual_wield": false
+  },
+  {
+   "key": "bloodmender",
+   "name": "Bloodmender",
+   "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain",
+   "spellbook": "Bloodmender",
+   "power_type": 0,
+   "class": 5,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 2,
+   "dual_wield": false
   }
  ],
  "spells": [
@@ -18497,6 +18510,1374 @@
    ]
   },
   {
+   "spell_id": 1000996,
+   "calling": "bloodmender",
+   "key": "blood_lance",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Blood Lance",
+    "cost": 3,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_UnholyFrenzy",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 106,
+      "per_level": 2
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 9000,
+    "speed": 30.0,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000997,
+   "calling": "bloodmender",
+   "key": "blood_feast",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Blood Feast",
+    "cost_percent": 6,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Drinks the target's blood for 3 sec, dealing Shadow damage each second and healing you for twice what each tick drains.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Ability_Racial_Cannibalize",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 25,
+      "per_level": 1.2
+     }
+    ],
+    "visual": 177,
+    "range_index": 4,
+    "duration_index": 27
+   }
+  },
+  {
+   "spell_id": 1000998,
+   "calling": "bloodmender",
+   "key": "dark_mending",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Dark Mending",
+    "cost": 15,
+    "cooldown_ms": 8000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_FlashHeal",
+    "dbc_effects": [
+     {
+      "effect": 10,
+      "base": 418,
+      "per_level": 10
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "aura_description": "Minor Shadow damage over time.",
+    "visual": 3077,
+    "range_index": 5,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000999,
+   "calling": "bloodmender",
+   "key": "transfusion",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Transfusion",
+    "cost": 15,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Pours your own blood into an ally: costs 15% of your maximum health, and the ally heals 150% of what it cost you over 6 sec.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfSacrifice",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8
+     }
+    ],
+    "aura_description": "Healing every second.",
+    "visual": 163,
+    "range_index": 5,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1001000,
+   "calling": "bloodmender",
+   "key": "blood_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Blood Ward",
+    "cost": 12,
+    "cooldown_ms": 20000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 12% of your maximum health to ward every ally within 15 yards of you, yourself included, with a shield absorbing 60% of what it cost for 10 sec. 20 second cooldown.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_SacrificialShield",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 784,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1001001,
+   "calling": "bloodmender",
+   "key": "hush",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Hush",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, it also drains the target's blood, healing you for all of it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Shadow_ImpPhaseShift",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 20,
+      "per_level": 1
+     }
+    ],
+    "visual": 179,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1001002,
+   "calling": "bloodmender",
+   "key": "circle_of_blood",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Circle of Blood",
+    "cost": 10,
+    "cooldown_ms": 30000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 10% of your maximum health to draw a circle of blood at the target location for 10 sec. Allies inside heal every 2 sec. 30 second cooldown.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_PrayerOfHealing",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 57,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1001004,
+   "calling": "bloodmender",
+   "key": "last_rites",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Last Rites",
+    "cost": 20,
+    "not_in_combat": true,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 20% of your maximum health to call a dead ally back. They return to life with twice the health it cost you. Only out of combat.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Holy_Resurrection",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 41,
+    "range_index": 4,
+    "cast_time_index": 7
+   }
+  },
+  {
+   "spell_id": 1001005,
+   "calling": "bloodmender",
+   "key": "deep_lance",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Deep Lance",
+    "cost": 3,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage, 25% more than before, and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_UnholyFrenzy",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 133,
+      "per_level": 2.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 9000,
+    "speed": 30.0,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1001006,
+   "calling": "bloodmender",
+   "key": "mending_lance",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Mending Lance",
+    "cost": 3,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a Heal-over-Time of 40% of the hit to the lowest-health ally within 15 yards of the target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_UnholyFrenzy",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 106,
+      "per_level": 2
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 9000,
+    "speed": 30.0,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1001007,
+   "calling": "bloodmender",
+   "key": "quick_lance",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Quick Lance",
+    "cost": 3,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. The cast takes 1 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_UnholyFrenzy",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 106,
+      "per_level": 2
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 9000,
+    "speed": 30.0,
+    "range_index": 4,
+    "cast_time_index": 4
+   }
+  },
+  {
+   "spell_id": 1001008,
+   "calling": "bloodmender",
+   "key": "gorging_feast",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Gorging Feast",
+    "cost_percent": 6,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Drinks the target's blood for 3 sec, dealing Shadow damage each second and healing you for three times what each tick drains.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Ability_Racial_Cannibalize",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 25,
+      "per_level": 1.2
+     }
+    ],
+    "visual": 177,
+    "range_index": 4,
+    "duration_index": 27
+   }
+  },
+  {
+   "spell_id": 1001009,
+   "calling": "bloodmender",
+   "key": "sated_feast",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Sated Feast",
+    "cost_percent": 6,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Drinks the target's blood for 3 sec, dealing Shadow damage each second and healing you for twice what each tick drains. Healing past your maximum health grows a shield on you of up to 15% of your maximum health, lasting 8 sec from its last growth.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Ability_Racial_Cannibalize",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 25,
+      "per_level": 1.2
+     }
+    ],
+    "visual": 177,
+    "range_index": 4,
+    "duration_index": 27
+   }
+  },
+  {
+   "spell_id": 1001010,
+   "calling": "bloodmender",
+   "key": "long_feast",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Feast",
+    "cost_percent": 6,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Drinks the target's blood for 4 sec, dealing Shadow damage each second and healing you for twice what each tick drains.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Ability_Racial_Cannibalize",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 25,
+      "per_level": 1.2
+     }
+    ],
+    "visual": 177,
+    "range_index": 4,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1001011,
+   "calling": "bloodmender",
+   "key": "deep_mending",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Deep Mending",
+    "cost": 15,
+    "cooldown_ms": 8000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Instantly heals the target ally for a massive amount, 30% more than before, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_FlashHeal",
+    "dbc_effects": [
+     {
+      "effect": 10,
+      "base": 543,
+      "per_level": 13
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 3077,
+    "range_index": 5,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1001012,
+   "calling": "bloodmender",
+   "key": "quick_mending",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Quick Mending",
+    "cost": 15,
+    "cooldown_ms": 5000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 5 second cooldown.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_FlashHeal",
+    "dbc_effects": [
+     {
+      "effect": 10,
+      "base": 418,
+      "per_level": 10
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 3077,
+    "range_index": 5,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1001013,
+   "calling": "bloodmender",
+   "key": "gentle_mending",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Gentle Mending",
+    "cost": 10,
+    "cooldown_ms": 8000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 10% of your health. 8 second cooldown.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_FlashHeal",
+    "dbc_effects": [
+     {
+      "effect": 10,
+      "base": 418,
+      "per_level": 10
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 3077,
+    "range_index": 5,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1001014,
+   "calling": "bloodmender",
+   "key": "rich_transfusion",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Rich Transfusion",
+    "cost": 15,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Pours your own blood into an ally: costs 15% of your maximum health, and the ally heals 200% of what it cost you over 6 sec.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfSacrifice",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8
+     }
+    ],
+    "visual": 163,
+    "range_index": 5,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1001016,
+   "calling": "bloodmender",
+   "key": "quick_transfusion",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Quick Transfusion",
+    "cost": 15,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Pours your own blood into an ally: costs 15% of your maximum health, and the ally heals 150% of what it cost you over 4 sec.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfSacrifice",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8
+     }
+    ],
+    "visual": 163,
+    "range_index": 5,
+    "cast_time_index": 1,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1001018,
+   "calling": "bloodmender",
+   "key": "cheap_transfusion",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Cheap Transfusion",
+    "cost": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Pours your own blood into an ally: costs 10% of your maximum health, and the ally heals 150% of what it cost you over 6 sec.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfSacrifice",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8
+     }
+    ],
+    "visual": 163,
+    "range_index": 5,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1001019,
+   "calling": "bloodmender",
+   "key": "masochism",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Masochism",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting spells that cost Health grants you a buff that regenerates 30% of the Health spent over the next 5 seconds.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_BurningSpirit",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1001021,
+   "calling": "bloodmender",
+   "key": "thick_blood",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Thick Blood",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your maximum health is 10% higher.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Nature_BloodLust",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1001022,
+   "calling": "bloodmender",
+   "key": "sanguine_flow",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Sanguine Flow",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting a spell that costs Health makes your next Blood Lance within 6 sec instant.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_DeadofNight",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1001024,
+   "calling": "bloodmender",
+   "key": "thick_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Thick Ward",
+    "cost": 12,
+    "cooldown_ms": 20000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 12% of your maximum health to ward every ally within 15 yards of you, yourself included, with a shield absorbing 90% of what it cost for 10 sec. 20 second cooldown.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_SacrificialShield",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 784,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1001025,
+   "calling": "bloodmender",
+   "key": "wide_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Wide Ward",
+    "cost": 12,
+    "cooldown_ms": 20000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 12% of your maximum health to ward every ally within 25 yards of you, yourself included, with a shield absorbing 60% of what it cost for 10 sec. 20 second cooldown.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_SacrificialShield",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 784,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1001026,
+   "calling": "bloodmender",
+   "key": "long_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Long Ward",
+    "cost": 12,
+    "cooldown_ms": 20000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 12% of your maximum health to ward every ally within 15 yards of you, yourself included, with a shield absorbing 60% of what it cost for 15 sec. 20 second cooldown.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_SacrificialShield",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 784,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1001027,
+   "calling": "bloodmender",
+   "key": "long_hush",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Hush",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, it also drains the target's blood, healing you for all of it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Shadow_ImpPhaseShift",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 20,
+      "per_level": 1
+     }
+    ],
+    "visual": 179,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1001028,
+   "calling": "bloodmender",
+   "key": "deep_drink",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Deep Drink",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, it also drains twice as much of the target's blood, healing you for all of it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Shadow_ImpPhaseShift",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 40,
+      "per_level": 2
+     }
+    ],
+    "visual": 179,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1001029,
+   "calling": "bloodmender",
+   "key": "mana_hush",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Mana Hush",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, it also drains the target's blood, healing you for all of it. It also gives you 10% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Shadow_ImpPhaseShift",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 20,
+      "per_level": 1
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 179,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1001030,
+   "calling": "bloodmender",
+   "key": "deep_circle",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Deep Circle",
+    "cost": 10,
+    "cooldown_ms": 30000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 10% of your maximum health to draw a circle of blood at the target location for 10 sec. Allies inside heal 50% more every 2 sec. 30 second cooldown.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_PrayerOfHealing",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 57,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1001032,
+   "calling": "bloodmender",
+   "key": "wide_circle",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Wide Circle",
+    "cost": 10,
+    "cooldown_ms": 30000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 10% of your maximum health to draw a circle of blood at the target location for 10 sec. Allies inside heal every 2 sec. 30 second cooldown. It reaches 13 yards from its centre.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_PrayerOfHealing",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 17
+     }
+    ],
+    "visual": 57,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1001033,
+   "calling": "bloodmender",
+   "key": "long_circle",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Long Circle",
+    "cost": 10,
+    "cooldown_ms": 30000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 10% of your maximum health to draw a circle of blood at the target location for 14 sec. Allies inside heal every 2 sec. 30 second cooldown.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_PrayerOfHealing",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 57,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 305
+   }
+  },
+  {
+   "spell_id": 1001034,
+   "calling": "bloodmender",
+   "key": "full_rites",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Full Rites",
+    "cost": 20,
+    "not_in_combat": true,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 20% of your maximum health to call a dead ally back. They return to life with three times the health it cost you. Only out of combat.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Holy_Resurrection",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 41,
+    "range_index": 4,
+    "cast_time_index": 7
+   }
+  },
+  {
+   "spell_id": 1001035,
+   "calling": "bloodmender",
+   "key": "quick_rites",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Quick Rites",
+    "cost": 20,
+    "not_in_combat": true,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 20% of your maximum health to call a dead ally back. They return to life with twice the health it cost you. Only out of combat. The cast takes 5 sec.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Holy_Resurrection",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 41,
+    "range_index": 4,
+    "cast_time_index": 6
+   }
+  },
+  {
+   "spell_id": 1001036,
+   "calling": "bloodmender",
+   "key": "cheap_rites",
+   "rank": 1,
+   "fields": {
+    "power_type": 4294967294,
+    "name": "Cheap Rites",
+    "cost": 10,
+    "not_in_combat": true,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Spends 10% of your maximum health to call a dead ally back. They return to life with twice the health it cost you. Only out of combat.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Holy_Resurrection",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 41,
+    "range_index": 4,
+    "cast_time_index": 7
+   }
+  },
+  {
+   "spell_id": 1001037,
+   "calling": "bloodmender",
+   "key": "crimson_gift",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Crimson Gift",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Dark Mending and Transfusion heal 15% more.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_Heal02",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1001038,
+   "calling": "bloodmender",
+   "key": "iron_veins",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Iron Veins",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "While you are below 30% health, all healing you receive is increased by 30%.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_HolyProtection",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1001039,
+   "calling": "bloodmender",
+   "key": "bloodsurge",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Bloodsurge",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Each spell you cast that costs Health gives you 2% of your base mana.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_ElunesGrace",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
    "spell_id": 1000009,
    "calling": "vanguard",
    "key": "aura_seal_of_iron_armor",
@@ -21635,6 +23016,152 @@
     "name": "Deep Communion",
     "aura_description": "Healing every 2 sec.",
     "visual": 3643
+   }
+  },
+  {
+   "spell_id": 1001003,
+   "calling": "bloodmender",
+   "key": "aura_circle_of_blood",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_PrayerOfHealing",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     }
+    ],
+    "name": "Circle of Blood",
+    "aura_description": "Healing every 2 sec.",
+    "visual": 57
+   }
+  },
+  {
+   "spell_id": 1001015,
+   "calling": "bloodmender",
+   "key": "aura_rich_transfusion",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfSacrifice",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 1000
+     }
+    ],
+    "name": "Rich Transfusion",
+    "aura_description": "Healing every second.",
+    "visual": 163
+   }
+  },
+  {
+   "spell_id": 1001017,
+   "calling": "bloodmender",
+   "key": "aura_quick_transfusion",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfSacrifice",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 1000
+     }
+    ],
+    "name": "Quick Transfusion",
+    "aura_description": "Healing every second.",
+    "visual": 163
+   }
+  },
+  {
+   "spell_id": 1001020,
+   "calling": "bloodmender",
+   "key": "aura_masochism",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Shadow_BurningSpirit",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 1000
+     }
+    ],
+    "name": "Masochism",
+    "aura_description": "Recovering 30% of the health spent over 5 sec."
+   }
+  },
+  {
+   "spell_id": 1001023,
+   "calling": "bloodmender",
+   "key": "aura_sanguine_flow",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Shadow_DeadofNight",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Sanguine Flow",
+    "aura_description": "Your next Blood Lance is instant."
+   }
+  },
+  {
+   "spell_id": 1001031,
+   "calling": "bloodmender",
+   "key": "aura_deep_circle",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_PrayerOfHealing",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     }
+    ],
+    "name": "Deep Circle",
+    "aura_description": "Healing every 2 sec.",
+    "visual": 57
    }
   },
   {

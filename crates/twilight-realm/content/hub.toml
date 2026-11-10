@@ -2690,6 +2690,28 @@ hidden = true
 text_id = 64188
 greeting = "Mind the beds, $C. Everything here is growing, and most of it is hungry."
 
+# Sister Elowen Marr, the Bloodmender (#693): tends the orphans of Stormwind on the steps of
+# Cathedral Square, outside the doors of a cathedral that no longer opens, 10 yd from the stock
+# Brother Kristoff and outside cathedral_of_light.toml's footprint. The look is Brother Sarno's (a
+# placeholder). Role `talker`, as the other Tier 2 trainers. z is the square's floor (wmo_floor.py),
+# checked by ground_check.py.
+[[npc]]
+guid = 9300119
+entry = 190119
+name = "Sister Elowen Marr"
+subname = "Bloodmender"
+level = 50
+display_id = 7008
+faction_template = 35
+role = "talker"
+npc_flags = 0x3
+map = 0
+position = [-8630.0, 760.0, 97.3]
+orientation = 0.8
+hidden = true
+text_id = 64189
+greeting = "Sit with me, $C. The children are asleep. A little blood buys a lot of quiet."
+
 # Belongs to tests/sight.rs: seen only after test quest 99811 is handed in, 10 yd from that
 # quest's Rachel (zones.toml guid 960811), whom only those who have not handed it in see. The
 # look is Maera Holt's. z is ground_check.py's.

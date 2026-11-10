@@ -2316,6 +2316,81 @@ completion = "Still warm. Sit down, Blightcaller."
 money = 5000
 collect = [{ item = 980891, count = 5, chance = 50, from = [1270] }]
 
+# The Bloodmender (#693): Sister Elowen Marr on the steps of Cathedral Square, tending the orphans
+# of Stormwind. Brother Corwin Ashgrave and Brother Kristoff give the hints. A medium search, so a
+# medium trial in Duskwood: the wounded of Darkshire, the wolves that bit them, the mages that
+# curse the Watch.
+[[quest]]
+id = 64408
+kind = "advancement"
+giver = 190119
+level = 30
+zone_or_sort = -262
+advancement = { from = "acolyte", to = "bloodmender", trial = 64458 }
+calling_choice = true
+title = "The Bloodmender's Gift"
+objectives = "Find the Bloodmender who tends Stormwind's orphans, and pass her trial."
+details = "You have spent your blood on yourself, $N. A Bloodmender spends it on everyone else, and drinks it back from those who deserve to lose it.$B$BA sister who heals with her own blood tends the orphans of Stormwind, outside the doors of a cathedral that no longer opens. Brother Corwin Ashgrave knows the brother who brings her bread. Ask him."
+progress = "You found me. Did you bleed for them?"
+completion = "Then you know the price, and you paid it gladly. You start over, Bloodmender. Your veins don't."
+money = 0
+hint = [
+  { npc = 190054, option = "Who heals with her own blood?", reply = "Sister Elowen Marr. Brother Kristoff brings her bread in Cathedral Square. He'll know where she sits today." },
+  { npc = 1444, option = "Where is Sister Marr?", reply = "On the steps by the orphans, where she always is. She bleeds for anyone who asks. Be kind to her." },
+]
+
+[[quest]]
+id = 64456
+kind = "once"
+giver = 190119
+after_taken = 64408
+level = 30
+min_tier = 1
+zone_or_sort = 10
+title = "The Wounded Watch"
+objectives = "Tend the wounded of Darkshire: Watcher Ladimore, Clerk Daltry and Elaine Carevin."
+details = "Go to Darkshire and mend three of them. Pay for it yourself. Don't tell them what it cost."
+progress = "Did they thank you?"
+completion = "They always do. They never know."
+money = 2500
+talk = [
+  { npc = 576, option = "Let me see that wound.", reply = "It's nothing. It's been nothing for a week. ...Thank you." },
+  { npc = 267, option = "You're bleeding through your sleeve.", reply = "Am I? I hadn't looked up from the ledger in days. Thank you." },
+  { npc = 633, option = "Hold still. This will sting.", reply = "It does. It's better. Who sent you?" },
+]
+
+[[quest]]
+id = 64457
+kind = "once"
+giver = 190119
+after = 64456
+level = 30
+min_tier = 1
+zone_or_sort = 10
+title = "What Bit Them"
+objectives = "Kill 8 Rabid Dire Wolves on the Darkened Bank."
+details = "The bites came from the wolves along the river. Eight, and drink what they owe you."
+progress = "Full again?"
+completion = "Good. You took back what you gave."
+money = 2500
+kill = [[565, 8]]
+
+[[quest]]
+id = 64458
+kind = "once"
+giver = 190119
+after = 64457
+level = 30
+min_tier = 1
+zone_or_sort = 10
+title = "The Cursing Dead"
+objectives = "Kill 6 Skeletal Mages at Tranquil Gardens Cemetery."
+details = "Last. The skeleton mages curse the Watch from the gardens. Six. Spend, drink, spend again."
+progress = "Still standing?"
+completion = "Standing, and not a drop wasted. Kneel."
+money = 5000
+kill = [[203, 6]]
+
 # ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
 # The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the
 # Dungeon's Repeatable Quests, from level 16. Every target is in the run (content/wailing_caverns.toml):

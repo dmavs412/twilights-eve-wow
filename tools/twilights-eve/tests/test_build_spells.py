@@ -815,10 +815,12 @@ effects = []
             patch = json.load(f)
         # Corrupted Blood's red bolt (SpellVisual 7273) with Shadow Bolt's casting kits (64), #585.
         self.assertEqual(patch["spell_visuals"], [{"id": 9000, "base": 7273, "cast_from": 64}])
-        for spell_id in (1000350, 1000553, 1000554, 1000555):
+        # The Acolyte's Lance and its three choices, and the Bloodmender's carried Lance and its three (#693).
+        lances = (1000350, 1000553, 1000554, 1000555, 1000996, 1001005, 1001006, 1001007)
+        for spell_id in lances:
             lance = next(s for s in patch["spells"] if s["spell_id"] == spell_id)
             self.assertEqual((lance["fields"]["visual"], lance["fields"]["speed"]), (9000, 30.0), spell_id)
-        self.assertEqual(sum(1 for s in patch["spells"] if s["fields"].get("visual") == 9000), 4)
+        self.assertEqual(sum(1 for s in patch["spells"] if s["fields"].get("visual") == 9000), len(lances))
 
     def test_per_combo_is_a_formula_block(self):
         row = {**STRIKE, "effect1_kind": "school_damage",
@@ -2711,6 +2713,18 @@ class TalentRows(BuildSpells):
                           ("wasting_communion", 40), ("rise_again", 45), ("blightcaller_plaguelord", 50)])
         self.assertTrue(all(len(r["choices"]) == 3 for r in blightcaller["rows"]))
         self.assert_committed_icons("blightcaller")
+
+    def test_the_committed_bloodmender_has_ten_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            bloodmender = next(c for c in json.load(f) if c["key"] == "bloodmender")
+        self.assertEqual(bloodmender["row_levels"], [5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
+        self.assertEqual([(r["key"], r["level"]) for r in bloodmender["rows"]],
+                         [("blood_lance", 5), ("blood_feast", 10), ("dark_mending", 15), ("transfusion", 20),
+                          ("bloodmender_blood_pact", 25), ("blood_ward", 30), ("hush", 35),
+                          ("circle_of_blood", 40), ("last_rites", 45), ("bloodmender_hearts_blood", 50)])
+        self.assertTrue(all(len(r["choices"]) == 3 for r in bloodmender["rows"]))
+        self.assert_committed_icons("bloodmender")
 
     def test_the_committed_bloodletter_has_ten_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),

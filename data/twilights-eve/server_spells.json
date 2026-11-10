@@ -30285,5 +30285,2079 @@
    "spirit": 30
   },
   "shapeshift_form": 0
+ },
+ {
+  "key": "bloodmender",
+  "power": "mana",
+  "stat_profile": "priest",
+  "item_class": "warrior",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [
+   "cloth"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain",
+  "spellbook": "Bloodmender",
+  "blurb": "A healer who pays in blood. Spends its own health to mend and shield its friends, then drinks the foe's to fill up again.",
+  "skills": [
+   {
+    "key": "blood_lance",
+    "name": "Blood Lance",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000996,
+    "realm_cost": 3,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "health",
+    "cast_kind": "cast",
+    "cast_time_ms": 1500,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 106,
+        "per_level": 2
+       },
+       "school": "shadow"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 2000,
+       "duration_ms": 6000,
+       "pct_of": "hit",
+       "pct": 20,
+       "ally": "lowest_health",
+       "radius_yd": 15,
+       "center": "target"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target."
+   },
+   {
+    "key": "blood_feast",
+    "name": "Blood Feast",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000997,
+    "realm_cost": 6,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "channel",
+    "channel_tick_ms": 1000,
+    "channel_ms": 3000,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "drain",
+      "params": {
+       "amount": {
+        "base": 25,
+        "per_level": 1.2
+       },
+       "heal_pct": 200,
+       "school": "shadow"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Drinks the target's blood for 3 sec, dealing Shadow damage each second and healing you for twice what each tick drains."
+   },
+   {
+    "key": "dark_mending",
+    "name": "Dark Mending",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000998,
+    "realm_cost": 15,
+    "realm_cooldown_ms": 8000,
+    "realm_range_max": 40,
+    "target": "ally",
+    "school": "holy",
+    "prevention": "silence",
+    "cost_kind": "health",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "heal",
+      "params": {
+       "amount": {
+        "base": 418,
+        "per_level": 10
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_dark_mending"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown."
+   },
+   {
+    "key": "transfusion",
+    "name": "Transfusion",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000999,
+    "realm_cost": 15,
+    "realm_range_max": 40,
+    "target": "ally",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "health",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "apply_aura": "aura_transfusion"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Pours your own blood into an ally: costs 15% of your maximum health, and the ally heals 150% of what it cost you over 6 sec."
+   },
+   {
+    "key": "blood_ward",
+    "name": "Blood Ward",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1001000,
+    "realm_cost": 12,
+    "realm_cooldown_ms": 20000,
+    "learn_level": 10,
+    "target": "self",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "health",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "absorb",
+      "params": {
+       "pct": 60,
+       "pct_of": "health_cost",
+       "radius_yd": 15,
+       "duration_ms": 10000
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Spends 12% of your maximum health to ward every ally within 15 yards of you, yourself included, with a shield absorbing 60% of what it cost for 10 sec. 20 second cooldown."
+   },
+   {
+    "key": "hush",
+    "name": "Hush",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1001001,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 24000,
+    "realm_gcd_ms": 0,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 4500
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "drain",
+      "params": {
+       "amount": {
+        "base": 20,
+        "per_level": 1
+       },
+       "heal_pct": 100,
+       "school": "shadow"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, it also drains the target's blood, healing you for all of it."
+   },
+   {
+    "key": "circle_of_blood",
+    "name": "Circle of Blood",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1001002,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 30000,
+    "realm_range_max": 30,
+    "realm_radius_yd": 8,
+    "learn_level": 20,
+    "target": "dest",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "health",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "area_shape": "circle",
+    "area_center": "ground",
+    "max_targets": null,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "ground_area",
+      "params": {
+       "radius_yd": 8,
+       "duration_ms": 10000,
+       "ally_aura": "aura_circle_of_blood"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Spends 10% of your maximum health to draw a circle of blood at the target location for 10 sec. Allies inside heal every 2 sec. 30 second cooldown."
+   },
+   {
+    "key": "last_rites",
+    "name": "Last Rites",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1001004,
+    "realm_cost": 20,
+    "realm_range_max": 30,
+    "learn_level": 30,
+    "target": "ally",
+    "school": "shadow",
+    "prevention": "silence",
+    "requires": {
+     "combat": "out"
+    },
+    "requires_out_of_combat": true,
+    "cost_kind": "health",
+    "cast_kind": "cast",
+    "cast_time_ms": 10000,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "resurrect",
+      "params": {
+       "pct_of": "health_cost",
+       "pct": 200
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Spends 20% of your maximum health to call a dead ally back. They return to life with twice the health it cost you. Only out of combat."
+   }
+  ],
+  "auras": [
+   {
+    "key": "aura_dark_mending",
+    "name": "Dark Mending",
+    "spell_id": 1000998,
+    "status": "placeholder",
+    "school": "shadow",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 0,
+        "per_level": 0
+       },
+       "pct_of": "heal",
+       "pct": 15,
+       "school": "shadow"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Minor Shadow damage over time."
+   },
+   {
+    "key": "aura_transfusion",
+    "name": "Transfusion",
+    "spell_id": 1000999,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 1000,
+       "pct_of": "health_cost",
+       "pct": 150
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Healing every second."
+   },
+   {
+    "key": "aura_circle_of_blood",
+    "name": "Circle of Blood",
+    "spell_id": 1001003,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 25,
+        "per_level": 2.5
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Healing every 2 sec."
+   },
+   {
+    "key": "aura_rich_transfusion",
+    "name": "Rich Transfusion",
+    "spell_id": 1001015,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 1000,
+       "pct_of": "health_cost",
+       "pct": 200
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Healing every second."
+   },
+   {
+    "key": "aura_quick_transfusion",
+    "name": "Quick Transfusion",
+    "spell_id": 1001017,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 4000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 1000,
+       "pct_of": "health_cost",
+       "pct": 150
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Healing every second."
+   },
+   {
+    "key": "aura_masochism",
+    "name": "Masochism",
+    "spell_id": 1001020,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 5000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 1000,
+       "pct_of": "health_cost",
+       "pct": 30
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Recovering 30% of the health spent over 5 sec."
+   },
+   {
+    "key": "aura_sanguine_flow",
+    "name": "Sanguine Flow",
+    "spell_id": 1001023,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "blood_lance",
+       "instant": true,
+       "family_bits": [
+        33
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Blood Lance is instant."
+   },
+   {
+    "key": "aura_deep_circle",
+    "name": "Deep Circle",
+    "spell_id": 1001031,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 37.5,
+        "per_level": 3.75
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Healing every 2 sec."
+   }
+  ],
+  "rows": [
+   {
+    "key": "blood_lance",
+    "level": 5,
+    "kind": "skill_choice",
+    "skill": "blood_lance",
+    "choices": [
+     {
+      "key": "deep_lance",
+      "name": "Deep Lance",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001005,
+      "realm_cost": 3,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 133,
+          "per_level": 2.5
+         },
+         "school": "shadow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "tick_ms": 2000,
+         "duration_ms": 6000,
+         "pct_of": "hit",
+         "pct": 20,
+         "ally": "lowest_health",
+         "radius_yd": 15,
+         "center": "target"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage, 25% more than before, and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target.",
+      "change": "Deals {amount:133:2.5:0:0} Shadow damage instead of {amount:106:2:0:0}.",
+      "variant_of": "blood_lance"
+     },
+     {
+      "key": "mending_lance",
+      "name": "Mending Lance",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001006,
+      "realm_cost": 3,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 106,
+          "per_level": 2
+         },
+         "school": "shadow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "tick_ms": 2000,
+         "duration_ms": 6000,
+         "pct_of": "hit",
+         "pct": 40,
+         "ally": "lowest_health",
+         "radius_yd": 15,
+         "center": "target"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a Heal-over-Time of 40% of the hit to the lowest-health ally within 15 yards of the target.",
+      "change": "The ally heals 40% of the hit instead of 20%.",
+      "variant_of": "blood_lance"
+     },
+     {
+      "key": "quick_lance",
+      "name": "Quick Lance",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001007,
+      "realm_cost": 3,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "cast",
+      "cast_time_ms": 1000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 106,
+          "per_level": 2
+         },
+         "school": "shadow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "tick_ms": 2000,
+         "duration_ms": 6000,
+         "pct_of": "hit",
+         "pct": 20,
+         "ally": "lowest_health",
+         "radius_yd": 15,
+         "center": "target"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. The cast takes 1 sec.",
+      "change": "The cast takes a third less time.",
+      "variant_of": "blood_lance"
+     }
+    ]
+   },
+   {
+    "key": "blood_feast",
+    "level": 10,
+    "kind": "skill_choice",
+    "skill": "blood_feast",
+    "choices": [
+     {
+      "key": "gorging_feast",
+      "name": "Gorging Feast",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001008,
+      "realm_cost": 6,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "drain",
+        "params": {
+         "amount": {
+          "base": 25,
+          "per_level": 1.2
+         },
+         "heal_pct": 300,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Drinks the target's blood for 3 sec, dealing Shadow damage each second and healing you for three times what each tick drains.",
+      "change": "Each tick heals you 300% of what it drains instead of 200%.",
+      "variant_of": "blood_feast"
+     },
+     {
+      "key": "sated_feast",
+      "name": "Sated Feast",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001009,
+      "realm_cost": 6,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "drain",
+        "params": {
+         "amount": {
+          "base": 25,
+          "per_level": 1.2
+         },
+         "heal_pct": 200,
+         "overheal_absorb_max_pct": 15,
+         "overheal_absorb_ms": 8000,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Drinks the target's blood for 3 sec, dealing Shadow damage each second and healing you for twice what each tick drains. Healing past your maximum health grows a shield on you of up to 15% of your maximum health, lasting 8 sec from its last growth.",
+      "change": "Healing past your maximum grows a shield of up to 15% of your maximum health for 8 sec.",
+      "variant_of": "blood_feast"
+     },
+     {
+      "key": "long_feast",
+      "name": "Long Feast",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001010,
+      "realm_cost": 6,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 4000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "drain",
+        "params": {
+         "amount": {
+          "base": 25,
+          "per_level": 1.2
+         },
+         "heal_pct": 200,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Drinks the target's blood for 4 sec, dealing Shadow damage each second and healing you for twice what each tick drains.",
+      "change": "Channels a second longer, for one more tick.",
+      "variant_of": "blood_feast"
+     }
+    ]
+   },
+   {
+    "key": "dark_mending",
+    "level": 15,
+    "kind": "skill_choice",
+    "skill": "dark_mending",
+    "choices": [
+     {
+      "key": "deep_mending",
+      "name": "Deep Mending",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001011,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 8000,
+      "realm_range_max": 40,
+      "target": "ally",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "heal",
+        "params": {
+         "amount": {
+          "base": 543,
+          "per_level": 13
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_dark_mending"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instantly heals the target ally for a massive amount, 30% more than before, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown.",
+      "change": "Heals {amount:543:13:0:0} instead of {amount:418:10:0:0}.",
+      "variant_of": "dark_mending"
+     },
+     {
+      "key": "quick_mending",
+      "name": "Quick Mending",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001012,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 5000,
+      "realm_range_max": 40,
+      "target": "ally",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "heal",
+        "params": {
+         "amount": {
+          "base": 418,
+          "per_level": 10
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_dark_mending"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 5 second cooldown.",
+      "change": "Cooldown 5 sec instead of 8 sec.",
+      "variant_of": "dark_mending"
+     },
+     {
+      "key": "gentle_mending",
+      "name": "Gentle Mending",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001013,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 8000,
+      "realm_range_max": 40,
+      "target": "ally",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "heal",
+        "params": {
+         "amount": {
+          "base": 418,
+          "per_level": 10
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_dark_mending"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 10% of your health. 8 second cooldown.",
+      "change": "Costs 10% of your health instead of 15%.",
+      "variant_of": "dark_mending"
+     }
+    ]
+   },
+   {
+    "key": "transfusion",
+    "level": 20,
+    "kind": "skill_choice",
+    "skill": "transfusion",
+    "choices": [
+     {
+      "key": "rich_transfusion",
+      "name": "Rich Transfusion",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001014,
+      "realm_cost": 15,
+      "realm_range_max": 40,
+      "target": "ally",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "apply_aura": "aura_rich_transfusion"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Pours your own blood into an ally: costs 15% of your maximum health, and the ally heals 200% of what it cost you over 6 sec.",
+      "change": "The ally heals 200% of the cost instead of 150%.",
+      "variant_of": "transfusion"
+     },
+     {
+      "key": "quick_transfusion",
+      "name": "Quick Transfusion",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001016,
+      "realm_cost": 15,
+      "realm_range_max": 40,
+      "target": "ally",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "apply_aura": "aura_quick_transfusion"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Pours your own blood into an ally: costs 15% of your maximum health, and the ally heals 150% of what it cost you over 4 sec.",
+      "change": "The ally heals over 4 sec instead of 6 sec.",
+      "variant_of": "transfusion"
+     },
+     {
+      "key": "cheap_transfusion",
+      "name": "Cheap Transfusion",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001018,
+      "realm_cost": 10,
+      "realm_range_max": 40,
+      "target": "ally",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "apply_aura": "aura_transfusion"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Pours your own blood into an ally: costs 10% of your maximum health, and the ally heals 150% of what it cost you over 6 sec.",
+      "change": "Costs 10% of your maximum health instead of 15%.",
+      "variant_of": "transfusion"
+     }
+    ]
+   },
+   {
+    "key": "bloodmender_blood_pact",
+    "level": 25,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "masochism",
+      "name": "Masochism",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001019,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "cast",
+         "cost_kind": "health",
+         "apply_aura": "aura_masochism"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Casting spells that cost Health grants you a buff that regenerates 30% of the Health spent over the next 5 seconds."
+     },
+     {
+      "key": "thick_blood",
+      "name": "Thick Blood",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001021,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "max_health_pct",
+        "params": {
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your maximum health is 10% higher."
+     },
+     {
+      "key": "sanguine_flow",
+      "name": "Sanguine Flow",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001022,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "cast",
+         "cost_kind": "health",
+         "apply_aura": "aura_sanguine_flow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Casting a spell that costs Health makes your next Blood Lance within 6 sec instant."
+     }
+    ]
+   },
+   {
+    "key": "blood_ward",
+    "level": 30,
+    "kind": "skill_choice",
+    "skill": "blood_ward",
+    "choices": [
+     {
+      "key": "thick_ward",
+      "name": "Thick Ward",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001024,
+      "realm_cost": 12,
+      "realm_cooldown_ms": 20000,
+      "learn_level": 10,
+      "target": "self",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 90,
+         "pct_of": "health_cost",
+         "radius_yd": 15,
+         "duration_ms": 10000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends 12% of your maximum health to ward every ally within 15 yards of you, yourself included, with a shield absorbing 90% of what it cost for 10 sec. 20 second cooldown.",
+      "change": "The shield absorbs 90% of the cost instead of 60%.",
+      "variant_of": "blood_ward"
+     },
+     {
+      "key": "wide_ward",
+      "name": "Wide Ward",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001025,
+      "realm_cost": 12,
+      "realm_cooldown_ms": 20000,
+      "learn_level": 10,
+      "target": "self",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 60,
+         "pct_of": "health_cost",
+         "radius_yd": 25,
+         "duration_ms": 10000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends 12% of your maximum health to ward every ally within 25 yards of you, yourself included, with a shield absorbing 60% of what it cost for 10 sec. 20 second cooldown.",
+      "change": "Wards allies within 25 yards instead of 15.",
+      "variant_of": "blood_ward"
+     },
+     {
+      "key": "long_ward",
+      "name": "Long Ward",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001026,
+      "realm_cost": 12,
+      "realm_cooldown_ms": 20000,
+      "learn_level": 10,
+      "target": "self",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 60,
+         "pct_of": "health_cost",
+         "radius_yd": 15,
+         "duration_ms": 15000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends 12% of your maximum health to ward every ally within 15 yards of you, yourself included, with a shield absorbing 60% of what it cost for 15 sec. 20 second cooldown.",
+      "change": "The shield lasts 15 sec instead of 10 sec.",
+      "variant_of": "blood_ward"
+     }
+    ]
+   },
+   {
+    "key": "hush",
+    "level": 35,
+    "kind": "skill_choice",
+    "skill": "hush",
+    "choices": [
+     {
+      "key": "long_hush",
+      "name": "Long Hush",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001027,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 24000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 6500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "drain",
+        "params": {
+         "amount": {
+          "base": 20,
+          "per_level": 1
+         },
+         "heal_pct": 100,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, it also drains the target's blood, healing you for all of it.",
+      "change": "Locks the school out for 6.5 sec instead of 4.5 sec.",
+      "variant_of": "hush"
+     },
+     {
+      "key": "deep_drink",
+      "name": "Deep Drink",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001028,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 24000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 4500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "drain",
+        "params": {
+         "amount": {
+          "base": 40,
+          "per_level": 2
+         },
+         "heal_pct": 100,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, it also drains twice as much of the target's blood, healing you for all of it.",
+      "change": "A stopped cast drains {amount:40:2:0:0} instead of {amount:20:1:0:0}.",
+      "variant_of": "hush"
+     },
+     {
+      "key": "mana_hush",
+      "name": "Mana Hush",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001029,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 24000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 4500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "drain",
+        "params": {
+         "amount": {
+          "base": 20,
+          "per_level": 1
+         },
+         "heal_pct": 100,
+         "school": "shadow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "mana",
+         "amount": {
+          "base": 0,
+          "per_level": 0,
+          "per_ap": 0
+         },
+         "pct_of_max": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, it also drains the target's blood, healing you for all of it. It also gives you 10% of your maximum mana.",
+      "change": "A stopped cast also gives you 10% of your maximum mana.",
+      "variant_of": "hush"
+     }
+    ]
+   },
+   {
+    "key": "circle_of_blood",
+    "level": 40,
+    "kind": "skill_choice",
+    "skill": "circle_of_blood",
+    "choices": [
+     {
+      "key": "deep_circle",
+      "name": "Deep Circle",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001030,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 30000,
+      "realm_range_max": 30,
+      "realm_radius_yd": 8,
+      "learn_level": 20,
+      "target": "dest",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 8,
+         "duration_ms": 10000,
+         "ally_aura": "aura_deep_circle"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends 10% of your maximum health to draw a circle of blood at the target location for 10 sec. Allies inside heal 50% more every 2 sec. 30 second cooldown.",
+      "change": "Allies inside heal {amount:37.5:3.75:0:0} every 2 sec instead of {amount:25:2.5:0:0}.",
+      "variant_of": "circle_of_blood"
+     },
+     {
+      "key": "wide_circle",
+      "name": "Wide Circle",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001032,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 30000,
+      "realm_range_max": 30,
+      "realm_radius_yd": 13,
+      "learn_level": 20,
+      "target": "dest",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 13,
+         "duration_ms": 10000,
+         "ally_aura": "aura_circle_of_blood"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends 10% of your maximum health to draw a circle of blood at the target location for 10 sec. Allies inside heal every 2 sec. 30 second cooldown. It reaches 13 yards from its centre.",
+      "change": "The circle reaches 13 yards from its centre instead of 8.",
+      "variant_of": "circle_of_blood"
+     },
+     {
+      "key": "long_circle",
+      "name": "Long Circle",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001033,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 30000,
+      "realm_range_max": 30,
+      "realm_radius_yd": 8,
+      "learn_level": 20,
+      "target": "dest",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "health",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 8,
+         "duration_ms": 14000,
+         "ally_aura": "aura_circle_of_blood"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends 10% of your maximum health to draw a circle of blood at the target location for 14 sec. Allies inside heal every 2 sec. 30 second cooldown.",
+      "change": "The circle lasts 14 sec instead of 10 sec.",
+      "variant_of": "circle_of_blood"
+     }
+    ]
+   },
+   {
+    "key": "last_rites",
+    "level": 45,
+    "kind": "skill_choice",
+    "skill": "last_rites",
+    "choices": [
+     {
+      "key": "full_rites",
+      "name": "Full Rites",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001034,
+      "realm_cost": 20,
+      "realm_range_max": 30,
+      "learn_level": 30,
+      "target": "ally",
+      "school": "shadow",
+      "prevention": "silence",
+      "requires": {
+       "combat": "out"
+      },
+      "requires_out_of_combat": true,
+      "cost_kind": "health",
+      "cast_kind": "cast",
+      "cast_time_ms": 10000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "resurrect",
+        "params": {
+         "pct_of": "health_cost",
+         "pct": 300
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends 20% of your maximum health to call a dead ally back. They return to life with three times the health it cost you. Only out of combat.",
+      "change": "The ally returns with 300% of the cost instead of 200%.",
+      "variant_of": "last_rites"
+     },
+     {
+      "key": "quick_rites",
+      "name": "Quick Rites",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001035,
+      "realm_cost": 20,
+      "realm_range_max": 30,
+      "learn_level": 30,
+      "target": "ally",
+      "school": "shadow",
+      "prevention": "silence",
+      "requires": {
+       "combat": "out"
+      },
+      "requires_out_of_combat": true,
+      "cost_kind": "health",
+      "cast_kind": "cast",
+      "cast_time_ms": 5000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "resurrect",
+        "params": {
+         "pct_of": "health_cost",
+         "pct": 200
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends 20% of your maximum health to call a dead ally back. They return to life with twice the health it cost you. Only out of combat. The cast takes 5 sec.",
+      "change": "The cast takes half as long.",
+      "variant_of": "last_rites"
+     },
+     {
+      "key": "cheap_rites",
+      "name": "Cheap Rites",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001036,
+      "realm_cost": 10,
+      "realm_range_max": 30,
+      "learn_level": 30,
+      "target": "ally",
+      "school": "shadow",
+      "prevention": "silence",
+      "requires": {
+       "combat": "out"
+      },
+      "requires_out_of_combat": true,
+      "cost_kind": "health",
+      "cast_kind": "cast",
+      "cast_time_ms": 10000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "resurrect",
+        "params": {
+         "pct_of": "health_cost",
+         "pct": 200
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends 10% of your maximum health to call a dead ally back. They return to life with twice the health it cost you. Only out of combat.",
+      "change": "Costs 10% of your maximum health instead of 20%.",
+      "variant_of": "last_rites"
+     }
+    ]
+   },
+   {
+    "key": "bloodmender_hearts_blood",
+    "level": 50,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "crimson_gift",
+      "name": "Crimson Gift",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001037,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_amount_pct",
+        "params": {
+         "skill": "dark_mending",
+         "pct": 15
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "skill_amount_pct",
+        "params": {
+         "skill": "transfusion",
+         "pct": 15
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Dark Mending and Transfusion heal 15% more."
+     },
+     {
+      "key": "iron_veins",
+      "name": "Iron Veins",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001038,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "healing_taken_pct",
+        "params": {
+         "pct": 30,
+         "below_health_pct": 30
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "While you are below 30% health, all healing you receive is increased by 30%."
+     },
+     {
+      "key": "bloodsurge",
+      "name": "Bloodsurge",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1001039,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "cast",
+         "cost_kind": "health",
+         "energize_pct_of_base": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Each spell you cast that costs Health gives you 2% of your base mana."
+     }
+    ]
+   }
+  ],
+  "name": "Bloodmender",
+  "tier": 2,
+  "tier_cap": 50,
+  "row_levels": [
+   5,
+   10,
+   15,
+   20,
+   25,
+   30,
+   35,
+   40,
+   45,
+   50
+  ],
+  "tier_bonus": {
+   "strength": 0,
+   "agility": 0,
+   "stamina": 24,
+   "intellect": 16,
+   "spirit": 30
+  },
+  "shapeshift_form": 0
  }
 ]

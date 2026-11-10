@@ -315,6 +315,12 @@ The Blightcaller (#692): a channel's tick shares only what that tick dealt or he
 before, a later tick's share counted the ticks before it too. A `ground_area`'s `ally_aura` goes on
 every friendly player inside, who wears it in their own session for the aura row's duration, and
 its `grow_aura` grows only enemies; before, another player inside took the enemy aura.
+The Bloodmender (#693): an `absorb` with `radius_yd` shields every friendly player within the
+radius of the caster, each in their own session (Blood Ward); before, only the caster was
+shielded. A friend's shield carries none of the riders (`energize_pct`, `attacker_aura`, the
+burst), which serve the caster. A `periodic_heal` with `pct_of=health_cost` now rises with the
+skill's `skill_amount_pct` Talents (Crimson Gift on Transfusion); a share of a hit or a heal
+already rose with that hit or heal, so those stay as they were.
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

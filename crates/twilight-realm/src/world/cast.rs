@@ -5366,18 +5366,24 @@ impl InWorld {
                     .map(|(guid, _, _)| guid)
                     .collect();
                 for guid in allies {
-                    // Only the caster is shielded yet; a friend in the radius gets none.
-                    if guid == self.guid {
-                        self.warded_shield(
-                            skill.spell_id,
-                            amount,
-                            duration_ms,
-                            school,
-                            ward,
-                            level,
-                            events,
-                        );
-                    }
+                    // A friend in the radius wears a plain shield in their own session (Blood
+                    // Ward): the riders give the caster power or hit the caster's attackers, so
+                    // they stay on the caster's own.
+                    let ward = if guid == self.guid {
+                        ward
+                    } else {
+                        Ward::default()
+                    };
+                    self.warded_shield(
+                        guid,
+                        skill.spell_id,
+                        amount,
+                        duration_ms,
+                        school,
+                        ward,
+                        level,
+                        events,
+                    );
                 }
             }
             Effect::Root {
@@ -5604,9 +5610,19 @@ impl InWorld {
                 let Some(unit) = unit else {
                     return;
                 };
-                let per_tick = tick.map_or(0, sized)
-                    + self.share(pct_of, pct, scaled(duration_ms + later, longer), tick_ms)
-                    + periodic_bonus(duration_ms, tick_ms);
+                // A share of the health the cast cost takes the skill's amount talents (Crimson
+                // Gift); a share of a hit or a heal already grew with that hit or heal.
+                let share = self.share(pct_of, pct, scaled(duration_ms + later, longer), tick_ms);
+                let share = if pct_of == Some(callings::PctOf::HealthCost) {
+                    scaled(
+                        share,
+                        crate::talents::amount_pct(c, &skill.key)
+                            + self.skills.skill_amount_pct(skill),
+                    )
+                } else {
+                    share
+                };
+                let per_tick = tick.map_or(0, sized) + share + periodic_bonus(duration_ms, tick_ms);
                 if per_tick == 0 {
                     return;
                 }
@@ -8354,13 +8370,25 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) {
         let ward = Ward::default();
-        self.warded_shield(spell_id, amount, duration_ms, school, ward, level, events);
+        let me = self.guid;
+        self.warded_shield(
+            me,
+            spell_id,
+            amount,
+            duration_ms,
+            school,
+            ward,
+            level,
+            events,
+        );
     }
 
-    /// [`Self::shield`] with `ward`'s riders (#506).
+    /// [`Self::shield`] on `unit`, the player or another player, who wears it in their own
+    /// session, with `ward`'s riders (#506).
     #[allow(clippy::too_many_arguments)]
     fn warded_shield(
         &mut self,
+        unit: u64,
         spell_id: u32,
         amount: u32,
         duration_ms: u32,
@@ -8373,7 +8401,7 @@ impl InWorld {
             return;
         }
         let aura = Aura {
-            unit: self.guid,
+            unit,
             spell_id,
             slot: 0,
             level,

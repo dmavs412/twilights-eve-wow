@@ -442,6 +442,14 @@ one is a placeholder.
 | Rise Again (#692) | master CSV | `Spell_Shadow_AnimateDead` |
 | The Blightcaller's Talents (#692) | master CSV, rows 25 and 50 | `Spell_Shadow_CorpseExplode`, `Spell_Nature_NullifyDisease`, `Spell_Shadow_ChillTouch`, `Spell_Shadow_DeathCoil`, `Spell_Shadow_ScourgeBuild`, `Spell_Shadow_CurseOfAchimonde` |
 | Rotting Heart, the trial's quest item (#692) | `content/quest_items.toml`, entry 980891 | display 10923, `INV_Misc_Organ_03` |
+| Sister Elowen Marr, the Bloodmender trainer (#693) | `content/hub.toml`, entry 190119 | display 7008, Brother Sarno's look. Wanted: a young sister in a plain grey habit with bandaged forearms, sitting on the cathedral steps among sleeping orphans, a bowl of bread beside her. |
+| Bloodmender Calling icon (#693) | `callings.csv` | `Spell_Shadow_LifeDrain` |
+| Blood Feast (#693) | master CSV | `Ability_Racial_Cannibalize` |
+| Transfusion and its heals (#693) | master CSV | `Spell_Holy_SealOfSacrifice` |
+| Blood Ward (#693) | master CSV | `Spell_Shadow_SacrificialShield` |
+| Circle of Blood and its heals (#693) | master CSV | `Spell_Holy_PrayerOfHealing` |
+| Last Rites (#693) | master CSV | `Spell_Holy_Resurrection` |
+| The Bloodmender's Talents and their buffs (#693) | master CSV, rows 25 and 50 | `Spell_Shadow_BurningSpirit`, `Spell_Nature_BloodLust`, `Spell_Shadow_DeadofNight`, `Spell_Holy_Heal02`, `Spell_Holy_HolyProtection`, `Spell_Holy_ElunesGrace` |
 
 The Sharpshooter's carried skills (Auto Shot, Puncturing Shaft, Rapid Fire, Silencing Shot) keep
 the Ranger's icons. Its trial has no quest items. The Ironclad's carried skills (Righteous Smash,
@@ -456,4 +464,6 @@ keep the Initiate's icons. The Leyweaver's carried skills (Ley-Spark, Ley Ward, 
 the Initiate's icons, and its trial has no quest items. The Trapper's carried skills (Auto Shot,
 Snapshot, Vault, Silencing Shot) keep the Ranger's icons. The Blightcaller's carried skills
 (Creeping Blight, Miasma and its auras, Hush) keep the Acolyte's icons, and Healing Miasma's aura
-keeps Miasma's.
+keeps Miasma's. The Bloodmender's carried skills (Blood Lance, Dark Mending and its aura, Hush)
+keep the Acolyte's icons, the auras of Transfusion and Circle of Blood and their Skill Choices
+keep their skill's, and its trial has no quest items.

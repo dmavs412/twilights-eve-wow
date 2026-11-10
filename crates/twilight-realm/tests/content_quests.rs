@@ -39,12 +39,20 @@ struct Quest {
     explore: Option<Explore>,
     #[serde(default)]
     discover: Vec<u32>,
+    /// People to speak with (a Tier 2 trial's, #693).
+    #[serde(default)]
+    talk: Vec<Talk>,
     /// An Advancement Quest asks for nothing but a word with its giver.
     #[serde(default)]
     advancement: Option<toml::Value>,
     /// Listed in the Calling Choice popup.
     #[serde(default)]
     calling_choice: bool,
+}
+
+#[derive(Deserialize)]
+struct Talk {
+    npc: u32,
 }
 
 #[derive(Deserialize)]
@@ -86,6 +94,7 @@ fn every_objective_names_a_creature_and_an_item_the_realm_has() {
                 || !q.collect.is_empty()
                 || q.explore.is_some()
                 || !q.discover.is_empty()
+                || !q.talk.is_empty()
                 || q.ender.is_some_and(|e| e != q.giver)
                 || q.advancement.is_some(),
             "quest {}",
@@ -99,6 +108,14 @@ fn every_objective_names_a_creature_and_an_item_the_realm_has() {
             );
             // The log's kill counters are 6 bits wide.
             assert!((1..64).contains(count), "quest {}", q.id);
+        }
+        for t in &q.talk {
+            assert!(
+                creature_named(&mut realm, t.npc),
+                "quest {}: talk to {}",
+                q.id,
+                t.npc
+            );
         }
         for c in &q.collect {
             assert!(
@@ -388,13 +405,13 @@ fn the_calling_choices_are_the_five_northshire_advancement_quests_and_the_tier_2
         .collect();
     // With the Zealot, each Tier 2 Calling of #674 as it lands: the Ironclad (#685), kept in
     // file order before the Zealot, the Sharpshooter (#684), the Bloodletter (#687), the
-    // Nightblade (#688), the Pyromancer (#689), the Leyweaver (#690), the Trapper (#691) and the
-    // Blightcaller (#692).
+    // Nightblade (#688), the Pyromancer (#689), the Leyweaver (#690), the Trapper (#691), the
+    // Blightcaller (#692) and the Bloodmender (#693).
     assert_eq!(
         chosen,
         [
             64002, 64003, 64009, 64010, 64011, 64012, 64013, 64405, 64401, 64402, 64403, 64404,
-            64406, 64407
+            64406, 64407, 64408
         ]
     );
 }
