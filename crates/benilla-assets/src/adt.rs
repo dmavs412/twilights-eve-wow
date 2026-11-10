@@ -404,10 +404,10 @@ fn map_of_adt(path: &str) -> Option<u32> {
 }
 
 /// Cuts the Closed Zones (ADR 0015) out of a decoded tile of `map` while `reached` are: a chunk
-/// whose centre is closed draws no water or clutter, is fenced in as impassable, and a doodad or
-/// WMO placed on a closed chunk goes. A rim chunk, a closed chunk with an open chunk among its
-/// eight neighbours, keeps its terrain (and so welds its collision) for the mist to fog; every
-/// other closed chunk draws no terrain and welds no collision. Returns each chunk's
+/// whose centre is closed draws no clutter, is fenced in as impassable, and a doodad or WMO placed
+/// on a closed chunk goes. A rim chunk, a closed chunk with an open chunk among its eight
+/// neighbours, keeps its terrain (and so welds its collision) and its water for the mist to fog;
+/// every other closed chunk draws no terrain or water and welds no collision. Returns each chunk's
 /// [`ChunkShading::rim_open`] mask.
 fn cut_closed(map: u32, tile: &mut TileMesh, reached: &Reached) -> Vec<u8> {
     let mut masks = Vec::with_capacity(tile.chunks.len());
@@ -432,8 +432,8 @@ fn cut_closed(map: u32, tile: &mut TileMesh, reached: &Reached) -> Vec<u8> {
         if open == 0 {
             chunk.indices.clear();
             chunk.holes = 0xFFFF;
+            chunk.liquids.clear();
         }
-        chunk.liquids.clear();
         chunk.no_effect_doodad = [true; 64];
         chunk.impassable = true;
         masks.push(open);
@@ -574,10 +574,14 @@ mod closed_tests {
         );
         assert_eq!(rim.holes, 0);
         assert!(rim.impassable, "the fence stays");
-        assert!(rim.liquids.is_empty());
+        assert_eq!(rim.liquids.len(), 1, "the rim chunk keeps its water");
         assert_eq!(rim.no_effect_doodad, [true; 64]);
         assert!(!open.impassable && open.liquids.len() == 1);
         assert!(deep.indices.is_empty() && deep.holes == 0xFFFF && deep.impassable);
+        assert!(
+            deep.liquids.is_empty(),
+            "a closed chunk with no open neighbour loses its water"
+        );
         let left: Vec<u32> = tile.doodads.iter().map(|d| d.unique_id).collect();
         assert_eq!(left, vec![2], "the rim chunk's doodad goes");
     }

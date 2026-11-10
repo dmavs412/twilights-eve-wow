@@ -40,6 +40,9 @@ struct LiquidParams {
     // y = frame count; z = scroll flag (WMO magma/slime only, liquid nibbles 6/7); w = clock
     // enable (0 on a deterministic run).
     anim: vec4<f32>,
+    // The rim row (ADR 0015): x = the depth (yd) at which the water is pure mist; y = the mist
+    // foot's desaturation and z its value; w reserved.
+    mist: vec4<f32>,
 };
 @group(#{MATERIAL_BIND_GROUP}) @binding(102) var<uniform> w: LiquidParams;
 
@@ -73,6 +76,8 @@ struct LiquidVsOut {
     @location(5) vcolor: vec4<f32>,
     // `MeshTag` bit 30: the room's per-frame interior-fog gate, the reference's `[0xca7f00]`.
     @location(6) @interpolate(flat) room_fog: u32,
+    // Yards past the Closed Zone edge on a rim chunk's water, 0 elsewhere (ADR 0015, the rim row).
+    @location(7) rim_depth: f32,
 }
 
 // Sun sheen (`secondary`): the Blinn highlight `light_spec.rgb · (N·H)^shininess`.
@@ -129,6 +134,18 @@ fn apply_fog(rgb: vec3<f32>, world_pos: vec3<f32>, room_fog: u32) -> vec3<f32> {
     return mix(fog_color.xyz, rgb, factor);
 }
 
+// The rim row sinks into the mist, as terrain.wgsl's land does: by its depth past the edge the
+// colour fades to the mist's foot, the scene fog colour desaturated by `mist.y` and scaled by
+// `mist.z`, and the alpha rises to 1, so the water ends in solid grey; pure mist at `mist.x`.
+// Applied before `apply_fog`, as the terrain mixes before its fog.
+fn rim_mist(color: vec4<f32>, rim_depth: f32) -> vec4<f32> {
+    let rim = smoothstep(0.0, w.mist.x, rim_depth);
+    let fog_rgb = wow_light.fog_color.rgb;
+    let luma = dot(fog_rgb, vec3<f32>(0.299, 0.587, 0.114));
+    let foot = mix(fog_rgb, vec3<f32>(luma), w.mist.y) * w.mist.z;
+    return vec4<f32>(mix(color.rgb, foot, rim), mix(color.a, 1.0, rim));
+}
+
 @vertex
 fn vertex(in: Vertex) -> LiquidVsOut {
     var out: LiquidVsOut;
@@ -148,6 +165,8 @@ fn vertex(in: Vertex) -> LiquidVsOut {
     out.secondary_vtx = sun_sheen(out.world_normal, out.world_position.xyz);
     // ADT surfaces carry no `MeshTag`, so they take the scene fog.
     out.room_fog = mesh_functions::get_tag(in.instance_index) & 0x40000000u;
+    // The rim row's depth past the edge in UV1.y; 0 off the rim and on every WMO pool.
+    out.rim_depth = in.uv_b.y;
     return out;
 }
 
@@ -206,7 +225,8 @@ fn fragment(in: LiquidVsOut) -> @location(0) vec4<f32> {
     // Magma/slime: the sheet is the opaque body, unmodulated (the ADT vertex has no colour, the WMO
     // one is `0xffffffff`) and unlit (lighting off on both paths), but fogged.
     if (w.kind.x > 0.5) {
-        return vec4<f32>(apply_fog(detail.rgb, in.world_position.xyz, in.room_fog), 1.0);
+        let body = rim_mist(vec4<f32>(detail.rgb, 1.0), in.rim_depth);
+        return vec4<f32>(apply_fog(body.rgb, in.world_position.xyz, in.room_fog), body.a);
     }
 
     // V, from the authored depth byte CPU-side: clamp(byte/42) on river/lake (LUT `0xc81768`,
@@ -229,11 +249,14 @@ fn fragment(in: LiquidVsOut) -> @location(0) vec4<f32> {
         // Cf is the pool's raw `MOMT.diffColor`; the vertex has no normal, so no sun and no sheen.
         // Preset 3 is `GL_ADD` through `GL_COMBINE` on both channels (`COMBINE_ALPHA` at
         // `0x85c2fc`), so the ripple adds to the pool's opacity rather than multiplying it.
-        let body = clamp(in.vcolor.rgb + detail.rgb, vec3<f32>(0.0), vec3<f32>(1.0));
-        return vec4<f32>(
-            apply_fog(body, in.world_position.xyz, in.room_fog),
-            clamp(vtx_alpha + detail.a, 0.0, 1.0),
+        let body = rim_mist(
+            vec4<f32>(
+                clamp(in.vcolor.rgb + detail.rgb, vec3<f32>(0.0), vec3<f32>(1.0)),
+                clamp(vtx_alpha + detail.a, 0.0, 1.0),
+            ),
+            in.rim_depth,
         );
+        return vec4<f32>(apply_fog(body.rgb, in.world_position.xyz, in.room_fog), body.a);
     }
     if (w.path.x > 0.5) {
         // ---- WMO exterior (`0x6b6630`): `Shaders\Pixel\MapObjExtWater0.bls` (bound `0x6b6654`),
@@ -255,7 +278,8 @@ fn fragment(in: LiquidVsOut) -> @location(0) vec4<f32> {
         let rgb_ext = primary_ext + detail.rgb + in.secondary_vtx * detail.a;
         // Alpha is `fragment.color.primary` alone: the bound program bypasses the texture
         // environment, so the interior arm's `+ At` does not apply.
-        return vec4<f32>(apply_fog(rgb_ext, in.world_position.xyz, in.room_fog), vtx_alpha);
+        let body_ext = rim_mist(vec4<f32>(rgb_ext, vtx_alpha), in.rim_depth);
+        return vec4<f32>(apply_fog(body_ext.rgb, in.world_position.xyz, in.room_fog), body_ext.a);
     }
 
     // The ADT arm. `primary`: the lit white vertex.
@@ -277,10 +301,10 @@ fn fragment(in: LiquidVsOut) -> @location(0) vec4<f32> {
     var rgb = primary * swatch.rgb + detail.rgb + (secondary + vec3<f32>(0.25)) * detail.a;
 
     // `colorTex.a`, over the same V as the colour: deeper water is more opaque.
-    let alpha = swatch.w;
+    let body_adt = rim_mist(vec4<f32>(rgb, swatch.w), in.rim_depth);
 
-    rgb = apply_fog(rgb, in.world_position.xyz, in.room_fog);
+    rgb = apply_fog(body_adt.rgb, in.world_position.xyz, in.room_fog);
 
     // Raw gamma out; alpha blends in gamma space like the reference's bytes.
-    return vec4<f32>(rgb, alpha);
+    return vec4<f32>(rgb, body_adt.a);
 }

@@ -45,7 +45,7 @@ pub use query::{
 };
 pub(crate) use spatial::{maintain_water_index, WaterIndex};
 pub(crate) use surface::{
-    spawn_liquids, spawn_wmo_liquids, LiquidAssets, LiquidSoundSource, LiquidSurface,
+    spawn_liquids, spawn_wmo_liquids, LiquidAssets, LiquidRim, LiquidSoundSource, LiquidSurface,
 };
 
 /// `WOW_FORCE_SUB=<frames>`: hold the camera-eye verdict submerged for the first `<frames>` frames,

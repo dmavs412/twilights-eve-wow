@@ -360,6 +360,10 @@ pub struct LiquidExt {
     /// `y` = frame count, `z` = scroll flag, `w` = clock enable.
     #[uniform(102)]
     pub anim: Vec4,
+    /// The rim row (ADR 0015), read against the water's `UV1.y` depth past the edge: `x` = the
+    /// depth of pure mist in yd (`RIM_FOG_YD`), `y` = the mist foot's desaturation, `z` its value.
+    #[uniform(102)]
+    pub mist: Vec4,
     /// The shared global light, read in both stages (the vertex stage evaluates the sun sheen).
     #[storage(90, read_only, buffer, visibility(vertex, fragment))]
     pub light_buf: Buffer,

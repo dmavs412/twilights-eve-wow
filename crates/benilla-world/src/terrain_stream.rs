@@ -17,7 +17,7 @@ use crate::clutter::{scatter_tile_clutter, ClutterConfig, GroundClutter};
 use crate::collision::{walk_layers, GroundDecalSurface, PickOccluder};
 use crate::interior::WmoResidency;
 use crate::lighting::SharedLightBuffer;
-use crate::liquid::{spawn_liquids, LiquidAssets};
+use crate::liquid::{spawn_liquids, LiquidAssets, LiquidRim};
 use crate::model_render::MaterialCache;
 use crate::schedule::WorldStage;
 use crate::view::WorldCamera;
@@ -794,7 +794,18 @@ fn stream_terrain(
         let mut liquid_ents = Vec::new();
         spawn_liquids(
             &mut commands,
-            adt.chunks.iter().flat_map(|c| c.liquids.iter()),
+            adt.chunks.iter().zip(&adt.shading).flat_map(|(c, s)| {
+                // `positions[0]` is the chunk's north-west corner; a chunk with none is no rim.
+                let rim = c
+                    .positions
+                    .first()
+                    .map(|nw| LiquidRim {
+                        north_west: [nw[0], nw[1]],
+                        open: s.rim_open,
+                    })
+                    .unwrap_or_default();
+                c.liquids.iter().map(move |lq| (lq, rim))
+            }),
             liquid_assets.as_deref(),
             &mut meshes,
             &mut liquid_ents,

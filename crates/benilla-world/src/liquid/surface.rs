@@ -18,7 +18,7 @@ use avian3d::prelude::{Collider, RigidBody};
 use benilla_assets::coords::wow_to_bevy;
 use benilla_assets::materials::{LiquidExt, LiquidMaterial};
 use benilla_assets::LockRecover;
-use benilla_assets::{liquid_frame_array, RenderConfig, WorldAssets};
+use benilla_assets::{liquid_frame_array, rim_depth, RenderConfig, WorldAssets};
 use benilla_formats::{read_texture_mip_chain, BlpMipChain, LiquidKind, LiquidMesh};
 
 /// The shared liquid materials by [`LiquidKey`]; absent without client data.
@@ -139,10 +139,19 @@ pub(crate) struct LiquidSoundSource {
     pub(crate) nibble: u8,
 }
 
-/// Spawn an ADT tile's liquid surfaces into `entities`, to despawn with the tile.
+/// The chunk a liquid layer lies on, for the rim row (ADR 0015): its north-west corner
+/// (`positions[0]`) and its `ChunkShading::rim_open` mask. The default, mask 0, is off the rim.
+#[derive(Clone, Copy, Default)]
+pub(crate) struct LiquidRim {
+    pub(crate) north_west: [f32; 2],
+    pub(crate) open: u8,
+}
+
+/// Spawn an ADT tile's liquid surfaces into `entities`, to despawn with the tile; each layer comes
+/// with its chunk's [`LiquidRim`].
 pub(crate) fn spawn_liquids<'a>(
     commands: &mut Commands,
-    liquids: impl Iterator<Item = &'a LiquidMesh>,
+    liquids: impl Iterator<Item = (&'a LiquidMesh, LiquidRim)>,
     liquid_assets: Option<&LiquidAssets>,
     meshes: &mut Assets<Mesh>,
     entities: &mut Vec<Entity>,
@@ -150,7 +159,7 @@ pub(crate) fn spawn_liquids<'a>(
     let Some(liquid) = liquid_assets else {
         return;
     };
-    for lq in liquids {
+    for (lq, rim) in liquids {
         // The scene fog (the ADT passes submit none and draw under the scene submit `0x66ff20`),
         // and never a scroll, though ADT magma is nibble 6: its kernel zeroes the v-translate.
         let Some(material) = liquid.material(lq.kind, LiquidPath::Adt, false) else {
@@ -161,7 +170,7 @@ pub(crate) fn spawn_liquids<'a>(
         entities.push(
             commands
                 .spawn((
-                    Mesh3d(meshes.add(liquid_bevy_mesh(lq, None))),
+                    Mesh3d(meshes.add(liquid_bevy_mesh(lq, None, rim))),
                     MeshMaterial3d(material),
                     Transform::IDENTITY,
                     LiquidSurface,
@@ -209,8 +218,9 @@ fn liquid_collider(lq: &LiquidMesh) -> Option<Collider> {
 }
 
 /// The render mesh for one [`LiquidMesh`] in its own space (absolute for MCLQ, model-local for WMO
-/// liquid): a flat up normal, the tiling UVs, and the per-vertex depth `V` in UV1.x.
-fn liquid_bevy_mesh(lq: &LiquidMesh, body_color: Option<[f32; 3]>) -> Mesh {
+/// liquid): a flat up normal, the tiling UVs, the per-vertex depth `V` in UV1.x, and in UV1.y the
+/// rim row's depth past the Closed Zone edge (`rim_depth`), 0 off the rim.
+fn liquid_bevy_mesh(lq: &LiquidMesh, body_color: Option<[f32; 3]>, rim: LiquidRim) -> Mesh {
     let positions: Vec<[f32; 3]> = lq
         .positions
         .iter()
@@ -225,7 +235,12 @@ fn liquid_bevy_mesh(lq: &LiquidMesh, body_color: Option<[f32; 3]>) -> Mesh {
     // WoW up (0, 0, 1) is Bevy up (0, 1, 0).
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 1.0, 0.0]; n]);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, lq.uvs.clone());
-    let uv1: Vec<[f32; 2]> = lq.depths.iter().map(|&d| [d, 0.0]).collect();
+    let uv1: Vec<[f32; 2]> = lq
+        .depths
+        .iter()
+        .zip(&lq.positions)
+        .map(|(&d, p)| [d, rim_depth([p[0], p[1]], rim.north_west, rim.open)])
+        .collect();
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_1, uv1);
     // An interior pool's `MOMT.diffColor` rides the vertex colour, where the reference's interior
     // vertex carries it, keeping one material per lane; other lanes take the shader's white.
@@ -277,7 +292,8 @@ pub(crate) fn spawn_wmo_liquids<'a>(
         }
         let surface = commands
             .spawn((
-                Mesh3d(meshes.add(liquid_bevy_mesh(lq, body_color))),
+                // A WMO pool is never on the rim.
+                Mesh3d(meshes.add(liquid_bevy_mesh(lq, body_color, LiquidRim::default()))),
                 MeshMaterial3d(material),
                 transform,
                 LiquidSurface,
@@ -405,6 +421,13 @@ pub(super) fn setup_liquid(
                             1.0
                         },
                     ),
+                    // The rim row's water fogs to the mist's foot by `RIM_FOG_YD`, as its land.
+                    mist: Vec4::new(
+                        benilla_assets::RIM_FOG_YD,
+                        crate::mist::FOOT_DESAT,
+                        crate::mist::FOOT_VALUE,
+                        0.0,
+                    ),
                     light_buf: world_assets.shared_light.clone(),
                 },
             });
@@ -523,6 +546,52 @@ mod tests {
         }
     }
 
+    /// A sheet's `UV_1.y`, the rim depth, per vertex.
+    fn rim_depths(mesh: &Mesh) -> Vec<f32> {
+        match mesh.attribute(Mesh::ATTRIBUTE_UV_1) {
+            Some(bevy::mesh::VertexAttributeValues::Float32x2(uv)) => {
+                uv.iter().map(|v| v[1]).collect()
+            }
+            other => panic!("UV_1 is Float32x2, got {other:?}"),
+        }
+    }
+
+    /// A sheet across a whole rim chunk whose only open neighbour is east (−y): its east column
+    /// (y = the corner's y − 33.33) lies on the edge, its west column (the corner's y) is a full
+    /// chunk past it.
+    #[test]
+    fn a_rim_sheet_carries_its_depth_past_the_edge_in_uv1_y() {
+        use benilla_formats::CHUNK_SIZE;
+        let nw = [100.0f32, 200.0];
+        let mut lq = one_sheet([nw[0], nw[1], 5.0]);
+        lq.positions = vec![
+            [nw[0], nw[1], 5.0],
+            [nw[0] - 8.0, nw[1], 5.0],
+            [nw[0], nw[1] - CHUNK_SIZE, 5.0],
+            [nw[0] - 8.0, nw[1] - CHUNK_SIZE, 5.0],
+        ];
+        let east_open = LiquidRim {
+            north_west: nw,
+            open: 1 << 2,
+        };
+        let depths = rim_depths(&liquid_bevy_mesh(&lq, None, east_open));
+        for (i, d) in depths.iter().enumerate() {
+            let want = if i < 2 { CHUNK_SIZE } else { 0.0 };
+            assert!(
+                (d - want).abs() < 1e-3,
+                "vertex {i}: rim depth {d}, want {want} (west column 33.33, east column 0)"
+            );
+        }
+        assert!((CHUNK_SIZE - 33.33).abs() < 0.01);
+
+        let off_rim = LiquidRim {
+            north_west: nw,
+            open: 0,
+        };
+        let depths = rim_depths(&liquid_bevy_mesh(&lq, None, off_rim));
+        assert_eq!(depths, vec![0.0; 4], "a sheet with mask 0 is 0 everywhere");
+    }
+
     /// Only the ADT still-water material, without which `spawn_liquids` spawns nothing.
     fn adt_assets() -> LiquidAssets {
         LiquidAssets {
@@ -557,7 +626,7 @@ mod tests {
                     let mut ents = Vec::new();
                     spawn_liquids(
                         &mut commands,
-                        sheets.iter(),
+                        sheets.iter().map(|lq| (lq, LiquidRim::default())),
                         Some(&assets),
                         &mut meshes,
                         &mut ents,

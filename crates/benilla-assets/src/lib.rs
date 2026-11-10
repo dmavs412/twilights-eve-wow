@@ -603,7 +603,8 @@ mod tests {
     }
 
     /// The Westfall edge (ADR 0015, the rim row): the tile holding (-9700, 880) draws rim chunks
-    /// on the closed side of y 866.7, each fenced, with no water and a mist depth on its cell.
+    /// on the closed side of y 866.7, each fenced with a mist depth on its cell, and the border
+    /// river keeps its water in them.
     #[test]
     fn a_westfall_edge_tile_draws_its_rim_chunks() {
         let data = benilla_formats::wow_data_or_skip!();
@@ -657,9 +658,12 @@ mod tests {
         for (c, s) in &rims {
             assert!(c.indices.len() >= 3, "a rim chunk draws its terrain");
             assert!(c.impassable, "a rim chunk keeps its fence");
-            assert!(c.liquids.is_empty(), "a rim chunk draws no water yet");
             let mesh = chunk_to_mesh(c, s).expect("a rim chunk makes a mesh");
             assert!(mesh.attribute(ATTRIBUTE_MIST_DEPTH).is_some());
         }
+        assert!(
+            rims.iter().any(|(c, _)| !c.liquids.is_empty()),
+            "the border river runs on into the rim chunks"
+        );
     }
 }
