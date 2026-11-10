@@ -112,6 +112,8 @@ struct Done {
     handed_in: Option<u32>,
     /// The quest taken, for a Rumour's spawns.
     accepted: Option<u32>,
+    /// The Hub NPC whose quest list opened, for a Hidden Trainer to be met.
+    met: Option<&'static crate::hub::Npc>,
 }
 
 impl Realm {
@@ -150,6 +152,7 @@ impl Realm {
                         object_hello(c, g.entry, npc, window, reached, events);
                     } else {
                         hello(c, g, npc, window, reached, events);
+                        done.met = hub_speaker(npc, reached);
                     }
                 }
             }
@@ -237,6 +240,9 @@ impl Realm {
         if let Some(quest) = done.handed_in {
             self.feed_milestones(quest);
         }
+        if let Some(npc) = done.met {
+            self.meet(npc);
+        }
     }
 }
 
@@ -253,7 +259,8 @@ impl Realm {
         let Some(entry) = w.friendly_within_reach(guid, c.position) else {
             return;
         };
-        let options = super::talk_options(c, entry);
+        let mut options = super::talk_options(c, entry);
+        options.extend(super::hint_options(c, entry));
         let window = crate::writs::window(self.wall as u64);
         let quests = gossip_rows(c, entry, window, &self.milestones.reached_refs());
         let hint = w.key_hint_text(guid);
@@ -279,8 +286,8 @@ impl Realm {
         }
     }
 
-    /// A talk line of NPC `entry` (guid `guid`, in reach) was chosen: it gives its credit and the
-    /// menu shows the reply.
+    /// A talk line or a hint line of NPC `entry` (guid `guid`, in reach) was chosen: the menu
+    /// shows the reply, and a talk line gives its credit.
     pub(crate) fn talk_select(&mut self, guid: u64, entry: u32, option: u32) {
         let Some(w) = &self.world else {
             return;
@@ -289,7 +296,9 @@ impl Realm {
         let Some(c) = self.characters.get_mut(player) else {
             return;
         };
-        let Some(reply) = super::credit_talk(c, entry, option, &mut self.events) else {
+        let hint = super::hint_reply(c, entry, option);
+        let Some(reply) = hint.or_else(|| super::credit_talk(c, entry, option, &mut self.events))
+        else {
             return;
         };
         self.events.push(SessionEvent::GossipMenu {
@@ -298,7 +307,9 @@ impl Realm {
             options: Vec::new(),
             quests: Vec::new(),
         });
-        self.save(player);
+        if hint.is_none() {
+            self.save(player);
+        }
     }
 }
 

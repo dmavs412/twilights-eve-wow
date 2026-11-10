@@ -161,6 +161,18 @@ _Avoid_: max level
 **Advancement Quest**:
 A quest from a Calling's trainer, offered at the Tier Cap. Completing it advances the character into that Calling, so choosing which one to finish is how a player chooses their branch. A Basic Warrior can also take one from the Calling Choice.
 
+**Hidden Trainer**:
+A Tier 2 trainer the Living Map does not show until the character has met them, by opening their gossip menu or quest list. Finding one is the first half of a Tier 2 Advancement Quest. `hidden = true` in `content/hub.toml`.
+_Avoid_: secret trainer
+
+**Hint**:
+A gossip line an NPC says only while the character holds a certain quest, not yet handed in. It points the way, gives no credit, and can be asked again.
+_Avoid_: clue, talk line (a talk line is an objective and gives credit)
+
+**Trial**:
+The quests a Tier 2 trainer sets before Advancement. Until the character hands in the Trial's last quest, the trainer's Advancement Quest is not complete.
+_Avoid_: test, challenge
+
 **Calling Choice**:
 The popup a character gets at its Calling's Tier Cap, listing each Calling of the next Tier it may advance into, with a blurb: a Basic Warrior's lists every Tier 1 Calling, a Tier 1 Calling's lists the Tier 2 Callings of its Line. Picking one puts that Calling's Advancement Quest in the log. At each Tier it is offered until a pick is made, and never again after.
 

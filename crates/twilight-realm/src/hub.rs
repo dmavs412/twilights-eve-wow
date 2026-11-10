@@ -95,6 +95,10 @@ pub(crate) struct Npc {
     /// Its gossip greeting says how far a Tally has come (ADR 0034), in place of `greeting`.
     #[serde(default)]
     pub(crate) readout: Option<Readout>,
+    /// A Hidden Trainer (#676): the Living Map marks it only for a character who has met it, by
+    /// opening its gossip menu or its quest list.
+    #[serde(default)]
+    pub(crate) hidden: bool,
 }
 
 /// A Tally's stages in words: one greeting before its `after` is reached, one per band of the
@@ -398,13 +402,15 @@ impl crate::Realm {
     /// an innkeeper's, the bind and the merchant window; a townsperson's is the greeting alone,
     /// and a readout's greeting is its Tally's stage.
     pub(crate) fn gossip_hello(&mut self, guid: u64) {
-        let reached = self.milestones.reached_refs();
         let talks = |n: &Npc| n.text_id.is_some() || n.readout.is_some();
-        let Some(npc) = find(guid, &reached).filter(|n| n.gossips() && talks(n) && self.near(n))
-        else {
+        let found = find(guid, &self.milestones.reached_refs())
+            .filter(|n| n.gossips() && talks(n) && self.near(n));
+        let Some(npc) = found else {
             self.field_gossip_hello(guid);
             return;
         };
+        self.meet(npc);
+        let reached = self.milestones.reached_refs();
         let player = self
             .world
             .as_ref()
@@ -428,6 +434,7 @@ impl crate::Realm {
         };
         options.extend(player.map_or_else(Vec::new, |c| crate::world::hint_options(npc, c)));
         options.extend(player.map_or_else(Vec::new, |c| crate::quests::talk_options(c, npc.entry)));
+        options.extend(player.map_or_else(Vec::new, |c| crate::quests::hint_options(c, npc.entry)));
         let text_id = match &npc.readout {
             Some(readout) => readout.text_id(&self.milestones),
             None => npc.text_id.unwrap_or_default(),
@@ -459,6 +466,21 @@ impl crate::Realm {
             Some(npc) if npc.alchemist => self.alchemy_select(npc, option),
             Some(_) => self.trainer_select(guid, option),
             None => self.field_gossip_select(guid, option),
+        }
+    }
+
+    /// The character in the world opens `npc`'s gossip menu or quest list: a Hidden Trainer is
+    /// met, and the Living Map marks it for them from now on.
+    pub(crate) fn meet(&mut self, npc: &Npc) {
+        let Some(guid) = self.world.as_ref().map(|w| w.guid) else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(guid).filter(|_| npc.hidden) else {
+            return;
+        };
+        if !c.met.contains(&npc.entry) {
+            c.met.push(npc.entry);
+            self.save(guid);
         }
     }
 

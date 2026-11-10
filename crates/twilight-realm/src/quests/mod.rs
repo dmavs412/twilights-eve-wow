@@ -184,6 +184,11 @@ fn complete(c: &Char, a: &Active) -> bool {
     if q.advancement.as_ref().is_some_and(|adv| !adv.completable) {
         return false;
     }
+    // A Tier 2 Advancement waits on its Trial's last quest (#676).
+    let trial = q.advancement.as_ref().and_then(|adv| adv.trial);
+    if trial.is_some_and(|t| !c.quests.completed.contains(&t)) {
+        return false;
+    }
     q.kill
         .iter()
         .zip(a.kills)
@@ -285,6 +290,11 @@ const GREETING_TEXT: u32 = 0x4000_0000;
 /// Run's key), answered by [`talk_text`] with that holder's `hint`.
 pub(crate) const HINT_TEXT: u32 = 0x3000_0000;
 const REPLY_TEXT: u32 = 0x5000_0000;
+/// The first hint-line index in a gossip menu (#676); the talk lines sit below.
+const HINT_OPTION: u32 = 200;
+/// `NpcText` ids for a quest hint's reply (`HINT_REPLY_TEXT` + quest id x [`content::HINTS`] +
+/// hint index), answered by [`talk_text`].
+const HINT_REPLY_TEXT: u32 = 0x6000_0000;
 
 /// The talk lines NPC `entry` offers `c` now: `(quest, talk index)` of each active quest that has
 /// a talk objective with that NPC whose credit is not given.
@@ -317,10 +327,58 @@ pub(crate) fn talk_options(c: &Char, entry: u32) -> Vec<benilla_protocol::messag
         .collect()
 }
 
+/// The hint lines NPC `entry` offers `c` now: `(quest, hint index)` of each quest they hold,
+/// not yet handed in, with a hint at that NPC.
+fn hint_lines(c: &Char, entry: u32) -> Vec<(&'static content::Quest, usize)> {
+    let mut out = Vec::new();
+    for a in &c.quests.active {
+        let Some(q) = content::quest(a.id) else {
+            continue;
+        };
+        for (h, hint) in q.hint.iter().enumerate() {
+            if hint.npc == entry {
+                out.push((q, h));
+            }
+        }
+    }
+    out
+}
+
+/// The gossip lines of NPC `entry` that give a quest's hint, indexed from [`HINT_OPTION`].
+pub(crate) fn hint_options(c: &Char, entry: u32) -> Vec<benilla_protocol::messages::GossipOption> {
+    hint_lines(c, entry)
+        .into_iter()
+        .zip(HINT_OPTION..)
+        .map(|((q, h), index)| benilla_protocol::messages::GossipOption {
+            index,
+            icon: 0,
+            coded: false,
+            message: q.hint[h].option.clone(),
+        })
+        .collect()
+}
+
+/// The player chose gossip line `option` of NPC `entry`: if it is a hint line, the text id of
+/// its reply. A hint gives no credit and may be asked again.
+pub(crate) fn hint_reply(c: &Char, entry: u32, option: u32) -> Option<u32> {
+    let (q, h) = *hint_lines(c, entry).get(option.checked_sub(HINT_OPTION)? as usize)?;
+    Some(HINT_REPLY_TEXT + q.id * content::HINTS as u32 + h as u32)
+}
+
 /// The text a talk NPC's greeting or reply shows, for `CMSG_NPC_TEXT_QUERY`.
 pub(crate) fn talk_text(text_id: u32) -> Option<String> {
     if (HINT_TEXT..GREETING_TEXT).contains(&text_id) {
         return crate::phased::hint_text(text_id - HINT_TEXT).map(str::to_string);
+    }
+    if text_id >= HINT_REPLY_TEXT {
+        let n = text_id - HINT_REPLY_TEXT;
+        let q = content::quest(n / content::HINTS as u32)?;
+        return Some(
+            q.hint
+                .get((n % content::HINTS as u32) as usize)?
+                .reply
+                .clone(),
+        );
     }
     if text_id >= REPLY_TEXT {
         let n = text_id - REPLY_TEXT;

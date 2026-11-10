@@ -106,6 +106,8 @@ pub(crate) struct Char {
     /// The Tiers they have picked from the Calling Choice at, in order: it is offered at a Tier
     /// Cap until they pick there.
     pub(crate) chosen_tiers: Vec<u8>,
+    /// The entries of the hidden Hub NPCs they have met: the Living Map marks those (#676).
+    pub(crate) met: Vec<u32>,
     /// The Legendary Fish (trophy items) they have caught: each bites for them once.
     pub(crate) legends_caught: Vec<u32>,
     /// The Legendary Fish they hold a hint of, from a Legend Rumour or an angler's gossip.
@@ -368,6 +370,7 @@ impl Characters {
             fishing_lure: None,
             lure_waiting: None,
             chosen_tiers: Vec::new(),
+            met: Vec::new(),
             legends_caught: Vec::new(),
             legend_hints: Vec::new(),
             knows_herbalism: false,

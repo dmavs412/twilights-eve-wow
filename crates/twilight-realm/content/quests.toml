@@ -61,6 +61,18 @@
 #   every one (Discovery). It counts the discoveries made before the quest was taken.
 # - `after`: a quest offered only once that quest is handed in. When its giver is that quest's
 #   ender, it is the next in the chain: its accept panel opens as the other is handed in.
+# - `hint`: rows of `{ npc, option, reply }`, written as `talk` rows are (#676). While the
+#   character holds the quest, not yet handed in, NPC `npc` shows the gossip line `option`, and
+#   choosing it shows `reply`. A hint gives no credit, takes no objective slot and can be asked
+#   again. `npc` is a gossiping Hub NPC or a friendly spawn; at most eight per quest. An
+#   Advancement Quest may carry hints.
+#
+# An Advancement Quest's `advancement` table may name `trial = <quest id>` (#676): the last quest
+# of the Trial its trainer sets. Until the character has handed that quest in, the Advancement
+# Quest is not complete: its ender shows a grey `?`, the map no ready mark, and the hand-in shows
+# its `progress` text and does not advance. The Trial's quests need nothing new: the first names
+# `after_taken = <the Advancement Quest>`, each later one `after` the one before; the content
+# load fails on a `trial` naming no quest, or one that does not chain back that way.
 #
 # Two optional keys hold a quest's offer on a Milestone (ADR 0034), each naming a row of
 # content/milestones.toml; the content load fails on a key that names none. `after_milestone`: not

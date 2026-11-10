@@ -256,6 +256,10 @@ struct Save {
     /// The old one-bool record of a pick (#416), read only: `true` loads as a Tier 0 pick.
     #[serde(default, skip_serializing)]
     calling_chosen: bool,
+    /// The entries of the hidden Hub NPCs they have met (#676). A plain key, so before the
+    /// tables; an old save has met none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    met: Vec<u32>,
     /// The wall time the next potion may be drunk (#543, within version 6).
     #[serde(default, skip_serializing_if = "is_never")]
     potion_ready: f64,
@@ -542,6 +546,7 @@ pub(crate) fn export(c: &Char) -> String {
         lure_waiting: c.lure_waiting,
         chosen_tiers: c.chosen_tiers.clone(),
         calling_chosen: false,
+        met: c.met.clone(),
         fishing_pole: saved_gear(&c.fishing_pole),
         fishing_lure: saved_gear(&c.fishing_lure),
         satchel: saved_satchel(&c.inventory.satchel),
@@ -667,6 +672,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         fishing_lure: None,
         lure_waiting: s.lure_waiting,
         chosen_tiers: chosen_tiers(s.chosen_tiers, s.calling_chosen),
+        met: s.met,
     };
     c.fishing_pole = load_gear(&mut c.inventory, &s.fishing_pole);
     c.fishing_lure = load_gear(&mut c.inventory, &s.fishing_lure);

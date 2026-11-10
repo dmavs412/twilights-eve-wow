@@ -23,6 +23,8 @@ struct Giver {
     subtitle: String,
     /// The Milestones a Hub NPC or a GameObject waits on (ADR 0034); a Field Giver waits on none.
     milestones: Option<&'static crate::milestones::Gate>,
+    /// A Hidden Trainer: marked only for a character who has met it.
+    hidden: bool,
 }
 
 /// The quest givers in marking order: Hub NPCs, Field Givers, then GameObjects.
@@ -40,6 +42,7 @@ fn givers() -> &'static [Giver] {
                 name: n.name.clone(),
                 subtitle: n.subname.clone(),
                 milestones: Some(&n.milestones),
+                hidden: n.hidden,
             });
         }
         for s in &mobs::content().spawn {
@@ -58,6 +61,7 @@ fn givers() -> &'static [Giver] {
                 name: t.name.clone(),
                 subtitle: String::new(),
                 milestones: None,
+                hidden: false,
             });
         }
         for o in content::objects() {
@@ -77,6 +81,7 @@ fn givers() -> &'static [Giver] {
                 name: q.title.clone(),
                 subtitle: String::new(),
                 milestones: Some(&o.milestones),
+                hidden: false,
             });
         }
         out
@@ -182,13 +187,14 @@ fn service(role: &str) -> Option<(MapIcon, &'static str)> {
 
 /// Everything the map marks for `c`: quest marks, then service marks, dungeon marks, and the cart
 /// stops on their map, grey while `carts_locked`. `window` is the Writ Board's now. None stands on
-/// land closed while the Milestones `reached` are, and none is of a Hub NPC or a GameObject whose
-/// Milestone keys they do not meet.
+/// land closed while the Milestones `reached` are, none is of a Hub NPC or a GameObject whose
+/// Milestone keys they do not meet, and none is of a Hidden Trainer `c` has not met.
 pub(crate) fn marks(c: &Char, carts_locked: bool, window: u32, reached: &[&str]) -> Vec<MapMark> {
     let mut out = Vec::new();
     let mut quest_marked = Vec::new();
     for g in givers() {
-        if g.milestones.is_some_and(|m| !m.met(reached)) {
+        if g.milestones.is_some_and(|m| !m.met(reached)) || (g.hidden && !c.met.contains(&g.entry))
+        {
             continue;
         }
         let quests = quest_rows(c, g, window, reached);
@@ -217,7 +223,10 @@ pub(crate) fn marks(c: &Char, carts_locked: bool, window: u32, reached: &[&str])
         let Some((icon, label)) = service(&n.role) else {
             continue;
         };
-        if quest_marked.contains(&n.guid()) || !n.milestones.met(reached) {
+        if quest_marked.contains(&n.guid())
+            || !n.milestones.met(reached)
+            || (n.hidden && !c.met.contains(&n.entry))
+        {
             continue;
         }
         out.push(MapMark {

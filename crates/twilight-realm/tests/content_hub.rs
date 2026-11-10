@@ -229,6 +229,8 @@ fn every_npcs_flags_fit_its_role() {
             "alchemist" => {
                 n.npc_flags == GOSSIP && n.alchemist && talks && !gives && n.stock.is_empty()
             }
+            // The realm's test fixtures (#676): they talk and give the quests a test adds.
+            "test" => n.npc_flags == GOSSIP | QUEST_GIVER && talks && n.stock.is_empty(),
             other => panic!("{}: no role {other:?}", n.name),
         };
         assert!(ok, "{} ({}): flags {:#x}", n.name, n.role, n.npc_flags);

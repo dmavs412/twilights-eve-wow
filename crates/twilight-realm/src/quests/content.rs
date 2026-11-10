@@ -292,6 +292,18 @@ pub(crate) struct Talk {
     pub(crate) reply: String,
 }
 
+/// A hint line (#676): while the quest is held and not handed in, `npc`'s gossip menu shows
+/// `option`; choosing it shows `reply` and gives nothing, as often as asked.
+#[derive(Deserialize)]
+pub(crate) struct Hint {
+    pub(crate) npc: u32,
+    pub(crate) option: String,
+    pub(crate) reply: String,
+}
+
+/// At most this many hint lines on one quest: each has its own reply text id.
+pub(crate) const HINTS: usize = 8;
+
 /// A GameObject standing out in the open world for a use objective: it despawns for a character
 /// who uses it and returns `respawn` seconds later.
 #[derive(Deserialize)]
@@ -398,6 +410,9 @@ pub(crate) struct Quest {
     /// Talk-to objectives, after the kills in the log's four creature/GameObject slots.
     #[serde(default)]
     pub(crate) talk: Vec<Talk>,
+    /// Hint lines: gossip an NPC says only while the quest is held. No objective, no credit.
+    #[serde(default)]
+    pub(crate) hint: Vec<Hint>,
     /// Use-GameObject objectives, `(GameObject entry, count)`, after the talk objectives.
     #[serde(default, rename = "use")]
     pub(crate) use_object: Vec<(u32, u32)>,
@@ -437,6 +452,10 @@ pub(crate) struct Advancement {
     /// `false` for a quest that is offered and never finished: its Calling has no kit.
     #[serde(default = "yes")]
     pub(crate) completable: bool,
+    /// The last quest of its Trial (#676): until the character has handed that in, it is not
+    /// complete. The Trial's quests chain back to this one through `after` and `after_taken`.
+    #[serde(default)]
+    pub(crate) trial: Option<u32>,
 }
 
 fn yes() -> bool {
@@ -606,6 +625,7 @@ pub(crate) fn shipped() -> &'static [Quest] {
             check(q, &|id| quests.iter().any(|o| o.id == id), &|entry| {
                 objects.iter().any(|o| o.entry == entry) || crate::phased::is_door(entry)
             });
+            check_trial(q, &|id| quests.iter().find(|o| o.id == id));
             assert_eq!(
                 quests.iter().filter(|o| o.id == q.id).count(),
                 1,
@@ -703,19 +723,58 @@ pub(crate) fn add(toml: &str) {
             extra.push(Box::leak(Box::new(o)));
         }
     }
+    // A quest may name one later in the same file: a Trial's last quest comes after its
+    // Advancement Quest.
+    let ids: Vec<u32> = parsed.quest.iter().map(|q| q.id).collect();
     for q in parsed.quest {
         if quest(q.id).is_some() {
             continue;
         }
-        check(&q, &|id| quest(id).is_some() || id == q.id, &|entry| {
-            objects().iter().any(|o| o.entry == entry) || crate::phased::is_door(entry)
-        });
+        check(
+            &q,
+            &|id| quest(id).is_some() || ids.contains(&id),
+            &|entry| objects().iter().any(|o| o.entry == entry) || crate::phased::is_door(entry),
+        );
         // Parallel tests add the same quests; the check and the push share one lock.
         let mut extra = added().write().unwrap();
         if extra.iter().all(|a| a.id != q.id) {
             extra.push(Box::leak(Box::new(q)));
         }
     }
+    for id in ids {
+        if let Some(q) = quest(id) {
+            check_trial(q, &quest);
+        }
+    }
+}
+
+/// Panics unless the Trial of Advancement Quest `q`, if it names one, chains back to `q` through
+/// the `after` and `after_taken` of its quests; `lookup` finds a quest by id.
+fn check_trial<'a>(q: &Quest, lookup: &dyn Fn(u32) -> Option<&'a Quest>) {
+    let Some(trial) = q.advancement.as_ref().and_then(|a| a.trial) else {
+        return;
+    };
+    let before = |id| {
+        lookup(id)
+            .map(|t| t.after.ids().iter().copied().chain(t.after_taken).collect())
+            .unwrap_or_else(Vec::new)
+    };
+    let mut seen = vec![trial];
+    let mut open = before(trial);
+    while let Some(id) = open.pop() {
+        if id == q.id {
+            return;
+        }
+        if !seen.contains(&id) {
+            seen.push(id);
+            open.extend(before(id));
+        }
+    }
+    panic!(
+        "Advancement Quest {}'s trial {trial} does not chain back to it through `after` and \
+         `after_taken`",
+        q.id
+    );
 }
 
 /// What the content load refuses in `q`; `known` says whether a quest id exists and `object`
@@ -847,6 +906,22 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
             t.npc
         );
     }
+    for h in &q.hint {
+        let hub = crate::hub::npcs()
+            .iter()
+            .any(|n| n.entry == h.npc && n.gossips());
+        assert!(
+            hub || friendly_spawn(h.npc),
+            "quest {} hints at {}, who is no gossiping Hub NPC and no friendly spawn",
+            q.id,
+            h.npc
+        );
+    }
+    assert!(
+        q.hint.len() <= HINTS,
+        "quest {} has more than {HINTS} hint lines",
+        q.id
+    );
     for &(entry, count) in &q.use_object {
         assert!(
             count > 0 && object(entry),
@@ -877,6 +952,13 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
             "Advancement Quest {} asks for more than a word",
             q.id
         );
+        if let Some(trial) = a.trial {
+            assert!(
+                trial != q.id && known(trial),
+                "Advancement Quest {}'s trial names quest {trial}, which the content does not have",
+                q.id
+            );
+        }
     }
     assert!(
         q.kill.len() + q.talk.len() + q.use_object.len() + q.explore.listed().len() <= OBJECTIVES
@@ -965,12 +1047,12 @@ pub(crate) fn field_giver(entry: u32) -> bool {
         && quests().iter().any(gives)
 }
 
-/// Whether any quest has a talk objective with the creature `entry`.
+/// Whether any quest has a talk objective or a hint line with the creature `entry`.
 pub(crate) fn talk_target(entry: u32) -> bool {
     friendly_spawn(entry)
         && quests()
             .iter()
-            .any(|q| q.talk.iter().any(|t| t.npc == entry))
+            .any(|q| q.talk.iter().any(|t| t.npc == entry) || q.hint.iter().any(|h| h.npc == entry))
 }
 
 #[derive(Deserialize)]
@@ -1388,6 +1470,63 @@ mod tests {
         progress = ""
         completion = ""
         money = 0"#
+    }
+
+    /// [`quest_body`] given by Uzzek, a gossiping Hub quest giver, with `extra` keys before it.
+    fn at_uzzek(extra: &str) -> Quest {
+        toml::from_str(&format!(
+            "{extra}\n{}",
+            quest_body().replace("giver = 1", "giver = 5810")
+        ))
+        .expect("a quest")
+    }
+
+    #[test]
+    #[should_panic(expected = "trial names quest 99999, which the content does not have")]
+    fn a_trial_naming_a_missing_quest_fails_the_load() {
+        let q = at_uzzek(
+            "kind = \"advancement\"\n\
+             advancement = { from = \"vanguard\", to = \"zealot\", trial = 99999 }",
+        );
+        check(&q, &|_| false, &|_| false);
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "quest 1 hints at 1, who is no gossiping Hub NPC and no friendly spawn"
+    )]
+    fn a_hint_at_an_npc_who_neither_gossips_nor_is_a_friendly_spawn_fails_the_load() {
+        let q = at_uzzek("kind = \"story\"\nhint = [{ npc = 1, option = \"?\", reply = \"!\" }]");
+        check(&q, &|_| false, &|_| false);
+    }
+
+    #[test]
+    #[should_panic(expected = "trial 2 does not chain back to it")]
+    fn a_trial_that_does_not_chain_back_fails_the_load() {
+        let q = at_uzzek(
+            "kind = \"advancement\"\n\
+             advancement = { from = \"vanguard\", to = \"zealot\", trial = 2 }",
+        );
+        let unchained = at_uzzek("kind = \"story\"").with_id(2);
+        check_trial(&q, &|id| (id == 2).then_some(&unchained));
+    }
+
+    #[test]
+    fn a_trial_reached_through_after_and_after_taken_passes_the_load() {
+        let q = at_uzzek(
+            "kind = \"advancement\"\n\
+             advancement = { from = \"vanguard\", to = \"zealot\", trial = 3 }",
+        );
+        let first = at_uzzek("kind = \"story\"\nafter_taken = 1").with_id(2);
+        let last = at_uzzek("kind = \"story\"\nafter = 2").with_id(3);
+        check_trial(&q, &|id| [&first, &last].into_iter().find(|t| t.id == id));
+    }
+
+    impl Quest {
+        fn with_id(mut self, id: u32) -> Quest {
+            self.id = id;
+            self
+        }
     }
 
     #[test]
