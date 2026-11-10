@@ -1167,11 +1167,13 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
     # bleeding target and a proc's combo points; an absorb's mana back and burst; a tick's power
     # and base mana back and its spread; a snare's, a consume's and a grow's reach; a drain tick's
     # overheal shield; a heal's overheal burst; an area's grow and the display of the GameObject
-    # that shows it; and the display of a droplet's GameObject. Then the chances, out of 100, and
-    # the params that come in pairs.
+    # that shows it; and the display of a droplet's GameObject; a hit's raise by the mana fill and
+    # its share of the mana spent (#680). Then the chances, out of 100, and the params that come in
+    # pairs.
     on_hit = ("bleeding_pct", "kill_heal_pct", "kill_energize")
     wholes = {"weapon_strike": ("block_value_pct", "heal_pct", *on_hit, "crit_damage_pct", "crit_cooldown_ms"),
-              "school_damage": (*on_hit, "vs_aura_pct", "vs_aura_max_pct", "splash_pct", "splash_yd"),
+              "school_damage": (*on_hit, "vs_aura_pct", "vs_aura_max_pct", "splash_pct", "splash_yd",
+                                "pct_at_full_mana", "per_mana_pct"),
               "consume_aura_stacks": ("heal_pct", "refund_per_stack"),
               "add_combo_points": ("bleeding_bonus",),
               "proc": ("add_combo_points",),
@@ -1863,6 +1865,8 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             raise BuildError(f"{here}: grants {parsed.get('grants')!r} is not an aura row of this Calling")
         if kind == "judgement" and "seal" in parsed and parsed["seal"] not in auras:
             raise BuildError(f"{here}: seal {parsed['seal']!r} is not an aura row of this Calling")
+        if kind == "school_damage" and "per_mana_pct" in parsed and out.get("cost_kind") != "all_remaining":
+            raise BuildError(f"{here}: per_mana_pct needs cost_kind=all_remaining")
         if kind == "mod_threat_pct" and row["kind"] != "aura":
             raise BuildError(f"{here}: mod_threat_pct belongs on an aura row, not a {row['kind']} row")
         if kind == "consume_self_stacks" and parsed.get("grant") not in auras:

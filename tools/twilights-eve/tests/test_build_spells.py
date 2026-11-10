@@ -2037,6 +2037,16 @@ class TalentRows(BuildSpells):
                 self.assert_each_fails([], row, "vs_type and vs_type_pct go together",
                                        "vs_type=undead", "vs_type_pct=50")
 
+    def test_a_hits_pct_at_full_mana_is_a_whole_number_of_at_least_1(self):
+        self.assert_whole_param([], self.HIT, "pct_at_full_mana")
+
+    def test_a_hits_per_mana_pct_is_a_whole_number_on_an_all_remaining_row_only(self):
+        surge = {**self.HIT, "cost_kind": "all_remaining", "cost_extra_max": "400"}
+        self.assert_whole_param([], surge, "per_mana_pct")
+        self.assert_each_fails([], self.HIT, "per_mana_pct needs cost_kind=all_remaining", "per_mana_pct=60")
+        self.assert_each_fails([], {**self.HIT, "cost_kind": "pct_base"},
+                               "per_mana_pct needs cost_kind=all_remaining", "per_mana_pct=60")
+
     def test_a_controls_only_type_names_a_creature_type(self):
         stun = {**STRIKE, "effect1_kind": "stun", "effect1_params": "duration_ms=2000"}
         knock = {**STRIKE, "effect1_kind": "knockback", "effect1_params": "distance_yd=8"}

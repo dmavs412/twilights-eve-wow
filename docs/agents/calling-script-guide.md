@@ -202,6 +202,10 @@ The params the build checks:
 - **Creature types:** `school_damage` and `weapon_strike` take `vs_type=` with `vs_type_pct=` (that percent more against a
   creature of that type). `stun`, `incapacitate`, `root` and `knockback` take `only_type=` (the control lands on that type
   alone). The names: `beast`, `dragonkin`, `demon`, `elemental`, `giant`, `undead`, `humanoid`, `critter`, `mechanical`.
+- **Mana kinds:** `school_damage` takes `pct_at_full_mana=` (up to that percent more, scaled by the caster's mana fill after the
+  cost, as `crit_pct_at_full_mana` scales its crit points; a channel's ticks each read their own fill) and, on a
+  `cost_kind=all_remaining` row only, `per_mana_pct=` (that percent of the mana the cast spent, the cost and the extra, added
+  to `amount`). Both are whole numbers of at least 1.
 - **`grow_aura`:** `aura=` the key of an aura row of the Calling that has a `periodic_damage` effect, `stacks=` a positive whole number
   (default 1). A landed hit adds the stacks to the caster's aura on the target, up to its `max_stacks`, and leaves its timer. A target
   without the aura gets nothing.

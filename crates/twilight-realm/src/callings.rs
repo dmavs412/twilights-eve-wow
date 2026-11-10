@@ -1582,6 +1582,15 @@ pub enum Effect {
         /// blow rolls (after the cast's own cost). A caster on another bar gets none.
         #[serde(default)]
         crit_pct_at_full_mana: Option<f32>,
+        /// Up to that percent more, scaled the same way by the mana fill at the hit (after the
+        /// cast's own cost; each tick of a channel reads its own), summed with `controlled_pct`,
+        /// `bleeding_pct`, `vs_aura_pct` and `vs_type_pct`.
+        #[serde(default)]
+        pct_at_full_mana: u32,
+        /// That percent of the mana the cast spent (its cost and the extra an `all_remaining`
+        /// cost took) added to `amount`.
+        #[serde(default)]
+        per_mana_pct: u32,
         /// That percent more on a target wearing a stun or incapacitate at the hit (Backdraft).
         #[serde(default)]
         controlled_pct: u32,

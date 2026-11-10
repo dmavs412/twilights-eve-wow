@@ -4119,11 +4119,19 @@ impl InWorld {
             return;
         }
         let cost = self.power_cost(c, skill);
-        self.skills.last_cost = cost;
         self.skills.was_full = self.player.power.current >= self.player.power.max;
         let blood = self.health_cost(skill);
         let p = &mut self.player;
         p.power.spend(cost);
+        // An `all_remaining` cost then takes the rest of the bar, up to `cost_extra_max`.
+        let shape = &skill.meta.shape;
+        let extra = if shape.cost_kind.as_deref() == Some("all_remaining") {
+            p.power.current.min(shape.cost_extra_max)
+        } else {
+            0
+        };
+        p.power.spend(extra);
+        self.skills.last_cost = cost + extra;
         let health_cost = p.stats.base_health * skill.health_cost_pct_of_base_health / 100 + blood;
         self.skills.last_health_cost = health_cost.min(p.health.saturating_sub(1));
         // A cost never kills.
@@ -4436,11 +4444,23 @@ impl InWorld {
                 splash_yd,
                 vs_type,
                 vs_type_pct,
+                pct_at_full_mana,
+                per_mana_pct,
                 ..
             } => {
+                // A share of the mana the cast spent, its `all_remaining` extra included.
+                let paid = self.skills.last_cost * per_mana_pct / 100;
                 let raw = scaled(amount.at(level, ap), hit_pct)
                     + per_combo(more)
+                    + paid
                     + if school.is_magic() { direct_bonus } else { 0 };
+                // More by the mana fill now, as the mana-fill crit reads it; whole percents.
+                let bar = &self.player.power;
+                let fill_pct = if bar.kind == PowerKind::Mana && bar.max > 0 {
+                    (pct_at_full_mana as f32 * bar.current as f32 / bar.max as f32) as u32
+                } else {
+                    0
+                };
                 // More against a target wearing the caster's aura (Combustion Engine), or so much
                 // a stack of it, to a most (Exsanguinate), beside the other conditions.
                 let worn = match vs_aura_spell_id {
@@ -4452,7 +4472,8 @@ impl InWorld {
                 };
                 let cond = self.condition_pct(target, controlled_pct, 0, 0, bleeding_pct)
                     + worn
-                    + self.type_pct(target, vs_type, vs_type_pct);
+                    + self.type_pct(target, vs_type, vs_type_pct)
+                    + fill_pct;
                 let raw = scaled(raw, cond);
                 let worth = self.kill_yields_xp(target);
                 let at = self
