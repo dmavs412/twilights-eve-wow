@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "about": "Twilight's Eve Callings: the Warrior line (Basic Warrior, Vanguard, Zealot, and Ironclad's and Templar's locked quests), and the other Tier 1 lines (Acolyte, Cutthroat, Initiate, Ranger), whose kits live in the master CSV. Every spell, talent and tab id is a real 1.12.1 record, checked by tools/twilights-eve/extract_spells.py verify. Design notes: docs/reference/skills-and-talents.md.",
+  "about": "Twilight's Eve Callings: the Warrior line (Basic Warrior, Vanguard, Zealot, and Templar's locked quest; the Ironclad's kit and quest moved to the master CSV and quests.toml in #685), and the other Tier 1 lines (Acolyte, Cutthroat, Initiate, Ranger), whose kits live in the master CSV. Every spell, talent and tab id is a real 1.12.1 record, checked by tools/twilights-eve/extract_spells.py verify. Design notes: docs/reference/skills-and-talents.md.",
 
   "formula_conventions": {
     "L": "the character's level inside its current Tier (1..Tier Cap); it resets to 1 on Advancement",
@@ -294,24 +294,9 @@
       "class": 1,
       "display_name": "Ironclad",
       "cap": 50,
-      "locked": true,
       "skills": [],
-      "advancement_quest": {
-        "quest_id": 64002,
-        "synthesized": true,
-        "offered_by": "the Hub's Vanguard Trainer",
-        "offered_to": { "calling": "vanguard", "level": 30 },
-        "advances_to": "ironclad",
-        "completable": false,
-        "zone_or_sort": -81,
-        "quest_level": 30,
-        "title": "The Ironclad's Oath",
-        "details": "Thirty battles' worth of scars, and still standing at the front. Few Vanguards come this far, $N.$B$BThe Ironclads hold the line when every other blade has broken, and with the world as small as it is now, there's only one line left to hold. They don't take just anyone. When they're ready to test you, I'll send word. Until then, keep your shield arm strong.",
-        "objectives": "Await the Ironclads' summons.",
-        "objective": { "kind": "never", "note": "A single objective the realm never credits (or a kill of a creature entry that is never spawned), so the stock quest log shows it as in progress forever and the trainer shows the 'incomplete' text. Abandoning and retaking it is harmless." },
-        "request_items_text": "The Ironclads haven't sent for you yet, $N. Patience.",
-        "flavour_source": "The vanilla level 30 warrior chain (1718 'The Islander', 1791 'The Windwatcher', 1712 'Cyclonian') for tone only."
-      }
+      "kit_note": "Since #685 the Ironclad's kit lives in the master CSV, and its Advancement Quest 64002 in content/quests.toml, given by Sergeant Maera Holt at the Lakeshire bridge and gated by her trial (tests/tier2_ironclad.rs).",
+      "advancement_quest": null
     },
 
     "zealot": {

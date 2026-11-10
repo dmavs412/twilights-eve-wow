@@ -379,8 +379,12 @@ fn the_calling_choices_are_the_five_northshire_advancement_quests_and_the_tier_2
         .filter(|q| q.calling_choice)
         .map(|q| q.id)
         .collect();
-    // Then the Zealot, and each Tier 2 Calling of #674 as it lands: the Sharpshooter (#684).
-    assert_eq!(chosen, [64003, 64009, 64010, 64011, 64012, 64013, 64405]);
+    // With the Zealot, each Tier 2 Calling of #674 as it lands: the Ironclad (#685), kept in
+    // file order before the Zealot, and the Sharpshooter (#684).
+    assert_eq!(
+        chosen,
+        [64002, 64003, 64009, 64010, 64011, 64012, 64013, 64405]
+    );
 }
 
 /// Every Elwynn story quest (#448) offers a choice of sheet rows the character may wear by the

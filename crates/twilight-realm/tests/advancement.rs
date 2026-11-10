@@ -647,62 +647,31 @@ fn advancement_saves_the_character() {
 
 // ── Ironclad ────────────────────────────────────────────────────────────────────────────────────
 
+/// Since #685 Sergeant Maera Holt at the Lakeshire bridge gives the Ironclad's Oath and her trial
+/// gates it (tests/tier2_ironclad.rs): Wray offers a capped Vanguard only the Zealot's Vow.
 #[test]
-fn at_thirty_ironclads_quest_is_offered_but_cannot_be_finished() {
+fn at_thirty_wray_offers_the_zealots_vow_and_not_the_ironclads_oath() {
     let (mut realm, _, events) = questing_at_wray("vanguard", 29);
     assert!(
         wray_quests(&mut realm, wray(&events)).is_empty(),
         "not at 29"
     );
 
-    let (mut realm, me, mut events) = questing_at_wray("vanguard", 30);
+    let (mut realm, _, events) = questing_at_wray("vanguard", 30);
     let uzzek = wray(&events);
     let rows = wray_quests(&mut realm, uzzek);
     assert_eq!(
         rows.iter()
             .map(|r| (r.0, r.1, r.3.as_str()))
             .collect::<Vec<_>>(),
-        [
-            (
-                THE_IRONCLADS_OATH,
-                dialog_status::AVAILABLE,
-                "The Ironclad's Oath"
-            ),
-            (
-                THE_ZEALOTS_VOW,
-                dialog_status::AVAILABLE,
-                "The Zealot's Vow"
-            ),
-        ],
-        "both of Vanguard's branches"
+        [(
+            THE_ZEALOTS_VOW,
+            dialog_status::AVAILABLE,
+            "The Zealot's Vow"
+        )],
+        "Holt gives the other branch"
     );
-    events.extend(take(&mut realm, uzzek, THE_IRONCLADS_OATH));
-    let log = quest_log(&events, me);
-    assert_eq!(
-        (log[0].1, log[0].3),
-        (THE_IRONCLADS_OATH, 0),
-        "never complete"
-    );
-    assert_eq!(
-        status(&mut realm, uzzek),
-        dialog_status::AVAILABLE,
-        "the Zealot's Vow still on offer"
-    );
-
-    realm.handle(RealmCommand::QuestGiverCompleteQuest {
-        npc: uzzek,
-        quest: THE_IRONCLADS_OATH,
-    });
-    let progress = drain(&mut realm)
-        .into_iter()
-        .find_map(|e| match e {
-            SessionEvent::QuestProgress(p) => Some(p),
-            _ => None,
-        })
-        .expect("the progress panel");
-    assert!(!progress.is_complete);
-    assert!(completed(&hand_in(&mut realm, uzzek, THE_IRONCLADS_OATH)).is_none());
-    assert_eq!(realm.current_calling().unwrap().key, "vanguard");
+    assert!(rows.iter().all(|r| r.0 != THE_IRONCLADS_OATH));
 }
 
 #[test]

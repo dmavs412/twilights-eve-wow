@@ -283,14 +283,15 @@ fn offered(events: &[SessionEvent]) -> Vec<Vec<u32>> {
         .collect()
 }
 
+/// The Vanguard's two branches: the Ironclad (#685) and the Zealot.
 #[test]
-fn a_level_30_vanguard_is_offered_the_zealot_at_login() {
+fn a_level_30_vanguard_is_offered_the_ironclad_and_the_zealot_at_login() {
     let (mut realm, me) = tier1("vanguard", 30);
-    assert_eq!(offered(&enter(&mut realm, me)), [[64003]]);
+    assert_eq!(offered(&enter(&mut realm, me)), [[64002, 64003]]);
 }
 
 #[test]
-fn a_vanguard_reaching_30_is_offered_the_zealot() {
+fn a_vanguard_reaching_30_is_offered_the_ironclad_and_the_zealot() {
     let (mut realm, _, events) = skinner_as("vanguard", 29, 5000.0);
     assert!(popups(&events).is_empty(), "{events:?}");
     let zunjin = giver(&events, ZUNJIN);
@@ -301,7 +302,7 @@ fn a_vanguard_reaching_30_is_offered_the_zealot() {
             .any(|e| matches!(e, SessionEvent::LevelUp(l) if l.level == 30)),
         "{turned_in:?}"
     );
-    assert_eq!(offered(&turned_in), [[64003]]);
+    assert_eq!(offered(&turned_in), [[64002, 64003]]);
 }
 
 #[test]

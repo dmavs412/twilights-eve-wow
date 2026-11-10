@@ -2302,6 +2302,19 @@ impl Skill {
             .any(|w| w == "any_ranged")
     }
 
+    /// How long after the caster blocks it stays usable, for a skill whose `requires` cell holds
+    /// `caster_state=after_block;window_ms=N` (Retort); `None` for a skill with no such gate.
+    pub fn after_block_window_ms(&self) -> Option<u32> {
+        let requires = &self.meta.gates.requires;
+        if requires.get("caster_state")?.as_str()? != "after_block" {
+            return None;
+        }
+        let window = requires
+            .get("window_ms")
+            .and_then(serde_json::Value::as_u64);
+        Some(window.unwrap_or(0) as u32)
+    }
+
     /// A finisher: any effect carries a `per_combo` block. It needs combo points on the target
     /// to cast, and a cast that lands spends them all.
     /// Whether a `grant_aura` of it puts up the aura row of `spell_id`.
@@ -2498,6 +2511,14 @@ pub fn aura(key: &str) -> Option<&'static AuraDef> {
     all().iter().flat_map(|c| &c.auras).find(|a| a.key == key)
 }
 
+/// The aura row of `spell_id`, in any Calling, when it has effects of its own.
+pub fn aura_by_spell(spell_id: u32) -> Option<&'static AuraDef> {
+    all()
+        .iter()
+        .flat_map(|c| &c.auras)
+        .find(|a| a.spell_id == spell_id)
+}
+
 /// The one stack a proc's `apply_aura` adds of the stacking aura row `key` that has no effects
 /// of its own (Conviction), as [`aura`] finds a buff.
 pub fn stack_aura(key: &str) -> Option<&'static Effect> {
@@ -2506,6 +2527,17 @@ pub fn stack_aura(key: &str) -> Option<&'static Effect> {
         .flat_map(|c| &c.stack_auras)
         .find(|a| a.key == key)
         .map(|a| &a.add)
+}
+
+/// [`stack_aura`], looking first in `calling`'s own rows: a Tier 2 Calling's copy of a Tier 1 row
+/// shares its key (the Ironclad's Conviction).
+pub(crate) fn own_stack_aura(calling: Calling, key: &str) -> Option<&'static Effect> {
+    of(calling)
+        .stack_auras
+        .iter()
+        .find(|a| a.key == key)
+        .map(|a| &a.add)
+        .or_else(|| stack_aura(key))
 }
 
 /// A current Calling's data.

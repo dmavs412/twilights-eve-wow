@@ -370,6 +370,17 @@ one is a placeholder.
 | Pinning Shot and its root (#684) | master CSV | `Spell_Frost_Stun`, `Spell_Nature_StrangleVines` |
 | Crippling Aim, Bleeding Arrow, Barbed Pin (#684) | master CSV, aura rows | `Ability_Rogue_Trip`, `Ability_BackStab`, `Ability_Hunter_Quickshot` |
 | The Sharpshooter's Talents (#684) | master CSV, rows 25 and 50 | `Spell_Nature_StoneClawTotem`, `Ability_Hunter_EagleEye`, `Spell_Nature_StoneSkinTotem`, `Ability_TrueShot`, `INV_Ammo_Arrow_02`, `Spell_Nature_Sleep` |
+| Sergeant Maera Holt, the Ironclad trainer (#685) | `content/hub.toml`, entry 190110 | display 3287, Ilsa Corbin's look. Wanted: a grey-haired woman sergeant in old, dented plate, a heavy shield on her arm. |
+| Ironclad Calling icon (#685) | `callings.csv` | `INV_Shield_06` |
+| Shield Slam and Stunning Slam's stun (#685) | master CSV | `INV_Shield_05` |
+| Retort (#685) | master CSV | `Ability_Warrior_Revenge` |
+| Iron Wall and its buffs (#685) | master CSV | `Ability_Warrior_ShieldWall` |
+| Steel Resolve and its buffs (#685) | master CSV | `Spell_Holy_AshesToAshes` |
+| Hold the Line and its buff (#685) | master CSV | `Ability_Warrior_Challange` |
+| The Ironclad's Talents (#685) | master CSV, rows 25 and 50 | `INV_Chest_Plate04`, `INV_Shield_04`, `Spell_Holy_BlessingOfStamina`, `Spell_Holy_Heal`, `Spell_Holy_RighteousFury`, `Spell_Holy_SealOfValor` |
+| Blackrock Shield, the trial's quest item (#685) | `content/quest_items.toml`, entry 980811 | display 17943, `INV_Shield_20` |
 
 The Sharpshooter's carried skills (Auto Shot, Puncturing Shaft, Rapid Fire, Silencing Shot) keep
-the Ranger's icons. Its trial has no quest items.
+the Ranger's icons. Its trial has no quest items. The Ironclad's carried skills (Righteous Smash,
+Shield of the Penitent, Rebuke) keep the Vanguard's icons, and Shield Rebuke's stun shows
+`Ability_Warrior_ShieldBash`.

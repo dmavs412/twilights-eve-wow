@@ -142,6 +142,9 @@ item = [
   # Darkshire's missing charity (#619, quests_stormwind.toml 97411): INV_Letter_11, a stock icon
   # no other item shows.
   { entry = 980157, name = "Darkshire's Relief Letter", quality = 1, item_level = 46, class = 12, display_id = 9467, max_count = 1, description = "'Twenty wagons, for the people of Darkshire, with the compliments of a friend.' The same grey-green wax." },
+  # Sergeant Holt's trial (#685, quests.toml 64412): INV_Shield_20, a stock icon no other item
+  # shows.
+  { entry = 980811, name = "Blackrock Shield", quality = 1, item_level = 30, class = 12, display_id = 17943, stackable = 20 },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye

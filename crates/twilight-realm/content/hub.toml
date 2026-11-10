@@ -1962,8 +1962,9 @@ text_id = 64161
 greeting = "Three horses, no feed to spare, and every family off the road asks what I'd take for one. Not coin. Not yet. Come back when the roads are safe enough to ride."
 
 # Commander Aldous Wray (#378): gives the Tier 2 and 3 advancement quests (#374) in the Stormwind
-# barracks, beside the warrior trainers. A quest giver only, no training. Placeholders: name,
-# subname, greeting, spot. z is the barracks ground floor (wmo_floor.py group 268).
+# barracks, beside the warrior trainers. No training. Since #685 his gossip menu holds the Vanguard
+# Line's first hint (the Ironclads at the Lakeshire bridge), so he is a `talker`. Placeholders:
+# name, subname, spot. z is the barracks ground floor (wmo_floor.py group 268).
 [[npc]]
 guid = 9300034
 entry = 190071
@@ -1972,12 +1973,13 @@ subname = "Stormwind Barracks"
 level = 40
 display_id = 1504
 faction_template = 35
-role = "giver"
-npc_flags = 0x2
+role = "talker"
+npc_flags = 0x3
 map = 0
 position = [-8687.0, 328.0, 109.44]
 orientation = 3.14
-greeting = "Stormwind still has a barracks, $C, and I still have warriors to test. The Ironclads hold the line, and the Templars keep the Light. When you're ready for either, you'll find me here."
+text_id = 64190
+greeting = "Stormwind still has a barracks, $C, and I still have warriors to test. The best of mine went east and south, where the court won't send soldiers. Ask, and I'll tell you where."
 
 # ── Brother Wendell, the Northshire fisherman (#346) ─────────────────────────────────────────────
 # Teaches Fishing and sells Lee Brown's goods on the north bank of the Northshire River, and hints at
@@ -2538,3 +2540,24 @@ orientation = 4.71
 hidden = true
 text_id = 64186
 greeting = "Don't step on the line, $C. I've stood on this spot so long the gnolls think I'm a tree."
+
+# Sergeant Maera Holt, the Ironclad (#685): on the road at the west end of the Lakeshire bridge,
+# beside the stock Guard Howe, looking across the bridge into town. The look is Ilsa Corbin's (a
+# placeholder). Role `talker`, as Wren's. z is ground_check.py's.
+[[npc]]
+guid = 9300110
+entry = 190110
+name = "Sergeant Maera Holt"
+subname = "Ironclad"
+level = 50
+display_id = 3287
+faction_template = 35
+role = "talker"
+npc_flags = 0x3
+map = 0
+position = [-9417.0, -2261.0, 67.58]
+orientation = 0.35
+faces = [-9250.0, -2200.0]
+hidden = true
+text_id = 64180
+greeting = "Nobody ordered us to hold this bridge, $C. That's why it's still standing."

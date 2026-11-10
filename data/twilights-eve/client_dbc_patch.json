@@ -103,6 +103,19 @@
    "weapon_mask": 1435135,
    "armor_mask": 12,
    "dual_wield": false
+  },
+  {
+   "key": "ironclad",
+   "name": "Ironclad",
+   "icon": "Interface\\Icons\\INV_Shield_06",
+   "spellbook": "Ironclad",
+   "power_type": 1,
+   "class": 1,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 126,
+   "dual_wield": false
   }
  ],
  "spells": [
@@ -7524,6 +7537,1442 @@
    }
   },
   {
+   "spell_id": 1000622,
+   "calling": "ironclad",
+   "key": "righteous_smash",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Righteous Smash",
+    "cost": 12,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "on_next_swing": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your next melee swing strikes the target for weapon damage plus 90 + 2 per level. Every hit grants a stack of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Smash",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 90,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Each stack adds Holy damage to your next Shield Slam.",
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000623,
+   "calling": "ironclad",
+   "key": "shield_slam",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Shield Slam",
+    "cost": 15,
+    "cooldown_ms": 6000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "Slams the target with your shield for weapon damage plus 30 + 2 per level and 200% of your shield's Block Value, then spends every Conviction stack for 12 + 1.2 per level Holy damage a stack. Needs a shield.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Shield_05",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 30,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000624,
+   "calling": "ironclad",
+   "key": "shield_of_penitent",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Shield of the Penitent",
+    "cost": 10,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "For 10 sec your chance to Block is increased by 55%. Every block deals 53 + 1.2 per level Holy damage to the attacker.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Block chance increased by 55%. Each block deals Holy damage to the attacker.",
+    "visual": 7323,
+    "range_index": 5,
+    "cast_time_index": 1,
+    "duration_index": 347
+   }
+  },
+  {
+   "spell_id": 1000625,
+   "calling": "ironclad",
+   "key": "retort",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Retort",
+    "cost": 5,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Usable for 5 sec after you block. Strikes the target with holy force for 80% weapon damage plus 20 + 1.5 per level Holy damage, and grants 2 stacks of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Warrior_Revenge",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 342,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000626,
+   "calling": "ironclad",
+   "key": "iron_wall",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Iron Wall",
+    "cost": 0,
+    "cooldown_ms": 120000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. You take 40% less damage for 8 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldWall",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Damage taken reduced by 40%.",
+    "visual": 345,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000627,
+   "calling": "ironclad",
+   "key": "rebuke",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Rebuke",
+    "cost": 10,
+    "cooldown_ms": 12000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain a stack of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldBash",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000628,
+   "calling": "ironclad",
+   "key": "steel_resolve",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Steel Resolve",
+    "cost": 10,
+    "cooldown_ms": 45000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. For 15 sec, every block heals you for 2% of your maximum health.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_AshesToAshes",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Each block heals you for 2% of your maximum health.",
+    "visual": 0,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000629,
+   "calling": "ironclad",
+   "key": "hold_the_line",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Hold the Line",
+    "cost": 0,
+    "cooldown_ms": 20000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Every enemy within 10 yd attacks you for 4 sec, and your threat on each rises to match its highest. Each enemy taunted gives you a stack of Hold the Line: 5% more block chance a stack, up to 5, for 10 sec.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Warrior_Challange",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 209,
+    "range_index": 1,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000631,
+   "calling": "ironclad",
+   "key": "smash_of_conviction",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Smash of Conviction",
+    "cost": 12,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "on_next_swing": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your next melee swing strikes the target for weapon damage plus 90 + 2 per level. Every hit grants 2 stacks of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Smash",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 90,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000632,
+   "calling": "ironclad",
+   "key": "shield_smash",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Shield Smash",
+    "cost": 12,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "on_next_swing": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your next melee swing strikes the target for weapon damage plus 90 + 2 per level. Also deals Physical damage equal to 50% of your shield's Block Value. Every hit grants a stack of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Smash",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 90,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000633,
+   "calling": "ironclad",
+   "key": "hungry_smash",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Hungry Smash",
+    "cost": 12,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "on_next_swing": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your next melee swing strikes the target for weapon damage plus 90 + 2 per level. It heals you for 20% of the damage it deals. Every hit grants a stack of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Smash",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 90,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000634,
+   "calling": "ironclad",
+   "key": "stunning_slam",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Stunning Slam",
+    "cost": 15,
+    "cooldown_ms": 6000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "Slams the target with your shield for weapon damage plus 30 + 2 per level and 200% of your shield's Block Value, then spends every Conviction stack for 12 + 1.2 per level Holy damage a stack. The target is stunned for 2 sec. Needs a shield.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Shield_05",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 30,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000636,
+   "calling": "ironclad",
+   "key": "heavy_slam",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Heavy Slam",
+    "cost": 15,
+    "cooldown_ms": 6000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "Slams the target with your shield for weapon damage plus 30 + 2 per level and 300% of your shield's Block Value, then spends every Conviction stack for 12 + 1.2 per level Holy damage a stack. Needs a shield.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Shield_05",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 30,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000637,
+   "calling": "ironclad",
+   "key": "refunding_slam",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Refunding Slam",
+    "cost": 15,
+    "cooldown_ms": 6000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "Slams the target with your shield for weapon damage plus 30 + 2 per level and 200% of your shield's Block Value, then spends every Conviction stack for 12 + 1.2 per level Holy damage a stack. You gain 3 Rage for each stack spent. Needs a shield.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Shield_05",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 30,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000638,
+   "calling": "ironclad",
+   "key": "long_penance",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Long Penance",
+    "cost": 10,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "For 15 sec your chance to Block is increased by 55%. Every block deals 53 + 1.2 per level Holy damage to the attacker.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7323,
+    "range_index": 5,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000640,
+   "calling": "ironclad",
+   "key": "searing_penance",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Searing Penance",
+    "cost": 10,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "For 10 sec your chance to Block is increased by 55%. Every block deals 106 + 2.4 per level Holy damage to the attacker.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7323,
+    "range_index": 5,
+    "cast_time_index": 1,
+    "duration_index": 347
+   }
+  },
+  {
+   "spell_id": 1000642,
+   "calling": "ironclad",
+   "key": "steadfast",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Steadfast",
+    "cost": 10,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "For 10 sec your chance to Block is increased by 55%. Every block deals 53 + 1.2 per level Holy damage to the attacker. 10 sec cooldown.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7323,
+    "range_index": 5,
+    "cast_time_index": 1,
+    "duration_index": 347
+   }
+  },
+  {
+   "spell_id": 1000643,
+   "calling": "ironclad",
+   "key": "quick_retort",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Quick Retort",
+    "cost": 5,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Usable for 8 sec after you block. Strikes the target with holy force for 80% weapon damage plus 20 + 1.5 per level Holy damage, and grants 2 stacks of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Warrior_Revenge",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 342,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000644,
+   "calling": "ironclad",
+   "key": "righteous_retort",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Righteous Retort",
+    "cost": 5,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Usable for 5 sec after you block. Strikes the target with holy force for 80% weapon damage plus 20 + 1.5 per level Holy damage, and grants 3 stacks of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Warrior_Revenge",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 342,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000645,
+   "calling": "ironclad",
+   "key": "crushing_retort",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Crushing Retort",
+    "cost": 5,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Usable for 5 sec after you block. Strikes the target with holy force for 120% weapon damage plus 20 + 1.5 per level Holy damage, and grants 2 stacks of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Warrior_Revenge",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 342,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000646,
+   "calling": "ironclad",
+   "key": "thick_plate",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Thick Plate",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Armor from items increased by 10%.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\INV_Chest_Plate04",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000647,
+   "calling": "ironclad",
+   "key": "shield_mastery",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Shield Mastery",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your chance to Block is increased by 10% while you wear a shield.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\INV_Shield_04",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000648,
+   "calling": "ironclad",
+   "key": "bastions_heart",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Bastion's Heart",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Maximum health increased by 10%.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_BlessingOfStamina",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000649,
+   "calling": "ironclad",
+   "key": "longer_wall",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Longer Wall",
+    "cost": 0,
+    "cooldown_ms": 120000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. You take 40% less damage for 12 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldWall",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 345,
+    "cast_time_index": 1,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000651,
+   "calling": "ironclad",
+   "key": "quick_wall",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Quick Wall",
+    "cost": 0,
+    "cooldown_ms": 80000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. You take 40% less damage for 8 sec. 80 sec cooldown.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldWall",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 345,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000652,
+   "calling": "ironclad",
+   "key": "wall_of_thorns",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Wall of Thorns",
+    "cost": 0,
+    "cooldown_ms": 120000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. You take 40% less damage for 8 sec, and every block while it lasts deals 20 + 2 per level Holy damage to the attacker.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldWall",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 345,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000654,
+   "calling": "ironclad",
+   "key": "long_rebuke",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Long Rebuke",
+    "cost": 10,
+    "cooldown_ms": 12000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you gain a stack of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldBash",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000655,
+   "calling": "ironclad",
+   "key": "rebuke_of_conviction",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Rebuke of Conviction",
+    "cost": 10,
+    "cooldown_ms": 12000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain 2 stacks of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldBash",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000656,
+   "calling": "ironclad",
+   "key": "shield_rebuke",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Shield Rebuke",
+    "cost": 10,
+    "cooldown_ms": 12000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain a stack of Conviction and the target is stunned for 2 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldBash",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000658,
+   "calling": "ironclad",
+   "key": "iron_resolve",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Iron Resolve",
+    "cost": 10,
+    "cooldown_ms": 45000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. For 15 sec, every block heals you for 3% of your maximum health.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_AshesToAshes",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 0,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000660,
+   "calling": "ironclad",
+   "key": "long_resolve",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Long Resolve",
+    "cost": 10,
+    "cooldown_ms": 45000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. For 25 sec, every block heals you for 2% of your maximum health.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_AshesToAshes",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 0,
+    "cast_time_index": 1,
+    "duration_index": 63
+   }
+  },
+  {
+   "spell_id": 1000662,
+   "calling": "ironclad",
+   "key": "resolute_block",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Resolute Block",
+    "cost": 10,
+    "cooldown_ms": 45000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. For 15 sec, every block heals you for 2% of your maximum health. Your chance to Block is also increased by 15% while it lasts.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_AshesToAshes",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 0,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000664,
+   "calling": "ironclad",
+   "key": "wider_line",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Wider Line",
+    "cost": 0,
+    "cooldown_ms": 20000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Every enemy within 15 yd attacks you for 4 sec, and your threat on each rises to match its highest. Each enemy taunted gives you a stack of Hold the Line: 5% more block chance a stack, up to 5, for 10 sec.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Warrior_Challange",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 209,
+    "range_index": 1,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000665,
+   "calling": "ironclad",
+   "key": "firm_line",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Firm Line",
+    "cost": 0,
+    "cooldown_ms": 20000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Every enemy within 10 yd attacks you for 4 sec, and your threat on each rises to match its highest. Each enemy taunted gives you 2 stacks of Hold the Line: 5% more block chance a stack, up to 5, for 10 sec.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Warrior_Challange",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 209,
+    "range_index": 1,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000666,
+   "calling": "ironclad",
+   "key": "hard_line",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Hard Line",
+    "cost": 0,
+    "cooldown_ms": 20000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Every enemy within 10 yd attacks you for 6 sec, and your threat on each rises to match its highest. Each enemy taunted gives you a stack of Hold the Line: 5% more block chance a stack, up to 5, for 10 sec.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Warrior_Challange",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 209,
+    "range_index": 1,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000667,
+   "calling": "ironclad",
+   "key": "last_bastion",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Last Bastion",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Healing on you is 30% stronger while you are below 30% health.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_Heal",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000668,
+   "calling": "ironclad",
+   "key": "convictions_edge",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Conviction's Edge",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Shield Slam is 10% more likely to be a critical strike.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_RighteousFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000669,
+   "calling": "ironclad",
+   "key": "vengeful_wall",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Vengeful Wall",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Each block has a 50% chance to give you a stack of Conviction.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfValor",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
    "spell_id": 1000009,
    "calling": "vanguard",
    "key": "aura_seal_of_iron_armor",
@@ -8899,6 +10348,254 @@
     ],
     "name": "Barbed Pin",
     "aura_description": "Bleeding for physical damage every 2 sec."
+   }
+  },
+  {
+   "spell_id": 1000630,
+   "calling": "ironclad",
+   "key": "aura_hold_the_line",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Warrior_Challange",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Hold the Line",
+    "aura_description": "Block chance increased by 5% a stack."
+   }
+  },
+  {
+   "spell_id": 1000635,
+   "calling": "ironclad",
+   "key": "aura_stunning_slam",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\INV_Shield_05",
+    "mechanic": 12,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "name": "Stunning Slam",
+    "aura_description": "Stunned.",
+    "visual": 2816
+   }
+  },
+  {
+   "spell_id": 1000639,
+   "calling": "ironclad",
+   "key": "aura_long_penance",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Shield of the Penitent",
+    "aura_description": "Block chance increased by 55%. Each block deals Holy damage to the attacker.",
+    "visual": 7323
+   }
+  },
+  {
+   "spell_id": 1000641,
+   "calling": "ironclad",
+   "key": "aura_searing_penance",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Shield of the Penitent",
+    "aura_description": "Block chance increased by 55%. Each block deals twice the Holy damage to the attacker.",
+    "visual": 7323
+   }
+  },
+  {
+   "spell_id": 1000650,
+   "calling": "ironclad",
+   "key": "aura_longer_wall",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldWall",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Iron Wall",
+    "aura_description": "Damage taken reduced by 40%."
+   }
+  },
+  {
+   "spell_id": 1000653,
+   "calling": "ironclad",
+   "key": "aura_wall_of_thorns",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldWall",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Iron Wall",
+    "aura_description": "Damage taken reduced by 40%. Each block deals Holy damage to the attacker."
+   }
+  },
+  {
+   "spell_id": 1000657,
+   "calling": "ironclad",
+   "key": "aura_shield_rebuke",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldBash",
+    "mechanic": 12,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "name": "Shield Rebuke",
+    "aura_description": "Stunned.",
+    "visual": 2816
+   }
+  },
+  {
+   "spell_id": 1000659,
+   "calling": "ironclad",
+   "key": "aura_iron_resolve",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_AshesToAshes",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Steel Resolve",
+    "aura_description": "Each block heals you for 3% of your maximum health."
+   }
+  },
+  {
+   "spell_id": 1000661,
+   "calling": "ironclad",
+   "key": "aura_long_resolve",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_AshesToAshes",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Steel Resolve",
+    "aura_description": "Each block heals you for 2% of your maximum health."
+   }
+  },
+  {
+   "spell_id": 1000663,
+   "calling": "ironclad",
+   "key": "aura_resolute_block",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_AshesToAshes",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Steel Resolve",
+    "aura_description": "Each block heals you for 2% of your maximum health. Block chance increased by 15%."
    }
   },
   {

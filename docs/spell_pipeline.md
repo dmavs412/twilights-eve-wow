@@ -254,6 +254,16 @@ had stepped in. One with `spring_radius_yd` catches everyone within it; one with
 nearest enemy inside its own radius, if any. Either way it is spent, and its objects go. An area
 still arming does not spring. One area stands per caster and skill, so several trap skills stand
 at once.
+The Ironclad (#685) makes the realm enforce `requires: caster_state=after_block;window_ms=N`: the
+cast is refused (`SPELL_FAILED_CASTER_AURASTATE`, before the cost) unless the caster blocked a
+blow, whole or in part, in the last N ms (Retort). The other `caster_state` values are still
+loaded and not enforced, and the client does not grey the button. An `add_aura_stacks` whose aura
+row has effects of its own puts that row up once a stack, so each stack's effect counts, held to
+its `max_stacks` under `stack_rule=stack`; an aura row with no effects (Conviction) stays a bare
+stack count. `parry_pct`, `block_pct`, `block_value_pct` and `armor_items_pct` on an aura row now
+add up a stack each (Hold the Line's 5% block a stack). A proc's `apply_aura`,
+`apply_aura_target` and `apply_aura_area` find the caster's own Calling's aura row first, so a Tier
+2 copy of a Tier 1 row under the same key (the Ironclad's Conviction) gets its own stacks.
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

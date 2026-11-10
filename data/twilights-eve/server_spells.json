@@ -12833,5 +12833,2381 @@
    "spirit": 0
   },
   "shapeshift_form": 0
+ },
+ {
+  "key": "ironclad",
+  "power": "rage",
+  "stat_profile": "warrior",
+  "item_class": "warrior",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [
+   "cloth",
+   "leather",
+   "mail",
+   "plate",
+   "shield"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\INV_Shield_06",
+  "spellbook": "Ironclad",
+  "blurb": "A wall of steel the pack breaks against. Every block builds Conviction, and every shield blow spends it.",
+  "skills": [
+   {
+    "key": "righteous_smash",
+    "name": "Righteous Smash",
+    "rank": 1,
+    "status": "placeholder",
+    "icon_id": 856,
+    "spell_id": 1000622,
+    "realm_cost": 12,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "next_swing",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "normal",
+       "on_next_swing": true,
+       "bonus": {
+        "base": 90,
+        "per_level": 2,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_aura_stacks",
+      "params": {
+       "aura": "conviction",
+       "stacks": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next melee swing strikes the target for weapon damage plus 90 + 2 per level. Every hit grants a stack of Conviction."
+   },
+   {
+    "key": "shield_slam",
+    "name": "Shield Slam",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000623,
+    "realm_cost": 15,
+    "realm_cooldown_ms": 6000,
+    "realm_gcd_ms": 1500,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "shield"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "normal",
+       "bonus": {
+        "base": 30,
+        "per_level": 2,
+        "per_ap": 0
+       },
+       "block_value_pct": 200
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "consume_aura_stacks",
+      "params": {
+       "aura": "conviction",
+       "school": "holy",
+       "per_stack": {
+        "base": 12,
+        "per_level": 1.2
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Slams the target with your shield for weapon damage plus 30 + 2 per level and 200% of your shield's Block Value, then spends every Conviction stack for 12 + 1.2 per level Holy damage a stack. Needs a shield."
+   },
+   {
+    "key": "shield_of_penitent",
+    "name": "Shield of the Penitent",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000624,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 15000,
+    "realm_gcd_ms": 0,
+    "target": "self",
+    "school": "holy",
+    "prevention": "silence",
+    "requires_weapon": [
+     "shield"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_shield_of_penitent"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "For 10 sec your chance to Block is increased by 55%. Every block deals 53 + 1.2 per level Holy damage to the attacker."
+   },
+   {
+    "key": "retort",
+    "name": "Retort",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000625,
+    "realm_cost": 5,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 1500,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "holy",
+    "prevention": "silence",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "requires": {
+     "caster_state": "after_block",
+     "window_ms": 5000
+    },
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "normal",
+       "weapon_pct": 80,
+       "bonus": {
+        "base": 20,
+        "per_level": 1.5,
+        "per_ap": 0
+       },
+       "school": "holy"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_aura_stacks",
+      "params": {
+       "aura": "conviction",
+       "stacks": 2
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Usable for 5 sec after you block. Strikes the target with holy force for 80% weapon damage plus 20 + 1.5 per level Holy damage, and grants 2 stacks of Conviction."
+   },
+   {
+    "key": "iron_wall",
+    "name": "Iron Wall",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000626,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 120000,
+    "realm_gcd_ms": 0,
+    "learn_level": 10,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_iron_wall"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. You take 40% less damage for 8 sec."
+   },
+   {
+    "key": "rebuke",
+    "name": "Rebuke",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000627,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 12000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "holy",
+    "prevention": "silence",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 4500
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_aura_stacks",
+      "params": {
+       "aura": "conviction",
+       "stacks": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain a stack of Conviction."
+   },
+   {
+    "key": "steel_resolve",
+    "name": "Steel Resolve",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000628,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 45000,
+    "realm_gcd_ms": 0,
+    "learn_level": 20,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_steel_resolve"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. For 15 sec, every block heals you for 2% of your maximum health."
+   },
+   {
+    "key": "hold_the_line",
+    "name": "Hold the Line",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000629,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 20000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 0,
+    "realm_range_max": 0,
+    "realm_radius_yd": 10,
+    "learn_level": 30,
+    "target": "self_area",
+    "school": "holy",
+    "prevention": "silence",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": null,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "taunt",
+      "params": {
+       "duration_ms": 4000
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_aura_stacks",
+      "params": {
+       "aura": "aura_hold_the_line",
+       "stacks": 1,
+       "per_target": true
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Every enemy within 10 yd attacks you for 4 sec, and your threat on each rises to match its highest. Each enemy taunted gives you a stack of Hold the Line: 5% more block chance a stack, up to 5, for 10 sec."
+   }
+  ],
+  "auras": [
+   {
+    "key": "conviction",
+    "name": "Conviction",
+    "spell_id": 1000622,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 5,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [],
+    "description": "Each stack adds Holy damage to your next Shield Slam."
+   },
+   {
+    "key": "aura_shield_of_penitent",
+    "name": "Shield of the Penitent",
+    "spell_id": 1000624,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 55
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "damage_attacker": {
+        "base": 53,
+        "per_level": 1.2
+       },
+       "school": "holy",
+       "amount_skill": "shield_of_penitent"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 55%. Each block deals Holy damage to the attacker."
+   },
+   {
+    "key": "aura_iron_wall",
+    "name": "Iron Wall",
+    "spell_id": 1000626,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_taken_pct",
+      "params": {
+       "pct": -40
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Damage taken reduced by 40%."
+   },
+   {
+    "key": "aura_steel_resolve",
+    "name": "Steel Resolve",
+    "spell_id": 1000628,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "heal_pct": 2
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Each block heals you for 2% of your maximum health."
+   },
+   {
+    "key": "aura_hold_the_line",
+    "name": "Hold the Line",
+    "spell_id": 1000630,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 5,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 5
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 5% a stack."
+   },
+   {
+    "key": "aura_stunning_slam",
+    "name": "Stunning Slam",
+    "spell_id": 1000635,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "stun",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 2000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "aura_spell_id": 7922
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stunned."
+   },
+   {
+    "key": "aura_long_penance",
+    "name": "Shield of the Penitent",
+    "spell_id": 1000639,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 55
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "damage_attacker": {
+        "base": 53,
+        "per_level": 1.2
+       },
+       "school": "holy",
+       "amount_skill": "shield_of_penitent"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 55%. Each block deals Holy damage to the attacker."
+   },
+   {
+    "key": "aura_searing_penance",
+    "name": "Shield of the Penitent",
+    "spell_id": 1000641,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 55
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "damage_attacker": {
+        "base": 106,
+        "per_level": 2.4
+       },
+       "school": "holy",
+       "amount_skill": "shield_of_penitent"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 55%. Each block deals twice the Holy damage to the attacker."
+   },
+   {
+    "key": "aura_longer_wall",
+    "name": "Iron Wall",
+    "spell_id": 1000650,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_taken_pct",
+      "params": {
+       "pct": -40
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Damage taken reduced by 40%."
+   },
+   {
+    "key": "aura_wall_of_thorns",
+    "name": "Iron Wall",
+    "spell_id": 1000653,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_taken_pct",
+      "params": {
+       "pct": -40
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "damage_attacker": {
+        "base": 20,
+        "per_level": 2
+       },
+       "school": "holy"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Damage taken reduced by 40%. Each block deals Holy damage to the attacker."
+   },
+   {
+    "key": "aura_shield_rebuke",
+    "name": "Shield Rebuke",
+    "spell_id": 1000657,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "stun",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 2000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "aura_spell_id": 7922
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stunned."
+   },
+   {
+    "key": "aura_iron_resolve",
+    "name": "Steel Resolve",
+    "spell_id": 1000659,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "heal_pct": 3
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Each block heals you for 3% of your maximum health."
+   },
+   {
+    "key": "aura_long_resolve",
+    "name": "Steel Resolve",
+    "spell_id": 1000661,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 25000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "heal_pct": 2
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Each block heals you for 2% of your maximum health."
+   },
+   {
+    "key": "aura_resolute_block",
+    "name": "Steel Resolve",
+    "spell_id": 1000663,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "heal_pct": 2
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 15
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Each block heals you for 2% of your maximum health. Block chance increased by 15%."
+   }
+  ],
+  "rows": [
+   {
+    "key": "righteous_smash",
+    "level": 5,
+    "kind": "skill_choice",
+    "skill": "righteous_smash",
+    "choices": [
+     {
+      "key": "smash_of_conviction",
+      "name": "Smash of Conviction",
+      "rank": 1,
+      "status": "placeholder",
+      "icon_id": 856,
+      "spell_id": 1000631,
+      "realm_cost": 12,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "next_swing",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "on_next_swing": true,
+         "bonus": {
+          "base": 90,
+          "per_level": 2,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your next melee swing strikes the target for weapon damage plus 90 + 2 per level. Every hit grants 2 stacks of Conviction.",
+      "change": "Each hit grants 2 stacks of Conviction instead of 1.",
+      "variant_of": "righteous_smash"
+     },
+     {
+      "key": "shield_smash",
+      "name": "Shield Smash",
+      "rank": 1,
+      "status": "placeholder",
+      "icon_id": 856,
+      "spell_id": 1000632,
+      "realm_cost": 12,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "next_swing",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "on_next_swing": true,
+         "bonus": {
+          "base": 90,
+          "per_level": 2,
+          "per_ap": 0
+         },
+         "block_value_pct": 50
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your next melee swing strikes the target for weapon damage plus 90 + 2 per level. Also deals Physical damage equal to 50% of your shield's Block Value. Every hit grants a stack of Conviction.",
+      "change": "Also deals Physical damage equal to 50% of your shield's Block Value.",
+      "variant_of": "righteous_smash"
+     },
+     {
+      "key": "hungry_smash",
+      "name": "Hungry Smash",
+      "rank": 1,
+      "status": "placeholder",
+      "icon_id": 856,
+      "spell_id": 1000633,
+      "realm_cost": 12,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "next_swing",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "on_next_swing": true,
+         "bonus": {
+          "base": 90,
+          "per_level": 2,
+          "per_ap": 0
+         },
+         "heal_pct": 20
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your next melee swing strikes the target for weapon damage plus 90 + 2 per level. It heals you for 20% of the damage it deals. Every hit grants a stack of Conviction.",
+      "change": "Heals you for 20% of the damage it deals.",
+      "variant_of": "righteous_smash"
+     }
+    ]
+   },
+   {
+    "key": "shield_slam",
+    "level": 10,
+    "kind": "skill_choice",
+    "skill": "shield_slam",
+    "choices": [
+     {
+      "key": "stunning_slam",
+      "name": "Stunning Slam",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000634,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 6000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "shield"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "bonus": {
+          "base": 30,
+          "per_level": 2,
+          "per_ap": 0
+         },
+         "block_value_pct": 200
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "consume_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "school": "holy",
+         "per_stack": {
+          "base": 12,
+          "per_level": 1.2
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "aura_stunning_slam"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Slams the target with your shield for weapon damage plus 30 + 2 per level and 200% of your shield's Block Value, then spends every Conviction stack for 12 + 1.2 per level Holy damage a stack. The target is stunned for 2 sec. Needs a shield.",
+      "change": "Also stuns the target for 2 sec.",
+      "variant_of": "shield_slam"
+     },
+     {
+      "key": "heavy_slam",
+      "name": "Heavy Slam",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000636,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 6000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "shield"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "bonus": {
+          "base": 30,
+          "per_level": 2,
+          "per_ap": 0
+         },
+         "block_value_pct": 300
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "consume_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "school": "holy",
+         "per_stack": {
+          "base": 12,
+          "per_level": 1.2
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Slams the target with your shield for weapon damage plus 30 + 2 per level and 300% of your shield's Block Value, then spends every Conviction stack for 12 + 1.2 per level Holy damage a stack. Needs a shield.",
+      "change": "Adds 300% of your shield's Block Value instead of 200%.",
+      "variant_of": "shield_slam"
+     },
+     {
+      "key": "refunding_slam",
+      "name": "Refunding Slam",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000637,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 6000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "shield"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "bonus": {
+          "base": 30,
+          "per_level": 2,
+          "per_ap": 0
+         },
+         "block_value_pct": 200
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "consume_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "school": "holy",
+         "per_stack": {
+          "base": 12,
+          "per_level": 1.2
+         },
+         "refund_per_stack": 3
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Slams the target with your shield for weapon damage plus 30 + 2 per level and 200% of your shield's Block Value, then spends every Conviction stack for 12 + 1.2 per level Holy damage a stack. You gain 3 Rage for each stack spent. Needs a shield.",
+      "change": "Gives you 3 Rage for each Conviction stack it spends.",
+      "variant_of": "shield_slam"
+     }
+    ]
+   },
+   {
+    "key": "shield_of_penitent",
+    "level": 15,
+    "kind": "skill_choice",
+    "skill": "shield_of_penitent",
+    "choices": [
+     {
+      "key": "long_penance",
+      "name": "Long Penance",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000638,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "shield"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_long_penance"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 15 sec your chance to Block is increased by 55%. Every block deals 53 + 1.2 per level Holy damage to the attacker.",
+      "change": "Lasts 15 sec instead of 10 sec.",
+      "variant_of": "shield_of_penitent"
+     },
+     {
+      "key": "searing_penance",
+      "name": "Searing Penance",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000640,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "shield"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_searing_penance"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 10 sec your chance to Block is increased by 55%. Every block deals 106 + 2.4 per level Holy damage to the attacker.",
+      "change": "Each block deals {amount:106:2.4:0:0} Holy damage to the attacker instead of {amount:53:1.2:0:0}.",
+      "variant_of": "shield_of_penitent"
+     },
+     {
+      "key": "steadfast",
+      "name": "Steadfast",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000642,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 10000,
+      "realm_gcd_ms": 0,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "shield"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_shield_of_penitent"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 10 sec your chance to Block is increased by 55%. Every block deals 53 + 1.2 per level Holy damage to the attacker. 10 sec cooldown.",
+      "change": "Has a 10 sec cooldown instead of 15 sec.",
+      "variant_of": "shield_of_penitent"
+     }
+    ]
+   },
+   {
+    "key": "retort",
+    "level": 20,
+    "kind": "skill_choice",
+    "skill": "retort",
+    "choices": [
+     {
+      "key": "quick_retort",
+      "name": "Quick Retort",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000643,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "requires": {
+       "caster_state": "after_block",
+       "window_ms": 8000
+      },
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 80,
+         "bonus": {
+          "base": 20,
+          "per_level": 1.5,
+          "per_ap": 0
+         },
+         "school": "holy"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Usable for 8 sec after you block. Strikes the target with holy force for 80% weapon damage plus 20 + 1.5 per level Holy damage, and grants 2 stacks of Conviction.",
+      "change": "Stays usable longer after a block.",
+      "variant_of": "retort"
+     },
+     {
+      "key": "righteous_retort",
+      "name": "Righteous Retort",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000644,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "requires": {
+       "caster_state": "after_block",
+       "window_ms": 5000
+      },
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 80,
+         "bonus": {
+          "base": 20,
+          "per_level": 1.5,
+          "per_ap": 0
+         },
+         "school": "holy"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 3
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Usable for 5 sec after you block. Strikes the target with holy force for 80% weapon damage plus 20 + 1.5 per level Holy damage, and grants 3 stacks of Conviction.",
+      "change": "Grants 3 stacks of Conviction instead of 2.",
+      "variant_of": "retort"
+     },
+     {
+      "key": "crushing_retort",
+      "name": "Crushing Retort",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000645,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "requires": {
+       "caster_state": "after_block",
+       "window_ms": 5000
+      },
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 120,
+         "bonus": {
+          "base": 20,
+          "per_level": 1.5,
+          "per_ap": 0
+         },
+         "school": "holy"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Usable for 5 sec after you block. Strikes the target with holy force for 120% weapon damage plus 20 + 1.5 per level Holy damage, and grants 2 stacks of Conviction.",
+      "change": "Strikes for 120% weapon damage instead of 80%.",
+      "variant_of": "retort"
+     }
+    ]
+   },
+   {
+    "key": "ironclad_bulwark",
+    "level": 25,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "thick_plate",
+      "name": "Thick Plate",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000646,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "armor_items_pct",
+        "params": {
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Armor from items increased by 10%."
+     },
+     {
+      "key": "shield_mastery",
+      "name": "Shield Mastery",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000647,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "block_pct",
+        "params": {
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your chance to Block is increased by 10% while you wear a shield."
+     },
+     {
+      "key": "bastions_heart",
+      "name": "Bastion's Heart",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000648,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "max_health_pct",
+        "params": {
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Maximum health increased by 10%."
+     }
+    ]
+   },
+   {
+    "key": "iron_wall",
+    "level": 30,
+    "kind": "skill_choice",
+    "skill": "iron_wall",
+    "choices": [
+     {
+      "key": "longer_wall",
+      "name": "Longer Wall",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000649,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 120000,
+      "realm_gcd_ms": 0,
+      "learn_level": 10,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_longer_wall"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. You take 40% less damage for 12 sec.",
+      "change": "Lasts 12 sec instead of 8 sec.",
+      "variant_of": "iron_wall"
+     },
+     {
+      "key": "quick_wall",
+      "name": "Quick Wall",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000651,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 80000,
+      "realm_gcd_ms": 0,
+      "learn_level": 10,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_iron_wall"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. You take 40% less damage for 8 sec. 80 sec cooldown.",
+      "change": "Has a 80 sec cooldown instead of 120 sec.",
+      "variant_of": "iron_wall"
+     },
+     {
+      "key": "wall_of_thorns",
+      "name": "Wall of Thorns",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000652,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 120000,
+      "realm_gcd_ms": 0,
+      "learn_level": 10,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_wall_of_thorns"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. You take 40% less damage for 8 sec, and every block while it lasts deals 20 + 2 per level Holy damage to the attacker.",
+      "change": "While it lasts, each block deals {amount:20:2:0:0} Holy damage to the attacker.",
+      "variant_of": "iron_wall"
+     }
+    ]
+   },
+   {
+    "key": "rebuke",
+    "level": 35,
+    "kind": "skill_choice",
+    "skill": "rebuke",
+    "choices": [
+     {
+      "key": "long_rebuke",
+      "name": "Long Rebuke",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000654,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 12000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 6500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you gain a stack of Conviction.",
+      "change": "Locks the school out for 6.5 sec instead of 4.5 sec.",
+      "variant_of": "rebuke"
+     },
+     {
+      "key": "rebuke_of_conviction",
+      "name": "Rebuke of Conviction",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000655,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 12000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 4500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain 2 stacks of Conviction.",
+      "change": "A stopped cast grants 2 stacks of Conviction instead of 1.",
+      "variant_of": "rebuke"
+     },
+     {
+      "key": "shield_rebuke",
+      "name": "Shield Rebuke",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000656,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 12000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 4500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "conviction",
+         "stacks": 1
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "aura_shield_rebuke"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain a stack of Conviction and the target is stunned for 2 sec.",
+      "change": "A stopped cast also stuns the target for 2 sec.",
+      "variant_of": "rebuke"
+     }
+    ]
+   },
+   {
+    "key": "steel_resolve",
+    "level": 40,
+    "kind": "skill_choice",
+    "skill": "steel_resolve",
+    "choices": [
+     {
+      "key": "iron_resolve",
+      "name": "Iron Resolve",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000658,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 45000,
+      "realm_gcd_ms": 0,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_iron_resolve"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. For 15 sec, every block heals you for 3% of your maximum health.",
+      "change": "Each block heals you for 3% of your maximum health instead of 2%.",
+      "variant_of": "steel_resolve"
+     },
+     {
+      "key": "long_resolve",
+      "name": "Long Resolve",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000660,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 45000,
+      "realm_gcd_ms": 0,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_long_resolve"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. For 25 sec, every block heals you for 2% of your maximum health.",
+      "change": "Lasts 25 sec instead of 15 sec.",
+      "variant_of": "steel_resolve"
+     },
+     {
+      "key": "resolute_block",
+      "name": "Resolute Block",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000662,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 45000,
+      "realm_gcd_ms": 0,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_resolute_block"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. For 15 sec, every block heals you for 2% of your maximum health. Your chance to Block is also increased by 15% while it lasts.",
+      "change": "While it lasts, your chance to Block is also increased by 15%.",
+      "variant_of": "steel_resolve"
+     }
+    ]
+   },
+   {
+    "key": "hold_the_line",
+    "level": 45,
+    "kind": "skill_choice",
+    "skill": "hold_the_line",
+    "choices": [
+     {
+      "key": "wider_line",
+      "name": "Wider Line",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000664,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 0,
+      "realm_radius_yd": 15,
+      "learn_level": 30,
+      "target": "self_area",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "taunt",
+        "params": {
+         "duration_ms": 4000
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "aura_hold_the_line",
+         "stacks": 1,
+         "per_target": true
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Every enemy within 15 yd attacks you for 4 sec, and your threat on each rises to match its highest. Each enemy taunted gives you a stack of Hold the Line: 5% more block chance a stack, up to 5, for 10 sec.",
+      "change": "Taunts the enemies in a wider circle.",
+      "variant_of": "hold_the_line"
+     },
+     {
+      "key": "firm_line",
+      "name": "Firm Line",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000665,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 0,
+      "realm_radius_yd": 10,
+      "learn_level": 30,
+      "target": "self_area",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "taunt",
+        "params": {
+         "duration_ms": 4000
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "aura_hold_the_line",
+         "stacks": 2,
+         "per_target": true
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Every enemy within 10 yd attacks you for 4 sec, and your threat on each rises to match its highest. Each enemy taunted gives you 2 stacks of Hold the Line: 5% more block chance a stack, up to 5, for 10 sec.",
+      "change": "Each enemy taunted gives 2 stacks of Hold the Line instead of 1.",
+      "variant_of": "hold_the_line"
+     },
+     {
+      "key": "hard_line",
+      "name": "Hard Line",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000666,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 0,
+      "realm_radius_yd": 10,
+      "learn_level": 30,
+      "target": "self_area",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "taunt",
+        "params": {
+         "duration_ms": 6000
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "aura_hold_the_line",
+         "stacks": 1,
+         "per_target": true
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Every enemy within 10 yd attacks you for 6 sec, and your threat on each rises to match its highest. Each enemy taunted gives you a stack of Hold the Line: 5% more block chance a stack, up to 5, for 10 sec.",
+      "change": "The taunt lasts 6 sec instead of 4 sec.",
+      "variant_of": "hold_the_line"
+     }
+    ]
+   },
+   {
+    "key": "ironclad_last_bastion",
+    "level": 50,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "last_bastion",
+      "name": "Last Bastion",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000667,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "healing_taken_pct",
+        "params": {
+         "pct": 30,
+         "below_health_pct": 30
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Healing on you is 30% stronger while you are below 30% health."
+     },
+     {
+      "key": "convictions_edge",
+      "name": "Conviction's Edge",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000668,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_crit_pct",
+        "params": {
+         "skill": "shield_slam",
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Shield Slam is 10% more likely to be a critical strike."
+     },
+     {
+      "key": "vengeful_wall",
+      "name": "Vengeful Wall",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000669,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "block",
+         "chance": 50,
+         "apply_aura": "conviction"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Each block has a 50% chance to give you a stack of Conviction."
+     }
+    ]
+   }
+  ],
+  "name": "Ironclad",
+  "tier": 2,
+  "tier_cap": 50,
+  "row_levels": [
+   5,
+   10,
+   15,
+   20,
+   25,
+   30,
+   35,
+   40,
+   45,
+   50
+  ],
+  "tier_bonus": {
+   "strength": 24,
+   "agility": 12,
+   "stamina": 24,
+   "intellect": 0,
+   "spirit": 6
+  },
+  "shapeshift_form": 17
  }
 ]

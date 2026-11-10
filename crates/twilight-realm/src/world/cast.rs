@@ -118,6 +118,9 @@ pub(super) struct Skills {
     dodged: Option<(u64, f32)>,
     /// Whether that dodge shows the client its marker point.
     dodge_marked: bool,
+    /// Seconds since the player last blocked a blow; `None` before the first. A skill gated on
+    /// `caster_state=after_block` reads it (Retort).
+    since_block: Option<f32>,
     /// The combo points a builder put on a target; the finisher that lands spends them.
     pub(super) combo: Combo,
     /// Seconds the caster is held in combat (Bloodrage).
@@ -895,10 +898,12 @@ enum AuraKind {
         skill: &'static str,
         stacks: u32,
     },
-    /// The player's `stat` is `pct` percent higher.
+    /// The player's `stat` is `pct` percent higher a stack, up to `max_stacks` (Hold the Line).
     Defense {
         stat: DefenseStat,
         pct: u32,
+        stacks: u32,
+        max_stacks: u32,
     },
     /// The player is stealthed; `opener_crit`: their first attack from it is a critical strike.
     Stealth {
@@ -1028,6 +1033,7 @@ impl AuraKind {
             | AuraKind::MeleeHaste { stacks, .. }
             | AuraKind::NextCast { stacks, .. }
             | AuraKind::ArmorLoss { stacks, .. }
+            | AuraKind::Defense { stacks, .. }
             | AuraKind::Marker { stacks, .. } => stacks,
             _ => 1,
         }
@@ -1159,7 +1165,12 @@ impl Skills {
             .iter()
             .filter(|a| a.unit == self.me)
             .map(|a| match a.kind {
-                AuraKind::Defense { stat: s, pct } if s == stat => pct,
+                AuraKind::Defense {
+                    stat: s,
+                    pct,
+                    stacks,
+                    ..
+                } if s == stat => pct * stacks,
                 _ => 0,
             })
             .sum()
@@ -2122,6 +2133,12 @@ impl Skills {
             | (
                 AuraKind::ArmorLoss { stacks: held, .. },
                 AuraKind::ArmorLoss {
+                    stacks, max_stacks, ..
+                },
+            )
+            | (
+                AuraKind::Defense { stacks: held, .. },
+                AuraKind::Defense {
                     stacks, max_stacks, ..
                 },
             ) = (old.kind, &mut aura.kind)
@@ -4003,6 +4020,17 @@ impl InWorld {
         {
             return Err(SPELL_FAILED_NOT_READY);
         }
+        // A blow answered only just after a block (Retort), checked before the cost as the
+        // client's aura state is.
+        if let Some(window_ms) = skill.after_block_window_ms() {
+            let open = self
+                .skills
+                .since_block
+                .is_some_and(|t| clock::ms(t) <= window_ms);
+            if !open {
+                return Err(SPELL_FAILED_CASTER_AURASTATE);
+            }
+        }
         if !free && !p.power.has(self.power_cost(c, skill)) {
             return Err(SPELL_FAILED_NO_POWER);
         }
@@ -4954,7 +4982,12 @@ impl InWorld {
             | Effect::BlockValuePct { .. }
             | Effect::ArmorItemsPct { .. } => {
                 let (stat, pct, duration_ms) = AuraKind::defense(effect).expect("a defense effect");
-                let kind = AuraKind::Defense { stat, pct };
+                let kind = AuraKind::Defense {
+                    stat,
+                    pct,
+                    stacks: 1,
+                    max_stacks: 1,
+                };
                 let mut a = aura(kind, skill.spell_id, duration_ms, 0);
                 a.unit = self.guid;
                 self.skills.apply(a, events);
@@ -5831,6 +5864,14 @@ impl InWorld {
         else {
             return;
         };
+        // An aura row with effects of its own goes on whole, a stack an application, so each
+        // stack of its effect counts (Hold the Line's block chance).
+        if let Some(def) = callings::aura_by_spell(aura_spell_id) {
+            for _ in 0..stacks.max(more) {
+                self.grant_aura(def, level, 0, events);
+            }
+            return;
+        }
         let aura = Aura {
             unit: self.guid,
             spell_id: aura_spell_id,
@@ -6057,6 +6098,9 @@ impl InWorld {
             return;
         }
         let on = crate::talents::on_struck(c);
+        if matches!(outcome, Outcome::Block) {
+            self.skills.since_block = Some(0.0);
+        }
         let event = match outcome {
             // A combo point from dodging lands on the mob the player fights.
             Outcome::Dodge => Some((crate::callings::ProcEvent::Dodge, self.player.attacking)),
@@ -6738,6 +6782,7 @@ impl InWorld {
             self.auras_die_with(unit, events);
         }
         let s = &mut self.skills;
+        s.since_block = s.since_block.map(|t| t + dt);
         if let Some((_, left)) = &mut s.dodged {
             *left -= dt;
             if *left <= 0.0 {
@@ -8491,18 +8536,26 @@ impl InWorld {
                 callings::AuraEffect::ParryPct { pct } => AuraKind::Defense {
                     stat: DefenseStat::Parry,
                     pct: *pct,
+                    stacks: 1,
+                    max_stacks: stack_max,
                 },
                 callings::AuraEffect::BlockPct { pct } => AuraKind::Defense {
                     stat: DefenseStat::Block,
                     pct: *pct,
+                    stacks: 1,
+                    max_stacks: stack_max,
                 },
                 callings::AuraEffect::BlockValuePct { pct } => AuraKind::Defense {
                     stat: DefenseStat::BlockValue,
                     pct: *pct,
+                    stacks: 1,
+                    max_stacks: stack_max,
                 },
                 callings::AuraEffect::ArmorItemsPct { pct } => AuraKind::Defense {
                     stat: DefenseStat::ArmorItems,
                     pct: *pct,
+                    stacks: 1,
+                    max_stacks: stack_max,
                 },
                 callings::AuraEffect::Stealth { opener_crit } => AuraKind::Stealth {
                     opener_crit: *opener_crit,

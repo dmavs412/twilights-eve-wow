@@ -1524,20 +1524,25 @@ progress = "Say the word, $N, and it begins."
 completion = "Then it is done. Forget your old habits, $N: you are a Vanguard now, and a Vanguard starts over. Go and earn your scars again."
 money = 0
 
-# Ironclad (Tier 2) has no kit: the quest is offered at Vanguard's cap and never finishes.
+# The Ironclad (Tier 2, #685): Sergeant Maera Holt at the Lakeshire bridge gives it, and her
+# trial (64411-64414, in the Tier 2 section below) gates it. Commander Wray gives the hint.
 [[quest]]
 id = 64002
 kind = "advancement"
-giver = 190071
+giver = 190110
 level = 30
 zone_or_sort = -81
-advancement = { from = "vanguard", to = "ironclad", completable = false }
+advancement = { from = "vanguard", to = "ironclad", trial = 64414 }
+calling_choice = true
 title = "The Ironclad's Oath"
-objectives = "Await the Ironclads' summons."
-details = "Thirty battles' worth of scars, and still standing at the front. Few Vanguards come this far, $N.$B$BThe Ironclads hold the line when every other blade has broken, and with the world as small as it is now, there's only one line left to hold. They don't take just anyone. When they're ready to test you, I'll send word. Until then, keep your shield arm strong."
-progress = "The Ironclads haven't sent for you yet, $N. Patience."
-completion = "The Ironclads haven't sent for you yet, $N. Patience."
+objectives = "Find the Ironclads at the Lakeshire bridge in Redridge, and pass their sergeant's trial."
+details = "Thirty battles' worth of scars, and still standing at the front. The Ironclads hold the line when every other blade has broken.$B$BThey're not in Stormwind. East of Elwynn, where the road crosses Lake Everstill into Lakeshire, someone still keeps the bridge in Ironclad plate. Commander Wray in the Stormwind barracks knows her name. Find her at the bridge."
+progress = "You found the bridge. Now hold it. Have you done what I asked?"
+completion = "Then swear it. You'll hold a line nobody ordered you to hold, and you'll hold it after everyone else has run. You start over, Ironclad. Your shield arm doesn't."
 money = 0
+hint = [
+  { npc = 190071, option = "Where do I find the Ironclads?", reply = "Lakeshire. They hold the bridge into town because nobody else will. Look for Sergeant Holt at the west end, in plate older than you are." },
+]
 
 [[quest]]
 id = 64003
@@ -1783,6 +1788,72 @@ progress = "Dry boots?"
 completion = "Six, and dry boots. Come back up the hill. I've something to tell you."
 money = 5000
 kill = [[1083, 6]]
+
+# The Ironclad (#685): Sergeant Maera Holt at the Lakeshire bridge. Her Advancement Quest is 64002,
+# kept with the Vanguard Line's quests above.
+[[quest]]
+id = 64411
+kind = "once"
+giver = 190110
+after_taken = 64002
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "The Highway Holds"
+objectives = "Kill 12 Blackrock Outrunners on Lakeridge Highway."
+details = "The orcs run messages up and down the highway south of the lake. Every runner that dies is an order that never arrives. Twelve."
+progress = "The highway?"
+completion = "Twelve orders that never arrived. Good."
+money = 2500
+kill = [[485, 12]]
+
+[[quest]]
+id = 64412
+kind = "once"
+giver = 190110
+after = 64411
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Shields of the Blackrock"
+objectives = "Bring 8 Blackrock Shields from the grunts and renegades on Lakeridge Highway."
+details = "You learn a shield by breaking it. Bring me eight of theirs, and we'll see whose held."
+progress = "Their shields?"
+completion = "Cracked, every one. Yours isn't. That's the lesson."
+money = 2500
+collect = [{ item = 980811, count = 8, chance = 40, from = [440, 437] }]
+
+[[quest]]
+id = 64413
+kind = "once"
+giver = 190110
+after = 64412
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "The Lake Shore"
+objectives = "Kill 10 Murloc Flesheaters on the shore of Lake Everstill."
+details = "The murlocs come up out of the lake at night and take whoever's on the bridge. Make the shore a place they don't come back from."
+progress = "The shore?"
+completion = "Quiet water tonight. The Watch will thank you, and won't know why."
+money = 2500
+kill = [[422, 10]]
+
+[[quest]]
+id = 64414
+kind = "once"
+giver = 190110
+after = 64413
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Hold the Line"
+objectives = "Kill 10 Blackrock Renegades on Lakeridge Highway."
+details = "Last. The renegades are the ones who left the Blackrock and still raid for themselves. They fight dirty and they fight together. Ten, and you come back on your feet."
+progress = "Standing?"
+completion = "Standing. Then come and swear."
+money = 5000
+kill = [[437, 10]]
 
 # ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
 # The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the

@@ -20,6 +20,12 @@ fn own_aura(c: &Char, key: &str) -> Option<&'static crate::callings::AuraDef> {
         .find(|a| a.key == key)
 }
 
+/// The aura row `key` a proc puts up: `c`'s Calling's own, else any Calling's. A Tier 2 Calling's
+/// copy of a Tier 1 row shares its key.
+fn proc_aura(c: &Char, key: &str) -> Option<&'static crate::callings::AuraDef> {
+    own_aura(c, key).or_else(|| crate::callings::aura(key))
+}
+
 /// Whether a chance of `pct_per_stack` percent a stack lands at `stacks`, rolled in thousandths
 /// so a fraction of a percent counts.
 pub(super) fn lands_per_stack(pct_per_stack: f32, stacks: u32, rng: &mut Rng) -> bool {
@@ -125,7 +131,7 @@ impl InWorld {
                 self.heal_allies(c, c.position, proc.radius_yd, total, proc.spell_id, events);
             }
             for key in &proc.target_auras {
-                if let (Some(def), Some(target)) = (crate::callings::aura(key), happened.target) {
+                if let (Some(def), Some(target)) = (proc_aura(c, key), happened.target) {
                     self.put_aura(def, target, c.power_level(), events);
                 }
             }
@@ -168,15 +174,15 @@ impl InWorld {
                 self.skills.send_combo(events);
             }
             for key in &proc.auras {
-                if let Some(def) = crate::callings::aura(key) {
+                if let Some(def) = proc_aura(c, key) {
                     self.grant_aura(def, c.power_level(), 0, events);
-                } else if let Some(add) = crate::callings::stack_aura(key) {
+                } else if let Some(add) = crate::callings::own_stack_aura(c.calling, key) {
                     // A stacking aura with no effects of its own (Conviction) takes a stack.
                     self.add_aura_stacks(add, 0, c.power_level(), events);
                 }
             }
             for key in &proc.area_auras {
-                let Some(def) = crate::callings::aura(key) else {
+                let Some(def) = proc_aura(c, key) else {
                     continue;
                 };
                 let around: Vec<u64> = self
