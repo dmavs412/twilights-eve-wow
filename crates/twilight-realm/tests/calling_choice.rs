@@ -337,7 +337,9 @@ fn a_tier_1_pick_logs_the_quest_names_nobody_and_is_not_offered_again() {
 }
 
 #[test]
-fn a_level_30_cutthroat_has_no_tier_2_choice_yet() {
+fn a_level_30_cutthroat_is_offered_the_bloodletter() {
     let (mut realm, me) = tier1("cutthroat", 30);
-    assert!(popups(&enter(&mut realm, me)).is_empty());
+    let offers = offered(&enter(&mut realm, me));
+    assert_eq!(offers.len(), 1, "{offers:?}");
+    assert!(offers[0].contains(&64401), "{offers:?}");
 }

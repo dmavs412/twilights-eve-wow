@@ -116,6 +116,19 @@
    "weapon_mask": 1435135,
    "armor_mask": 126,
    "dual_wield": false
+  },
+  {
+   "key": "bloodletter",
+   "name": "Bloodletter",
+   "icon": "Interface\\Icons\\Ability_Rogue_Rupture",
+   "spellbook": "Bloodletter",
+   "power_type": 3,
+   "class": 4,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 6,
+   "dual_wield": true
   }
  ],
  "spells": [
@@ -10185,6 +10198,1363 @@
    }
   },
   {
+   "spell_id": 1000722,
+   "calling": "bloodletter",
+   "key": "rupture",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Rupture",
+    "cost": 25.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals. Each tick may spill a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Rogue_Rupture",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 250,
+    "range_index": 2,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000723,
+   "calling": "bloodletter",
+   "key": "hemorrhage",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Hemorrhage",
+    "cost": 35,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point. For 15 sec the target takes 20% more from your bleeds.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 28,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5119,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000725,
+   "calling": "bloodletter",
+   "key": "garrote",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Garrote",
+    "cost": 40,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Garrote the enemy, causing it to bleed every 3 sec for 18 sec. Awards 1 combo point. Each tick may spill a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Rogue_Garrote",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 757,
+    "range_index": 2,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1000727,
+   "calling": "bloodletter",
+   "key": "open_veins",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Open Veins",
+    "cost": 30,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: each of your bleeds on the target deals one of its ticks at once per combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Druid_Disembowel",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 250,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000728,
+   "calling": "bloodletter",
+   "key": "blood_fan",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Blood Fan",
+    "cost": 40,
+    "cooldown_ms": 10000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Up to 5 enemies in a cone in front of you within 8 yd bleed every 2 sec for 8 sec. Each tick spills a blood droplet 25% of the time.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Warrior_PunishingBlow",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 211,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000730,
+   "calling": "bloodletter",
+   "key": "kick",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Kick",
+    "cost": 25.0,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 1 combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Kick",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 90,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000731,
+   "calling": "bloodletter",
+   "key": "red_frenzy",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Red Frenzy",
+    "cost": 0,
+    "cooldown_ms": 30000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Spends every stack of Bloodlust for 10 sec of Red Frenzy: your melee swings are 6% faster a stack.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Ability_Rogue_SliceDice",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3260
+   }
+  },
+  {
+   "spell_id": 1000733,
+   "calling": "bloodletter",
+   "key": "blood_pool",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Blood Pool",
+    "cost": 25,
+    "cooldown_ms": 30000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Spills three blood droplets around you.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Shadow_BloodBoil",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 250
+   }
+  },
+  {
+   "spell_id": 1000736,
+   "calling": "bloodletter",
+   "key": "deep_rupture",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Deep Rupture",
+    "cost": 25.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. It deals 30% more damage than Rupture. You heal for 40% of the damage it deals. Each tick may spill a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Rogue_Rupture",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 250,
+    "range_index": 2,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000737,
+   "calling": "bloodletter",
+   "key": "spilling_rupture",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Spilling Rupture",
+    "cost": 25.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals. Each tick spills a blood droplet nearby 80% of the time.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Rogue_Rupture",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 250,
+    "range_index": 2,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000738,
+   "calling": "bloodletter",
+   "key": "long_rupture",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Long Rupture",
+    "cost": 25.0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 3 sec and more damage per combo point. You heal for 40% of the damage it deals. Each tick may spill a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Rogue_Rupture",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 250,
+    "range_index": 2,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000740,
+   "calling": "bloodletter",
+   "key": "open_wound",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Open Wound",
+    "cost": 35,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point. For 15 sec the target takes 30% more from your bleeds.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 28,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5119,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000741,
+   "calling": "bloodletter",
+   "key": "twin_cut",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Twin Cut",
+    "cost": 35,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point, or 2 against a bleeding target. For 15 sec the target takes 20% more from your bleeds.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 28,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5119,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000742,
+   "calling": "bloodletter",
+   "key": "gushing_strike",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Gushing Strike",
+    "cost": 35,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point, 30% more against a bleeding target. For 15 sec the target takes 20% more from your bleeds.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 28,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5119,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000745,
+   "calling": "bloodletter",
+   "key": "deep_garrote",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Deep Garrote",
+    "cost": 40,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Garrote the enemy, causing it to bleed every 3 sec for 18 sec. It deals 30% more damage. Awards 1 combo point. Each tick may spill a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Rogue_Garrote",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 757,
+    "range_index": 2,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1000746,
+   "calling": "bloodletter",
+   "key": "bleeding_garrote",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Bleeding Garrote",
+    "cost": 40,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Garrote the enemy, causing it to bleed every 3 sec for 18 sec. Awards 1 combo point. Each tick spills a blood droplet nearby 80% of the time.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Rogue_Garrote",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 757,
+    "range_index": 2,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1000747,
+   "calling": "bloodletter",
+   "key": "long_garrote",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Long Garrote",
+    "cost": 40,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Garrote the enemy, causing it to bleed every 3 sec for 24 sec. Awards 1 combo point. Each tick may spill a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Rogue_Garrote",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 757,
+    "range_index": 2,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1000748,
+   "calling": "bloodletter",
+   "key": "torrent",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Torrent",
+    "cost": 30,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: each of your bleeds on the target deals two of its ticks at once per combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Druid_Disembowel",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 250,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000749,
+   "calling": "bloodletter",
+   "key": "spilling_veins",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Spilling Veins",
+    "cost": 30,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: each of your bleeds on the target deals one of its ticks at once per combo point. Each forced tick spills a blood droplet 50% of the time.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Druid_Disembowel",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 250,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000750,
+   "calling": "bloodletter",
+   "key": "feeding_veins",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Feeding Veins",
+    "cost": 30,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Finishing move: each of your bleeds on the target deals one of its ticks at once per combo point. You heal for 30% of the damage it deals.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Druid_Disembowel",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 250,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000751,
+   "calling": "bloodletter",
+   "key": "thirst",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Thirst",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Each blood droplet you pick up heals you for 2% of your maximum health.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_SiphonMana",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000752,
+   "calling": "bloodletter",
+   "key": "quickening",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Quickening",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Each blood droplet you pick up gives you 10 Energy.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Ability_Rogue_Sprint",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000753,
+   "calling": "bloodletter",
+   "key": "deep_wounds",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Deep Wounds",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your melee critical strikes make the target bleed for 30% of the critical strike's damage over 6 sec. A new critical strike replaces it.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Ability_BackStab",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "amplitude_ms": 2000
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000754,
+   "calling": "bloodletter",
+   "key": "wide_fan",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Wide Fan",
+    "cost": 40,
+    "cooldown_ms": 10000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Up to 8 enemies in a cone in front of you within 8 yd bleed every 2 sec for 8 sec. Each tick spills a blood droplet 25% of the time.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Warrior_PunishingBlow",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 211,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000756,
+   "calling": "bloodletter",
+   "key": "long_fan",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Long Fan",
+    "cost": 40,
+    "cooldown_ms": 10000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Up to 5 enemies in a cone in front of you within 8 yd bleed every 2 sec for 12 sec. Each tick spills a blood droplet 25% of the time.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Warrior_PunishingBlow",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 211,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000757,
+   "calling": "bloodletter",
+   "key": "spilling_fan",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Spilling Fan",
+    "cost": 40,
+    "cooldown_ms": 10000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Up to 5 enemies in a cone in front of you within 8 yd bleed every 2 sec for 8 sec. Each tick spills a blood droplet 50% of the time.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_Warrior_PunishingBlow",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 211,
+    "range_index": 2
+   }
+  },
+  {
+   "spell_id": 1000758,
+   "calling": "bloodletter",
+   "key": "long_kick",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Long Kick",
+    "cost": 25.0,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 7.5 seconds. When it stops a cast, you gain 1 combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Kick",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 90,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000760,
+   "calling": "bloodletter",
+   "key": "bleeding_kick",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Bleeding Kick",
+    "cost": 25.0,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 1 combo point and the target bleeds every 2 sec for 6 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Kick",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 90,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000761,
+   "calling": "bloodletter",
+   "key": "double_kick",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Double Kick",
+    "cost": 25.0,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 2 combo points.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Kick",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 90,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000764,
+   "calling": "bloodletter",
+   "key": "sustained_frenzy",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Sustained Frenzy",
+    "cost": 0,
+    "cooldown_ms": 30000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Spends every stack of Bloodlust for 15 sec of Red Frenzy: your melee swings are 6% faster a stack.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Ability_Rogue_SliceDice",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3260
+   }
+  },
+  {
+   "spell_id": 1000765,
+   "calling": "bloodletter",
+   "key": "frenzied_blood",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Frenzied Blood",
+    "cost": 0,
+    "cooldown_ms": 30000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Spends every stack of Bloodlust for 10 sec of Red Frenzy: your melee swings are 6% faster and you deal 3% more physical damage a stack.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Ability_Rogue_SliceDice",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3260
+   }
+  },
+  {
+   "spell_id": 1000766,
+   "calling": "bloodletter",
+   "key": "quick_frenzy",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Quick Frenzy",
+    "cost": 0,
+    "cooldown_ms": 20000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Spends every stack of Bloodlust for 10 sec of Red Frenzy: your melee swings are 6% faster a stack. Cooldown 20 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Ability_Rogue_SliceDice",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3260
+   }
+  },
+  {
+   "spell_id": 1000767,
+   "calling": "bloodletter",
+   "key": "deep_pool",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Deep Pool",
+    "cost": 25,
+    "cooldown_ms": 30000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Spills five blood droplets around you.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Shadow_BloodBoil",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 250
+   }
+  },
+  {
+   "spell_id": 1000768,
+   "calling": "bloodletter",
+   "key": "quick_pool",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Quick Pool",
+    "cost": 25,
+    "cooldown_ms": 10000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Spills three blood droplets around you. Cooldown 10 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Shadow_BloodBoil",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 250
+   }
+  },
+  {
+   "spell_id": 1000769,
+   "calling": "bloodletter",
+   "key": "lasting_pool",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Lasting Pool",
+    "cost": 25,
+    "cooldown_ms": 30000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Spills three blood droplets around you. They last 16 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Shadow_BloodBoil",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 250
+   }
+  },
+  {
+   "spell_id": 1000770,
+   "calling": "bloodletter",
+   "key": "arterial",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Arterial",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Rupture, Garrote and Blood Fan deal 15% more damage with each tick.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Ability_Druid_Rake",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000771,
+   "calling": "bloodletter",
+   "key": "butcher",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Butcher",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Hemorrhage is 10% more likely to be a critical strike.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Ability_CriticalStrike",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000772,
+   "calling": "bloodletter",
+   "key": "last_drop",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Last Drop",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A killing blow heals you for 5% of your maximum health and gives you 20 Energy.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_DeathPact",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
    "spell_id": 1000009,
    "calling": "vanguard",
    "key": "aura_seal_of_iron_armor",
@@ -12184,6 +13554,332 @@
     "name": "Hammer of Justice",
     "aura_description": "Stunned.",
     "visual": 322
+   }
+  },
+  {
+   "spell_id": 1000724,
+   "calling": "bloodletter",
+   "key": "aura_hemorrhage",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Hemorrhage",
+    "aura_description": "Takes 20% more from the Bloodletter's bleeds.",
+    "visual": 5119
+   }
+  },
+  {
+   "spell_id": 1000726,
+   "calling": "bloodletter",
+   "key": "aura_garrote",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Rogue_Garrote",
+    "mechanic": 15,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "name": "Garrote",
+    "aura_description": "Bleeding.",
+    "visual": 757
+   }
+  },
+  {
+   "spell_id": 1000729,
+   "calling": "bloodletter",
+   "key": "aura_blood_fan",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Warrior_PunishingBlow",
+    "mechanic": 15,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "name": "Blood Fan",
+    "aura_description": "Bleeding.",
+    "visual": 211
+   }
+  },
+  {
+   "spell_id": 1000732,
+   "calling": "bloodletter",
+   "key": "aura_red_frenzy",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Rogue_SliceDice",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Red Frenzy",
+    "aura_description": "Melee swings 6% faster a stack.",
+    "visual": 3260
+   }
+  },
+  {
+   "spell_id": 1000734,
+   "calling": "bloodletter",
+   "key": "aura_bloodlust",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Racial_Orc_BerserkerStrength",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Bloodlust",
+    "aura_description": "Physical damage dealt and attack speed increased by 3% a stack."
+   }
+  },
+  {
+   "spell_id": 1000735,
+   "calling": "bloodletter",
+   "key": "aura_blood_droplet",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Racial_Orc_BerserkerStrength",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Blood Droplet",
+    "aura_description": "A droplet of blood. Walk over it for a stack of Bloodlust.",
+    "visual": 3302
+   }
+  },
+  {
+   "spell_id": 1000739,
+   "calling": "bloodletter",
+   "key": "aura_open_wound",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Shadow_LifeDrain",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Open Wound",
+    "aura_description": "Takes 30% more from the Bloodletter's bleeds.",
+    "visual": 5119
+   }
+  },
+  {
+   "spell_id": 1000743,
+   "calling": "bloodletter",
+   "key": "aura_deep_garrote",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Rogue_Garrote",
+    "mechanic": 15,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "name": "Garrote",
+    "aura_description": "Bleeding.",
+    "visual": 757
+   }
+  },
+  {
+   "spell_id": 1000744,
+   "calling": "bloodletter",
+   "key": "aura_long_garrote",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Rogue_Garrote",
+    "mechanic": 15,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "name": "Garrote",
+    "aura_description": "Bleeding.",
+    "visual": 757
+   }
+  },
+  {
+   "spell_id": 1000755,
+   "calling": "bloodletter",
+   "key": "aura_long_fan",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Warrior_PunishingBlow",
+    "mechanic": 15,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "name": "Blood Fan",
+    "aura_description": "Bleeding.",
+    "visual": 211
+   }
+  },
+  {
+   "spell_id": 1000759,
+   "calling": "bloodletter",
+   "key": "aura_bleeding_kick",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Kick",
+    "mechanic": 15,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "name": "Bleeding Kick",
+    "aura_description": "Bleeding.",
+    "visual": 90
+   }
+  },
+  {
+   "spell_id": 1000762,
+   "calling": "bloodletter",
+   "key": "aura_sustained_frenzy",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Rogue_SliceDice",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Red Frenzy",
+    "aura_description": "Melee swings 6% faster a stack.",
+    "visual": 3260
+   }
+  },
+  {
+   "spell_id": 1000763,
+   "calling": "bloodletter",
+   "key": "aura_frenzied_blood",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Rogue_SliceDice",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Red Frenzy",
+    "aura_description": "Melee swings 6% faster and physical damage 3% higher a stack.",
+    "visual": 3260
    }
   },
   {

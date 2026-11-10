@@ -282,6 +282,10 @@ now crits at the caster's crit chance plus the skill's `skill_crit_pct` (Hammer 
 Talent's `max_power` on a rage Calling raises the rage bar's cap by `amount`, in tenths as the bar
 stores it (Fervent's `amount=100` is 10 rage). A `skill_amount_pct` on a skill with a
 `ground_effect` raises the heal of the patch's `caster_aura` a tick (Sanctified on Hallowed Ground).
+The Bloodletter (#687): a Calling's `bleed_drop` row, the aura its `pickup` grants, and the auras a
+`damage_pct_vs_aura` names are found among the caster's own Calling's rows first, so a Tier 2 copy
+of the Cutthroat's `aura_blood_droplet` and `aura_bloodlust` under the same keys spills and grants
+its own, and Red Frenzy's `consume_self_stacks` finds the Bloodlust a droplet gave.
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

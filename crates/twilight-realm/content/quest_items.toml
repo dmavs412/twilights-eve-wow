@@ -148,6 +148,9 @@ item = [
   # Brother-Knight Vale's trial (#686, quests.toml 64416): INV_Misc_Bone_DwarfSkull_01, a stock icon
   # no other item shows.
   { entry = 980821, name = "Hallowed Bone", quality = 1, item_level = 30, class = 12, display_id = 1273, stackable = 20 },
+  # Sabine Redmark's trial (#687, quests.toml 64422): INV_Misc_Pelt_Bear_Ruin_01, a stock icon no
+  # other item shows.
+  { entry = 980831, name = "Torn Mongrel Hide", quality = 1, item_level = 30, class = 12, display_id = 8952, stackable = 20 },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye

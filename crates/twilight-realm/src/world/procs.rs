@@ -12,18 +12,10 @@ use crate::rng::Rng;
 use crate::rules::procs::Happened;
 use crate::rules::talents::scaled;
 
-/// The aura row `key` of `c`'s Calling.
-fn own_aura(c: &Char, key: &str) -> Option<&'static crate::callings::AuraDef> {
-    crate::callings::of(c.calling)
-        .auras
-        .iter()
-        .find(|a| a.key == key)
-}
-
 /// The aura row `key` a proc puts up: `c`'s Calling's own, else any Calling's. A Tier 2 Calling's
 /// copy of a Tier 1 row shares its key.
 fn proc_aura(c: &Char, key: &str) -> Option<&'static crate::callings::AuraDef> {
-    own_aura(c, key).or_else(|| crate::callings::aura(key))
+    crate::callings::own_aura(c.calling, key)
 }
 
 /// Whether a chance of `pct_per_stack` percent a stack lands at `stacks`, rolled in thousandths
@@ -67,7 +59,12 @@ impl InWorld {
                 continue;
             }
             // `wearer_death`: only an enemy that wore the player's aura of that row.
-            let worn = proc.aura.and_then(|key| own_aura(c, key));
+            let worn = proc.aura.and_then(|key| {
+                crate::callings::of(c.calling)
+                    .auras
+                    .iter()
+                    .find(|a| a.key == key)
+            });
             if proc.aura.is_some()
                 && !worn
                     .zip(happened.target)

@@ -17378,5 +17378,2270 @@
    "spirit": 6
   },
   "shapeshift_form": 17
+ },
+ {
+  "key": "bloodletter",
+  "power": "energy",
+  "stat_profile": "rogue",
+  "item_class": "warrior",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "energy_per_tick": 25,
+  "bleed_drop": "aura_blood_droplet",
+  "bleed_drop_chance": 50,
+  "armour": [
+   "cloth",
+   "leather"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole",
+   "dual_wield"
+  ],
+  "icon": "Interface\\Icons\\Ability_Rogue_Rupture",
+  "spellbook": "Bloodletter",
+  "blurb": "Keeps every wound open and grows wilder with every drop of blood it walks through.",
+  "skills": [
+   {
+    "key": "rupture",
+    "name": "Rupture",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000722,
+    "realm_cost": 25,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 2000,
+       "duration_ms": 6000,
+       "duration_per_combo": {
+        "base": 2000,
+        "per_level": 0
+       },
+       "tick": {
+        "base": 26,
+        "per_level": 0.6
+       },
+       "per_combo": {
+        "base": 2,
+        "per_level": 0.05
+       },
+       "leech_pct": 40
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals. Each tick may spill a blood droplet nearby."
+   },
+   {
+    "key": "hemorrhage",
+    "name": "Hemorrhage",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000723,
+    "realm_cost": 35,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "normal",
+       "weapon_pct": 110,
+       "bonus": {
+        "base": 28,
+        "per_level": 2,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_combo_points",
+      "params": {
+       "amount": 1
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_periodic_taken_pct",
+      "params": {
+       "apply_aura": "aura_hemorrhage"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "A 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point. For 15 sec the target takes 20% more from your bleeds."
+   },
+   {
+    "key": "garrote",
+    "name": "Garrote",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000725,
+    "realm_cost": 40,
+    "realm_gcd_ms": 1000,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_garrote"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_combo_points",
+      "params": {
+       "amount": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Garrote the enemy, causing it to bleed every 3 sec for 18 sec. Awards 1 combo point. Each tick may spill a blood droplet nearby."
+   },
+   {
+    "key": "open_veins",
+    "name": "Open Veins",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000727,
+    "realm_cost": 30,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "tick_now",
+      "params": {
+       "ticks_per_combo": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Finishing move: each of your bleeds on the target deals one of its ticks at once per combo point."
+   },
+   {
+    "key": "blood_fan",
+    "name": "Blood Fan",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000728,
+    "realm_cost": 40,
+    "realm_cooldown_ms": 10000,
+    "realm_range_max": 5,
+    "realm_radius_yd": 8,
+    "learn_level": 10,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "area_shape": "cone",
+    "area_center": "caster",
+    "max_targets": 5,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_blood_fan",
+       "drop_chance": 25
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Up to 5 enemies in a cone in front of you within 8 yd bleed every 2 sec for 8 sec. Each tick spills a blood droplet 25% of the time."
+   },
+   {
+    "key": "kick",
+    "name": "Kick",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000730,
+    "realm_cost": 25,
+    "realm_cooldown_ms": 10000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 5500
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_combo_points",
+      "params": {
+       "amount": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 1 combo point."
+   },
+   {
+    "key": "red_frenzy",
+    "name": "Red Frenzy",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000731,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 30000,
+    "learn_level": 20,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "consume_self_stacks",
+      "params": {
+       "aura": "aura_bloodlust",
+       "grant": "aura_red_frenzy"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Spends every stack of Bloodlust for 10 sec of Red Frenzy: your melee swings are 6% faster a stack."
+   },
+   {
+    "key": "blood_pool",
+    "name": "Blood Pool",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000733,
+    "realm_cost": 25,
+    "realm_cooldown_ms": 30000,
+    "learn_level": 30,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "spill_droplets",
+      "params": {
+       "count": 3
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Spills three blood droplets around you."
+   }
+  ],
+  "auras": [
+   {
+    "key": "aura_hemorrhage",
+    "name": "Hemorrhage",
+    "spell_id": 1000724,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_periodic_taken_pct",
+      "params": {
+       "pct": 20,
+       "school": "physical"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Takes 20% more from the Bloodletter's bleeds."
+   },
+   {
+    "key": "aura_garrote",
+    "name": "Garrote",
+    "spell_id": 1000726,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 18000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 3000,
+       "tick": {
+        "base": 35,
+        "per_level": 0.8
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding."
+   },
+   {
+    "key": "aura_blood_fan",
+    "name": "Blood Fan",
+    "spell_id": 1000729,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 10,
+        "per_level": 1
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding."
+   },
+   {
+    "key": "aura_red_frenzy",
+    "name": "Red Frenzy",
+    "spell_id": 1000732,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 5,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_melee_haste_pct",
+      "params": {
+       "pct": 6
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Melee swings 6% faster a stack."
+   },
+   {
+    "key": "aura_bloodlust",
+    "name": "Bloodlust",
+    "spell_id": 1000734,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 5,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_done_pct",
+      "params": {
+       "pct": 3
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_melee_haste_pct",
+      "params": {
+       "pct": 3
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Physical damage dealt and attack speed increased by 3% a stack."
+   },
+   {
+    "key": "aura_blood_droplet",
+    "name": "Blood Droplet",
+    "spell_id": 1000735,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "pickup",
+      "params": {
+       "grants": "aura_bloodlust",
+       "radius_yd": 1,
+       "scatter_min_yd": 3,
+       "scatter_max_yd": 6,
+       "object_display": 4211
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "A droplet of blood. Walk over it for a stack of Bloodlust."
+   },
+   {
+    "key": "aura_open_wound",
+    "name": "Open Wound",
+    "spell_id": 1000739,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_periodic_taken_pct",
+      "params": {
+       "pct": 30,
+       "school": "physical"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Takes 30% more from the Bloodletter's bleeds."
+   },
+   {
+    "key": "aura_deep_garrote",
+    "name": "Garrote",
+    "spell_id": 1000743,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 18000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 3000,
+       "tick": {
+        "base": 45.5,
+        "per_level": 1.04
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding."
+   },
+   {
+    "key": "aura_long_garrote",
+    "name": "Garrote",
+    "spell_id": 1000744,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 24000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 3000,
+       "tick": {
+        "base": 35,
+        "per_level": 0.8
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding."
+   },
+   {
+    "key": "aura_long_fan",
+    "name": "Blood Fan",
+    "spell_id": 1000755,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 10,
+        "per_level": 1
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding."
+   },
+   {
+    "key": "aura_bleeding_kick",
+    "name": "Bleeding Kick",
+    "spell_id": 1000759,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 10,
+        "per_level": 1
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding."
+   },
+   {
+    "key": "aura_sustained_frenzy",
+    "name": "Red Frenzy",
+    "spell_id": 1000762,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 5,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_melee_haste_pct",
+      "params": {
+       "pct": 6
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Melee swings 6% faster a stack."
+   },
+   {
+    "key": "aura_frenzied_blood",
+    "name": "Red Frenzy",
+    "spell_id": 1000763,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 5,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_melee_haste_pct",
+      "params": {
+       "pct": 6
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_damage_done_pct",
+      "params": {
+       "pct": 3
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Melee swings 6% faster and physical damage 3% higher a stack."
+   }
+  ],
+  "rows": [
+   {
+    "key": "rupture",
+    "level": 5,
+    "kind": "skill_choice",
+    "skill": "rupture",
+    "choices": [
+     {
+      "key": "deep_rupture",
+      "name": "Deep Rupture",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000736,
+      "realm_cost": 25,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "tick_ms": 2000,
+         "duration_ms": 6000,
+         "duration_per_combo": {
+          "base": 2000,
+          "per_level": 0
+         },
+         "tick": {
+          "base": 33.8,
+          "per_level": 0.78
+         },
+         "per_combo": {
+          "base": 2.6,
+          "per_level": 0.065
+         },
+         "leech_pct": 40
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. It deals 30% more damage than Rupture. You heal for 40% of the damage it deals. Each tick may spill a blood droplet nearby.",
+      "change": "Its bleed deals {amount:33.8:0.78:0:0} damage a tick instead of {amount:26:0.6:0:0}, and more per combo point.",
+      "variant_of": "rupture"
+     },
+     {
+      "key": "spilling_rupture",
+      "name": "Spilling Rupture",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000737,
+      "realm_cost": 25,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "tick_ms": 2000,
+         "duration_ms": 6000,
+         "duration_per_combo": {
+          "base": 2000,
+          "per_level": 0
+         },
+         "tick": {
+          "base": 26,
+          "per_level": 0.6
+         },
+         "per_combo": {
+          "base": 2,
+          "per_level": 0.05
+         },
+         "leech_pct": 40,
+         "drop_chance": 80
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals. Each tick spills a blood droplet nearby 80% of the time.",
+      "change": "Each tick spills a blood droplet 80% of the time.",
+      "variant_of": "rupture"
+     },
+     {
+      "key": "long_rupture",
+      "name": "Long Rupture",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000738,
+      "realm_cost": 25,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "tick_ms": 2000,
+         "duration_ms": 6000,
+         "duration_per_combo": {
+          "base": 3000,
+          "per_level": 0
+         },
+         "tick": {
+          "base": 26,
+          "per_level": 0.6
+         },
+         "per_combo": {
+          "base": 2,
+          "per_level": 0.05
+         },
+         "leech_pct": 40
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 3 sec and more damage per combo point. You heal for 40% of the damage it deals. Each tick may spill a blood droplet nearby.",
+      "change": "Lasts longer for each combo point spent.",
+      "variant_of": "rupture"
+     }
+    ]
+   },
+   {
+    "key": "hemorrhage",
+    "level": 10,
+    "kind": "skill_choice",
+    "skill": "hemorrhage",
+    "choices": [
+     {
+      "key": "open_wound",
+      "name": "Open Wound",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000740,
+      "realm_cost": 35,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 110,
+         "bonus": {
+          "base": 28,
+          "per_level": 2,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_periodic_taken_pct",
+        "params": {
+         "apply_aura": "aura_open_wound"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point. For 15 sec the target takes 30% more from your bleeds.",
+      "change": "The target takes 30% more from your bleeds instead of 20%.",
+      "variant_of": "hemorrhage"
+     },
+     {
+      "key": "twin_cut",
+      "name": "Twin Cut",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000741,
+      "realm_cost": 35,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 110,
+         "bonus": {
+          "base": 28,
+          "per_level": 2,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1,
+         "bleeding_bonus": 1
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_periodic_taken_pct",
+        "params": {
+         "apply_aura": "aura_hemorrhage"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point, or 2 against a bleeding target. For 15 sec the target takes 20% more from your bleeds.",
+      "change": "Awards 1 more combo point against a bleeding target.",
+      "variant_of": "hemorrhage"
+     },
+     {
+      "key": "gushing_strike",
+      "name": "Gushing Strike",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000742,
+      "realm_cost": 35,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "weapon_pct": 110,
+         "bonus": {
+          "base": 28,
+          "per_level": 2,
+          "per_ap": 0
+         },
+         "bleeding_pct": 30
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_periodic_taken_pct",
+        "params": {
+         "apply_aura": "aura_hemorrhage"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point, 30% more against a bleeding target. For 15 sec the target takes 20% more from your bleeds.",
+      "change": "Deals 30% more damage to a bleeding target.",
+      "variant_of": "hemorrhage"
+     }
+    ]
+   },
+   {
+    "key": "garrote",
+    "level": 15,
+    "kind": "skill_choice",
+    "skill": "garrote",
+    "choices": [
+     {
+      "key": "deep_garrote",
+      "name": "Deep Garrote",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000745,
+      "realm_cost": 40,
+      "realm_gcd_ms": 1000,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_deep_garrote"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Garrote the enemy, causing it to bleed every 3 sec for 18 sec. It deals 30% more damage. Awards 1 combo point. Each tick may spill a blood droplet nearby.",
+      "change": "Its bleed deals {amount:45.5:1.04:0:0} damage a tick instead of {amount:35:0.8:0:0}.",
+      "variant_of": "garrote"
+     },
+     {
+      "key": "bleeding_garrote",
+      "name": "Bleeding Garrote",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000746,
+      "realm_cost": 40,
+      "realm_gcd_ms": 1000,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_garrote",
+         "drop_chance": 80
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Garrote the enemy, causing it to bleed every 3 sec for 18 sec. Awards 1 combo point. Each tick spills a blood droplet nearby 80% of the time.",
+      "change": "Each tick spills a blood droplet 80% of the time.",
+      "variant_of": "garrote"
+     },
+     {
+      "key": "long_garrote",
+      "name": "Long Garrote",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000747,
+      "realm_cost": 40,
+      "realm_gcd_ms": 1000,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_long_garrote"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Garrote the enemy, causing it to bleed every 3 sec for 24 sec. Awards 1 combo point. Each tick may spill a blood droplet nearby.",
+      "change": "Its bleed lasts 24 sec instead of 18 sec.",
+      "variant_of": "garrote"
+     }
+    ]
+   },
+   {
+    "key": "open_veins",
+    "level": 20,
+    "kind": "skill_choice",
+    "skill": "open_veins",
+    "choices": [
+     {
+      "key": "torrent",
+      "name": "Torrent",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000748,
+      "realm_cost": 30,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "tick_now",
+        "params": {
+         "ticks_per_combo": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: each of your bleeds on the target deals two of its ticks at once per combo point.",
+      "change": "Forces 2 ticks a combo point instead of 1.",
+      "variant_of": "open_veins"
+     },
+     {
+      "key": "spilling_veins",
+      "name": "Spilling Veins",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000749,
+      "realm_cost": 30,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "tick_now",
+        "params": {
+         "ticks_per_combo": 1,
+         "drop_chance": 50
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: each of your bleeds on the target deals one of its ticks at once per combo point. Each forced tick spills a blood droplet 50% of the time.",
+      "change": "Each forced tick spills a blood droplet 50% of the time.",
+      "variant_of": "open_veins"
+     },
+     {
+      "key": "feeding_veins",
+      "name": "Feeding Veins",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000750,
+      "realm_cost": 30,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "tick_now",
+        "params": {
+         "ticks_per_combo": 1,
+         "heal_pct": 30
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Finishing move: each of your bleeds on the target deals one of its ticks at once per combo point. You heal for 30% of the damage it deals.",
+      "change": "Heals you for 30% of the damage it deals.",
+      "variant_of": "open_veins"
+     }
+    ]
+   },
+   {
+    "key": "bloodletter_blood_sense",
+    "level": 25,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "thirst",
+      "name": "Thirst",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000751,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "pickup_heal_pct",
+        "params": {
+         "pct": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Each blood droplet you pick up heals you for 2% of your maximum health."
+     },
+     {
+      "key": "quickening",
+      "name": "Quickening",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000752,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "pickup_energize",
+        "params": {
+         "amount": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Each blood droplet you pick up gives you 10 Energy."
+     },
+     {
+      "key": "deep_wounds",
+      "name": "Deep Wounds",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000753,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "crit_bleed",
+        "params": {
+         "aura_spell_id": 12721,
+         "tick_ms": 2000,
+         "duration_ms": 6000,
+         "pct": 30,
+         "of": "crit_damage"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your melee critical strikes make the target bleed for 30% of the critical strike's damage over 6 sec. A new critical strike replaces it."
+     }
+    ]
+   },
+   {
+    "key": "blood_fan",
+    "level": 30,
+    "kind": "skill_choice",
+    "skill": "blood_fan",
+    "choices": [
+     {
+      "key": "wide_fan",
+      "name": "Wide Fan",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000754,
+      "realm_cost": 40,
+      "realm_cooldown_ms": 10000,
+      "realm_range_max": 5,
+      "realm_radius_yd": 8,
+      "learn_level": 10,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "cone",
+      "area_center": "caster",
+      "max_targets": 8,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_blood_fan",
+         "drop_chance": 25
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Up to 8 enemies in a cone in front of you within 8 yd bleed every 2 sec for 8 sec. Each tick spills a blood droplet 25% of the time.",
+      "change": "Strikes up to 8 enemies instead of 5.",
+      "variant_of": "blood_fan"
+     },
+     {
+      "key": "long_fan",
+      "name": "Long Fan",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000756,
+      "realm_cost": 40,
+      "realm_cooldown_ms": 10000,
+      "realm_range_max": 5,
+      "realm_radius_yd": 8,
+      "learn_level": 10,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "cone",
+      "area_center": "caster",
+      "max_targets": 5,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_long_fan",
+         "drop_chance": 25
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Up to 5 enemies in a cone in front of you within 8 yd bleed every 2 sec for 12 sec. Each tick spills a blood droplet 25% of the time.",
+      "change": "Its bleed lasts 12 sec instead of 8 sec.",
+      "variant_of": "blood_fan"
+     },
+     {
+      "key": "spilling_fan",
+      "name": "Spilling Fan",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000757,
+      "realm_cost": 40,
+      "realm_cooldown_ms": 10000,
+      "realm_range_max": 5,
+      "realm_radius_yd": 8,
+      "learn_level": 10,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "cone",
+      "area_center": "caster",
+      "max_targets": 5,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_blood_fan",
+         "drop_chance": 50
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Up to 5 enemies in a cone in front of you within 8 yd bleed every 2 sec for 8 sec. Each tick spills a blood droplet 50% of the time.",
+      "change": "Each tick spills a blood droplet 50% of the time instead of 25%.",
+      "variant_of": "blood_fan"
+     }
+    ]
+   },
+   {
+    "key": "kick",
+    "level": 35,
+    "kind": "skill_choice",
+    "skill": "kick",
+    "choices": [
+     {
+      "key": "long_kick",
+      "name": "Long Kick",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000758,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 10000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 7500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 7.5 seconds. When it stops a cast, you gain 1 combo point.",
+      "change": "Locks the school out for 7.5 sec instead of 5.5 sec.",
+      "variant_of": "kick"
+     },
+     {
+      "key": "bleeding_kick",
+      "name": "Bleeding Kick",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000760,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 10000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 5500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 1
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_bleeding_kick"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 1 combo point and the target bleeds every 2 sec for 6 sec.",
+      "change": "A stopped cast also makes the target bleed for 6 sec.",
+      "variant_of": "kick"
+     },
+     {
+      "key": "double_kick",
+      "name": "Double Kick",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000761,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 10000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 5500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_combo_points",
+        "params": {
+         "amount": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 5.5 seconds. When it stops a cast, you gain 2 combo points.",
+      "change": "A stopped cast gives 2 combo points instead of 1.",
+      "variant_of": "kick"
+     }
+    ]
+   },
+   {
+    "key": "red_frenzy",
+    "level": 40,
+    "kind": "skill_choice",
+    "skill": "red_frenzy",
+    "choices": [
+     {
+      "key": "sustained_frenzy",
+      "name": "Sustained Frenzy",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000764,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 30000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "consume_self_stacks",
+        "params": {
+         "aura": "aura_bloodlust",
+         "grant": "aura_sustained_frenzy"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends every stack of Bloodlust for 15 sec of Red Frenzy: your melee swings are 6% faster a stack.",
+      "change": "Red Frenzy lasts 15 sec instead of 10 sec.",
+      "variant_of": "red_frenzy"
+     },
+     {
+      "key": "frenzied_blood",
+      "name": "Frenzied Blood",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000765,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 30000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "consume_self_stacks",
+        "params": {
+         "aura": "aura_bloodlust",
+         "grant": "aura_frenzied_blood"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends every stack of Bloodlust for 10 sec of Red Frenzy: your melee swings are 6% faster and you deal 3% more physical damage a stack.",
+      "change": "Red Frenzy also raises your damage by 3% a stack.",
+      "variant_of": "red_frenzy"
+     },
+     {
+      "key": "quick_frenzy",
+      "name": "Quick Frenzy",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000766,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 20000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "consume_self_stacks",
+        "params": {
+         "aura": "aura_bloodlust",
+         "grant": "aura_red_frenzy"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spends every stack of Bloodlust for 10 sec of Red Frenzy: your melee swings are 6% faster a stack. Cooldown 20 sec.",
+      "change": "Its cooldown is 20 sec instead of 30 sec.",
+      "variant_of": "red_frenzy"
+     }
+    ]
+   },
+   {
+    "key": "blood_pool",
+    "level": 45,
+    "kind": "skill_choice",
+    "skill": "blood_pool",
+    "choices": [
+     {
+      "key": "deep_pool",
+      "name": "Deep Pool",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000767,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 30000,
+      "learn_level": 30,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "spill_droplets",
+        "params": {
+         "count": 5
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spills five blood droplets around you.",
+      "change": "Spills 5 droplets instead of 3.",
+      "variant_of": "blood_pool"
+     },
+     {
+      "key": "quick_pool",
+      "name": "Quick Pool",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000768,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 10000,
+      "learn_level": 30,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "spill_droplets",
+        "params": {
+         "count": 3
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spills three blood droplets around you. Cooldown 10 sec.",
+      "change": "Its cooldown is 10 sec instead of 30 sec.",
+      "variant_of": "blood_pool"
+     },
+     {
+      "key": "lasting_pool",
+      "name": "Lasting Pool",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000769,
+      "realm_cost": 25,
+      "realm_cooldown_ms": 30000,
+      "learn_level": 30,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "spill_droplets",
+        "params": {
+         "count": 3,
+         "duration_ms": 16000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Spills three blood droplets around you. They last 16 sec.",
+      "change": "Its droplets last 16 sec.",
+      "variant_of": "blood_pool"
+     }
+    ]
+   },
+   {
+    "key": "bloodletter_exsanguinate",
+    "level": 50,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "arterial",
+      "name": "Arterial",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000770,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_amount_pct",
+        "params": {
+         "skill": "rupture",
+         "pct": 15,
+         "applies_to": "tick"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "skill_amount_pct",
+        "params": {
+         "skill": "garrote",
+         "pct": 15,
+         "applies_to": "tick"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "skill_amount_pct",
+        "params": {
+         "skill": "blood_fan",
+         "pct": 15,
+         "applies_to": "tick"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Rupture, Garrote and Blood Fan deal 15% more damage with each tick."
+     },
+     {
+      "key": "butcher",
+      "name": "Butcher",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000771,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_crit_pct",
+        "params": {
+         "skill": "hemorrhage",
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Hemorrhage is 10% more likely to be a critical strike."
+     },
+     {
+      "key": "last_drop",
+      "name": "Last Drop",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000772,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "kill",
+         "chance": 100,
+         "heal_pct": 5,
+         "energize": 20
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A killing blow heals you for 5% of your maximum health and gives you 20 Energy."
+     }
+    ]
+   }
+  ],
+  "name": "Bloodletter",
+  "tier": 2,
+  "tier_cap": 50,
+  "row_levels": [
+   5,
+   10,
+   15,
+   20,
+   25,
+   30,
+   35,
+   40,
+   45,
+   50
+  ],
+  "tier_bonus": {
+   "strength": 12,
+   "agility": 24,
+   "stamina": 24,
+   "intellect": 0,
+   "spirit": 6
+  },
+  "shapeshift_form": 0
  }
 ]

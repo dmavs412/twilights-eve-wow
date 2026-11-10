@@ -1912,6 +1912,75 @@ completion = "You didn't. Kneel, then, and swear."
 money = 5000
 kill = [[48, 12]]
 
+# The Bloodletter (#687): Sabine Redmark at the poachers' fire on Lakeridge Highway. Jorik Vane and
+# Wiley the Black give the hints.
+[[quest]]
+id = 64401
+kind = "advancement"
+giver = 190112
+level = 30
+zone_or_sort = -162
+advancement = { from = "cutthroat", to = "bloodletter", trial = 64423 }
+calling_choice = true
+title = "The Bloodletter's Salt"
+objectives = "Find the Bloodletter who sits at the poachers' fire in Redridge, and pass her trial."
+details = "You cut well, $N, but you let them stop bleeding. There's a woman who never does.$B$BShe sits at a fire on the highway south of Lake Everstill, among men who think she is one of them. Jorik Vane knows a man in Lakeshire who sells her the salt. Ask Jorik."
+progress = "You found the fire. Are your hands red yet?"
+completion = "Good. Now you know what I know: a wound is a door, and you keep it open. You start over, Bloodletter. The blood stays."
+money = 0
+hint = [
+  { npc = 190051, option = "Who sells blood for a living?", reply = "Wiley the Black, in Lakeshire. He sells salt and hooks to a woman who skins what she bleeds. Tell him I sent you. Or don't. He'll guess." },
+  { npc = 266, option = "Who buys your salt?", reply = "Sabine. She sits at the poachers' fire on Lakeridge Highway, south and west of the lake. They think she's one of them. They're wrong about a lot of things." },
+]
+
+[[quest]]
+id = 64421
+kind = "once"
+giver = 190112
+after_taken = 64401
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "First Blood"
+objectives = "Kill 10 Redridge Poachers on Lakeridge Highway."
+details = "They're my cover, but they're getting greedy. Ten of them, and let them bleed out slow so the others hear."
+progress = "Did they bleed?"
+completion = "I heard. So did they."
+money = 2500
+kill = [[424, 10]]
+
+[[quest]]
+id = 64422
+kind = "once"
+giver = 190112
+after = 64421
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Mongrel Hides"
+objectives = "Bring 8 Torn Mongrel Hides from the Redridge Mongrels."
+details = "The gnoll mongrels run with the poachers. Bring me eight hides. Torn is fine. Torn is the point."
+progress = "Hides?"
+completion = "Torn the right way. You learn."
+money = 2500
+collect = [{ item = 980831, count = 8, chance = 50, from = [423] }]
+
+[[quest]]
+id = 64423
+kind = "once"
+giver = 190112
+after = 64422
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Spider Blood"
+objectives = "Kill 8 Tarantulas around Three Corners."
+details = "Last. Spiders don't bleed like men, and that's why I send you. Eight. Find out how they do."
+progress = "Well?"
+completion = "Green and slow. Everything bleeds, $N. Sit down."
+money = 5000
+kill = [[442, 8]]
+
 # ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
 # The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the
 # Dungeon's Repeatable Quests, from level 16. Every target is in the run (content/wailing_caverns.toml):

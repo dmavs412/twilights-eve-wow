@@ -388,9 +388,20 @@ one is a placeholder.
 | Hammer of Justice and its stuns (#686) | master CSV | `Spell_Holy_SealOfMight` |
 | The Zealot's Talents (#686) | master CSV, rows 25 and 50 | `Spell_Holy_FlashHeal`, `INV_Chest_Plate02`, `Ability_Warrior_InnerRage`, `Spell_Holy_PrayerOfHealing02`, `Spell_Holy_BlessedRecovery`, `INV_Hammer_04` |
 | Hallowed Bone, the trial's quest item (#686) | `content/quest_items.toml`, entry 980821 | display 1273, `INV_Misc_Bone_DwarfSkull_01` |
+| Sabine Redmark, the Bloodletter trainer (#687) | `content/hub.toml`, entry 190112 | display 1297, Keryn Sylvius's look. Wanted: a lean woman in stained leathers by a campfire, a skinning knife in her lap and salt sacks at her feet. |
+| Bloodletter Calling icon (#687) | `callings.csv` | `Ability_Rogue_Rupture` |
+| Hemorrhage, its debuff and Open Wound's (#687) | master CSV | `Spell_Shadow_LifeDrain` |
+| Open Veins (#687) | master CSV | `Ability_Druid_Disembowel` |
+| Blood Fan and its bleeds (#687) | master CSV | `Ability_Warrior_PunishingBlow` |
+| Red Frenzy and its buffs (#687) | master CSV | `Ability_Rogue_SliceDice` |
+| Blood Pool (#687) | master CSV | `Spell_Shadow_BloodBoil` |
+| The Bloodletter's Talents (#687) | master CSV, rows 25 and 50 | `Spell_Shadow_SiphonMana`, `Ability_Rogue_Sprint`, `Ability_BackStab`, `Ability_Druid_Rake`, `Ability_CriticalStrike`, `Spell_Shadow_DeathPact` |
+| Torn Mongrel Hide, the trial's quest item (#687) | `content/quest_items.toml`, entry 980831 | display 8952, `INV_Misc_Pelt_Bear_Ruin_01` |
 
 The Sharpshooter's carried skills (Auto Shot, Puncturing Shaft, Rapid Fire, Silencing Shot) keep
 the Ranger's icons. Its trial has no quest items. The Ironclad's carried skills (Righteous Smash,
 Shield of the Penitent, Rebuke) keep the Vanguard's icons, and Shield Rebuke's stun shows
 `Ability_Warrior_ShieldBash`. The Zealot's carried skills (Bulwark Charge and its Consecration,
-Seal of Iron and its armour spike, Rebuke) keep the Vanguard's icons.
+Seal of Iron and its armour spike, Rebuke) keep the Vanguard's icons. The Bloodletter's carried
+skills (Rupture, Garrote and its bleeds, Kick, and Bleeding Kick's bleed) keep the Cutthroat's
+icons, as do its copies of Bloodlust and the blood droplet.

@@ -2582,3 +2582,24 @@ orientation = 1.57
 hidden = true
 text_id = 64181
 greeting = "Kneel if you like, $C. The dead here won't. That's why I stay."
+
+# Sabine Redmark, the Bloodletter (#687): sits by the poachers' campfire on Lakeridge Highway,
+# south-west of Lake Everstill (the stock fire at -9792.5, -2242.6), among men who think she is one
+# of them. The look is Keryn Sylvius's (a placeholder). Role `talker`, as Wren's. z is
+# ground_check.py's.
+[[npc]]
+guid = 9300112
+entry = 190112
+name = "Sabine Redmark"
+subname = "Bloodletter"
+level = 50
+display_id = 1297
+faction_template = 35
+role = "talker"
+npc_flags = 0x3
+map = 0
+position = [-9789.5, -2244.0, 69.25]
+orientation = 2.71
+hidden = true
+text_id = 64182
+greeting = "Sit, $C. They think I skin rabbits. I let them think it."

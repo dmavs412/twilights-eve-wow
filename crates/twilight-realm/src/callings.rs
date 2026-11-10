@@ -2549,6 +2549,16 @@ pub fn aura(key: &str) -> Option<&'static AuraDef> {
     all().iter().flat_map(|c| &c.auras).find(|a| a.key == key)
 }
 
+/// [`aura`], looking first in `calling`'s own rows: a Tier 2 Calling's copy of a Tier 1 row
+/// shares its key (the Bloodletter's Bloodlust and blood droplet).
+pub(crate) fn own_aura(calling: Calling, key: &str) -> Option<&'static AuraDef> {
+    of(calling)
+        .auras
+        .iter()
+        .find(|a| a.key == key)
+        .or_else(|| aura(key))
+}
+
 /// The aura row of `spell_id`, in any Calling, when it has effects of its own.
 pub fn aura_by_spell(spell_id: u32) -> Option<&'static AuraDef> {
     all()

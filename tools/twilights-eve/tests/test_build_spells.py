@@ -2633,6 +2633,18 @@ class TalentRows(BuildSpells):
                          1000478)
         self.assert_committed_icons("cutthroat")
 
+    def test_the_committed_bloodletter_has_ten_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            bloodletter = next(c for c in json.load(f) if c["key"] == "bloodletter")
+        self.assertEqual(bloodletter["row_levels"], [5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
+        self.assertEqual([(r["key"], r["level"]) for r in bloodletter["rows"]],
+                         [("rupture", 5), ("hemorrhage", 10), ("garrote", 15), ("open_veins", 20),
+                          ("bloodletter_blood_sense", 25), ("blood_fan", 30), ("kick", 35),
+                          ("red_frenzy", 40), ("blood_pool", 45), ("bloodletter_exsanguinate", 50)])
+        self.assertTrue(all(len(r["choices"]) == 3 for r in bloodletter["rows"]))
+        self.assert_committed_icons("bloodletter")
+
     def test_the_committed_initiate_has_six_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
                   encoding="utf-8") as f:

@@ -5998,7 +5998,7 @@ impl InWorld {
             .armor
             .saturating_sub(self.player.stats.armor_pen + armor_ignore);
         let more = crate::talents::damage_pct_vs(c, school, |key| {
-            callings::aura(key).is_some_and(|a| self.skills.on(target, a.spell_id))
+            callings::own_aura(c.calling, key).is_some_and(|a| self.skills.on(target, a.spell_id))
         });
         let raw = scaled(raw, more);
         let mut damage = mitigated(school, raw, armor, self.player.stats.level);
@@ -7211,7 +7211,7 @@ impl InWorld {
         let Some(def) = crate::callings::of(c.calling)
             .bleed_drop
             .as_deref()
-            .and_then(crate::callings::aura)
+            .and_then(|key| crate::callings::own_aura(c.calling, key))
         else {
             return;
         };
@@ -7279,7 +7279,7 @@ impl InWorld {
             if energize > 0 {
                 self.energize_player(spell_id, energize, events);
             }
-            if let Some(def) = crate::callings::aura(key) {
+            if let Some(def) = crate::callings::own_aura(c.calling, key) {
                 let more = crate::talents::aura_max_stacks(c, key);
                 self.grant_aura(def, c.level, more, events);
             }
