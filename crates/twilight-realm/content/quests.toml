@@ -2175,6 +2175,90 @@ completion = "Full again. That is the whole of it. Sit."
 money = 5000
 kill = [[569, 6]]
 
+# The Trapper (#691): Hale Brannock on the tree line south of the Eastvale Logging Camp. Thalyssa
+# Windbough gives the hint. His trial hunts east into Redridge.
+[[quest]]
+id = 64406
+kind = "advancement"
+giver = 190117
+level = 30
+zone_or_sort = -261
+advancement = { from = "ranger", to = "trapper", trial = 64449 }
+calling_choice = true
+title = "The Trapper's Line"
+objectives = "Find the Trapper at the Eastvale logging camp in Elwynn, and pass his trial."
+details = "You never stand still long, $N, and you don't need to. A Trapper leaves the fight behind him, laid out in fire and wire, and keeps shooting while it springs.$B$BAt the logging camp in Eastvale, in east Elwynn, a trapper sets snares along the tree line. Thalyssa Windbough can tell you more."
+progress = "Found the wire? Good. Did you find the work?"
+completion = "Then you're a Trapper, and you'll never stand still again. You start over. The ground behind you doesn't."
+money = 0
+hint = [
+  { npc = 190053, option = "Where does the Trapper set his snares?", reply = "Hale Brannock works the tree line south of the Eastvale logging camp. Follow the cut wire, and step where he stepped." },
+]
+
+[[quest]]
+id = 64446
+kind = "once"
+giver = 190117
+after_taken = 64406
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Run Them Down"
+objectives = "Kill 10 Redridge Mongrels around Three Corners."
+details = "Go east into Redridge. The mongrels hunt in packs. Lead them over your traps, and don't let them catch you standing."
+progress = "Moving?"
+completion = "Still moving. Good."
+money = 2500
+kill = [[423, 10]]
+
+[[quest]]
+id = 64447
+kind = "once"
+giver = 190117
+after = 64446
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Spider Silk"
+objectives = "Bring 8 Tarantula Silk from the Tarantulas around Three Corners."
+details = "Wire rusts. Silk doesn't. Eight bundles from the tarantulas."
+progress = "Silk?"
+completion = "Strong stuff. That'll hold a boar."
+money = 2500
+collect = [{ item = 980881, count = 8, chance = 50, from = [442] }]
+
+[[quest]]
+id = 64448
+kind = "once"
+giver = 190117
+after = 64447
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Goretusks"
+objectives = "Kill 8 Great Goretusks in Redridge."
+details = "Goretusks charge in a straight line. Put a trap in the line. Eight."
+progress = "Straight lines?"
+completion = "They never learn. You did."
+money = 2500
+kill = [[547, 8]]
+
+[[quest]]
+id = 64449
+kind = "once"
+giver = 190117
+after = 64448
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Bellygrub"
+objectives = "Kill Bellygrub in the fields west of Lakeshire."
+details = "Last. Bellygrub is the biggest boar in Redridge and the farmers have given up on him. Lay the field with traps and run him through every one."
+progress = "Is he down?"
+completion = "Down, and you never stopped running. Come here."
+money = 5000
+kill = [[345, 1]]
+
 # ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
 # The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the
 # Dungeon's Repeatable Quests, from level 16. Every target is in the run (content/wailing_caverns.toml):

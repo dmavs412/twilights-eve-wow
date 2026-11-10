@@ -2693,7 +2693,8 @@ impl InWorld {
     /// Casts the skill each `cast_skill` of the last tick's casts names, now that their Blinks
     /// have landed, or once the player's leap has had its `dt`s in the air: the version set on its
     /// row, free, at the cast's target, if it is alive, in the skill's range and in sight of where
-    /// the caster stands (Parting Shot).
+    /// the caster stands (Parting Shot). A skill on the caster needs no target: it goes off where
+    /// they landed (Trap Vault).
     pub(super) fn land_follow_ups(
         &mut self,
         dt: f32,
@@ -2709,10 +2710,14 @@ impl InWorld {
             return;
         }
         for f in std::mem::take(&mut self.skills.follow_ups) {
-            let Some(target) = f.target else {
+            let Some(skill) = crate::talents::current_of(c, f.skill_spell_id) else {
                 continue;
             };
-            let Some(skill) = crate::talents::current_of(c, f.skill_spell_id) else {
+            if skill.target == Target::Caster {
+                self.free_cast(skill, None, false, c, rng, events, ticked);
+                continue;
+            }
+            let Some(target) = f.target else {
                 continue;
             };
             let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
@@ -4292,9 +4297,8 @@ impl InWorld {
         p.health = p.health.saturating_sub(health_cost).max(1);
         let s = &mut self.skills;
         if skill.cooldown_ms > 0 {
-            // A Talent's flat COOLDOWN spellmod moves it, as it moves the client's button.
-            let change = crate::talents::cooldown_change_ms(c, &skill.key);
-            let cooldown_ms = skill.cooldown_ms.saturating_add_signed(change);
+            // A Talent's COOLDOWN spellmod moves it, as it moves the client's button.
+            let cooldown_ms = crate::talents::cooldown_ms(c, &skill.key, skill.cooldown_ms);
             s.cooldowns.retain(|(id, _)| *id != skill.spell_id);
             s.cooldowns.push((skill.spell_id, clock::secs(cooldown_ms)));
         }

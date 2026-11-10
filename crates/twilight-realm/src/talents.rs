@@ -538,15 +538,22 @@ pub(crate) fn power_cost_from(c: &Char, skill: &callings::Skill, base: u32) -> u
     crate::rules::talents::scaled(base, more).saturating_sub(less)
 }
 
-/// The milliseconds the set Talents' flat `COOLDOWN` spellmods move `skill`'s cooldown by, the
-/// cells the client's button reads too (Shadow Dance's -40000): negative is shorter.
-pub(crate) fn cooldown_change_ms(c: &Char, skill: &str) -> i32 {
-    set_talents(c)
+/// `skill`'s cooldown of `base_ms` as the set Talents' `COOLDOWN` spellmods move it, the cells
+/// the client's button reads too: a `pct` one scales it (Trap Mastery's -20), then a `flat` one
+/// adds its milliseconds (Shadow Dance's -40000). Negative is shorter; never below 0.
+pub(crate) fn cooldown_ms(c: &Char, skill: &str, base_ms: u32) -> u32 {
+    let (mut flat, mut pct) = (0i64, 0i64);
+    for m in set_talents(c)
         .flat_map(|t| t.rank_spellmods.first().into_iter().flatten())
-        .filter(|m| m.kind == "flat" && m.op == "COOLDOWN")
-        .filter(|m| m.target.iter().any(|t| answers(c, skill, t)))
-        .map(|m| m.value as i32)
-        .sum()
+        .filter(|m| m.op == "COOLDOWN" && m.target.iter().any(|t| answers(c, skill, t)))
+    {
+        match m.kind.as_str() {
+            "flat" => flat += m.value as i64,
+            "pct" => pct += m.value as i64,
+            _ => {}
+        }
+    }
+    (base_ms as i64 * (100 + pct) / 100 + flat).max(0) as u32
 }
 
 /// The percent of the shield's Block Value a skill's strike adds.

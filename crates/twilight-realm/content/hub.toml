@@ -2649,6 +2649,26 @@ hidden = true
 text_id = 64185
 greeting = "Can you feel it? Under your feet, like a river under ice. No? You will."
 
+# Hale Brannock, the Trapper (#691): sets snares along the tree line south of the Eastvale Logging
+# Camp in east Elwynn, well clear of Marshal Haggard and the camp's quest givers. The look is Sven
+# Yorgen's (a placeholder). Role `talker`, as Wren's. z is ground_check.py's.
+[[npc]]
+guid = 9300117
+entry = 190117
+name = "Hale Brannock"
+subname = "Trapper"
+level = 50
+display_id = 4327
+faction_template = 35
+role = "talker"
+npc_flags = 0x3
+map = 0
+position = [-9495.0, -1425.0, 56.07]
+orientation = 3.14
+hidden = true
+text_id = 64187
+greeting = "Watch your feet, $C. Half this tree line is wire, and I've stopped remembering which half."
+
 # Belongs to tests/sight.rs: seen only after test quest 99811 is handed in, 10 yd from that
 # quest's Rachel (zones.toml guid 960811), whom only those who have not handed it in see. The
 # look is Maera Holt's. z is ground_check.py's.

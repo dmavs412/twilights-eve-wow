@@ -25903,5 +25903,2363 @@
    "spirit": 20
   },
   "shapeshift_form": 0
+ },
+ {
+  "key": "trapper",
+  "power": "mana",
+  "stat_profile": "hunter",
+  "item_class": "warrior",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [
+   "leather"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\Spell_Fire_SelfDestruct",
+  "spellbook": "Trapper",
+  "blurb": "Never stops moving. Lays fire, frost and wire behind it, and shoots the whole way.",
+  "skills": [
+   {
+    "key": "auto_shot",
+    "name": "Auto Shot",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000900,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 8,
+    "realm_range_max": 35,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "auto_repeat",
+    "interrupt_on": [
+     "move"
+    ],
+    "defense_type": "ranged",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "bonus": {
+        "base": 0,
+        "per_level": 0,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Automatically shoots the target with your ranged weapon until cancelled."
+   },
+   {
+    "key": "snapshot",
+    "name": "Snapshot",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000901,
+    "realm_cost": 5,
+    "realm_cooldown_ms": 0,
+    "realm_range_min": 8,
+    "realm_range_max": 35,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "ranged",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "bonus": {
+        "base": 57,
+        "per_level": 1.3,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. Fires a quick arrow for ranged weapon damage plus 57 + 1.3 per level."
+   },
+   {
+    "key": "immolation_trap",
+    "name": "Immolation Trap",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000902,
+    "realm_cost": 6,
+    "realm_cooldown_ms": 15000,
+    "realm_range_max": 5,
+    "target": "self",
+    "school": "fire",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "ground_area",
+      "params": {
+       "radius_yd": 3,
+       "duration_ms": 60000,
+       "arm_ms": 1000,
+       "first_only": true,
+       "spring_radius_yd": 6,
+       "enemy_aura": "aura_immolation_trap",
+       "object_display": 3074
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. Lays a fire trap at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 6 yards burns for 15 + 1.2 per level Fire damage every 3 sec for 12 sec. One Immolation Trap at a time."
+   },
+   {
+    "key": "vault",
+    "name": "Vault",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000904,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 15000,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "blink",
+      "params": {
+       "distance_yd": 17,
+       "backward": true,
+       "leap": true
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "You instantly leap backward 17 yards to escape melee range and keep your firing distance."
+   },
+   {
+    "key": "frost_trap",
+    "name": "Frost Trap",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000905,
+    "realm_cost": 6,
+    "realm_cooldown_ms": 20000,
+    "realm_range_max": 5,
+    "target": "self",
+    "school": "frost",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "ground_area",
+      "params": {
+       "radius_yd": 3,
+       "duration_ms": 60000,
+       "arm_ms": 1000,
+       "first_only": true,
+       "spring_radius_yd": 8,
+       "enemy_aura": "aura_frost_trap",
+       "object_display": 3073
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. Lays a frost trap at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 8 yards runs 50% slower and takes 6 + 0.5 per level Frost damage every 2 sec for 8 sec. One Frost Trap at a time."
+   },
+   {
+    "key": "caltrops",
+    "name": "Caltrops",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000907,
+    "realm_cost": 5,
+    "realm_cooldown_ms": 20000,
+    "realm_range_max": 5,
+    "learn_level": 10,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "ground_area",
+      "params": {
+       "radius_yd": 4,
+       "duration_ms": 8000,
+       "follow_caster": true,
+       "enemy_aura": "aura_caltrops"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. For 8 sec, caltrops cover the ground within 4 yards of you and follow you. Enemies inside bleed for 8 + 0.8 per level a second and run 30% slower."
+   },
+   {
+    "key": "silencing_shot",
+    "name": "Silencing Shot",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000909,
+    "realm_cost": 5,
+    "realm_cooldown_ms": 20000,
+    "realm_gcd_ms": 0,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 3500
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "reset_cooldowns",
+      "params": {
+       "spell_ids": [
+        1000904
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 3.5 seconds. When it stops a cast, your Vault is ready again."
+   },
+   {
+    "key": "spring_the_traps",
+    "name": "Spring the Traps",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000910,
+    "realm_cost": 8,
+    "realm_cooldown_ms": 12000,
+    "realm_range_max": 35,
+    "realm_radius_yd": 8,
+    "learn_level": 20,
+    "target": "dest",
+    "school": "fire",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "area_shape": "circle",
+    "area_center": "ground",
+    "max_targets": null,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 50,
+        "per_level": 2.5
+       },
+       "school": "fire"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "detonate_traps",
+      "params": {
+       "radius_yd": 10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. Sets off a blast at a spot within 35 yards: every enemy within 8 yards takes 50 + 2.5 per level Fire damage, and every armed trap of yours within 10 yards of it springs at once."
+   },
+   {
+    "key": "tripwire",
+    "name": "Tripwire",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000911,
+    "realm_cost": 6,
+    "realm_cooldown_ms": 30000,
+    "realm_range_max": 5,
+    "learn_level": 30,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "ground_area",
+      "params": {
+       "radius_yd": 3,
+       "duration_ms": 60000,
+       "arm_ms": 1000,
+       "first_only": true,
+       "spring_radius_yd": 6,
+       "enemy_aura": "aura_tripwire",
+       "object_display": 3071
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. Lays a tripwire at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 6 yards is rooted for 4 sec."
+   }
+  ],
+  "auras": [
+   {
+    "key": "aura_immolation_trap",
+    "name": "Immolation Trap",
+    "spell_id": 1000903,
+    "status": "placeholder",
+    "school": "fire",
+    "prevention": "silence",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 3000,
+       "tick": {
+        "base": 15,
+        "per_level": 1.2
+       },
+       "school": "fire"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Burning for Fire damage every 3 sec."
+   },
+   {
+    "key": "aura_frost_trap",
+    "name": "Frost Trap",
+    "spell_id": 1000906,
+    "status": "placeholder",
+    "school": "frost",
+    "prevention": "silence",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "snare",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": -50
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 6,
+        "per_level": 0.5
+       },
+       "school": "frost"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Movement speed slowed by 50%. Frost damage every 2 sec."
+   },
+   {
+    "key": "aura_caltrops",
+    "name": "Caltrops",
+    "spell_id": 1000908,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 1000,
+       "tick": {
+        "base": 8,
+        "per_level": 0.8
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": -30
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding every second and slowed by 30% while inside the caltrops."
+   },
+   {
+    "key": "aura_tripwire",
+    "name": "Tripwire",
+    "spell_id": 1000912,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "root",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 4000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "root",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Rooted. Cannot move."
+   },
+   {
+    "key": "aura_hot_trap",
+    "name": "Immolation Trap",
+    "spell_id": 1000917,
+    "status": "placeholder",
+    "school": "fire",
+    "prevention": "silence",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 3000,
+       "tick": {
+        "base": 23,
+        "per_level": 1.8
+       },
+       "school": "fire"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Burning for Fire damage every 3 sec."
+   },
+   {
+    "key": "aura_deep_freeze",
+    "name": "Frost Trap",
+    "spell_id": 1000924,
+    "status": "placeholder",
+    "school": "frost",
+    "prevention": "silence",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "snare",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": -70
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 6,
+        "per_level": 0.5
+       },
+       "school": "frost"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Movement speed slowed by 70%. Frost damage every 2 sec."
+   },
+   {
+    "key": "aura_biting_frost",
+    "name": "Frost Trap",
+    "spell_id": 1000927,
+    "status": "placeholder",
+    "school": "frost",
+    "prevention": "silence",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "snare",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": -50
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 9,
+        "per_level": 0.75
+       },
+       "school": "frost"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Movement speed slowed by 50%. Frost damage every 2 sec."
+   },
+   {
+    "key": "aura_sharp_caltrops",
+    "name": "Caltrops",
+    "spell_id": 1000934,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 1000,
+       "tick": {
+        "base": 12,
+        "per_level": 1.2
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": -30
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding every second and slowed by 30% while inside the caltrops."
+   },
+   {
+    "key": "aura_sticky_caltrops",
+    "name": "Caltrops",
+    "spell_id": 1000936,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 1000,
+       "tick": {
+        "base": 8,
+        "per_level": 0.8
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": -50
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding every second and slowed by 50% while inside the caltrops."
+   },
+   {
+    "key": "aura_quieting_snare",
+    "name": "Quieting Snare",
+    "spell_id": 1000940,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "snare",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 4000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": -50
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Movement speed slowed by 50%."
+   },
+   {
+    "key": "aura_long_wire",
+    "name": "Tripwire",
+    "spell_id": 1000946,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "root",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "root",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Rooted. Cannot move."
+   },
+   {
+    "key": "aura_bleeding_wire",
+    "name": "Tripwire",
+    "spell_id": 1000949,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "root",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 4000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "root",
+      "params": {},
+      "realm_only": false
+     },
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 1000,
+       "tick": {
+        "base": 8,
+        "per_level": 0.8
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Rooted. Cannot move. Bleeding every second."
+   },
+   {
+    "key": "aura_running_fire",
+    "name": "Running Fire",
+    "spell_id": 1000930,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 3000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "cast_while_moving",
+      "params": {
+       "skill": "auto_shot"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Auto Shot fires while moving."
+   },
+   {
+    "key": "aura_light_feet",
+    "name": "Light Feet",
+    "spell_id": 1000932,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 4000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": 15
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Run speed increased by 15%."
+   },
+   {
+    "key": "aura_momentum",
+    "name": "Momentum",
+    "spell_id": 1000952,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 5000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_ranged_haste_pct",
+      "params": {
+       "pct": 15
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ranged attack speed increased by 15%."
+   }
+  ],
+  "rows": [
+   {
+    "key": "snapshot",
+    "level": 5,
+    "kind": "skill_choice",
+    "skill": "snapshot",
+    "choices": [
+     {
+      "key": "hard_snapshot",
+      "name": "Hard Snapshot",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000913,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 71,
+          "per_level": 1.6,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Fires a quick arrow for ranged weapon damage plus 71 + 1.6 per level.",
+      "change": "Deals {amount:71:1.6:0:0} bonus damage instead of {amount:57:1.3:0:0}.",
+      "variant_of": "snapshot"
+     },
+     {
+      "key": "running_snapshot",
+      "name": "Running Snapshot",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000914,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 57,
+          "per_level": 1.3,
+          "per_ap": 0
+         },
+         "crit_cooldown_ms": 2000,
+         "crit_cooldown_spell_id": 1000904
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Fires a quick arrow for ranged weapon damage plus 57 + 1.3 per level. Its critical strikes take 2 sec off the cooldown of Vault.",
+      "change": "Its critical strikes take 2 sec off the cooldown of Vault.",
+      "variant_of": "snapshot"
+     },
+     {
+      "key": "cheap_snapshot",
+      "name": "Cheap Snapshot",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000915,
+      "realm_cost": 4,
+      "realm_cooldown_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 57,
+          "per_level": 1.3,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Fires a quick arrow for ranged weapon damage plus 57 + 1.3 per level. Costs 4% of base mana.",
+      "change": "Costs 4% of base mana instead of 5%.",
+      "variant_of": "snapshot"
+     }
+    ]
+   },
+   {
+    "key": "immolation_trap",
+    "level": 10,
+    "kind": "skill_choice",
+    "skill": "immolation_trap",
+    "choices": [
+     {
+      "key": "hot_trap",
+      "name": "Hot Trap",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000916,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 15000,
+      "realm_range_max": 5,
+      "target": "self",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 3,
+         "duration_ms": 60000,
+         "arm_ms": 1000,
+         "first_only": true,
+         "spring_radius_yd": 6,
+         "enemy_aura": "aura_hot_trap",
+         "object_display": 3074
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Lays a fire trap at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 6 yards burns for 23 + 1.8 per level Fire damage every 3 sec for 12 sec. One Immolation Trap at a time.",
+      "change": "Burns for {amount:23:1.8:0:0} every 3 sec instead of {amount:15:1.2:0:0}.",
+      "variant_of": "immolation_trap"
+     },
+     {
+      "key": "wide_trap",
+      "name": "Wide Trap",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000918,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 15000,
+      "realm_range_max": 5,
+      "target": "self",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 3,
+         "duration_ms": 60000,
+         "arm_ms": 1000,
+         "first_only": true,
+         "spring_radius_yd": 9,
+         "enemy_aura": "aura_immolation_trap",
+         "object_display": 3074
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Lays a fire trap at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 9 yards burns for 15 + 1.2 per level Fire damage every 3 sec for 12 sec. One Immolation Trap at a time.",
+      "change": "Springs on every enemy within 9 yards instead of 6.",
+      "variant_of": "immolation_trap"
+     },
+     {
+      "key": "quick_trap",
+      "name": "Quick Trap",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000919,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 10000,
+      "realm_range_max": 5,
+      "target": "self",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 3,
+         "duration_ms": 60000,
+         "arm_ms": 1000,
+         "first_only": true,
+         "spring_radius_yd": 6,
+         "enemy_aura": "aura_immolation_trap",
+         "object_display": 3074
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Lays a fire trap at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 6 yards burns for 15 + 1.2 per level Fire damage every 3 sec for 12 sec. One Immolation Trap at a time. 10 sec cooldown.",
+      "change": "Cooldown 10 sec instead of 15 sec.",
+      "variant_of": "immolation_trap"
+     }
+    ]
+   },
+   {
+    "key": "vault",
+    "level": 15,
+    "kind": "skill_choice",
+    "skill": "vault",
+    "choices": [
+     {
+      "key": "trap_vault",
+      "name": "Trap Vault",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000920,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "blink",
+        "params": {
+         "distance_yd": 17,
+         "backward": true,
+         "leap": true
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "cast_skill",
+        "params": {
+         "skill_spell_id": 1000902
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "You instantly leap backward 17 yards to escape melee range and keep your firing distance. Lays an Immolation Trap where you land.",
+      "change": "Lays an Immolation Trap where you land.",
+      "variant_of": "vault"
+     },
+     {
+      "key": "far_vault",
+      "name": "Far Vault",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000921,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "blink",
+        "params": {
+         "distance_yd": 22,
+         "backward": true,
+         "leap": true
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "You instantly leap backward 22 yards to escape melee range and keep your firing distance.",
+      "change": "Leaps 22 yards instead of 17.",
+      "variant_of": "vault"
+     },
+     {
+      "key": "quick_vault",
+      "name": "Quick Vault",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000922,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 10000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "blink",
+        "params": {
+         "distance_yd": 17,
+         "backward": true,
+         "leap": true
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "You instantly leap backward 17 yards to escape melee range and keep your firing distance. 10 sec cooldown.",
+      "change": "Cooldown 10 sec instead of 15 sec.",
+      "variant_of": "vault"
+     }
+    ]
+   },
+   {
+    "key": "frost_trap",
+    "level": 20,
+    "kind": "skill_choice",
+    "skill": "frost_trap",
+    "choices": [
+     {
+      "key": "deep_freeze",
+      "name": "Deep Freeze",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000923,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 20000,
+      "realm_range_max": 5,
+      "target": "self",
+      "school": "frost",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 3,
+         "duration_ms": 60000,
+         "arm_ms": 1000,
+         "first_only": true,
+         "spring_radius_yd": 8,
+         "enemy_aura": "aura_deep_freeze",
+         "object_display": 3073
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Lays a frost trap at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 8 yards runs 70% slower and takes 6 + 0.5 per level Frost damage every 2 sec for 8 sec. One Frost Trap at a time.",
+      "change": "Run speed changes by 70% instead of 50%.",
+      "variant_of": "frost_trap"
+     },
+     {
+      "key": "wide_frost",
+      "name": "Wide Frost",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000925,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 20000,
+      "realm_range_max": 5,
+      "target": "self",
+      "school": "frost",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 3,
+         "duration_ms": 60000,
+         "arm_ms": 1000,
+         "first_only": true,
+         "spring_radius_yd": 11,
+         "enemy_aura": "aura_frost_trap",
+         "object_display": 3073
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Lays a frost trap at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 11 yards runs 50% slower and takes 6 + 0.5 per level Frost damage every 2 sec for 8 sec. One Frost Trap at a time.",
+      "change": "Springs on every enemy within 11 yards instead of 8.",
+      "variant_of": "frost_trap"
+     },
+     {
+      "key": "biting_frost",
+      "name": "Biting Frost",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000926,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 20000,
+      "realm_range_max": 5,
+      "target": "self",
+      "school": "frost",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 3,
+         "duration_ms": 60000,
+         "arm_ms": 1000,
+         "first_only": true,
+         "spring_radius_yd": 8,
+         "enemy_aura": "aura_biting_frost",
+         "object_display": 3073
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Lays a frost trap at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 8 yards runs 50% slower and takes 9 + 0.75 per level Frost damage every 2 sec for 8 sec. One Frost Trap at a time.",
+      "change": "Frost ticks for {amount:9:0.75:0:0} instead of {amount:6:0.5:0:0}.",
+      "variant_of": "frost_trap"
+     }
+    ]
+   },
+   {
+    "key": "trapper_trapcraft",
+    "level": 25,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "trap_mastery",
+      "name": "Trap Mastery",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000928,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [],
+      "description": "Immolation Trap, Frost Trap and Tripwire cooldowns are 20% shorter.",
+      "spellmods": [
+       {
+        "type": "pct",
+        "op": "COOLDOWN",
+        "family_mask": 2370821947392,
+        "value": -20,
+        "target": [
+         "immolation_trap",
+         "frost_trap",
+         "tripwire"
+        ]
+       }
+      ]
+     },
+     {
+      "key": "running_fire",
+      "name": "Running Fire",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000929,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "moving_for",
+         "ms": 1000,
+         "apply_aura": "aura_running_fire"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "After 1 sec of moving, Auto Shot fires while you move for 3 sec, renewed while you keep running."
+     },
+     {
+      "key": "light_feet",
+      "name": "Light Feet",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000931,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "moving_for",
+         "ms": 3000,
+         "apply_aura": "aura_light_feet"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "After 3 sec of moving, you run 15% faster for 4 sec."
+     }
+    ]
+   },
+   {
+    "key": "caltrops",
+    "level": 30,
+    "kind": "skill_choice",
+    "skill": "caltrops",
+    "choices": [
+     {
+      "key": "sharp_caltrops",
+      "name": "Sharp Caltrops",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000933,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 20000,
+      "realm_range_max": 5,
+      "learn_level": 10,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 4,
+         "duration_ms": 8000,
+         "follow_caster": true,
+         "enemy_aura": "aura_sharp_caltrops"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. For 8 sec, caltrops cover the ground within 4 yards of you and follow you. Enemies inside bleed for 12 + 1.2 per level a second and run 30% slower.",
+      "change": "Enemies inside bleed for {amount:12:1.2:0:0} instead of {amount:8:0.8:0:0}.",
+      "variant_of": "caltrops"
+     },
+     {
+      "key": "sticky_caltrops",
+      "name": "Sticky Caltrops",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000935,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 20000,
+      "realm_range_max": 5,
+      "learn_level": 10,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 4,
+         "duration_ms": 8000,
+         "follow_caster": true,
+         "enemy_aura": "aura_sticky_caltrops"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. For 8 sec, caltrops cover the ground within 4 yards of you and follow you. Enemies inside bleed for 8 + 0.8 per level a second and run 50% slower.",
+      "change": "Run speed inside changes by 50% instead of 30%.",
+      "variant_of": "caltrops"
+     },
+     {
+      "key": "long_caltrops",
+      "name": "Long Caltrops",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000937,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 20000,
+      "realm_range_max": 5,
+      "learn_level": 10,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 4,
+         "duration_ms": 12000,
+         "follow_caster": true,
+         "enemy_aura": "aura_caltrops"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. For 12 sec, caltrops cover the ground within 4 yards of you and follow you. Enemies inside bleed for 8 + 0.8 per level a second and run 30% slower.",
+      "change": "Lasts 12 sec instead of 8 sec.",
+      "variant_of": "caltrops"
+     }
+    ]
+   },
+   {
+    "key": "silencing_shot",
+    "level": 35,
+    "kind": "skill_choice",
+    "skill": "silencing_shot",
+    "choices": [
+     {
+      "key": "long_silence",
+      "name": "Long Silence",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000938,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 5000
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "reset_cooldowns",
+        "params": {
+         "spell_ids": [
+          1000904
+         ]
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 5 seconds. When it stops a cast, your Vault is ready again.",
+      "change": "Locks the school out for 5 sec instead of 3.5 sec.",
+      "variant_of": "silencing_shot"
+     },
+     {
+      "key": "quieting_snare",
+      "name": "Quieting Snare",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000939,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 3500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "reset_cooldowns",
+        "params": {
+         "spell_ids": [
+          1000904
+         ]
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_run_speed",
+        "params": {
+         "apply_aura": "aura_quieting_snare"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 3.5 seconds. When it stops a cast, your Vault is ready again and the target runs 50% slower for 4 sec.",
+      "change": "A stopped cast also slows the target (50% run speed) for 4 sec.",
+      "variant_of": "silencing_shot"
+     },
+     {
+      "key": "reset_traps",
+      "name": "Reset Traps",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000941,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 3500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "reset_cooldowns",
+        "params": {
+         "spell_ids": [
+          1000904,
+          1000902
+         ]
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 3.5 seconds. When it stops a cast, your Vault and Immolation Trap are ready again.",
+      "change": "A stopped cast also makes Immolation Trap ready again.",
+      "variant_of": "silencing_shot"
+     }
+    ]
+   },
+   {
+    "key": "spring_the_traps",
+    "level": 40,
+    "kind": "skill_choice",
+    "skill": "spring_the_traps",
+    "choices": [
+     {
+      "key": "wide_spring",
+      "name": "Wide Spring",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000942,
+      "realm_cost": 8,
+      "realm_cooldown_ms": 12000,
+      "realm_range_max": 35,
+      "realm_radius_yd": 15,
+      "learn_level": 20,
+      "target": "dest",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 50,
+          "per_level": 2.5
+         },
+         "school": "fire"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "detonate_traps",
+        "params": {
+         "radius_yd": 15
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Sets off a blast at a spot within 35 yards: every enemy within 15 yards takes 50 + 2.5 per level Fire damage, and every armed trap of yours within 15 yards of it springs at once.",
+      "change": "Hits enemies and springs traps within 15 yards of the point.",
+      "variant_of": "spring_the_traps"
+     },
+     {
+      "key": "burning_spring",
+      "name": "Burning Spring",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000943,
+      "realm_cost": 8,
+      "realm_cooldown_ms": 12000,
+      "realm_range_max": 35,
+      "realm_radius_yd": 8,
+      "learn_level": 20,
+      "target": "dest",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 75,
+          "per_level": 3.75
+         },
+         "school": "fire"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "detonate_traps",
+        "params": {
+         "radius_yd": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Sets off a blast at a spot within 35 yards: every enemy within 8 yards takes 75 + 3.75 per level Fire damage, and every armed trap of yours within 10 yards of it springs at once.",
+      "change": "Deals {amount:75:3.75:0:0} instead of {amount:50:2.5:0:0}.",
+      "variant_of": "spring_the_traps"
+     },
+     {
+      "key": "quick_spring",
+      "name": "Quick Spring",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000944,
+      "realm_cost": 8,
+      "realm_cooldown_ms": 8000,
+      "realm_range_max": 35,
+      "realm_radius_yd": 8,
+      "learn_level": 20,
+      "target": "dest",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 50,
+          "per_level": 2.5
+         },
+         "school": "fire"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "detonate_traps",
+        "params": {
+         "radius_yd": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Sets off a blast at a spot within 35 yards: every enemy within 8 yards takes 50 + 2.5 per level Fire damage, and every armed trap of yours within 10 yards of it springs at once. 8 sec cooldown.",
+      "change": "Cooldown 8 sec instead of 12 sec.",
+      "variant_of": "spring_the_traps"
+     }
+    ]
+   },
+   {
+    "key": "tripwire",
+    "level": 45,
+    "kind": "skill_choice",
+    "skill": "tripwire",
+    "choices": [
+     {
+      "key": "long_wire",
+      "name": "Long Wire",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000945,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 30000,
+      "realm_range_max": 5,
+      "learn_level": 30,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 3,
+         "duration_ms": 60000,
+         "arm_ms": 1000,
+         "first_only": true,
+         "spring_radius_yd": 6,
+         "enemy_aura": "aura_long_wire",
+         "object_display": 3071
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Lays a tripwire at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 6 yards is rooted for 6 sec.",
+      "change": "Roots for 6 sec instead of 4 sec.",
+      "variant_of": "tripwire"
+     },
+     {
+      "key": "wide_wire",
+      "name": "Wide Wire",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000947,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 30000,
+      "realm_range_max": 5,
+      "learn_level": 30,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 3,
+         "duration_ms": 60000,
+         "arm_ms": 1000,
+         "first_only": true,
+         "spring_radius_yd": 9,
+         "enemy_aura": "aura_tripwire",
+         "object_display": 3071
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Lays a tripwire at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 9 yards is rooted for 4 sec.",
+      "change": "Springs on every enemy within 9 yards instead of 6.",
+      "variant_of": "tripwire"
+     },
+     {
+      "key": "bleeding_wire",
+      "name": "Bleeding Wire",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000948,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 30000,
+      "realm_range_max": 5,
+      "learn_level": 30,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 3,
+         "duration_ms": 60000,
+         "arm_ms": 1000,
+         "first_only": true,
+         "spring_radius_yd": 6,
+         "enemy_aura": "aura_bleeding_wire",
+         "object_display": 3071
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Lays a tripwire at your feet that arms after 1 sec and lasts 60 sec. The first enemy to step in springs it, and every enemy within 6 yards is rooted for 4 sec. They also bleed for 8 + 0.8 per level every sec while rooted.",
+      "change": "The caught also bleed for {amount:8:0.8:0:0} every 1 sec while rooted.",
+      "variant_of": "tripwire"
+     }
+    ]
+   },
+   {
+    "key": "trapper_huntsman",
+    "level": 50,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "lure",
+      "name": "Lure",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000950,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_crit_pct",
+        "params": {
+         "skill": "snapshot",
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Snapshot is 10% more likely to be a critical strike."
+     },
+     {
+      "key": "momentum",
+      "name": "Momentum",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000951,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "moving_for",
+         "ms": 5000,
+         "apply_aura": "aura_momentum"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "After 5 sec of moving, your ranged attacks are 15% faster for 5 sec."
+     },
+     {
+      "key": "killing_ground",
+      "name": "Killing Ground",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000953,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_amount_pct",
+        "params": {
+         "skill": "snapshot",
+         "pct": 20,
+         "max_distance_yd": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Snapshot deals 20% more damage to a target within 10 yards."
+     }
+    ]
+   }
+  ],
+  "name": "Trapper",
+  "tier": 2,
+  "tier_cap": 50,
+  "row_levels": [
+   5,
+   10,
+   15,
+   20,
+   25,
+   30,
+   35,
+   40,
+   45,
+   50
+  ],
+  "tier_bonus": {
+   "strength": 0,
+   "agility": 30,
+   "stamina": 20,
+   "intellect": 10,
+   "spirit": 0
+  },
+  "shapeshift_form": 0
  }
 ]

@@ -752,6 +752,10 @@ effects = []
         self.assert_fails([{**ground, "effect1_kind": "ground_area",
                             "effect1_params": "radius_yd=10;duration_ms=1000"}],
                           "realm_radius_yd 8 and an effect's radius_yd 10 disagree")
+        # A detonate_traps radius is where the caster's traps are sought, not the reticle (#691).
+        done, _ = self.run_build([{**ground, "effect2_kind": "detonate_traps", "effect2_params": "radius_yd=10"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.patch["spells"][0]["fields"]["radius_yd"], 8)
 
     def test_a_castable_row_needs_a_visual_or_none(self):
         self.assert_fails([{**STRIKE, "visual": ""}], "strike): a castable row needs a visual")
@@ -2683,6 +2687,18 @@ class TalentRows(BuildSpells):
                           ("attunement", 40), ("ley_bind", 45), ("leyweaver_ley_master", 50)])
         self.assertTrue(all(len(r["choices"]) == 3 for r in leyweaver["rows"]))
         self.assert_committed_icons("leyweaver")
+
+    def test_the_committed_trapper_has_ten_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            trapper = next(c for c in json.load(f) if c["key"] == "trapper")
+        self.assertEqual(trapper["row_levels"], [5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
+        self.assertEqual([(r["key"], r["level"]) for r in trapper["rows"]],
+                         [("snapshot", 5), ("immolation_trap", 10), ("vault", 15), ("frost_trap", 20),
+                          ("trapper_trapcraft", 25), ("caltrops", 30), ("silencing_shot", 35),
+                          ("spring_the_traps", 40), ("tripwire", 45), ("trapper_huntsman", 50)])
+        self.assertTrue(all(len(r["choices"]) == 3 for r in trapper["rows"]))
+        self.assert_committed_icons("trapper")
 
     def test_the_committed_bloodletter_has_ten_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),

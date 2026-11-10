@@ -423,6 +423,16 @@ one is a placeholder.
 | Attunement and its buffs (#690) | master CSV | `Spell_Arcane_ArcaneResilience` |
 | Ley Bind and its binds (#690) | master CSV | `Spell_Nature_Polymorph` |
 | The Leyweaver's Talents (#690) | master CSV, rows 25 and 50 | `Spell_Shadow_Charm`, `Spell_Holy_MagicalSentry`, `Spell_Holy_Devotion`, `Spell_Holy_PowerInfusion`, `Spell_Frost_ManaRecharge`, `Spell_Nature_ManaRegenTotem` |
+| Hale Brannock, the Trapper trainer (#691) | `content/hub.toml`, entry 190117 | display 4327, Sven Yorgen's look. Wanted: a wiry woodsman in patched leathers kneeling at the tree line, coils of wire and a trap jaw at his belt. |
+| Trapper Calling icon (#691) | `callings.csv` | `Spell_Fire_SelfDestruct` |
+| Immolation Trap and its burns (#691) | master CSV | `Spell_Fire_FlameShock`; the trap shows the stock Immolation Trap GameObject (display 3074) |
+| Frost Trap and its chills (#691) | master CSV | `Spell_Frost_Glacier` (`Spell_Frost_FreezingBreath` is the Initiate's Shattered Blink); the trap shows the stock Frost Trap GameObject (display 3073) |
+| Caltrops and its auras (#691) | master CSV | `Spell_Nature_Thorns` |
+| Spring the Traps (#691) | master CSV | `INV_Misc_Bomb_05` |
+| Tripwire and its roots (#691) | master CSV | `Spell_Nature_Earthbind`; the trap shows the stock Freezing Trap GameObject (display 3071) |
+| Quieting Snare's snare (#691) | master CSV, aura row | `Ability_GolemStormBolt` |
+| The Trapper's Talents and their buffs (#691) | master CSV, rows 25 and 50 | `INV_Misc_Gear_02`, `Ability_Hunter_Harass`, `Spell_Nature_Swiftness`, `Ability_Hunter_BeastSoothe`, `Ability_Mount_JungleTiger`, `Ability_Hunter_AimedShot` |
+| Tarantula Silk, the trial's quest item (#691) | `content/quest_items.toml`, entry 980881 | display 4815, `INV_Fabric_Silk_03` |
 
 The Sharpshooter's carried skills (Auto Shot, Puncturing Shaft, Rapid Fire, Silencing Shot) keep
 the Ranger's icons. Its trial has no quest items. The Ironclad's carried skills (Righteous Smash,
@@ -434,4 +444,5 @@ icons, as do its copies of Bloodlust and the blood droplet. The Nightblade's car
 (Eviscerate, Stealth and its stealth auras, Kick) keep the Cutthroat's icons, and its trial has no
 quest items. The Pyromancer's carried skills (Searing Ember and its Ember, Catalyst, Counterspell)
 keep the Initiate's icons. The Leyweaver's carried skills (Ley-Spark, Ley Ward, Counterspell) keep
-the Initiate's icons, and its trial has no quest items.
+the Initiate's icons, and its trial has no quest items. The Trapper's carried skills (Auto Shot,
+Snapshot, Vault, Silencing Shot) keep the Ranger's icons.

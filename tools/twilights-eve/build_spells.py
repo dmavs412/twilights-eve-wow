@@ -2262,7 +2262,9 @@ def from_scratch_fields(row: dict, built: dict, art: list[str], art_dir: str, wh
             raise BuildError(f"{where}: client_radius_index is set on a row with no DBC effect")
         effects[0]["radius_index"] = whole(radius_index, f"{where} client_radius_index")
         yards = [number(row["realm_radius_yd"], f"{where} realm_radius_yd")] if row["realm_radius_yd"] else []
-        yards += [e["params"]["radius_yd"] for e in built["effects"] if "radius_yd" in e["params"]]
+        # A detonate_traps radius is where the caster's traps are sought, not the reticle (Spring the Traps).
+        yards += [e["params"]["radius_yd"] for e in built["effects"]
+                  if "radius_yd" in e["params"] and e["kind"] != "detonate_traps"]
         for other in yards[1:]:
             if float(other) != float(yards[0]):
                 raise BuildError(f"{where}: realm_radius_yd {yards[0]} and an effect's radius_yd {other} disagree")

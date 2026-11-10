@@ -304,6 +304,12 @@ most `max_targets`, each rolled as a unit target is. A `proc` with `on=kill` nam
 The Leyweaver (#690): a `cast_kind=channel` row with `target=self` ticks on the caster, its
 effects each tick (Ley Tap's `energize`), until it runs out or breaks. Before, the realm ended a
 channel at its first tick unless its target was a living enemy in range.
+The Trapper (#691): a `cast_skill` that names a `target=self` skill casts it at the caster with no
+target needed, where the leap landed (Trap Vault lays an Immolation Trap). A Talent's `pct`
+`COOLDOWN` spellmod now moves the realm's cooldown as a `flat` one does: the percent scales the
+skill's cooldown, then the flat milliseconds add (Trap Mastery's -20). A `detonate_traps`
+`radius_yd` is left out of a `client_radius_index` row's yards check, since it is where the traps
+are sought and not the reticle (Spring the Traps).
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`
