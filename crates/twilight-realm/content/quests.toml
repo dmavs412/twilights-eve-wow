@@ -2121,6 +2121,60 @@ completion = "Both. Come and sit by the fire, Pyromancer."
 money = 5000
 kill = [[445, 6]]
 
+# The Leyweaver (#690): Teodric Lumen at a ley spring on Duskwood's Darkened Bank. Elsa
+# Brightwood, Zaldimar Wefhellt and Watcher Callahan give the hints, in that order.
+[[quest]]
+id = 64404
+kind = "advancement"
+giver = 190115
+level = 30
+zone_or_sort = -161
+advancement = { from = "initiate", to = "leyweaver", trial = 64437 }
+calling_choice = true
+title = "The Ley Beneath"
+objectives = "Find the Leyweaver who listens to the ley, and pass his trial."
+details = "There is a kind of mage who does not burn or freeze. He listens, and pours, and listens again.$B$BThe ley runs under the land like water under ice, and where it wells up beside a dark river, someone has been drinking from it for years. Elsa Brightwood will tell you who in Goldshire still studies the old lines. Ask her."
+progress = "You found the spring. Did you hear it?"
+completion = "Then pour. All of it, and fill again. You start over, Leyweaver. The ley does not."
+money = 0
+hint = [
+  { npc = 190052, option = "Who still studies the old ley lines?", reply = "Zaldimar Wefhellt, in Goldshire. He maps them for Azora, though Azora stopped asking." },
+  { npc = 328, option = "Where does the ley rise near here?", reply = "South, across the river, on Duskwood's bank. The Night Watch has a post down there. Their watcher sees blue lights on the water and pretends he doesn't. Ask him." },
+  { npc = 2142, option = "Have you seen lights on the river?", reply = "West of my post, along the bank, past the spiders. Blue lights at night, and a man who sits by them. He doesn't sleep. I don't ask." },
+]
+
+[[quest]]
+id = 64436
+kind = "once"
+giver = 190115
+after_taken = 64404
+level = 30
+min_tier = 1
+zone_or_sort = 10
+title = "Quiet the Bank"
+objectives = "Kill 8 Venom Web Spiders on the Darkened Bank."
+details = "The spiders spin over the spring and the ley tastes of them. Eight, and pour your bar into each one."
+progress = "Quieter?"
+completion = "Much. Listen."
+money = 2500
+kill = [[217, 8]]
+
+[[quest]]
+id = 64437
+kind = "once"
+giver = 190115
+after = 64436
+level = 30
+min_tier = 1
+zone_or_sort = 10
+title = "The Recluses"
+objectives = "Kill 6 Green Recluses on the Darkened Bank."
+details = "Last. The recluses are slower and bigger. Strike from a full bar, empty it, and fill it again before the next."
+progress = "Full again?"
+completion = "Full again. That is the whole of it. Sit."
+money = 5000
+kill = [[569, 6]]
+
 # ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
 # The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the
 # Dungeon's Repeatable Quests, from level 16. Every target is in the run (content/wailing_caverns.toml):

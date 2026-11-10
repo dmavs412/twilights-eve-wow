@@ -2672,6 +2672,18 @@ class TalentRows(BuildSpells):
         self.assertTrue(all(len(r["choices"]) == 3 for r in pyromancer["rows"]))
         self.assert_committed_icons("pyromancer")
 
+    def test_the_committed_leyweaver_has_ten_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            leyweaver = next(c for c in json.load(f) if c["key"] == "leyweaver")
+        self.assertEqual(leyweaver["row_levels"], [5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
+        self.assertEqual([(r["key"], r["level"]) for r in leyweaver["rows"]],
+                         [("ley_spark", 5), ("arcane_missiles", 10), ("ley_ward", 15), ("arcane_surge", 20),
+                          ("leyweaver_wellspring", 25), ("ley_tap", 30), ("counterspell", 35),
+                          ("attunement", 40), ("ley_bind", 45), ("leyweaver_ley_master", 50)])
+        self.assertTrue(all(len(r["choices"]) == 3 for r in leyweaver["rows"]))
+        self.assert_committed_icons("leyweaver")
+
     def test_the_committed_bloodletter_has_ten_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
                   encoding="utf-8") as f:

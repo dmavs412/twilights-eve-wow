@@ -2929,7 +2929,8 @@ impl InWorld {
     }
 
     /// The channel's clock: each tick runs the skill's effects at its target, rolled afresh; it
-    /// ends when it runs out, or when its target dies or leaves its range.
+    /// ends when it runs out, or when its target dies or leaves its range. One on the caster
+    /// (Ley Tap) ends only when it runs out or breaks.
     #[allow(clippy::too_many_arguments)]
     fn channel_tick(
         &mut self,
@@ -2955,12 +2956,14 @@ impl InWorld {
                 return;
             };
             let [lo, hi] = skill.range_yd;
-            let in_reach = self.mobs.iter().any(|m| {
-                m.guid == ch.target && m.alive() && {
-                    let d = distance(m.position, c.position);
-                    d >= lo && (hi == 0.0 || d <= hi)
-                }
-            });
+            // A channel on the caster (Ley Tap) is always in reach.
+            let in_reach = ch.target == self.guid
+                || self.mobs.iter().any(|m| {
+                    m.guid == ch.target && m.alive() && {
+                        let d = distance(m.position, c.position);
+                        d >= lo && (hi == 0.0 || d <= hi)
+                    }
+                });
             if !in_reach {
                 self.end_channel(true, events);
                 return;

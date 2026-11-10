@@ -155,6 +155,19 @@
    "weapon_mask": 1435135,
    "armor_mask": 2,
    "dual_wield": false
+  },
+  {
+   "key": "leyweaver",
+   "name": "Leyweaver",
+   "icon": "Interface\\Icons\\Spell_Nature_StarFall",
+   "spellbook": "Leyweaver",
+   "power_type": 0,
+   "class": 8,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 2,
+   "dual_wield": false
   }
  ],
  "spells": [
@@ -14406,6 +14419,1285 @@
    }
   },
   {
+   "spell_id": 1000859,
+   "calling": "leyweaver",
+   "key": "ley_spark",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley-Spark",
+    "cost_percent": 5,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "1.5 sec cast. Deals 117 + 2.5 per level Arcane damage. Its chance to be a critical strike rises by up to 15 points the fuller your mana bar is.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Arcane_StarFire",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 117,
+      "per_level": 2.5
+     }
+    ],
+    "visual": 1264,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000860,
+   "calling": "leyweaver",
+   "key": "arcane_missiles",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Missiles",
+    "cost_percent": 8,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Channeled for 3 sec. Fires a missile each second for 35 + 1.5 per level Arcane damage, up to 30% more the fuller your mana bar is as it lands.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Nature_WispSplode",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 35,
+      "per_level": 1.5
+     }
+    ],
+    "visual": 262,
+    "range_index": 35,
+    "duration_index": 27
+   }
+  },
+  {
+   "spell_id": 1000861,
+   "calling": "leyweaver",
+   "key": "ley_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley Ward",
+    "cooldown_ms": 30000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 11% of your maximum mana for 20 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Shadow_DetectLesserInvisibility",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 968,
+    "duration_index": 18
+   }
+  },
+  {
+   "spell_id": 1000862,
+   "calling": "leyweaver",
+   "key": "arcane_surge",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Surge",
+    "cost": 100,
+    "cooldown_ms": 20000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Instant. Costs 100 mana, then up to 600 more of what you have left, and deals 60 + 3 per level Arcane damage plus 60% of the mana it spent.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Lightning_LightningBolt01",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 60,
+      "per_level": 3
+     }
+    ],
+    "visual": 965,
+    "range_index": 35
+   }
+  },
+  {
+   "spell_id": 1000863,
+   "calling": "leyweaver",
+   "key": "ley_tap",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley Tap",
+    "cost": 0,
+    "cooldown_ms": 60000,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Channeled for 6 sec. Taps the ley beneath you: every 2 sec you gain 12% of your maximum mana.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Nature_Purge",
+    "dbc_effects": [
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 2756,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000864,
+   "calling": "leyweaver",
+   "key": "counterspell",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Counterspell",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you regain 10% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Frost_IceShock",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 239,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000865,
+   "calling": "leyweaver",
+   "key": "attunement",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Attunement",
+    "cost": 0,
+    "cooldown_ms": 90000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Instant. For 8 sec, Ley-Spark and Arcane Missiles cost no mana.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Arcane_ArcaneResilience",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Ley-Spark and Arcane Missiles cost no mana.",
+    "visual": 4600,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000866,
+   "calling": "leyweaver",
+   "key": "ley_bind",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley Bind",
+    "cost_percent": 12,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "1.5 sec cast. Binds an enemy in threads of ley for 20 sec. Any damage ends it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Nature_Polymorph",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "mechanic": 14,
+    "aura_description": "Bound by the ley. Any damage ends it.",
+    "visual": 131,
+    "range_index": 4,
+    "cast_time_index": 16,
+    "duration_index": 18
+   }
+  },
+  {
+   "spell_id": 1000867,
+   "calling": "leyweaver",
+   "key": "brimming_spark",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Brimming Spark",
+    "cost_percent": 5,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "1.5 sec cast. Deals 117 + 2.5 per level Arcane damage. Its chance to be a critical strike rises by up to 30 points the fuller your mana bar is.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Arcane_StarFire",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 117,
+      "per_level": 2.5
+     }
+    ],
+    "visual": 1264,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000868,
+   "calling": "leyweaver",
+   "key": "quick_spark",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Spark",
+    "cost_percent": 5,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "1 sec cast. Deals 117 + 2.5 per level Arcane damage. Its chance to be a critical strike rises by up to 15 points the fuller your mana bar is.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Arcane_StarFire",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 117,
+      "per_level": 2.5
+     }
+    ],
+    "visual": 1264,
+    "range_index": 4,
+    "cast_time_index": 4
+   }
+  },
+  {
+   "spell_id": 1000869,
+   "calling": "leyweaver",
+   "key": "sharp_spark",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Sharp Spark",
+    "cost_percent": 5,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "1.5 sec cast. Deals 140 + 3 per level Arcane damage. Its chance to be a critical strike rises by up to 15 points the fuller your mana bar is.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Arcane_StarFire",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 140,
+      "per_level": 3
+     }
+    ],
+    "visual": 1264,
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000870,
+   "calling": "leyweaver",
+   "key": "brimming_missiles",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Brimming Missiles",
+    "cost_percent": 8,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Channeled for 3 sec. Fires a missile each second for 35 + 1.5 per level Arcane damage, up to 50% more the fuller your mana bar is as it lands.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Nature_WispSplode",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 35,
+      "per_level": 1.5
+     }
+    ],
+    "visual": 262,
+    "range_index": 35,
+    "duration_index": 27
+   }
+  },
+  {
+   "spell_id": 1000871,
+   "calling": "leyweaver",
+   "key": "extra_missile",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Extra Missile",
+    "cost_percent": 8,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Channeled for 4 sec. Fires a missile each second for 35 + 1.5 per level Arcane damage, up to 30% more the fuller your mana bar is as it lands.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Nature_WispSplode",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 35,
+      "per_level": 1.5
+     }
+    ],
+    "visual": 262,
+    "range_index": 35,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000872,
+   "calling": "leyweaver",
+   "key": "mana_missiles",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Mana Missiles",
+    "cost_percent": 8,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Channeled for 3 sec. Fires a missile each second for 35 + 1.5 per level Arcane damage, up to 30% more the fuller your mana bar is as it lands. Each missile that lands gives back 1% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Nature_WispSplode",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 35,
+      "per_level": 1.5
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 262,
+    "range_index": 35,
+    "duration_index": 27
+   }
+  },
+  {
+   "spell_id": 1000873,
+   "calling": "leyweaver",
+   "key": "deep_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Deep Ward",
+    "cooldown_ms": 30000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 15% of your maximum mana for 20 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Shadow_DetectLesserInvisibility",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 968,
+    "duration_index": 18
+   }
+  },
+  {
+   "spell_id": 1000874,
+   "calling": "leyweaver",
+   "key": "bursting_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Bursting Ward",
+    "cooldown_ms": 30000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 11% of your maximum mana for 20 sec. When the ward is soaked whole, it bursts for its amount as Arcane damage to enemies within 8 yards.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Shadow_DetectLesserInvisibility",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 968,
+    "duration_index": 18
+   }
+  },
+  {
+   "spell_id": 1000875,
+   "calling": "leyweaver",
+   "key": "returning_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Returning Ward",
+    "cooldown_ms": 30000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 11% of your maximum mana for 20 sec. Each soak gives back 30% of what it soaked as mana.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Shadow_DetectLesserInvisibility",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 968,
+    "duration_index": 18
+   }
+  },
+  {
+   "spell_id": 1000876,
+   "calling": "leyweaver",
+   "key": "overflow",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Overflow",
+    "cost": 100,
+    "cooldown_ms": 20000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Instant. Costs 100 mana, then up to 600 more of what you have left, and deals 60 + 3 per level Arcane damage plus 80% of the mana it spent.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Lightning_LightningBolt01",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 60,
+      "per_level": 3
+     }
+    ],
+    "visual": 965,
+    "range_index": 35
+   }
+  },
+  {
+   "spell_id": 1000877,
+   "calling": "leyweaver",
+   "key": "wide_surge",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Wide Surge",
+    "cost": 100,
+    "cooldown_ms": 20000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Instant. Costs 100 mana, then up to 600 more of what you have left, and deals 60 + 3 per level Arcane damage plus 60% of the mana it spent. Every other enemy within 6 yards of the target takes 50% of the hit.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Lightning_LightningBolt01",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 60,
+      "per_level": 3
+     }
+    ],
+    "visual": 965,
+    "range_index": 35
+   }
+  },
+  {
+   "spell_id": 1000878,
+   "calling": "leyweaver",
+   "key": "quick_surge",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Surge",
+    "cost": 100,
+    "cooldown_ms": 12000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Instant. Costs 100 mana, then up to 600 more of what you have left, and deals 60 + 3 per level Arcane damage plus 60% of the mana it spent. 12 sec cooldown.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Lightning_LightningBolt01",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 60,
+      "per_level": 3
+     }
+    ],
+    "visual": 965,
+    "range_index": 35
+   }
+  },
+  {
+   "spell_id": 1000882,
+   "calling": "leyweaver",
+   "key": "deep_tap",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Deep Tap",
+    "cost": 0,
+    "cooldown_ms": 60000,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Channeled for 6 sec. Taps the ley beneath you: every 2 sec you gain 15% of your maximum mana.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Nature_Purge",
+    "dbc_effects": [
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 2756,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000883,
+   "calling": "leyweaver",
+   "key": "quick_tap",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Tap",
+    "cost": 0,
+    "cooldown_ms": 40000,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Channeled for 6 sec. Taps the ley beneath you: every 2 sec you gain 12% of your maximum mana. 40 sec cooldown.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Nature_Purge",
+    "dbc_effects": [
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 2756,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000884,
+   "calling": "leyweaver",
+   "key": "walking_tap",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Walking Tap",
+    "cost": 0,
+    "cooldown_ms": 60000,
+    "channeled": true,
+    "channel_interrupt_flags": 10,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Channeled for 6 sec. Taps the ley beneath you: every 2 sec you gain 12% of your maximum mana. Moving does not end it.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Nature_Purge",
+    "dbc_effects": [
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 2756,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000885,
+   "calling": "leyweaver",
+   "key": "long_counter",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Counter",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 8.5 seconds. When it stops a cast, you regain 10% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Frost_IceShock",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 239,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000886,
+   "calling": "leyweaver",
+   "key": "siphoning_counter",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Siphoning Counter",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you regain 20% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Frost_IceShock",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 239,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000887,
+   "calling": "leyweaver",
+   "key": "spark_counter",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Spark Counter",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you regain 10% of your maximum mana. A stopped cast also makes Arcane Surge ready again.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Frost_IceShock",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 239,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000888,
+   "calling": "leyweaver",
+   "key": "long_attunement",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Attunement",
+    "cost": 0,
+    "cooldown_ms": 90000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Instant. For 12 sec, Ley-Spark and Arcane Missiles cost no mana.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Arcane_ArcaneResilience",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 4600,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000890,
+   "calling": "leyweaver",
+   "key": "quick_attunement",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Attunement",
+    "cost": 0,
+    "cooldown_ms": 60000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Instant. For 8 sec, Ley-Spark and Arcane Missiles cost no mana. 60 sec cooldown.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Arcane_ArcaneResilience",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 4600,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000891,
+   "calling": "leyweaver",
+   "key": "attuned_haste",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Attuned Haste",
+    "cost": 0,
+    "cooldown_ms": 90000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Instant. For 8 sec, Ley-Spark and Arcane Missiles cost no mana. Your casts are also 20% faster while it lasts.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Arcane_ArcaneResilience",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 4600,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000893,
+   "calling": "leyweaver",
+   "key": "long_bind",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Bind",
+    "cost_percent": 12,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "1.5 sec cast. Binds an enemy in threads of ley for 30 sec. Any damage ends it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Nature_Polymorph",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 131,
+    "range_index": 4,
+    "cast_time_index": 16,
+    "duration_index": 2
+   }
+  },
+  {
+   "spell_id": 1000895,
+   "calling": "leyweaver",
+   "key": "quick_bind",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Bind",
+    "cost_percent": 12,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Instant. Binds an enemy in threads of ley for 20 sec. Any damage ends it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Nature_Polymorph",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 131,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 18
+   }
+  },
+  {
+   "spell_id": 1000896,
+   "calling": "leyweaver",
+   "key": "far_bind",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Far Bind",
+    "cost_percent": 12,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "1.5 sec cast. Binds an enemy in threads of ley for 20 sec. Any damage ends it. Reaches 40 yards.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Nature_Polymorph",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 131,
+    "range_index": 5,
+    "cast_time_index": 16,
+    "duration_index": 18
+   }
+  },
+  {
+   "spell_id": 1000879,
+   "calling": "leyweaver",
+   "key": "arcane_mind",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Mind",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your intellect is increased by 10%.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_Charm",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000880,
+   "calling": "leyweaver",
+   "key": "deep_reserves",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Deep Reserves",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your maximum mana is increased by 200.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_MagicalSentry",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000881,
+   "calling": "leyweaver",
+   "key": "arcane_focus",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Focus",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Ley-Spark and Arcane Missiles cost 20% less mana.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_Devotion"
+   }
+  },
+  {
+   "spell_id": 1000897,
+   "calling": "leyweaver",
+   "key": "arcane_potency",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Potency",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Arcane Surge is 15% more likely to be a critical strike.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_PowerInfusion",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000898,
+   "calling": "leyweaver",
+   "key": "overcharge",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Overcharge",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A Ley-Spark critical strike gives you 5% of your base mana.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Frost_ManaRecharge",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000899,
+   "calling": "leyweaver",
+   "key": "deep_well",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Deep Well",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Ley Tap's cooldown is 30 sec shorter.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Nature_ManaRegenTotem"
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COOLDOWN",
+     "family_bit": 37,
+     "value": -30000
+    }
+   ]
+  },
+  {
    "spell_id": 1000009,
    "calling": "vanguard",
    "key": "aura_seal_of_iron_armor",
@@ -16979,6 +18271,79 @@
     "name": "Dazing Wave",
     "aura_description": "Movement speed slowed by 70%.",
     "visual": 963
+   }
+  },
+  {
+   "spell_id": 1000889,
+   "calling": "leyweaver",
+   "key": "aura_long_attunement",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Arcane_ArcaneResilience",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Attunement",
+    "aura_description": "Ley-Spark and Arcane Missiles cost no mana."
+   }
+  },
+  {
+   "spell_id": 1000892,
+   "calling": "leyweaver",
+   "key": "aura_attuned_haste",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Arcane_ArcaneResilience",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Attunement",
+    "aura_description": "Ley-Spark and Arcane Missiles cost no mana, and your casts are 20% faster."
+   }
+  },
+  {
+   "spell_id": 1000894,
+   "calling": "leyweaver",
+   "key": "aura_long_bind",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Nature_Polymorph",
+    "mechanic": 14,
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Ley Bind",
+    "aura_description": "Bound by the ley. Any damage ends it.",
+    "visual": 131
    }
   },
   {

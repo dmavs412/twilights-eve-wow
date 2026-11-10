@@ -2629,6 +2629,26 @@ hidden = true
 text_id = 64184
 greeting = "Warm your hands, $C. Mind the sleeves. It's been burning longer than you've been alive."
 
+# Teodric Lumen, the Leyweaver (#690): keeps a ley spring on the Darkened Bank, Duskwood's strip
+# along the river below Elwynn, among the spiders and wolves and far from any road. The look is
+# Larimaine Purdue's (a placeholder). Role `talker`, as Wren's. z is ground_check.py's.
+[[npc]]
+guid = 9300115
+entry = 190115
+name = "Teodric Lumen"
+subname = "Leyweaver"
+level = 50
+display_id = 1470
+faction_template = 35
+role = "talker"
+npc_flags = 0x3
+map = 0
+position = [-10060.0, -560.0, 52.11]
+orientation = 1.57
+hidden = true
+text_id = 64185
+greeting = "Can you feel it? Under your feet, like a river under ice. No? You will."
+
 # Belongs to tests/sight.rs: seen only after test quest 99811 is handed in, 10 yd from that
 # quest's Rachel (zones.toml guid 960811), whom only those who have not handed it in see. The
 # look is Maera Holt's. z is ground_check.py's.

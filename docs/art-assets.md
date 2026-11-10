@@ -415,6 +415,14 @@ one is a placeholder.
 | Hot Streak's buff (#689) | master CSV, aura row | `Spell_Fire_Incinerate` |
 | The Pyromancer's Talents (#689) | master CSV, rows 25 and 50 | `Spell_Fire_Incinerate`, `Spell_Fire_FlameTounge`, `Spell_Fire_FireArmor`, `Spell_Fire_MasterOfElements`, `Spell_Fire_SearingTotem`, `Spell_Fire_Volcano` |
 | Gnoll Tallow, the trial's quest item (#689) | `content/quest_items.toml`, entry 980851 | display 3341, `INV_Misc_Organ_05` |
+| Teodric Lumen, the Leyweaver trainer (#690) | `content/hub.toml`, entry 190115 | display 1470, Larimaine Purdue's look. Wanted: a lean, sleepless man in faded blue robes, barefoot by a glowing spring on a dark riverbank. |
+| Leyweaver Calling icon (#690) | `callings.csv` | `Spell_Nature_StarFall` |
+| Arcane Missiles (#690) | master CSV | `Spell_Nature_WispSplode` (`Spell_Nature_StarFall` is the Initiate's Catalyst) |
+| Arcane Surge (#690) | master CSV | `Spell_Lightning_LightningBolt01` |
+| Ley Tap (#690) | master CSV | `Spell_Nature_Purge` |
+| Attunement and its buffs (#690) | master CSV | `Spell_Arcane_ArcaneResilience` |
+| Ley Bind and its binds (#690) | master CSV | `Spell_Nature_Polymorph` |
+| The Leyweaver's Talents (#690) | master CSV, rows 25 and 50 | `Spell_Shadow_Charm`, `Spell_Holy_MagicalSentry`, `Spell_Holy_Devotion`, `Spell_Holy_PowerInfusion`, `Spell_Frost_ManaRecharge`, `Spell_Nature_ManaRegenTotem` |
 
 The Sharpshooter's carried skills (Auto Shot, Puncturing Shaft, Rapid Fire, Silencing Shot) keep
 the Ranger's icons. Its trial has no quest items. The Ironclad's carried skills (Righteous Smash,
@@ -425,4 +433,5 @@ skills (Rupture, Garrote and its bleeds, Kick, and Bleeding Kick's bleed) keep t
 icons, as do its copies of Bloodlust and the blood droplet. The Nightblade's carried skills
 (Eviscerate, Stealth and its stealth auras, Kick) keep the Cutthroat's icons, and its trial has no
 quest items. The Pyromancer's carried skills (Searing Ember and its Ember, Catalyst, Counterspell)
-keep the Initiate's icons.
+keep the Initiate's icons. The Leyweaver's carried skills (Ley-Spark, Ley Ward, Counterspell) keep
+the Initiate's icons, and its trial has no quest items.

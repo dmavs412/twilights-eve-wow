@@ -23968,5 +23968,1940 @@
    "spirit": 20
   },
   "shapeshift_form": 0
+ },
+ {
+  "key": "leyweaver",
+  "power": "mana",
+  "stat_profile": "mage",
+  "item_class": "warrior",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [
+   "cloth"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\Spell_Nature_StarFall",
+  "spellbook": "Leyweaver",
+  "blurb": "Weaves the ley itself. Hits hardest on a full bar, pours it all into one blow, then taps the ley to fill up again.",
+  "skills": [
+   {
+    "key": "ley_spark",
+    "name": "Ley-Spark",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000859,
+    "realm_cost": 5,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "cast",
+    "cast_time_ms": 1500,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 117,
+        "per_level": 2.5
+       },
+       "crit_pct_at_full_mana": 15,
+       "school": "arcane"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "1.5 sec cast. Deals 117 + 2.5 per level Arcane damage. Its chance to be a critical strike rises by up to 15 points the fuller your mana bar is."
+   },
+   {
+    "key": "arcane_missiles",
+    "name": "Arcane Missiles",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000860,
+    "realm_cost": 8,
+    "realm_range_max": 35,
+    "target": "enemy",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "channel",
+    "channel_tick_ms": 1000,
+    "channel_ms": 3000,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 35,
+        "per_level": 1.5
+       },
+       "pct_at_full_mana": 30,
+       "school": "arcane"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Channeled for 3 sec. Fires a missile each second for 35 + 1.5 per level Arcane damage, up to 30% more the fuller your mana bar is as it lands."
+   },
+   {
+    "key": "ley_ward",
+    "name": "Ley Ward",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000861,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 30000,
+    "target": "self",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "absorb",
+      "params": {
+       "pct": 11,
+       "pct_of": "max_mana",
+       "duration_ms": 20000
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 11% of your maximum mana for 20 sec."
+   },
+   {
+    "key": "arcane_surge",
+    "name": "Arcane Surge",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000862,
+    "realm_cost": 100,
+    "realm_cooldown_ms": 20000,
+    "realm_range_max": 35,
+    "target": "enemy",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "all_remaining",
+    "cost_extra_max": 600,
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 60,
+        "per_level": 3
+       },
+       "per_mana_pct": 60,
+       "school": "arcane"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. Costs 100 mana, then up to 600 more of what you have left, and deals 60 + 3 per level Arcane damage plus 60% of the mana it spent."
+   },
+   {
+    "key": "ley_tap",
+    "name": "Ley Tap",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000863,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 60000,
+    "learn_level": 10,
+    "target": "self",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "flat",
+    "cast_kind": "channel",
+    "channel_tick_ms": 2000,
+    "channel_ms": 6000,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "energize",
+      "params": {
+       "power": "mana",
+       "amount": {
+        "base": 0,
+        "per_level": 0,
+        "per_ap": 0
+       },
+       "pct_of_max": 12
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Channeled for 6 sec. Taps the ley beneath you: every 2 sec you gain 12% of your maximum mana."
+   },
+   {
+    "key": "counterspell",
+    "name": "Counterspell",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000864,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 24000,
+    "realm_gcd_ms": 0,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 6500
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "energize",
+      "params": {
+       "power": "mana",
+       "amount": {
+        "base": 0,
+        "per_level": 0,
+        "per_ap": 0
+       },
+       "pct_of_max": 10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you regain 10% of your maximum mana."
+   },
+   {
+    "key": "attunement",
+    "name": "Attunement",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000865,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 90000,
+    "learn_level": 20,
+    "target": "self",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_attunement"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. For 8 sec, Ley-Spark and Arcane Missiles cost no mana."
+   },
+   {
+    "key": "ley_bind",
+    "name": "Ley Bind",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000866,
+    "realm_cost": 12,
+    "realm_range_max": 30,
+    "learn_level": 30,
+    "target": "enemy",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "cast",
+    "cast_time_ms": 1500,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "incapacitate",
+      "params": {
+       "apply_aura": "aura_ley_bind"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "1.5 sec cast. Binds an enemy in threads of ley for 20 sec. Any damage ends it."
+   }
+  ],
+  "auras": [
+   {
+    "key": "aura_attunement",
+    "name": "Attunement",
+    "spell_id": 1000865,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": [
+        "ley_spark",
+        "arcane_missiles"
+       ],
+       "cost_pct": -100,
+       "family_bits": [
+        33,
+        34
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ley-Spark and Arcane Missiles cost no mana."
+   },
+   {
+    "key": "aura_ley_bind",
+    "name": "Ley Bind",
+    "spell_id": 1000866,
+    "status": "placeholder",
+    "school": "arcane",
+    "prevention": "silence",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "incapacitate",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "break_on": {
+     "damage": true
+    },
+    "duration_ms": 20000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "incapacitate",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Bound by the ley. Any damage ends it."
+   },
+   {
+    "key": "aura_long_attunement",
+    "name": "Attunement",
+    "spell_id": 1000889,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": [
+        "ley_spark",
+        "arcane_missiles"
+       ],
+       "cost_pct": -100,
+       "family_bits": [
+        33,
+        34
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ley-Spark and Arcane Missiles cost no mana."
+   },
+   {
+    "key": "aura_attuned_haste",
+    "name": "Attunement",
+    "spell_id": 1000892,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": [
+        "ley_spark",
+        "arcane_missiles"
+       ],
+       "cost_pct": -100,
+       "family_bits": [
+        33,
+        34
+       ]
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_cast_speed_pct",
+      "params": {
+       "pct": 20,
+       "family_bits": [
+        34,
+        36,
+        39,
+        38,
+        40,
+        33,
+        37,
+        35
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ley-Spark and Arcane Missiles cost no mana, and your casts are 20% faster."
+   },
+   {
+    "key": "aura_long_bind",
+    "name": "Ley Bind",
+    "spell_id": 1000894,
+    "status": "placeholder",
+    "school": "arcane",
+    "prevention": "silence",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "incapacitate",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "break_on": {
+     "damage": true
+    },
+    "duration_ms": 30000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "incapacitate",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Bound by the ley. Any damage ends it."
+   }
+  ],
+  "rows": [
+   {
+    "key": "ley_spark",
+    "level": 5,
+    "kind": "skill_choice",
+    "skill": "ley_spark",
+    "choices": [
+     {
+      "key": "brimming_spark",
+      "name": "Brimming Spark",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000867,
+      "realm_cost": 5,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 117,
+          "per_level": 2.5
+         },
+         "crit_pct_at_full_mana": 30,
+         "school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "1.5 sec cast. Deals 117 + 2.5 per level Arcane damage. Its chance to be a critical strike rises by up to 30 points the fuller your mana bar is.",
+      "change": "Up to 30 crit points more at a full bar instead of 15.",
+      "variant_of": "ley_spark"
+     },
+     {
+      "key": "quick_spark",
+      "name": "Quick Spark",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000868,
+      "realm_cost": 5,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 1000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 117,
+          "per_level": 2.5
+         },
+         "crit_pct_at_full_mana": 15,
+         "school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "1 sec cast. Deals 117 + 2.5 per level Arcane damage. Its chance to be a critical strike rises by up to 15 points the fuller your mana bar is.",
+      "change": "Has a shorter cast.",
+      "variant_of": "ley_spark"
+     },
+     {
+      "key": "sharp_spark",
+      "name": "Sharp Spark",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000869,
+      "realm_cost": 5,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 140,
+          "per_level": 3
+         },
+         "crit_pct_at_full_mana": 15,
+         "school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "1.5 sec cast. Deals 140 + 3 per level Arcane damage. Its chance to be a critical strike rises by up to 15 points the fuller your mana bar is.",
+      "change": "Deals {amount:140:3:0:0} instead of {amount:117:2.5:0:0}.",
+      "variant_of": "ley_spark"
+     }
+    ]
+   },
+   {
+    "key": "arcane_missiles",
+    "level": 10,
+    "kind": "skill_choice",
+    "skill": "arcane_missiles",
+    "choices": [
+     {
+      "key": "brimming_missiles",
+      "name": "Brimming Missiles",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000870,
+      "realm_cost": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 35,
+          "per_level": 1.5
+         },
+         "pct_at_full_mana": 50,
+         "school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Channeled for 3 sec. Fires a missile each second for 35 + 1.5 per level Arcane damage, up to 50% more the fuller your mana bar is as it lands.",
+      "change": "Up to 50% more at a full bar instead of 30%.",
+      "variant_of": "arcane_missiles"
+     },
+     {
+      "key": "extra_missile",
+      "name": "Extra Missile",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000871,
+      "realm_cost": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 4000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 35,
+          "per_level": 1.5
+         },
+         "pct_at_full_mana": 30,
+         "school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Channeled for 4 sec. Fires a missile each second for 35 + 1.5 per level Arcane damage, up to 30% more the fuller your mana bar is as it lands.",
+      "change": "Channels a second longer, for one more missile.",
+      "variant_of": "arcane_missiles"
+     },
+     {
+      "key": "mana_missiles",
+      "name": "Mana Missiles",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000872,
+      "realm_cost": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 35,
+          "per_level": 1.5
+         },
+         "pct_at_full_mana": 30,
+         "school": "arcane"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "mana",
+         "amount": {
+          "base": 0,
+          "per_level": 0,
+          "per_ap": 0
+         },
+         "pct_of_max": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Channeled for 3 sec. Fires a missile each second for 35 + 1.5 per level Arcane damage, up to 30% more the fuller your mana bar is as it lands. Each missile that lands gives back 1% of your maximum mana.",
+      "change": "Each missile that lands gives back 1% of your maximum mana.",
+      "variant_of": "arcane_missiles"
+     }
+    ]
+   },
+   {
+    "key": "ley_ward",
+    "level": 15,
+    "kind": "skill_choice",
+    "skill": "ley_ward",
+    "choices": [
+     {
+      "key": "deep_ward",
+      "name": "Deep Ward",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000873,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 30000,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 15,
+         "pct_of": "max_mana",
+         "duration_ms": 20000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 15% of your maximum mana for 20 sec.",
+      "change": "Absorbs 15% of your maximum mana instead of 11%.",
+      "variant_of": "ley_ward"
+     },
+     {
+      "key": "bursting_ward",
+      "name": "Bursting Ward",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000874,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 30000,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 11,
+         "pct_of": "max_mana",
+         "duration_ms": 20000,
+         "burst_radius_yd": 8,
+         "burst_school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 11% of your maximum mana for 20 sec. When the ward is soaked whole, it bursts for its amount as Arcane damage to enemies within 8 yards.",
+      "change": "When the ward is soaked whole, it bursts for its amount as Arcane damage to enemies within 8 yards.",
+      "variant_of": "ley_ward"
+     },
+     {
+      "key": "returning_ward",
+      "name": "Returning Ward",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000875,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 30000,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "absorb",
+        "params": {
+         "pct": 11,
+         "pct_of": "max_mana",
+         "duration_ms": 20000,
+         "energize_pct": 30
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 11% of your maximum mana for 20 sec. Each soak gives back 30% of what it soaked as mana.",
+      "change": "Each soak gives back 30% of what it soaked as mana.",
+      "variant_of": "ley_ward"
+     }
+    ]
+   },
+   {
+    "key": "arcane_surge",
+    "level": 20,
+    "kind": "skill_choice",
+    "skill": "arcane_surge",
+    "choices": [
+     {
+      "key": "overflow",
+      "name": "Overflow",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000876,
+      "realm_cost": 100,
+      "realm_cooldown_ms": 20000,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "all_remaining",
+      "cost_extra_max": 600,
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 60,
+          "per_level": 3
+         },
+         "per_mana_pct": 80,
+         "school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Costs 100 mana, then up to 600 more of what you have left, and deals 60 + 3 per level Arcane damage plus 80% of the mana it spent.",
+      "change": "Adds 80% of the mana spent instead of 60%.",
+      "variant_of": "arcane_surge"
+     },
+     {
+      "key": "wide_surge",
+      "name": "Wide Surge",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000877,
+      "realm_cost": 100,
+      "realm_cooldown_ms": 20000,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "all_remaining",
+      "cost_extra_max": 600,
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 60,
+          "per_level": 3
+         },
+         "per_mana_pct": 60,
+         "splash_pct": 50,
+         "splash_yd": 6,
+         "school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Costs 100 mana, then up to 600 more of what you have left, and deals 60 + 3 per level Arcane damage plus 60% of the mana it spent. Every other enemy within 6 yards of the target takes 50% of the hit.",
+      "change": "Every other enemy within 6 yards of the target takes 50% of the hit.",
+      "variant_of": "arcane_surge"
+     },
+     {
+      "key": "quick_surge",
+      "name": "Quick Surge",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000878,
+      "realm_cost": 100,
+      "realm_cooldown_ms": 12000,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "all_remaining",
+      "cost_extra_max": 600,
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 60,
+          "per_level": 3
+         },
+         "per_mana_pct": 60,
+         "school": "arcane"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Costs 100 mana, then up to 600 more of what you have left, and deals 60 + 3 per level Arcane damage plus 60% of the mana it spent. 12 sec cooldown.",
+      "change": "Cooldown 12 sec instead of 20 sec.",
+      "variant_of": "arcane_surge"
+     }
+    ]
+   },
+   {
+    "key": "leyweaver_wellspring",
+    "level": 25,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "arcane_mind",
+      "name": "Arcane Mind",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000879,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "mod_stat",
+        "params": {
+         "stat": "intellect",
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your intellect is increased by 10%."
+     },
+     {
+      "key": "deep_reserves",
+      "name": "Deep Reserves",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000880,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "max_power",
+        "params": {
+         "amount": 200
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your maximum mana is increased by 200."
+     },
+     {
+      "key": "arcane_focus",
+      "name": "Arcane Focus",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000881,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": false,
+      "effects": [],
+      "description": "Ley-Spark and Arcane Missiles cost 20% less mana."
+     }
+    ]
+   },
+   {
+    "key": "ley_tap",
+    "level": 30,
+    "kind": "skill_choice",
+    "skill": "ley_tap",
+    "choices": [
+     {
+      "key": "deep_tap",
+      "name": "Deep Tap",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000882,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 60000,
+      "learn_level": 10,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "channel",
+      "channel_tick_ms": 2000,
+      "channel_ms": 6000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "energize",
+        "params": {
+         "power": "mana",
+         "amount": {
+          "base": 0,
+          "per_level": 0,
+          "per_ap": 0
+         },
+         "pct_of_max": 15
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Channeled for 6 sec. Taps the ley beneath you: every 2 sec you gain 15% of your maximum mana.",
+      "change": "Each tick gives 15% of your maximum mana instead of 12%.",
+      "variant_of": "ley_tap"
+     },
+     {
+      "key": "quick_tap",
+      "name": "Quick Tap",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000883,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 40000,
+      "learn_level": 10,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "channel",
+      "channel_tick_ms": 2000,
+      "channel_ms": 6000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "energize",
+        "params": {
+         "power": "mana",
+         "amount": {
+          "base": 0,
+          "per_level": 0,
+          "per_ap": 0
+         },
+         "pct_of_max": 12
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Channeled for 6 sec. Taps the ley beneath you: every 2 sec you gain 12% of your maximum mana. 40 sec cooldown.",
+      "change": "Cooldown 40 sec instead of 60 sec.",
+      "variant_of": "ley_tap"
+     },
+     {
+      "key": "walking_tap",
+      "name": "Walking Tap",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000884,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 60000,
+      "learn_level": 10,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "channel",
+      "channel_tick_ms": 2000,
+      "channel_ms": 6000,
+      "interrupt_on": [
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "energize",
+        "params": {
+         "power": "mana",
+         "amount": {
+          "base": 0,
+          "per_level": 0,
+          "per_ap": 0
+         },
+         "pct_of_max": 12
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Channeled for 6 sec. Taps the ley beneath you: every 2 sec you gain 12% of your maximum mana. Moving does not end it.",
+      "change": "Moving does not end it.",
+      "variant_of": "ley_tap"
+     }
+    ]
+   },
+   {
+    "key": "counterspell",
+    "level": 35,
+    "kind": "skill_choice",
+    "skill": "counterspell",
+    "choices": [
+     {
+      "key": "long_counter",
+      "name": "Long Counter",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000885,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 24000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 8500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "mana",
+         "amount": {
+          "base": 0,
+          "per_level": 0,
+          "per_ap": 0
+         },
+         "pct_of_max": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 8.5 seconds. When it stops a cast, you regain 10% of your maximum mana.",
+      "change": "Locks the school out for 8.5 sec instead of 6.5 sec.",
+      "variant_of": "counterspell"
+     },
+     {
+      "key": "siphoning_counter",
+      "name": "Siphoning Counter",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000886,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 24000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 6500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "mana",
+         "amount": {
+          "base": 0,
+          "per_level": 0,
+          "per_ap": 0
+         },
+         "pct_of_max": 20
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you regain 20% of your maximum mana.",
+      "change": "A stopped cast gives 20% of your maximum mana instead of 10%.",
+      "variant_of": "counterspell"
+     },
+     {
+      "key": "spark_counter",
+      "name": "Spark Counter",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000887,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 24000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 6500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "mana",
+         "amount": {
+          "base": 0,
+          "per_level": 0,
+          "per_ap": 0
+         },
+         "pct_of_max": 10
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "reset_cooldowns",
+        "params": {
+         "spell_ids": [
+          1000862
+         ]
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you regain 10% of your maximum mana. A stopped cast also makes Arcane Surge ready again.",
+      "change": "A stopped cast also finishes Arcane Surge's cooldown.",
+      "variant_of": "counterspell"
+     }
+    ]
+   },
+   {
+    "key": "attunement",
+    "level": 40,
+    "kind": "skill_choice",
+    "skill": "attunement",
+    "choices": [
+     {
+      "key": "long_attunement",
+      "name": "Long Attunement",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000888,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 90000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_long_attunement"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. For 12 sec, Ley-Spark and Arcane Missiles cost no mana.",
+      "change": "Lasts 12 sec instead of 8 sec.",
+      "variant_of": "attunement"
+     },
+     {
+      "key": "quick_attunement",
+      "name": "Quick Attunement",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000890,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 60000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_attunement"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. For 8 sec, Ley-Spark and Arcane Missiles cost no mana. 60 sec cooldown.",
+      "change": "Cooldown 60 sec instead of 90 sec.",
+      "variant_of": "attunement"
+     },
+     {
+      "key": "attuned_haste",
+      "name": "Attuned Haste",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000891,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 90000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_attuned_haste"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. For 8 sec, Ley-Spark and Arcane Missiles cost no mana. Your casts are also 20% faster while it lasts.",
+      "change": "Your casts are also 20% faster while it lasts.",
+      "variant_of": "attunement"
+     }
+    ]
+   },
+   {
+    "key": "ley_bind",
+    "level": 45,
+    "kind": "skill_choice",
+    "skill": "ley_bind",
+    "choices": [
+     {
+      "key": "long_bind",
+      "name": "Long Bind",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000893,
+      "realm_cost": 12,
+      "realm_range_max": 30,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "incapacitate",
+        "params": {
+         "apply_aura": "aura_long_bind"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "1.5 sec cast. Binds an enemy in threads of ley for 30 sec. Any damage ends it.",
+      "change": "Lasts 30 sec instead of 20 sec.",
+      "variant_of": "ley_bind"
+     },
+     {
+      "key": "quick_bind",
+      "name": "Quick Bind",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000895,
+      "realm_cost": 12,
+      "realm_range_max": 30,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "incapacitate",
+        "params": {
+         "apply_aura": "aura_ley_bind"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Binds an enemy in threads of ley for 20 sec. Any damage ends it.",
+      "change": "Is instant.",
+      "variant_of": "ley_bind"
+     },
+     {
+      "key": "far_bind",
+      "name": "Far Bind",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000896,
+      "realm_cost": 12,
+      "realm_range_max": 40,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "arcane",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "incapacitate",
+        "params": {
+         "apply_aura": "aura_ley_bind"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "1.5 sec cast. Binds an enemy in threads of ley for 20 sec. Any damage ends it. Reaches 40 yards.",
+      "change": "Reaches 40 yards instead of 30.",
+      "variant_of": "ley_bind"
+     }
+    ]
+   },
+   {
+    "key": "leyweaver_ley_master",
+    "level": 50,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "arcane_potency",
+      "name": "Arcane Potency",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000897,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_crit_pct",
+        "params": {
+         "skill": "arcane_surge",
+         "pct": 15
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Arcane Surge is 15% more likely to be a critical strike."
+     },
+     {
+      "key": "overcharge",
+      "name": "Overcharge",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000898,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "crit",
+         "skill": "ley_spark",
+         "energize_pct_of_base": 5
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A Ley-Spark critical strike gives you 5% of your base mana."
+     },
+     {
+      "key": "deep_well",
+      "name": "Deep Well",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000899,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [],
+      "description": "Ley Tap's cooldown is 30 sec shorter.",
+      "spellmods": [
+       {
+        "type": "flat",
+        "op": "COOLDOWN",
+        "family_bit": 37,
+        "value": -30000,
+        "target": [
+         "ley_tap"
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "name": "Leyweaver",
+  "tier": 2,
+  "tier_cap": 50,
+  "row_levels": [
+   5,
+   10,
+   15,
+   20,
+   25,
+   30,
+   35,
+   40,
+   45,
+   50
+  ],
+  "tier_bonus": {
+   "strength": 0,
+   "agility": 0,
+   "stamina": 10,
+   "intellect": 30,
+   "spirit": 20
+  },
+  "shapeshift_form": 0
  }
 ]
