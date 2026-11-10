@@ -405,6 +405,16 @@ one is a placeholder.
 | Cold Blood and its buffs (#688) | master CSV | `Spell_Ice_Lament` |
 | Kidney Shot and its stun (#688) | master CSV | `Ability_Rogue_KidneyShot` |
 | The Nightblade's Talents (#688) | master CSV, rows 25 and 50 | `Spell_Shadow_Twilight`, `Spell_Shadow_Curse`, `Spell_Shadow_UnholyStrength`, `Spell_Shadow_DeathScream`, `Spell_Shadow_Possession`, `Ability_Rogue_FeignDeath` |
+| Magus Ilyra Vance, the Pyromancer trainer (#689) | `content/hub.toml`, entry 190114 | display 3293, Elsharin's look. Wanted: a grey-haired woman magus in scorched red robes, sleeves rolled, beside an old courtyard fire. |
+| Pyromancer Calling icon (#689) | `callings.csv` | `Spell_Fire_FlameBolt` |
+| Fireball (#689) | master CSV | `Spell_Fire_FireBolt02` |
+| Pyroblast and its burns (#689) | master CSV | `Spell_Fire_FireBolt` (`Spell_Fire_Fireball02` is the Ranger's Explosive Shot) |
+| Kindle (#689) | master CSV | `Spell_Fire_SoulBurn` |
+| Flamestrike (#689) | master CSV | `Spell_Fire_Fire` (`Spell_Fire_SelfDestruct` is the Acolyte's Miasma) |
+| Blast Wave and its slows (#689) | master CSV | `Spell_Fire_MeteorStorm` (`Spell_Holy_Excorcism_02` is the Initiate's Ember Blast) |
+| Hot Streak's buff (#689) | master CSV, aura row | `Spell_Fire_Incinerate` |
+| The Pyromancer's Talents (#689) | master CSV, rows 25 and 50 | `Spell_Fire_Incinerate`, `Spell_Fire_FlameTounge`, `Spell_Fire_FireArmor`, `Spell_Fire_MasterOfElements`, `Spell_Fire_SearingTotem`, `Spell_Fire_Volcano` |
+| Gnoll Tallow, the trial's quest item (#689) | `content/quest_items.toml`, entry 980851 | display 3341, `INV_Misc_Organ_05` |
 
 The Sharpshooter's carried skills (Auto Shot, Puncturing Shaft, Rapid Fire, Silencing Shot) keep
 the Ranger's icons. Its trial has no quest items. The Ironclad's carried skills (Righteous Smash,
@@ -414,4 +424,5 @@ Seal of Iron and its armour spike, Rebuke) keep the Vanguard's icons. The Bloodl
 skills (Rupture, Garrote and its bleeds, Kick, and Bleeding Kick's bleed) keep the Cutthroat's
 icons, as do its copies of Bloodlust and the blood droplet. The Nightblade's carried skills
 (Eviscerate, Stealth and its stealth auras, Kick) keep the Cutthroat's icons, and its trial has no
-quest items.
+quest items. The Pyromancer's carried skills (Searing Ember and its Ember, Catalyst, Counterspell)
+keep the Initiate's icons.

@@ -2037,6 +2037,90 @@ completion = "Once each. Close enough. Sit."
 money = 5000
 kill = [[97201, 3]]
 
+# The Pyromancer (#689): Magus Ilyra Vance in the courtyard of Stormwind's Mage Quarter. Elsa
+# Brightwood gives the hint.
+[[quest]]
+id = 64403
+kind = "advancement"
+giver = 190114
+level = 30
+zone_or_sort = -161
+advancement = { from = "initiate", to = "pyromancer", trial = 64434 }
+calling_choice = true
+title = "The Pyromancer's Flame"
+objectives = "Find the Pyromancer in Stormwind's Mage Quarter, and pass her trial."
+details = "You burn well, $N, but you burn one thing at a time. A Pyromancer lights one fire and lets it find the rest.$B$BIn Stormwind's Mage Quarter, among the towers, a magus keeps a fire that has never gone out. Elsa Brightwood knows her. Ask Elsa."
+progress = "You found the fire. Have you fed it?"
+completion = "Then it's yours now. Let it spread, and don't stand in it. You start over, Pyromancer. The fire doesn't."
+money = 0
+hint = [
+  { npc = 190052, option = "Who keeps the oldest fire in Stormwind?", reply = "Magus Ilyra Vance, in the Mage Quarter's courtyard. She lit it the day the Second War ended and hasn't let it go out since. You'll smell it before you see it." },
+]
+
+[[quest]]
+id = 64431
+kind = "once"
+giver = 190114
+after_taken = 64403
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Kindling"
+objectives = "Kill 8 Redridge Brutes and 6 Redridge Mystics in the Redridge Canyons."
+details = "Gnolls burn badly and run worse. Go to the canyons north of Lakeshire and set the pack alight. Fourteen, and let it spread."
+progress = "Smell of singed fur?"
+completion = "Strong. Good."
+money = 2500
+kill = [[426, 8], [430, 6]]
+
+[[quest]]
+id = 64432
+kind = "once"
+giver = 190114
+after = 64431
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Gnoll Tallow"
+objectives = "Bring 8 Gnoll Tallow from the gnolls of the Redridge Canyons."
+details = "The fire wants feeding. Gnoll fat burns slow and hot. Eight lumps."
+progress = "The tallow?"
+completion = "That will keep it a month. Ugh."
+money = 2500
+collect = [{ item = 980851, count = 8, chance = 50, from = [426, 430] }]
+
+[[quest]]
+id = 64433
+kind = "once"
+giver = 190114
+after = 64432
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "The Highway"
+objectives = "Kill 10 Blackrock Grunts on Lakeridge Highway."
+details = "Orcs don't run from fire. They charge through it. Ten grunts, and learn to step back while they burn."
+progress = "Still unsinged?"
+completion = "Mostly. Good."
+money = 2500
+kill = [[440, 10]]
+
+[[quest]]
+id = 64434
+kind = "once"
+giver = 190114
+after = 64433
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "The Alphas"
+objectives = "Kill 6 Redridge Alphas in the Redridge Canyons."
+details = "Last. The alphas lead the packs and take the fire for them. Six, and come back with your eyebrows."
+progress = "Eyebrows?"
+completion = "Both. Come and sit by the fire, Pyromancer."
+money = 5000
+kill = [[445, 6]]
+
 # ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
 # The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the
 # Dungeon's Repeatable Quests, from level 16. Every target is in the run (content/wailing_caverns.toml):

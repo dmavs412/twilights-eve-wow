@@ -1850,7 +1850,8 @@ impl InWorld {
                 skill: None,
                 plain: None,
                 yields_xp: base_xp > 0,
-                target: None,
+                // The victim, its auras still on it: a kill proc may ask what it wore (Fuel).
+                target: Some(victim),
                 amount: 0,
                 school: None,
             },

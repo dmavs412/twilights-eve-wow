@@ -2660,6 +2660,18 @@ class TalentRows(BuildSpells):
         self.assertTrue(all(len(r["choices"]) == 3 for r in nightblade["rows"]))
         self.assert_committed_icons("nightblade")
 
+    def test_the_committed_pyromancer_has_ten_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            pyromancer = next(c for c in json.load(f) if c["key"] == "pyromancer")
+        self.assertEqual(pyromancer["row_levels"], [5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
+        self.assertEqual([(r["key"], r["level"]) for r in pyromancer["rows"]],
+                         [("searing_ember", 5), ("fireball", 10), ("catalyst", 15), ("pyroblast", 20),
+                          ("pyromancer_firestarter", 25), ("kindle", 30), ("counterspell", 35),
+                          ("flamestrike", 40), ("blast_wave", 45), ("pyromancer_inferno", 50)])
+        self.assertTrue(all(len(r["choices"]) == 3 for r in pyromancer["rows"]))
+        self.assert_committed_icons("pyromancer")
+
     def test_the_committed_bloodletter_has_ten_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
                   encoding="utf-8") as f:

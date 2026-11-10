@@ -142,6 +142,19 @@
    "weapon_mask": 1435135,
    "armor_mask": 6,
    "dual_wield": true
+  },
+  {
+   "key": "pyromancer",
+   "name": "Pyromancer",
+   "icon": "Interface\\Icons\\Spell_Fire_FlameBolt",
+   "spellbook": "Pyromancer",
+   "power_type": 0,
+   "class": 8,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 2,
+   "dual_wield": false
   }
  ],
  "spells": [
@@ -12930,6 +12943,1469 @@
    }
   },
   {
+   "spell_id": 1000818,
+   "calling": "pyromancer",
+   "key": "searing_ember",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Searing Ember",
+    "cost_percent": 4,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Deals 73 + 1.5 per level Fire damage and leaves a Searing Ember on the target: a burn of 12 + 0.3 per level Fire damage every 3 sec for 12 sec, stacking up to 3 times.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Fire_FlameBolt",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 73,
+      "per_level": 1.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "aura_description": "Burning for Fire damage every 3 sec.",
+    "visual": 67,
+    "speed": 24.0,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000819,
+   "calling": "pyromancer",
+   "key": "fireball",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Fireball",
+    "cost_percent": 9,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "2.5 sec cast. Hurls a ball of fire for 90 + 4 per level Fire damage, and your Searing Ember on the target grows a stack.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Fire_FireBolt02",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 90,
+      "per_level": 4
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 67,
+    "speed": 24.0,
+    "range_index": 35,
+    "cast_time_index": 19
+   }
+  },
+  {
+   "spell_id": 1000820,
+   "calling": "pyromancer",
+   "key": "catalyst",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Catalyst",
+    "cost": 0,
+    "cooldown_ms": 12000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Takes your Searing Ember off the target for 30 + 2.5 per level Fire damage a stack it held, and gives you 11% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Nature_StarFall",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 30,
+      "per_level": 2.5
+     }
+    ],
+    "visual": 1263,
+    "range_index": 4,
+    "duration_index": 105
+   }
+  },
+  {
+   "spell_id": 1000821,
+   "calling": "pyromancer",
+   "key": "pyroblast",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Pyroblast",
+    "cooldown_ms": 10000,
+    "cost_percent": 15,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "4 sec cast. Hurls an immense fiery boulder for 200 + 8 per level Fire damage, and the target burns for 15 + 1 per level Fire damage every 3 sec for 12 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Fire_FireBolt",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 200,
+      "per_level": 8
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "aura_description": "Burning for Fire damage every 3 sec.",
+    "visual": 2253,
+    "speed": 24.0,
+    "range_index": 35,
+    "cast_time_index": 15,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000822,
+   "calling": "pyromancer",
+   "key": "kindle",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Kindle",
+    "cooldown_ms": 10000,
+    "cost_percent": 6,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Your Searing Ember on the target, with its stacks and its time left, is copied to the two nearest enemies within 10 yards of it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Fire_SoulBurn",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7634,
+    "range_index": 4
+   }
+  },
+  {
+   "spell_id": 1000823,
+   "calling": "pyromancer",
+   "key": "counterspell",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Counterspell",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you regain 10% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Frost_IceShock",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 239,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000824,
+   "calling": "pyromancer",
+   "key": "flamestrike",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Flamestrike",
+    "cooldown_ms": 12000,
+    "cost_percent": 14,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "2 sec cast. Calls down a pillar of fire on a spot within 30 yards: every enemy within 8 yards of it takes 70 + 3 per level Fire damage and a Searing Ember.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Fire_Fire",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 70,
+      "per_level": 3,
+      "radius_index": 14
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 33,
+    "range_index": 4,
+    "cast_time_index": 5
+   }
+  },
+  {
+   "spell_id": 1000825,
+   "calling": "pyromancer",
+   "key": "blast_wave",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Blast Wave",
+    "cooldown_ms": 25000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. A wave of flame deals 45 + 2 per level Fire damage to every enemy within 8 yards, knocks them back, and slows them by 50% for 6 sec.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Fire_MeteorStorm",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 45,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "mechanic": 11,
+    "aura_description": "Movement speed slowed by 50%.",
+    "visual": 963,
+    "range_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000826,
+   "calling": "pyromancer",
+   "key": "hot_ember",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Hot Ember",
+    "cost_percent": 4,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Deals 102 + 2.1 per level Fire damage and leaves a Searing Ember on the target: a burn of 12 + 0.3 per level Fire damage every 3 sec for 12 sec, stacking up to 3 times.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Fire_FlameBolt",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 102,
+      "per_level": 2.1
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 67,
+    "speed": 24.0,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000827,
+   "calling": "pyromancer",
+   "key": "cheap_ember",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Cheap Ember",
+    "cost_percent": 3,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Deals 73 + 1.5 per level Fire damage and leaves a Searing Ember on the target: a burn of 12 + 0.3 per level Fire damage every 3 sec for 12 sec, stacking up to 3 times. Costs 3% of base mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Fire_FlameBolt",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 73,
+      "per_level": 1.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 67,
+    "speed": 24.0,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000828,
+   "calling": "pyromancer",
+   "key": "twin_ember",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Twin Ember",
+    "cost_percent": 4,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Deals 73 + 1.5 per level Fire damage and leaves a Searing Ember on the target: a burn of 12 + 0.3 per level Fire damage every 3 sec for 12 sec, stacking up to 3 times. It also strikes the nearest other enemy within 8 yards of the target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Fire_FlameBolt",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 73,
+      "per_level": 1.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 67,
+    "speed": 24.0,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000829,
+   "calling": "pyromancer",
+   "key": "hot_fireball",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Hot Fireball",
+    "cost_percent": 9,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "2 sec cast. Hurls a ball of fire for 90 + 4 per level Fire damage, and your Searing Ember on the target grows a stack.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Fire_FireBolt02",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 90,
+      "per_level": 4
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 67,
+    "speed": 24.0,
+    "range_index": 35,
+    "cast_time_index": 5
+   }
+  },
+  {
+   "spell_id": 1000830,
+   "calling": "pyromancer",
+   "key": "stoking_fireball",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Stoking Fireball",
+    "cost_percent": 9,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "2.5 sec cast. Hurls a ball of fire for 90 + 4 per level Fire damage, and your Searing Ember on the target grows 2 stacks.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Fire_FireBolt02",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 90,
+      "per_level": 4
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 67,
+    "speed": 24.0,
+    "range_index": 35,
+    "cast_time_index": 19
+   }
+  },
+  {
+   "spell_id": 1000831,
+   "calling": "pyromancer",
+   "key": "fireball_splash",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Fireball Splash",
+    "cost_percent": 9,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "2.5 sec cast. Hurls a ball of fire for 90 + 4 per level Fire damage, and your Searing Ember on the target grows a stack. Every other enemy within 5 yards of the target takes 30% of the hit.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Fire_FireBolt02",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 90,
+      "per_level": 4
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 67,
+    "speed": 24.0,
+    "range_index": 35,
+    "cast_time_index": 19
+   }
+  },
+  {
+   "spell_id": 1000832,
+   "calling": "pyromancer",
+   "key": "bright_catalyst",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Bright Catalyst",
+    "cost": 0,
+    "cooldown_ms": 12000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Takes your Searing Ember off the target for 45 + 3.75 per level Fire damage a stack it held, and gives you 11% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Nature_StarFall",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 45,
+      "per_level": 3.75
+     }
+    ],
+    "visual": 1263,
+    "range_index": 4,
+    "duration_index": 105
+   }
+  },
+  {
+   "spell_id": 1000833,
+   "calling": "pyromancer",
+   "key": "refunding_catalyst",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Refunding Catalyst",
+    "cost": 0,
+    "cooldown_ms": 12000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Takes your Searing Ember off the target for 30 + 2.5 per level Fire damage a stack it held, and gives you 20% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Nature_StarFall",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 30,
+      "per_level": 2.5
+     }
+    ],
+    "visual": 1263,
+    "range_index": 4,
+    "duration_index": 105
+   }
+  },
+  {
+   "spell_id": 1000834,
+   "calling": "pyromancer",
+   "key": "spreading_catalyst",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Spreading Catalyst",
+    "cost": 0,
+    "cooldown_ms": 12000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Takes your Searing Ember off the target for 30 + 2.5 per level Fire damage a stack it held, and gives you 11% of your maximum mana. A fresh Searing Ember then goes on the nearest other enemy within 8 yards.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Nature_StarFall",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 30,
+      "per_level": 2.5
+     }
+    ],
+    "visual": 1263,
+    "range_index": 4,
+    "duration_index": 105
+   }
+  },
+  {
+   "spell_id": 1000835,
+   "calling": "pyromancer",
+   "key": "quick_pyroblast",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Pyroblast",
+    "cooldown_ms": 10000,
+    "cost_percent": 15,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "3 sec cast. Hurls an immense fiery boulder for 200 + 8 per level Fire damage, and the target burns for 15 + 1 per level Fire damage every 3 sec for 12 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Fire_FireBolt",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 200,
+      "per_level": 8
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 2253,
+    "speed": 24.0,
+    "range_index": 35,
+    "cast_time_index": 14,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000836,
+   "calling": "pyromancer",
+   "key": "searing_pyroblast",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Searing Pyroblast",
+    "cooldown_ms": 10000,
+    "cost_percent": 15,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "4 sec cast. Hurls an immense fiery boulder for 200 + 8 per level Fire damage, and the target burns for 22.5 + 1.5 per level Fire damage every 3 sec for 12 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Fire_FireBolt",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 200,
+      "per_level": 8
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 2253,
+    "speed": 24.0,
+    "range_index": 35,
+    "cast_time_index": 15,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000838,
+   "calling": "pyromancer",
+   "key": "ember_blast",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ember Blast",
+    "cooldown_ms": 10000,
+    "cost_percent": 15,
+    "interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "4 sec cast. Hurls an immense fiery boulder for 200 + 8 per level Fire damage, and the target burns for 15 + 1 per level Fire damage every 3 sec for 12 sec. Your Searing Ember on the target also grows 3 stacks.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Fire_FireBolt",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 200,
+      "per_level": 8
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 2253,
+    "speed": 24.0,
+    "range_index": 35,
+    "cast_time_index": 15,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000839,
+   "calling": "pyromancer",
+   "key": "hot_streak",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Hot Streak",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A Fireball critical strike makes your next Pyroblast instant.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Fire_Incinerate",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000841,
+   "calling": "pyromancer",
+   "key": "fire_power",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Fire Power",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Fireball and Pyroblast deal 10% more damage.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Fire_FlameTounge",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000842,
+   "calling": "pyromancer",
+   "key": "ember_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ember Ward",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "When an enemy lands a critical strike on you, it takes a Searing Ember.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Fire_FireArmor",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000843,
+   "calling": "pyromancer",
+   "key": "wildfire",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Wildfire",
+    "cooldown_ms": 10000,
+    "cost_percent": 6,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Your Searing Ember on the target, with its stacks and its time left, is copied to the three nearest enemies within 10 yards of it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Fire_SoulBurn",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7634,
+    "range_index": 4
+   }
+  },
+  {
+   "spell_id": 1000844,
+   "calling": "pyromancer",
+   "key": "far_kindle",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Far Kindle",
+    "cooldown_ms": 10000,
+    "cost_percent": 6,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Your Searing Ember on the target, with its stacks and its time left, is copied to the two nearest enemies within 15 yards of it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Fire_SoulBurn",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7634,
+    "range_index": 4
+   }
+  },
+  {
+   "spell_id": 1000845,
+   "calling": "pyromancer",
+   "key": "quick_kindle",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Kindle",
+    "cooldown_ms": 6000,
+    "cost_percent": 6,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. Your Searing Ember on the target, with its stacks and its time left, is copied to the two nearest enemies within 10 yards of it. 6 sec cooldown.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Fire_SoulBurn",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 7634,
+    "range_index": 4
+   }
+  },
+  {
+   "spell_id": 1000846,
+   "calling": "pyromancer",
+   "key": "long_counter",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Counter",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 8.5 seconds. When it stops a cast, you regain 10% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Frost_IceShock",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 239,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000847,
+   "calling": "pyromancer",
+   "key": "burning_counter",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Burning Counter",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you regain 10% of your maximum mana. A stopped cast also puts a Searing Ember on the target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Frost_IceShock",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 239,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000848,
+   "calling": "pyromancer",
+   "key": "mana_counter",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Mana Counter",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you regain 20% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Frost_IceShock",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 239,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000849,
+   "calling": "pyromancer",
+   "key": "wide_flamestrike",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Wide Flamestrike",
+    "cooldown_ms": 12000,
+    "cost_percent": 14,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "2 sec cast. Calls down a pillar of fire on a spot within 30 yards: every enemy within 13 yards of it takes 70 + 3 per level Fire damage and a Searing Ember.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Fire_Fire",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 70,
+      "per_level": 3,
+      "radius_index": 17
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 33,
+    "range_index": 4,
+    "cast_time_index": 5
+   }
+  },
+  {
+   "spell_id": 1000850,
+   "calling": "pyromancer",
+   "key": "quick_flamestrike",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Flamestrike",
+    "cooldown_ms": 12000,
+    "cost_percent": 14,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "1 sec cast. Calls down a pillar of fire on a spot within 30 yards: every enemy within 8 yards of it takes 70 + 3 per level Fire damage and a Searing Ember.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Fire_Fire",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 70,
+      "per_level": 3,
+      "radius_index": 14
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 33,
+    "range_index": 4,
+    "cast_time_index": 4
+   }
+  },
+  {
+   "spell_id": 1000851,
+   "calling": "pyromancer",
+   "key": "burning_flamestrike",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Burning Flamestrike",
+    "cooldown_ms": 12000,
+    "cost_percent": 14,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "2 sec cast. Calls down a pillar of fire on a spot within 30 yards: every enemy within 8 yards of it takes 105 + 4.5 per level Fire damage and a Searing Ember.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Fire_Fire",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 105,
+      "per_level": 4.5,
+      "radius_index": 14
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 33,
+    "range_index": 4,
+    "cast_time_index": 5
+   }
+  },
+  {
+   "spell_id": 1000852,
+   "calling": "pyromancer",
+   "key": "big_wave",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Big Wave",
+    "cooldown_ms": 25000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. A wave of flame deals 45 + 2 per level Fire damage to every enemy within 12 yards, knocks them back, and slows them by 50% for 6 sec.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Fire_MeteorStorm",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 45,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 963,
+    "range_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000853,
+   "calling": "pyromancer",
+   "key": "dazing_wave",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Dazing Wave",
+    "cooldown_ms": 25000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. A wave of flame deals 45 + 2 per level Fire damage to every enemy within 8 yards, knocks them back, and slows them by 70% for 6 sec.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Fire_MeteorStorm",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 45,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 963,
+    "range_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000855,
+   "calling": "pyromancer",
+   "key": "igniting_wave",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Igniting Wave",
+    "cooldown_ms": 25000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant. A wave of flame deals 45 + 2 per level Fire damage to every enemy within 8 yards, knocks them back, and slows them by 50% for 6 sec. Each enemy hit also takes a Searing Ember.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Fire_MeteorStorm",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 45,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 963,
+    "range_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000856,
+   "calling": "pyromancer",
+   "key": "pyromaniac",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Pyromaniac",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Fireball and Pyroblast are 5% more likely to be a critical strike.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Fire_MasterOfElements",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000857,
+   "calling": "pyromancer",
+   "key": "searing_mastery",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Searing Mastery",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your Searing Embers deal 20% more damage.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Fire_SearingTotem",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000858,
+   "calling": "pyromancer",
+   "key": "fuel",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Fuel",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Killing an enemy that burns with your Searing Ember gives you 5% of your base mana.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Fire_Volcano",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
    "spell_id": 1000009,
    "calling": "vanguard",
    "key": "aura_seal_of_iron_armor",
@@ -15431,6 +16907,78 @@
     "name": "Cold Blood",
     "aura_description": "Your next two skill hits are critical strikes.",
     "visual": 4371
+   }
+  },
+  {
+   "spell_id": 1000837,
+   "calling": "pyromancer",
+   "key": "aura_pyroblast_searing",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Fire_FireBolt",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "name": "Searing Pyroblast",
+    "aura_description": "Burning for Fire damage every 3 sec.",
+    "visual": 2253,
+    "speed": 24.0
+   }
+  },
+  {
+   "spell_id": 1000840,
+   "calling": "pyromancer",
+   "key": "aura_hot_streak",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Fire_Incinerate",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Hot Streak",
+    "aura_description": "Your next Pyroblast is instant."
+   }
+  },
+  {
+   "spell_id": 1000854,
+   "calling": "pyromancer",
+   "key": "aura_dazing_wave",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Fire_MeteorStorm",
+    "mechanic": 11,
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Dazing Wave",
+    "aura_description": "Movement speed slowed by 70%.",
+    "visual": 963
    }
   },
   {

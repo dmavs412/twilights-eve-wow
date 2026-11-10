@@ -2608,6 +2608,27 @@ hidden = true
 text_id = 64182
 greeting = "Sit, $C. They think I skin rabbits. I let them think it."
 
+# Magus Ilyra Vance, the Pyromancer (#689): keeps a fire in the courtyard of Stormwind's Mage
+# Quarter that has burned since the Second War. The look is Elsharin's (a placeholder). Role
+# `talker`, as Wren's. The street is the city's WMO: z is wmo_floor.py's street floor (the stock
+# Squirrel at -8976, 866 stands on it), which ground_check.py checks.
+[[npc]]
+guid = 9300114
+entry = 190114
+name = "Magus Ilyra Vance"
+subname = "Pyromancer"
+level = 50
+display_id = 3293
+faction_template = 35
+role = "talker"
+npc_flags = 0x3
+map = 0
+position = [-8972.0, 862.0, 106.46]
+orientation = 3.14
+hidden = true
+text_id = 64184
+greeting = "Warm your hands, $C. Mind the sleeves. It's been burning longer than you've been alive."
+
 # Belongs to tests/sight.rs: seen only after test quest 99811 is handed in, 10 yd from that
 # quest's Rachel (zones.toml guid 960811), whom only those who have not handed it in see. The
 # look is Maera Holt's. z is ground_check.py's.

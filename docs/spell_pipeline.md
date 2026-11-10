@@ -296,6 +296,11 @@ caster, so a stealth row's second effect (Shadow Speed's `mod_run_speed`, Stalke
 lasts as long as the Stealth, and the run speed falls back at once. A set Talent's flat `COOLDOWN`
 spellmod now moves its skill's cooldown in the realm too, never below 0, as it moves the client's
 button (Shadow Dance's -40000 on Vanish).
+The Pyromancer (#689): a `target=dest` row's `ground_area`, `ground_effect` and `detonate_traps`
+go off once at its point, as before, and its other effects (Flamestrike's `school_damage` and the
+Ember's `periodic_damage`) now land on every living enemy within `realm_radius_yd` of the point, at
+most `max_targets`, each rolled as a unit target is. A `proc` with `on=kill` names its victim, so
+`requires_target_aura=key` reads what the victim wore as it died (Fuel).
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

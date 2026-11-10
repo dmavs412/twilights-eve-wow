@@ -3336,9 +3336,11 @@ impl InWorld {
             .any(|(_, how)| !matches!(how, Landed::Missed(_)));
         let mut spent = false;
         let mut finisher_target = None;
-        // A ground skill's effects happen at its point, once.
-        if skill.target == Target::Ground {
-            for effect in &skill.effects {
+        // A ground skill's patches and traps happen at its point, once; its other effects land on
+        // each enemy there, below.
+        let ground = skill.target == Target::Ground;
+        if ground {
+            for effect in skill.effects.iter().filter(|e| at_the_point(e)) {
                 self.effect(
                     skill,
                     effect,
@@ -3362,6 +3364,10 @@ impl InWorld {
                 for (i, effect) in skill.effects.iter().enumerate() {
                     // The rider's blow gives no combo point of its own.
                     if rider == Some(guid) && matches!(effect, Effect::AddComboPoints { .. }) {
+                        continue;
+                    }
+                    // A ground skill's patch or trap went off at its point, above.
+                    if ground && at_the_point(effect) {
                         continue;
                     }
                     // An effect that asks what the target wore before the cast (Frostbite).
@@ -4122,7 +4128,15 @@ impl InWorld {
                 if hi > 0.0 && distance(dest, c.position) > hi {
                     return Err(SPELL_FAILED_OUT_OF_RANGE);
                 }
-                Ok(Vec::new())
+                // Its unit effects (Flamestrike's hit and burn) land on every enemy within its
+                // radius of the point; its patches and traps go at the point alone.
+                if skill.effects.iter().all(at_the_point) {
+                    return Ok(Vec::new());
+                }
+                Ok(enemies_within(&self.mobs, self.guid, dest, skill.radius_yd)
+                    .take(skill.max_targets as usize)
+                    .map(|m| m.guid)
+                    .collect())
             }
             Target::SelfArea => {
                 Ok(
@@ -9191,6 +9205,15 @@ fn run_speed(pct: i32) -> AuraKind {
     } else {
         AuraKind::RunSpeed { pct: pct as u32 }
     }
+}
+
+/// Whether a ground skill's `effect` goes off once at its point (a patch, an area, the traps it
+/// springs) rather than on each enemy there.
+fn at_the_point(effect: &Effect) -> bool {
+    matches!(
+        effect,
+        Effect::GroundArea { .. } | Effect::GroundEffect { .. } | Effect::DetonateTraps { .. }
+    )
 }
 
 /// The living units among `mobs` that `caster` may attack, within `radius_yd` of `at`.

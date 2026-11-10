@@ -1458,7 +1458,9 @@ pub enum Target {
     SelfArea,
     /// A friendly player: the caster, the only one until other players exist.
     Ally,
-    /// A point on the ground the client picks. No ground area plays yet, so the cast is refused.
+    /// A point on the ground the client picks, within range. Its patches and areas go down there;
+    /// its other effects land on every living enemy within `radius_yd` of it, at most
+    /// `max_targets` (Flamestrike).
     #[serde(rename = "dest")]
     Ground,
 }
