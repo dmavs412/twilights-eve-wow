@@ -3,12 +3,14 @@
 report, one table per rule with a `holds` column, then the failures, the kits, the picked builds
 and the Talent Row choices the model ignores.
 
-    python3.15 tools/twilights-eve/balance/run.py --scenario <T0|pulls|dps|elites|blues|named|plus5|all>
+    python3.15 tools/twilights-eve/balance/run.py --scenario <T0|pulls|dps|elites|blues|named|plus5|heal|all>
         --levels 1-30 --fights 300 --callings all --data-root <dir> --jobs 4 --out <file.md>
 
 --levels takes levels and ranges (`10 20`, `1-30`); the named-boss rules ignore it, since each
-boss sets its own level. --callings takes Calling keys or `all`; the Tier 0 rules always run the
-Basic Warrior. --data-root is a folder holding data/twilights-eve/ and
+boss sets its own level. The default runs Tier 1; `--levels 30-50` runs Tier 2, whose rows the
+report keeps under their own heading. --callings takes Calling keys (Tier 1 or Tier 2) or `all`;
+the Tier 0 rules always run the Basic Warrior. A Tier 2 Calling with no sim yet gets one "no sim"
+row a rule. --data-root is a folder holding data/twilights-eve/ and
 crates/twilight-realm/content/ (default the repo). Stdlib only.
 """
 from __future__ import annotations
@@ -51,40 +53,49 @@ def report(rows, args, levels):
     out = ["# Balance model report", "",
            f"Data root `{os.path.abspath(args.data_root)}`; {args.fights} fights a cell; levels "
            f"{levels[0]}-{levels[-1] if levels else ''}; scenario `{args.scenario}`. Rules: docs/balance/rules.md.", ""]
-    by_rule = {}
-    for r in rows:
-        by_rule.setdefault(r["rule"], []).append(r)
-    for rule, rs in by_rule.items():
-        who, gear, against, band = scenarios.RULES[rule]
-        out += [f"## {rule}: {who}, {gear}, {against}", "", f"Must show: {band}.", "",
-                "| Calling | Level | Gear | Against | Mob health | Win | Health left | DPS | Kill s | Deaths | Holds | Notes |",
-                "|---|---|---|---|---|---|---|---|---|---|---|---|"]
-        for r in rs:
-            out.append(f"| {r['calling']} | {r['level']} | {r['gear']} | {r['against']} | {r['mob_hp']} | {pct(r['win'])} "
-                       f"| {pct(r['health_left'])} | {num(r['dps'])} | {num(r['kill_s'])} | {pct(r['deaths'])} "
-                       f"| {holds(r['holds'])} | {r['notes']} |")
-        out.append("")
+    for tier, heading in ((1, "## Tiers 0 and 1"), (2, "## Tier 2")):
+        by_rule = {}
+        for r in rows:
+            if scenarios.tier(r["calling"]) == tier:
+                by_rule.setdefault(r["rule"], []).append(r)
+        if not by_rule:
+            continue
+        out += [heading, ""]
+        for rule, rs in by_rule.items():
+            who, gear, against, band = scenarios.rule_words(rule, rs[0]["calling"])
+            out += [f"### {rule}: {who}, {gear}, {against}", "", f"Must show: {band}.", "",
+                    "| Calling | Level | Gear | Against | Mob health | Win | Health left | DPS | Kill s | Deaths | Holds | Notes |",
+                    "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+            for r in rs:
+                out.append(f"| {r['calling']} | {r['level']} | {r['gear']} | {r['against']} | {r['mob_hp']} "
+                           f"| {pct(r['win'])} | {pct(r['health_left'])} | {num(r['dps'])} | {num(r['kill_s'])} "
+                           f"| {pct(r['deaths'])} | {holds(r['holds'])} | {r['notes']} |")
+            out.append("")
     out += ["## Failures", ""]
     failed = [r for r in rows if r["holds"] is False]
     for r in failed:
         out.append(f"- {r['rule']} {r['calling']} {r['level']} vs {r['against']}: win {pct(r['win'])}, health left "
-                   f"{pct(r['health_left'])}, DPS {num(r['dps'])} (must show {scenarios.RULES[r['rule']][3]})")
+                   f"{pct(r['health_left'])}, DPS {num(r['dps'])} (must show "
+                   f"{scenarios.rule_words(r['rule'], r['calling'])[3]})")
     if not failed:
         out.append("- none")
-    out += ["", "## Kits", "", "A blue kit wears a green in the slots `Green in` names: no Rare row there yet.", "",
-            "| Calling | Level | Gear | Kit | Green in |", "|---|---|---|---|---|"]
+    out += ["", "## Kits", "", "A blue kit wears a green in the slots `Green in` names: no Rare row there yet. "
+            "`Nothing in` names the slots with no usable row at all.", "",
+            "| Calling | Level | Gear | Kit | Green in | Nothing in |", "|---|---|---|---|---|---|"]
     seen = set()
-    for r in sorted(rows, key=lambda r: (r["calling"], r["level"], r["gear"])):
+    simmed = [r for r in rows if not r.get("no_sim")]
+    for r in sorted(simmed, key=lambda r: (r["calling"], r["level"], r["gear"])):
         key = (r["calling"], r["level"], r["gear"])
         if key in seen:
             continue
         seen.add(key)
         green_in = ", ".join(r["fell_back"]) or "-"
-        out.append(f"| {r['calling']} | {r['level']} | {r['gear']} | {r['kit']} | {green_in} |")
+        empty = ", ".join(r["empty"]) or "-"
+        out.append(f"| {r['calling']} | {r['level']} | {r['gear']} | {r['kit']} | {green_in} | {empty} |")
     out += ["", "## Builds", "", "Each level where a Calling's picked build differs from its build at the level before: "
             "every open Talent Row and its choice.", "", "| Calling | Level | Build |", "|---|---|---|"]
-    builds = {(r["calling"], r["level"]): r["rows"] for r in rows}
-    order = {c: i for i, c in enumerate(model.CALLINGS)}
+    builds = {(r["calling"], r["level"]): r["rows"] for r in simmed}
+    order = {c: i for i, c in enumerate(model.CALLINGS + model.TIER2_CALLINGS)}
     before = {}
     for calling, level in sorted(builds, key=lambda k: (order.get(k[0], -1), k[1])):
         b = builds[(calling, level)]
@@ -94,7 +105,8 @@ def report(rows, args, levels):
         before[calling] = b
     out += ["", "## Ignored choices", "", "Talent Row choices that change nothing in the model's fights, in sheet "
             "order, and why.", "", "| Calling | Row | Choice | Reason |", "|---|---|---|---|"]
-    ignored = [(c, row["key"], ch["key"]) for c in model.CALLINGS for row in model.talent_rows(c)
+    simmed_callings = [c for c in model.CALLINGS + model.TIER2_CALLINGS if scenarios.has_sim(c)]
+    ignored = [(c, row["key"], ch["key"]) for c in simmed_callings for row in model.talent_rows(c)
                for ch in row["choices"] if (c, ch["key"]) in model.IGNORED]
     for calling, row, key in ignored:
         out.append(f"| {calling} | {row} | {key} | {model.IGNORED[(calling, key)]} |")
@@ -114,8 +126,9 @@ def main(argv=None):
     p.add_argument("--out")
     args = p.parse_args(argv)
     levels = parse_levels(args.levels)
-    callings = list(model.CALLINGS) if "all" in args.callings else args.callings
-    unknown = [c for c in callings if c not in model.CALLINGS]
+    every = model.CALLINGS + model.TIER2_CALLINGS
+    callings = list(every) if "all" in args.callings else args.callings
+    unknown = [c for c in callings if c not in every]
     if unknown:
         p.error(f"unknown Calling(s): {', '.join(unknown)}")
     model.use(args.data_root)

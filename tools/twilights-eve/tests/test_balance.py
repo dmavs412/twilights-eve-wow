@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import argparse
 import math
 import os
 import random
@@ -16,6 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import boss  # noqa: E402
 import model  # noqa: E402
 import multi  # noqa: E402
+import run as run_balance  # noqa: E402
 import scenarios  # noqa: E402
 
 
@@ -61,6 +63,11 @@ def totals(calling: str, n: int, rows: dict, fights: int, rng: random.Random, le
         lost += 1 - r["health_left"]
         spent += r["time"]
     return dealt, lost, spent
+
+
+def tier2_in_data() -> list:
+    """The Tier 2 Callings server_spells.json already has as Tier 2."""
+    return [c for c in model.TIER2_CALLINGS if model.SPELLS.get(c, {}).get("tier") == 2]
 
 
 def fought(calling: str, rows: dict, fights: int, rng: random.Random, n: int = 2, **pull) -> tuple:
@@ -404,16 +411,127 @@ class BalanceModel(unittest.TestCase):
                     self.assertNotEqual(why, "not modelled yet")
 
     def test_kits_fill_every_slot(self):
-        for calling in model.CALLINGS:
-            for level in (15, 25):
+        # The Tier 2 Callings in the data wear the 30-50 arc's rows (#615), up to Power Level 50.
+        cases = [(c, (15, 25)) for c in model.CALLINGS]
+        cases += [(c, (30, 40, 50)) for c in tier2_in_data()]
+        for calling, levels in cases:
+            for level in levels:
                 for tier in ("green", "blue"):
                     with self.subTest(calling=calling, level=level, tier=tier):
-                        entries, off, _ = model.kit(calling, level, tier)
+                        entries, off, _, empty = model.kit(calling, level, tier)
                         slots = Counter(model.GEAR[e]["slot"] for e in entries + ([off] if off else []))
                         self.assertEqual(slots["Chest"], 1)
                         self.assertGreaterEqual(slots["Weapon"], 1)
                         self.assertEqual(slots["Amulet"], 1)
                         self.assertEqual(slots["Ring"], 2)
+                        self.assertEqual(empty, [])
+
+    def test_a_slot_with_no_row_is_named(self):
+        amulets = {e: r for e, r in model.GEAR.items() if r["slot"] == "Amulet" and r["quality"] == "Uncommon"}
+        try:
+            for e in amulets:
+                del model.GEAR[e]
+            entries, off, _, empty = model.kit("vanguard", 40, "green")
+        finally:
+            model.GEAR.update(amulets)
+        self.assertEqual(empty, ["Amulet"])
+        self.assertNotIn("Amulet", [model.GEAR[e]["slot"] for e in entries])
+
+    def test_tier2_levels_run_power_levels_30_to_50(self):
+        # rules/stats.rs power_level: a Tier 2 Calling's real levels 1 to 50 are Power Levels 30 to
+        # 50, and real level 25 is Power Level 40.
+        self.assertEqual(model.power_level(2, 1), 30)
+        self.assertEqual(model.power_level(2, 25), 40)
+        self.assertEqual(model.power_level(2, 50), 50)
+        self.assertTrue(tier2_in_data())
+        for calling in tier2_in_data():
+            with self.subTest(calling=calling):
+                self.assertEqual(model.calling_level(calling, 30), 1)
+                self.assertEqual(model.calling_level(calling, 40), 25)
+                self.assertEqual(model.calling_level(calling, 50), 50)
+                want = [r["key"] for r in model.talent_rows(calling) if r["level"] <= 25]
+                self.assertEqual([r["key"] for r in model.open_rows(calling, 40)], want)
+
+    def test_mobs_take_the_tier_step_above_30(self):
+        d = model.DATA.difficulty
+        step = d["tier_step"]
+        at_ten = model.DATA.mob_class["warrior"]
+        health, damage = at_ten["health"][9], at_ten["melee_damage_avg"][9]
+        # On level above 30 is Redridge, whose Zone Factor is Duskwood's.
+        self.assertEqual(model.on_level_area(30), model.ELWYNN_FOREST)
+        self.assertEqual(model.on_level_area(31), model.REDRIDGE_MOUNTAINS)
+        self.assertEqual(model.zone_factor(model.REDRIDGE_MOUNTAINS), model.zone_factor(model.DUSKWOOD))
+        for level, (step_h, step_d) in ((30, (1.0, 1.0)), (31, (step["health"], step["damage"]))):
+            with self.subTest(level=level):
+                zone_h, zone_d = model.zone_factor(model.on_level_area(level))
+                p = model.curve_at(level)
+                mob = model.mob_stats(level)
+                self.assertLessEqual(abs(mob["hp"] - round(health * p * d["health"] * step_h * zone_h)), 1)
+                self.assertAlmostEqual(swing(mob), damage * p * d["damage"] * step_d * zone_d, places=3)
+
+    def test_a_tier2_run_with_no_sims_lists_each_calling_as_no_sim(self):
+        levels = run_balance.parse_levels(["31-50"])
+        tier2 = list(model.TIER2_CALLINGS)
+        sims = {c: multi.CLASSES.pop(c) for c in tier2 if c in multi.CLASSES}
+        try:
+            serial = lambda cells: [scenarios.run_cell(c) for c in scenarios.with_builds(cells)]  # noqa: E731
+            rows = [r for fs in scenarios.SCENARIOS.values() for f in fs for r in f(levels, 1, tier2, serial)]
+        finally:
+            multi.CLASSES.update(sims)
+        self.assertTrue(rows)
+        for r in rows:
+            # The named-boss rules take the bosses' levels, not the run's.
+            if r["rule"] not in ("B-named", "G+5-named"):
+                self.assertEqual(r["notes"], "no sim at levels 31 to 50", r)
+            self.assertTrue(r["notes"].startswith("no sim at levels"), r)
+            self.assertIsNone(r["holds"])
+        self.assertEqual({r["calling"] for r in rows}, set(tier2))
+        args = argparse.Namespace(data_root=model.REPO, fights=1, scenario="all")
+        text = run_balance.report(rows, args, levels)
+        self.assertIn("## Tier 2", text)
+        self.assertIn("## Failures\n\n- none\n", text)
+
+    def test_h1_reports_the_friends_win_and_health_left(self):
+        # A fixture healer: the Acolyte's data as a Tier 2 Blightcaller, which mends the friend to
+        # full every second, and the same Blightcaller that never heals it.
+        calling = "blightcaller"
+
+        class Mender(multi.CLASSES["acolyte"]):
+            def after_step(self):
+                super().after_step()
+                if self.friend and self.t >= getattr(self, "mend_t", 0.0):
+                    self.mend_t = self.t + 1.0
+                    self.heal_friend(self.friend["hp"])
+
+        added = dict(spells=model.SPELLS, callings=model.CALLINGS_CSV)
+        model.SPELLS[calling] = {**model.SPELLS["acolyte"], "key": calling, "tier": 2, "tier_cap": 50}
+        model.CALLINGS_CSV[calling] = model.CALLINGS_CSV["acolyte"]
+        had = multi.CLASSES.get(calling)
+        try:
+            rows = {}
+            for name, cls in (("mends", Mender), ("idle", multi.CLASSES["acolyte"])):
+                multi.CLASSES[calling] = cls
+                scenarios._BUILDS.clear()
+                scenarios._CHARACTERS.clear()
+                rows[name] = scenarios.h_1([40], 5, [calling], lambda cells: [scenarios.run_cell(c) for c in cells])
+        finally:
+            for table in added.values():
+                del table[calling]
+            if had:
+                multi.CLASSES[calling] = had
+            else:
+                del multi.CLASSES[calling]
+            scenarios._BUILDS.clear()
+            scenarios._CHARACTERS.clear()
+        mends, idle = rows["mends"][0], rows["idle"][0]
+        for r in (mends, idle):
+            self.assertEqual((r["rule"], r["calling"], r["level"]), ("H-1", calling, 40))
+            self.assertIn("friend", r["against"])
+        self.assertEqual(mends["win"], 1.0)
+        self.assertGreaterEqual(mends["health_left"], 0.30)
+        self.assertTrue(mends["holds"])
+        self.assertLess(idle["win"], 0.80)
+        self.assertFalse(idle["holds"])
 
     def test_named_bosses_load(self):
         bosses = boss.named_bosses()

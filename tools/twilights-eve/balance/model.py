@@ -16,7 +16,7 @@ import json
 import math
 import os
 import tomllib
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
 
@@ -29,6 +29,10 @@ AMMO_DPS = 1.5         # Rough Arrow
 
 CLASS_ID = {"warrior": 1, "hunter": 3, "rogue": 4, "priest": 5, "mage": 8}
 CALLINGS = ("cutthroat", "ranger", "initiate", "vanguard", "acolyte")
+# The ten Tier 2 Callings docs/balance/rules.md judges at Power Levels 30 to 50, whether or not the
+# data or a sim has them yet.
+TIER2_CALLINGS = ("bloodletter", "nightblade", "pyromancer", "leyweaver", "sharpshooter", "trapper",
+                  "ironclad", "zealot", "blightcaller", "bloodmender")
 
 
 class DataRoot:
@@ -133,6 +137,14 @@ WEIGHTS = {
     "basic_warrior": dict(str=1.0, sta=0.5, agi=0.3, armor=0.004, block=0.6),
 }
 CASTERS = {"initiate", "acolyte"}
+# A Tier 2 Calling wears what the Tier 1 Calling of its stat profile wears, and weighs stats as it does.
+GEAR_LIKE = {"warrior": "vanguard", "rogue": "cutthroat", "mage": "initiate", "priest": "acolyte", "hunter": "ranger"}
+
+
+def gear_like(calling):
+    """The Calling whose armour, weapons and stat weights `calling` takes: itself when it has its
+    own, else the Tier 1 Calling of its stat profile."""
+    return calling if calling in WEIGHTS else GEAR_LIKE[SPELLS[calling]["stat_profile"]]
 
 
 def wdps(r):
@@ -141,6 +153,7 @@ def wdps(r):
 
 
 def score(calling, r):
+    calling = gear_like(calling)
     w = WEIGHTS[calling]
     s = sum(fnum(r[k]) * v for k, v in w.items() if k in r)
     # A weapon is chosen by its damage row first; stats only break ties. Melee Callings want a
@@ -171,9 +184,11 @@ QUALITY = {"white": "Common", "green": "Uncommon", "blue": "Rare"}
 
 def kit(calling, level, tier):
     """What `calling` wears at `level` in `tier`: white (the starting outfit and the best Common
-    row a slot), green (the best Uncommon) or blue (the best Rare, else the green). Returns
-    (entries, off_hand, fell_back): off_hand the off-hand weapon's entry or None, fell_back the
-    slots of a blue kit that wear a green because no Rare row is usable there."""
+    row a slot), green (the best Uncommon) or blue (the best Rare, else the green). A row stays
+    usable from its required level up, so a level with no row of its own wears an earlier one.
+    Returns (entries, off_hand, fell_back, empty): off_hand the off-hand weapon's entry or None,
+    fell_back the slots of a blue kit that wear a green because no Rare row is usable there, empty
+    the slots the kit wants and wears nothing in because no row is usable there at all."""
     outfit = tuple(e for e in OUTFITS.get(calling, {}).get("items", []) if e in GEAR) if tier == "white" else ()
 
     def best(slot, pred=lambda r: True):
@@ -182,8 +197,10 @@ def kit(calling, level, tier):
             cands = pick(calling, level, ("Uncommon",), slot, pred)
         return cands
 
+    like = gear_like(calling)
     chosen = []
-    chest = best("Chest", lambda r: r["type"] in ARMOR_ALLOWED[calling])
+    wanted = ["Chest", "Amulet", "Ring", "Ring", "Weapon"]
+    chest = best("Chest", lambda r: r["type"] in ARMOR_ALLOWED[like])
     if chest:
         chosen.append(int(chest[0]["entry"]))
     neck = best("Amulet")
@@ -192,21 +209,24 @@ def kit(calling, level, tier):
     rings = best("Ring")
     chosen += [int(r["entry"]) for r in rings[:2]]
     off = None
-    if calling == "cutthroat":
+    if like == "cutthroat":
+        wanted.append("Weapon")
         mh = best("Weapon", lambda r: r["hand"] in ("MH", "1H") and fnum(r["speed"]) >= 2.0)
         oh = best("Weapon", lambda r: r["hand"] == "1H" and fnum(r["speed"]) <= 1.9)
         if mh:
             chosen.append(int(mh[0]["entry"]))
         if oh:
             off = int(oh[0]["entry"])
-    elif calling in ("vanguard", "basic_warrior"):
+    elif like in ("vanguard", "basic_warrior"):
+        wanted.append("Offhand")
         mh = best("Weapon", lambda r: r["hand"] in ("MH", "1H"))
         sh = best("Offhand", lambda r: r["type"] == "Shield")
         if mh:
             chosen.append(int(mh[0]["entry"]))
         if sh:
             chosen.append(int(sh[0]["entry"]))
-    elif calling == "ranger":
+    elif like == "ranger":
+        wanted.append("Ranged")
         mh = best("Weapon", lambda r: r["hand"] in ("MH", "1H", "2H"))
         bow = best("Ranged", lambda r: r["type"] in ("Bow", "Gun", "Crossbow"))
         if mh:
@@ -214,6 +234,7 @@ def kit(calling, level, tier):
         if bow:
             chosen.append(int(bow[0]["entry"]))
     else:
+        wanted.append("Ranged")
         staff = best("Weapon", lambda r: r["hand"] == "2H")
         mh = best("Weapon", lambda r: r["hand"] in ("MH", "1H"))
         held = best("Offhand", lambda r: r["type"] == "Held")
@@ -231,7 +252,14 @@ def kit(calling, level, tier):
             chosen.append(int(wand[0]["entry"]))
     worn = chosen + ([off] if off else [])
     fell_back = [GEAR[e]["slot"] for e in worn if tier == "blue" and GEAR[e]["quality"] != "Rare"]
-    return chosen, off, fell_back
+    have = Counter(GEAR[e]["slot"] for e in worn)
+    empty = []
+    for slot in wanted:
+        if have[slot]:
+            have[slot] -= 1
+        else:
+            empty.append(slot)
+    return chosen, off, fell_back, empty
 
 
 
@@ -343,6 +371,8 @@ DAMAGE_VARIANCE = 0.14   # rules/stats.rs
 RANK_KEY = {1: "elite", 2: "rare_elite", 3: "boss", 4: "rare"}
 ELWYNN_FOREST = 12
 NORTHSHIRE_VALLEY = 9
+REDRIDGE_MOUNTAINS = 44
+DUSKWOOD = 10
 
 
 def round_half_up(v):
@@ -377,8 +407,11 @@ def zone_factor(area):
 
 
 def on_level_area(level):
-    """docs/balance/rules.md: Northshire at 10 and below, Elwynn Forest from 11."""
-    return NORTHSHIRE_VALLEY if level <= 10 else ELWYNN_FOREST
+    """docs/balance/rules.md: Northshire at 10 and below, Elwynn Forest from 11 to 30, Redridge
+    Mountains above 30 (Duskwood's Zone Factor is the same)."""
+    if level <= 10:
+        return NORTHSHIRE_VALLEY
+    return ELWYNN_FOREST if level <= 30 else REDRIDGE_MOUNTAINS
 
 
 def mob_stats(level, unit_class="warrior", rank=0, area=None, health_mul=1.0, damage_mul=1.0,
@@ -1961,7 +1994,7 @@ SIMS = dict(basic_warrior=BasicWarrior, vanguard=Vanguard, cutthroat=Cutthroat, 
 
 # ---------------------------------------------------------------- levels and Talent Rows
 def tier_cap(tier):
-    return max((c.get("tier_cap") or 0) for c in SPELLS.values() if c.get("tier") == tier)
+    return max(((c.get("tier_cap") or 0) for c in SPELLS.values() if c.get("tier") == tier), default=0)
 
 
 def power_level(tier, level):
@@ -1976,16 +2009,20 @@ def power_level(tier, level):
 
 def calling_level(calling, level):
     """The level a character of Power Level `level` has in its Calling: Advancement starts a
-    Tier 1 Calling at 1, and its Power Level runs 10 to 30. Past the band's top the Calling stays
-    at its cap."""
+    Calling at 1, and its Power Level runs over its Tier's band (10 to 30 for Tier 1, 30 to 50 for
+    Tier 2): the lowest real level the realm gives that Power Level. At the band's top and past
+    it the Calling is at its cap (Tier 2's real 49 and 50 are both Power Level 50)."""
     tier = SPELLS[calling].get("tier") or 0
     if tier == 0:
         return level
-    return next((cl for cl in range(1, tier_cap(tier) + 1) if power_level(tier, cl) >= level), tier_cap(tier))
+    cap = tier_cap(tier)
+    if level >= cap:
+        return cap
+    return next((cl for cl in range(1, cap + 1) if power_level(tier, cl) >= level), cap)
 
 
 def open_rows(calling, level):
-    """The Talent Rows a Tier 1 `calling` at Power Level `level` has open: each whose `level` is at
+    """The Talent Rows a Tier 1 or 2 `calling` at Power Level `level` has open: each whose `level` is at
     most its real level in the Calling. A Tier 0 character's rows stay empty (docs/balance/rules.md)."""
     if not SPELLS[calling].get("tier"):
         return []
@@ -1995,9 +2032,9 @@ def open_rows(calling, level):
 
 def character(calling, level, tier, rows={}):
     """`calling` at Power Level `level` in a `tier` kit, in the build `rows` ({row key: choice key})."""
-    entries, off, fell_back = kit(calling, level, tier)
+    entries, off, fell_back, empty = kit(calling, level, tier)
     stats = build_stats(calling, level, entries, off, rows)
-    return dict(stats=stats, rows=dict(rows), entries=entries, off=off, fell_back=fell_back)
+    return dict(stats=stats, rows=dict(rows), entries=entries, off=off, fell_back=fell_back, empty=empty)
 
 
 def describe_kit(entries, off):

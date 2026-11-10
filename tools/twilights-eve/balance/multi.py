@@ -9,6 +9,7 @@ import model
 
 class Multi:
     N = 1
+    friend = None      # H-1's dummy friend in a Guard fight, else None
     AOE = {}           # damage source -> targets hit (0 = every living mob)
     ROLLS = set()      # AoE sources whose extra targets roll a 15% avoid
     PER_TARGET = {}    # attributes cleared when the target changes
@@ -89,7 +90,7 @@ class Multi:
         self.setup_fight()
         if self.N > 1 and getattr(self, "dist", 0) > 5:
             self.dist = 5.0
-        while self.alive() and self.hp > 0 and self.t - t0 < self.cap_s():
+        while self.going():
             if self.t >= self.regen_next:
                 self.regen_tick(True)
                 self.regen_next += 2.0
@@ -103,8 +104,61 @@ class Multi:
         won = self.hp > 0 and not self.alive()
         return dict(time=self.t - t0, won=won, died=self.hp <= 0, health_left=max(self.hp, 0) / s.max_hp)
 
+    def going(self):
+        """The fight goes on: a mob and the character live, and the cap has not come."""
+        return self.alive() and self.hp > 0 and self.t - self.t0 < self.cap_s()
+
     def cap_s(self):
         return model.FIGHT_CAP_S
+
+
+# H-1 (docs/balance/rules.md): how long the friend must live, and the share of its health it must keep.
+GUARD_S = 60.0
+GUARD_LEFT = 0.30
+
+
+class Guard:
+    """H-1's fight, ahead of a Multi Calling class: one mob swings at a dummy friend, never at the
+    character, for GUARD_S seconds. The friend (`friend`: hp, armor) has no dodge, parry or block;
+    a swing misses 5%, crits 5%, and passes the friend's armour. A mob that dies is replaced by a
+    fresh one at once. A healer's heal reaches the friend through heal_friend. The fight is won
+    when the friend and the character live to the end and the friend keeps GUARD_LEFT of its
+    health; health_left is the friend's share."""
+
+    def mob_swing(self, from_front=True, i=None):
+        f = self.friend
+        raw = self.rng.uniform(self.m["dmin"], self.m["dmax"])
+        weaken = self.weaken_pct(i)
+        if weaken:
+            raw = raw * (100 - weaken) / 100
+        d = model.armored(raw, f["armor"], self.m["level"])
+        r = self.rng.random() * 100
+        if r >= 5:
+            self.friend_hp -= d * 2 if r < 10 else d
+        return 0, "friend"
+
+    def heal_friend(self, amount):
+        """`amount` healed on the friend, up to its maximum. Returns what it healed."""
+        before = self.friend_hp
+        self.friend_hp = min(self.friend_hp + int(amount), self.friend["hp"])
+        return self.friend_hp - before
+
+    def after_step(self):
+        super().after_step()
+        if self.mobs[self.tgt] <= 0:
+            self.mobs[self.tgt] = self.m["hp"]
+            self.retarget()
+
+    def going(self):
+        return self.friend_hp > 0 and self.hp > 0 and self.t - self.t0 < GUARD_S
+
+    def fight(self):
+        self.friend_hp = self.friend["hp"]
+        r = super().fight()
+        left = max(self.friend_hp, 0) / self.friend["hp"]
+        lived = self.friend_hp > 0 and self.hp > 0
+        r.update(won=lived and left >= GUARD_LEFT, died=not lived, health_left=left)
+        return r
 
 
 class BasicWarriorN(Multi, model.BasicWarrior):
@@ -219,3 +273,8 @@ CLASSES = dict(basic_warrior=BasicWarriorN, vanguard=VanguardN, cutthroat=Cutthr
 def fighter(calling, n=1):
     """`calling`'s fight class against a pull of `n`."""
     return type(f"{calling}_x{n}", (CLASSES[calling],), {"N": n})
+
+
+def guard(calling, friend):
+    """`calling`'s H-1 fight class: one mob on the dummy `friend` (hp, armor)."""
+    return type(f"{calling}_guard", (Guard, CLASSES[calling]), {"N": 1, "friend": friend})
