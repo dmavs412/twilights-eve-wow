@@ -9,10 +9,11 @@ use crate::terrain_stream::SPAWN_XY;
 use crate::view::WorldCamera;
 use crate::world_map::CurrentMap;
 use benilla_assets::coords::bevy_to_wow;
-use benilla_assets::{LockRecover, WorldAssets};
+use benilla_assets::{LockRecover, ReachedMilestones, WorldAssets};
+use benilla_formats::closed_zones::closed_distance;
 use benilla_formats::{Atmosphere, LightCatalog};
 
-use super::{daynight, quantize_glow, ClockSource, GameClock, LightSampler, WowLighting};
+use super::{daynight, edge, quantize_glow, ClockSource, GameClock, LightSampler, WowLighting};
 
 /// The scene-fog stage (`0x6cee30`): the pushed pair `end = min(zone end, farclip)` and
 /// `start = frac × end`, unclamped. The storm's negative fraction (Elwynn −0.5) floors the near
@@ -183,8 +184,10 @@ pub(super) fn update_time_lighting(
     mut wmo_ramp: ResMut<WmoCrossfade>,
     mut clock: ResMut<GameClock>,
     mut lighting: ResMut<WowLighting>,
-    mut last_dump: Local<Option<u32>>,
-    mut last_fog_dump: Local<Option<u32>>,
+    // Tuples, because a system takes at most 16 parameters.
+    (mut last_dump, mut last_fog_dump): (Local<Option<u32>>, Local<Option<u32>>),
+    // The Milestones reached and the applied edge pull, eased toward its target.
+    (reached, mut pull): (Option<Res<ReachedMilestones>>, Local<f32>),
 ) {
     // `minute` drives the `Light.dbc` sample, the clock and the log; the fractional `minute_f`
     // drives the celestial positions and curves, which would otherwise step once per game minute.
@@ -251,16 +254,33 @@ pub(super) fn update_time_lighting(
     // Elwynn commits 125/500 clear and −139/278 at full storm (`0x6cee30`): the negative start is
     // the near veil, and the short storm end whites out the middle distance.
     let (fog_start, fog_end) = scene_fog(atmo.fog_end, atmo.fog_start_frac, view.farclip);
+    // Near the edge of the mist the scene fog closes in and greys (#662), eased so an opened zone
+    // or a teleport fades it; submerged, the underwater fog owns the screen and the pull lets go.
+    let target = if submerged.any() {
+        0.0
+    } else {
+        let reached = reached.map(|r| r.get()).unwrap_or_default();
+        edge::edge_pull(closed_distance(
+            map,
+            wow_pos[0],
+            wow_pos[1],
+            edge::EDGE_NEAR_YD,
+            &reached,
+        ))
+    };
+    *pull = edge::ease(*pull, target, time.delta_secs());
+    let (fog_start, fog_end, fog_color, sky) =
+        edge::pulled(*pull, fog_start, fog_end, atmo.fog_color, atmo.sky);
     // The interior crossfade is its own triple; the scene fog stays untouched. Submerged, the
     // underwater param owns the fog and the ramp is bypassed, as the reference snaps it for magma
     // and slime inside an MFOG interior (`0x6cef6f`); the reference's MFOG underwater block
     // (`+0x24`, flags 0x100/0x10) is not applied.
     let (wmo_fog_color, wmo_fog_start, wmo_fog_end) = if submerged.any() {
-        (atmo.fog_color, fog_start, fog_end)
+        (fog_color, fog_start, fog_end)
     } else {
         wmo_ramp.blend(
             wmo_fog.0,
-            atmo.fog_color,
+            fog_color,
             fog_start,
             fog_end,
             view.farclip,
@@ -280,13 +300,13 @@ pub(super) fn update_time_lighting(
         spec: atmo.sun_color, // row 9, the specular colour
         sun_dir,
         celestial_dir,
-        fog_color: atmo.fog_color,
+        fog_color,
         fog_start,
         fog_end,
         wmo_fog_color,
         wmo_fog_start,
         wmo_fog_end,
-        sky: atmo.sky,
+        sky,
         // Area-blended like every band (`0x6d30e0` merges all 18 colour rows): a single-sphere pick
         // snaps the tint where a sphere's weight reaches zero.
         water_river: atmo.water_river,

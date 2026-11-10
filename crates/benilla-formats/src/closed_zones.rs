@@ -214,6 +214,22 @@ pub fn closed_chunks_near(
     out
 }
 
+/// The distance in yards from `(x, y)` on `map` to the nearest square of the chunks
+/// [`closed_chunks_near`] finds for `radius_yd` while `reached` are: 0 on a closed chunk, `None`
+/// when no closed chunk lies within `radius_yd`.
+pub fn closed_distance(map: u32, x: f32, y: f32, radius_yd: f32, reached: &Reached) -> Option<f32> {
+    closed_chunks_near(map, x, y, radius_yd, reached)
+        .into_iter()
+        .map(|(gx, gy)| {
+            let (north, west) = chunk_corner(gx, gy);
+            let dx = (north - CHUNK_SIZE - x).max(x - north).max(0.0);
+            let dy = (west - CHUNK_SIZE - y).max(y - west).max(0.0);
+            dx.hypot(dy)
+        })
+        .filter(|&d| d <= radius_yd)
+        .min_by(f32::total_cmp)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -256,6 +272,23 @@ mod tests {
         assert!(zone_closed(0, 40, &steppes()), "Westfall stays misted");
         assert!(!closed_chunks_near(0, x, y, 50.0, &none()).is_empty());
         assert!(closed_chunks_near(0, x, y, 50.0, &steppes()).is_empty());
+    }
+
+    #[test]
+    fn closed_distance_measures_to_the_westfall_edge() {
+        // The edge runs along y 866.67 at x -9700.
+        let d = closed_distance(0, -9700.0, 856.67, 60.0, &none()).expect("10 yd off");
+        assert!((d - 10.0).abs() < 0.01, "{d}");
+        assert_eq!(closed_distance(0, -9700.0, 880.0, 60.0, &none()), Some(0.0));
+        assert_eq!(closed_distance(0, -9700.0, 760.0, 60.0, &none()), None);
+        assert_eq!(closed_distance(1, -9700.0, 856.67, 60.0, &none()), None);
+    }
+
+    #[test]
+    fn closed_distance_skips_a_reached_gated_chunk() {
+        let (x, y) = MORGANS_VIGIL;
+        assert_eq!(closed_distance(0, x, y, 50.0, &none()), Some(0.0));
+        assert_eq!(closed_distance(0, x, y, 50.0, &steppes()), None);
     }
 
     #[test]

@@ -8,6 +8,7 @@ use benilla_formats::{LightCatalog, LiquidKind};
 
 mod blob; // off-world light blobs (portrait booths, body panes, glue scene)
 mod daynight; // the sun, moon and day/night curves
+pub mod edge; // the scene fog's pull near the edge of the mist
 mod global_light; // the shared global-light storage buffer
 mod prop_probes; // the interior-prop SH probe table
 mod resolve; // the per-frame time-of-day resolve and the interior-fog crossfade
