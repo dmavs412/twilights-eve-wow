@@ -5,8 +5,9 @@ each on origin/main.
 
 Started by overnight.ps1, one process per builder; not meant to be run by hand. Each ticket: reset
 the worktree to origin/main, claim the ticket, run a fresh `claude -p` session, gate the commits,
-rebase them onto origin/main (re-gating when main moved) and push. A rebase that conflicts puts
-the ticket back in the queue once; a second conflict blocks it. Rules the session follows:
+rebase them onto origin/main (re-gating when main moved) and push. A rebase that conflicts gets a
+short session that resolves it; if that fails, the ticket goes back in the queue once, and a second
+failure blocks it. A builder reloads itself between tickets when its scripts change. Rules the session follows:
 docs/agents/unattended.md.
 #>
 param(
@@ -65,6 +66,47 @@ function Reset-Worktree {
     git clean -fdq | Out-Null
 }
 
+function Test-Rebasing {
+    (Test-Path (git rev-parse --git-path rebase-merge)) -or (Test-Path (git rev-parse --git-path rebase-apply))
+}
+
+# A rebase stopped on conflicts (the other builder landed on the same files; every Calling ticket
+# touches the callings test and the generated outputs). A short session resolves each stopped
+# commit in place and stages it; the session may not run git rebase, so this script continues.
+# Returns $true when the rebase finished.
+function Resolve-Rebase([string]$files) {
+    for ($step = 1; $step -le 8; $step++) {
+        $p = "Unattended run, nobody is at the keyboard. Read $rules first and follow it. " +
+             "You are builder $Name in your own worktree $Worktree. Your commits for GitHub issue #$n ($title) on $Repo are being rebased onto origin/main, " +
+             "and the rebase stopped on conflicts in: $files. Main gained another builder's work on the same files since your session started. " +
+             "Resolve every conflict in place so both sides' work survives; read the other side with git log and git show on origin/main. " +
+             "For a generated output (crates/twilight-realm/src/generated.rs, server_spells.json, client_dbc_patch.json, generated tables in docs/spell_pipeline.md) " +
+             "resolve its sources first (the master CSV, the content files), then re-run the generator named in docs/spell_pipeline.md instead of merging by hand. " +
+             "Then git add every file you resolved or regenerated. Do not run git rebase, git commit, git reset or git push: the script continues the rebase and gates the result. " +
+             "Before you stop, run cargo check -q -p twilight-realm and the realm tests, and fix what you broke."
+        $cargs = @("-p", $p, "--model", $Model, "--settings", $settings,
+                   "--permission-mode", "dontAsk", "--output-format", "json", "--max-budget-usd", 4)
+        $json = & $claude @cargs 2> (Join-Path $script:LogDir "$n.resolve$step.stderr.log")
+        $text = ($json -join "`n"); $cost = "?"
+        try { $res = $text | ConvertFrom-Json; if ($null -ne $res.total_cost_usd) { $cost = ("{0:N2}" -f $res.total_cost_usd) }; if ($res.result) { $text = $res.result } } catch { }
+        $text | Set-Content (Join-Path $script:LogDir "$n.resolve$step.log") -Encoding utf8
+        Write-Log "resolve session $step for #${n}: `$$cost"
+
+        git add -u 2>$null | Out-Null
+        $left = @(git diff --name-only --diff-filter=U)
+        if ($left.Count -or @(git grep -l -E '^(<<<<<<<|>>>>>>>) ' -- . 2>$null).Count) {
+            Write-Log "#${n}: conflict markers left after the resolve session"
+            return $false
+        }
+        $env:GIT_EDITOR = "true"
+        git rebase --continue 2>$null | Out-Null
+        if (-not (Test-Rebasing)) { return $true }
+        $files = @(git diff --name-only --diff-filter=U) -join ", "
+        if (-not $files) { return $false }
+    }
+    return $false
+}
+
 # Rebases this ticket's commits onto origin/main and pushes. Returns @{ok; conflict; what; out; shas}.
 function Invoke-Land {
     for ($try = 1; $try -le 4; $try++) {
@@ -75,8 +117,12 @@ function Invoke-Land {
             git rebase -q origin/main 2>$null | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 $files = @(git diff --name-only --diff-filter=U) -join ", "
-                git rebase --abort 2>$null | Out-Null
-                return @{ ok = $false; conflict = $true; what = "rebase onto main conflicted on $files" }
+                Write-Log "#${n}: rebase conflicted on $files; a session resolves it"
+                if (-not (Resolve-Rebase $files)) {
+                    git rebase --abort 2>$null | Out-Null
+                    return @{ ok = $false; conflict = $true; what = "rebase onto main conflicted on $files, and the resolve session did not finish it" }
+                }
+                Write-Log "#${n}: conflicts resolved"
             }
             # Main moved under us: the rebased commits need the gate again.
             $gate = Invoke-Gate $base (git rev-parse HEAD).Trim() $holder
@@ -119,9 +165,31 @@ if (Enter-ClientLock $holder $PID 0) {
     Write-Log "client lock busy; skipped the client warm-up"
 }
 
+# A builder reloads itself between tickets when its scripts change in the main checkout, so a fix
+# to the fleet lands without killing the session in progress. The new process runs as a child and
+# this one waits for it, so overnight.ps1 still sees one process per builder.
+function Get-ScriptStamp {
+    (@('worker.ps1', 'overnight-lib.ps1', 'client-lock.ps1') | ForEach-Object {
+        (Get-Item (Join-Path $PSScriptRoot $_)).LastWriteTimeUtc.Ticks }) -join ','
+}
+$scriptStamp = Get-ScriptStamp
+
 while ($true) {
     if ($stopTime -and (Get-Date) -ge $stopTime) { Write-Log "stop time $StopAt reached"; break }
     if ($done -ge $Max) { Write-Log "reached -Max $Max"; break }
+    if ((Get-ScriptStamp) -ne $scriptStamp) {
+        Write-Log "scripts changed; builder $Name reloads"
+        $wargs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "worker.ps1"))
+        foreach ($k in $PSBoundParameters.Keys) {
+            $v = $PSBoundParameters[$k]
+            if ($k -eq 'Max') { $v = $Max - $done }
+            if ($v -is [System.Management.Automation.SwitchParameter]) { if ($v) { $wargs += "-$k" } }
+            else { $wargs += @("-$k", "$v") }
+        }
+        if (-not $PSBoundParameters.ContainsKey('Max')) { $wargs += @("-Max", "$($Max - $done)") }
+        & powershell.exe @wargs
+        exit $LASTEXITCODE
+    }
 
     Reset-Worktree
     $t = $null

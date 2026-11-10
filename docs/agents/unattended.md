@@ -33,8 +33,12 @@ failed. With `-LingerMinutes`, a builder whose queue is empty checks again that 
   gate up to 2 h. Realm and data builds never wait for the other builder.
 - **Landing**: a builder gates the session's commits in its worktree, rebases them onto
   `origin/main`, gates again if main moved, and pushes `HEAD:main`. A rebase that conflicts
-  (the other builder landed on the same file) puts the ticket back in the queue for one more
-  try on the new main; a second conflict blocks it. Every commit on `main` passed its gate.
+  (the other builder landed on the same file) gets a short resolve session: it fixes the
+  conflicted files, regenerates generated outputs from their sources, and stages them, and the
+  script continues the rebase. If that fails, the ticket goes back in the queue for one more try
+  on the new main, and a second failure blocks it. Every commit on `main` passed its gate. A
+  builder reloads itself between tickets when `worker.ps1`, `overnight-lib.ps1` or
+  `client-lock.ps1` changes in the main checkout.
 - **Play copies**: `scripts/publish-play.ps1` builds release under both locks in the main
   checkout and copies the exe and data patch to `play/<short-commit>/` (gitignored), keeping the
   newest 3 and never deleting one whose exe is running. It runs when Davis asks, and once at the
