@@ -689,3 +689,49 @@ fn each_thirty_to_fifty_final_boss_rolls_its_three_epics_at_five_percent() {
         assert_eq!(rolls(row), vec![(100, range(set.0, set.1))], "boss {guid}");
     }
 }
+
+#[test]
+fn each_thirty_to_fifty_dungeon_has_a_bonus_chest_of_its_set() {
+    // File, its boss, the chest's entry, its set, its copper and its challenge.
+    let challenges = [
+        r#"{ kind = "within_s", seconds = 720 }"#,
+        r#"{ kind = "unused", levers = [983041, 983042, 983043] }"#,
+        r#"{ kind = "unused", levers = [983051] }"#,
+        r#"{ kind = "together_s", guids = [974316, 974317], seconds = 10 }"#,
+    ];
+    for ((text, boss, entry, set, money), challenge) in [
+        (MISTMANTLE_MANOR, 974014, 980721, MISTMANTLE20, 3600),
+        (ILGALAR, 974114, 980722, ILGALAR20, 3800),
+        (RAVEN_HILL_DEEPS, 974213, 980723, RAVEN_HILL20, 4400),
+        (STONEWATCH_KEEP, 974316, 980724, STONEWATCH20, 4800),
+    ]
+    .into_iter()
+    .zip(challenges)
+    {
+        let file = parse(text);
+        let chest = file
+            .get("bonus_chest")
+            .unwrap_or_else(|| panic!("boss {boss}'s dungeon has no bonus chest"));
+        assert_eq!(
+            (
+                int(chest, "boss"),
+                int(chest, "entry"),
+                int(chest, "display"),
+                int(chest, "money")
+            ),
+            (boss, entry, 259, money),
+            "boss {boss}"
+        );
+        assert_eq!(chest["east_yd"].as_float(), Some(2.0), "boss {boss}");
+        let want: Value = toml::from_str(&format!("c = {challenge}")).unwrap();
+        assert_eq!(chest["challenge"], want["c"], "boss {boss}");
+        let set = range(set.0, set.1);
+        assert_eq!(integers(&chest["one_of"]), set, "boss {boss}");
+        // The same list the final boss's set roll names.
+        let row = creatures(&file)
+            .into_iter()
+            .find(|c| c["guid"].as_integer() == Some(boss))
+            .unwrap();
+        assert_eq!(rolls(row), vec![(100, set)], "boss {boss}");
+    }
+}

@@ -327,3 +327,16 @@ position = [-10364.0, -1260.0, 35.91]
 grounded = false
 orientation = 0.0
 sides = "inside"
+
+# The Bonus Chest (#659, spec #650): when Stalvan (974014) dies within 12 minutes of the Run's
+# start, a strongbox of one of the manor's twenty blues and 3600 copper stands 2 yd east of his
+# corpse. Its look is vanilla's small wooden chest, a placeholder.
+[bonus_chest]
+boss = 974014
+entry = 980721
+display = 259
+east_yd = 2.0
+money = 3600
+one_of = [905140, 905141, 905142, 905143, 905144, 905145, 905146, 905147, 905148, 905149, 905150, 905151, 905152, 905153, 905154, 905155, 905156, 905157, 905158, 905159]
+found_text = "Under the torn boards by the humming stone, a strongbox nobody has opened since the dark came."
+challenge = { kind = "within_s", seconds = 720 }

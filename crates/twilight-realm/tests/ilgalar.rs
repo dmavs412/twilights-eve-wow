@@ -277,3 +277,103 @@ fn with_valve_a_pulled_morganth_calls_servants_only_for_valves_b_and_c() {
     let calls = morganth_s_calls(&mut p);
     assert_eq!(calls.len(), 2, "{calls:?}");
 }
+
+/// The tower's Bonus Chest (#659): its entry, its copper and the set it holds one of.
+const BONUS_CHEST: u32 = 980722;
+const CHEST_COPPER: u32 = 3800;
+const ILGALAR20: std::ops::RangeInclusive<u32> = 905160..=905179;
+const FOUND: &str = "With every valve still open, the tower's strongbox stands unguarded.";
+
+/// Player `i` steps beside Morganth and kills him where he stands, with no fight.
+fn kill_morganth(p: &mut Party, i: usize) {
+    p.go_facing(i, BY_MORGANTH, MORGANTH_AT);
+    p.run(0.5);
+    let (morganth, _) = p.unit(i, MORGANTH, MORGANTH_AT);
+    p.realm.kill_creature(morganth);
+    p.run(1.0);
+}
+
+/// The Bonus Chests player `i`'s client was created: `(guid, position)`.
+fn bonus_chests(p: &Party, i: usize) -> Vec<(u64, [f32; 3])> {
+    p.seen(i)
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                kind: benilla_protocol::EntityKind::GameObject,
+                position,
+                fields,
+                ..
+            } if fields.object_entry() == Some(BONUS_CHEST) => Some((*guid, *position)),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn morganth_killed_with_every_valve_open_leaves_the_bonus_chest() {
+    let mut p = party(1);
+    kill_morganth(&mut p, 0);
+    let made = bonus_chests(&p, 0);
+    assert_eq!(made.len(), 1, "one chest: {made:?}");
+    let (chest, at) = made[0];
+    let east = [MORGANTH_AT[0] + 2.0, MORGANTH_AT[1], MORGANTH_AT[2]];
+    assert!(
+        flat_distance(at, east) < 1.0,
+        "about 2 yd east of Morganth: {at:?}"
+    );
+    assert!(
+        p.seen(0)
+            .iter()
+            .any(|e| matches!(e, SessionEvent::Notification { text } if text == FOUND)),
+        "no found text"
+    );
+
+    p.go(0, [at[0] + 1.0, at[1], at[2]], std::f32::consts::PI);
+    p.run(0.3);
+    let from = p.seen(0).len();
+    p.cmd(0, RealmCommand::UseGameObject { guid: chest });
+    p.run(0.3);
+    let (copper, items): (u32, Vec<u32>) = p.seen(0)[from..]
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::LootResponse { gold, items, .. } => {
+                Some((*gold, items.iter().map(|i| i.item_id).collect()))
+            }
+            _ => None,
+        })
+        .expect("a loot window on the chest");
+    assert_eq!(copper, CHEST_COPPER);
+    assert_eq!(items.len(), 1, "{items:?}");
+    assert!(ILGALAR20.contains(&items[0]), "{items:?}");
+}
+
+#[test]
+fn morganth_killed_after_valve_a_is_pulled_leaves_no_chest() {
+    // As above: the first warrior holds the Run in the doorway while the second turns valve A.
+    let mut p = party(2);
+    p.go(0, IN_THE_DOORWAY, 0.0);
+    p.run(0.5);
+    p.go(1, BY_VALVE_A, 0.0);
+    p.run(1.0);
+    let from = p.seen(1).len();
+    p.cmd(
+        1,
+        RealmCommand::UseGameObject {
+            guid: 0xF110 << 48 | VALVE_A,
+        },
+    );
+    p.run(0.5);
+    assert!(
+        p.seen(1)[from..]
+            .iter()
+            .any(|e| matches!(e, SessionEvent::Notification { text } if text == VALVE_USED)),
+        "valve A did not turn"
+    );
+
+    kill_morganth(&mut p, 0);
+    p.run(2.0);
+    for i in 0..2 {
+        assert!(bonus_chests(&p, i).is_empty(), "a chest for {i}");
+    }
+}

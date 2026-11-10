@@ -437,3 +437,16 @@ position = [-9288.0, -3308.0, 150.09]
 orientation = 1.47
 sides = "inside"
 after_milestone = "ilgalar_anchor_broken"
+
+# The Bonus Chest (#659, spec #650): when Morganth (974114) dies with all three feed valves
+# (983041 to 983043) still open, so every one of his timed calls ran, a strongbox of one of the
+# tower's twenty blues and 3800 copper stands 2 yd east of his corpse.
+[bonus_chest]
+boss = 974114
+entry = 980722
+display = 259
+east_yd = 2.0
+money = 3800
+one_of = [905160, 905161, 905162, 905163, 905164, 905165, 905166, 905167, 905168, 905169, 905170, 905171, 905172, 905173, 905174, 905175, 905176, 905177, 905178, 905179]
+found_text = "With every valve still open, the tower's strongbox stands unguarded."
+challenge = { kind = "unused", levers = [983041, 983042, 983043] }

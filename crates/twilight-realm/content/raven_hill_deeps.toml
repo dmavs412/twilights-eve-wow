@@ -506,3 +506,16 @@ position = [-10226.0, 325.0, 20.87]
 grounded = false
 orientation = 3.1
 sides = "inside"
+
+# The Bonus Chest (#659, spec #650): when the Grey Deacon (974213) dies with the shoring lever
+# (983051) never pulled, so the Dig Overseer's ghouls kept coming, a strongbox of one of the
+# Deeps' twenty blues and 4400 copper stands 2 yd east of his corpse.
+[bonus_chest]
+boss = 974213
+entry = 980723
+display = 259
+east_yd = 2.0
+money = 4400
+one_of = [905180, 905181, 905182, 905183, 905184, 905185, 905186, 905187, 905188, 905189, 905190, 905191, 905192, 905193, 905194, 905195, 905196, 905197, 905198, 905199]
+found_text = "The diggers' pay chest sits by the seam, its keeper gone."
+challenge = { kind = "unused", levers = [983051] }

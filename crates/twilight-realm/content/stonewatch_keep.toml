@@ -539,3 +539,16 @@ camp = 7
 on_partner_death = { guid = 974316, spell = "enraged_partner" }
 drop = [980701]
 rolls = [{ chance = 100, one_of = [905200, 905201, 905202, 905203, 905204, 905205, 905206, 905207, 905208, 905209, 905210, 905211, 905212, 905213, 905214, 905215, 905216, 905217, 905218, 905219] }]
+
+# The Bonus Chest (#659, spec #650): when Gath'Ilzogg (974316) and Singe (974317) die within
+# 10 seconds of each other, a strongbox of one of the keep's twenty blues and 4800 copper stands
+# 2 yd east of Gath'Ilzogg's corpse. It holds no page: page three stays in his drop.
+[bonus_chest]
+boss = 974316
+entry = 980724
+display = 259
+east_yd = 2.0
+money = 4800
+one_of = [905200, 905201, 905202, 905203, 905204, 905205, 905206, 905207, 905208, 905209, 905210, 905211, 905212, 905213, 905214, 905215, 905216, 905217, 905218, 905219]
+found_text = "Gath'Ilzogg's war chest falls open beside him."
+challenge = { kind = "together_s", guids = [974316, 974317], seconds = 10 }

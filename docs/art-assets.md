@@ -320,6 +320,7 @@ All are placeholders and none needs new art. "Where" names the spec's ticket.
 | Brood cage and its lever | 10 | displays 676 (`G_Cage`) and 295 (`G_LeverMetal`) |
 | Singe's Scale icon | 11 | a free stock scale icon that passes `icon_check.py` |
 | Mourncrown | 12 | display 6678 (`World\Goober\G_Necropolis.m2`) |
+| The four Bonus Chests | #659 (spec #650) | display 259 (`TreasureChest01`), vanilla's small wooden chest, until each dungeon's chest has a look of its own |
 
 ## The Deeprun Tram (spec in `docs/specs/deeprun-tram/README.md`)
 
