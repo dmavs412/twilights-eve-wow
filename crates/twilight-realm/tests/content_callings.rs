@@ -489,6 +489,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         | Effect::ConsumeSelfStacks { .. }
         | Effect::SpillDroplets { .. }
         | Effect::DropThreat => panic!("{key}: the reference has no realm half for a Blade kind"),
+        // A copy of an aura lives in the master CSV only (#679); tests/aura_copies.rs reads it.
+        Effect::CopyAura { .. } => {
+            panic!("{key}: the reference has no realm half for an aura copy")
+        }
     }
 }
 

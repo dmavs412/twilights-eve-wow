@@ -1826,6 +1826,7 @@ impl InWorld {
             events,
             ticked,
         );
+        self.wearer_died(victim, c, rng, events, ticked);
         self.auras_die_with(victim, events);
     }
 

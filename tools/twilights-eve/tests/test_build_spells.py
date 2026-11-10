@@ -2172,6 +2172,39 @@ class TalentRows(BuildSpells):
                                                               "realm_only": False})
         self.assert_fails([CALLING, {**row, "effect1_params": "radius_yd=10"}], "drop_threat takes no params, has")
 
+    # Aura copies (#679).
+    def test_copy_aura_names_a_damage_over_time_row_up_to_ten_targets_and_a_radius(self):
+        row = {**STRIKE, "effect1_kind": "copy_aura", "effect1_params": "aura=dot;targets=2",
+               "effect4_kind": "", "effect4_params": ""}
+        before = [CALLING, self.DOT]
+        self.assertEqual(self.built_params(before, row, "radius_yd=10"),
+                         {"aura": "dot", "targets": 2, "radius_yd": 10})
+        self.assert_fails([*before, {**row, "effect1_params": "aura=ghost;targets=2;radius_yd=10"}],
+                          "aura 'ghost' is not an aura row of this Calling")
+        self.assert_fails([CALLING, self.BUFF, {**row, "effect1_params": "aura=buff;targets=2;radius_yd=10"}],
+                          "copy_aura aura 'buff' has no periodic_damage effect to copy")
+        self.assert_each_fails(before, {**row, "effect1_params": "aura=dot;radius_yd=10"},
+                               "copy_aura needs targets, a whole number from 1 to 10, has",
+                               "targets=0", "targets=11", "targets=1.5")
+        self.assert_each_fails(before, row, "copy_aura needs a positive radius_yd, has", "radius_yd=0", "radius_yd=yes")
+
+    def test_a_wearer_death_proc_names_its_aura_and_spreads_all_its_stacks(self):
+        row = {**STRIKE, "effect1_kind": "proc", "effect1_params": "on=wearer_death;aura=dot;spread_aura=10",
+               "effect4_kind": "", "effect4_params": ""}
+        before = [CALLING, self.DOT]
+        self.assertEqual(self.built_params(before, row, "spread_stacks=all"),
+                         {"on": "wearer_death", "aura": "dot", "spread_aura": 10, "spread_stacks": "all"})
+        self.assert_fails([*before, {**row, "effect1_params": "on=wearer_death;spread_aura=10"}],
+                          "on=wearer_death and aura go together")
+        self.assert_fails([*before, {**row, "effect1_params": "on=kill;aura=dot;spread_aura=10"}],
+                          "on=wearer_death and aura go together")
+        self.assert_fails([*before, {**row, "effect1_params": "on=wearer_death;aura=ghost;spread_aura=10"}],
+                          "aura 'ghost' is not an aura row of this Calling")
+        self.assert_fails([*before, {**row, "effect1_params": "on=wearer_death;aura=dot;spread_aura=10;spread_stacks=2"}],
+                          "spread_stacks is 2, want all")
+        self.assert_fails([*before, {**row, "effect1_params": "on=kill;heal_pct=10;spread_stacks=all"}],
+                          "spread_stacks needs spread_aura")
+
     def test_a_snares_radius_yd_is_a_whole_number_of_at_least_1(self):
         self.assert_whole_param([], self.SNARE, "radius_yd")
 

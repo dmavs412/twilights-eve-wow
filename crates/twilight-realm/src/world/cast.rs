@@ -3974,9 +3974,15 @@ impl InWorld {
             if !worn {
                 return Err(SPELL_FAILED_CASTER_AURASTATE);
             }
-            // A cast that spends the caster's own stacks needs some (Red Frenzy), and one that
-            // ticks the caster's bleeds now needs one on the target (Open Veins).
+            // A cast that spends the caster's own stacks needs some (Red Frenzy), one that ticks
+            // the caster's bleeds now needs one on the target (Open Veins), and one that copies
+            // the caster's aura needs it on the target (Spread Blight).
             match *effect {
+                Effect::CopyAura { aura_spell_id, .. }
+                    if target.is_none_or(|t| !self.skills.on(t, aura_spell_id)) =>
+                {
+                    return Err(SPELL_FAILED_TARGET_AURASTATE);
+                }
                 Effect::ConsumeSelfStacks { aura_spell_id, .. }
                     if self.skills.own_stacks(aura_spell_id) == 0 =>
                 {
@@ -4815,6 +4821,11 @@ impl InWorld {
                     }
                 }
             }
+            Effect::CopyAura {
+                aura_spell_id,
+                targets,
+                radius_yd,
+            } => self.copy_aura(target, aura_spell_id, targets, radius_yd, events),
             Effect::SpillDroplets { count, duration_ms } => {
                 let at = c.position;
                 for _ in 0..count {
@@ -6595,6 +6606,21 @@ impl InWorld {
         self.timed_cast_tick(dt, wall, c, rng, events, ticked);
         self.channel_tick(dt, c, rng, events, ticked);
         self.area_tick(dt, c, events);
+        // A creature that died to another player's blow: its wearer-death procs, then its auras
+        // go with it, as a kill here does.
+        let mut dead: Vec<u64> = self
+            .skills
+            .auras
+            .iter()
+            .map(|a| a.unit)
+            .filter(|&u| self.mobs.iter().any(|m| m.guid == u && !m.alive()))
+            .collect();
+        dead.sort_unstable();
+        dead.dedup();
+        for unit in dead {
+            self.wearer_died(unit, c, rng, events, ticked);
+            self.auras_die_with(unit, events);
+        }
         let s = &mut self.skills;
         if let Some((_, left)) = &mut s.dodged {
             *left -= dt;
@@ -7499,6 +7525,95 @@ impl InWorld {
         }
         self.skills.apply(copy, events);
         self.update_speed(other, events);
+    }
+
+    /// Up to `n` of the living enemies nearest `from` within `radius_yd`, other than `from`, that
+    /// do not wear the player's aura `spell_id`, nearest first; equally near ones in the order the
+    /// world lists them.
+    fn nearest_lacking(&self, from: u64, spell_id: u32, radius_yd: f32, n: usize) -> Vec<u64> {
+        let Some(at) = self
+            .mobs
+            .iter()
+            .find(|m| m.guid == from)
+            .map(|m| m.position)
+        else {
+            return Vec::new();
+        };
+        let mut near: Vec<&crate::mobs::Mob> = enemies_within(&self.mobs, self.guid, at, radius_yd)
+            .filter(|m| m.guid != from && !self.skills.on(m.guid, spell_id))
+            .collect();
+        near.sort_by(|a, b| distance(a.position, at).total_cmp(&distance(b.position, at)));
+        near.into_iter().take(n).map(|m| m.guid).collect()
+    }
+
+    /// Copies of the player's aura `spell_id` on `from`, every effect of it, go on each of `to`,
+    /// each copy changed by `shape` first; nothing when `from` wears none.
+    fn copy_auras(
+        &mut self,
+        from: u64,
+        spell_id: u32,
+        to: &[u64],
+        shape: impl Fn(&mut Aura),
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let me = self.guid;
+        let worn: Vec<Aura> = self
+            .skills
+            .auras
+            .iter()
+            .filter(|a| a.unit == from && a.spell_id == spell_id)
+            .filter(|a| !matches!(a.kind, AuraKind::PeriodicDamage { caster, .. } if caster != me))
+            .copied()
+            .collect();
+        for &unit in to {
+            for a in &worn {
+                let mut copy = *a;
+                copy.unit = unit;
+                copy.slot = 0;
+                shape(&mut copy);
+                self.skills.apply(copy, events);
+            }
+            self.update_speed(unit, events);
+        }
+    }
+
+    /// `copy_aura`: the player's aura `spell_id` on `target`, with its stacks and time left, on up
+    /// to `targets` of the nearest other enemies within `radius_yd` of it that lack it.
+    fn copy_aura(
+        &mut self,
+        target: u64,
+        spell_id: u32,
+        targets: u32,
+        radius_yd: f32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let to = self.nearest_lacking(target, spell_id, radius_yd, targets as usize);
+        self.copy_auras(target, spell_id, &to, |_| {}, events);
+    }
+
+    /// A `wearer_death` proc's spread: the player's aura of row `def` on the dying `from` goes on
+    /// the nearest other enemy within `radius_yd` that lacks it, with the row's full duration and
+    /// every stack `from` had when `all`, else one.
+    pub(super) fn spread_worn(
+        &mut self,
+        from: u64,
+        def: &callings::AuraDef,
+        radius_yd: f32,
+        all: bool,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let to = self.nearest_lacking(from, def.spell_id, radius_yd, 1);
+        let left = clock::secs(def.duration_ms);
+        let shape = |copy: &mut Aura| {
+            copy.left = left;
+            copy.next_tick = copy.period;
+            if let AuraKind::PeriodicDamage { stacks, .. } = &mut copy.kind {
+                if !all {
+                    *stacks = 1;
+                }
+            }
+        };
+        self.copy_auras(from, def.spell_id, &to, shape, events);
     }
 
     pub(super) fn update_speed(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {

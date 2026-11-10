@@ -482,6 +482,15 @@ fn row(calling: &str, g: &GenRow, auras: &[GenAura]) -> TalentRow {
     }
 }
 
+/// A test Calling's `[[calling.row]]`, a Talent Row in the sheet's shape. Its choices resolve no
+/// aura keys, so a Skill Choice naming one does not load.
+pub(crate) fn toml_row(calling: &str, value: &toml::Value) -> TalentRow {
+    let g: GenRow = serde_json::to_value(value)
+        .and_then(serde_json::from_value)
+        .unwrap_or_else(|e| panic!("{calling}: a TOML row reads: {e}"));
+    row(calling, &g, &[])
+}
+
 /// A Talent row's choice. One with a `target` is an active one: its effects are the skill it
 /// teaches, under its spell id.
 fn talent(rank: &GenRank, auras: &[GenAura]) -> TalentDef {

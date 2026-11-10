@@ -12,6 +12,14 @@ use crate::rng::Rng;
 use crate::rules::procs::Happened;
 use crate::rules::talents::scaled;
 
+/// The aura row `key` of `c`'s Calling.
+fn own_aura(c: &Char, key: &str) -> Option<&'static crate::callings::AuraDef> {
+    crate::callings::of(c.calling)
+        .auras
+        .iter()
+        .find(|a| a.key == key)
+}
+
 /// Whether a chance of `pct_per_stack` percent a stack lands at `stacks`, rolled in thousandths
 /// so a fraction of a percent counts.
 pub(super) fn lands_per_stack(pct_per_stack: f32, stacks: u32, rng: &mut Rng) -> bool {
@@ -50,6 +58,15 @@ impl InWorld {
                 continue;
             }
             if proc.requires_health_cost && self.skills.last_health_cost == 0 {
+                continue;
+            }
+            // `wearer_death`: only an enemy that wore the player's aura of that row.
+            let worn = proc.aura.and_then(|key| own_aura(c, key));
+            if proc.aura.is_some()
+                && !worn
+                    .zip(happened.target)
+                    .is_some_and(|(a, t)| self.skills.on(t, a.spell_id))
+            {
                 continue;
             }
             if proc.chance_per_stack > 0.0 {
@@ -94,7 +111,14 @@ impl InWorld {
                 continue;
             }
             if proc.spread_aura > 0.0 {
-                self.spread_ticking(proc.spread_aura, events);
+                match (worn, happened.target) {
+                    // Off the dead wearer, with the row's full duration.
+                    (Some(def), Some(from)) => {
+                        let all = proc.spread_stacks == crate::callings::SpreadStacks::All;
+                        self.spread_worn(from, def, proc.spread_aura, all, events);
+                    }
+                    _ => self.spread_ticking(proc.spread_aura, events),
+                }
             }
             if proc.heal_allies_pct > 0 {
                 let total = happened.amount * proc.heal_allies_pct / 100;
@@ -264,6 +288,34 @@ impl InWorld {
                 spell_id.is_some_and(|id| self.skills.on(t, id))
             }
         })
+    }
+
+    /// `unit` died: each proc for the death of a wearer of the player's aura fires once, while its
+    /// auras are still on it.
+    pub(super) fn wearer_died(
+        &mut self,
+        unit: u64,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        self.proc(
+            Happened {
+                was_ms: 0,
+                event: crate::callings::ProcEvent::WearerDeath,
+                skill: None,
+                plain: None,
+                yields_xp: false,
+                target: Some(unit),
+                amount: 0,
+                school: None,
+            },
+            c,
+            rng,
+            events,
+            ticked,
+        );
     }
 
     /// Whether the player wears the aura row `key` of their Calling.

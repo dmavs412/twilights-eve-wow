@@ -449,6 +449,15 @@ pub struct AuraProc {
     /// Add this many combo points on the event's target (Phantom Guile's dodge).
     #[serde(default)]
     pub add_combo_points: u32,
+    /// `wearer_death`: only for an enemy wearing the player's aura of this row, which
+    /// `spread_aura` copies off the dead wearer onto the nearest other enemy within that many
+    /// yards that lacks it, with `spread_stacks` stacks and the row's full duration.
+    #[serde(default)]
+    pub aura: Option<String>,
+    #[serde(default)]
+    pub spread_aura: f32,
+    #[serde(default)]
+    pub spread_stacks: SpreadStacks,
 }
 
 /// What a `next_cast` aura does to the next cast of one of `skill`: an instant cast, a cast bar
@@ -995,6 +1004,12 @@ pub enum TalentEffect {
         /// within this many yards of the target that lacks it (Epidemic).
         #[serde(default)]
         spread_aura: f32,
+        /// `wearer_death`: only for an enemy wearing the character's aura of this row; its
+        /// `spread_aura` copies that aura off the dead wearer, with `spread_stacks` stacks.
+        #[serde(default)]
+        aura: Option<String>,
+        #[serde(default)]
+        spread_stacks: SpreadStacks,
         /// Each rank's percent of the damage done that heals the friendly players within
         /// `radius_yd` of the character, split evenly (Symbiotic Rot).
         #[serde(default)]
@@ -1171,6 +1186,20 @@ pub enum ProcEvent {
     StillFor,
     /// The character's cast lands a critical strike (once a cast).
     Crit,
+    /// An enemy wearing the character's aura of the proc's `aura` row dies, by anyone's hand or
+    /// by the aura's own tick (once a death).
+    WearerDeath,
+}
+
+/// How many stacks a `wearer_death` proc's `spread_aura` copy carries.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SpreadStacks {
+    /// One stack.
+    #[default]
+    One,
+    /// Every stack the dead wearer had.
+    All,
 }
 
 /// One of the five stats, in the order of [`crate::rules::stats::CharacterStats::base`].
@@ -1941,6 +1970,15 @@ pub enum Effect {
         #[serde(default)]
         spread_yd: f32,
     },
+    /// The caster's aura `aura_spell_id` (resolved from `aura=key`) on the target is copied, with
+    /// its stacks, time left and params, onto up to `targets` of the nearest other living enemies
+    /// within `radius_yd` of the target that do not wear it. The copies are the caster's own. With
+    /// none on the target the cast is refused (Kindle, Spread Blight).
+    CopyAura {
+        aura_spell_id: u32,
+        targets: u32,
+        radius_yd: f32,
+    },
     /// The target's run speed changes by `pct` percent for `duration_ms`: a snare on an enemy
     /// when negative, a sprint on the caster when positive.
     ModRunSpeed {
@@ -2338,9 +2376,11 @@ fn shipped() -> &'static [CallingDef] {
 
 /// Callings in the shape of `content/callings.toml`. A TOML Calling may still write `class = N`
 /// for its `stat_profile` and that vanilla class's power (Warrior rage, Rogue energy, the rest
-/// mana): the test seam's shorthand. `power` or `stat_profile` written beside it win.
+/// mana): the test seam's shorthand. `power` or `stat_profile` written beside it win. A test
+/// Calling's `[[calling.row]]` is a Talent Row in the sheet's shape (`server_spells.json`).
 fn parse_toml(text: &str) -> Result<Callings, toml::de::Error> {
     let mut value: toml::Value = toml::from_str(text)?;
+    let mut rows = Vec::new();
     for calling in value
         .get_mut("calling")
         .and_then(toml::Value::as_array_mut)
@@ -2350,6 +2390,7 @@ fn parse_toml(text: &str) -> Result<Callings, toml::de::Error> {
         let Some(table) = calling.as_table_mut() else {
             continue;
         };
+        rows.push(table.remove("row"));
         let Some(class) = table.remove("class").and_then(|c| c.as_integer()) else {
             continue;
         };
@@ -2368,7 +2409,15 @@ fn parse_toml(text: &str) -> Result<Callings, toml::de::Error> {
             .entry("power")
             .or_insert(toml::Value::String(power.into()));
     }
-    value.try_into()
+    let mut parsed: Callings = value.try_into()?;
+    for (def, rows) in parsed.calling.iter_mut().zip(rows) {
+        let rows = rows.and_then(|r| r.as_array().cloned()).unwrap_or_default();
+        def.rows = rows
+            .iter()
+            .map(|r| crate::generated::toml_row(&def.key, r))
+            .collect();
+    }
+    Ok(parsed)
 }
 
 /// The Callings tests added ([`add`]), for the rest of the process.

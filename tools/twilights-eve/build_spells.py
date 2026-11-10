@@ -53,6 +53,7 @@ KNOWN_KINDS = {
     "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike", "pickup",
     "refund_cost", "cast_skill", "cast_while_moving", "mod_threat_pct",
     "mod_periodic_taken_pct", "tick_now", "consume_self_stacks", "spill_droplets", "drop_threat",
+    "copy_aura",
 }
 # 1.12's CreatureType names, ids 1 to 9 in this order: a hit's `vs_type` and a control's
 # `only_type`.
@@ -80,7 +81,7 @@ CHOICE_OWN_COLUMNS = ("kind", "key", "name", "rank", "spell_id", "visual", "cast
 BLANK = "-"
 STATS =("strength", "agility", "stamina", "intellect", "spirit")
 ARMOUR_KINDS = ("cloth", "leather", "mail", "plate", "shield")
-PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken", "melee_hit", "consume", "periodic_tick", "damage_done", "moving_for", "still_for", "crit")
+PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken", "melee_hit", "consume", "periodic_tick", "damage_done", "moving_for", "still_for", "crit", "wearer_death")
 PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct", "weapon_pct", "spread", "apply_aura_area", "refund_cost_pct", "absorb_cost_pct", "energize_pct_of_base", "apply_aura_target", "spread_aura", "heal_allies_pct", "repeat_cast", "cooldown_ms", "splash_pct")
 WEAPON_ROLLS = ("normal", "normalized", "ranged")
 FORMULA_FIELDS = ("base", "per_level")
@@ -1042,6 +1043,16 @@ def check_proc(params: dict, auras: set[str], where: str) -> None:
         raise BuildError(f"{where}: at_full_power=absorb needs absorb_cost_pct")
     if "requires_target_aura" in params and params["requires_target_aura"] not in {*auras, "slowed"}:
         raise BuildError(f"{where}: requires_target_aura {params['requires_target_aura']!r} is not an aura row or slowed")
+    # A wearer's death (#679): the aura row whose wearer dies, and how many stacks its spread carries.
+    if (params.get("on") == "wearer_death") != ("aura" in params):
+        raise BuildError(f"{where}: on=wearer_death and aura go together")
+    if "aura" in params and params["aura"] not in auras:
+        raise BuildError(f"{where}: aura {params['aura']!r} is not an aura row of this Calling")
+    if "spread_stacks" in params:
+        if params["spread_stacks"] != "all":
+            raise BuildError(f"{where}: spread_stacks is {params['spread_stacks']!r}, want all")
+        if "spread_aura" not in params:
+            raise BuildError(f"{where}: spread_stacks needs spread_aura")
     if "apply_aura_area" in params:
         if params.get("center", "origin") != "origin":
             raise BuildError(f"{where}: apply_aura_area center is {params['center']!r}, want origin")
@@ -1319,6 +1330,14 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
                              f"{params['duration_ms']!r}")
     if kind == "drop_threat" and params:
         raise BuildError(f"{where}: drop_threat takes no params, has {', '.join(params)}")
+    # An aura copy (#679): how many enemies, and how far from the target.
+    if kind == "copy_aura":
+        if not is_whole(params.get("targets"), 10):
+            raise BuildError(f"{where}: copy_aura needs targets, a whole number from 1 to 10, has "
+                             f"{params.get('targets')!r}")
+        radius = params.get("radius_yd")
+        if isinstance(radius, bool) or not isinstance(radius, (int, float)) or radius <= 0:
+            raise BuildError(f"{where}: copy_aura needs a positive radius_yd, has {radius!r}")
     if kind == "skill_crit_pct" and not isinstance(params.get("skill", "any"), str):
         raise BuildError(f"{where}: skill_crit_pct skill is one skill key or any, has {params['skill']!r}")
     for block in ("per_combo", "duration_per_combo"):
@@ -1833,11 +1852,13 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
                 raise BuildError(f"{here}: unknown effect kind {kind!r}")
             check_kind_params(kind, parsed, here)
         if kind in ("add_aura_stacks", "grow_aura", "consume_aura_stacks", "grant_aura", "consume_aura",
-                    "aura_max_stacks", "consume_self_stacks"):
+                    "aura_max_stacks", "consume_self_stacks", "copy_aura"):
             if parsed.get("aura") not in auras:
                 raise BuildError(f"{here}: aura {parsed.get('aura')!r} is not an aura row of this Calling")
             if kind == "grow_aura" and "periodic_damage" not in auras[parsed["aura"]]:
                 raise BuildError(f"{here}: grow_aura aura {parsed['aura']!r} has no periodic_damage effect to grow")
+            if kind == "copy_aura" and "periodic_damage" not in auras[parsed["aura"]]:
+                raise BuildError(f"{here}: copy_aura aura {parsed['aura']!r} has no periodic_damage effect to copy")
         if kind == "pickup" and parsed.get("grants") not in auras:
             raise BuildError(f"{here}: grants {parsed.get('grants')!r} is not an aura row of this Calling")
         if kind == "judgement" and "seal" in parsed and parsed["seal"] not in auras:

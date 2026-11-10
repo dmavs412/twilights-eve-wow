@@ -782,6 +782,10 @@ pub(crate) struct Proc {
     pub(crate) target_auras: Vec<String>,
     /// Yards from the target the ticking aura's copy may spread to; 0 for none.
     pub(crate) spread_aura: f32,
+    /// `wearer_death`: only for an enemy wearing the character's aura of this row, which
+    /// `spread_aura` copies off it, with `spread_stacks` stacks.
+    pub(crate) aura: Option<&'static str>,
+    pub(crate) spread_stacks: callings::SpreadStacks,
     /// Percent of the damage done that heals the friendly players within `radius_yd`.
     pub(crate) heal_allies_pct: u32,
     /// Only after a cast that cost health.
@@ -830,6 +834,8 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 target_auras,
                 damage_school,
                 spread_aura,
+                aura,
+                spread_stacks,
                 heal_allies_pct,
                 cost_kind,
                 absorb_of,
@@ -872,6 +878,8 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                     energize_pct_of_base: energize_pct_of_base.get(r).copied().unwrap_or(0),
                     target_auras: target_auras.get(r).cloned().unwrap_or_default(),
                     spread_aura: *spread_aura,
+                    aura: aura.as_deref(),
+                    spread_stacks: *spread_stacks,
                     heal_allies_pct: heal_allies_pct.get(r).copied().unwrap_or(0),
                     requires_health_cost: cost_kind.as_deref() == Some("health"),
                     absorb_of: *absorb_of,
@@ -923,7 +931,9 @@ pub(crate) fn aura_proc(
         requires_target_aura: None,
         energize_pct_of_base: p.energize_pct_of_base,
         target_auras: Vec::new(),
-        spread_aura: 0.0,
+        spread_aura: p.spread_aura,
+        aura: p.aura.as_deref(),
+        spread_stacks: p.spread_stacks,
         heal_allies_pct: 0,
         requires_health_cost: false,
         absorb_of: None,
