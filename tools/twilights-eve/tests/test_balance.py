@@ -616,6 +616,40 @@ class BalanceModel(unittest.TestCase):
                 sim.fight()
                 self.assertGreater(sim.friend_healed, 0)
 
+    def test_the_global_cooldown_is_the_clients(self):
+        # docs/spell_pipeline.md: an empty client_gcd_ms is the client's 1.5 s, 0 is none, and a
+        # longer realm_gcd_ms wins.
+        def gcd(calling, key, client="as is", realm="as is"):
+            ch = model.character(calling, 40, "green")
+            sim = model.SIMS[calling](calling, 40, ch["stats"], ch["rows"], random.Random(1), {})
+            sk = dict(sim.skill(key))
+            if realm != "as is":
+                sk["realm_gcd_ms"] = realm
+            sim.spells[key] = sk
+            was = model.DATA.client_gcd.get(sk["spell_id"])
+            if client != "as is":
+                model.DATA.client_gcd[sk["spell_id"]] = client
+            try:
+                return sim.gcd_of(key)
+            finally:
+                model.DATA.client_gcd[sk["spell_id"]] = was
+
+        self.assertEqual(gcd("bloodmender", "blood_lance"), 1.5)      # both cells empty
+        self.assertEqual(gcd("ironclad", "righteous_smash"), 0.0)     # client 0, realm 0
+        self.assertEqual(gcd("ironclad", "shield_slam"), 1.5)
+        self.assertEqual(gcd("ironclad", "righteous_smash", realm=2000), 2.0)
+        self.assertEqual(gcd("ironclad", "shield_slam", client=1000, realm=0), 1.0)
+        # So Sanguine Flow's instant Blood Lances come no closer than the global cooldown.
+        rows = {**scenarios.pick_build("bloodmender", 40, 1), "bloodmender_blood_pact": "sanguine_flow"}
+        ch = model.character("bloodmender", 40, "green", rows)
+        sim = multi.fighter("bloodmender", 1)("bloodmender", 40, ch["stats"], ch["rows"], random.Random(5), {},
+                                              mob=model.mob_stats(40, rank=1))
+        sim.fight()
+        lances = [e for e in sim.fight_log if e[1] == "blood_lance"]
+        self.assertTrue(any(instant for _, _, instant in lances))
+        for (a, _, _), (b, _, _) in zip(lances, lances[1:]):
+            self.assertGreaterEqual(b - a, 1.5 - model.DT / 2)
+
     def test_every_tier2_ignored_entry_names_a_choice_or_row(self):
         for (calling, key), why in model.IGNORED.items():
             if calling in model.CALLINGS:

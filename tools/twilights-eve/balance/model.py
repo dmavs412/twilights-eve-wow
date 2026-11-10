@@ -26,6 +26,7 @@ MOB_RUN = 7.0 * 1.143
 PLAYER_RUN = 7.0
 DROPLET_PICKUP = 0.5   # share of blood droplets the Cutthroat steps on
 AMMO_DPS = 1.5         # Rough Arrow
+DEFAULT_GCD_MS = 1500  # the client's global cooldown for an empty client_gcd_ms
 
 CLASS_ID = {"warrior": 1, "hunter": 3, "rogue": 4, "priest": 5, "mage": 8}
 CALLINGS = ("cutthroat", "ranger", "initiate", "vanguard", "acolyte")
@@ -44,6 +45,9 @@ class DataRoot:
         self.data = os.path.join(self.root, "data", "twilights-eve")
         self.content = os.path.join(self.root, "crates", "twilight-realm", "content")
         self.spells = {c["key"]: c for c in self.json("server_spells.json")}
+        # The global cooldown the client enforces before it sends a cast: a row's client_gcd_ms,
+        # which the patch carries as gcd_ms only when the cell is set (docs/spell_pipeline.md).
+        self.client_gcd = {r["spell_id"]: r["fields"].get("gcd_ms") for r in self.json("client_dbc_patch.json")["spells"]}
         self.tables = {k: self.json(f"{k}_level_stats.json") for k in CLASS_ID}
         self.gear = {int(r["entry"]): r for r in self.csv("gear.csv")}
         self.callings_csv = {r["calling"]: r for r in self.csv("callings.csv")}
@@ -647,10 +651,12 @@ class Sim:
         return max((self.skill(key).get("realm_cooldown_ms") or 0) + mod, 0)
 
     def gcd_of(self, key):
-        """The global cooldown skill `key` starts, in seconds: its realm_gcd_ms, 0 when its row has
-        none, as generated.rs reads it. cast.rs starts no global cooldown for 0, so such an instant
-        can go off again at once (every Tier 2 healer row has none)."""
-        return (self.skill(key).get("realm_gcd_ms") or 0) / 1000
+        """The global cooldown skill `key` starts, in seconds: the client's client_gcd_ms, which it
+        enforces before it sends the cast (an empty cell is the from-scratch 1.5 s, 0 is none), or
+        the realm's realm_gcd_ms when that is longer (docs/spell_pipeline.md)."""
+        sk = self.skill(key)
+        client = DATA.client_gcd.get(sk["spell_id"])
+        return max(DEFAULT_GCD_MS if client is None else client, sk.get("realm_gcd_ms") or 0) / 1000
 
     def heal(self, amount, src):
         """`amount` healed up to the maximum health, more while below a passive's health line (Will
