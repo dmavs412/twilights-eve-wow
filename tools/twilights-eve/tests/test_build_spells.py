@@ -2092,7 +2092,13 @@ class TalentRows(BuildSpells):
         self.assertEqual((params["seal"], params["heal_pct"], params["school"]),
                          ("aura_seal_of_iron", 10, "holy"))
         self.assert_each_fails([CALLING, seal], {**judge, "effect1_params": "amount.base=40;amount.per_level=2"},
-                               "seal 'ghost' is not an aura row of this Calling", "seal=ghost")
+                               "seal 'ghost' is not an aura row of this Calling", "seal=ghost",
+                               "seal=aura_seal_of_iron|ghost")
+        # A Seal and its Skill Choices' Seals (#686).
+        mending = {**seal, "key": "aura_seal_of_mending", "spell_id": "1014178"}
+        two = {**judge, "effect1_params": "seal=aura_seal_of_iron|aura_seal_of_mending;amount.base=40;amount.per_level=2"}
+        done, data = self.run_build([CALLING, seal, mending, two])
+        self.assertEqual(done.returncode, 0, done.stderr)
         self.assert_each_fails([CALLING, seal], judge, "heal_pct needs a whole number of at least 1, has",
                                "heal_pct=0")
         self.assert_fails([CALLING, seal, {**judge, "effect1_params": "seal=aura_seal_of_iron"}],

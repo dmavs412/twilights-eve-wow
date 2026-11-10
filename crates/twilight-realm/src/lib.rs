@@ -26,8 +26,9 @@
 //! ## A Calling, end to end
 //!
 //! - **Data**: the master CSV (`data/twilights-eve/server_spells.json`) holds each sheet Calling's
-//!   kit and Talent Rows, and `content/callings.toml` the Zealot's kit, Tier Bonus and armour;
-//!   `content/quests.toml` the Advancement Quests. The [`callings`] module loads them.
+//!   kit and Talent Rows (every shipped Calling's since #686; `content/callings.toml` keeps only
+//!   the shape a test Calling takes), and `content/quests.toml` the Advancement Quests. The
+//!   [`callings`] module loads them.
 //! - **Reference**: `data/twilights-eve/callings.json` is the design data and
 //!   `tests/content_callings.rs` fails when the two drift. `tools/twilights-eve/extract_spells.py
 //!   verify` checks every spell, talent and tab id against the DBCs (the `spell-data` gate).

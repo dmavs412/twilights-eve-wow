@@ -145,6 +145,9 @@ item = [
   # Sergeant Holt's trial (#685, quests.toml 64412): INV_Shield_20, a stock icon no other item
   # shows.
   { entry = 980811, name = "Blackrock Shield", quality = 1, item_level = 30, class = 12, display_id = 17943, stackable = 20 },
+  # Brother-Knight Vale's trial (#686, quests.toml 64416): INV_Misc_Bone_DwarfSkull_01, a stock icon
+  # no other item shows.
+  { entry = 980821, name = "Hallowed Bone", quality = 1, item_level = 30, class = 12, display_id = 1273, stackable = 20 },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye

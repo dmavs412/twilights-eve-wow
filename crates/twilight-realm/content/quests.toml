@@ -1544,20 +1544,27 @@ hint = [
   { npc = 190071, option = "Where do I find the Ironclads?", reply = "Lakeshire. They hold the bridge into town because nobody else will. Look for Sergeant Holt at the west end, in plate older than you are." },
 ]
 
+# The Zealot (Tier 2, #686): Brother-Knight Aldren Vale in Tranquil Gardens Cemetery gives it, and
+# his trial (64416-64418, in the Tier 2 section below) gates it. Commander Wray and Commander
+# Althea Ebonlocke give the hints.
 [[quest]]
 id = 64003
 kind = "advancement"
-giver = 190071
+giver = 190111
 level = 30
 zone_or_sort = -81
-advancement = { from = "vanguard", to = "zealot" }
+advancement = { from = "vanguard", to = "zealot", trial = 64418 }
 calling_choice = true
 title = "The Zealot's Vow"
-objectives = "Speak with Commander Aldous Wray in the Stormwind barracks to swear the Zealot's vow."
-details = "You fight like one possessed, $N, and some say the Light itself guides your blade. These days, plenty of people have stopped believing the Light watches anything at all. There are warriors who answer its call anyway: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word."
-progress = "Say the word, $N, and swear the vow."
-completion = "It's sworn. Seal your blade and judge your foes, Zealot. You start over once more, so let your fury carry you."
+objectives = "Find the Zealot who keeps vigil over Duskwood's restless dead, and pass his trial."
+details = "You fight like one possessed, $N. Plenty of people have stopped believing the Light watches anything at all. The Zealots answer it anyway.$B$BThe last sworn knight of them keeps a vigil where Duskwood laid its dead in quiet gardens, and the dead would not stay quiet. Commander Wray in the Stormwind barracks knows who keeps watch over that town. Ask him who to ask."
+progress = "You found the gardens. The dead found you first, I expect. Is it done?"
+completion = "Then swear the vow. You'll stand in the Light when the dead come, and you won't step back. You start over, Zealot. The plate on your back stays."
 money = 0
+hint = [
+  { npc = 190071, option = "Where does the last Zealot keep vigil?", reply = "Duskwood. Commander Althea Ebonlocke runs the Night Watch in Darkshire. She knows every soul that walks her graves at night. Ask her." },
+  { npc = 264, option = "Who keeps vigil among your dead?", reply = "A knight in white walks the Tranquil Gardens south and east of town, among the graves the dead keep climbing out of. My watchers leave him be. He prays louder than they scream." },
+]
 
 # Templar (Tier 3) has no kit yet: the quest is offered at Zealot's cap and never finishes.
 [[quest]]
@@ -1854,6 +1861,56 @@ progress = "Standing?"
 completion = "Standing. Then come and swear."
 money = 5000
 kill = [[437, 10]]
+
+# The Zealot (#686): Brother-Knight Aldren Vale in Tranquil Gardens Cemetery. His Advancement Quest
+# is 64003, kept with the Vanguard Line's quests above.
+[[quest]]
+id = 64416
+kind = "once"
+giver = 190111
+after_taken = 64003
+level = 30
+min_tier = 1
+zone_or_sort = 10
+title = "Hallowed Bones"
+objectives = "Bring 8 Hallowed Bones from the skeletons of Tranquil Gardens."
+details = "These were Darkshire's people once. Break what walks and bring me the bones, and I'll bury them where they'll stay."
+progress = "The bones?"
+completion = "Eight. They'll rest now. The rest won't, yet."
+money = 2500
+collect = [{ item = 980821, count = 8, chance = 40, from = [48, 203] }]
+
+[[quest]]
+id = 64417
+kind = "once"
+giver = 190111
+after = 64416
+level = 30
+min_tier = 1
+zone_or_sort = 10
+title = "The Ghoul in the Crypt"
+objectives = "Kill the Insane Ghoul that haunts Tranquil Gardens."
+details = "Something in the crypt eats what I bury. It was a man once. Put it down."
+progress = "Is it done?"
+completion = "Then I can bury the rest without feeding it."
+money = 2500
+kill = [[511, 1]]
+
+[[quest]]
+id = 64418
+kind = "once"
+giver = 190111
+after = 64417
+level = 30
+min_tier = 1
+zone_or_sort = 10
+title = "Stand in the Light"
+objectives = "Kill 12 Skeletal Warriors in Tranquil Gardens."
+details = "Last. Stand among the graves and let them come to you. Twelve, and you don't run."
+progress = "Did you run?"
+completion = "You didn't. Kneel, then, and swear."
+money = 5000
+kill = [[48, 12]]
 
 # ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
 # The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the

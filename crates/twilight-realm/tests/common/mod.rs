@@ -9,14 +9,120 @@ pub mod party;
 pub mod ranger;
 pub mod vanguard;
 
-/// The Zealot as a Tier 0 Calling, "test_zealot", for a fight a weak body has to take hits in:
-/// a Tier 2 level 1 Zealot has Power Level 30 and no longer builds rage from level 3 mobs. Pass
-/// it to `Realm::with_callings`.
+/// The old two-handed Zealot as a Tier 0 test Calling, "test_zealot": the borrowed Paladin Seals
+/// (`Effect::Seal`), the TOML Judgement of the active Seal, Mortal Strike and Charge, which no
+/// shipped Calling has since the Zealot moved into the sheet (#686). Tier 0, for a fight a weak
+/// body has to take hits in. Judgement and Hammer of Justice take test ids, since the sheet's
+/// Zealot keeps 1000067 and 1000068. Pass it to `Realm::with_callings`; [`test_zealot_spell`]
+/// reads its ids.
+pub const TEST_ZEALOT: &str = r#"
+[[calling]]
+key = "test_zealot"
+name = "Zealot"
+tier = 0
+power = "rage"
+stat_profile = "warrior"
+cap = 10
+tier_bonus = { strength = 28, agility = 14, stamina = 28, intellect = 0, spirit = 7 }
+shapeshift_form = 17
+armour = ["cloth", "leather", "mail", "plate", "shield"]
+
+[[calling.skill]]
+key = "seal_of_command"
+spell_id = 1000065
+spell_name = "Seal of Command"
+power_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "self"
+borrowed = { family_bit = 33 }
+effects = [
+    { kind = "seal", duration_ms = 30000, seal = { kind = "command", procs_per_minute = 7.0, weapon_pct = 70, proc_spell_id = 20424, proc_spell_name = "Seal of Command", judgement_spell_id = 20467, judgement_spell_name = "Judgement of Command", judgement = { base = 30.0, per_level = 3.0, per_ap = 0.15 } } },
+]
+
+[[calling.skill]]
+key = "seal_of_the_crusader"
+spell_id = 1000066
+spell_name = "Seal of the Crusader"
+power_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "self"
+borrowed = { family_bit = 34 }
+effects = [
+    { kind = "seal", duration_ms = 30000, seal = { kind = "crusader", attack_power = { base = 20.0, per_level = 4.0 }, haste_pct = 40, judgement_spell_id = 20300, judgement_spell_name = "Judgement of the Crusader", judgement_duration_ms = 10000, holy_taken_pct = 20 } },
+]
+
+[[calling.skill]]
+key = "judgement"
+spell_id = 900167
+spell_name = "Judgement"
+power_cost = 5
+cooldown_ms = 10000
+gcd_ms = 0
+target = "enemy"
+range_yd = [0.0, 10.0]
+borrowed = { family_bit = 35 }
+effects = [{ kind = "judgement" }]
+
+[[calling.skill]]
+key = "hammer_of_justice"
+spell_id = 900168
+spell_name = "Hammer of Justice"
+power_cost = 15
+cooldown_ms = 60000
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 10.0]
+borrowed = { family_bit = 36 }
+effects = [{ kind = "stun", aura_spell_id = 900168, aura_spell_name = "Hammer of Justice", duration_ms = 6000 }]
+
+[[calling.skill]]
+key = "mortal_strike"
+spell_id = 1000069
+spell_name = "Mortal Strike"
+power_cost = 30
+cooldown_ms = 6000
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [
+    { kind = "weapon_strike", weapon = "normalized", bonus = { base = 25.0, per_level = 2.5 } },
+    { kind = "healing_reduction", pct = 50, duration_ms = 10000 },
+]
+
+[[calling.skill]]
+key = "charge"
+spell_id = 1000070
+spell_name = "Charge"
+power_cost = 0
+cooldown_ms = 15000
+gcd_ms = 0
+target = "enemy"
+range_yd = [8.0, 25.0]
+requires_out_of_combat = true
+effects = [
+    { kind = "charge", speed_yd_s = 24.0 },
+    { kind = "energize", power = "rage", amount = { base = 11.0, per_level = 0.1 } },
+    { kind = "stun", aura_spell_id = 1000190, aura_spell_name = "Charge (stun)", duration_ms = 1000 },
+]
+"#;
+
+/// [`TEST_ZEALOT`], for `Realm::with_callings`.
 pub fn tier_0_zealot() -> String {
-    include_str!("../../content/callings.toml")
-        .replacen("key = \"zealot\"", "key = \"test_zealot\"", 1)
-        .replacen("tier = 2", "tier = 0", 1)
-        .replacen("cap = 50", "cap = 10", 1)
+    TEST_ZEALOT.to_string()
+}
+
+/// The spell id of [`TEST_ZEALOT`]'s skill `key`.
+pub fn test_zealot_spell(key: &str) -> u32 {
+    let tables: toml::Table = TEST_ZEALOT.parse().unwrap();
+    tables["calling"][0]["skill"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|s| s["key"].as_str() == Some(key))
+        .and_then(|s| s["spell_id"].as_integer())
+        .unwrap_or_else(|| panic!("{key} is a skill of the test Zealot")) as u32
 }
 
 /// The **Champion**, "test_champion": a Warrior-Class Calling in Tier 3 whose Tier Bonus wins any

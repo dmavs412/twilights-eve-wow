@@ -29,7 +29,7 @@
   {
    "key": "zealot",
    "name": "Zealot",
-   "icon": "Interface\\Icons\\Ability_Warrior_InnerRage",
+   "icon": "Interface\\Icons\\Spell_Holy_RighteousFury",
    "spellbook": "Zealot",
    "power_type": 1,
    "class": 1,
@@ -1734,78 +1734,6 @@
    }
   },
   {
-   "spell_id": 1000065,
-   "calling": "zealot",
-   "key": "seal_of_command",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Seal of Command",
-    "cost": 10,
-    "cooldown_ms": 0,
-    "gcd_ms": 1500,
-    "interrupt_flags": 0,
-    "dmg_class": 0,
-    "school": 0,
-    "prevention_type": 2,
-    "description": "A 30 s self Seal: a landed white swing has 7 procs a minute (vmangos) of a holy hit of 70% of a weapon roll (20424). Judged: a holy hit under Judgement of Command (20467). Holy ignores armour.",
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "spell_family": 4,
-    "family_flags": 8589934592,
-    "icon": "Interface\\Icons\\Ability_Warrior_InnerRage",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "visual": 5622,
-    "range_index": 1,
-    "cast_time_index": 1,
-    "duration_index": 2
-   }
-  },
-  {
-   "spell_id": 1000066,
-   "calling": "zealot",
-   "key": "seal_of_the_crusader",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Seal of the Crusader",
-    "cost": 10,
-    "cooldown_ms": 0,
-    "gcd_ms": 1500,
-    "interrupt_flags": 0,
-    "dmg_class": 0,
-    "school": 0,
-    "prevention_type": 2,
-    "description": "A 30 s self Seal that replaces any other: 20 + 4 attack power a level, swings 40% faster with each hit cut to match (so the haste alone adds no damage a second). Judged: Judgement of the Crusader Rank 3 (20300) on the target for 10 s, 20% more holy damage taken (vanilla's is a flat amount), its duration refreshed by each landed white swing at the target.",
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "spell_family": 4,
-    "family_flags": 17179869184,
-    "icon": "Interface\\Icons\\Spell_Holy_HolySmite",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "visual": 5622,
-    "range_index": 1,
-    "cast_time_index": 1,
-    "duration_index": 2
-   }
-  },
-  {
    "spell_id": 1000067,
    "calling": "zealot",
    "key": "judgement",
@@ -1813,26 +1741,26 @@
    "fields": {
     "power_type": 1,
     "name": "Judgement",
-    "cost": 5,
-    "cooldown_ms": 10000,
+    "cost": 10,
+    "cooldown_ms": 8000,
     "gcd_ms": 0,
     "interrupt_flags": 0,
-    "dmg_class": 2,
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Consumes the active Seal for that Seal's judgement; with no Seal it fails and costs nothing.",
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Judges your Seal of Iron, taking it off, for 40 + 3 per level Holy damage, and heals you for 10% of your maximum health. Needs a Seal of Iron.",
     "implicit_targets": [
      6,
      0
     ],
     "spell_family": 4,
-    "family_flags": 34359738368,
+    "family_flags": 8589934592,
     "icon": "Interface\\Icons\\Spell_Holy_RighteousFury",
     "dbc_effects": [
      {
       "effect": 3,
-      "base": 0,
-      "per_level": 0
+      "base": 40,
+      "per_level": 3
      }
     ],
     "visual": 5651,
@@ -1852,16 +1780,16 @@
     "cooldown_ms": 60000,
     "gcd_ms": 1500,
     "interrupt_flags": 0,
-    "dmg_class": 2,
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Stuns the target for $d.",
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stuns the target for 6 sec.",
     "implicit_targets": [
      6,
      0
     ],
     "spell_family": 4,
-    "family_flags": 68719476736,
+    "family_flags": 17179869184,
     "icon": "Interface\\Icons\\Spell_Holy_SealOfMight",
     "dbc_effects": [
      {
@@ -1875,97 +1803,6 @@
     "range_index": 7,
     "cast_time_index": 1,
     "duration_index": 32
-   }
-  },
-  {
-   "spell_id": 1000069,
-   "calling": "zealot",
-   "key": "mortal_strike",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Mortal Strike",
-    "cost": 30.0,
-    "cooldown_ms": 6000,
-    "gcd_ms": 1500,
-    "interrupt_flags": 0,
-    "dmg_class": 2,
-    "school": 0,
-    "prevention_type": 2,
-    "description": "A vicious strike that deals weapon damage plus $s2 and wounds the target, reducing the effectiveness of any healing by $s1% for $d.",
-    "implicit_targets": [
-     6,
-     0
-    ],
-    "spell_family": 4,
-    "family_flags": 137438953472,
-    "icon": "Interface\\Icons\\Ability_Warrior_SavageBlow",
-    "dbc_effects": [
-     {
-      "effect": 58,
-      "base": 25,
-      "per_level": 2.5
-     },
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "visual": 39,
-    "range_index": 2,
-    "cast_time_index": 1,
-    "duration_index": 1
-   }
-  },
-  {
-   "spell_id": 1000070,
-   "calling": "zealot",
-   "key": "charge",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Charge",
-    "cost": 0.0,
-    "cooldown_ms": 15000,
-    "gcd_ms": 0,
-    "not_in_combat": true,
-    "interrupt_flags": 0,
-    "dmg_class": 2,
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Charge an enemy, generate $/10;s2 rage, and stun it for $7922d.  Cannot be used in combat.",
-    "stances": [
-     "Battle Stance"
-    ],
-    "implicit_targets": [
-     6,
-     0
-    ],
-    "spell_family": 4,
-    "family_flags": 274877906944,
-    "icon": "Interface\\Icons\\Ability_Druid_Dash",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     },
-     {
-      "effect": 30,
-      "base": 11,
-      "per_level": 0.1
-     },
-     {
-      "effect": 6,
-      "base": 0,
-      "per_level": 0,
-      "aura": 12
-     }
-    ],
-    "visual": 867,
-    "range_index": 95,
-    "cast_time_index": 1
    }
   },
   {
@@ -8973,6 +8810,1381 @@
    }
   },
   {
+   "spell_id": 1000670,
+   "calling": "zealot",
+   "key": "bulwark_charge",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Bulwark Charge",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "not_in_combat": false,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Charge an enemy, generating 17 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes 24 + 0.6 per level Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+    "stances": [
+     "Battle Stance"
+    ],
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_PersuitofJustice",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 17,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 24,
+      "per_level": 0.6,
+      "amplitude_ms": 1000
+     }
+    ],
+    "visual": 867,
+    "range_index": 95,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000671,
+   "calling": "zealot",
+   "key": "consecration",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Consecration",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "The holy ground Bulwark Charge leaves at its destination.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Holy_InnerFire",
+    "visual": 5600
+   }
+  },
+  {
+   "spell_id": 1000673,
+   "calling": "zealot",
+   "key": "seal_of_iron",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Seal of Iron",
+    "cost": 10.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Holy_HealingAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Melee attacks may heal you or raise your armor.",
+    "visual": 5622,
+    "cast_time_index": 1,
+    "duration_index": 2
+   }
+  },
+  {
+   "spell_id": 1000675,
+   "calling": "zealot",
+   "key": "hallowed_ground",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Hallowed Ground",
+    "cost": 15,
+    "cooldown_ms": 20000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Consecrates the ground at your feet for 10 sec: each second every enemy within 8 yd takes 6 + 0.8 per level Holy damage, and while you stand in it you heal 8 + 1 per level a second. It replaces your Bulwark Charge's Consecration.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Holy_InnerFire",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 6,
+      "per_level": 0.8,
+      "amplitude_ms": 1000
+     }
+    ],
+    "visual": 5600,
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1000677,
+   "calling": "zealot",
+   "key": "righteous_fury",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Righteous Fury",
+    "cost": 0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 5 min your Holy damage causes 50% more threat.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Holy damage causes 50% more threat.",
+    "visual": 298,
+    "cast_time_index": 1,
+    "duration_index": 5
+   }
+  },
+  {
+   "spell_id": 1000678,
+   "calling": "zealot",
+   "key": "rebuke",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Rebuke",
+    "cost": 10.0,
+    "cooldown_ms": 12000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain 10 Rage.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldBash",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 10,
+      "per_level": 0
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000679,
+   "calling": "zealot",
+   "key": "holy_wrath",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Holy Wrath",
+    "cost": 20,
+    "cooldown_ms": 15000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Deals 30 + 2.5 per level Holy damage to every enemy within 8 yd, double to undead, and stuns the undead for 2 sec.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 2199023255552,
+    "icon": "Interface\\Icons\\Spell_Holy_Excorcism",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 30,
+      "per_level": 2.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 126,
+    "speed": 20.0,
+    "range_index": 1,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000682,
+   "calling": "zealot",
+   "key": "long_consecration",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Long Consecration",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "not_in_combat": false,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Charge an enemy, generating 17 Rage and leaving Consecration at the destination: for 12 sec, each second every enemy within 8 yd takes 24 + 0.6 per level Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+    "stances": [
+     "Battle Stance"
+    ],
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_PersuitofJustice",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 17,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 24,
+      "per_level": 0.6,
+      "amplitude_ms": 1000
+     }
+    ],
+    "visual": 867,
+    "range_index": 95,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000683,
+   "calling": "zealot",
+   "key": "rallying_charge",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Rallying Charge",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "not_in_combat": false,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Charge an enemy, generating 27 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes 24 + 0.6 per level Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+    "stances": [
+     "Battle Stance"
+    ],
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_PersuitofJustice",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 27,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 24,
+      "per_level": 0.6,
+      "amplitude_ms": 1000
+     }
+    ],
+    "visual": 867,
+    "range_index": 95,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000684,
+   "calling": "zealot",
+   "key": "hallowed_charge",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Hallowed Charge",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "not_in_combat": false,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Charge an enemy, generating 17 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes 36 + 0.9 per level Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+    "stances": [
+     "Battle Stance"
+    ],
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_PersuitofJustice",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 17,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 36,
+      "per_level": 0.9,
+      "amplitude_ms": 1000
+     }
+    ],
+    "visual": 867,
+    "range_index": 95,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000685,
+   "calling": "zealot",
+   "key": "judgement_of_mending",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Judgement of Mending",
+    "cost": 10,
+    "cooldown_ms": 8000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Judges your Seal of Iron, taking it off, for 40 + 3 per level Holy damage, and heals you for 15% of your maximum health. Needs a Seal of Iron.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Holy_RighteousFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 40,
+      "per_level": 3
+     }
+    ],
+    "visual": 5651,
+    "range_index": 7,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000686,
+   "calling": "zealot",
+   "key": "harsh_judgement",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Harsh Judgement",
+    "cost": 10,
+    "cooldown_ms": 8000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Judges your Seal of Iron, taking it off, for 60 + 4.5 per level Holy damage, and heals you for 10% of your maximum health. Needs a Seal of Iron.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Holy_RighteousFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 60,
+      "per_level": 4.5
+     }
+    ],
+    "visual": 5651,
+    "range_index": 7,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000687,
+   "calling": "zealot",
+   "key": "swift_judgement",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Swift Judgement",
+    "cost": 10,
+    "cooldown_ms": 5000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Judges your Seal of Iron, taking it off, for 40 + 3 per level Holy damage, and heals you for 10% of your maximum health. Needs a Seal of Iron. 5 sec cooldown.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Holy_RighteousFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 40,
+      "per_level": 3
+     }
+    ],
+    "visual": 5651,
+    "range_index": 7,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000688,
+   "calling": "zealot",
+   "key": "seal_of_mending",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Seal of Mending",
+    "cost": 10.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 30 sec your melee attacks have a 50% chance to heal you slightly and a 50% chance to grant you a temporary armor spike.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Holy_HealingAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5622,
+    "cast_time_index": 1,
+    "duration_index": 2
+   }
+  },
+  {
+   "spell_id": 1000690,
+   "calling": "zealot",
+   "key": "seal_of_fervor",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Seal of Fervor",
+    "cost": 10.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike, and each heal or armor spike also gives you 5 Rage.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Holy_HealingAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5622,
+    "cast_time_index": 1,
+    "duration_index": 2
+   }
+  },
+  {
+   "spell_id": 1000692,
+   "calling": "zealot",
+   "key": "wrathful_iron",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Wrathful Iron",
+    "cost": 10.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike. The armor spike raises your armor from items by 40%.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Holy_HealingAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5622,
+    "cast_time_index": 1,
+    "duration_index": 2
+   }
+  },
+  {
+   "spell_id": 1000695,
+   "calling": "zealot",
+   "key": "deep_ground",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Deep Ground",
+    "cost": 15,
+    "cooldown_ms": 20000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Consecrates the ground at your feet for 10 sec: each second every enemy within 8 yd takes 6 + 0.8 per level Holy damage, and while you stand in it you heal 12 + 1.5 per level a second. It replaces your Bulwark Charge's Consecration.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Holy_InnerFire",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 6,
+      "per_level": 0.8,
+      "amplitude_ms": 1000
+     }
+    ],
+    "visual": 5600,
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1000697,
+   "calling": "zealot",
+   "key": "wide_ground",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Wide Ground",
+    "cost": 15,
+    "cooldown_ms": 20000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Consecrates the ground at your feet for 10 sec: each second every enemy within 12 yd takes 6 + 0.8 per level Holy damage, and while you stand in it you heal 8 + 1 per level a second. It replaces your Bulwark Charge's Consecration.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Holy_InnerFire",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 6,
+      "per_level": 0.8,
+      "amplitude_ms": 1000
+     }
+    ],
+    "visual": 5600,
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1000698,
+   "calling": "zealot",
+   "key": "burning_ground",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Burning Ground",
+    "cost": 15,
+    "cooldown_ms": 20000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Consecrates the ground at your feet for 10 sec: each second every enemy within 8 yd takes 9 + 1.2 per level Holy damage, and while you stand in it you heal 8 + 1 per level a second. It replaces your Bulwark Charge's Consecration.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Holy_InnerFire",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 9,
+      "per_level": 1.2,
+      "amplitude_ms": 1000
+     }
+    ],
+    "visual": 5600,
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1000699,
+   "calling": "zealot",
+   "key": "lights_grace",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Light's Grace",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Healing on you is 10% stronger.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_FlashHeal",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000700,
+   "calling": "zealot",
+   "key": "plated_faith",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Plated Faith",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Armor from items increased by 10%.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\INV_Chest_Plate02",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000701,
+   "calling": "zealot",
+   "key": "fervent",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Fervent",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your maximum Rage is increased by 10.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Ability_Warrior_InnerRage",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000702,
+   "calling": "zealot",
+   "key": "blazing_fury",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Blazing Fury",
+    "cost": 0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 5 min your Holy damage causes 80% more threat.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 298,
+    "cast_time_index": 1,
+    "duration_index": 5
+   }
+  },
+  {
+   "spell_id": 1000704,
+   "calling": "zealot",
+   "key": "furys_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Fury's Ward",
+    "cost": 0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 5 min your Holy damage causes 50% more threat, and you take 5% less damage.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 298,
+    "cast_time_index": 1,
+    "duration_index": 5
+   }
+  },
+  {
+   "spell_id": 1000706,
+   "calling": "zealot",
+   "key": "furys_edge",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Fury's Edge",
+    "cost": 0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 5 min your Holy damage causes 50% more threat, and your Holy damage is 10% higher.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 298,
+    "cast_time_index": 1,
+    "duration_index": 5
+   }
+  },
+  {
+   "spell_id": 1000708,
+   "calling": "zealot",
+   "key": "long_rebuke",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Long Rebuke",
+    "cost": 10.0,
+    "cooldown_ms": 12000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you gain 10 Rage.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldBash",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 10,
+      "per_level": 0
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000709,
+   "calling": "zealot",
+   "key": "rebuke_of_iron",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Rebuke of Iron",
+    "cost": 10.0,
+    "cooldown_ms": 12000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain 10 Rage and your Seal of Iron goes up.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldBash",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 10,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000710,
+   "calling": "zealot",
+   "key": "judging_rebuke",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Judging Rebuke",
+    "cost": 10.0,
+    "cooldown_ms": 12000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain 10 Rage and Judgement is ready again.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldBash",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 10,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000711,
+   "calling": "zealot",
+   "key": "wrath_of_ages",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Wrath of Ages",
+    "cost": 20,
+    "cooldown_ms": 15000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Deals 30 + 2.5 per level Holy damage to every enemy within 8 yd, double to undead, and stuns the undead for 4 sec.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 2199023255552,
+    "icon": "Interface\\Icons\\Spell_Holy_Excorcism",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 30,
+      "per_level": 2.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 126,
+    "speed": 20.0,
+    "range_index": 1,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000713,
+   "calling": "zealot",
+   "key": "searing_wrath",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Searing Wrath",
+    "cost": 20,
+    "cooldown_ms": 15000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Deals 45 + 3.75 per level Holy damage to every enemy within 8 yd, double to undead, and stuns the undead for 2 sec.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 2199023255552,
+    "icon": "Interface\\Icons\\Spell_Holy_Excorcism",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 45,
+      "per_level": 3.75
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 126,
+    "speed": 20.0,
+    "range_index": 1,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000714,
+   "calling": "zealot",
+   "key": "quick_wrath",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Quick Wrath",
+    "cost": 20,
+    "cooldown_ms": 10000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Deals 30 + 2.5 per level Holy damage to every enemy within 8 yd, double to undead, and stuns the undead for 2 sec. 10 sec cooldown.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 2199023255552,
+    "icon": "Interface\\Icons\\Spell_Holy_Excorcism",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 30,
+      "per_level": 2.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 126,
+    "speed": 20.0,
+    "range_index": 1,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000715,
+   "calling": "zealot",
+   "key": "long_hammer",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Long Hammer",
+    "cost": 15,
+    "cooldown_ms": 60000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stuns the target for 8 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfMight",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 322,
+    "range_index": 7,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000717,
+   "calling": "zealot",
+   "key": "thrown_hammer",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Thrown Hammer",
+    "cost": 15,
+    "cooldown_ms": 60000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stuns the target for 6 sec. 20 yd range.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfMight",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 322,
+    "range_index": 3,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000718,
+   "calling": "zealot",
+   "key": "quick_hammer",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Quick Hammer",
+    "cost": 15,
+    "cooldown_ms": 40000,
+    "gcd_ms": 1500,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stuns the target for 6 sec. 40 sec cooldown.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfMight",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 322,
+    "range_index": 7,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000719,
+   "calling": "zealot",
+   "key": "sanctified",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Sanctified",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Hallowed Ground heals you 30% more.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_PrayerOfHealing02",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000720,
+   "calling": "zealot",
+   "key": "undying_zeal",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Undying Zeal",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Healing on you is 30% stronger while you are below 30% health.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Holy_BlessedRecovery",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000721,
+   "calling": "zealot",
+   "key": "hammer_and_anvil",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Hammer and Anvil",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Judgement is 15% more likely to be a critical strike.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\INV_Hammer_04",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
    "spell_id": 1000009,
    "calling": "vanguard",
    "key": "aura_seal_of_iron_armor",
@@ -10596,6 +11808,382 @@
     ],
     "name": "Steel Resolve",
     "aura_description": "Each block heals you for 2% of your maximum health. Block chance increased by 15%."
+   }
+  },
+  {
+   "spell_id": 1000672,
+   "calling": "zealot",
+   "key": "aura_consecration_ward",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_InnerFire",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Consecrated Ground",
+    "aura_description": "Damage taken reduced by 10%."
+   }
+  },
+  {
+   "spell_id": 1000674,
+   "calling": "zealot",
+   "key": "aura_seal_of_iron_armor",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_DevotionAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Seal of Iron",
+    "aura_description": "Armor from items increased by 22%.",
+    "visual": 160
+   }
+  },
+  {
+   "spell_id": 1000676,
+   "calling": "zealot",
+   "key": "aura_hallowed",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_InnerFire",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 1000
+     }
+    ],
+    "name": "Hallowed Ground",
+    "aura_description": "Heals you each second while you stand in your Hallowed Ground."
+   }
+  },
+  {
+   "spell_id": 1000680,
+   "calling": "zealot",
+   "key": "aura_holy_wrath_stun",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_Excorcism",
+    "mechanic": 12,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "name": "Holy Wrath",
+    "aura_description": "Stunned.",
+    "visual": 2816
+   }
+  },
+  {
+   "spell_id": 1000681,
+   "calling": "zealot",
+   "key": "aura_hammer_of_justice",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfMight",
+    "mechanic": 12,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "name": "Hammer of Justice",
+    "aura_description": "Stunned.",
+    "visual": 322
+   }
+  },
+  {
+   "spell_id": 1000689,
+   "calling": "zealot",
+   "key": "aura_seal_of_mending",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_HealingAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Seal of Iron",
+    "aura_description": "Melee attacks may heal you or raise your armor.",
+    "visual": 5622
+   }
+  },
+  {
+   "spell_id": 1000691,
+   "calling": "zealot",
+   "key": "aura_seal_of_fervor",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_HealingAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Seal of Iron",
+    "aura_description": "Melee attacks may heal you or raise your armor, and give you Rage when they do.",
+    "visual": 5622
+   }
+  },
+  {
+   "spell_id": 1000693,
+   "calling": "zealot",
+   "key": "aura_wrathful_iron",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_HealingAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Seal of Iron",
+    "aura_description": "Melee attacks may heal you or raise your armor.",
+    "visual": 5622
+   }
+  },
+  {
+   "spell_id": 1000694,
+   "calling": "zealot",
+   "key": "aura_wrathful_iron_armor",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_DevotionAura",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Seal of Iron",
+    "aura_description": "Armor from items increased by 40%.",
+    "visual": 160
+   }
+  },
+  {
+   "spell_id": 1000696,
+   "calling": "zealot",
+   "key": "aura_deep_ground",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_InnerFire",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 1000
+     }
+    ],
+    "name": "Hallowed Ground",
+    "aura_description": "Heals you each second while you stand in your Hallowed Ground."
+   }
+  },
+  {
+   "spell_id": 1000703,
+   "calling": "zealot",
+   "key": "aura_blazing_fury",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Righteous Fury",
+    "aura_description": "Holy damage causes 80% more threat."
+   }
+  },
+  {
+   "spell_id": 1000705,
+   "calling": "zealot",
+   "key": "aura_furys_ward",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Righteous Fury",
+    "aura_description": "Holy damage causes 50% more threat. Damage taken reduced by 5%."
+   }
+  },
+  {
+   "spell_id": 1000707,
+   "calling": "zealot",
+   "key": "aura_furys_edge",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfFury",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Righteous Fury",
+    "aura_description": "Holy damage causes 50% more threat. Holy damage increased by 10%."
+   }
+  },
+  {
+   "spell_id": 1000712,
+   "calling": "zealot",
+   "key": "aura_wrath_of_ages_stun",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_Excorcism",
+    "mechanic": 12,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "name": "Holy Wrath",
+    "aura_description": "Stunned.",
+    "visual": 2816
+   }
+  },
+  {
+   "spell_id": 1000716,
+   "calling": "zealot",
+   "key": "aura_long_hammer",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Holy_SealOfMight",
+    "mechanic": 12,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "name": "Hammer of Justice",
+    "aura_description": "Stunned.",
+    "visual": 322
    }
   },
   {

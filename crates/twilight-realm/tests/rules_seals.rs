@@ -1,12 +1,19 @@
-//! Damage schools and the Zealot's Seals, as pure rules (ADR 0002): holy damage skips armour,
+//! Damage schools and the old Zealot's Seals, as pure rules (ADR 0002): holy damage skips armour,
 //! Seal of Command's proc chance and damage, and Judgement of Command's holy hit by level and
-//! attack power.
+//! attack power. The Seals live on the test Zealot (`common::TEST_ZEALOT`) since #686.
 
 mod common;
 
-use common::spell;
+use common::{test_zealot_spell, TEST_ZEALOT};
 use twilight_realm::callings::{self, Effect, Seal};
 use twilight_realm::rules::school::{mitigated, School};
+use twilight_realm::Realm;
+
+/// The test Zealot's skill `key`, its Calling added to the process's.
+fn skill(key: &str) -> &'static callings::Skill {
+    let _ = Realm::with_seed(1).with_callings(TEST_ZEALOT);
+    callings::skill(test_zealot_spell(key)).unwrap_or_else(|| panic!("{key}"))
+}
 
 #[test]
 fn holy_damage_ignores_armour() {
@@ -48,10 +55,9 @@ fn seal_of_command_deals_seventy_percent_of_weapon_damage() {
     assert_eq!(weapon_pct_damage(0.0, 70), 0);
 }
 
-/// The Zealot's Seal of Command, as its content says.
+/// The test Zealot's Seal of Command.
 fn seal_of_command() -> Seal {
-    let skill = callings::skill(spell("zealot", "seal_of_command")).expect("Seal of Command");
-    skill
+    skill("seal_of_command")
         .effects
         .iter()
         .find_map(|e| match *e {
@@ -63,7 +69,7 @@ fn seal_of_command() -> Seal {
 
 #[test]
 fn seal_of_command_is_a_thirty_second_seal_of_seven_procs_a_minute_at_seventy_percent() {
-    let skill = callings::skill(spell("zealot", "seal_of_command")).unwrap();
+    let skill = skill("seal_of_command");
     assert!(skill.effects.contains(&Effect::Seal {
         duration_ms: 30_000,
         seal: seal_of_command()
@@ -113,10 +119,9 @@ fn judgement_of_the_crusader_raises_holy_damage_taken() {
     assert_eq!(holy_taken(50, 0), 50);
 }
 
-/// The Zealot's Seal of the Crusader, as its content says.
+/// The test Zealot's Seal of the Crusader.
 fn seal_of_the_crusader() -> Seal {
-    let skill =
-        callings::skill(spell("zealot", "seal_of_the_crusader")).expect("Seal of the Crusader");
+    let skill = skill("seal_of_the_crusader");
     assert!(skill.effects.iter().any(|e| matches!(
         e,
         Effect::Seal {

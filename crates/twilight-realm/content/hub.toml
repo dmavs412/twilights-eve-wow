@@ -2561,3 +2561,24 @@ faces = [-9250.0, -2200.0]
 hidden = true
 text_id = 64180
 greeting = "Nobody ordered us to hold this bridge, $C. That's why it's still standing."
+
+# Brother-Knight Aldren Vale, the Zealot (#686): keeps a vigil among the graves of Tranquil
+# Gardens Cemetery in south-east Duskwood, north of the crypt, where the skeletons keep climbing
+# out. The look is Duthorian Rall's (a placeholder). Role `talker`, as Wren's. z is
+# ground_check.py's.
+[[npc]]
+guid = 9300111
+entry = 190111
+name = "Brother-Knight Aldren Vale"
+subname = "Zealot"
+level = 50
+display_id = 4885
+faction_template = 35
+role = "talker"
+npc_flags = 0x3
+map = 0
+position = [-11009.3, -1324.3, 52.59]
+orientation = 1.57
+hidden = true
+text_id = 64181
+greeting = "Kneel if you like, $C. The dead here won't. That's why I stay."

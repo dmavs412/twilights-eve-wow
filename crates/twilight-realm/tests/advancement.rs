@@ -160,19 +160,16 @@ static TIER_1_SKILLS: std::sync::LazyLock<Vec<u32>> = std::sync::LazyLock::new(|
     ];
     spells("vanguard", &[&keys[..], &["seal_of_iron"]].concat())
 });
-/// Zealot's: Seal of Command, Seal of the Crusader, Judgement, Hammer of Justice, Mortal Strike and
-/// Charge.
+/// What a level 1 Zealot knows (the master CSV, #686): Bulwark Charge, Judgement, Seal of Iron,
+/// Hallowed Ground and Rebuke.
 static ZEALOT_SKILLS: std::sync::LazyLock<Vec<u32>> = std::sync::LazyLock::new(|| {
     let keys = [
-        "seal_of_command",
-        "seal_of_the_crusader",
+        "bulwark_charge",
         "judgement",
-        "hammer_of_justice",
+        "seal_of_iron",
+        "hallowed_ground",
     ];
-    spells(
-        "zealot",
-        &[&keys[..], &["mortal_strike", "charge"]].concat(),
-    )
+    spells("zealot", &[&keys[..], &["rebuke"]].concat())
 });
 /// Bull Rush, a choice of the Basic Warrior's Charge row.
 static BULL_RUSH: std::sync::LazyLock<u32> =
@@ -647,31 +644,21 @@ fn advancement_saves_the_character() {
 
 // ── Ironclad ────────────────────────────────────────────────────────────────────────────────────
 
-/// Since #685 Sergeant Maera Holt at the Lakeshire bridge gives the Ironclad's Oath and her trial
-/// gates it (tests/tier2_ironclad.rs): Wray offers a capped Vanguard only the Zealot's Vow.
+/// Since #685 Sergeant Maera Holt gives the Ironclad's Oath and since #686 Brother-Knight Aldren
+/// Vale the Zealot's Vow, each after a trial (tests/tier2_ironclad.rs, tests/tier2_zealot.rs): Wray
+/// offers a capped Vanguard neither.
 #[test]
-fn at_thirty_wray_offers_the_zealots_vow_and_not_the_ironclads_oath() {
-    let (mut realm, _, events) = questing_at_wray("vanguard", 29);
-    assert!(
-        wray_quests(&mut realm, wray(&events)).is_empty(),
-        "not at 29"
-    );
-
-    let (mut realm, _, events) = questing_at_wray("vanguard", 30);
-    let uzzek = wray(&events);
-    let rows = wray_quests(&mut realm, uzzek);
-    assert_eq!(
-        rows.iter()
-            .map(|r| (r.0, r.1, r.3.as_str()))
-            .collect::<Vec<_>>(),
-        [(
-            THE_ZEALOTS_VOW,
-            dialog_status::AVAILABLE,
-            "The Zealot's Vow"
-        )],
-        "Holt gives the other branch"
-    );
-    assert!(rows.iter().all(|r| r.0 != THE_IRONCLADS_OATH));
+fn at_thirty_wray_offers_neither_tier_2_quest() {
+    for level in [29, 30] {
+        let (mut realm, _, events) = questing_at_wray("vanguard", level);
+        let rows = wray_quests(&mut realm, wray(&events));
+        assert!(
+            rows.iter()
+                .all(|r| r.0 != THE_IRONCLADS_OATH && r.0 != THE_ZEALOTS_VOW),
+            "at {level}: {:?}",
+            rows.iter().map(|r| r.0).collect::<Vec<_>>()
+        );
+    }
 }
 
 #[test]
@@ -682,31 +669,60 @@ fn uzzek_no_longer_offers_the_tier_2_quests() {
 
 // ── Zealot ──────────────────────────────────────────────────────────────────────────────────────
 
-/// A Vanguard at the cap in Jouster's Chestplate.
+/// Brother-Knight Aldren Vale, who gives the Zealot's Vow (#686), and his trial.
+const VALE: u32 = 190111;
+const VALES_TRIAL: [u32; 3] = [64416, 64417, 64418];
+
+/// A Vanguard at the cap in Jouster's Chestplate beside Vale in Tranquil Gardens, the Zealot's Vow
+/// taken and his trial done.
 fn capped_vanguard() -> (Realm, u64, Vec<SessionEvent>) {
-    let (guid, blob) = save_with_quests(30, &[(4, JOUSTERS_CHESTPLATE, 1)], 0, &[]);
-    let blob = at_wray(&blob).replace("calling = \"basic_warrior\"", "calling = \"vanguard\"");
+    let (guid, blob) = save_with_quests(
+        30,
+        &[(4, JOUSTERS_CHESTPLATE, 1)],
+        0,
+        &[(THE_ZEALOTS_VOW, [0; 4])],
+    );
+    let [x, y, z] = hub_home(hub_guid(VALE));
+    let (head, tail) = blob.split_once("\n[").unwrap_or((&blob, ""));
+    let head: Vec<String> = head
+        .lines()
+        .map(|line| {
+            if line.starts_with("map = ") {
+                "map = 0".to_string()
+            } else if line.starts_with("zone = ") {
+                "zone = 10".to_string()
+            } else if line.starts_with("position = [") {
+                format!("position = [{}, {y:?}, {z:?}]", x + 1.5)
+            } else if line == "xp = 0" {
+                format!("xp = 0\ncompleted = {VALES_TRIAL:?}")
+            } else {
+                line.to_string()
+            }
+        })
+        .collect();
+    let blob = format!("{}\n[{tail}", head.join("\n"))
+        .replace("calling = \"basic_warrior\"", "calling = \"vanguard\"");
     let mut realm = Realm::with_seed(SEED);
-    realm.import_character(&blob).unwrap();
+    realm
+        .import_character(&blob)
+        .unwrap_or_else(|e| panic!("{e:?}: {blob}"));
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);
     let events = drain(&mut realm);
     (realm, guid, events)
 }
 
-/// Takes the Zealot's Vow and hands it in.
-fn become_zealot(realm: &mut Realm, npc: u64) -> Vec<SessionEvent> {
-    let mut events = take(realm, npc, THE_ZEALOTS_VOW);
-    events.extend(hand_in(realm, npc, THE_ZEALOTS_VOW));
-    events
+/// Hands the Zealot's Vow in to Vale.
+fn become_zealot(realm: &mut Realm) -> Vec<SessionEvent> {
+    hand_in(realm, hub_guid(VALE), THE_ZEALOTS_VOW)
 }
 
 #[test]
-fn the_zealots_vow_makes_a_level_1_zealot_with_six_skills_in_the_same_plate() {
+fn the_zealots_vow_makes_a_level_1_zealot_with_its_kit_in_the_same_plate() {
     let (mut realm, me, mut events) = capped_vanguard();
     let chest = descriptor(&events, me).player_inv_slot(4);
     assert!(chest.is_some(), "the plate is worn");
-    let advanced = become_zealot(&mut realm, wray(&events));
+    let advanced = become_zealot(&mut realm);
     assert!(completed(&advanced).is_some(), "it completes");
     events.extend(advanced);
 
@@ -717,7 +733,7 @@ fn the_zealots_vow_makes_a_level_1_zealot_with_six_skills_in_the_same_plate() {
     assert_eq!(
         spellbook(&events),
         ZEALOT_SKILLS.iter().copied().collect(),
-        "exactly the six, the Vanguard kit forgotten"
+        "exactly the level 1 kit, the Vanguard kit forgotten"
     );
     assert_eq!(now.player_inv_slot(4), chest, "the plate stays worn");
     assert_eq!(now.unit_shapeshift_form(), 17, "still in Battle Stance");
@@ -734,13 +750,13 @@ fn a_zealot_has_the_tier_2_bonus_on_its_sheet() {
         std::array::from_fn(|i| f.unit_stat(i as u8).unwrap())
     };
     let [s, a, st, i, sp] = stats(&basic);
-    assert_eq!(stats(&zealot), [s + 28, a + 14, st + 28, i, sp + 7]);
+    assert_eq!(stats(&zealot), [s + 24, a + 12, st + 24, i, sp + 6]);
 }
 
 #[test]
 fn a_zealot_save_round_trips_and_names_the_calling() {
-    let (mut realm, me, events) = capped_vanguard();
-    become_zealot(&mut realm, wray(&events));
+    let (mut realm, me, _) = capped_vanguard();
+    become_zealot(&mut realm);
     realm.handle(RealmCommand::Logout);
     assert_eq!(realm.calling_name(me), Some("Zealot"));
     let blob = realm.export_character(me).unwrap();

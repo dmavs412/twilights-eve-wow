@@ -2298,6 +2298,10 @@ fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
         (UNIT_FIELD_BASE_HEALTH, s.base_health),
         (UNIT_FIELD_MAXPOWER1, s.max_mana),
         (
+            UNIT_FIELD_MAXPOWER1 + PowerKind::Rage.id() as u16,
+            rage::MAX + s.max_rage_bonus,
+        ),
+        (
             UNIT_FIELD_MAXPOWER1 + PowerKind::Energy.id() as u16,
             power_rules::ENERGY_MAX + s.max_energy_bonus,
         ),
@@ -2370,7 +2374,7 @@ fn player_fields(c: &Char, stats: &CharacterStats, power: &Power) -> ObjectField
         (UNIT_FIELD_HEALTH, stats.max_health),
         power.field(),
         (UNIT_FIELD_MAXPOWER1, stats.max_mana),
-        (UNIT_FIELD_MAXPOWER2, rage::MAX),
+        (UNIT_FIELD_MAXPOWER2, rage::MAX + stats.max_rage_bonus),
         (
             UNIT_FIELD_MAXPOWER1 + PowerKind::Focus.id() as u16,
             power_rules::FOCUS_MAX,

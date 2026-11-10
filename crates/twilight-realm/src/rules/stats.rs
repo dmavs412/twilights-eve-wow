@@ -60,6 +60,8 @@ pub struct CharacterStats {
     pub armor_pen: u32,
     /// What talents add to the Energy bar's 100; Mana's goes straight into `max_mana`.
     pub max_energy_bonus: u32,
+    /// What talents add to the Rage bar's fixed cap, in tenths as the bar stores it.
+    pub max_rage_bonus: u32,
     /// The percent talents raise the run speed by.
     pub run_speed_pct: u32,
     /// 0 without the Parry skill, which the slice's warriors do not train; talents add to it.
@@ -340,6 +342,7 @@ impl CharacterStats {
             dodge_pct: f64::from(agi) / tables::at(&t.agi_per_dodge, level),
             armor_pen: 0,
             max_energy_bonus: 0,
+            max_rage_bonus: 0,
             run_speed_pct: 0,
             parry_pct: 0.0,
             block_pct: gear.shield_block.map_or(0.0, |_| block_pct(defense, level)),

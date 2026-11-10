@@ -38,7 +38,7 @@ cooldown_ms = 0
 gcd_ms = 0
 target = "enemy"
 range_yd = [0.0, 30.0]
-effects = [{ kind = "judgement", seal_spell_id = 900102, amount = { base = 50.0 }, school = "holy", heal_pct = 10 }]
+effects = [{ kind = "judgement", seal_spell_ids = [900102], amount = { base = 50.0 }, school = "holy", heal_pct = 10 }]
 
 [[calling.skill]]
 key = "zeal"

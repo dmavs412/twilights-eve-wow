@@ -1,4 +1,5 @@
-//! The Zealot's borrowed Paladin skills, through the realm's seam: Hammer of Justice's stun, the
+//! The old Zealot's borrowed Paladin skills, through the realm's seam on the test Zealot
+//! (`common::TEST_ZEALOT`; since #686 no shipped Calling has them): Hammer of Justice's stun, the
 //! Seals (one at a time; Seal of Command's holy procs; Seal of the Crusader's haste and attack
 //! power) and Judgement consuming the Seal, for a holy hit or the Crusader's holy damage taken.
 
@@ -10,15 +11,15 @@ use common::fight::*;
 use common::*;
 
 static HAMMER_OF_JUSTICE: std::sync::LazyLock<u32> =
-    std::sync::LazyLock::new(|| spell("zealot", "hammer_of_justice"));
+    std::sync::LazyLock::new(|| test_zealot_spell("hammer_of_justice"));
 static SEAL_OF_COMMAND: std::sync::LazyLock<u32> =
-    std::sync::LazyLock::new(|| spell("zealot", "seal_of_command"));
+    std::sync::LazyLock::new(|| test_zealot_spell("seal_of_command"));
 static SEAL_OF_THE_CRUSADER: std::sync::LazyLock<u32> =
-    std::sync::LazyLock::new(|| spell("zealot", "seal_of_the_crusader"));
+    std::sync::LazyLock::new(|| test_zealot_spell("seal_of_the_crusader"));
 static JUDGEMENT: std::sync::LazyLock<u32> =
-    std::sync::LazyLock::new(|| spell("zealot", "judgement"));
+    std::sync::LazyLock::new(|| test_zealot_spell("judgement"));
 static MORTAL_STRIKE: std::sync::LazyLock<u32> =
-    std::sync::LazyLock::new(|| spell("zealot", "mortal_strike"));
+    std::sync::LazyLock::new(|| test_zealot_spell("mortal_strike"));
 const MAIN_HAND: u8 = 15;
 /// A two-handed axe.
 const LARGE_AXE: u32 = 2491;

@@ -664,12 +664,13 @@ pub(crate) fn stats(c: &Char) -> CharacterStats {
     s.armor_pen = sum(c, |e| matches!(e, TalentEffect::ArmorPen { .. }));
     s.run_speed_pct = sum(c, |e| matches!(e, TalentEffect::ModRunSpeed { .. }));
     s.offhand_damage_pct = sum(c, |e| matches!(e, TalentEffect::OffhandDamagePct { .. }));
-    // Max power is of the Calling's own bar; a rage bar has a fixed cap.
+    // Max power is of the Calling's own bar, rage's in tenths (Fervent); focus has a fixed cap.
     let max_power = sum(c, |e| matches!(e, TalentEffect::MaxPower { .. }));
     match crate::callings::of(c.calling).power {
         PowerKind::Mana => s.max_mana += max_power,
         PowerKind::Energy => s.max_energy_bonus = max_power,
-        PowerKind::Rage | PowerKind::Focus => {}
+        PowerKind::Rage => s.max_rage_bonus = max_power,
+        PowerKind::Focus => {}
     }
     s.crit_pct += f64::from(sum(
         c,

@@ -1,5 +1,5 @@
-//! Mortal Strike's wound, played through the realm's seam as a Zealot (the one Calling that still
-//! has it).
+//! Mortal Strike's wound, played through the realm's seam as the test Zealot
+//! (`common::TEST_ZEALOT`, the old Zealot's kit; no shipped Calling has it since #686).
 
 mod common;
 
@@ -7,7 +7,7 @@ use benilla_protocol::SessionEvent;
 use common::*;
 
 static MORTAL_STRIKE: std::sync::LazyLock<u32> =
-    std::sync::LazyLock::new(|| spell("zealot", "mortal_strike"));
+    std::sync::LazyLock::new(|| test_zealot_spell("mortal_strike"));
 
 #[test]
 fn mortal_strike_strikes_and_wounds_the_target() {

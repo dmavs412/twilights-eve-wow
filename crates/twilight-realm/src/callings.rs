@@ -1480,6 +1480,23 @@ pub enum CritIf {
     GroundEffect,
 }
 
+/// The aura rows a sheet Judgement judges, by spell id: a Seal and its Skill Choices' Seals, 0 for
+/// an empty place. All zeros is the TOML's Judgement, of the active Seal.
+pub type SealIds = [u32; 4];
+
+/// Reads a list of up to four Seal spell ids into [`SealIds`].
+fn seal_ids<'de, D: serde::Deserializer<'de>>(d: D) -> Result<SealIds, D::Error> {
+    let ids = Vec::<u32>::deserialize(d)?;
+    let mut out = [0; 4];
+    if ids.len() > out.len() || ids.contains(&0) {
+        return Err(serde::de::Error::custom(format!(
+            "a judgement judges 1 to 4 Seals by spell id, has {ids:?}"
+        )));
+    }
+    out[..ids.len()].copy_from_slice(&ids);
+    Ok(out)
+}
+
 /// One thing a skill does.
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -2136,13 +2153,13 @@ pub enum Effect {
     /// active: a new one replaces the old.
     Seal { duration_ms: u32, seal: Seal },
     /// Consumes the caster's active Seal for its judgement on the target. With no Seal active the
-    /// cast fails and costs nothing. With `seal_spell_id` (resolved by the build from
-    /// `seal=key`), it judges that aura row of the Calling instead: the cast needs the caster to
-    /// wear it, takes it off, deals `amount` in `school` to the target and heals the caster
-    /// `heal_pct` percent of their maximum health.
+    /// cast fails and costs nothing. With `seal_spell_ids` (resolved from `seal=key|key`), it
+    /// judges those aura rows of the Calling instead (a Seal and its Skill Choices' Seals): the
+    /// cast needs the caster to wear one, takes it off, deals `amount` in `school` to the target
+    /// and heals the caster `heal_pct` percent of their maximum health.
     Judgement {
-        #[serde(default)]
-        seal_spell_id: Option<u32>,
+        #[serde(default, deserialize_with = "seal_ids")]
+        seal_spell_ids: SealIds,
         #[serde(default)]
         amount: Option<Linear>,
         #[serde(default)]
@@ -2405,6 +2422,8 @@ pub enum Seal {
 
 #[derive(Deserialize)]
 struct Callings {
+    /// None in `content/callings.toml` since #686: every shipped Calling is the sheet's.
+    #[serde(default)]
     calling: Vec<CallingDef>,
 }
 

@@ -7,6 +7,14 @@ use crate::rules::power::{self, PowerKind};
 use crate::rules::rage;
 use crate::rules::stats::CharacterStats;
 
+/// What talents add to a bar of `kind`'s cap, as it stores it (rage in tenths).
+pub(super) fn talent_bonus(kind: PowerKind, stats: &CharacterStats) -> u32 {
+    match kind {
+        PowerKind::Rage => stats.max_rage_bonus,
+        _ => stats.max_energy_bonus,
+    }
+}
+
 /// One bar, stored as its client field carries it: rage in tenths, energy, focus and mana whole.
 pub(super) struct Power {
     pub(super) kind: PowerKind,
@@ -29,7 +37,7 @@ impl Power {
     /// rest full (vmangos `Player::InitStatsForLevel`, `ResurrectPlayer`). An energy bar gains
     /// `energy_per_tick` every tick.
     pub(super) fn fresh(stats: &CharacterStats, kind: PowerKind, energy_per_tick: u32) -> Self {
-        let max = power::cap(kind, stats.max_mana, stats.max_energy_bonus);
+        let max = power::cap(kind, stats.max_mana, talent_bonus(kind, stats));
         Self {
             kind,
             current: if kind == PowerKind::Rage { 0 } else { max },
@@ -44,7 +52,7 @@ impl Power {
 
     /// The max follows new `stats` (a level, a piece of gear); what is held stays, clamped.
     pub(super) fn resize(&mut self, stats: &CharacterStats) {
-        self.max = power::cap(self.kind, stats.max_mana, stats.max_energy_bonus);
+        self.max = power::cap(self.kind, stats.max_mana, talent_bonus(self.kind, stats));
         self.current = self.current.min(self.max);
     }
 

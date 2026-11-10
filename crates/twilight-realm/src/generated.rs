@@ -328,12 +328,30 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
             }
         }
     }
+    // The Seals a judgement judges (`seal=key`, or a list from `seal=key|key`; a `seal` effect's
+    // `seal` is its own block), by their rows' spell ids.
+    if e.kind == "judgement" {
+        if let Some(keys) = object.remove("seal") {
+            let keys = match keys {
+                Value::Array(keys) => keys,
+                key => vec![key],
+            };
+            let ids = keys
+                .iter()
+                .map(|key| {
+                    let aura = auras
+                        .iter()
+                        .find(|a| a.modelled && key.as_str() == Some(a.key.as_str()))?;
+                    Some(Value::from(aura.spell_id))
+                })
+                .collect::<Option<Vec<_>>>()?;
+            object.insert("seal_spell_ids".into(), Value::Array(ids));
+        }
+    }
     // A ground area's auras (`enemy_aura=key`, `ally_aura=key`), the aura rows a shield puts on its
     // attacker, a burn's tick gives its caster and a hit is stronger against, the damage over
-    // time a drain's tick and an area's clock grow, the Seal a judgement judges (a `seal`
-    // effect's `seal` is its own block) and the aura a stack consume grants, by their rows' spell
-    // ids.
-    let judges = (e.kind == "judgement").then_some("seal");
+    // time a drain's tick and an area's clock grow, and the aura a stack consume grants, by their
+    // rows' spell ids.
     for side in [
         "enemy_aura",
         "ally_aura",
@@ -343,10 +361,7 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
         "tick_grow_aura",
         "grow_aura",
         "grant",
-    ]
-    .into_iter()
-    .chain(judges)
-    {
+    ] {
         if let Some(key) = object.remove(side) {
             let aura = auras
                 .iter()

@@ -379,8 +379,18 @@ one is a placeholder.
 | Hold the Line and its buff (#685) | master CSV | `Ability_Warrior_Challange` |
 | The Ironclad's Talents (#685) | master CSV, rows 25 and 50 | `INV_Chest_Plate04`, `INV_Shield_04`, `Spell_Holy_BlessingOfStamina`, `Spell_Holy_Heal`, `Spell_Holy_RighteousFury`, `Spell_Holy_SealOfValor` |
 | Blackrock Shield, the trial's quest item (#685) | `content/quest_items.toml`, entry 980811 | display 17943, `INV_Shield_20` |
+| Brother-Knight Aldren Vale, the Zealot trainer (#686) | `content/hub.toml`, entry 190111 | display 4885, Duthorian Rall's look. Wanted: a knight in white-and-gold plate, bareheaded, a warhammer at his belt, kneeling among graves. |
+| Zealot Calling icon (#686) | `callings.csv` | `Spell_Holy_RighteousFury` |
+| Judgement (#686) | master CSV | `Spell_Holy_RighteousFury` |
+| Hallowed Ground and its heal auras (#686) | master CSV | `Spell_Holy_InnerFire` |
+| Righteous Fury and its buffs (#686) | master CSV | `Spell_Holy_SealOfFury` |
+| Holy Wrath and its stuns (#686) | master CSV | `Spell_Holy_Excorcism` |
+| Hammer of Justice and its stuns (#686) | master CSV | `Spell_Holy_SealOfMight` |
+| The Zealot's Talents (#686) | master CSV, rows 25 and 50 | `Spell_Holy_FlashHeal`, `INV_Chest_Plate02`, `Ability_Warrior_InnerRage`, `Spell_Holy_PrayerOfHealing02`, `Spell_Holy_BlessedRecovery`, `INV_Hammer_04` |
+| Hallowed Bone, the trial's quest item (#686) | `content/quest_items.toml`, entry 980821 | display 1273, `INV_Misc_Bone_DwarfSkull_01` |
 
 The Sharpshooter's carried skills (Auto Shot, Puncturing Shaft, Rapid Fire, Silencing Shot) keep
 the Ranger's icons. Its trial has no quest items. The Ironclad's carried skills (Righteous Smash,
 Shield of the Penitent, Rebuke) keep the Vanguard's icons, and Shield Rebuke's stun shows
-`Ability_Warrior_ShieldBash`.
+`Ability_Warrior_ShieldBash`. The Zealot's carried skills (Bulwark Charge and its Consecration,
+Seal of Iron and its armour spike, Rebuke) keep the Vanguard's icons.

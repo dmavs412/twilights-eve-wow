@@ -477,6 +477,8 @@ struct Ground {
     /// they stood inside at the last look.
     caster_aura: Option<&'static callings::AuraDef>,
     caster_inside: bool,
+    /// The percent more that aura's heal a tick heals (Sanctified, the skill's `skill_amount_pct`).
+    heal_more: u32,
 }
 
 impl Aura {
@@ -4080,10 +4082,11 @@ impl InWorld {
         // Judgement needs a Seal to judge: the TOML's active Seal, or the aura row it names.
         for effect in &skill.effects {
             let worn = match *effect {
-                Effect::Judgement {
-                    seal_spell_id: Some(id),
-                    ..
-                } => self.skills.on(self.guid, id),
+                Effect::Judgement { seal_spell_ids, .. } if seal_spell_ids[0] != 0 => {
+                    seal_spell_ids
+                        .iter()
+                        .any(|&id| id != 0 && self.skills.on(self.guid, id))
+                }
                 Effect::Judgement { .. } => self.skills.seal().is_some(),
                 _ => true,
             };
@@ -4316,6 +4319,23 @@ impl InWorld {
         let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
             return Landed::Hit;
         };
+        // A sheet Judgement never misses, but crits at the caster's chance plus the skill's
+        // (Hammer and Anvil).
+        let judges = skill.effects.iter().any(
+            |e| matches!(e, Effect::Judgement { seal_spell_ids, .. } if seal_spell_ids[0] != 0),
+        );
+        if !rolls && judges {
+            let stats = buffed(&self.player.stats, &self.skills);
+            let crit = (stats.crit_pct * 100.0) as u32
+                + (crate::talents::skill_crit_pct(c, &skill.key)
+                    + self.skills.skill_crit_pct(skill))
+                    * 100;
+            return if rng.below(ROLL) < crit {
+                Landed::Crit
+            } else {
+                Landed::Hit
+            };
+        }
         if !rolls {
             return Landed::Hit;
         }
@@ -5215,6 +5235,7 @@ impl InWorld {
                     caster_aura: caster_aura_spell_id
                         .and_then(|id| callings::of(c.calling).aura_by_spell(id)),
                     caster_inside: false,
+                    heal_more: crate::talents::amount_pct(c, &skill.key),
                 };
                 let old: Vec<Ground> = self
                     .skills
@@ -5687,15 +5708,16 @@ impl InWorld {
             }
             // A sheet Seal: an aura row of the Calling, judged for a hit and a heal.
             Effect::Judgement {
-                seal_spell_id: Some(seal),
+                seal_spell_ids,
                 amount,
                 school,
                 heal_pct,
-            } => {
+            } if seal_spell_ids[0] != 0 => {
                 let me = self.guid;
-                let gone = self
-                    .skills
-                    .remove_where(|a| a.unit == me && a.spell_id == seal, events);
+                let gone = self.skills.remove_where(
+                    |a| a.unit == me && a.spell_id != 0 && seal_spell_ids.contains(&a.spell_id),
+                    events,
+                );
                 self.faded(&gone, events);
                 if gone.is_empty() {
                     return;
@@ -7322,6 +7344,15 @@ impl InWorld {
             let inside = alive && flat_distance(g.centre, c.position) <= g.radius_yd;
             if inside && !self.skills.on(me, def.spell_id) {
                 self.put_aura(def, me, c.power_level(), events);
+                if g.heal_more > 0 {
+                    for a in self.skills.auras.iter_mut() {
+                        if let (true, AuraKind::Heal { per_tick, .. }) =
+                            (a.unit == me && a.spell_id == def.spell_id, &mut a.kind)
+                        {
+                            *per_tick = scaled(*per_tick, g.heal_more);
+                        }
+                    }
+                }
             } else if !inside {
                 self.ward_off(g, events);
             }

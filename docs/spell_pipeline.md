@@ -275,6 +275,13 @@ fresh power bar, as Release Spirit gives. A decline drops the offer, and a relea
 answer do nothing. A skill's `periodic_heal` with `apply_aura` on a `target=ally` row already
 reads the aura row's `pct_of=health_cost;pct=N`: the friend heals N% of the health the cast cost,
 spread over the aura's ticks.
+The Zealot (#686): a `judgement`'s `seal` takes up to four aura rows, `seal=key|key`, a Seal and
+the Seals its Skill Choices grant (Seal of Mending), so a chosen Seal can still be judged; the cast
+needs one of them worn and takes off what is. A judgement of a sheet Seal still never misses, but
+now crits at the caster's crit chance plus the skill's `skill_crit_pct` (Hammer and Anvil). A
+Talent's `max_power` on a rage Calling raises the rage bar's cap by `amount`, in tenths as the bar
+stores it (Fervent's `amount=100` is 10 rage). A `skill_amount_pct` on a skill with a
+`ground_effect` raises the heal of the patch's `caster_aura` a tick (Sanctified on Hallowed Ground).
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

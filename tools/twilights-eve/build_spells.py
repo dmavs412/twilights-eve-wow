@@ -1881,8 +1881,14 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
                 raise BuildError(f"{here}: copy_aura aura {parsed['aura']!r} has no periodic_damage effect to copy")
         if kind == "pickup" and parsed.get("grants") not in auras:
             raise BuildError(f"{here}: grants {parsed.get('grants')!r} is not an aura row of this Calling")
-        if kind == "judgement" and "seal" in parsed and parsed["seal"] not in auras:
-            raise BuildError(f"{here}: seal {parsed['seal']!r} is not an aura row of this Calling")
+        if kind == "judgement" and "seal" in parsed:
+            # One Seal, or a Seal and its Skill Choices' Seals (`seal=key|key`), four at most.
+            seals = parsed["seal"] if isinstance(parsed["seal"], list) else [parsed["seal"]]
+            if len(seals) > 4:
+                raise BuildError(f"{here}: a judgement judges at most 4 Seals, has {len(seals)}")
+            for seal in seals:
+                if seal not in auras:
+                    raise BuildError(f"{here}: seal {seal!r} is not an aura row of this Calling")
         if kind == "school_damage" and "per_mana_pct" in parsed and out.get("cost_kind") != "all_remaining":
             raise BuildError(f"{here}: per_mana_pct needs cost_kind=all_remaining")
         if kind == "mod_threat_pct" and row["kind"] != "aura":

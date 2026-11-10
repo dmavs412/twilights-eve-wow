@@ -3468,127 +3468,31 @@
    "crossbow",
    "fishing_pole"
   ],
-  "icon": "Interface\\Icons\\Ability_Warrior_InnerRage",
+  "icon": "Interface\\Icons\\Spell_Holy_RighteousFury",
   "spellbook": "Zealot",
   "blurb": "A holy fury in plate. Stands in its own Consecration, judges its Seal to mend itself, and is the dead's worst enemy.",
   "skills": [
-   {
-    "key": "seal_of_command",
-    "name": "Seal of Command",
-    "rank": 1,
-    "status": "placeholder",
-    "icon_id": 561,
-    "spell_id": 1000065,
-    "realm_cost": 10,
-    "realm_cooldown_ms": 0,
-    "realm_gcd_ms": 1500,
-    "target": "self",
-    "school": "physical",
-    "prevention": "pacify",
-    "cost_kind": "flat",
-    "cast_kind": "instant",
-    "interrupt_on": [],
-    "defense_type": "none",
-    "on_cast": {
-     "breaks_stealth": true,
-     "starts_auto_attack": false,
-     "resets_swing": false
-    },
-    "weapon_hand": "main",
-    "max_targets": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "seal",
-      "params": {
-       "duration_ms": 30000,
-       "seal": {
-        "kind": "command",
-        "procs_per_minute": 7.0,
-        "weapon_pct": 70,
-        "proc_spell_id": 20424,
-        "judgement_spell_id": 20467,
-        "judgement": {
-         "base": 30.0,
-         "per_level": 3.0,
-         "per_ap": 0.15
-        }
-       }
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "A 30 s self Seal: a landed white swing has 7 procs a minute (vmangos) of a holy hit of 70% of a weapon roll (20424). Judged: a holy hit under Judgement of Command (20467). Holy ignores armour."
-   },
-   {
-    "key": "seal_of_the_crusader",
-    "name": "Seal of the Crusader",
-    "rank": 1,
-    "status": "placeholder",
-    "icon_id": 237,
-    "spell_id": 1000066,
-    "realm_cost": 10,
-    "realm_cooldown_ms": 0,
-    "realm_gcd_ms": 1500,
-    "target": "self",
-    "school": "physical",
-    "prevention": "pacify",
-    "cost_kind": "flat",
-    "cast_kind": "instant",
-    "interrupt_on": [],
-    "defense_type": "none",
-    "on_cast": {
-     "breaks_stealth": true,
-     "starts_auto_attack": false,
-     "resets_swing": false
-    },
-    "weapon_hand": "main",
-    "max_targets": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "seal",
-      "params": {
-       "duration_ms": 30000,
-       "seal": {
-        "kind": "crusader",
-        "attack_power": {
-         "base": 20.0,
-         "per_level": 4.0
-        },
-        "haste_pct": 40,
-        "judgement_spell_id": 20300,
-        "judgement_duration_ms": 10000,
-        "holy_taken_pct": 20
-       }
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "A 30 s self Seal that replaces any other: 20 + 4 attack power a level, swings 40% faster with each hit cut to match (so the haste alone adds no damage a second). Judged: Judgement of the Crusader Rank 3 (20300) on the target for 10 s, 20% more holy damage taken (vanilla's is a flat amount), its duration refreshed by each landed white swing at the target."
-   },
    {
     "key": "judgement",
     "name": "Judgement",
     "rank": 1,
     "status": "placeholder",
-    "icon_id": 205,
     "spell_id": 1000067,
-    "realm_cost": 5,
-    "realm_cooldown_ms": 10000,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 8000,
     "realm_gcd_ms": 0,
     "realm_range_min": 0,
     "realm_range_max": 10,
     "target": "enemy",
-    "school": "physical",
-    "prevention": "pacify",
+    "school": "holy",
+    "prevention": "silence",
     "cost_kind": "flat",
     "cast_kind": "instant",
     "interrupt_on": [],
-    "defense_type": "melee",
+    "defense_type": "magic",
     "on_cast": {
      "breaks_stealth": true,
-     "starts_auto_attack": true,
+     "starts_auto_attack": false,
      "resets_swing": false
     },
     "weapon_hand": "main",
@@ -3597,34 +3501,48 @@
     "effects": [
      {
       "kind": "judgement",
-      "params": {},
+      "params": {
+       "seal": [
+        "aura_seal_of_iron",
+        "aura_seal_of_mending",
+        "aura_seal_of_fervor",
+        "aura_wrathful_iron"
+       ],
+       "amount": {
+        "base": 40,
+        "per_level": 3,
+        "per_ap": 0
+       },
+       "heal_pct": 10,
+       "school": "holy"
+      },
       "realm_only": false
      }
     ],
-    "description": "Consumes the active Seal for that Seal's judgement; with no Seal it fails and costs nothing."
+    "description": "Judges your Seal of Iron, taking it off, for 40 + 3 per level Holy damage, and heals you for 10% of your maximum health. Needs a Seal of Iron."
    },
    {
     "key": "hammer_of_justice",
     "name": "Hammer of Justice",
     "rank": 1,
     "status": "placeholder",
-    "icon_id": 302,
     "spell_id": 1000068,
     "realm_cost": 15,
     "realm_cooldown_ms": 60000,
     "realm_gcd_ms": 1500,
     "realm_range_min": 0,
     "realm_range_max": 10,
+    "learn_level": 30,
     "target": "enemy",
-    "school": "physical",
-    "prevention": "pacify",
+    "school": "holy",
+    "prevention": "silence",
     "cost_kind": "flat",
     "cast_kind": "instant",
     "interrupt_on": [],
-    "defense_type": "melee",
+    "defense_type": "magic",
     "on_cast": {
      "breaks_stealth": true,
-     "starts_auto_attack": true,
+     "starts_auto_attack": false,
      "resets_swing": false
     },
     "weapon_hand": "main",
@@ -3634,72 +3552,20 @@
      {
       "kind": "stun",
       "params": {
-       "duration_ms": 6000,
-       "aura_spell_id": 10308
+       "apply_aura": "aura_hammer_of_justice"
       },
       "realm_only": false
      }
     ],
-    "description": "Stuns the target for $d."
+    "description": "Stuns the target for 6 sec."
    },
    {
-    "key": "mortal_strike",
-    "name": "Mortal Strike",
-    "rank": 1,
-    "status": "placeholder",
-    "icon_id": 564,
-    "spell_id": 1000069,
-    "realm_cost": 30,
-    "realm_cooldown_ms": 6000,
-    "realm_gcd_ms": 1500,
-    "realm_range_min": 0,
-    "realm_range_max": 5,
-    "target": "enemy",
-    "school": "physical",
-    "prevention": "pacify",
-    "cost_kind": "flat",
-    "cast_kind": "instant",
-    "interrupt_on": [],
-    "defense_type": "melee",
-    "on_cast": {
-     "breaks_stealth": true,
-     "starts_auto_attack": true,
-     "resets_swing": false
-    },
-    "weapon_hand": "main",
-    "max_targets": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "weapon_strike",
-      "params": {
-       "weapon": "normalized",
-       "bonus": {
-        "base": 25,
-        "per_level": 2.5,
-        "per_ap": 0
-       }
-      },
-      "realm_only": false
-     },
-     {
-      "kind": "healing_reduction",
-      "params": {
-       "pct": 50,
-       "duration_ms": 10000
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "A vicious strike that deals weapon damage plus $s2 and wounds the target, reducing the effectiveness of any healing by $s1% for $d."
-   },
-   {
-    "key": "charge",
-    "name": "Charge",
+    "key": "bulwark_charge",
+    "name": "Bulwark Charge",
     "rank": 1,
     "status": "placeholder",
     "icon_id": 457,
-    "spell_id": 1000070,
+    "spell_id": 1000670,
     "realm_cost": 0,
     "realm_cooldown_ms": 15000,
     "realm_gcd_ms": 0,
@@ -3708,10 +3574,6 @@
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
-    "requires": {
-     "combat": "out"
-    },
-    "requires_out_of_combat": true,
     "cost_kind": "flat",
     "cast_kind": "instant",
     "interrupt_on": [],
@@ -3737,28 +3599,2335 @@
       "params": {
        "power": "rage",
        "amount": {
-        "base": 11,
-        "per_level": 0.1,
+        "base": 17,
+        "per_level": 0,
         "per_ap": 0
        }
       },
       "realm_only": false
      },
      {
+      "kind": "ground_effect",
+      "params": {
+       "radius_yd": 8,
+       "tick_ms": 1000,
+       "duration_ms": 8000,
+       "school": "holy",
+       "amount": {
+        "base": 24,
+        "per_level": 0.6
+       },
+       "caster_aura_spell_id": 1000672,
+       "ground_spell_id": 1000671
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Charge an enemy, generating 17 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes 24 + 0.6 per level Holy damage. You take 10% less damage while you stand in it. Usable in combat."
+   },
+   {
+    "key": "consecration",
+    "name": "Consecration",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000671,
+    "spellbook": false,
+    "school": "holy",
+    "prevention": "silence",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": false,
+    "effects": [],
+    "description": "The holy ground Bulwark Charge leaves at its destination."
+   },
+   {
+    "key": "seal_of_iron",
+    "name": "Seal of Iron",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000673,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 1500,
+    "target": "self",
+    "school": "holy",
+    "prevention": "silence",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_seal_of_iron"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike."
+   },
+   {
+    "key": "hallowed_ground",
+    "name": "Hallowed Ground",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000675,
+    "realm_cost": 15,
+    "realm_cooldown_ms": 20000,
+    "realm_gcd_ms": 1500,
+    "realm_range_min": 0,
+    "realm_range_max": 0,
+    "target": "self",
+    "school": "holy",
+    "prevention": "silence",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "ground_effect",
+      "params": {
+       "radius_yd": 8,
+       "tick_ms": 1000,
+       "duration_ms": 10000,
+       "school": "holy",
+       "amount": {
+        "base": 6,
+        "per_level": 0.8
+       },
+       "caster_aura_spell_id": 1000676
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Consecrates the ground at your feet for 10 sec: each second every enemy within 8 yd takes 6 + 0.8 per level Holy damage, and while you stand in it you heal 8 + 1 per level a second. It replaces your Bulwark Charge's Consecration."
+   },
+   {
+    "key": "righteous_fury",
+    "name": "Righteous Fury",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000677,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 1500,
+    "learn_level": 10,
+    "target": "self",
+    "school": "holy",
+    "prevention": "silence",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_righteous_fury"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "For 5 min your Holy damage causes 50% more threat."
+   },
+   {
+    "key": "rebuke",
+    "name": "Rebuke",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000678,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 12000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "holy",
+    "prevention": "silence",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 4500
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "energize",
+      "params": {
+       "power": "rage",
+       "amount": {
+        "base": 10,
+        "per_level": 0,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain 10 Rage."
+   },
+   {
+    "key": "holy_wrath",
+    "name": "Holy Wrath",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000679,
+    "realm_cost": 20,
+    "realm_cooldown_ms": 15000,
+    "realm_gcd_ms": 1500,
+    "realm_range_min": 0,
+    "realm_range_max": 0,
+    "realm_radius_yd": 8,
+    "learn_level": 20,
+    "target": "self_area",
+    "school": "holy",
+    "prevention": "silence",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": null,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 30,
+        "per_level": 2.5
+       },
+       "vs_type": "undead",
+       "vs_type_pct": 100,
+       "school": "holy"
+      },
+      "realm_only": false
+     },
+     {
       "kind": "stun",
       "params": {
-       "duration_ms": 1000,
+       "apply_aura": "aura_holy_wrath_stun",
+       "only_type": "undead"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Deals 30 + 2.5 per level Holy damage to every enemy within 8 yd, double to undead, and stuns the undead for 2 sec."
+   }
+  ],
+  "auras": [
+   {
+    "key": "aura_consecration_ward",
+    "name": "Consecrated Ground",
+    "spell_id": 1000672,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_taken_pct",
+      "params": {
+       "pct": -10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Damage taken reduced by 10%."
+   },
+   {
+    "key": "aura_seal_of_iron",
+    "name": "Seal of Iron",
+    "spell_id": 1000673,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 30000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 25,
+       "heal_pct": 4
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 25,
+       "apply_aura": "aura_seal_of_iron_armor"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Melee attacks may heal you or raise your armor."
+   },
+   {
+    "key": "aura_seal_of_iron_armor",
+    "name": "Seal of Iron",
+    "spell_id": 1000674,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "armor_items_pct",
+      "params": {
+       "pct": 22
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Armor from items increased by 22%."
+   },
+   {
+    "key": "aura_hallowed",
+    "name": "Hallowed Ground",
+    "spell_id": 1000676,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 1000,
+       "tick": {
+        "base": 8,
+        "per_level": 1,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Heals you each second while you stand in your Hallowed Ground."
+   },
+   {
+    "key": "aura_righteous_fury",
+    "name": "Righteous Fury",
+    "spell_id": 1000677,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 300000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_threat_pct",
+      "params": {
+       "pct": 50,
+       "school": "holy"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Holy damage causes 50% more threat."
+   },
+   {
+    "key": "aura_holy_wrath_stun",
+    "name": "Holy Wrath",
+    "spell_id": 1000680,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "stun",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 2000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
        "aura_spell_id": 7922
       },
       "realm_only": false
      }
     ],
-    "description": "Charge an enemy, generate $/10;s2 rage, and stun it for $7922d.  Cannot be used in combat."
+    "description": "Stunned."
+   },
+   {
+    "key": "aura_hammer_of_justice",
+    "name": "Hammer of Justice",
+    "spell_id": 1000681,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "stun",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "aura_spell_id": 10308
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stunned."
+   },
+   {
+    "key": "aura_seal_of_mending",
+    "name": "Seal of Iron",
+    "spell_id": 1000689,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 30000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 50,
+       "heal_pct": 4
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 50,
+       "apply_aura": "aura_seal_of_iron_armor"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Melee attacks may heal you or raise your armor."
+   },
+   {
+    "key": "aura_seal_of_fervor",
+    "name": "Seal of Iron",
+    "spell_id": 1000691,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 30000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 25,
+       "heal_pct": 4,
+       "energize": 5
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 25,
+       "apply_aura": "aura_seal_of_iron_armor",
+       "energize": 5
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Melee attacks may heal you or raise your armor, and give you Rage when they do."
+   },
+   {
+    "key": "aura_wrathful_iron",
+    "name": "Seal of Iron",
+    "spell_id": 1000693,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 30000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 25,
+       "heal_pct": 4
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 25,
+       "apply_aura": "aura_wrathful_iron_armor"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Melee attacks may heal you or raise your armor."
+   },
+   {
+    "key": "aura_wrathful_iron_armor",
+    "name": "Seal of Iron",
+    "spell_id": 1000694,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "armor_items_pct",
+      "params": {
+       "pct": 40
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Armor from items increased by 40%."
+   },
+   {
+    "key": "aura_deep_ground",
+    "name": "Hallowed Ground",
+    "spell_id": 1000696,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 1000,
+       "tick": {
+        "base": 12,
+        "per_level": 1.5,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Heals you each second while you stand in your Hallowed Ground."
+   },
+   {
+    "key": "aura_blazing_fury",
+    "name": "Righteous Fury",
+    "spell_id": 1000703,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 300000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_threat_pct",
+      "params": {
+       "pct": 80,
+       "school": "holy"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Holy damage causes 80% more threat."
+   },
+   {
+    "key": "aura_furys_ward",
+    "name": "Righteous Fury",
+    "spell_id": 1000705,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 300000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_threat_pct",
+      "params": {
+       "pct": 50,
+       "school": "holy"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_damage_taken_pct",
+      "params": {
+       "pct": -5
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Holy damage causes 50% more threat. Damage taken reduced by 5%."
+   },
+   {
+    "key": "aura_furys_edge",
+    "name": "Righteous Fury",
+    "spell_id": 1000707,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 300000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_threat_pct",
+      "params": {
+       "pct": 50,
+       "school": "holy"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_spell_damage_pct",
+      "params": {
+       "pct": 10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Holy damage causes 50% more threat. Holy damage increased by 10%."
+   },
+   {
+    "key": "aura_wrath_of_ages_stun",
+    "name": "Holy Wrath",
+    "spell_id": 1000712,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "stun",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 4000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "aura_spell_id": 7922
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stunned."
+   },
+   {
+    "key": "aura_long_hammer",
+    "name": "Hammer of Justice",
+    "spell_id": 1000716,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "stun",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "aura_spell_id": 10308
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stunned."
    }
   ],
-  "auras": [],
-  "rows": [],
-  "name": "Zealot"
+  "rows": [
+   {
+    "key": "bulwark_charge",
+    "level": 5,
+    "kind": "skill_choice",
+    "skill": "bulwark_charge",
+    "choices": [
+     {
+      "key": "long_consecration",
+      "name": "Long Consecration",
+      "rank": 1,
+      "status": "placeholder",
+      "icon_id": 457,
+      "spell_id": 1000682,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 25,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "charge",
+        "params": {
+         "speed_yd_s": 24
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 17,
+          "per_level": 0,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "ground_effect",
+        "params": {
+         "radius_yd": 8,
+         "tick_ms": 1000,
+         "duration_ms": 12000,
+         "school": "holy",
+         "amount": {
+          "base": 24,
+          "per_level": 0.6
+         },
+         "caster_aura_spell_id": 1000672,
+         "ground_spell_id": 1000671
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Charge an enemy, generating 17 Rage and leaving Consecration at the destination: for 12 sec, each second every enemy within 8 yd takes 24 + 0.6 per level Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+      "change": "Consecration lasts 12 sec instead of 8 sec.",
+      "variant_of": "bulwark_charge"
+     },
+     {
+      "key": "rallying_charge",
+      "name": "Rallying Charge",
+      "rank": 1,
+      "status": "placeholder",
+      "icon_id": 457,
+      "spell_id": 1000683,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 25,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "charge",
+        "params": {
+         "speed_yd_s": 24
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 27,
+          "per_level": 0,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "ground_effect",
+        "params": {
+         "radius_yd": 8,
+         "tick_ms": 1000,
+         "duration_ms": 8000,
+         "school": "holy",
+         "amount": {
+          "base": 24,
+          "per_level": 0.6
+         },
+         "caster_aura_spell_id": 1000672,
+         "ground_spell_id": 1000671
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Charge an enemy, generating 27 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes 24 + 0.6 per level Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+      "change": "Generates {amount:27:0:0:0} Rage instead of {amount:17:0:0:0}.",
+      "variant_of": "bulwark_charge"
+     },
+     {
+      "key": "hallowed_charge",
+      "name": "Hallowed Charge",
+      "rank": 1,
+      "status": "placeholder",
+      "icon_id": 457,
+      "spell_id": 1000684,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 25,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "charge",
+        "params": {
+         "speed_yd_s": 24
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 17,
+          "per_level": 0,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "ground_effect",
+        "params": {
+         "radius_yd": 8,
+         "tick_ms": 1000,
+         "duration_ms": 8000,
+         "school": "holy",
+         "amount": {
+          "base": 36,
+          "per_level": 0.9
+         },
+         "caster_aura_spell_id": 1000672,
+         "ground_spell_id": 1000671
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Charge an enemy, generating 17 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes 36 + 0.9 per level Holy damage. You take 10% less damage while you stand in it. Usable in combat.",
+      "change": "Consecration deals {amount:36:0.9:0:0} Holy damage a second instead of {amount:24:0.6:0:0}.",
+      "variant_of": "bulwark_charge"
+     }
+    ]
+   },
+   {
+    "key": "judgement",
+    "level": 10,
+    "kind": "skill_choice",
+    "skill": "judgement",
+    "choices": [
+     {
+      "key": "judgement_of_mending",
+      "name": "Judgement of Mending",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000685,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 8000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 10,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "judgement",
+        "params": {
+         "seal": [
+          "aura_seal_of_iron",
+          "aura_seal_of_mending",
+          "aura_seal_of_fervor",
+          "aura_wrathful_iron"
+         ],
+         "amount": {
+          "base": 40,
+          "per_level": 3,
+          "per_ap": 0
+         },
+         "heal_pct": 15,
+         "school": "holy"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Judges your Seal of Iron, taking it off, for 40 + 3 per level Holy damage, and heals you for 15% of your maximum health. Needs a Seal of Iron.",
+      "change": "Heals you for 15% of your maximum health instead of 10%.",
+      "variant_of": "judgement"
+     },
+     {
+      "key": "harsh_judgement",
+      "name": "Harsh Judgement",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000686,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 8000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 10,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "judgement",
+        "params": {
+         "seal": [
+          "aura_seal_of_iron",
+          "aura_seal_of_mending",
+          "aura_seal_of_fervor",
+          "aura_wrathful_iron"
+         ],
+         "amount": {
+          "base": 60,
+          "per_level": 4.5,
+          "per_ap": 0
+         },
+         "heal_pct": 10,
+         "school": "holy"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Judges your Seal of Iron, taking it off, for 60 + 4.5 per level Holy damage, and heals you for 10% of your maximum health. Needs a Seal of Iron.",
+      "change": "Deals {amount:60:4.5:0:0} Holy damage instead of {amount:40:3:0:0}.",
+      "variant_of": "judgement"
+     },
+     {
+      "key": "swift_judgement",
+      "name": "Swift Judgement",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000687,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 5000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 10,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "judgement",
+        "params": {
+         "seal": [
+          "aura_seal_of_iron",
+          "aura_seal_of_mending",
+          "aura_seal_of_fervor",
+          "aura_wrathful_iron"
+         ],
+         "amount": {
+          "base": 40,
+          "per_level": 3,
+          "per_ap": 0
+         },
+         "heal_pct": 10,
+         "school": "holy"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Judges your Seal of Iron, taking it off, for 40 + 3 per level Holy damage, and heals you for 10% of your maximum health. Needs a Seal of Iron. 5 sec cooldown.",
+      "change": "Has a 5 sec cooldown instead of 8 sec.",
+      "variant_of": "judgement"
+     }
+    ]
+   },
+   {
+    "key": "seal_of_iron",
+    "level": 15,
+    "kind": "skill_choice",
+    "skill": "seal_of_iron",
+    "choices": [
+     {
+      "key": "seal_of_mending",
+      "name": "Seal of Mending",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000688,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_seal_of_mending"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 30 sec your melee attacks have a 50% chance to heal you slightly and a 50% chance to grant you a temporary armor spike.",
+      "change": "The heal and the armor spike each fire on 50% of hits instead of 25%.",
+      "variant_of": "seal_of_iron"
+     },
+     {
+      "key": "seal_of_fervor",
+      "name": "Seal of Fervor",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000690,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_seal_of_fervor"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike, and each heal or armor spike also gives you 5 Rage.",
+      "change": "Each heal or armor spike also gives you 5 Rage.",
+      "variant_of": "seal_of_iron"
+     },
+     {
+      "key": "wrathful_iron",
+      "name": "Wrathful Iron",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000692,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_wrathful_iron"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike. The armor spike raises your armor from items by 40%.",
+      "change": "The armor spike raises your armor from items by 40% instead of 22%.",
+      "variant_of": "seal_of_iron"
+     }
+    ]
+   },
+   {
+    "key": "hallowed_ground",
+    "level": 20,
+    "kind": "skill_choice",
+    "skill": "hallowed_ground",
+    "choices": [
+     {
+      "key": "deep_ground",
+      "name": "Deep Ground",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000695,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 0,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_effect",
+        "params": {
+         "radius_yd": 8,
+         "tick_ms": 1000,
+         "duration_ms": 10000,
+         "school": "holy",
+         "amount": {
+          "base": 6,
+          "per_level": 0.8
+         },
+         "caster_aura_spell_id": 1000696
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Consecrates the ground at your feet for 10 sec: each second every enemy within 8 yd takes 6 + 0.8 per level Holy damage, and while you stand in it you heal 12 + 1.5 per level a second. It replaces your Bulwark Charge's Consecration.",
+      "change": "While you stand in it you heal {amount:12:1.5:0:0} a second instead of {amount:8:1:0:0}.",
+      "variant_of": "hallowed_ground"
+     },
+     {
+      "key": "wide_ground",
+      "name": "Wide Ground",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000697,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 0,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_effect",
+        "params": {
+         "radius_yd": 12,
+         "tick_ms": 1000,
+         "duration_ms": 10000,
+         "school": "holy",
+         "amount": {
+          "base": 6,
+          "per_level": 0.8
+         },
+         "caster_aura_spell_id": 1000676
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Consecrates the ground at your feet for 10 sec: each second every enemy within 12 yd takes 6 + 0.8 per level Holy damage, and while you stand in it you heal 8 + 1 per level a second. It replaces your Bulwark Charge's Consecration.",
+      "change": "Covers 12 yards instead of 8.",
+      "variant_of": "hallowed_ground"
+     },
+     {
+      "key": "burning_ground",
+      "name": "Burning Ground",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000698,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 0,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_effect",
+        "params": {
+         "radius_yd": 8,
+         "tick_ms": 1000,
+         "duration_ms": 10000,
+         "school": "holy",
+         "amount": {
+          "base": 9,
+          "per_level": 1.2
+         },
+         "caster_aura_spell_id": 1000676
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Consecrates the ground at your feet for 10 sec: each second every enemy within 8 yd takes 9 + 1.2 per level Holy damage, and while you stand in it you heal 8 + 1 per level a second. It replaces your Bulwark Charge's Consecration.",
+      "change": "Deals {amount:9:1.2:0:0} Holy damage a second instead of {amount:6:0.8:0:0}.",
+      "variant_of": "hallowed_ground"
+     }
+    ]
+   },
+   {
+    "key": "zealot_crusader",
+    "level": 25,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "lights_grace",
+      "name": "Light's Grace",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000699,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "healing_taken_pct",
+        "params": {
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Healing on you is 10% stronger."
+     },
+     {
+      "key": "plated_faith",
+      "name": "Plated Faith",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000700,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "armor_items_pct",
+        "params": {
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Armor from items increased by 10%."
+     },
+     {
+      "key": "fervent",
+      "name": "Fervent",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000701,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "max_power",
+        "params": {
+         "amount": 100
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your maximum Rage is increased by 10."
+     }
+    ]
+   },
+   {
+    "key": "righteous_fury",
+    "level": 30,
+    "kind": "skill_choice",
+    "skill": "righteous_fury",
+    "choices": [
+     {
+      "key": "blazing_fury",
+      "name": "Blazing Fury",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000702,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "learn_level": 10,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_blazing_fury"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 5 min your Holy damage causes 80% more threat.",
+      "change": "Your Holy damage causes 80% more threat instead of 50%.",
+      "variant_of": "righteous_fury"
+     },
+     {
+      "key": "furys_ward",
+      "name": "Fury's Ward",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000704,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "learn_level": 10,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_furys_ward"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 5 min your Holy damage causes 50% more threat, and you take 5% less damage.",
+      "change": "While it lasts you also take 5% less damage.",
+      "variant_of": "righteous_fury"
+     },
+     {
+      "key": "furys_edge",
+      "name": "Fury's Edge",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000706,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 1500,
+      "learn_level": 10,
+      "target": "self",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_furys_edge"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 5 min your Holy damage causes 50% more threat, and your Holy damage is 10% higher.",
+      "change": "While it lasts your Holy damage is also 10% higher.",
+      "variant_of": "righteous_fury"
+     }
+    ]
+   },
+   {
+    "key": "rebuke",
+    "level": 35,
+    "kind": "skill_choice",
+    "skill": "rebuke",
+    "choices": [
+     {
+      "key": "long_rebuke",
+      "name": "Long Rebuke",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000708,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 12000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 6500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 10,
+          "per_level": 0,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, you gain 10 Rage.",
+      "change": "Locks the school out for 6.5 sec instead of 4.5 sec.",
+      "variant_of": "rebuke"
+     },
+     {
+      "key": "rebuke_of_iron",
+      "name": "Rebuke of Iron",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000709,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 12000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 4500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 10,
+          "per_level": 0,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_seal_of_iron"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain 10 Rage and your Seal of Iron goes up.",
+      "change": "A stopped cast also puts up your Seal of Iron.",
+      "variant_of": "rebuke"
+     },
+     {
+      "key": "judging_rebuke",
+      "name": "Judging Rebuke",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000710,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 12000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "requires_weapon": [
+       "any_melee"
+      ],
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 4500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 10,
+          "per_level": 0,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "reset_cooldowns",
+        "params": {
+         "spell_ids": [
+          1000067
+         ]
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, you gain 10 Rage and Judgement is ready again.",
+      "change": "A stopped cast also finishes Judgement's cooldown.",
+      "variant_of": "rebuke"
+     }
+    ]
+   },
+   {
+    "key": "holy_wrath",
+    "level": 40,
+    "kind": "skill_choice",
+    "skill": "holy_wrath",
+    "choices": [
+     {
+      "key": "wrath_of_ages",
+      "name": "Wrath of Ages",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000711,
+      "realm_cost": 20,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 0,
+      "realm_radius_yd": 8,
+      "learn_level": 20,
+      "target": "self_area",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 30,
+          "per_level": 2.5
+         },
+         "vs_type": "undead",
+         "vs_type_pct": 100,
+         "school": "holy"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "aura_wrath_of_ages_stun",
+         "only_type": "undead"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Deals 30 + 2.5 per level Holy damage to every enemy within 8 yd, double to undead, and stuns the undead for 4 sec.",
+      "change": "Stuns the undead for 4 sec instead of 2 sec.",
+      "variant_of": "holy_wrath"
+     },
+     {
+      "key": "searing_wrath",
+      "name": "Searing Wrath",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000713,
+      "realm_cost": 20,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 0,
+      "realm_radius_yd": 8,
+      "learn_level": 20,
+      "target": "self_area",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 45,
+          "per_level": 3.75
+         },
+         "vs_type": "undead",
+         "vs_type_pct": 100,
+         "school": "holy"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "aura_holy_wrath_stun",
+         "only_type": "undead"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Deals 45 + 3.75 per level Holy damage to every enemy within 8 yd, double to undead, and stuns the undead for 2 sec.",
+      "change": "Deals {amount:45:3.75:0:0} Holy damage instead of {amount:30:2.5:0:0}.",
+      "variant_of": "holy_wrath"
+     },
+     {
+      "key": "quick_wrath",
+      "name": "Quick Wrath",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000714,
+      "realm_cost": 20,
+      "realm_cooldown_ms": 10000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 0,
+      "realm_radius_yd": 8,
+      "learn_level": 20,
+      "target": "self_area",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 30,
+          "per_level": 2.5
+         },
+         "vs_type": "undead",
+         "vs_type_pct": 100,
+         "school": "holy"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "aura_holy_wrath_stun",
+         "only_type": "undead"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Deals 30 + 2.5 per level Holy damage to every enemy within 8 yd, double to undead, and stuns the undead for 2 sec. 10 sec cooldown.",
+      "change": "Has a 10 sec cooldown instead of 15 sec.",
+      "variant_of": "holy_wrath"
+     }
+    ]
+   },
+   {
+    "key": "hammer_of_justice",
+    "level": 45,
+    "kind": "skill_choice",
+    "skill": "hammer_of_justice",
+    "choices": [
+     {
+      "key": "long_hammer",
+      "name": "Long Hammer",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000715,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 60000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 10,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "aura_long_hammer"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stuns the target for 8 sec.",
+      "change": "Stuns for 8 sec instead of 6 sec.",
+      "variant_of": "hammer_of_justice"
+     },
+     {
+      "key": "thrown_hammer",
+      "name": "Thrown Hammer",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000717,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 60000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 20,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "aura_hammer_of_justice"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stuns the target for 6 sec. 20 yd range.",
+      "change": "Reaches 20 yards instead of 10.",
+      "variant_of": "hammer_of_justice"
+     },
+     {
+      "key": "quick_hammer",
+      "name": "Quick Hammer",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000718,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 40000,
+      "realm_gcd_ms": 1500,
+      "realm_range_min": 0,
+      "realm_range_max": 10,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "holy",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "aura_hammer_of_justice"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stuns the target for 6 sec. 40 sec cooldown.",
+      "change": "Has a 40 sec cooldown instead of 60 sec.",
+      "variant_of": "hammer_of_justice"
+     }
+    ]
+   },
+   {
+    "key": "zealot_light_eternal",
+    "level": 50,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "sanctified",
+      "name": "Sanctified",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000719,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_amount_pct",
+        "params": {
+         "skill": "hallowed_ground",
+         "pct": 30
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Hallowed Ground heals you 30% more."
+     },
+     {
+      "key": "undying_zeal",
+      "name": "Undying Zeal",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000720,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "healing_taken_pct",
+        "params": {
+         "pct": 30,
+         "below_health_pct": 30
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Healing on you is 30% stronger while you are below 30% health."
+     },
+     {
+      "key": "hammer_and_anvil",
+      "name": "Hammer and Anvil",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000721,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_crit_pct",
+        "params": {
+         "skill": "judgement",
+         "pct": 15
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Judgement is 15% more likely to be a critical strike."
+     }
+    ]
+   }
+  ],
+  "name": "Zealot",
+  "tier": 2,
+  "tier_cap": 50,
+  "row_levels": [
+   5,
+   10,
+   15,
+   20,
+   25,
+   30,
+   35,
+   40,
+   45,
+   50
+  ],
+  "tier_bonus": {
+   "strength": 24,
+   "agility": 12,
+   "stamina": 24,
+   "intellect": 0,
+   "spirit": 6
+  },
+  "shapeshift_form": 17
  },
  {
   "key": "cutthroat",
