@@ -144,17 +144,16 @@ impl Shard {
         Some(guid)
     }
 
-    /// Removes every creature made for exactly `audience`. Each admitted client has it destroyed
-    /// when its view next lacks it.
-    pub(crate) fn despawn_audience(&mut self, audience: &Audience) {
-        self.mobs.retain(|m| m.audience.as_ref() != Some(audience));
+    /// Removes every creature made for exactly `audience` but those of `keep`. Each admitted
+    /// client has it destroyed when its view next lacks it.
+    pub(crate) fn despawn_audience(&mut self, audience: &Audience, keep: &[u64]) {
+        self.mobs
+            .retain(|m| m.audience.as_ref() != Some(audience) || keep.contains(&m.guid));
     }
 
     /// Hides the creature `guid` from the characters `from` while everyone else still sees it:
     /// it leaves their view, and they are outside its Audience. A creature the Population
     /// streams back in is a new one, hidden from no one, so a caller hides it every tick.
-    // The escort (#701) is the first caller.
-    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn hide_from(&mut self, guid: u64, from: &[u64]) {
         let Some(m) = self.mobs.iter_mut().find(|m| m.guid == guid) else {
             return;
@@ -167,7 +166,6 @@ impl Shard {
     }
 
     /// Shows the creature `guid` again to the characters `from` it was hidden from.
-    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn unhide(&mut self, guid: u64, from: &[u64]) {
         if let Some(m) = self.mobs.iter_mut().find(|m| m.guid == guid) {
             m.hidden_from.retain(|g| !from.contains(g));

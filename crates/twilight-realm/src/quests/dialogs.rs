@@ -261,6 +261,15 @@ impl Realm {
         };
         let mut options = super::talk_options(c, entry);
         options.extend(super::hint_options(c, entry));
+        // An escort's start creature offers its start line (#701).
+        let spawn = w
+            .mobs
+            .iter()
+            .find(|m| m.guid == guid)
+            .and_then(|m| m.spawn_row());
+        if let Some(i) = spawn.and_then(|s| self.escorts.offered(c, s)) {
+            options.push(crate::escorts::Escorts::option(i));
+        }
         let window = crate::writs::window(self.wall as u64);
         let quests = gossip_rows(c, entry, window, &self.milestones.reached_refs());
         let hint = w.key_hint_text(guid);
@@ -281,8 +290,33 @@ impl Realm {
             let c = self.characters.get(w.guid)?;
             w.friendly_within_reach(guid, c.position, &c.quests.completed)
         });
-        if let Some(entry) = entry {
+        let Some(entry) = entry else {
+            return;
+        };
+        if option == crate::escorts::ESCORT_OPTION {
+            self.escort_select(guid);
+        } else {
             self.talk_select(guid, entry, option);
+        }
+    }
+
+    /// An escort's start line was chosen at its start creature `guid`, in reach: the menu closes,
+    /// and the escort starts on the next tick if the line is still offered (#701).
+    fn escort_select(&mut self, guid: u64) {
+        self.events.push(SessionEvent::GossipComplete);
+        let Some(w) = &self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get(w.guid) else {
+            return;
+        };
+        let spawn = w
+            .mobs
+            .iter()
+            .find(|m| m.guid == guid)
+            .and_then(|m| m.spawn_row());
+        if let Some(i) = spawn.and_then(|s| self.escorts.offered(c, s)) {
+            self.escorts.ask(c.guid, i);
         }
     }
 

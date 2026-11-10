@@ -34,9 +34,6 @@ use crate::world::{patch_create, HIGHGUID_DYNAMICOBJECT};
 /// A walk at a creature's own walk speed.
 const FULL_SPEED_PCT: u32 = 100;
 
-/// How near its point a walking creature counts as there.
-const THERE_YD: f32 = 0.5;
-
 /// The crates on a Tribute Pile (GLOSSARY.md).
 const PILE_CRATES: usize = 12;
 
@@ -1101,16 +1098,16 @@ impl Line {
                     None => (Porter::Waiting, tram.pile_centre()),
                 };
                 self.brought[i].porter = state;
-                walk_toward(mob, to, FULL_SPEED_PCT, events);
+                events.extend(mob.walk_toward(to, FULL_SPEED_PCT));
             }
             Porter::ToCrate(k) => {
-                if there(mob, tram.pile[k]) {
+                if mob.there(tram.pile[k]) {
                     self.brought[i].porter = Porter::Lifting {
                         k,
                         until_ms: now + ms(tram.lift_s),
                     };
                 } else {
-                    walk_toward(mob, tram.pile[k], FULL_SPEED_PCT, events);
+                    events.extend(mob.walk_toward(tram.pile[k], FULL_SPEED_PCT));
                 }
             }
             Porter::Lifting { k, until_ms } => {
@@ -1118,7 +1115,7 @@ impl Line {
                     self.pile[k] = Crate::Carried;
                     let to = self.carry_to(i, mob.position, standing);
                     self.brought[i].porter = Porter::Carrying { k, to };
-                    walk_toward(mob, self.dest_point(to, standing), carry, events);
+                    events.extend(mob.walk_toward(self.dest_point(to, standing), carry));
                 }
             }
             Porter::Carrying { k, to } => {
@@ -1129,12 +1126,12 @@ impl Line {
                 if !still {
                     let to = self.carry_to(i, mob.position, standing);
                     self.brought[i].porter = Porter::Carrying { k, to };
-                    walk_toward(mob, self.dest_point(to, standing), carry, events);
+                    events.extend(mob.walk_toward(self.dest_point(to, standing), carry));
                     return false;
                 }
                 let point = self.dest_point(to, standing);
-                if !there(mob, point) {
-                    walk_toward(mob, point, carry, events);
+                if !mob.there(point) {
+                    events.extend(mob.walk_toward(point, carry));
                 } else if matches!(to, Dest::Car(_)) {
                     self.pile[k] = Crate::Escaped;
                     self.brought[i].porter = Porter::Waiting;
@@ -1475,24 +1472,6 @@ impl Line {
             backs_out: true,
         })
     }
-}
-
-/// Whether `mob` has walked to `point` and stopped there.
-fn there(mob: &Mob, point: [f32; 3]) -> bool {
-    mob.walk.is_none() && flat_distance(mob.position, point) <= THERE_YD
-}
-
-/// Starts `mob` walking to `point` at `speed_pct` of its walk speed, unless it is there or
-/// already on its way.
-fn walk_toward(mob: &mut Mob, point: [f32; 3], speed_pct: u32, events: &mut Vec<SessionEvent>) {
-    let heading_there = mob
-        .walk
-        .as_ref()
-        .is_some_and(|w| w.points.last() == Some(&point));
-    if heading_there || there(mob, point) {
-        return;
-    }
-    events.push(mob.walk_path(vec![point], speed_pct));
 }
 
 /// The guid of the `n`th thing a line made, as a Lampman's lamp of `display`: a GameObject.

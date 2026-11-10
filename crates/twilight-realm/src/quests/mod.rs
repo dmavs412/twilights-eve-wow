@@ -201,6 +201,7 @@ fn complete(c: &Char, a: &Active) -> bool {
         && q.collect.iter().all(|o| carried(c, o.item) >= o.count)
         && (q.explore.single().is_none() || a.explored)
         && (0..q.explore.listed().len()).all(|i| a.kills[q.explore_slot(i)] >= 1)
+        && (!crate::escorts::names(q.id) || a.kills[q.escort_slot()] >= 1)
         && q.discover
             .iter()
             .all(|id| c.discovered.binary_search(id).is_ok())
@@ -412,6 +413,32 @@ pub(crate) fn credit_talk(
     });
     update_slot(c, i, events);
     Some(REPLY_TEXT + q.id * 4 + t as u32)
+}
+
+/// Whether `c` holds `quest`, not failed, with its escort still to do (#701).
+pub(crate) fn escort_due(c: &Char, quest: u32) -> bool {
+    let (Some(a), Some(q)) = (c.quests.get(quest), content::quest(quest)) else {
+        return false;
+    };
+    !a.failed && a.kills[q.escort_slot()] == 0
+}
+
+/// The escortee of `quest` arrived with `c` in his group (#701): its escort counter is set, and
+/// the log shows the quest complete once nothing else is left. Saved by the caller.
+pub(crate) fn credit_escort(c: &mut Char, quest: u32, events: &mut Vec<SessionEvent>) {
+    let Some(q) = content::quest(quest) else {
+        return;
+    };
+    let Some(i) = c
+        .quests
+        .active
+        .iter()
+        .position(|a| a.id == quest && !a.failed)
+    else {
+        return;
+    };
+    c.quests.active[i].kills[q.escort_slot()] = 1;
+    update_slot(c, i, events);
 }
 
 /// The player used a GameObject of `entry`: every quest that wants one more counts it. Whether

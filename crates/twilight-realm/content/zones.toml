@@ -692,6 +692,17 @@ level_max = 10
 position = [-8850.0, -2960.0, 275.24]
 orientation = 0.0
 
+# Belongs to tests/escorts.rs: an Erin (850, a friendly template no shipped quest names) in the
+# south of Redridge, over 150 yd from every other spawn and Hub NPC along the 80 yd path west of
+# her, the start creature of content/escorts.toml's test_escort. z is ground_check.py's.
+[[zone.added]]
+guid = 960821
+entry = 850
+level_min = 10
+level_max = 10
+position = [-9805.0, -3463.0, 218.49]
+orientation = 3.1416
+
 # The named elites and rares roll their band's Elite pool at 20%, else one of the band's
 # greens at 50% (#658, spec #650 decision 10). The band holds the creature's lowest open-world
 # spawn level as the realm loads it; mobs.rs tests each row against the loaded levels.

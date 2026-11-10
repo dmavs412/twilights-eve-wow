@@ -251,6 +251,14 @@ _Avoid_: event, world quest, random quest
 The characters who can see, fight, click and loot what a Rumour spawned: everyone within the kill credit range of the corpse when the Rumour dropped, fixed then (ADR 0014). An entity with no Audience is seen by everyone in its Phase.
 _Avoid_: owners, party, group
 
+**Escort**:
+A quest step where a friendly creature walks a fixed path for a group (ADR 0035). A character holding the quest picks its start line, and everyone within the kill credit range of the start creature becomes the group, fixed then. The group sees a private copy of him walk; he waits while no one is near and fights what attacks him. His arrival meets the quest for every group member holding it. If he dies or the group leaves him, the escort fails, the quest stays in the log, and he is back at his start a few seconds later.
+_Avoid_: escort quest (the quest), follower, companion
+
+**Defender**:
+A friendly creature that hostile creatures notice and fight, that fights back and that players heal (#700). Players cannot attack it, it never leashes, and its fight ends where it stands. An Escort's walker is one.
+_Avoid_: guard (a city guard), ally, pet
+
 **Calling Rumour**:
 A Rumour that drops only for a character at their Tier Cap whose Calling advances into the Calling it names, and leads to that Calling's trainer. It has no timer, pays no chest and never drops again for a character who finished it.
 _Avoid_: trainer quest, rumour quest

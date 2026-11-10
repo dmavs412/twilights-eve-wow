@@ -61,6 +61,7 @@ mod duel;
 mod dungeon;
 mod encounters;
 mod equipment;
+mod escorts;
 mod fields;
 mod fish;
 mod generated;
@@ -740,6 +741,8 @@ pub struct Realm {
     duels: duel::Duels,
     /// The open world's Encounters under way.
     encounters: encounters::Encounters,
+    /// The Escorts under way (#701).
+    escorts: escorts::Escorts,
     /// The served session's character in the world: `active`'s, swapped in by [`Self::serve`].
     world: Option<world::InWorld>,
     /// The served session's events.
@@ -1526,6 +1529,8 @@ impl Realm {
             // Before the update, so a tram line sees its passengers thawed this tick.
             let (thawed, woken) = shard.thaw_frozen(players);
             let mut made = shard.update(dt, &positions, host, wall_ms, carts_on, &reached);
+            // A start creature streamed back in is hidden again before anyone is shown it (#701).
+            self.escorts.hide_starts(*map, shard);
             made.extend(scaled);
             made.extend(thawed);
             let mut owners = shard.owners(players);
@@ -1826,6 +1831,77 @@ impl Realm {
         }
         for key in won.iter().filter_map(|e| e.records.as_deref()) {
             self.reach_milestone(key);
+        }
+    }
+
+    /// The Escorts' tick (#701): on each map an escort runs, the escortees walk among the
+    /// characters there and the asked-for escorts start. Their moves go to every client that sees
+    /// them, their lines to the characters they are for, and an arrival meets the quest of each
+    /// group member it credits, who is saved.
+    fn tick_escorts(&mut self, dt: f32, host: &dyn Host) {
+        let mut ticked = escorts::Ticked::default();
+        for place in escorts::places() {
+            let mut players = Vec::new();
+            let worlds = std::iter::once(&self.world).chain(self.parked.values().map(|s| &s.world));
+            for w in worlds.flatten() {
+                let (true, Some(c)) = (w.shard_place() == Some(place), self.characters.get(w.guid))
+                else {
+                    continue;
+                };
+                let holding: Vec<u32> = c
+                    .quests
+                    .active
+                    .iter()
+                    .filter(|a| !a.failed)
+                    .map(|a| a.id)
+                    .collect();
+                let ready = holding
+                    .iter()
+                    .copied()
+                    .filter(|&q| quests::escort_due(c, q))
+                    .collect();
+                players.push(escorts::Player {
+                    guid: w.guid,
+                    position: c.position,
+                    alive: w.alive(),
+                    holding,
+                    ready,
+                });
+            }
+            match self.shards.get_mut(&place) {
+                Some(shard) => ticked.extend(self.escorts.tick(dt, place, &players, shard, host)),
+                None => self.escorts.drop_at(place),
+            }
+        }
+        let mut credited = Vec::new();
+        let sessions = std::iter::once((&mut self.world, &mut self.events)).chain(
+            self.parked
+                .values_mut()
+                .map(|s| (&mut s.world, &mut s.events)),
+        );
+        for (w, events) in sessions {
+            let Some(w) = w else { continue };
+            for e in &ticked.shown {
+                if shard::shown_units(e).iter().any(|u| w.seen.contains(u)) {
+                    events.push(e.clone());
+                }
+            }
+            events.extend(
+                ticked
+                    .told
+                    .iter()
+                    .filter(|(g, _)| *g == w.guid)
+                    .map(|(_, e)| e.clone()),
+            );
+            for &(_, quest) in ticked.credit.iter().filter(|(g, _)| *g == w.guid) {
+                if let Some(c) = self.characters.get_mut(w.guid) {
+                    quests::credit_escort(c, quest, events);
+                    credited.push(w.guid);
+                }
+            }
+        }
+        for guid in credited {
+            self.save(guid);
         }
     }
 
@@ -2543,6 +2619,7 @@ impl Realm {
         self.tick_noise();
         self.tick_gazes();
         self.tick_encounters(dt, host);
+        self.tick_escorts(dt, host);
         self.tick_trams();
         self.tick_bonus_chests();
         self.party_tick(dt);
@@ -3034,12 +3111,14 @@ impl Realm {
         shard.spawn_for(host, template, level, position, audience, defender)
     }
 
-    /// Removes every creature made for exactly `audience` on any shard; each admitted client
-    /// that had one in view is sent its destroy on the next tick.
+    /// Removes every creature made for exactly `audience` on any shard but an escortee; each
+    /// admitted client that had one in view is sent its destroy on the next tick.
     pub fn despawn_audience(&mut self, audience: &Audience) {
         self.give_back();
+        // An escortee shares a solo character's Audience with their Rumour, and stays (#701).
+        let escortees = self.escorts.escortees();
         for shard in self.shards.values_mut() {
-            shard.despawn_audience(audience);
+            shard.despawn_audience(audience, &escortees);
         }
         self.objects.despawn_audience(audience);
     }

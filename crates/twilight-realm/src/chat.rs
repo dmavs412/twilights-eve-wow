@@ -282,6 +282,26 @@ enum Hearers {
     Session(SessionId),
 }
 
+/// `mob` saying `text`: a `CHAT_MSG_MONSTER_SAY` from its guid under its template's name, which
+/// carries [`creature_say_yd`] yards.
+pub(crate) fn creature_say(mob: &Mob, text: String) -> SessionEvent {
+    SessionEvent::Chat(ChatMessage {
+        chat_type: m::CHAT_MSG_MONSTER_SAY,
+        language: LANGUAGE_UNIVERSAL,
+        sender_guid: mob.guid,
+        target_guid: 0,
+        sender_name: Some(mob.template.name.clone()),
+        channel: None,
+        text,
+        chat_tag: 0,
+    })
+}
+
+/// How far a creature's line carries.
+pub(crate) fn creature_say_yd() -> f32 {
+    SAY_YD
+}
+
 /// What `mob` says or plays that came due, clearing it: each event and how far it carries.
 fn due_speech(mob: &mut Mob, rng: &mut Rng) -> Vec<(SessionEvent, f32)> {
     let mut out = Vec::new();
@@ -289,33 +309,13 @@ fn due_speech(mob: &mut Mob, rng: &mut Rng) -> Vec<(SessionEvent, f32)> {
         if let Some(say) = mob.template.say.as_ref().filter(|s| !s.aggro.is_empty()) {
             if rng.below(100) < say.aggro_chance {
                 let text = say.aggro[rng.below(say.aggro.len() as u32) as usize].clone();
-                let line = SessionEvent::Chat(ChatMessage {
-                    chat_type: m::CHAT_MSG_MONSTER_SAY,
-                    language: LANGUAGE_UNIVERSAL,
-                    sender_guid: mob.guid,
-                    target_guid: 0,
-                    sender_name: Some(mob.template.name.clone()),
-                    channel: None,
-                    text,
-                    chat_tag: 0,
-                });
-                out.push((line, SAY_YD));
+                out.push((creature_say(mob, text), SAY_YD));
             }
         }
     }
     if std::mem::take(&mut mob.flee_due) {
         if let Some(text) = mob.template.say.as_ref().and_then(|s| s.flee.clone()) {
-            let line = SessionEvent::Chat(ChatMessage {
-                chat_type: m::CHAT_MSG_MONSTER_SAY,
-                language: LANGUAGE_UNIVERSAL,
-                sender_guid: mob.guid,
-                target_guid: 0,
-                sender_name: Some(mob.template.name.clone()),
-                channel: None,
-                text,
-                chat_tag: 0,
-            });
-            out.push((line, SAY_YD));
+            out.push((creature_say(mob, text), SAY_YD));
         }
     }
     if std::mem::take(&mut mob.emote_due) {

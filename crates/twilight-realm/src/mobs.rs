@@ -19,7 +19,7 @@ use crate::rules::melee::MobDefense;
 use crate::rules::school::School;
 use crate::rules::stats::{MobStats, UnitClass};
 use crate::rules::talents::changed_by;
-use crate::space::distance;
+use crate::space::{distance, flat_distance};
 use crate::Host;
 
 /// `HIGHGUID_UNIT`, in a creature guid's top 16 bits.
@@ -1601,6 +1601,9 @@ pub(crate) struct Bounty {
 /// The spawn index of a mob that no spawn placed.
 pub(crate) const NO_SPAWN: u32 = u32::MAX;
 
+/// How near its point a walking creature counts as there.
+const THERE_YD: f32 = 0.5;
+
 /// The pause between one stroll and the next, in seconds.
 const WANDER_PAUSE: (f32, f32) = (6.0, 16.0);
 
@@ -2196,7 +2199,10 @@ impl Mob {
         // A Field Giver shows the quest giver flag, so the client asks for its `!` and `?`.
         // A talk-to target shows the gossip flag, so the client opens its menu.
         let flags = if t.friendly {
-            u32::from(crate::quests::content::talk_target(t.entry)) * UNIT_NPC_FLAG_GOSSIP
+            // So does an escort's start creature, and its escortee, who shares its entry (#701).
+            u32::from(
+                crate::quests::content::talk_target(t.entry) || crate::escorts::starts(t.entry),
+            ) * UNIT_NPC_FLAG_GOSSIP
                 | u32::from(crate::quests::content::field_giver(t.entry)) * UNIT_NPC_FLAG_QUESTGIVER
         } else {
             0
@@ -2342,6 +2348,31 @@ impl Mob {
             flying: false,
             run_mode: false,
         })
+    }
+
+    /// Whether it has walked to `point` and stopped there.
+    pub(crate) fn there(&self, point: [f32; 3]) -> bool {
+        self.walk.is_none() && flat_distance(self.position, point) <= THERE_YD
+    }
+
+    /// Starts a walk to `point` at `speed_pct` of its walk speed, unless it is there or already
+    /// on its way: the move, when it starts one.
+    pub(crate) fn walk_toward(&mut self, point: [f32; 3], speed_pct: u32) -> Option<SessionEvent> {
+        (!self.heading_to(point)).then(|| self.walk_path(vec![point], speed_pct))
+    }
+
+    /// [`Self::walk_toward`] at a run.
+    pub(crate) fn run_toward(&mut self, point: [f32; 3]) -> Option<SessionEvent> {
+        (!self.heading_to(point)).then(|| self.run_path(vec![point], [f32::MAX; 3]))
+    }
+
+    /// Whether it stands at `point` or is on its way there.
+    fn heading_to(&self, point: [f32; 3]) -> bool {
+        let on_way = self
+            .walk
+            .as_ref()
+            .is_some_and(|w| w.points.last() == Some(&point));
+        on_way || self.there(point)
     }
 
     /// Walks on along the current path by `dt` seconds.

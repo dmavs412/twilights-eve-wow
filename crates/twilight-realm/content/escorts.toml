@@ -1,0 +1,77 @@
+# Escorts (#596, ADR 0035): a friendly creature that a character holding a quest asks to set off,
+# and that walks a fixed path for their group. Hand-written. Nothing here is named after one quest;
+# a quest's content points at an escort by the `quest` id below. `src/escorts.rs` runs them.
+#
+# A character holding the quest picks `start_option` in the start creature's gossip menu. The
+# group is them and every character on the map within the shared credit range (content/group.toml)
+# of the start creature who is in no running escort's group, fixed then. The start creature leaves
+# the group's view, and a private copy of it, seen by the group alone, walks the points. He waits
+# while no living group member is near, fights what attacks him (a defender, #700), and when he
+# reaches the last point every group member holding the quest has it met. If he dies, or no living
+# group member has been near him for `leash_s`, the escort fails: the quest stays in the log, not
+# failed, and the group sees the start creature again `reset_s` later. Everyone outside the group
+# still sees the start creature and can start an escort of their own.
+#
+# key           the escort's name, unique
+# quest         the quest whose holders may start it; met for every group member holding it on
+#               arrival, wherever they stand. The quest needs no objective of its own: the escort
+#               takes the log slot after its listed explore spots.
+# map           the map, 0 (Eastern Kingdoms) by default; open world only
+# spawn         the low guid of the friendly spawn row at the start: the creature players talk to.
+#               Its entry is the escortee's.
+# level         the escortee's level while escorted
+# health_mul    multiplies the escortee's health while escorted; 1.0 by default
+# start_option  the gossip line that starts the walk
+# start_say     optional; the escortee says it as he sets off
+# end_say       optional; he says it on reaching the last point
+# failed_text   sent to every group member as a system line when the escort fails
+# wait_yd       he stops and waits while no living group member is within this
+# leash_yd      the escort fails once no living group member has been within this for `leash_s`
+# leash_s       seconds
+# reset_s       seconds after the escort ends (success or failure) before the group sees the start
+#               creature again
+# linger_s      seconds he stands at the last point before he goes
+#
+# [[escort.point]]  in order; the first is his first step from the start spot, the last is the end
+# at            [x, y]; the Z comes from the host's ground when he walks there. Not `position`:
+#               ground_check.py reads a `position` line as a placed unit, and a path point is none.
+# wait_s        optional; seconds he stands here
+# say           optional; he says it on reaching the point
+# run           optional; true makes him run from here on
+#
+# The load fails on a repeated key, an escort with fewer than two points, a `spawn` that is no
+# friendly spawn row on `map`, a `quest` the realm does not have, and two escorts sharing a quest
+# or a spawn. An escort whose key starts with `test_` belongs to a test, which adds its quest
+# with `Realm::with_quests`; the load does not look its quest up.
+
+# Belongs to tests/escorts.rs, whose quest 99821 is added with `Realm::with_quests`; no shipped
+# quest names that id, so it cannot start in the game. Its start creature is the Erin of spawn
+# 960821 in content/zones.toml's redridge [[zone]], and its path runs 80 yd west from there.
+[[escort]]
+key = "test_escort"
+quest = 99821
+spawn = 960821
+level = 30
+health_mul = 1.0
+start_option = "Lead the way."
+start_say = "Stay close."
+end_say = "We made it."
+failed_text = "The escort has failed."
+wait_yd = 20.0
+leash_yd = 60.0
+leash_s = 10.0
+reset_s = 5.0
+linger_s = 3.0
+
+[[escort.point]]
+at = [-9825.0, -3463.0]
+
+[[escort.point]]
+at = [-9845.0, -3463.0]
+say = "Halfway."
+
+[[escort.point]]
+at = [-9865.0, -3463.0]
+
+[[escort.point]]
+at = [-9885.0, -3463.0]

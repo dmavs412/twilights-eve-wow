@@ -498,6 +498,12 @@ impl Quest {
         self.use_slot(self.use_object.len()) + i
     }
 
+    /// The log slot of its escort's counter (#701), when an escort names it: the slot after the
+    /// listed explore spots.
+    pub(crate) fn escort_slot(&self) -> usize {
+        self.explore_slot(self.explore.listed().len())
+    }
+
     /// The quest log's header the quest goes under.
     pub(crate) fn zone_or_sort(&self) -> i32 {
         self.zone_or_sort.unwrap_or(crate::THE_BARRENS as i32)
@@ -960,11 +966,13 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
             );
         }
     }
+    let escort = usize::from(crate::escorts::names(q.id));
     assert!(
-        q.kill.len() + q.talk.len() + q.use_object.len() + q.explore.listed().len() <= OBJECTIVES
+        q.kill.len() + q.talk.len() + q.use_object.len() + q.explore.listed().len() + escort
+            <= OBJECTIVES
             && q.collect.len() <= OBJECTIVES,
         "quest {} has more than {OBJECTIVES} kill, talk and use objectives (listed explore \
-         spots count too), or collect objectives",
+         spots and an escort count too), or collect objectives",
         q.id
     );
     for k in &q.kill {

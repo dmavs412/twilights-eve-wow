@@ -54,6 +54,8 @@
 #   the text goes to the character as a system message, and it gains no credit and cannot be
 #   handed in. A groupmate's combat does not count. Abandoning it from the log lets the giver
 #   offer it again with all credit reset.
+# - An escort in content/escorts.toml can name a quest (#701): that quest is met when its escortee
+#   arrives, and the escort takes the objective slot after the listed explore spots.
 # - `ender`: the Hub NPC or Field Giver who takes the quest in, when it is not the giver: a
 #   person found out in a Hunting Ground. A quest with no other objective is met on accepting,
 #   and finding them is the task.
