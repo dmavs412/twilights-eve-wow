@@ -6,6 +6,7 @@
 //! with it. `shaders/mist.wgsl` colours it with the scene fog.
 //! A placed mist wall (`benilla_formats::mist_walls`, ADR 0033) stands where there is no closed
 //! chunk, as in the Deeprun Tram's tunnel: the same shells on a straight line, and a solid box.
+//! Its material is its own: the WMO fog's colour and distance, and a lower band.
 //! When a Milestone opens a gated zone during play ([`ZonesOpened`], ADR 0034), the curtain on
 //! its old border fades out over [`OPEN_FADE_SECS`] on a copy of its own; placed walls never fade.
 
@@ -99,6 +100,12 @@ pub const FOOT_DESAT: f32 = 0.6;
 pub const FOOT_VALUE: f32 = 0.35;
 /// Yards above the ground over which the dark foot returns to the pure fog colour.
 pub const COLOUR_RAMP_YD: f32 = 60.0;
+/// [`OPAQUE_YD`] for a placed wall, whose floor stands far below the outdoor ground's band.
+pub const WALL_OPAQUE_YD: f32 = 8.0;
+/// [`RAG_YD`] for a placed wall.
+pub const WALL_RAG_YD: f32 = 3.0;
+/// [`COLOUR_RAMP_YD`] for a placed wall.
+pub const WALL_COLOUR_RAMP_YD: f32 = 15.0;
 /// Yards over which each sheet fades in above its own foot.
 pub const FOOT_RAMP_YD: f32 = 6.0;
 /// Yards from the camera within which shells 0 to 3 vanish, so the camera never crosses a hard
@@ -142,8 +149,8 @@ pub type MistMaterial = ExtendedMaterial<StandardMaterial, MistExt>;
 
 #[derive(Asset, AsBindGroup, Clone, TypePath)]
 pub struct MistExt {
-    /// The scene fog colour (raw gamma, as `WowLighting::fog_color`) and, in `w`, the seconds the
-    /// noise has drifted for.
+    /// The scene fog colour (raw gamma, as `WowLighting::fog_color`, or `wmo_fog_color` on the
+    /// placed walls) and, in `w`, the seconds the noise has drifted for.
     #[uniform(100)]
     pub(crate) fog: Vec4,
     /// [`OPAQUE_YD`], [`DRIFT_YD_S`], [`DRIFT_UP_YD_S`] and [`WARP_YD`], read by the shader.
@@ -156,8 +163,8 @@ pub struct MistExt {
     /// multiplies into the alpha: 1 on every curtain but one fading out ([`open_fade`]).
     #[uniform(103)]
     pub(crate) rag: Vec4,
-    /// The scene's linear fog start and end in yards (`WowLighting::fog_start`, `fog_end`),
-    /// [`BILLOW_LIGHT`] and [`BAND_FLOOR`].
+    /// The scene's linear fog start and end in yards (`WowLighting::fog_start`, `fog_end`, or
+    /// `wmo_fog_start`, `wmo_fog_end` on the placed walls), [`BILLOW_LIGHT`] and [`BAND_FLOOR`].
     #[uniform(104)]
     pub(crate) scene: Vec4,
     /// [`LAYER_DRIFT`]: entries 0 to 3 in the first vector, entry 4 in the second's `x`.
@@ -198,10 +205,47 @@ impl MaterialExtension for MistExt {
     }
 }
 
-/// The one mist material every curtain shares.
+/// The two shared mist materials: `material` for every closed-zone curtain on a tile, `wall` for
+/// the placed walls, which take the WMO fog and their own band.
 #[derive(Resource)]
 struct Mist {
     material: Handle<MistMaterial>,
+    wall: Handle<MistMaterial>,
+}
+
+/// The closed-zone curtains' extension and the placed walls', in that order: the same lanes but
+/// for the placed walls' [`WALL_OPAQUE_YD`], [`WALL_RAG_YD`] and [`WALL_COLOUR_RAMP_YD`]. Both
+/// start with no colour, no fog and a fade factor of 1.
+fn mist_exts() -> [MistExt; 2] {
+    let ext = |opaque: f32, rag: f32, ramp: f32| MistExt {
+        fog: Vec4::ZERO,
+        shape: Vec4::new(opaque, DRIFT_YD_S, DRIFT_UP_YD_S, WARP_YD),
+        foot: Vec4::new(FOOT_DESAT, FOOT_VALUE, ramp, FOOT_RAMP_YD),
+        rag: Vec4::new(rag, FADE_FLOOR, CAMERA_FADE_YD, 1.0),
+        scene: scene_lanes(0.0, 0.0),
+        drift: drift_lanes(),
+    };
+    [
+        ext(OPAQUE_YD, RAG_YD, COLOUR_RAMP_YD),
+        ext(WALL_OPAQUE_YD, WALL_RAG_YD, WALL_COLOUR_RAMP_YD),
+    ]
+}
+
+/// The `fog` and `scene` lanes of the closed-zone material and of the placed-wall one, in that
+/// order, after `t` seconds of drift: the scene fog triple for the curtains and the interior one
+/// (`wmo_fog_*`, the scene fog crossfaded toward the claimed WMO's MFOG) for the walls.
+fn fog_lanes(lighting: &WowLighting, t: f32) -> [(Vec4, Vec4); 2] {
+    let lanes = |[r, g, b]: [f32; 3], start: f32, end: f32| {
+        (Vec4::new(r, g, b, t), scene_lanes(start, end))
+    };
+    [
+        lanes(lighting.fog_color, lighting.fog_start, lighting.fog_end),
+        lanes(
+            lighting.wmo_fog_color,
+            lighting.wmo_fog_start,
+            lighting.wmo_fog_end,
+        ),
+    ]
 }
 
 /// A tile root whose curtain is built (or found to have none).
@@ -533,7 +577,7 @@ fn build_placed_walls(
         let mut curtain = commands.spawn((
             PlacedMistWall,
             Mesh3d(meshes.add(mesh)),
-            MeshMaterial3d(mist.material.clone()),
+            MeshMaterial3d(mist.wall.clone()),
             Transform::IDENTITY, // the mesh is in absolute world coords
         ));
         if let Some(aabb) = aabb {
@@ -741,23 +785,18 @@ fn curtain_mesh(segments: &[Segment]) -> Mesh {
 }
 
 fn setup_mist(mut commands: Commands, mut materials: ResMut<Assets<MistMaterial>>) {
-    let material = materials.add(MistMaterial {
-        base: StandardMaterial {
-            unlit: true,
-            cull_mode: None, // both faces: the curtain is seen from either side
-            alpha_mode: AlphaMode::Blend,
-            ..default()
-        },
-        extension: MistExt {
-            fog: Vec4::ZERO,
-            shape: Vec4::new(OPAQUE_YD, DRIFT_YD_S, DRIFT_UP_YD_S, WARP_YD),
-            foot: Vec4::new(FOOT_DESAT, FOOT_VALUE, COLOUR_RAMP_YD, FOOT_RAMP_YD),
-            rag: Vec4::new(RAG_YD, FADE_FLOOR, CAMERA_FADE_YD, 1.0),
-            scene: scene_lanes(0.0, 0.0),
-            drift: drift_lanes(),
-        },
+    let [material, wall] = mist_exts().map(|extension| {
+        materials.add(MistMaterial {
+            base: StandardMaterial {
+                unlit: true,
+                cull_mode: None, // both faces: the curtain is seen from either side
+                alpha_mode: AlphaMode::Blend,
+                ..default()
+            },
+            extension,
+        })
     });
-    commands.insert_resource(Mist { material });
+    commands.insert_resource(Mist { material, wall });
 }
 
 /// Builds each newly spawned tile's curtain, once, as a child of its terrain root, for the
@@ -889,8 +928,9 @@ fn tick_fading_mist(
     }
 }
 
-/// Keeps the mist the scene fog's colour and distance, through day, night and weather, and drifts
-/// its noise on a clock that wraps every [`DRIFT_WRAP_SECS`].
+/// Keeps the curtains the scene fog's colour and distance and the placed walls the WMO fog's
+/// ([`fog_lanes`]), through day, night and weather, and drifts their noise on a clock that wraps
+/// every [`DRIFT_WRAP_SECS`].
 fn tint_mist(
     lighting: Option<Res<WowLighting>>,
     time: Res<Time>,
@@ -900,11 +940,13 @@ fn tint_mist(
     let Some(lighting) = lighting else {
         return;
     };
-    let [r, g, b] = lighting.fog_color;
-    if let Some(m) = materials.get_mut(&mist.material) {
-        let t = (time.elapsed_secs_f64() % DRIFT_WRAP_SECS) as f32;
-        m.extension.fog = Vec4::new(r, g, b, t);
-        m.extension.scene = scene_lanes(lighting.fog_start, lighting.fog_end);
+    let t = (time.elapsed_secs_f64() % DRIFT_WRAP_SECS) as f32;
+    let handles = [&mist.material, &mist.wall];
+    for (handle, (fog, scene)) in handles.into_iter().zip(fog_lanes(&lighting, t)) {
+        if let Some(m) = materials.get_mut(handle) {
+            m.extension.fog = fog;
+            m.extension.scene = scene;
+        }
     }
 }
 
@@ -1534,6 +1576,61 @@ mod tests {
                 let want = if i < 11 { wall.bottom } else { wall.top };
                 assert!((z - want).abs() < 1e-4, "shell {k}: z {z}");
             }
+        }
+    }
+
+    #[test]
+    fn placed_walls_take_their_own_material() {
+        let [zone, wall] = mist_exts();
+        assert_eq!(
+            (zone.shape.x, zone.rag.x, zone.foot.z),
+            (OPAQUE_YD, RAG_YD, COLOUR_RAMP_YD)
+        );
+        assert_eq!(
+            (wall.shape.x, wall.rag.x, wall.foot.z),
+            (WALL_OPAQUE_YD, WALL_RAG_YD, WALL_COLOUR_RAMP_YD)
+        );
+        // Every other lane alike, the fade factor 1 on both.
+        assert_eq!(zone.shape.yzw(), wall.shape.yzw());
+        assert_eq!(zone.rag.yzw(), wall.rag.yzw());
+        assert_eq!(wall.rag.w, 1.0);
+        assert_eq!((zone.foot.x, zone.foot.y), (wall.foot.x, wall.foot.y));
+        assert_eq!(zone.foot.w, wall.foot.w);
+        assert_eq!(
+            (zone.fog, zone.scene, zone.drift),
+            (wall.fog, wall.scene, wall.drift)
+        );
+    }
+
+    #[test]
+    fn the_placed_wall_reads_the_wmo_fog() {
+        let lighting = WowLighting {
+            fog_color: [0.5, 0.6, 0.7],
+            fog_start: 100.0,
+            fog_end: 400.0,
+            wmo_fog_color: [30.0 / 255.0, 53.0 / 255.0, 100.0 / 255.0],
+            wmo_fog_start: 50.0,
+            wmo_fog_end: 236.1,
+            ..default()
+        };
+        let [zone, wall] = fog_lanes(&lighting, 12.0);
+        assert_eq!(zone.0, Vec4::new(0.5, 0.6, 0.7, 12.0));
+        assert_eq!(zone.1, scene_lanes(100.0, 400.0));
+        assert_eq!(
+            wall.0,
+            Vec4::new(30.0 / 255.0, 53.0 / 255.0, 100.0 / 255.0, 12.0)
+        );
+        assert_eq!(wall.1, scene_lanes(50.0, 236.1));
+    }
+
+    #[test]
+    fn a_placed_walls_shells_span_the_wall() {
+        let (positions, ..) = mesh_parts(&curtain_mesh(&[wall_segment(&test_wall())]));
+        assert_eq!(positions.len(), 5 * 22);
+        for (k, shell) in positions.chunks(22).enumerate() {
+            let (feet, tops) = shell.split_at(11);
+            assert!(feet.iter().all(|p| (p[2] + 20.0).abs() < 1e-4), "shell {k}");
+            assert!(tops.iter().all(|p| (p[2] - 30.0).abs() < 1e-4), "shell {k}");
         }
     }
 
