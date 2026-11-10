@@ -2094,6 +2094,84 @@ class TalentRows(BuildSpells):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual(data[0]["skills"][0]["effects"][0]["params"], {})
 
+    # The Blade kinds (#678).
+    HEMO_AURA = {**AURA, "key": "hemorrhage", "modelled": "yes", "charges": "",
+                 "effect1_kind": "mod_periodic_taken_pct", "effect1_params": "pct=20"}
+
+    def test_mod_periodic_taken_pct_is_a_whole_pct_to_100_that_a_skill_applies_from_its_aura_row(self):
+        done, data = self.run_build([CALLING, {**self.HEMO_AURA, "effect1_params": "pct=20;school=fire"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["auras"][0]["effects"][0]["params"], {"pct": 20, "school": "fire"})
+        hemo = {**STRIKE, "effect1_kind": "mod_periodic_taken_pct", "effect1_params": "apply_aura=hemorrhage"}
+        self.assertEqual(self.built_params([CALLING, self.HEMO_AURA], hemo, "tags=a")["apply_aura"], "hemorrhage")
+        for bad in ("pct=0", "pct=101", "pct=1.5"):
+            with self.subTest(bad=bad):
+                self.assert_fails([CALLING, {**self.HEMO_AURA, "effect1_params": bad}],
+                                  "mod_periodic_taken_pct needs a whole pct from 1 to 100, has")
+        self.assert_fails([CALLING, {**self.HEMO_AURA, "effect1_params": "pct=20;school=wind"}],
+                          "mod_periodic_taken_pct school is 'wind'")
+        self.assert_fails([CALLING, self.HEMO_AURA, {**hemo, "effect1_params": "pct=20"}],
+                          "a skill's mod_periodic_taken_pct names its aura row with apply_aura")
+
+    def test_tick_now_takes_whole_ticks_per_combo_a_heal_and_a_droplet_chance(self):
+        row = {**STRIKE, "effect1_kind": "tick_now", "effect1_params": "school=physical"}
+        params = self.built_params([CALLING], row, "ticks_per_combo=1;heal_pct=10;drop_chance=50")
+        self.assertEqual(params, {"school": "physical", "ticks_per_combo": 1, "heal_pct": 10, "drop_chance": 50})
+        for param in ("ticks", "ticks_per_combo", "heal_pct"):
+            with self.subTest(param=param):
+                self.assert_each_fails([CALLING], row, f"tick_now {param} needs a whole number of at least 1, has",
+                                       f"{param}=0", f"{param}=1.5")
+        self.assert_each_fails([CALLING], row, "tick_now drop_chance needs a whole number from 1 to 100, has",
+                               "drop_chance=0", "drop_chance=101")
+        self.assert_fails([CALLING, {**row, "effect1_params": "school=wind"}], "tick_now school is 'wind'")
+
+    LUST = {**AURA, "key": "bloodlust", "spell_id": "1014180", "modelled": "yes", "charges": "",
+            "max_stacks": "5", "stack_rule": "stack", "effect1_kind": "mod_damage_done_pct",
+            "effect1_params": "pct=3"}
+    FRENZY = {**LUST, "key": "red_frenzy", "spell_id": "1014181", "effect1_kind": "mod_melee_haste_pct",
+              "effect1_params": "pct=5"}
+
+    def test_consume_self_stacks_names_a_known_aura_and_a_stacking_grant(self):
+        row = {**STRIKE, "target": "self", "effect1_kind": "consume_self_stacks",
+               "effect1_params": "aura=bloodlust;grant=red_frenzy", "effect4_kind": "", "effect4_params": ""}
+        before = [CALLING, self.LUST, self.FRENZY]
+        done, data = self.run_build([*before, row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"], {"aura": "bloodlust", "grant": "red_frenzy"})
+        self.assert_fails([*before, {**row, "effect1_params": "aura=ghost;grant=red_frenzy"}],
+                          "aura 'ghost' is not an aura row of this Calling")
+        self.assert_fails([*before, {**row, "effect1_params": "aura=bloodlust;grant=ghost"}],
+                          "grant 'ghost' is not an aura row of this Calling")
+        self.assert_fails([*before, {**row, "effect1_params": "aura=bloodlust"}],
+                          "consume_self_stacks needs grant, one aura key, has None")
+        refresh = {**self.FRENZY, "stack_rule": "refresh"}
+        self.assert_fails([CALLING, self.LUST, refresh, row], "grant 'red_frenzy' needs stack_rule=stack, has 'refresh'")
+
+    def test_spill_droplets_needs_a_count_and_the_callings_droplet(self):
+        droplet = {**AURA, "key": "droplet", "spell_id": "1014178", "modelled": "yes", "charges": "",
+                   "effect1_kind": "pickup",
+                   "effect1_params": "grants=bloodlust;radius_yd=1;scatter_min_yd=3;scatter_max_yd=6"}
+        row = {**STRIKE, "target": "self", "effect1_kind": "spill_droplets", "effect1_params": "count=3",
+               "effect4_kind": "", "effect4_params": ""}
+        before = [CALLING, self.LUST, droplet]
+        self.profiles = {"vanguard": {"bleed_drop": "droplet", "bleed_drop_chance": "50"}}
+        self.assertEqual(self.built_params(before, row, "duration_ms=4000"), {"count": 3, "duration_ms": 4000})
+        self.assert_each_fails(before, {**row, "effect1_params": "duration_ms=4000"},
+                               "spill_droplets needs a count of at least 1, has", "count=0", "count=1.5")
+        self.assert_each_fails(before, row, "spill_droplets duration_ms needs a whole number of at least 1, has",
+                               "duration_ms=0")
+        self.profiles = {}
+        self.assert_fails([*before, row], "spill_droplets needs the Calling's bleed_drop in callings.csv")
+
+    def test_drop_threat_takes_no_params(self):
+        row = {**STRIKE, "target": "self", "effect1_kind": "drop_threat", "effect1_params": "",
+               "effect4_kind": "", "effect4_params": ""}
+        done, data = self.run_build([CALLING, row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0], {"kind": "drop_threat", "params": {},
+                                                              "realm_only": False})
+        self.assert_fails([CALLING, {**row, "effect1_params": "radius_yd=10"}], "drop_threat takes no params, has")
+
     def test_a_snares_radius_yd_is_a_whole_number_of_at_least_1(self):
         self.assert_whole_param([], self.SNARE, "radius_yd")
 

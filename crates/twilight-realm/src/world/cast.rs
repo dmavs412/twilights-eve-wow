@@ -817,6 +817,11 @@ enum AuraKind {
         pct: u32,
         school: Option<School>,
     },
+    /// The unit takes `pct` percent more from the player's periodic damage of `school`.
+    PeriodicTaken {
+        pct: u32,
+        school: School,
+    },
     /// The amounts the player's `skill` deals are `pct` percent higher (a buff from a `proc`).
     SkillAmount {
         skill: &'static str,
@@ -1730,6 +1735,79 @@ impl Skills {
             .sum()
     }
 
+    /// The percent more `unit` takes from the player's periodic damage of `school` (Hemorrhage).
+    /// Only the player's own auras are in their list, so another's ticks never read it.
+    fn periodic_taken_pct(&self, unit: u64, school: School) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == unit)
+            .map(|a| match a.kind {
+                AuraKind::PeriodicTaken { pct, school: of } if of == school => pct,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// Whether the player has a periodic damage of `school` on `unit`.
+    fn bleeds(&self, unit: u64, school: School) -> bool {
+        let me = self.me;
+        self.auras.iter().any(|a| {
+            a.unit == unit
+                && matches!(a.kind, AuraKind::PeriodicDamage { caster, school: s, .. }
+                    if caster == me && s == school)
+        })
+    }
+
+    /// The stacks of the player's own aura `spell_id`: the most any of its effects holds, 0 when
+    /// it is not on them.
+    fn own_stacks(&self, spell_id: u32) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me && a.spell_id == spell_id)
+            .map(|a| a.kind.stacks())
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// Sets every stacking effect of the player's aura `spell_id` to `n` stacks, held to each
+    /// one's most.
+    fn set_own_stacks(&mut self, spell_id: u32, n: u32, events: &mut Vec<SessionEvent>) {
+        let me = self.me;
+        let mut slot = None;
+        for a in self
+            .auras
+            .iter_mut()
+            .filter(|a| a.unit == me && a.spell_id == spell_id)
+        {
+            match &mut a.kind {
+                AuraKind::SkillAmount {
+                    stacks, max_stacks, ..
+                }
+                | AuraKind::DamageDone {
+                    stacks, max_stacks, ..
+                }
+                | AuraKind::MeleeHaste {
+                    stacks, max_stacks, ..
+                }
+                | AuraKind::NextCast {
+                    stacks, max_stacks, ..
+                }
+                | AuraKind::ArmorLoss {
+                    stacks, max_stacks, ..
+                }
+                | AuraKind::PeriodicDamage {
+                    stacks, max_stacks, ..
+                } => *stacks = n.min(*max_stacks),
+                AuraKind::Stacks { count, max, .. } => *count = n.min(*max),
+                _ => continue,
+            }
+            slot = Some(a.slot);
+        }
+        if let Some(slot) = slot {
+            events.push(self.slot_fields(me, slot));
+        }
+    }
+
     /// Whether `unit` wears an aura of `spell_id`.
     pub(super) fn on(&self, unit: u64, spell_id: u32) -> bool {
         self.auras
@@ -1888,7 +1966,8 @@ impl Skills {
 
     /// `skill` landed (`None`: a white swing): each of the player's buffs for it, or for `any`
     /// skill, with charges loses one, and a spent one goes. A white swing spends only a buff for
-    /// `any` skill, and a skill never spends a buff of its own spell, which its cast just granted.
+    /// `any` skill, and a skill never spends a buff its cast just granted: one of its own spell,
+    /// or an aura row its `grant_aura` names (Cold Blood).
     pub(super) fn spend_charges(
         &mut self,
         skill: Option<&Skill>,
@@ -1900,7 +1979,9 @@ impl Skills {
                 | AuraKind::SkillAmount { skill: s, .. }
                 | AuraKind::SkillCost { skill: s, .. }
                 | AuraKind::SkillStacks { skill: s, .. } => match skill {
-                    Some(k) => k.is(s) || (s == "any" && a.spell_id != k.spell_id),
+                    Some(k) => {
+                        k.is(s) || (s == "any" && a.spell_id != k.spell_id && !k.grants(a.spell_id))
+                    }
                     None => s == "any",
                 },
                 _ => false,
@@ -3893,6 +3974,21 @@ impl InWorld {
             if !worn {
                 return Err(SPELL_FAILED_CASTER_AURASTATE);
             }
+            // A cast that spends the caster's own stacks needs some (Red Frenzy), and one that
+            // ticks the caster's bleeds now needs one on the target (Open Veins).
+            match *effect {
+                Effect::ConsumeSelfStacks { aura_spell_id, .. }
+                    if self.skills.own_stacks(aura_spell_id) == 0 =>
+                {
+                    return Err(SPELL_FAILED_CASTER_AURASTATE);
+                }
+                Effect::TickNow { school, .. }
+                    if target.is_none_or(|t| !self.skills.bleeds(t, school)) =>
+                {
+                    return Err(SPELL_FAILED_TARGET_AURASTATE);
+                }
+                _ => {}
+            }
         }
         match skill.target {
             Target::Caster => Ok(vec![self.guid]),
@@ -4670,6 +4766,62 @@ impl InWorld {
                     self.update_speed(unit, events);
                 }
             }
+            Effect::ModPeriodicTakenPct {
+                pct,
+                school,
+                duration_ms,
+                aura_spell_id,
+            } => {
+                let a = aura(
+                    AuraKind::PeriodicTaken { pct, school },
+                    aura_spell_id.unwrap_or(skill.spell_id),
+                    duration_ms,
+                    0,
+                );
+                self.skills.apply(a, events);
+            }
+            Effect::TickNow {
+                school,
+                ticks,
+                ticks_per_combo,
+                heal_pct,
+                drop_chance,
+            } => {
+                let n = if ticks_per_combo > 0 {
+                    ticks_per_combo * u32::from(combo)
+                } else {
+                    ticks
+                };
+                let dealt = self.tick_now(target, school, n, drop_chance, c, rng, events, ticked);
+                let heal = scaled_share(dealt, heal_pct);
+                if heal > 0 {
+                    self.heal_player(c, skill.spell_id, heal, events);
+                }
+            }
+            Effect::ConsumeSelfStacks {
+                aura_spell_id,
+                grant_spell_id,
+            } => {
+                let stacks = self.skills.own_stacks(aura_spell_id);
+                let me = self.guid;
+                let gone = self
+                    .skills
+                    .remove_where(|a| a.unit == me && a.spell_id == aura_spell_id, events);
+                self.faded(&gone, events);
+                if let Some(def) = callings::of(c.calling).aura_by_spell(grant_spell_id) {
+                    if stacks > 0 {
+                        self.grant_aura(def, level, 0, events);
+                        self.skills.set_own_stacks(grant_spell_id, stacks, events);
+                    }
+                }
+            }
+            Effect::SpillDroplets { count, duration_ms } => {
+                let at = c.position;
+                for _ in 0..count {
+                    self.spill_droplet(c, at, duration_ms, rng, events);
+                }
+            }
+            Effect::DropThreat => self.drop_threat(events),
             Effect::AuraAttackPower {
                 duration_ms,
                 amount,
@@ -6515,9 +6667,9 @@ impl InWorld {
                     let per_tick = per_tick * stacks;
                     let on_player = a.unit == self.guid;
                     // The player's own tick on an enemy grows with their damage buffs, as their
-                    // hits do.
+                    // hits do, and with what the enemy takes more of their ticks.
                     let per_tick = if !on_player && caster == self.guid {
-                        self.dealt(c, per_tick)
+                        self.own_tick(c, a.unit, per_tick, school)
                     } else {
                         per_tick
                     };
@@ -6689,8 +6841,124 @@ impl InWorld {
         }
     }
 
+    /// What one tick of the player's periodic damage of `school` on `unit` deals: `raw` grown by
+    /// their damage buffs and by what `unit` takes more of their ticks (Hemorrhage).
+    fn own_tick(&self, c: &Char, unit: u64, raw: u32, school: School) -> u32 {
+        scaled(
+            self.dealt(c, raw),
+            self.skills.periodic_taken_pct(unit, school),
+        )
+    }
+
+    /// Each of the player's periodic damage of `school` on `target` deals `n` of its ticks now,
+    /// its timer and stacks left alone, each forced Physical tick spilling the Calling's droplet
+    /// `drop_chance` percent of the time (Open Veins): what they dealt in all.
+    #[allow(clippy::too_many_arguments)]
+    fn tick_now(
+        &mut self,
+        target: u64,
+        school: School,
+        n: u32,
+        drop_chance: u32,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) -> u32 {
+        let me = self.guid;
+        let bleeds: Vec<(u32, u32)> = self
+            .skills
+            .auras
+            .iter()
+            .filter(|a| a.unit == target)
+            .filter_map(|a| match a.kind {
+                AuraKind::PeriodicDamage {
+                    per_tick,
+                    stacks,
+                    caster,
+                    school: s,
+                    ..
+                } if caster == me && s == school => Some((a.spell_id, per_tick * stacks)),
+                _ => None,
+            })
+            .collect();
+        let mut dealt = 0;
+        for (spell_id, raw) in bleeds {
+            for _ in 0..n {
+                if !self.mobs.iter().any(|m| m.guid == target && m.alive()) {
+                    return dealt;
+                }
+                let amount = self.own_tick(c, target, raw, school);
+                events.push(SessionEvent::PeriodicAuraLog(PeriodicAuraLog {
+                    target,
+                    caster: me,
+                    spell_id,
+                    ticks: vec![PeriodicTick::Damage {
+                        amount,
+                        school: u32::from(school.index()),
+                        absorb: 0,
+                        resist: 0,
+                    }],
+                }));
+                self.hurt(target, amount, c, rng, events, ticked);
+                dealt += amount;
+                if school == School::Physical && drop_chance > 0 && rng.below(100) < drop_chance {
+                    self.drop_blood(c, target, rng, events);
+                }
+            }
+        }
+        dealt
+    }
+
+    /// Every mob lets go of the player: off its threat list and out of a taunt of theirs, so one
+    /// with no one else to fight gives up and goes home at its next tick, as when its target
+    /// dies. The player stops attacking and leaves combat (Vanish).
+    fn drop_threat(&mut self, events: &mut Vec<SessionEvent>) {
+        self.stop_attack(events);
+        self.leave_threat_lists();
+        let me = self.guid;
+        for mob in &mut self.mobs {
+            if mob.taunted.is_some_and(|(by, _)| by == me) {
+                mob.taunted = None;
+            }
+        }
+        self.skills.combat_hold = 0.0;
+        if self.player.in_combat {
+            self.player.in_combat = false;
+            self.damage_stack = 0;
+            events.push(values(
+                self.guid,
+                &[(
+                    UNIT_FIELD_FLAGS,
+                    super::fear::unit_flags(false, self.fear.is_some()),
+                )],
+            ));
+        }
+    }
+
     /// Spills a blood droplet 3 to 6 yd (the row's scatter) around the mob `unit`.
     fn drop_blood(&mut self, c: &Char, unit: u64, rng: &mut Rng, events: &mut Vec<SessionEvent>) {
+        let Some(at) = self
+            .mobs
+            .iter()
+            .find(|m| m.guid == unit)
+            .map(|m| m.position)
+        else {
+            return;
+        };
+        self.spill_droplet(c, at, None, rng, events);
+    }
+
+    /// Spills one of the Calling's blood droplets, scattered as its row says around `at`, lasting
+    /// `duration_ms` when set or the row's duration; nothing for a Calling with none.
+    fn spill_droplet(
+        &mut self,
+        c: &Char,
+        at: [f32; 3],
+        duration_ms: Option<u32>,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) {
         let Some(def) = crate::callings::of(c.calling)
             .bleed_drop
             .as_deref()
@@ -6711,14 +6979,6 @@ impl InWorld {
         else {
             return;
         };
-        let Some(at) = self
-            .mobs
-            .iter()
-            .find(|m| m.guid == unit)
-            .map(|m| m.position)
-        else {
-            return;
-        };
         let angle = rng.frand(0.0, std::f32::consts::TAU);
         let away = rng.frand(*scatter_min_yd, *scatter_max_yd);
         let centre = [
@@ -6732,7 +6992,7 @@ impl InWorld {
             spell_id: def.spell_id,
             centre,
             radius_yd: *radius_yd,
-            left: clock::secs(def.duration_ms),
+            left: clock::secs(duration_ms.unwrap_or(def.duration_ms)),
             grants: grants.as_str(),
             shown: (*object_display > 0).then(|| (shown_guid(object), *object_display)),
         };
@@ -7924,6 +8184,12 @@ impl InWorld {
                     pct: *pct,
                     school: *school,
                 },
+                callings::AuraEffect::ModPeriodicTakenPct { pct, school } => {
+                    AuraKind::PeriodicTaken {
+                        pct: *pct,
+                        school: *school,
+                    }
+                }
                 callings::AuraEffect::SkillAmountPct { skill, pct } => AuraKind::SkillAmount {
                     skill: skill.as_str(),
                     pct: *pct,

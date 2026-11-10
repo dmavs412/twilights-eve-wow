@@ -483,6 +483,12 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::CastSkill { .. } => {
             panic!("{key}: the reference has no realm half for a cast of another skill")
         }
+        // The Blade kinds live in the master CSV only (#678); tests/blade_kinds.rs reads them.
+        Effect::ModPeriodicTakenPct { .. }
+        | Effect::TickNow { .. }
+        | Effect::ConsumeSelfStacks { .. }
+        | Effect::SpillDroplets { .. }
+        | Effect::DropThreat => panic!("{key}: the reference has no realm half for a Blade kind"),
     }
 }
 

@@ -199,6 +199,34 @@ player is of no creature type. `add_aura_stacks` takes `per_target=yes|no`: on a
 on several enemies (`target=self_area`), `yes` adds `stacks` once per enemy it landed on, up to
 the aura row's `max_stacks`, and `no` or none adds them once. A `taunt` on a `self_area` row
 already taunts every enemy it lands on.
+The Cutthroat Line's Tier 2 rows (#678) add five, each a whole number of at least 1 unless said
+otherwise. The aura kind `mod_periodic_taken_pct` takes `pct=N`, 1 to 100, and an optional
+`school=`, physical when left out: the unit wearing it takes N% more from the aura's caster's
+periodic damage of that school. Another player's ticks on it are as they were, since each
+player's auras live in their own session (`mod_damage_taken_pct` counts only other casters). A
+skill puts it on with an effect of the same kind and `apply_aura=key`, as `mod_run_speed` does;
+the build refuses one on a skill row without `apply_aura`. `tick_now` takes `school=`, physical
+when left out, and `ticks=N`, 1 when left out: each periodic damage of that school the caster has
+on the target deals N of its ticks at once, one log each, its timer and stacks left alone.
+`ticks_per_combo=N` makes it a finisher, N ticks a combo point, spending the points. `heal_pct=N`
+heals the caster N% of what the forced ticks dealt, and `drop_chance=N`, 1 to 100, spills the
+Calling's `bleed_drop` droplet at N% per forced physical tick. A forced tick runs no tick riders
+and no procs, and spills no droplet at the Calling's own chance. With no such aura on the target
+the cast is refused and costs nothing. `consume_self_stacks` takes `aura=key`, a stacking aura row
+of the Calling the caster wears (Bloodlust), and `grant=key`, an aura row with `stack_rule=stack`,
+which the build checks. The cast takes every stack of `aura` and puts `grant` up with that many,
+held to its `max_stacks`, for its duration; with none the cast is refused. `spill_droplets` takes
+`count=N` and an optional `duration_ms=N`: N of the Calling's `bleed_drop` droplets land around the
+caster, scattered as the pickup row's `scatter_min_yd` and `scatter_max_yd` say, lasting
+`duration_ms` or the pickup row's duration. The build refuses it for a Calling with no
+`bleed_drop`. `drop_threat` takes no params: every creature takes the caster off its threat list
+and out of a taunt of theirs, and one left with no one to fight gives up and goes home at its next
+tick, as when its target dies. The caster stops attacking and leaves combat. A `grant_aura` of a
+`stealth` aura row after it in the same cast puts Stealth up in what was a fight, since only a
+skill row's `requires` holds `combat=out`. An aura row's `skill_crit_pct` already took
+`skill=any`: the caster's next landed skill crits more, spending one `charges`, and a skill no
+longer spends a buff its own `grant_aura` just put up (Cold Blood). A white swing still spends an
+`any` buff, as it did.
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

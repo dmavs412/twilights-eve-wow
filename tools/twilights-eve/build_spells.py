@@ -52,6 +52,7 @@ KNOWN_KINDS = {
     "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
     "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike", "pickup",
     "refund_cost", "cast_skill", "cast_while_moving", "mod_threat_pct",
+    "mod_periodic_taken_pct", "tick_now", "consume_self_stacks", "spill_droplets", "drop_threat",
 }
 # 1.12's CreatureType names, ids 1 to 9 in this order: a hit's `vs_type` and a control's
 # `only_type`.
@@ -1291,11 +1292,54 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
             raise BuildError(f"{where}: a judgement of seal lacks an amount formula (amount.base, amount.per_level)")
         if "heal_pct" in params and not is_whole(params["heal_pct"]):
             raise BuildError(f"{where}: heal_pct needs a whole number of at least 1, has {params['heal_pct']!r}")
+    # The Blade kinds (#678): a bleed taken aura, bleeds ticked now, a spend of the caster's own
+    # stacks, droplets spilled around the caster.
+    if kind == "mod_periodic_taken_pct" and ("pct" in params or "apply_aura" not in params):
+        # A skill's effect reads its pct from the aura row it applies.
+        if not is_whole(params.get("pct"), 100):
+            raise BuildError(f"{where}: mod_periodic_taken_pct needs a whole pct from 1 to 100, has {params.get('pct')!r}")
+    if kind in ("mod_periodic_taken_pct", "tick_now") and params.get("school", "physical") not in SCHOOLS:
+        raise BuildError(f"{where}: {kind} school is {params['school']!r}, want one of {', '.join(SCHOOLS)}")
+    if kind == "tick_now":
+        for param in ("ticks", "ticks_per_combo", "heal_pct"):
+            if param in params and not is_whole(params[param]):
+                raise BuildError(f"{where}: tick_now {param} needs a whole number of at least 1, has {params[param]!r}")
+        if "drop_chance" in params and not is_whole(params["drop_chance"], 100):
+            raise BuildError(f"{where}: tick_now drop_chance needs a whole number from 1 to 100, has "
+                             f"{params['drop_chance']!r}")
+    if kind == "consume_self_stacks":
+        for param in ("aura", "grant"):
+            if not isinstance(params.get(param), str):
+                raise BuildError(f"{where}: consume_self_stacks needs {param}, one aura key, has {params.get(param)!r}")
+    if kind == "spill_droplets":
+        if not is_whole(params.get("count")):
+            raise BuildError(f"{where}: spill_droplets needs a count of at least 1, has {params.get('count')!r}")
+        if "duration_ms" in params and not is_whole(params["duration_ms"]):
+            raise BuildError(f"{where}: spill_droplets duration_ms needs a whole number of at least 1, has "
+                             f"{params['duration_ms']!r}")
+    if kind == "drop_threat" and params:
+        raise BuildError(f"{where}: drop_threat takes no params, has {', '.join(params)}")
     if kind == "skill_crit_pct" and not isinstance(params.get("skill", "any"), str):
         raise BuildError(f"{where}: skill_crit_pct skill is one skill key or any, has {params['skill']!r}")
     for block in ("per_combo", "duration_per_combo"):
         if block in params and not isinstance(params[block], dict):
             raise BuildError(f"{where}: {block} is a formula block ({block}.base, {block}.per_level)")
+
+
+def check_blade_refs(row: dict, where: str, profile: dict, aura_rows: dict[str, dict]) -> None:
+    """What the Blade kinds (#678) need of other rows: a stack consume's `grant` is an aura row with
+    `stack_rule=stack`, and a droplet spill's Calling has a `bleed_drop` in callings.csv."""
+    for i in range(1, MAX_EFFECTS + 1):
+        kind = row[f"effect{i}_kind"]
+        if kind not in ("consume_self_stacks", "spill_droplets"):
+            continue
+        here = f"{where} effect{i}"
+        if kind == "spill_droplets" and not profile.get("bleed_drop"):
+            raise BuildError(f"{here}: spill_droplets needs the Calling's bleed_drop in callings.csv")
+        grant = parse_params(row[f"effect{i}_params"], here).get("grant")
+        rule = aura_rows[grant].get("stack_rule", "") if grant in aura_rows else "stack"
+        if kind == "consume_self_stacks" and rule != "stack":
+            raise BuildError(f"{here}: grant {grant!r} needs stack_rule=stack, has {rule or 'refresh'!r}")
 
 
 def client_visible(row: dict, where: str) -> bool:
@@ -1789,7 +1833,7 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
                 raise BuildError(f"{here}: unknown effect kind {kind!r}")
             check_kind_params(kind, parsed, here)
         if kind in ("add_aura_stacks", "grow_aura", "consume_aura_stacks", "grant_aura", "consume_aura",
-                    "aura_max_stacks"):
+                    "aura_max_stacks", "consume_self_stacks"):
             if parsed.get("aura") not in auras:
                 raise BuildError(f"{here}: aura {parsed.get('aura')!r} is not an aura row of this Calling")
             if kind == "grow_aura" and "periodic_damage" not in auras[parsed["aura"]]:
@@ -1800,6 +1844,10 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             raise BuildError(f"{here}: seal {parsed['seal']!r} is not an aura row of this Calling")
         if kind == "mod_threat_pct" and row["kind"] != "aura":
             raise BuildError(f"{here}: mod_threat_pct belongs on an aura row, not a {row['kind']} row")
+        if kind == "consume_self_stacks" and parsed.get("grant") not in auras:
+            raise BuildError(f"{here}: grant {parsed.get('grant')!r} is not an aura row of this Calling")
+        if kind == "mod_periodic_taken_pct" and row["kind"] != "aura" and "apply_aura" not in parsed:
+            raise BuildError(f"{here}: a skill's mod_periodic_taken_pct names its aura row with apply_aura")
         if kind == "ground_effect" and "caster_aura" in parsed and parsed["caster_aura"] not in auras:
             raise BuildError(f"{here}: caster_aura {parsed['caster_aura']!r} is not an aura row of this Calling")
         if kind == "ground_area":
@@ -2303,6 +2351,8 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
     auras = {c: {r["key"]: {r[f"effect{i}_kind"] for i in range(1, MAX_EFFECTS + 1) if r[f"effect{i}_kind"]}
                  for r in rows if r["kind"] == "aura" and r["calling"] == c}
              for c in {r["calling"] for r in rows}}
+    aura_rows = {c: {r["key"]: r for r in rows if r["kind"] == "aura" and r["calling"] == c}
+                 for c in {r["calling"] for r in rows}}
     for key, profile in profiles.items():
         drop = profile.get("bleed_drop")
         if drop and "pickup" not in auras.get(key, {}).get(drop, set()):
@@ -2363,6 +2413,7 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
                 raise BuildError(f"{where}: variant_of {choice_of!r} is not a skill of {row['calling']}")
             # The merged row builds exactly as a skill: a visible, castable spell-book row.
             source = {**overlay(skills_by_key[(row["calling"], choice_of)][1], row, where), "kind": "skill"}
+        check_blade_refs(source, where, profile, aura_rows[row["calling"]])
         built = build_row(source, where, auras[row["calling"]])
         identity = (row["calling"], kind, row["key"], built["rank"])
         if identity in seen:

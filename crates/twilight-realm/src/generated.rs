@@ -330,8 +330,9 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
     }
     // A ground area's auras (`enemy_aura=key`, `ally_aura=key`), the aura rows a shield puts on its
     // attacker, a burn's tick gives its caster and a hit is stronger against, the damage over
-    // time a drain's tick and an area's clock grow, and the Seal a judgement judges (a `seal`
-    // effect's `seal` is its own block), by their rows' spell ids.
+    // time a drain's tick and an area's clock grow, the Seal a judgement judges (a `seal`
+    // effect's `seal` is its own block) and the aura a stack consume grants, by their rows' spell
+    // ids.
     let judges = (e.kind == "judgement").then_some("seal");
     for side in [
         "enemy_aura",
@@ -341,6 +342,7 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
         "vs_aura",
         "tick_grow_aura",
         "grow_aura",
+        "grant",
     ]
     .into_iter()
     .chain(judges)
@@ -366,7 +368,7 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
         }
         if matches!(
             e.kind.as_str(),
-            "periodic_damage" | "mod_run_speed" | "periodic_heal"
+            "periodic_damage" | "mod_run_speed" | "periodic_heal" | "mod_periodic_taken_pct"
         ) {
             merged.insert("aura_spell_id".into(), aura.spell_id.into());
         }

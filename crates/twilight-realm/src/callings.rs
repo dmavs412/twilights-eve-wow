@@ -373,6 +373,13 @@ pub enum AuraEffect {
         #[serde(default)]
         school: Option<School>,
     },
+    /// The unit takes `pct` percent more from the aura's caster's periodic damage of `school`
+    /// (Hemorrhage); another caster's ticks are as they were.
+    ModPeriodicTakenPct {
+        pct: u32,
+        #[serde(default)]
+        school: School,
+    },
     /// The player's next cast of one of the skills changes: see [`NextCast`].
     NextCast(NextCast),
     /// A count that grows by one each time the aura is put on again; at the row's `max_stacks`
@@ -1947,6 +1954,51 @@ pub enum Effect {
         #[serde(default)]
         radius_yd: f32,
     },
+    /// The target takes `pct` percent more from the caster's periodic damage of `school` for
+    /// `duration_ms`, under the aura row's spell id when `apply_aura` names one (Hemorrhage).
+    ModPeriodicTakenPct {
+        pct: u32,
+        #[serde(default)]
+        school: School,
+        duration_ms: u32,
+        #[serde(default)]
+        aura_spell_id: Option<u32>,
+    },
+    /// Every periodic damage of `school` the caster has on the target deals `ticks` of its ticks
+    /// at once, its timer and stacks left alone; with `ticks_per_combo`, that many per combo point
+    /// instead, a finisher. The caster heals `heal_pct` percent of what the forced ticks dealt,
+    /// and each forced Physical tick spills the Calling's blood droplet `drop_chance` percent of
+    /// the time. With no such aura on the target the cast is refused (Open Veins).
+    TickNow {
+        #[serde(default)]
+        school: School,
+        #[serde(default = "one")]
+        ticks: u32,
+        #[serde(default)]
+        ticks_per_combo: u32,
+        #[serde(default)]
+        heal_pct: u32,
+        #[serde(default)]
+        drop_chance: u32,
+    },
+    /// Takes every stack of the caster's stacking aura `aura_spell_id` and puts the aura row of
+    /// `grant_spell_id` (resolved from `grant=key`) up on them with that many stacks, for its
+    /// duration. With none the cast is refused (Red Frenzy).
+    ConsumeSelfStacks {
+        aura_spell_id: u32,
+        grant_spell_id: u32,
+    },
+    /// `count` of the Calling's blood droplets land around the caster, scattered as the pickup
+    /// row says, lasting `duration_ms` when set or the row's duration (Blood Pool).
+    SpillDroplets {
+        count: u32,
+        #[serde(default)]
+        duration_ms: Option<u32>,
+    },
+    /// Every creature's threat on the caster goes, so one with no one else on its list gives up
+    /// and goes home; the caster stops attacking and leaves combat. A `grant_aura` of a stealth
+    /// row after it in the cast stealths them in what was a fight (Vanish).
+    DropThreat,
     /// The caster's dodge chance rises by `pct` percent for `duration_ms`, under the skill's
     /// spell id (Evasion).
     DodgePct { pct: u32, duration_ms: u32 },
@@ -2187,6 +2239,13 @@ impl Skill {
 
     /// A finisher: any effect carries a `per_combo` block. It needs combo points on the target
     /// to cast, and a cast that lands spends them all.
+    /// Whether a `grant_aura` of it puts up the aura row of `spell_id`.
+    pub fn grants(&self, spell_id: u32) -> bool {
+        self.effects
+            .iter()
+            .any(|e| matches!(e, Effect::GrantAura { aura_spell_id } if *aura_spell_id == spell_id))
+    }
+
     pub fn is_finisher(&self) -> bool {
         self.effects.iter().any(|e| {
             e.per_combo().is_some()
@@ -2197,6 +2256,7 @@ impl Skill {
                         ..
                     }
                 )
+                || matches!(e, Effect::TickNow { ticks_per_combo, .. } if *ticks_per_combo > 0)
         })
     }
 
