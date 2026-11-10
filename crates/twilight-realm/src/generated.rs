@@ -368,7 +368,11 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
         }
         if matches!(
             e.kind.as_str(),
-            "periodic_damage" | "mod_run_speed" | "periodic_heal" | "mod_periodic_taken_pct"
+            "periodic_damage"
+                | "mod_run_speed"
+                | "periodic_heal"
+                | "mod_periodic_taken_pct"
+                | "mod_armor"
         ) {
             merged.insert("aura_spell_id".into(), aura.spell_id.into());
         }

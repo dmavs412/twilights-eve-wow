@@ -239,6 +239,9 @@ anyone's hand or by the aura's own tick, the proc fires once. Its `spread_aura=N
 aura off the dead wearer onto the nearest other living enemy within N yd that lacks it, with the
 row's full duration and one stack, or every stack the wearer had with `spread_stacks=all` (the only
 value, and only beside `spread_aura`). It works on a Talent row and on an aura row's proc.
+The Sharpshooter (#684) adds `mod_armor` as a skill kind: `apply_aura=key` names an aura row of
+the Calling with a `mod_armor` effect, and `stacks=N` (default 1) puts it on the living target
+that many times when the hit lands, held to the row's `max_stacks` (Sunder Arrow, Shred).
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

@@ -210,6 +210,21 @@ fn every_quest_target_spawns() {
             .iter()
             .map(|s| s["entry"].as_integer().unwrap() as u64),
     );
+    // The Tier 2 trials (#674) also live here, and send the character to the eastern zones.
+    for zone in [
+        "redridge.toml",
+        "duskwood.toml",
+        "stormwind.toml",
+        "burning_steppes.toml",
+    ] {
+        spawned.extend(
+            toml_file(zone)["spawns"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|r| r[1].as_integer().unwrap() as u64),
+        );
+    }
     let quests = toml_file("quests.toml");
     for q in quests["quest"].as_array().unwrap() {
         let kills = q.get("kill").and_then(|k| k.as_array());

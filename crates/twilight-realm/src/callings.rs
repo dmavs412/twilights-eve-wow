@@ -2073,6 +2073,14 @@ pub enum Effect {
     AuraAttackPower { duration_ms: u32, amount: Linear },
     /// The target's healing is cut by `pct`%, under the skill's spell id (Mortal Strike).
     HealingReduction { pct: u32, duration_ms: u32 },
+    /// The caster's armour loss `aura_spell_id` (an aura row with a `mod_armor` effect, named by
+    /// `apply_aura`) goes on the target `stacks` times when the hit lands, held to the row's
+    /// `max_stacks` (Sunder Arrow).
+    ModArmor {
+        aura_spell_id: u32,
+        #[serde(default = "one")]
+        stacks: u32,
+    },
     /// Physical damage of `base` plus `per_extra_rage` for every rage point over the cost, all of
     /// which the cast spends (Execute).
     Execute {

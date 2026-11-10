@@ -90,6 +90,19 @@
    "weapon_mask": 1435135,
    "armor_mask": 2,
    "dual_wield": false
+  },
+  {
+   "key": "sharpshooter",
+   "name": "Sharpshooter",
+   "icon": "Interface\\Icons\\Ability_Hunter_SniperShot",
+   "spellbook": "Sharpshooter",
+   "power_type": 0,
+   "class": 3,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 12,
+   "dual_wield": false
   }
  ],
  "spells": [
@@ -5993,6 +6006,1524 @@
    }
   },
   {
+   "spell_id": 1000570,
+   "calling": "sharpshooter",
+   "key": "auto_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Auto Shot",
+    "cost": 0.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "auto_repeat": true,
+    "interrupt_flags": 1,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Automatically shoots the target with your ranged weapon until cancelled.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Whirlwind",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "range_index": 114,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000571,
+   "calling": "sharpshooter",
+   "key": "puncturing_shaft",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Puncturing Shaft",
+    "cost_percent": 8.0,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Spear_07",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 215,
+      "per_level": 5
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1000572,
+   "calling": "sharpshooter",
+   "key": "steady_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Steady Shot",
+    "cost_percent": 4,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "1.5 sec cast. Fires a steady shot for ranged weapon damage plus 68 + 2 per level, and gives you a stack of Steady Aim: 4% more damage a stack, up to 5, for 15 sec. Moving ends Steady Aim.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Marksmanship",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 68,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3299,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000574,
+   "calling": "sharpshooter",
+   "key": "rapid_fire",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Rapid Fire",
+    "cost": 0.0,
+    "cooldown_ms": 60000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "For 10 seconds, your ranged attack speed is increased by 44%, and your auto-shots refund a small amount of mana on hit.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Hunter_RunningShot",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Ranged attack speed increased by 44%. Auto-shots refund mana.",
+    "visual": 3301,
+    "speed": 40.0,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000575,
+   "calling": "sharpshooter",
+   "key": "aimed_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Aimed Shot",
+    "cooldown_ms": 10000,
+    "cost_percent": 10,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "3 sec cast. A carefully aimed shot for ranged weapon damage plus 230 + 6 per level. Healing on the target is halved for 10 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_PierceDamage",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 230,
+      "per_level": 6
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1000576,
+   "calling": "sharpshooter",
+   "key": "sunder_arrow",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Sunder Arrow",
+    "cooldown_ms": 6000,
+    "cost_percent": 6,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Instant. Shoots the target for 80% of ranged weapon damage plus 20 + 1.5 per level, and sunders its armor: 250 less armor a stack, up to 5 stacks, for 15 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Hunter_CriticalShot",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3219,
+    "speed": 40.0,
+    "range_index": 114
+   }
+  },
+  {
+   "spell_id": 1000578,
+   "calling": "sharpshooter",
+   "key": "silencing_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Silencing Shot",
+    "cooldown_ms": 20000,
+    "gcd_ms": 0,
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 3.5 seconds. When it stops a cast, your Pinning Shot is ready again.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Ability_GolemStormBolt",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 361,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000579,
+   "calling": "sharpshooter",
+   "key": "hold_your_ground",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Hold Your Ground",
+    "cost": 0,
+    "cooldown_ms": 45000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. Plants your feet: you take 30% less damage for 12 sec. Moving ends it.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Defend",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Damage taken reduced by 30%. Moving ends it.",
+    "visual": 5739,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000580,
+   "calling": "sharpshooter",
+   "key": "pinning_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Pinning Shot",
+    "cooldown_ms": 30000,
+    "cost_percent": 5,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Instant. Pins the target to the ground: it cannot move for 6 sec, though it can still attack and cast.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 2199023255552,
+    "icon": "Interface\\Icons\\Spell_Frost_Stun",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 26
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114
+   }
+  },
+  {
+   "spell_id": 1000582,
+   "calling": "sharpshooter",
+   "key": "deep_shaft",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Deep Shaft",
+    "cost_percent": 8.0,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor, 50% more than usual.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Spear_07",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 215,
+      "per_level": 5
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1000583,
+   "calling": "sharpshooter",
+   "key": "quick_shaft",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Shaft",
+    "cost_percent": 8.0,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. 2 sec cast.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Spear_07",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 215,
+      "per_level": 5
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 5
+   }
+  },
+  {
+   "spell_id": 1000584,
+   "calling": "sharpshooter",
+   "key": "sundering_shaft",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Sundering Shaft",
+    "cost_percent": 8.0,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. Also sunders the target's armor by 250 for 15 sec, stacking up to 5 times.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\INV_Spear_07",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 215,
+      "per_level": 5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1000585,
+   "calling": "sharpshooter",
+   "key": "steadier_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Steadier Shot",
+    "cost_percent": 4,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "1.5 sec cast. Fires a steady shot for ranged weapon damage plus 68 + 2 per level, and gives you 2 stacks of Steady Aim: 4% more damage a stack, up to 5, for 15 sec. Moving ends Steady Aim.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Marksmanship",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 68,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3299,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000586,
+   "calling": "sharpshooter",
+   "key": "quick_draw",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Draw",
+    "cost_percent": 4,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "1 sec cast. Fires a steady shot for ranged weapon damage plus 68 + 2 per level, and gives you a stack of Steady Aim: 4% more damage a stack, up to 5, for 15 sec. Moving ends Steady Aim.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Marksmanship",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 68,
+      "per_level": 2
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3299,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 4
+   }
+  },
+  {
+   "spell_id": 1000587,
+   "calling": "sharpshooter",
+   "key": "heavy_draw",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Heavy Draw",
+    "cost_percent": 4,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "1.5 sec cast. Fires a steady shot for ranged weapon damage plus 88 + 2.6 per level, and gives you a stack of Steady Aim: 4% more damage a stack, up to 5, for 15 sec. Moving ends Steady Aim.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Marksmanship",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 88,
+      "per_level": 2.6
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3299,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 1000588,
+   "calling": "sharpshooter",
+   "key": "long_volley",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Volley",
+    "cost": 0.0,
+    "cooldown_ms": 60000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "For 15 seconds, your ranged attack speed is increased by 44%, and your auto-shots refund a small amount of mana on hit.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Hunter_RunningShot",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3301,
+    "speed": 40.0,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000590,
+   "calling": "sharpshooter",
+   "key": "planted_fire",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Planted Fire",
+    "cost": 0.0,
+    "cooldown_ms": 60000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "For 10 seconds, your ranged attack speed is increased by 44%, your ranged attacks are 15% more likely to crit, and your auto-shots refund a small amount of mana on hit.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Hunter_RunningShot",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3301,
+    "speed": 40.0,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000592,
+   "calling": "sharpshooter",
+   "key": "quick_recovery",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Recovery",
+    "cost": 0.0,
+    "cooldown_ms": 40000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "For 10 seconds, your ranged attack speed is increased by 44%, and your auto-shots refund a small amount of mana on hit. 40 sec cooldown.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Hunter_RunningShot",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3301,
+    "speed": 40.0,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000593,
+   "calling": "sharpshooter",
+   "key": "crippling_aim",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Crippling Aim",
+    "cooldown_ms": 10000,
+    "cost_percent": 10,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "3 sec cast. A carefully aimed shot for ranged weapon damage plus 230 + 6 per level. Healing on the target is halved for 10 sec, and it runs 50% slower for 6 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_PierceDamage",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 230,
+      "per_level": 6
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1000595,
+   "calling": "sharpshooter",
+   "key": "finishing_aim",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Finishing Aim",
+    "cooldown_ms": 10000,
+    "cost_percent": 10,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "3 sec cast. A carefully aimed shot for ranged weapon damage plus 230 + 6 per level, 50% more against a target below 35% health. Healing on the target is halved for 10 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_PierceDamage",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 230,
+      "per_level": 6
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1000596,
+   "calling": "sharpshooter",
+   "key": "sure_aim",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Sure Aim",
+    "cooldown_ms": 10000,
+    "cost_percent": 10,
+    "interrupt_flags": 11,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "3 sec cast. A carefully aimed shot for ranged weapon damage plus 230 + 6 per level; its critical strikes deal 30% more. Healing on the target is halved for 10 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Ability_PierceDamage",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 230,
+      "per_level": 6
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1000597,
+   "calling": "sharpshooter",
+   "key": "rooted_stance",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Rooted Stance",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "After 2 seconds without taking a step, your ranged attacks are 15% faster until you move.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Nature_StoneClawTotem",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000599,
+   "calling": "sharpshooter",
+   "key": "eagle_eye",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Eagle Eye",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Every shot of your kit reaches 5 yards farther.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Ability_Hunter_EagleEye"
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "RANGE",
+     "family_mask": 3221225472000,
+     "value": 5
+    }
+   ]
+  },
+  {
+   "spell_id": 1000600,
+   "calling": "sharpshooter",
+   "key": "iron_footing",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Iron Footing",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Hold Your Ground's cooldown is 15 sec shorter.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Nature_StoneSkinTotem"
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COOLDOWN",
+     "family_bit": 40,
+     "value": -15000
+    }
+   ]
+  },
+  {
+   "spell_id": 1000601,
+   "calling": "sharpshooter",
+   "key": "shred",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Shred",
+    "cooldown_ms": 6000,
+    "cost_percent": 6,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Instant. Shoots the target for 80% of ranged weapon damage plus 20 + 1.5 per level, and sunders its armor twice: 250 less armor a stack, up to 5 stacks, for 15 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Hunter_CriticalShot",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3219,
+    "speed": 40.0,
+    "range_index": 114
+   }
+  },
+  {
+   "spell_id": 1000602,
+   "calling": "sharpshooter",
+   "key": "bleeding_arrow",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Bleeding Arrow",
+    "cooldown_ms": 6000,
+    "cost_percent": 6,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Instant. Shoots the target for 80% of ranged weapon damage plus 20 + 1.5 per level, sunders its armor (250 less armor a stack, up to 5 stacks, for 15 sec), and makes it bleed for 8 + 0.8 per level every 3 sec for 9 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Hunter_CriticalShot",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 3219,
+    "speed": 40.0,
+    "range_index": 114
+   }
+  },
+  {
+   "spell_id": 1000604,
+   "calling": "sharpshooter",
+   "key": "long_sunder",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Sunder",
+    "cooldown_ms": 6000,
+    "cost_percent": 6,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Instant. Shoots the target for 80% of ranged weapon damage plus 20 + 1.5 per level, and sunders its armor: 250 less armor a stack, up to 5 stacks, for 25 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Hunter_CriticalShot",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 20,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3219,
+    "speed": 40.0,
+    "range_index": 114
+   }
+  },
+  {
+   "spell_id": 1000606,
+   "calling": "sharpshooter",
+   "key": "long_silence",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Silence",
+    "cooldown_ms": 20000,
+    "gcd_ms": 0,
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 5 seconds. When it stops a cast, your Pinning Shot is ready again.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Ability_GolemStormBolt",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 361,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000607,
+   "calling": "sharpshooter",
+   "key": "pinning_silence",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Pinning Silence",
+    "cooldown_ms": 20000,
+    "gcd_ms": 0,
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 3.5 seconds. When it stops a cast, your Pinning Shot is ready again and the target is rooted for 3 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Ability_GolemStormBolt",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 26
+     }
+    ],
+    "visual": 361,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000608,
+   "calling": "sharpshooter",
+   "key": "mana_return",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Mana Return",
+    "cooldown_ms": 20000,
+    "gcd_ms": 0,
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 3.5 seconds. When it stops a cast, your Pinning Shot is ready again and you gain 10% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Ability_GolemStormBolt",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 361,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000609,
+   "calling": "sharpshooter",
+   "key": "unbowed",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Unbowed",
+    "cost": 0,
+    "cooldown_ms": 45000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. Plants your feet: you take 45% less damage for 12 sec. Moving ends it.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Defend",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5739,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000611,
+   "calling": "sharpshooter",
+   "key": "second_breath",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Second Breath",
+    "cost": 0,
+    "cooldown_ms": 45000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. Plants your feet: you take 30% less damage and heal 10 + 1 per level every second for 12 sec. Moving ends it.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Defend",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5739,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000613,
+   "calling": "sharpshooter",
+   "key": "stone_stance",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Stone Stance",
+    "cost": 0,
+    "cooldown_ms": 45000,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instant. Plants your feet: you take 30% less damage and your ranged attacks are 20% faster for 12 sec. Moving ends it.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_Defend",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 5739,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000615,
+   "calling": "sharpshooter",
+   "key": "long_pin",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Pin",
+    "cooldown_ms": 30000,
+    "cost_percent": 5,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Instant. Pins the target to the ground: it cannot move for 9 sec, though it can still attack and cast.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 2199023255552,
+    "icon": "Interface\\Icons\\Spell_Frost_Stun",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 26
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114
+   }
+  },
+  {
+   "spell_id": 1000616,
+   "calling": "sharpshooter",
+   "key": "barbed_pin",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Barbed Pin",
+    "cooldown_ms": 30000,
+    "cost_percent": 5,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Instant. Pins the target to the ground: it cannot move for 6 sec, though it can still attack and cast. It also bleeds for 6 + 0.5 per level every 2 sec for 8 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 2199023255552,
+    "icon": "Interface\\Icons\\Spell_Frost_Stun",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 26
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114
+   }
+  },
+  {
+   "spell_id": 1000618,
+   "calling": "sharpshooter",
+   "key": "double_pin",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Double Pin",
+    "cooldown_ms": 30000,
+    "cost_percent": 5,
+    "interrupt_flags": 0,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Instant. Pins the target, and the nearest other enemy within 8 yards of it, to the ground: they cannot move for 6 sec, though they can still attack and cast.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 2199023255552,
+    "icon": "Interface\\Icons\\Spell_Frost_Stun",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 26
+     }
+    ],
+    "visual": 3180,
+    "speed": 40.0,
+    "range_index": 114
+   }
+  },
+  {
+   "spell_id": 1000619,
+   "calling": "sharpshooter",
+   "key": "killing_calm",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Killing Calm",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Aimed Shot is 15% more likely to be a critical strike.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Ability_TrueShot",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000620,
+   "calling": "sharpshooter",
+   "key": "armour_breaker",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Armour Breaker",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Puncturing Shaft and Aimed Shot ignore 200 more of the target's armor.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\INV_Ammo_Arrow_02",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000621,
+   "calling": "sharpshooter",
+   "key": "unhurried",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Unhurried",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Steady Shot and Aimed Shot cost 30% less mana.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Nature_Sleep"
+   }
+  },
+  {
    "spell_id": 1000009,
    "calling": "vanguard",
    "key": "aura_seal_of_iron_armor",
@@ -7040,6 +8571,334 @@
     "name": "Blood Droplet",
     "aura_description": "A droplet of blood. Walk over it for a stack of Bloodlust.",
     "visual": 3302
+   }
+  },
+  {
+   "spell_id": 1000573,
+   "calling": "sharpshooter",
+   "key": "aura_steady_aim",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Hunter_Pathfinding",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Steady Aim",
+    "aura_description": "4% more damage dealt a stack. Moving ends it."
+   }
+  },
+  {
+   "spell_id": 1000577,
+   "calling": "sharpshooter",
+   "key": "aura_sundering",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Warrior_Sunder",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Sundering",
+    "aura_description": "Armor reduced by 250 per stack."
+   }
+  },
+  {
+   "spell_id": 1000581,
+   "calling": "sharpshooter",
+   "key": "aura_pinning_shot",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Nature_StrangleVines",
+    "mechanic": 7,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 26
+     }
+    ],
+    "name": "Pinning Shot",
+    "aura_description": "Rooted. Cannot move.",
+    "visual": 3180,
+    "speed": 40.0
+   }
+  },
+  {
+   "spell_id": 1000589,
+   "calling": "sharpshooter",
+   "key": "aura_long_volley",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Hunter_RunningShot",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Long Volley",
+    "aura_description": "Ranged attack speed increased by 44%. Auto-shots refund mana.",
+    "visual": 3301,
+    "speed": 40.0
+   }
+  },
+  {
+   "spell_id": 1000591,
+   "calling": "sharpshooter",
+   "key": "aura_planted_fire",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Hunter_RunningShot",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Planted Fire",
+    "aura_description": "Ranged attack speed increased by 44%. Ranged critical strike chance increased by 15%. Auto-shots refund mana.",
+    "visual": 3301,
+    "speed": 40.0
+   }
+  },
+  {
+   "spell_id": 1000594,
+   "calling": "sharpshooter",
+   "key": "aura_crippling_aim",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Rogue_Trip",
+    "mechanic": 11,
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Crippling Aim",
+    "aura_description": "Movement speed slowed by 50%."
+   }
+  },
+  {
+   "spell_id": 1000598,
+   "calling": "sharpshooter",
+   "key": "aura_rooted_stance",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Nature_StoneClawTotem",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Rooted Stance",
+    "aura_description": "Ranged attack speed increased by 15%. Moving ends it."
+   }
+  },
+  {
+   "spell_id": 1000603,
+   "calling": "sharpshooter",
+   "key": "aura_bleeding_arrow",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_BackStab",
+    "mechanic": 15,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "name": "Bleeding Arrow",
+    "aura_description": "Bleeding for physical damage every 3 sec."
+   }
+  },
+  {
+   "spell_id": 1000605,
+   "calling": "sharpshooter",
+   "key": "aura_sundering_long",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Warrior_Sunder",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Sundering",
+    "aura_description": "Armor reduced by 250 per stack."
+   }
+  },
+  {
+   "spell_id": 1000610,
+   "calling": "sharpshooter",
+   "key": "aura_unbowed",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Defend",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Unbowed",
+    "aura_description": "You take 45% less damage for 12 sec. Moving ends it."
+   }
+  },
+  {
+   "spell_id": 1000612,
+   "calling": "sharpshooter",
+   "key": "aura_second_breath",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Defend",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 1000
+     }
+    ],
+    "name": "Second Breath",
+    "aura_description": "You take 30% less damage and heal 10 + 1 per level every second for 12 sec. Moving ends it."
+   }
+  },
+  {
+   "spell_id": 1000614,
+   "calling": "sharpshooter",
+   "key": "aura_stone_stance",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Defend",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Stone Stance",
+    "aura_description": "You take 30% less damage and your ranged attacks are 20% faster for 12 sec. Moving ends it."
+   }
+  },
+  {
+   "spell_id": 1000617,
+   "calling": "sharpshooter",
+   "key": "aura_barbed_pin",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Hunter_Quickshot",
+    "mechanic": 15,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "name": "Barbed Pin",
+    "aura_description": "Bleeding for physical damage every 2 sec."
    }
   },
   {

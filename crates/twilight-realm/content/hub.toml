@@ -2514,3 +2514,27 @@ orientation = 0.0
 hidden = true
 text_id = 64900
 greeting = "You found me. Most don't."
+
+# ── Tier 2 trainers (#674) ──
+# Each Tier 2 Calling's Hidden Trainer (#676): the Living Map marks it only once the character has
+# opened its gossip menu or quest list. It gives its Calling's Advancement Quest and Trial.
+
+# Wren Ashcombe, the Sharpshooter (#684): on the hilltop east of Three Corners, looking down the
+# road into Redridge. The look is Watcher Dodds's (a placeholder). Role `talker`: her gossip menu
+# is where a character meets her, so she gossips and gives quests. z is ground_check.py's.
+[[npc]]
+guid = 9300116
+entry = 190116
+name = "Wren Ashcombe"
+subname = "Sharpshooter"
+level = 50
+display_id = 2384
+faction_template = 35
+role = "talker"
+npc_flags = 0x3
+map = 0
+position = [-9463.0, -1995.0, 96.85]
+orientation = 4.71
+hidden = true
+text_id = 64186
+greeting = "Don't step on the line, $C. I've stood on this spot so long the gnolls think I'm a tree."

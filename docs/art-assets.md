@@ -354,3 +354,22 @@ art. The station is vanilla's map 369. The mist wall uses the Closed Zones' mist
 Every creature (the Blackrock, the gnolls, the worgen, the dead, the ogres, the Defias, the
 Twilight courier and outriders) and every quest item but the crowned ones use stock displays and
 need no art.
+
+## Tier 2 Callings (spec #674)
+
+Each Tier 2 Calling's trainer borrows a stock look, and its sheet rows borrow stock icons. Every
+one is a placeholder.
+
+| Asset | Where | Stand-in |
+|---|---|---|
+| Wren Ashcombe, the Sharpshooter trainer (#684) | `content/hub.toml`, entry 190116 | display 2384, Watcher Dodds's look. Wanted: a weathered woman archer in leather and a hooded cloak, a longbow at rest. |
+| Sharpshooter Calling icon (#684) | `callings.csv` | `Ability_Hunter_SniperShot` |
+| Steady Shot, Steady Aim (#684) | master CSV | `Ability_Marksmanship`, `Ability_Hunter_Pathfinding` |
+| Aimed Shot, Sunder Arrow, Sundering (#684) | master CSV | `Ability_PierceDamage`, `Ability_Hunter_CriticalShot`, `Ability_Warrior_Sunder` |
+| Hold Your Ground and its buffs (#684) | master CSV | `Ability_Defend` |
+| Pinning Shot and its root (#684) | master CSV | `Spell_Frost_Stun`, `Spell_Nature_StrangleVines` |
+| Crippling Aim, Bleeding Arrow, Barbed Pin (#684) | master CSV, aura rows | `Ability_Rogue_Trip`, `Ability_BackStab`, `Ability_Hunter_Quickshot` |
+| The Sharpshooter's Talents (#684) | master CSV, rows 25 and 50 | `Spell_Nature_StoneClawTotem`, `Ability_Hunter_EagleEye`, `Spell_Nature_StoneSkinTotem`, `Ability_TrueShot`, `INV_Ammo_Arrow_02`, `Spell_Nature_Sleep` |
+
+The Sharpshooter's carried skills (Auto Shot, Puncturing Shaft, Rapid Fire, Silencing Shot) keep
+the Ranger's icons. Its trial has no quest items.

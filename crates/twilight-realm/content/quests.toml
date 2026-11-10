@@ -1710,6 +1710,80 @@ progress = "Say the word, $N, and open the vein."
 completion = "It's open. Rot them, drink them, mend, Acolyte. You start over. Your blood is a tool now, so spend it wisely."
 money = 0
 
+# ── Tier 2 Advancement Quests and trials (#674) ──
+# Each Tier 2 Calling's Advancement Quest, offered at its Tier 1 Calling's cap through the Calling
+# Choice (`calling_choice`), is given by its Hidden Trainer (content/hub.toml). Its `hint` rows
+# point the way there, and its `trial` is the last quest of the three the trainer then sets, each
+# `after` the one before; the first is `after_taken` the Advancement Quest (#676).
+
+# The Sharpshooter (#684): Wren Ashcombe on the hill above Three Corners.
+[[quest]]
+id = 64405
+kind = "advancement"
+giver = 190116
+level = 30
+zone_or_sort = -261
+advancement = { from = "ranger", to = "sharpshooter", trial = 64443 }
+calling_choice = true
+title = "The Sharpshooter's Stillness"
+objectives = "Find the Sharpshooter who watches the road into Redridge, and pass her trial."
+details = "A bow that never moves watches the road where it climbs into Redridge, from high ground above the three roads. The orcs and gnolls who come that way never reach the post below.$B$BThalyssa Windbough trained beside her once. Ask Thalyssa who she means."
+progress = "You climbed up here. That's the easy part. Have you done what I asked?"
+completion = "You held still when it counted. Most never learn that. You start over now, $N, a Sharpshooter, and the first lesson is the one you just passed: the ground you stand on is a weapon."
+money = 0
+hint = [
+  { npc = 190053, option = "Who shoots without moving?", reply = "Wren Ashcombe. She went east to Redridge and stopped writing. Guard Parker at Three Corners will know where she stands. His gnolls keep dying before they reach him." },
+  { npc = 464, option = "Who's been shooting the gnolls?", reply = "Somebody on the hill east of my post, above the road. One arrow each. Never two. I stopped asking who. You go up and ask." },
+]
+
+[[quest]]
+id = 64441
+kind = "once"
+giver = 190116
+after_taken = 64405
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Hold the Hill"
+objectives = "Kill 10 Redridge Thrashers around Three Corners without leaving the hill more than you must."
+details = "Don't chase them. Let them come up to you. Ten thrashers, and every one dies before it reaches the top."
+progress = "Still standing?"
+completion = "Good. You only moved when you had to."
+money = 2500
+kill = [[712, 10]]
+
+[[quest]]
+id = 64442
+kind = "once"
+giver = 190116
+after = 64441
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "Spiders in the Grass"
+objectives = "Kill 8 Tarantulas in the grass around Three Corners."
+details = "A shooter who can't see what's in the grass is a dead shooter. The tarantulas hide better than the gnolls. Find eight and kill them before they get close."
+progress = "Found them?"
+completion = "Eight. Your eyes are better than your feet, which is how it should be."
+money = 2500
+kill = [[442, 8]]
+
+[[quest]]
+id = 64443
+kind = "once"
+giver = 190116
+after = 64442
+level = 30
+min_tier = 1
+zone_or_sort = 44
+title = "The Far Shore"
+objectives = "Kill 6 Murloc Shorestrikers on the shore of Lake Everstill."
+details = "Last one. The shorestrikers on Lake Everstill duck into the water when they're hurt. Kill six before they reach it. Stand on the bank, and don't get your feet wet."
+progress = "Dry boots?"
+completion = "Six, and dry boots. Come back up the hill. I've something to tell you."
+money = 5000
+kill = [[1083, 6]]
+
 # ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
 # The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the
 # Dungeon's Repeatable Quests, from level 16. Every target is in the run (content/wailing_caverns.toml):

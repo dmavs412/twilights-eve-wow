@@ -493,6 +493,11 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::CopyAura { .. } => {
             panic!("{key}: the reference has no realm half for an aura copy")
         }
+        // Sharpshooter's Sunder Arrow lives in the master CSV only (#684);
+        // tests/tier2_sharpshooter.rs reads it.
+        Effect::ModArmor { .. } => {
+            panic!("{key}: the reference has no realm half for an armour loss")
+        }
     }
 }
 

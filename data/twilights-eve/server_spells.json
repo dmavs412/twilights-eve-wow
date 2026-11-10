@@ -10314,5 +10314,2524 @@
    "agility": 0
   },
   "shapeshift_form": 0
+ },
+ {
+  "key": "sharpshooter",
+  "power": "mana",
+  "stat_profile": "hunter",
+  "item_class": "warrior",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [
+   "leather",
+   "mail"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\Ability_Hunter_SniperShot",
+  "spellbook": "Sharpshooter",
+  "blurb": "Plants its feet and drops the target before it arrives. Every second standing still makes the next shot hit harder.",
+  "skills": [
+   {
+    "key": "auto_shot",
+    "name": "Auto Shot",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000570,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 8,
+    "realm_range_max": 35,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "auto_repeat",
+    "interrupt_on": [
+     "move"
+    ],
+    "defense_type": "ranged",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "bonus": {
+        "base": 0,
+        "per_level": 0,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Automatically shoots the target with your ranged weapon until cancelled."
+   },
+   {
+    "key": "puncturing_shaft",
+    "name": "Puncturing Shaft",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000571,
+    "realm_cost": 8,
+    "realm_range_min": 8,
+    "realm_range_max": 35,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "pct_base",
+    "cast_kind": "cast",
+    "cast_time_ms": 3000,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "ranged",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "bonus": {
+        "base": 215,
+        "per_level": 5,
+        "per_ap": 0
+       },
+       "armor_ignore": {
+        "base": 440,
+        "per_level": 10
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor."
+   },
+   {
+    "key": "steady_shot",
+    "name": "Steady Shot",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000572,
+    "realm_cost": 4,
+    "realm_range_min": 8,
+    "realm_range_max": 35,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "pct_base",
+    "cast_kind": "cast",
+    "cast_time_ms": 1500,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "ranged",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "bonus": {
+        "base": 68,
+        "per_level": 2,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_aura_stacks",
+      "params": {
+       "aura": "aura_steady_aim",
+       "stacks": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "1.5 sec cast. Fires a steady shot for ranged weapon damage plus 68 + 2 per level, and gives you a stack of Steady Aim: 4% more damage a stack, up to 5, for 15 sec. Moving ends Steady Aim."
+   },
+   {
+    "key": "rapid_fire",
+    "name": "Rapid Fire",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000574,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 60000,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_rapid_fire"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "For 10 seconds, your ranged attack speed is increased by 44%, and your auto-shots refund a small amount of mana on hit."
+   },
+   {
+    "key": "aimed_shot",
+    "name": "Aimed Shot",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000575,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 10000,
+    "realm_range_min": 8,
+    "realm_range_max": 35,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "pct_base",
+    "cast_kind": "cast",
+    "cast_time_ms": 3000,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "ranged",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "bonus": {
+        "base": 230,
+        "per_level": 6,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "healing_reduction",
+      "params": {
+       "pct": 50,
+       "duration_ms": 10000
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "3 sec cast. A carefully aimed shot for ranged weapon damage plus 230 + 6 per level. Healing on the target is halved for 10 sec."
+   },
+   {
+    "key": "sunder_arrow",
+    "name": "Sunder Arrow",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000576,
+    "realm_cost": 6,
+    "realm_cooldown_ms": 6000,
+    "realm_range_min": 8,
+    "realm_range_max": 35,
+    "learn_level": 10,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "ranged",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "weapon_pct": 80,
+       "bonus": {
+        "base": 20,
+        "per_level": 1.5,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_armor",
+      "params": {
+       "apply_aura": "aura_sundering"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. Shoots the target for 80% of ranged weapon damage plus 20 + 1.5 per level, and sunders its armor: 250 less armor a stack, up to 5 stacks, for 15 sec."
+   },
+   {
+    "key": "silencing_shot",
+    "name": "Silencing Shot",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000578,
+    "realm_cost": 5,
+    "realm_cooldown_ms": 20000,
+    "realm_gcd_ms": 0,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 3500
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "reset_cooldowns",
+      "params": {
+       "spell_ids": [
+        1000580
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 3.5 seconds. When it stops a cast, your Pinning Shot is ready again."
+   },
+   {
+    "key": "hold_your_ground",
+    "name": "Hold Your Ground",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000579,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 45000,
+    "learn_level": 20,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_hold_your_ground"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. Plants your feet: you take 30% less damage for 12 sec. Moving ends it."
+   },
+   {
+    "key": "pinning_shot",
+    "name": "Pinning Shot",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000580,
+    "realm_cost": 5,
+    "realm_cooldown_ms": 30000,
+    "realm_range_min": 8,
+    "realm_range_max": 35,
+    "learn_level": 30,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "ranged",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "root",
+      "params": {
+       "aura_spell_id": 1000581,
+       "duration_ms": 6000
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant. Pins the target to the ground: it cannot move for 6 sec, though it can still attack and cast."
+   }
+  ],
+  "auras": [
+   {
+    "key": "aura_steady_aim",
+    "name": "Steady Aim",
+    "spell_id": 1000573,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 5,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "break_on": {
+     "move": true
+    },
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_done_pct",
+      "params": {
+       "pct": 4
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "4% more damage dealt a stack. Moving ends it."
+   },
+   {
+    "key": "aura_rapid_fire",
+    "name": "Rapid Fire",
+    "spell_id": 1000574,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_ranged_haste_pct",
+      "params": {
+       "pct": 44
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "damage_done",
+       "skill": "auto_shot",
+       "energize_pct_of_base": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ranged attack speed increased by 44%. Auto-shots refund mana."
+   },
+   {
+    "key": "aura_sundering",
+    "name": "Sundering",
+    "spell_id": 1000577,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 5,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_armor",
+      "params": {
+       "amount": -250
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Armor reduced by 250 per stack."
+   },
+   {
+    "key": "aura_hold_your_ground",
+    "name": "Hold Your Ground",
+    "spell_id": 1000579,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "break_on": {
+     "move": true
+    },
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_taken_pct",
+      "params": {
+       "pct": -30
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Damage taken reduced by 30%. Moving ends it."
+   },
+   {
+    "key": "aura_pinning_shot",
+    "name": "Pinning Shot",
+    "spell_id": 1000581,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "root",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "root",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Rooted. Cannot move."
+   },
+   {
+    "key": "aura_long_volley",
+    "name": "Long Volley",
+    "spell_id": 1000589,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_ranged_haste_pct",
+      "params": {
+       "pct": 44
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "damage_done",
+       "skill": "auto_shot",
+       "energize_pct_of_base": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ranged attack speed increased by 44%. Auto-shots refund mana."
+   },
+   {
+    "key": "aura_planted_fire",
+    "name": "Planted Fire",
+    "spell_id": 1000591,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_ranged_haste_pct",
+      "params": {
+       "pct": 44
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "damage_done",
+       "skill": "auto_shot",
+       "energize_pct_of_base": 1
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_ranged_crit_pct",
+      "params": {
+       "pct": 15
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ranged attack speed increased by 44%. Ranged critical strike chance increased by 15%. Auto-shots refund mana."
+   },
+   {
+    "key": "aura_crippling_aim",
+    "name": "Crippling Aim",
+    "spell_id": 1000594,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "snare",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": -50
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Movement speed slowed by 50%."
+   },
+   {
+    "key": "aura_rooted_stance",
+    "name": "Rooted Stance",
+    "spell_id": 1000598,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "break_on": {
+     "move": true
+    },
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_ranged_haste_pct",
+      "params": {
+       "pct": 15
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ranged attack speed increased by 15%. Moving ends it."
+   },
+   {
+    "key": "aura_bleeding_arrow",
+    "name": "Bleeding Arrow",
+    "spell_id": 1000603,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 9000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 3000,
+       "tick": {
+        "base": 8,
+        "per_level": 0.8
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding for physical damage every 3 sec."
+   },
+   {
+    "key": "aura_sundering_long",
+    "name": "Sundering",
+    "spell_id": 1000605,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 5,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 25000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_armor",
+      "params": {
+       "amount": -250
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Armor reduced by 250 per stack."
+   },
+   {
+    "key": "aura_unbowed",
+    "name": "Unbowed",
+    "spell_id": 1000610,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "break_on": {
+     "move": true
+    },
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_taken_pct",
+      "params": {
+       "pct": -45
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "You take 45% less damage for 12 sec. Moving ends it."
+   },
+   {
+    "key": "aura_second_breath",
+    "name": "Second Breath",
+    "spell_id": 1000612,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "break_on": {
+     "move": true
+    },
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_taken_pct",
+      "params": {
+       "pct": -30
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 1000,
+       "tick": {
+        "base": 10,
+        "per_level": 1
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "You take 30% less damage and heal 10 + 1 per level every second for 12 sec. Moving ends it."
+   },
+   {
+    "key": "aura_stone_stance",
+    "name": "Stone Stance",
+    "spell_id": 1000614,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "break_on": {
+     "move": true
+    },
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_taken_pct",
+      "params": {
+       "pct": -30
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_ranged_haste_pct",
+      "params": {
+       "pct": 20
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "You take 30% less damage and your ranged attacks are 20% faster for 12 sec. Moving ends it."
+   },
+   {
+    "key": "aura_barbed_pin",
+    "name": "Barbed Pin",
+    "spell_id": 1000617,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 6,
+        "per_level": 0.5
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding for physical damage every 2 sec."
+   }
+  ],
+  "rows": [
+   {
+    "key": "puncturing_shaft",
+    "level": 5,
+    "kind": "skill_choice",
+    "skill": "puncturing_shaft",
+    "choices": [
+     {
+      "key": "deep_shaft",
+      "name": "Deep Shaft",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000582,
+      "realm_cost": 8,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 215,
+          "per_level": 5,
+          "per_ap": 0
+         },
+         "armor_ignore": {
+          "base": 660,
+          "per_level": 15
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor, 50% more than usual.",
+      "change": "Ignores {amount:660:15:0:0} armor instead of {amount:440:10:0:0}.",
+      "variant_of": "puncturing_shaft"
+     },
+     {
+      "key": "quick_shaft",
+      "name": "Quick Shaft",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000583,
+      "realm_cost": 8,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 2000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 215,
+          "per_level": 5,
+          "per_ap": 0
+         },
+         "armor_ignore": {
+          "base": 440,
+          "per_level": 10
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. 2 sec cast.",
+      "change": "Has a shorter cast.",
+      "variant_of": "puncturing_shaft"
+     },
+     {
+      "key": "sundering_shaft",
+      "name": "Sundering Shaft",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000584,
+      "realm_cost": 8,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 215,
+          "per_level": 5,
+          "per_ap": 0
+         },
+         "armor_ignore": {
+          "base": 440,
+          "per_level": 10
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_armor",
+        "params": {
+         "apply_aura": "aura_sundering"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor. Also sunders the target's armor by 250 for 15 sec, stacking up to 5 times.",
+      "change": "Also puts a stack of Sundering on the target: 250 armor for 15 sec, up to 5 stacks.",
+      "variant_of": "puncturing_shaft"
+     }
+    ]
+   },
+   {
+    "key": "steady_shot",
+    "level": 10,
+    "kind": "skill_choice",
+    "skill": "steady_shot",
+    "choices": [
+     {
+      "key": "steadier_shot",
+      "name": "Steadier Shot",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000585,
+      "realm_cost": 4,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 68,
+          "per_level": 2,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "aura_steady_aim",
+         "stacks": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "1.5 sec cast. Fires a steady shot for ranged weapon damage plus 68 + 2 per level, and gives you 2 stacks of Steady Aim: 4% more damage a stack, up to 5, for 15 sec. Moving ends Steady Aim.",
+      "change": "Each cast adds 2 stacks of Steady Aim.",
+      "variant_of": "steady_shot"
+     },
+     {
+      "key": "quick_draw",
+      "name": "Quick Draw",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000586,
+      "realm_cost": 4,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 1000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 68,
+          "per_level": 2,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "aura_steady_aim",
+         "stacks": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "1 sec cast. Fires a steady shot for ranged weapon damage plus 68 + 2 per level, and gives you a stack of Steady Aim: 4% more damage a stack, up to 5, for 15 sec. Moving ends Steady Aim.",
+      "change": "Has a shorter cast.",
+      "variant_of": "steady_shot"
+     },
+     {
+      "key": "heavy_draw",
+      "name": "Heavy Draw",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000587,
+      "realm_cost": 4,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 1500,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 88,
+          "per_level": 2.6,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "aura_steady_aim",
+         "stacks": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "1.5 sec cast. Fires a steady shot for ranged weapon damage plus 88 + 2.6 per level, and gives you a stack of Steady Aim: 4% more damage a stack, up to 5, for 15 sec. Moving ends Steady Aim.",
+      "change": "Deals {amount:88:2.6:0:0} bonus damage instead of {amount:68:2:0:0}.",
+      "variant_of": "steady_shot"
+     }
+    ]
+   },
+   {
+    "key": "rapid_fire",
+    "level": 15,
+    "kind": "skill_choice",
+    "skill": "rapid_fire",
+    "choices": [
+     {
+      "key": "long_volley",
+      "name": "Long Volley",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000588,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 60000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_long_volley"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 15 seconds, your ranged attack speed is increased by 44%, and your auto-shots refund a small amount of mana on hit.",
+      "change": "Lasts 15 sec instead of 10 sec.",
+      "variant_of": "rapid_fire"
+     },
+     {
+      "key": "planted_fire",
+      "name": "Planted Fire",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000590,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 60000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_planted_fire"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 10 seconds, your ranged attack speed is increased by 44%, your ranged attacks are 15% more likely to crit, and your auto-shots refund a small amount of mana on hit.",
+      "change": "While it lasts, your ranged attacks crit 15% more often.",
+      "variant_of": "rapid_fire"
+     },
+     {
+      "key": "quick_recovery",
+      "name": "Quick Recovery",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000592,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 40000,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_rapid_fire"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "For 10 seconds, your ranged attack speed is increased by 44%, and your auto-shots refund a small amount of mana on hit. 40 sec cooldown.",
+      "change": "Cooldown 40 sec instead of 60 sec.",
+      "variant_of": "rapid_fire"
+     }
+    ]
+   },
+   {
+    "key": "aimed_shot",
+    "level": 20,
+    "kind": "skill_choice",
+    "skill": "aimed_shot",
+    "choices": [
+     {
+      "key": "crippling_aim",
+      "name": "Crippling Aim",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000593,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 10000,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 230,
+          "per_level": 6,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "healing_reduction",
+        "params": {
+         "pct": 50,
+         "duration_ms": 10000
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_run_speed",
+        "params": {
+         "apply_aura": "aura_crippling_aim"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "3 sec cast. A carefully aimed shot for ranged weapon damage plus 230 + 6 per level. Healing on the target is halved for 10 sec, and it runs 50% slower for 6 sec.",
+      "change": "Also slows the target (50% run speed) for 6 sec.",
+      "variant_of": "aimed_shot"
+     },
+     {
+      "key": "finishing_aim",
+      "name": "Finishing Aim",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000595,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 10000,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 230,
+          "per_level": 6,
+          "per_ap": 0
+         },
+         "below_health_pct": 35,
+         "below_bonus_pct": 50
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "healing_reduction",
+        "params": {
+         "pct": 50,
+         "duration_ms": 10000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "3 sec cast. A carefully aimed shot for ranged weapon damage plus 230 + 6 per level, 50% more against a target below 35% health. Healing on the target is halved for 10 sec.",
+      "change": "Deals 50% more to a target below 35% health.",
+      "variant_of": "aimed_shot"
+     },
+     {
+      "key": "sure_aim",
+      "name": "Sure Aim",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000596,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 10000,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "bonus": {
+          "base": 230,
+          "per_level": 6,
+          "per_ap": 0
+         },
+         "crit_damage_pct": 30
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "healing_reduction",
+        "params": {
+         "pct": 50,
+         "duration_ms": 10000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "3 sec cast. A carefully aimed shot for ranged weapon damage plus 230 + 6 per level; its critical strikes deal 30% more. Healing on the target is halved for 10 sec.",
+      "change": "Its critical strikes deal 30% more damage.",
+      "variant_of": "aimed_shot"
+     }
+    ]
+   },
+   {
+    "key": "sharpshooter_planted",
+    "level": 25,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "rooted_stance",
+      "name": "Rooted Stance",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000597,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "still_for",
+         "ms": 2000,
+         "apply_aura": "aura_rooted_stance"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "After 2 seconds without taking a step, your ranged attacks are 15% faster until you move."
+     },
+     {
+      "key": "eagle_eye",
+      "name": "Eagle Eye",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000599,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": false,
+      "effects": [],
+      "description": "Every shot of your kit reaches 5 yards farther.",
+      "spellmods": [
+       {
+        "type": "flat",
+        "op": "RANGE",
+        "family_mask": 3221225472000,
+        "value": 5,
+        "target": [
+         "auto_shot",
+         "puncturing_shaft",
+         "steady_shot",
+         "aimed_shot",
+         "sunder_arrow",
+         "silencing_shot",
+         "pinning_shot"
+        ]
+       }
+      ]
+     },
+     {
+      "key": "iron_footing",
+      "name": "Iron Footing",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000600,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": false,
+      "effects": [],
+      "description": "Hold Your Ground's cooldown is 15 sec shorter.",
+      "spellmods": [
+       {
+        "type": "flat",
+        "op": "COOLDOWN",
+        "family_bit": 40,
+        "value": -15000,
+        "target": [
+         "hold_your_ground"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "sunder_arrow",
+    "level": 30,
+    "kind": "skill_choice",
+    "skill": "sunder_arrow",
+    "choices": [
+     {
+      "key": "shred",
+      "name": "Shred",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000601,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 6000,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "learn_level": 10,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "weapon_pct": 80,
+         "bonus": {
+          "base": 20,
+          "per_level": 1.5,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_armor",
+        "params": {
+         "apply_aura": "aura_sundering",
+         "stacks": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Shoots the target for 80% of ranged weapon damage plus 20 + 1.5 per level, and sunders its armor twice: 250 less armor a stack, up to 5 stacks, for 15 sec.",
+      "change": "Each shot adds 2 stacks of Sundering.",
+      "variant_of": "sunder_arrow"
+     },
+     {
+      "key": "bleeding_arrow",
+      "name": "Bleeding Arrow",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000602,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 6000,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "learn_level": 10,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "weapon_pct": 80,
+         "bonus": {
+          "base": 20,
+          "per_level": 1.5,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_armor",
+        "params": {
+         "apply_aura": "aura_sundering"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_bleeding_arrow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Shoots the target for 80% of ranged weapon damage plus 20 + 1.5 per level, sunders its armor (250 less armor a stack, up to 5 stacks, for 15 sec), and makes it bleed for 8 + 0.8 per level every 3 sec for 9 sec.",
+      "change": "Also makes the target bleed for {amount:8:0.8:0:0} every 3 sec for 9 sec.",
+      "variant_of": "sunder_arrow"
+     },
+     {
+      "key": "long_sunder",
+      "name": "Long Sunder",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000604,
+      "realm_cost": 6,
+      "realm_cooldown_ms": 6000,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "learn_level": 10,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "ranged",
+         "weapon_pct": 80,
+         "bonus": {
+          "base": 20,
+          "per_level": 1.5,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "mod_armor",
+        "params": {
+         "apply_aura": "aura_sundering_long"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Shoots the target for 80% of ranged weapon damage plus 20 + 1.5 per level, and sunders its armor: 250 less armor a stack, up to 5 stacks, for 25 sec.",
+      "change": "Sundering lasts 25 sec instead of 15 sec.",
+      "variant_of": "sunder_arrow"
+     }
+    ]
+   },
+   {
+    "key": "silencing_shot",
+    "level": 35,
+    "kind": "skill_choice",
+    "skill": "silencing_shot",
+    "choices": [
+     {
+      "key": "long_silence",
+      "name": "Long Silence",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000606,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 5000
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "reset_cooldowns",
+        "params": {
+         "spell_ids": [
+          1000580
+         ]
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 5 seconds. When it stops a cast, your Pinning Shot is ready again.",
+      "change": "Locks the school out for 5 sec instead of 3.5 sec.",
+      "variant_of": "silencing_shot"
+     },
+     {
+      "key": "pinning_silence",
+      "name": "Pinning Silence",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000607,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 3500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "reset_cooldowns",
+        "params": {
+         "spell_ids": [
+          1000580
+         ]
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "root",
+        "params": {
+         "aura_spell_id": 1000581,
+         "duration_ms": 3000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 3.5 seconds. When it stops a cast, your Pinning Shot is ready again and the target is rooted for 3 sec.",
+      "change": "A stopped cast also roots the target for 3 sec.",
+      "variant_of": "silencing_shot"
+     },
+     {
+      "key": "mana_return",
+      "name": "Mana Return",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000608,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 20000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 3500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "reset_cooldowns",
+        "params": {
+         "spell_ids": [
+          1000580
+         ]
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "mana",
+         "amount": {
+          "base": 0,
+          "per_level": 0,
+          "per_ap": 0
+         },
+         "pct_of_max": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 3.5 seconds. When it stops a cast, your Pinning Shot is ready again and you gain 10% of your maximum mana.",
+      "change": "A stopped cast gives you 10% of your maximum mana.",
+      "variant_of": "silencing_shot"
+     }
+    ]
+   },
+   {
+    "key": "hold_your_ground",
+    "level": 40,
+    "kind": "skill_choice",
+    "skill": "hold_your_ground",
+    "choices": [
+     {
+      "key": "unbowed",
+      "name": "Unbowed",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000609,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 45000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_unbowed"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Plants your feet: you take 45% less damage for 12 sec. Moving ends it.",
+      "change": "Damage taken changes by 45% instead of 30%.",
+      "variant_of": "hold_your_ground"
+     },
+     {
+      "key": "second_breath",
+      "name": "Second Breath",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000611,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 45000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_second_breath"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Plants your feet: you take 30% less damage and heal 10 + 1 per level every second for 12 sec. Moving ends it.",
+      "change": "While it lasts, heals you for {amount:10:1:0:0} every 1 sec.",
+      "variant_of": "hold_your_ground"
+     },
+     {
+      "key": "stone_stance",
+      "name": "Stone Stance",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000613,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 45000,
+      "learn_level": 20,
+      "target": "self",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "grant_aura",
+        "params": {
+         "aura": "aura_stone_stance"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Plants your feet: you take 30% less damage and your ranged attacks are 20% faster for 12 sec. Moving ends it.",
+      "change": "While it lasts, your ranged attacks are 20% faster.",
+      "variant_of": "hold_your_ground"
+     }
+    ]
+   },
+   {
+    "key": "pinning_shot",
+    "level": 45,
+    "kind": "skill_choice",
+    "skill": "pinning_shot",
+    "choices": [
+     {
+      "key": "long_pin",
+      "name": "Long Pin",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000615,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 30000,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "root",
+        "params": {
+         "aura_spell_id": 1000581,
+         "duration_ms": 9000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Pins the target to the ground: it cannot move for 9 sec, though it can still attack and cast.",
+      "change": "Roots for 9 sec instead of 6 sec.",
+      "variant_of": "pinning_shot"
+     },
+     {
+      "key": "barbed_pin",
+      "name": "Barbed Pin",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000616,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 30000,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "root",
+        "params": {
+         "aura_spell_id": 1000581,
+         "duration_ms": 6000
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_barbed_pin"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Pins the target to the ground: it cannot move for 6 sec, though it can still attack and cast. It also bleeds for 6 + 0.5 per level every 2 sec for 8 sec.",
+      "change": "The target also bleeds for {amount:6:0.5:0:0} every 2 sec for 8 sec.",
+      "variant_of": "pinning_shot"
+     },
+     {
+      "key": "double_pin",
+      "name": "Double Pin",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000618,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 30000,
+      "realm_range_min": 8,
+      "realm_range_max": 35,
+      "realm_radius_yd": 8,
+      "learn_level": 30,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires_weapon": [
+       "any_ranged"
+      ],
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "ranged",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "chain",
+      "area_center": "target",
+      "max_targets": 2,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "root",
+        "params": {
+         "aura_spell_id": 1000581,
+         "duration_ms": 6000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Instant. Pins the target, and the nearest other enemy within 8 yards of it, to the ground: they cannot move for 6 sec, though they can still attack and cast.",
+      "change": "Roots up to 2 enemies: the target and the nearest other enemy beside it.",
+      "variant_of": "pinning_shot"
+     }
+    ]
+   },
+   {
+    "key": "sharpshooter_deadeye",
+    "level": 50,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "killing_calm",
+      "name": "Killing Calm",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000619,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_crit_pct",
+        "params": {
+         "skill": "aimed_shot",
+         "pct": 15
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Aimed Shot is 15% more likely to be a critical strike."
+     },
+     {
+      "key": "armour_breaker",
+      "name": "Armour Breaker",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000620,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_armor_ignore",
+        "params": {
+         "skill": "puncturing_shaft",
+         "amount": 200
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "skill_armor_ignore",
+        "params": {
+         "skill": "aimed_shot",
+         "amount": 200
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Puncturing Shaft and Aimed Shot ignore 200 more of the target's armor."
+     },
+     {
+      "key": "unhurried",
+      "name": "Unhurried",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000621,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": false,
+      "effects": [],
+      "description": "Steady Shot and Aimed Shot cost 30% less mana."
+     }
+    ]
+   }
+  ],
+  "name": "Sharpshooter",
+  "tier": 2,
+  "tier_cap": 50,
+  "row_levels": [
+   5,
+   10,
+   15,
+   20,
+   25,
+   30,
+   35,
+   40,
+   45,
+   50
+  ],
+  "tier_bonus": {
+   "strength": 0,
+   "agility": 30,
+   "stamina": 20,
+   "intellect": 10,
+   "spirit": 0
+  },
+  "shapeshift_form": 0
  }
 ]

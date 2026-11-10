@@ -4901,6 +4901,20 @@ impl InWorld {
                 let a = aura(AuraKind::HealingReduced, skill.spell_id, duration_ms, 0);
                 self.skills.apply(a, events);
             }
+            Effect::ModArmor {
+                aura_spell_id,
+                stacks,
+            } => {
+                let auras = &callings::of(c.calling).auras;
+                let alive = self.mobs.iter().any(|m| m.guid == target && m.alive());
+                if let (Some(def), true) =
+                    (auras.iter().find(|a| a.spell_id == aura_spell_id), alive)
+                {
+                    for _ in 0..stacks {
+                        self.put_aura(def, target, level, events);
+                    }
+                }
+            }
             Effect::Execute {
                 base,
                 per_extra_rage,
