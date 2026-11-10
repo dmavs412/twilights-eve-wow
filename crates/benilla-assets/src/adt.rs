@@ -54,6 +54,9 @@ pub struct ChunkShading {
     pub alpha: u32,
     /// The shadow-array index (vertex `UV1.y`); `-1.0` when there is no MCSH map.
     pub shadow: f32,
+    /// Which of a rim chunk's eight neighbours are open (ADR 0015, the rim row): bit 0 north (+x),
+    /// then clockwise to bit 7 north-west. 0 for every chunk that is not a rim chunk.
+    pub rim_open: u8,
 }
 
 impl Default for ChunkShading {
@@ -62,7 +65,58 @@ impl Default for ChunkShading {
             layers: [0; 4],
             alpha: 0,
             shadow: -1.0,
+            rim_open: 0,
         }
+    }
+}
+
+/// The depth past the Closed Zone edge, in yards, at which a rim chunk's land is pure mist.
+pub const RIM_FOG_YD: f32 = 30.0;
+
+/// The `(dx, dy)` step to each neighbour of a chunk, in bit order of [`ChunkShading::rim_open`]:
+/// north (+x), north-east, east (−y), south-east, south, south-west, west (+y), north-west.
+const NEIGHBOURS: [(f32, f32); 8] = [
+    (1.0, 0.0),
+    (1.0, -1.0),
+    (0.0, -1.0),
+    (-1.0, -1.0),
+    (-1.0, 0.0),
+    (-1.0, 1.0),
+    (0.0, 1.0),
+    (1.0, 1.0),
+];
+
+/// The distance in yards from `xy` to the nearest open neighbour's square of the chunk whose
+/// north-west corner is `north_west` (`positions[0]`), `open` being its
+/// [`ChunkShading::rim_open`]: to the shared side for an edge neighbour, to the shared corner
+/// point for a corner neighbour. 0 when `open` is 0.
+pub fn rim_depth(xy: [f32; 2], north_west: [f32; 2], open: u8) -> f32 {
+    let mut depth = f32::INFINITY;
+    for (bit, (dx, dy)) in NEIGHBOURS.iter().enumerate() {
+        if open & (1 << bit) == 0 {
+            continue;
+        }
+        // On each axis, the gap to the chunk's side facing this neighbour; none along an axis the
+        // neighbour shares. The north-west corner is the chunk's high side on both axes.
+        let gap = |d: f32, high: f32, v: f32| {
+            if d > 0.0 {
+                (high - v).max(0.0)
+            } else if d < 0.0 {
+                (v - (high - CHUNK_SIZE)).max(0.0)
+            } else {
+                0.0
+            }
+        };
+        let (gx, gy) = (
+            gap(*dx, north_west[0], xy[0]),
+            gap(*dy, north_west[1], xy[1]),
+        );
+        depth = depth.min((gx * gx + gy * gy).sqrt());
+    }
+    if depth.is_finite() {
+        depth
+    } else {
+        0.0
     }
 }
 
@@ -76,14 +130,18 @@ pub fn chunk_to_mesh(chunk: &ChunkMesh, shading: &ChunkShading) -> Option<Mesh> 
 
 /// [`chunk_to_mesh`] over several chunks of one tile as one mesh, the terrain cell: the indices
 /// the shader reads are per vertex and the tile shares one material, so the merge draws the same
-/// pixels in one draw. `None` when every chunk is a hole.
+/// pixels in one draw. `None` when every chunk is a hole. A cell holding a rim chunk also carries
+/// [`crate::ATTRIBUTE_MIST_DEPTH`] on every vertex, the [`rim_depth`] on the rim chunk's and 0 on
+/// the rest; a cell with none carries no such attribute, so its pipeline is unchanged.
 pub fn chunks_to_mesh(parts: &[(&ChunkMesh, &ChunkShading)]) -> Option<Mesh> {
     let live: Vec<&(&ChunkMesh, &ChunkShading)> =
         parts.iter().filter(|(c, _)| c.indices.len() >= 3).collect();
     if live.is_empty() {
         return None;
     }
+    let rim = live.iter().any(|(_, s)| s.rim_open != 0);
     let total: usize = live.iter().map(|(c, _)| c.positions.len()).sum();
+    let mut depths: Vec<f32> = Vec::with_capacity(if rim { total } else { 0 });
     let mut positions: Vec<[f32; 3]> = Vec::with_capacity(total);
     let mut normals: Vec<[f32; 3]> = Vec::with_capacity(total);
     let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(total);
@@ -110,6 +168,15 @@ pub fn chunks_to_mesh(parts: &[(&ChunkMesh, &ChunkShading)]) -> Option<Mesh> {
             n,
         ));
         colors.extend(std::iter::repeat_n(col, n));
+        if rim {
+            let nw = chunk.positions[0];
+            depths.extend(
+                chunk
+                    .positions
+                    .iter()
+                    .map(|p| rim_depth([p[0], p[1]], [nw[0], nw[1]], shading.rim_open)),
+            );
+        }
         uvs.extend_from_slice(&chunk.uvs);
         indices.extend(chunk.indices.iter().map(|i| i + base));
         positions.extend(chunk_positions);
@@ -123,6 +190,9 @@ pub fn chunks_to_mesh(parts: &[(&ChunkMesh, &ChunkShading)]) -> Option<Mesh> {
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_1, uv1);
     mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+    if rim {
+        mesh.insert_attribute(crate::ATTRIBUTE_MIST_DEPTH, depths);
+    }
     mesh.insert_indices(Indices::U32(indices));
     Some(mesh)
 }
@@ -169,9 +239,10 @@ impl AssetLoader for AdtLoader {
         reader.read_to_end(&mut bytes).await?;
         let to_io = |e: anyhow::Error| std::io::Error::other(format!("{e:#}"));
         let mut tile = adt_to_tile_mesh(&bytes).map_err(to_io)?;
-        if let Some(map) = map_of_adt(&ctx.path().to_string()) {
-            cut_closed(map, &mut tile, &self.reached.get());
-        }
+        let rim_open = match map_of_adt(&ctx.path().to_string()) {
+            Some(map) => cut_closed(map, &mut tile, &self.reached.get()),
+            None => vec![0; tile.chunks.len()],
+        };
 
         // Layer array: a solid-green fallback at index 0, then each unique layer texture, packed
         // once the whole tile is read.
@@ -185,8 +256,9 @@ impl AssetLoader for AdtLoader {
 
         let mut shading: Vec<ChunkShading> = Vec::with_capacity(tile.chunks.len());
 
-        for chunk in tile.chunks.iter() {
-            // A hole-emptied chunk takes no alpha or shadow slot either.
+        for (chunk, &rim_open) in tile.chunks.iter().zip(&rim_open) {
+            // A hole-emptied chunk takes no alpha or shadow slot either; a rim chunk keeps its
+            // indices, so it takes its real layers, alpha and shadow.
             if chunk.indices.len() < 3 {
                 shading.push(ChunkShading::default());
                 continue;
@@ -230,6 +302,7 @@ impl AssetLoader for AdtLoader {
                 layers: li,
                 alpha: ai,
                 shadow: si,
+                rim_open,
             });
         }
 
@@ -331,27 +404,45 @@ fn map_of_adt(path: &str) -> Option<u32> {
 }
 
 /// Cuts the Closed Zones (ADR 0015) out of a decoded tile of `map` while `reached` are: a chunk
-/// whose centre is closed draws no terrain, water or clutter, welds no collision and is fenced in
-/// as impassable, and a doodad or WMO placed on a closed chunk goes.
-fn cut_closed(map: u32, tile: &mut TileMesh, reached: &Reached) {
+/// whose centre is closed draws no water or clutter, is fenced in as impassable, and a doodad or
+/// WMO placed on a closed chunk goes. A rim chunk, a closed chunk with an open chunk among its
+/// eight neighbours, keeps its terrain (and so welds its collision) for the mist to fog; every
+/// other closed chunk draws no terrain and welds no collision. Returns each chunk's
+/// [`ChunkShading::rim_open`] mask.
+fn cut_closed(map: u32, tile: &mut TileMesh, reached: &Reached) -> Vec<u8> {
+    let mut masks = Vec::with_capacity(tile.chunks.len());
     for chunk in &mut tile.chunks {
         // `positions[0]` is the chunk's north-west corner; its centre is half a chunk in.
         let Some(&[x, y, _]) = chunk.positions.first() else {
+            masks.push(0);
             continue;
         };
-        if !closed_at(map, x - CHUNK_SIZE / 2.0, y - CHUNK_SIZE / 2.0, reached) {
+        let (cx, cy) = (x - CHUNK_SIZE / 2.0, y - CHUNK_SIZE / 2.0);
+        if !closed_at(map, cx, cy, reached) {
+            masks.push(0);
             continue;
         }
-        chunk.indices.clear();
-        chunk.holes = 0xFFFF;
+        let open = NEIGHBOURS
+            .iter()
+            .enumerate()
+            .filter(|(_, (dx, dy))| {
+                !closed_at(map, cx + dx * CHUNK_SIZE, cy + dy * CHUNK_SIZE, reached)
+            })
+            .fold(0u8, |mask, (bit, _)| mask | 1 << bit);
+        if open == 0 {
+            chunk.indices.clear();
+            chunk.holes = 0xFFFF;
+        }
         chunk.liquids.clear();
         chunk.no_effect_doodad = [true; 64];
         chunk.impassable = true;
+        masks.push(open);
     }
     tile.doodads
         .retain(|d| !closed_at(map, d.position[0], d.position[1], reached));
     tile.wmos
         .retain(|w| !closed_at(map, w.position[0], w.position[1], reached));
+    masks
 }
 
 #[cfg(test)]
@@ -423,7 +514,8 @@ mod closed_tests {
             doodads: vec![doodad(SENTINEL_HILL, 1), doodad(GOLDSHIRE, 2)],
             wmos: Vec::new(),
         };
-        cut_closed(AZEROTH, &mut tile, &Reached::default());
+        let masks = cut_closed(AZEROTH, &mut tile, &Reached::default());
+        assert_eq!(masks, vec![0, 0], "neither chunk is a rim chunk");
         let [closed, open] = &tile.chunks[..] else {
             unreachable!()
         };
@@ -440,6 +532,127 @@ mod closed_tests {
         assert!(!open.impassable && open.liquids.len() == 1);
         let left: Vec<u32> = tile.doodads.iter().map(|d| d.unique_id).collect();
         assert_eq!(left, vec![2]);
+    }
+
+    /// On the Westfall edge: y 866.7 is a chunk side, Westfall (closed) to its west (+y).
+    const WESTFALL_RIM: [f32; 2] = [-9700.0, 880.0];
+    const ELWYNN_BESIDE: [f32; 2] = [-9700.0, 850.0];
+
+    #[test]
+    fn a_rim_chunk_keeps_its_terrain_but_nothing_else() {
+        let none = Reached::default();
+        assert!(closed_at(AZEROTH, WESTFALL_RIM[0], WESTFALL_RIM[1], &none));
+        assert!(!closed_at(
+            AZEROTH,
+            ELWYNN_BESIDE[0],
+            ELWYNN_BESIDE[1],
+            &none
+        ));
+        let mut tile = TileMesh {
+            chunks: vec![
+                chunk(corner_of(WESTFALL_RIM)),
+                chunk(corner_of(ELWYNN_BESIDE)),
+                chunk(corner_of(SENTINEL_HILL)),
+            ],
+            doodads: vec![doodad(WESTFALL_RIM, 1), doodad(ELWYNN_BESIDE, 2)],
+            wmos: Vec::new(),
+        };
+        let masks = cut_closed(AZEROTH, &mut tile, &none);
+        let [rim, open, deep] = &tile.chunks[..] else {
+            unreachable!()
+        };
+        assert_ne!(masks[0] & 1 << 2, 0, "the open east side's bit is set");
+        assert_eq!(masks[1], 0, "an open chunk is no rim chunk");
+        assert_eq!(
+            masks[2], 0,
+            "a chunk with no open neighbour is no rim chunk"
+        );
+        assert_eq!(
+            rim.indices,
+            vec![0, 1, 2],
+            "the rim chunk keeps its terrain"
+        );
+        assert_eq!(rim.holes, 0);
+        assert!(rim.impassable, "the fence stays");
+        assert!(rim.liquids.is_empty());
+        assert_eq!(rim.no_effect_doodad, [true; 64]);
+        assert!(!open.impassable && open.liquids.len() == 1);
+        assert!(deep.indices.is_empty() && deep.holes == 0xFFFF && deep.impassable);
+        let left: Vec<u32> = tile.doodads.iter().map(|d| d.unique_id).collect();
+        assert_eq!(left, vec![2], "the rim chunk's doodad goes");
+    }
+
+    #[test]
+    fn rim_depth_measures_to_the_nearest_open_side_or_corner() {
+        let nw = [100.0, 200.0];
+        let (north, south) = (nw[0], nw[0] - CHUNK_SIZE);
+        let (west, east) = (nw[1], nw[1] - CHUNK_SIZE);
+        let near = |a: f32, b: f32| (a - b).abs() < 0.01;
+        let east_open = 1 << 2;
+        assert!(near(rim_depth([north - 10.0, east], nw, east_open), 0.0));
+        assert!(near(rim_depth([north - 10.0, west], nw, east_open), 33.33));
+        assert!(near(
+            rim_depth([north - 10.0, (west + east) / 2.0], nw, east_open),
+            16.67
+        ));
+        let south_east_open = 1 << 3;
+        assert!(near(rim_depth([north, west], nw, south_east_open), 47.14));
+        assert!(near(rim_depth([south, east], nw, south_east_open), 0.0));
+        for xy in [[north, west], [south, east], [north - 5.0, west - 7.0]] {
+            assert_eq!(rim_depth(xy, nw, 0), 0.0);
+        }
+    }
+
+    /// A chunk with a real 9×9 + 8×8 grid of positions from corner `nw`, and a triangle.
+    fn grid_chunk(nw: [f32; 2]) -> ChunkMesh {
+        let mut c = chunk(nw);
+        let step = CHUNK_SIZE / 8.0;
+        c.positions = (0..17)
+            .flat_map(|row| {
+                let inner = row % 2 == 1;
+                let (n, off) = if inner { (8, step / 2.0) } else { (9, 0.0) };
+                let x = nw[0] - row as f32 * step / 2.0;
+                (0..n).map(move |col| [x, nw[1] - off - col as f32 * step, 10.0])
+            })
+            .collect();
+        c.uvs = vec![[0.0; 2]; 145];
+        c
+    }
+
+    #[test]
+    fn a_cell_with_a_rim_chunk_carries_the_mist_depth() {
+        let rim_corner = corner_of(WESTFALL_RIM);
+        let (rim, open) = (
+            grid_chunk(rim_corner),
+            grid_chunk([rim_corner[0], rim_corner[1] - CHUNK_SIZE]),
+        );
+        let rim_shading = ChunkShading {
+            rim_open: 1 << 2,
+            ..Default::default()
+        };
+        let plain = ChunkShading::default();
+        let mesh = chunks_to_mesh(&[(&rim, &rim_shading), (&open, &plain)]).unwrap();
+        let Some(bevy::mesh::VertexAttributeValues::Float32(depths)) =
+            mesh.attribute(crate::ATTRIBUTE_MIST_DEPTH)
+        else {
+            panic!("a cell holding a rim chunk carries the mist depth")
+        };
+        assert_eq!(depths.len(), mesh.count_vertices());
+        assert!(
+            depths[145..].iter().all(|&d| d == 0.0),
+            "0 on the open chunk"
+        );
+        assert!(
+            (depths[0] - CHUNK_SIZE).abs() < 0.01,
+            "the far corner is a chunk deep"
+        );
+        assert!(
+            depths[8].abs() < 0.01,
+            "the corner on the open side is at the edge"
+        );
+
+        let mesh = chunks_to_mesh(&[(&open, &plain)]).unwrap();
+        assert!(mesh.attribute(crate::ATTRIBUTE_MIST_DEPTH).is_none());
     }
 
     #[test]

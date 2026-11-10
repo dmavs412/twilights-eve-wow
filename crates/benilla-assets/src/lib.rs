@@ -31,13 +31,16 @@ pub use model::{
     bone_target_id, merged_static_mesh_faded, submesh_to_skinned_mesh, submesh_to_static_mesh,
     AnimClip, BillboardInfo, ClipEvent, GlobalBone, GlobalSeqChannel, ModelAnimations,
     ModelAttachment, ModelJoint, ModelMarker, ModelSkeleton, ModelSubmesh, PoseBone, PoseClip,
-    PoseNode, PoseSource, PoseTrack, ATTRIBUTE_WOW_FADE_SPHERE, ATTRIBUTE_WOW_JOINT_INDEX,
-    ATTRIBUTE_WOW_JOINT_WEIGHT, ATTRIBUTE_WOW_MERGED_SLOT,
+    PoseNode, PoseSource, PoseTrack, ATTRIBUTE_MIST_DEPTH, ATTRIBUTE_WOW_FADE_SPHERE,
+    ATTRIBUTE_WOW_JOINT_INDEX, ATTRIBUTE_WOW_JOINT_WEIGHT, ATTRIBUTE_WOW_MERGED_SLOT,
 };
 mod adt;
 mod terrain;
 mod wdt;
-pub use adt::{chunk_to_mesh, chunks_to_mesh, AdtLoader, AdtTile, ChunkShading, ReachedMilestones};
+pub use adt::{
+    chunk_to_mesh, chunks_to_mesh, rim_depth, AdtLoader, AdtTile, ChunkShading, ReachedMilestones,
+    RIM_FOG_YD,
+};
 pub use wdt::{WdtIndex, WdtIndexLoader};
 mod blp;
 pub use blp::{BlpImageLoader, BlpLoaderSettings, BlpVariant};
@@ -597,5 +600,66 @@ mod tests {
             "ADT tile loaded: {} MCNK cells, {n_doodads} doodad placements",
             drawn.len()
         );
+    }
+
+    /// The Westfall edge (ADR 0015, the rim row): the tile holding (-9700, 880) draws rim chunks
+    /// on the closed side of y 866.7, each fenced, with no water and a mist depth on its cell.
+    #[test]
+    fn a_westfall_edge_tile_draws_its_rim_chunks() {
+        let data = benilla_formats::wow_data_or_skip!();
+        let (x, y) = (-9700.0f32, 880.0f32);
+        let edge = 32.0 * benilla_formats::TILE_SIZE;
+        let tile_of = |v: f32| ((edge - v) / benilla_formats::TILE_SIZE).floor() as u32;
+        let url = format!(
+            "mpq://World/Maps/Azeroth/Azeroth_{}_{}.adt",
+            tile_of(y),
+            tile_of(x)
+        );
+
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins);
+        register_mpq_source(&mut app, &data).expect("register mpq source");
+        app.add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<Image>();
+        app.init_asset::<Mesh>();
+        register_asset_loaders(&mut app);
+
+        let handle: Handle<AdtTile> = app.world().resource::<AssetServer>().load(url);
+        let mut cells = None;
+        for _ in 0..2000 {
+            app.update();
+            if let Some(t) = app.world().resource::<Assets<AdtTile>>().get(&handle) {
+                cells = Some(
+                    t.chunks
+                        .iter()
+                        .zip(&t.shading)
+                        .map(|(c, s)| (c.clone(), *s))
+                        .collect::<Vec<_>>(),
+                );
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        let cells = cells.expect("the Westfall edge tile should load via mpq:// + AdtLoader");
+
+        let rims: Vec<_> = cells.iter().filter(|(_, s)| s.rim_open != 0).collect();
+        // `positions[0]` is the north-west corner, so a chunk lies wholly west of y 866.7 when its
+        // east side, a chunk east of that corner, is at or past it.
+        let west_of_edge = rims
+            .iter()
+            .filter(|(c, _)| c.positions[0][1] - benilla_formats::CHUNK_SIZE >= 866.0)
+            .count();
+        assert!(
+            west_of_edge > 0,
+            "rim chunks are drawn on Westfall's side of y 866.7, got {} rim chunks",
+            rims.len()
+        );
+        for (c, s) in &rims {
+            assert!(c.indices.len() >= 3, "a rim chunk draws its terrain");
+            assert!(c.impassable, "a rim chunk keeps its fence");
+            assert!(c.liquids.is_empty(), "a rim chunk draws no water yet");
+            let mesh = chunk_to_mesh(c, s).expect("a rim chunk makes a mesh");
+            assert!(mesh.attribute(ATTRIBUTE_MIST_DEPTH).is_some());
+        }
     }
 }

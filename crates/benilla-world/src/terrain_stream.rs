@@ -732,7 +732,13 @@ fn stream_terrain(
                 layer_array: adt.layer_array.clone(),
                 alpha_array: adt.alpha_array.clone(),
                 shadow_array: adt.shadow_array.clone(),
-                params: Vec4::new(benilla_formats::TERRAIN_LAYER_TILES, 0.0, 0.0, 0.0),
+                // A rim cell fogs to the mist's own foot by `RIM_FOG_YD` (ADR 0015).
+                params: Vec4::new(
+                    benilla_formats::TERRAIN_LAYER_TILES,
+                    benilla_assets::RIM_FOG_YD,
+                    crate::mist::FOOT_DESAT,
+                    crate::mist::FOOT_VALUE,
+                ),
                 light_buf: shared_light.0.clone(),
             },
         });

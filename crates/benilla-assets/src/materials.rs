@@ -406,7 +406,9 @@ pub struct TerrainExtension {
     pub shadow_array: Handle<Image>,
 
     // Binding 106's uniforms, in the field order of the WGSL `TerrainParams`.
-    /// `x` = texture tiling factor (repeats per chunk); other lanes unused.
+    /// `x` = texture tiling factor (repeats per chunk); `y` = the rim's depth of pure mist in yd
+    /// (`RIM_FOG_YD`); `z` = the mist foot's desaturation and `w` its value, the rim's fog colour
+    /// (`TERRAIN_MIST_RIM` only).
     #[uniform(106)]
     pub params: Vec4,
 
@@ -422,6 +424,42 @@ impl MaterialExtension for TerrainExtension {
     }
     fn fragment_shader() -> ShaderRef {
         "embedded://benilla_assets/shaders/terrain.wgsl".into()
+    }
+
+    /// A cell holding a rim chunk (ADR 0015) carries the mist depth: `TERRAIN_MIST_RIM` fogs it
+    /// toward the mist's foot. The base layout lacks the attribute, so it is rebuilt with Bevy's
+    /// locations 0-5 plus the depth at 13, as `WowModelExt::specialize` does for its fade sphere.
+    fn specialize(
+        _pipeline: &MaterialExtensionPipeline,
+        descriptor: &mut RenderPipelineDescriptor,
+        layout: &MeshVertexBufferLayoutRef,
+        _key: MaterialExtensionKey<Self>,
+    ) -> Result<(), SpecializedMeshPipelineError> {
+        if layout.0.contains(crate::ATTRIBUTE_MIST_DEPTH) {
+            descriptor
+                .vertex
+                .shader_defs
+                .push("TERRAIN_MIST_RIM".into());
+            if let Some(fragment) = descriptor.fragment.as_mut() {
+                fragment.shader_defs.push("TERRAIN_MIST_RIM".into());
+            }
+            let mut attrs = Vec::with_capacity(7);
+            for (attr, loc) in [
+                (Mesh::ATTRIBUTE_POSITION, 0),
+                (Mesh::ATTRIBUTE_NORMAL, 1),
+                (Mesh::ATTRIBUTE_UV_0, 2),
+                (Mesh::ATTRIBUTE_UV_1, 3),
+                (Mesh::ATTRIBUTE_TANGENT, 4),
+                (Mesh::ATTRIBUTE_COLOR, 5),
+            ] {
+                if layout.0.contains(attr) {
+                    attrs.push(attr.at_shader_location(loc));
+                }
+            }
+            attrs.push(crate::ATTRIBUTE_MIST_DEPTH.at_shader_location(13));
+            descriptor.vertex.buffers = vec![layout.0.get_layout(&attrs)?];
+        }
+        Ok(())
     }
 }
 

@@ -168,6 +168,17 @@ pub const ATTRIBUTE_WOW_MERGED_SLOT: bevy::mesh::MeshVertexAttribute =
         bevy::render::render_resource::VertexFormat::Uint32,
     );
 
+/// A terrain cell's per-vertex depth past the Closed Zone edge in yards (ADR 0015, the rim row):
+/// on a rim chunk the distance to its nearest open neighbour, 0 on an open chunk. A cell carries it
+/// only when it holds a rim chunk, and `TerrainExtension::specialize` then compiles
+/// `TERRAIN_MIST_RIM`, which fogs the land toward the mist's foot. Shader location 13.
+pub const ATTRIBUTE_MIST_DEPTH: bevy::mesh::MeshVertexAttribute =
+    bevy::mesh::MeshVertexAttribute::new(
+        "Terrain_MistDepth",
+        988_540_921,
+        bevy::render::render_resource::VertexFormat::Float32,
+    );
+
 /// The static mesh, render-world only. Pair it with an explicit `Aabb`: a render-world mesh races
 /// Bevy's `calculate_bounds`, and the exterior cull draws a mesh that has no bound.
 pub fn submesh_to_static_mesh(sub: &RenderSubmesh) -> Mesh {

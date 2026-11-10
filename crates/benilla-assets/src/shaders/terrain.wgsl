@@ -22,7 +22,9 @@
 @group(#{MATERIAL_BIND_GROUP}) @binding(110) var shadow_array: texture_2d_array<f32>;
 
 // Per-tile Vec4 uniforms, packed into one buffer (binding 106); the field order must match the Rust
-// `TerrainExtension`. params.x = layer tiling factor; yzw unused.
+// `TerrainExtension`. params.x = layer tiling factor; under TERRAIN_MIST_RIM, params.y = the rim
+// depth (yd) at which the land is pure mist, params.z = the mist foot's desaturation and params.w
+// its value.
 struct TerrainParams {
     params: vec4<f32>,
 };
@@ -61,7 +63,26 @@ struct TerrainVsOut {
     // carried torch is (1.4, 0.87, 0.40)) saturates one vertex and falls off linearly from it,
     // where clamping per pixel would pin a wide plateau at white.
     @location(6) primary: vec3<f32>,
+#ifdef TERRAIN_MIST_RIM
+    // Yards past the Closed Zone edge on a rim chunk, 0 on open land (ADR 0015, the rim row).
+    @location(7) mist_depth: f32,
+#endif
 }
+
+#ifdef TERRAIN_MIST_RIM
+// `forward_io::Vertex` has no slot 13, so a rim cell's vertex is our own: Bevy's locations (all
+// present on a terrain cell, `chunks_to_mesh`) plus the mist depth `TerrainExtension::specialize`
+// appends at 13.
+struct TerrainRimVertex {
+    @builtin(instance_index) instance_index: u32,
+    @location(0) position: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) uv: vec2<f32>,
+    @location(3) uv_b: vec2<f32>,
+    @location(5) color: vec4<f32>,
+    @location(13) mist_depth: f32,
+}
+#endif
 
 // Terrain's point-light candidacy half-width (yd): `w + 10`, `w` being the chunk's bounding-sphere
 // radius `sqrt(2·16.666666² + (zExtent/2)²)`, 23.570166 on flat ground (constant at `0x68dfac`).
@@ -131,9 +152,17 @@ fn mcnk_cell_anchor(P: vec3<f32>) -> vec3<f32> {
     return vec3<f32>((ix + 0.5) * cell - half, P.y, (iz + 0.5) * cell - half);
 }
 
+#ifdef TERRAIN_MIST_RIM
+@vertex
+fn vertex(in: TerrainRimVertex) -> TerrainVsOut {
+#else
 @vertex
 fn vertex(in: Vertex) -> TerrainVsOut {
+#endif
     var out: TerrainVsOut;
+#ifdef TERRAIN_MIST_RIM
+    out.mist_depth = in.mist_depth;
+#endif
     let world_from_local = mesh_functions::get_world_from_local(in.instance_index);
     out.world_position =
         mesh_functions::mesh_position_local_to_world(world_from_local, vec4<f32>(in.position, 1.0));
@@ -227,6 +256,16 @@ fn fragment(in: TerrainVsOut) -> @location(0) vec4<f32> {
     let diffuse_term = color * primary * (0.3 * shadow_lit + 0.7);
     let spec_term = in.specular * specmask * shadow_lit;
     var tuned = clamp(diffuse_term + spec_term, vec3<f32>(0.0), vec3<f32>(1.0));
+
+#ifdef TERRAIN_MIST_RIM
+    // The rim row sinks into the mist: by its depth past the edge it fades to the mist's foot, the
+    // scene fog colour desaturated by params.z and scaled by params.w, pure mist at params.y.
+    let rim = smoothstep(0.0, t.params.y, in.mist_depth);
+    let fog_rgb = wow_light.fog_color.rgb;
+    let luma = dot(fog_rgb, vec3<f32>(0.299, 0.587, 0.114));
+    let foot = mix(fog_rgb, vec3<f32>(luma), t.params.z) * t.params.w;
+    tuned = mix(tuned, foot, rim);
+#endif
 
     // Gamma-space GL_LINEAR fog on planar eye-Z, as the reference computes `fogcoord`, not radial
     // distance. Per pixel matches its per-vertex fog, since a linear factor interpolates exactly.
