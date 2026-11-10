@@ -282,7 +282,7 @@ fn the_shipped_ember_blast_loads_at_level_twenty_with_the_interrupt_last() {
     assert!(matches!(skill.effects[0], Effect::SchoolDamage { .. }));
     assert!(matches!(
         skill.effects[1],
-        Effect::Knockback { distance_yd } if distance_yd == 10.0
+        Effect::Knockback { distance_yd, .. } if distance_yd == 10.0
     ));
     assert!(matches!(
         skill.effects[2],

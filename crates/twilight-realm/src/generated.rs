@@ -329,8 +329,10 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
         }
     }
     // A ground area's auras (`enemy_aura=key`, `ally_aura=key`), the aura rows a shield puts on its
-    // attacker, a burn's tick gives its caster and a hit is stronger against, and the damage over
-    // time a drain's tick and an area's clock grow, by their rows' spell ids.
+    // attacker, a burn's tick gives its caster and a hit is stronger against, the damage over
+    // time a drain's tick and an area's clock grow, and the Seal a judgement judges (a `seal`
+    // effect's `seal` is its own block), by their rows' spell ids.
+    let judges = (e.kind == "judgement").then_some("seal");
     for side in [
         "enemy_aura",
         "ally_aura",
@@ -339,7 +341,10 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
         "vs_aura",
         "tick_grow_aura",
         "grow_aura",
-    ] {
+    ]
+    .into_iter()
+    .chain(judges)
+    {
         if let Some(key) = object.remove(side) {
             let aura = auras
                 .iter()
@@ -672,6 +677,7 @@ mod tests {
             [Effect::Incapacitate {
                 duration_ms: 4000,
                 break_on_damage: true,
+                only_type: None,
             }]
         );
     }

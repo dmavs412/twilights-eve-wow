@@ -179,6 +179,26 @@ more from it, it goes and a new one comes at their feet. `tick_grow_aura` and `g
 aura row of the Calling with a `periodic_damage` effect, as `grow_aura`'s `aura` does. The realm
 ends a channel on a step only when its skill's `interrupt_on` holds `move`, as the client's
 `channel_interrupt_flags` do (Unbroken Siphon's `interrupt_on=pushback|kick`).
+The Vanguard Line's Tier 2 rows (#677) add four, each a whole number of at least 1 unless said
+otherwise. `judgement` takes `seal=key`, an aura row of the Calling (Seal of Iron's
+`aura_seal_of_iron`, put up by a `grant_aura`), with an `amount` formula block and `heal_pct=N`.
+The cast needs the caster to wear that aura and is refused without it, costing nothing. It takes
+the aura off, deals `amount` to the target in the row's school, and heals the caster N% of their
+maximum health. The hit never misses or crits, as the TOML Judgement's holy hit. A `judgement`
+with no `seal` judges the TOML's active Seal and takes no params. The aura kind `mod_threat_pct`
+takes `pct=N` and an optional `school=`: while it is worn, the wearer's damage of that school,
+or of every school without one, makes N% more threat. A shield's `threat_pct` (Steady Stance)
+comes first and this increase multiplies it. The build refuses `mod_threat_pct` on a row that is
+not an aura row. `school_damage` and `weapon_strike` take the pair `vs_type=name;vs_type_pct=N`:
+N% more against a creature of that type, summed with `controlled_pct`, `bleeding_pct` and
+`below_bonus_pct`. `stun`, `incapacitate`, `root` and `knockback` take `only_type=name`: the
+control lands only on a creature of that type and does nothing to any other. The names are
+`beast`, `dragonkin`, `demon`, `elemental`, `giant`, `undead`, `humanoid`, `critter` and
+`mechanical`, 1.12's CreatureType ids 1 to 9, read from the mob template's `creature_type`. A
+player is of no creature type. `add_aura_stacks` takes `per_target=yes|no`: on a cast that lands
+on several enemies (`target=self_area`), `yes` adds `stacks` once per enemy it landed on, up to
+the aura row's `max_stacks`, and `no` or none adds them once. A `taunt` on a `self_area` row
+already taunts every enemy it lands on.
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

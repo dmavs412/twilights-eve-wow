@@ -2025,6 +2025,75 @@ class TalentRows(BuildSpells):
         self.assert_each_fails(before, self.HIT, "vs_aura and vs_aura_pct go together",
                                "vs_aura=buff", "vs_aura_pct=45")
 
+    def test_a_hits_vs_type_names_a_creature_type_and_goes_with_its_pct(self):
+        for row in (self.HIT, STRIKE):
+            with self.subTest(kind=row["effect1_kind"]):
+                params = self.built_params([], row, "vs_type=undead;vs_type_pct=50")
+                self.assertEqual((params["vs_type"], params["vs_type_pct"]), ("undead", 50))
+                self.assert_each_fails([], row, "vs_type is 'ghoul', want one of beast, dragonkin",
+                                       "vs_type=ghoul;vs_type_pct=50")
+                self.assert_each_fails([], row, "vs_type_pct needs a whole number of at least 1, has",
+                                       "vs_type=undead;vs_type_pct=0", "vs_type=undead;vs_type_pct=1.5")
+                self.assert_each_fails([], row, "vs_type and vs_type_pct go together",
+                                       "vs_type=undead", "vs_type_pct=50")
+
+    def test_a_controls_only_type_names_a_creature_type(self):
+        stun = {**STRIKE, "effect1_kind": "stun", "effect1_params": "duration_ms=2000"}
+        knock = {**STRIKE, "effect1_kind": "knockback", "effect1_params": "distance_yd=8"}
+        sleep = {**STRIKE, "effect1_kind": "incapacitate", "effect1_params": "duration_ms=2000"}
+        root = {**STRIKE, "effect1_kind": "root", "effect1_params": "aura_spell_id=5;duration_ms=2000"}
+        for row in (stun, knock, sleep, root):
+            with self.subTest(kind=row["effect1_kind"]):
+                self.assertEqual(self.built_params([], row, "only_type=demon")["only_type"], "demon")
+                self.assert_each_fails([], row, "only_type is 'ghost', want one of beast", "only_type=ghost")
+
+    def test_mod_threat_pct_is_an_aura_kind_with_a_whole_pct_and_an_optional_school(self):
+        zeal = {**AURA, "key": "zeal", "modelled": "yes", "effect1_kind": "mod_threat_pct",
+                "effect1_params": "pct=50;school=holy"}
+        done, data = self.run_build([CALLING, zeal])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["auras"][0]["effects"][0],
+                         {"kind": "mod_threat_pct", "params": {"pct": 50, "school": "holy"}, "realm_only": False})
+        done, _ = self.run_build([CALLING, {**zeal, "effect1_params": "pct=30"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        for bad in ("pct=0", "pct=1.5", "pct=-10", ""):
+            with self.subTest(bad=bad):
+                self.assert_fails([CALLING, {**zeal, "effect1_params": bad}],
+                                  "mod_threat_pct needs a whole pct of at least 1, has")
+        self.assert_fails([CALLING, {**zeal, "effect1_params": "pct=50;school=wind"}],
+                          "mod_threat_pct school is 'wind'")
+        self.assert_fails([CALLING, {**STRIKE, "effect1_kind": "mod_threat_pct", "effect1_params": "pct=50"}],
+                          "mod_threat_pct belongs on an aura row, not a skill row")
+
+    def test_add_aura_stacks_per_target_is_yes_or_no(self):
+        aura = {**AURA, "key": "conviction", "effect1_kind": "", "effect1_params": "", "modelled": "yes",
+                "max_stacks": "5"}
+        row = {**STRIKE, "effect1_kind": "add_aura_stacks", "effect1_params": "aura=conviction;stacks=1"}
+        self.assertIs(self.built_params([CALLING, aura], row, "per_target=yes")["per_target"], True)
+        self.assert_each_fails([CALLING, aura], row, "add_aura_stacks per_target is yes or no, has",
+                               "per_target=2", "per_target=always")
+
+    def test_a_judgement_of_a_sheet_seal_names_an_aura_row_and_hits_in_the_rows_school(self):
+        seal = {**AURA, "key": "aura_seal_of_iron", "modelled": "yes", "effect1_kind": "block_pct",
+                "effect1_params": "pct=5"}
+        judge = {**STRIKE, "school": "holy", "effect1_kind": "judgement",
+                 "effect1_params": "seal=aura_seal_of_iron;amount.base=40;amount.per_level=2"}
+        params = self.built_params([CALLING, seal], judge, "heal_pct=10")
+        self.assertEqual((params["seal"], params["heal_pct"], params["school"]),
+                         ("aura_seal_of_iron", 10, "holy"))
+        self.assert_each_fails([CALLING, seal], {**judge, "effect1_params": "amount.base=40;amount.per_level=2"},
+                               "seal 'ghost' is not an aura row of this Calling", "seal=ghost")
+        self.assert_each_fails([CALLING, seal], judge, "heal_pct needs a whole number of at least 1, has",
+                               "heal_pct=0")
+        self.assert_fails([CALLING, seal, {**judge, "effect1_params": "seal=aura_seal_of_iron"}],
+                          "a judgement of seal lacks an amount formula")
+        self.assert_fails([CALLING, seal, {**judge, "effect1_params": "heal_pct=10"}],
+                          "a judgement's amount and heal_pct need seal")
+        # The TOML's Judgement, of the active Seal, takes no params and no school.
+        done, data = self.run_build([CALLING, {**judge, "effect1_params": ""}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"], {})
+
     def test_a_snares_radius_yd_is_a_whole_number_of_at_least_1(self):
         self.assert_whole_param([], self.SNARE, "radius_yd")
 

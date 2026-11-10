@@ -391,6 +391,7 @@ fn control_of(skill: &str, key: &str) -> (u32, u32) {
             Effect::Root {
                 aura_spell_id,
                 duration_ms,
+                ..
             } => Some((aura_spell_id, duration_ms)),
             Effect::Stun {
                 aura_spell_id,

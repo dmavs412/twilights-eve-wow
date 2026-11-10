@@ -730,8 +730,9 @@ impl InWorld {
         self.skills.stealthed()
     }
 
-    /// The percent of its threat the player's damage makes now (Steady Stance).
-    pub(crate) fn threat_pct(&self) -> u32 {
+    /// The percent of its threat the player's damage makes now, by school index (Steady Stance,
+    /// a threat aura).
+    pub(crate) fn threat_pct(&self) -> [f32; 7] {
         self.skills.threat_pct()
     }
 

@@ -51,8 +51,12 @@ KNOWN_KINDS = {
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
     "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike", "pickup",
-    "refund_cost", "cast_skill", "cast_while_moving",
+    "refund_cost", "cast_skill", "cast_while_moving", "mod_threat_pct",
 }
+# 1.12's CreatureType names, ids 1 to 9 in this order: a hit's `vs_type` and a control's
+# `only_type`.
+CREATURE_TYPES = ("beast", "dragonkin", "demon", "elemental", "giant", "undead", "humanoid", "critter",
+                  "mechanical")
 ROW_KINDS = ("skill", "talent", "calling", "aura")
 # Talent Rows (ADR 0028): a `talent` row with `variant_of` is a Skill Choice of that skill, one
 # with `row_key` a Talent of that row; `row_level` opens a skill's row or a Talent row.
@@ -1261,6 +1265,32 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
                 raise BuildError(f"{where}: below_health_pct needs a whole number from 1 to 100, has {health!r}")
             if isinstance(bonus, bool) or not isinstance(bonus, int) or bonus <= 0:
                 raise BuildError(f"{where}: below_bonus_pct needs a positive whole number, has {bonus!r}")
+    # The holy tank kinds (#677): a hit's bonus on a creature type, a control only on one, a
+    # threat aura, stacks once per enemy hit, and a judgement of a sheet Seal.
+    if kind in ("school_damage", "weapon_strike"):
+        if ("vs_type" in params) != ("vs_type_pct" in params):
+            raise BuildError(f"{where}: vs_type and vs_type_pct go together")
+        if "vs_type" in params and params["vs_type"] not in CREATURE_TYPES:
+            raise BuildError(f"{where}: vs_type is {params['vs_type']!r}, want one of {', '.join(CREATURE_TYPES)}")
+        if "vs_type_pct" in params and not is_whole(params["vs_type_pct"]):
+            raise BuildError(f"{where}: vs_type_pct needs a whole number of at least 1, has {params['vs_type_pct']!r}")
+    if kind in ("stun", "incapacitate", "root", "knockback") and "only_type" in params:
+        if params["only_type"] not in CREATURE_TYPES:
+            raise BuildError(f"{where}: only_type is {params['only_type']!r}, want one of {', '.join(CREATURE_TYPES)}")
+    if kind == "mod_threat_pct":
+        if not is_whole(params.get("pct")):
+            raise BuildError(f"{where}: mod_threat_pct needs a whole pct of at least 1, has {params.get('pct')!r}")
+        if params.get("school", "physical") not in SCHOOLS:
+            raise BuildError(f"{where}: mod_threat_pct school is {params['school']!r}, want one of {', '.join(SCHOOLS)}")
+    if kind == "add_aura_stacks" and not isinstance(params.get("per_target", False), bool):
+        raise BuildError(f"{where}: add_aura_stacks per_target is yes or no, has {params['per_target']!r}")
+    if kind == "judgement":
+        if "seal" not in params and ("amount" in params or "heal_pct" in params):
+            raise BuildError(f"{where}: a judgement's amount and heal_pct need seal")
+        if "seal" in params and not isinstance(params.get("amount"), dict):
+            raise BuildError(f"{where}: a judgement of seal lacks an amount formula (amount.base, amount.per_level)")
+        if "heal_pct" in params and not is_whole(params["heal_pct"]):
+            raise BuildError(f"{where}: heal_pct needs a whole number of at least 1, has {params['heal_pct']!r}")
     if kind == "skill_crit_pct" and not isinstance(params.get("skill", "any"), str):
         raise BuildError(f"{where}: skill_crit_pct skill is one skill key or any, has {params['skill']!r}")
     for block in ("per_combo", "duration_per_combo"):
@@ -1766,6 +1796,10 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
                 raise BuildError(f"{here}: grow_aura aura {parsed['aura']!r} has no periodic_damage effect to grow")
         if kind == "pickup" and parsed.get("grants") not in auras:
             raise BuildError(f"{here}: grants {parsed.get('grants')!r} is not an aura row of this Calling")
+        if kind == "judgement" and "seal" in parsed and parsed["seal"] not in auras:
+            raise BuildError(f"{here}: seal {parsed['seal']!r} is not an aura row of this Calling")
+        if kind == "mod_threat_pct" and row["kind"] != "aura":
+            raise BuildError(f"{here}: mod_threat_pct belongs on an aura row, not a {row['kind']} row")
         if kind == "ground_effect" and "caster_aura" in parsed and parsed["caster_aura"] not in auras:
             raise BuildError(f"{here}: caster_aura {parsed['caster_aura']!r} is not an aura row of this Calling")
         if kind == "ground_area":
@@ -1826,7 +1860,9 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             # The realm reads an unavoidable strike from the effect; the outcomes cell is its one source.
             parsed = {"weapon": parsed["weapon"], "unavoidable": True,
                       **{k: v for k, v in parsed.items() if k != "weapon"}}
-        if kind in ("school_damage", "weapon_strike", "periodic_damage", "drain", "consume_aura"):
+        # A judgement of a sheet Seal hits in the row's school too.
+        judges = kind == "judgement" and "seal" in parsed
+        if kind in ("school_damage", "weapon_strike", "periodic_damage", "drain", "consume_aura") or judges:
             if "school" in parsed:
                 raise BuildError(f"{here}: {kind} takes no school param; set the row's school column")
             # The realm reads the school from the effect's params; the row's school is the one source.

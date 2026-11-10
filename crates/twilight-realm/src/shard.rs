@@ -683,37 +683,46 @@ impl Shard {
 }
 
 /// Adds the threat `events` show `player` making (#147): their damage to each mob 1:1, at
-/// `threat_pct` percent of it (Steady Stance, #544), and their heals at half, split across the
-/// living mobs that hate the one healed.
-pub(crate) fn note_threat(mobs: &mut [Mob], player: u64, threat_pct: u32, events: &[SessionEvent]) {
+/// `threat_pct` percent of it by its school index (Steady Stance, #544, a threat aura), and their
+/// heals at half, split across the living mobs that hate the one healed.
+pub(crate) fn note_threat(
+    mobs: &mut [Mob],
+    player: u64,
+    threat_pct: [f32; 7],
+    events: &[SessionEvent],
+) {
     use benilla_protocol::messages::PeriodicTick;
+    let threat = |damage: u32, school: u32| {
+        damage as f32 * threat_pct.get(school as usize).copied().unwrap_or(100.0) / 100.0
+    };
     for e in events {
-        let (victim, damage, healed, who) = match e {
+        let (victim, made, healed, who) = match e {
             SessionEvent::AttackerState(s) if s.attacker == player => {
-                (s.victim, s.damage, 0, player)
+                (s.victim, threat(s.damage, s.school.into()), 0, player)
             }
             SessionEvent::SpellDamageLog(l) if l.attacker == player => {
-                (l.target, l.damage, 0, player)
+                (l.target, threat(l.damage, l.school.into()), 0, player)
             }
             SessionEvent::PeriodicAuraLog(l) if l.caster == player => {
-                let (mut damage, mut healed) = (0, 0);
+                let (mut made, mut healed) = (0.0, 0);
                 for t in &l.ticks {
                     match t {
-                        PeriodicTick::Damage { amount, .. } => damage += amount,
+                        PeriodicTick::Damage { amount, school, .. } => {
+                            made += threat(*amount, *school)
+                        }
                         PeriodicTick::Heal { amount } => healed += amount,
                         _ => {}
                     }
                 }
-                (l.target, damage, healed, player)
+                (l.target, made, healed, player)
             }
             // A heal from another player is shown in the healed one's session.
-            SessionEvent::SpellHealLog(l) => (l.target, 0, l.amount, l.healer),
+            SessionEvent::SpellHealLog(l) => (l.target, 0.0, l.amount, l.healer),
             _ => continue,
         };
         if let Some(m) = mobs.iter_mut().find(|m| m.guid == victim) {
             // Even a miss puts the attacker on the table.
-            m.threat
-                .add(player, damage as f32 * threat_pct as f32 / 100.0);
+            m.threat.add(player, made);
             continue;
         }
         if healed > 0 {

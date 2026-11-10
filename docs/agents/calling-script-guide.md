@@ -178,7 +178,7 @@ Write `key=value` pairs joined by `;`, and lists joined by `|`:
 ## Effect vocabulary the game runs today (allowed on `modelled=yes`)
 
 `add_aura_stacks`, `add_combo_points`, `grow_aura`, `armor_pen` (talent, `amount=`), `aura_attack_power`, `dodge_pct` (talent or aura, `pct=`), `max_power` (talent, `amount=`), `charge`, `consume_aura_stacks`, `consume_heal_pct`, `energize`,
-`healing_reduction`, `incapacitate`, `judgement`, `mod_crit_chance`, `mod_crit_damage`, `mod_damage_done_pct` (aura, `pct=`: the player deals that much more physical damage a stack), `mod_health_regen_out_of_combat`, `mod_melee_haste_pct` (aura, `pct=`: melee swings are that much faster a stack), `mod_run_speed`, `mod_stat`,
+`healing_reduction`, `incapacitate`, `judgement`, `mod_crit_chance`, `mod_crit_damage`, `mod_damage_done_pct` (aura, `pct=`: the player deals that much more physical damage a stack), `mod_health_regen_out_of_combat`, `mod_melee_haste_pct` (aura, `pct=`: melee swings are that much faster a stack), `mod_run_speed`, `mod_stat`, `mod_threat_pct` (aura, `pct=`, optional `school=`: the wearer's damage of that school, or every school, makes that much more threat),
 `periodic_damage`, `proc`, `proc_on_cast`, `proc_on_kill`, `school_damage`, `seal`, `skill_amount_pct`,
 `skill_crit_damage_pct`, `skill_crit_pct`, `skill_duration_ms`, `skill_rage`, `stealth` (aura, `opener_crit=yes`; it lasts until it breaks, so the aura row has no duration, and the skill sets `on_cast=breaks_stealth=no`), `stun`, `weapon_strike`.
 
@@ -194,7 +194,14 @@ The params the build checks:
 - **`energize`:** `power=rage|energy|mana` and an `amount.*` block.
 - **`add_combo_points`:** `amount=` a positive whole number (at most five points are held).
 - **`add_aura_stacks`:** `aura=` the key of an aura row of the Calling, `stacks=` a positive whole number (default 1). A landed hit
-  puts the stacks on the caster; the aura row's `duration_ms`, `max_stacks` and `stack_rule` govern them.
+  puts the stacks on the caster; the aura row's `duration_ms`, `max_stacks` and `stack_rule` govern them. A cast that lands on
+  several enemies adds them once; with `per_target=yes` (a `target=self_area` row) it adds them once per enemy it landed on.
+- **`judgement`:** no params judges the active Seal. `seal=` the key of an aura row of the Calling, an `amount.*` block and an
+  optional `heal_pct=` judge that aura instead: the cast needs the caster to wear it and is refused without it. It takes the
+  aura off, deals the amount in the row's school and heals the caster that percent of their maximum health.
+- **Creature types:** `school_damage` and `weapon_strike` take `vs_type=` with `vs_type_pct=` (that percent more against a
+  creature of that type). `stun`, `incapacitate`, `root` and `knockback` take `only_type=` (the control lands on that type
+  alone). The names: `beast`, `dragonkin`, `demon`, `elemental`, `giant`, `undead`, `humanoid`, `critter`, `mechanical`.
 - **`grow_aura`:** `aura=` the key of an aura row of the Calling that has a `periodic_damage` effect, `stacks=` a positive whole number
   (default 1). A landed hit adds the stacks to the caster's aura on the target, up to its `max_stacks`, and leaves its timer. A target
   without the aura gets nothing.

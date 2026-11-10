@@ -233,6 +233,7 @@ fn righteous_smash_adds_a_stack_and_zealous_cleave_takes_them() {
         duration_ms,
         max_stacks,
         stack_rule,
+        ..
     }) = smash
         .effects
         .iter()

@@ -812,6 +812,11 @@ enum AuraKind {
     HealingTaken {
         pct: u32,
     },
+    /// The player's damage of `school` makes `pct` percent more threat; `None` is every school.
+    Threat {
+        pct: u32,
+        school: Option<School>,
+    },
     /// The amounts the player's `skill` deals are `pct` percent higher (a buff from a `proc`).
     SkillAmount {
         skill: &'static str,
@@ -978,6 +983,7 @@ impl AuraKind {
                 | AuraKind::Dodge { .. }
                 | AuraKind::Absorb { .. }
                 | AuraKind::HealingTaken { .. }
+                | AuraKind::Threat { .. }
                 | AuraKind::CastSpeed { .. }
                 | AuraKind::Leech { .. }
                 | AuraKind::Rewind { .. }
@@ -1172,18 +1178,36 @@ impl Skills {
         })
     }
 
-    /// The percent of its threat the player's damage makes: the lowest a shield of theirs
-    /// holding a `threat_pct` sets (Steady Stance), else 100.
-    pub(crate) fn threat_pct(&self) -> u32 {
-        self.auras
-            .iter()
-            .filter(|a| a.unit == self.me)
+    /// The percent of its threat the player's damage makes, by school index: the lowest a shield
+    /// of theirs holding a `threat_pct` sets (Steady Stance), else 100, then that times their
+    /// threat auras' increase for the school.
+    pub(crate) fn threat_pct(&self) -> [f32; 7] {
+        let mine = || self.auras.iter().filter(|a| a.unit == self.me);
+        let shield = mine()
             .filter_map(|a| match a.kind {
                 AuraKind::Absorb { ward, .. } if ward.threat_pct > 0 => Some(ward.threat_pct),
                 _ => None,
             })
             .min()
-            .unwrap_or(100)
+            .unwrap_or(100);
+        [
+            School::Physical,
+            School::Holy,
+            School::Fire,
+            School::Nature,
+            School::Frost,
+            School::Shadow,
+            School::Arcane,
+        ]
+        .map(|school| {
+            let more: u32 = mine()
+                .map(|a| match a.kind {
+                    AuraKind::Threat { pct, school: of } if of.is_none_or(|s| s == school) => pct,
+                    _ => 0,
+                })
+                .sum();
+            shield as f32 * (100 + more) as f32 / 100.0
+        })
     }
 
     /// Takes the player's stealth off (an attack, a cast, a blow taken). `Some(opener_crit)` when
@@ -3167,6 +3191,9 @@ impl InWorld {
                 );
             }
         }
+        // The `add_aura_stacks` effects, by index, that have added their stacks this cast: once a
+        // cast, unless `per_target`.
+        let mut stacked = Vec::new();
         for (guid, how) in landed {
             if !matches!(how, Landed::Missed(_)) {
                 let combo = self.skills.combo.on(guid);
@@ -3193,6 +3220,12 @@ impl InWorld {
                             break;
                         }
                         continue;
+                    }
+                    if let Effect::AddAuraStacks { per_target, .. } = *effect {
+                        if !per_target && stacked.contains(&i) {
+                            continue;
+                        }
+                        stacked.push(i);
                     }
                     self.effect(
                         skill,
@@ -3238,6 +3271,8 @@ impl InWorld {
                         school: School::Physical,
                         crit_if_target_in: None,
                         armor_ignore: None,
+                        vs_type: None,
+                        vs_type_pct: 0,
                     };
                     self.effect(
                         skill,
@@ -3845,9 +3880,19 @@ impl InWorld {
         if skill.is_finisher() && target.is_none_or(|t| self.skills.combo.on(t) == 0) {
             return Err(SPELL_FAILED_NO_COMBO_POINTS);
         }
-        // Judgement needs a Seal to judge.
-        if skill.effects.contains(&Effect::Judgement) && self.skills.seal().is_none() {
-            return Err(SPELL_FAILED_CASTER_AURASTATE);
+        // Judgement needs a Seal to judge: the TOML's active Seal, or the aura row it names.
+        for effect in &skill.effects {
+            let worn = match *effect {
+                Effect::Judgement {
+                    seal_spell_id: Some(id),
+                    ..
+                } => self.skills.on(self.guid, id),
+                Effect::Judgement { .. } => self.skills.seal().is_some(),
+                _ => true,
+            };
+            if !worn {
+                return Err(SPELL_FAILED_CASTER_AURASTATE);
+            }
         }
         match skill.target {
             Target::Caster => Ok(vec![self.guid]),
@@ -4203,6 +4248,8 @@ impl InWorld {
                 crit_cooldown_spell_id,
                 crit_cooldown_ms,
                 crit_damage_pct,
+                vs_type,
+                vs_type_pct,
                 ..
             } => {
                 let cond = self.condition_pct(
@@ -4211,7 +4258,7 @@ impl InWorld {
                     below_health_pct,
                     below_bonus_pct,
                     bleeding_pct,
-                );
+                ) + self.type_pct(target, vs_type, vs_type_pct);
                 let worth = self.kill_yields_xp(target);
                 let roll = weapon_roll(&stats, weapon, rng) * weapon_pct as f32 / 100.0;
                 let shield = stats.block_value
@@ -4285,6 +4332,8 @@ impl InWorld {
                 vs_aura_max_pct,
                 splash_pct,
                 splash_yd,
+                vs_type,
+                vs_type_pct,
                 ..
             } => {
                 let raw = scaled(amount.at(level, ap), hit_pct)
@@ -4299,7 +4348,9 @@ impl InWorld {
                     Some(id) if self.skills.on(target, id) => vs_aura_pct,
                     _ => 0,
                 };
-                let cond = self.condition_pct(target, controlled_pct, 0, 0, bleeding_pct) + worn;
+                let cond = self.condition_pct(target, controlled_pct, 0, 0, bleeding_pct)
+                    + worn
+                    + self.type_pct(target, vs_type, vs_type_pct);
                 let raw = scaled(raw, cond);
                 let worth = self.kill_yields_xp(target);
                 let at = self
@@ -4475,10 +4526,17 @@ impl InWorld {
                 );
                 self.skills.apply(a, events);
             }
+            // A control that names a creature type does nothing to any other.
+            Effect::Stun { only_type, .. }
+            | Effect::Incapacitate { only_type, .. }
+            | Effect::Root { only_type, .. }
+            | Effect::Knockback { only_type, .. }
+                if !self.of_type(target, only_type) => {}
             Effect::Stun {
                 aura_spell_id,
                 duration_ms,
                 per_combo: more,
+                ..
             } => {
                 let duration_ms = duration_ms + per_combo(more);
                 let duration_ms = if self.is_diminished_mob(target) {
@@ -4495,6 +4553,7 @@ impl InWorld {
             Effect::Incapacitate {
                 duration_ms,
                 break_on_damage,
+                ..
             } => {
                 // Damage in the same cast came first, so it does not wake the target.
                 // A boss takes nothing, and no clock starts. A duel's stand-in is a player, and
@@ -4531,7 +4590,7 @@ impl InWorld {
             // Handled in the per-target loop of the cast, which decides whether the effects after
             // it run.
             Effect::Interrupt { .. } => {}
-            Effect::Knockback { distance_yd } => {
+            Effect::Knockback { distance_yd, .. } => {
                 let hit = self
                     .mobs
                     .iter()
@@ -4904,6 +4963,7 @@ impl InWorld {
             Effect::Root {
                 aura_spell_id,
                 duration_ms,
+                ..
             } => {
                 self.skills
                     .apply(aura(AuraKind::Root, aura_spell_id, duration_ms, 0), events);
@@ -5273,7 +5333,43 @@ impl InWorld {
                 );
                 self.skills.consumed = None;
             }
-            Effect::Judgement => {
+            // A sheet Seal: an aura row of the Calling, judged for a hit and a heal.
+            Effect::Judgement {
+                seal_spell_id: Some(seal),
+                amount,
+                school,
+                heal_pct,
+            } => {
+                let me = self.guid;
+                let gone = self
+                    .skills
+                    .remove_where(|a| a.unit == me && a.spell_id == seal, events);
+                self.faded(&gone, events);
+                if gone.is_empty() {
+                    return;
+                }
+                if let Some(amount) = amount {
+                    let raw = scaled(amount.at(level, ap), hit_pct)
+                        + if school.is_magic() { direct_bonus } else { 0 };
+                    let dealt = self.strike(
+                        skill.spell_id,
+                        target,
+                        raw,
+                        school,
+                        how,
+                        c,
+                        rng,
+                        events,
+                        ticked,
+                    );
+                    self.skills.cast_dealt += dealt;
+                }
+                if heal_pct > 0 {
+                    let max = buffed(&self.player.stats, &self.skills).max_health;
+                    self.heal_player(c, skill.spell_id, scaled_share(max, heal_pct), events);
+                }
+            }
+            Effect::Judgement { .. } => {
                 let me = self.guid;
                 let gone = self.skills.remove_where(
                     |a| a.unit == me && matches!(a.kind, AuraKind::Seal { .. }),
@@ -5451,6 +5547,7 @@ impl InWorld {
             duration_ms,
             max_stacks,
             stack_rule,
+            ..
         } = *effect
         else {
             return;
@@ -6016,6 +6113,25 @@ impl InWorld {
         controlled + low + bleeding
     }
 
+    /// Whether `target` is a creature of `kind`, or `kind` is `None`. A player, or a duel's
+    /// stand-in for one, is of no creature type.
+    fn of_type(&self, target: u64, kind: Option<callings::CreatureType>) -> bool {
+        kind.is_none_or(|kind| {
+            self.mobs
+                .iter()
+                .any(|m| m.guid == target && !m.remote && m.template.creature_type == kind.id())
+        })
+    }
+
+    /// `vs_type_pct`, the percent more a hit deals `target` when it is a creature of `vs_type`.
+    fn type_pct(&self, target: u64, vs_type: Option<callings::CreatureType>, pct: u32) -> u32 {
+        if vs_type.is_some() && self.of_type(target, vs_type) {
+            pct
+        } else {
+            0
+        }
+    }
+
     /// After a hit at `target`, which [`InWorld::kill_yields_xp`] read as `worth` just before:
     /// when the hit killed it and the kill yields experience, the player heals `heal_pct` percent
     /// of their maximum health and gains `energize` of their power, under `spell_id`
@@ -6121,6 +6237,8 @@ impl InWorld {
                 bleeding_pct,
                 kill_heal_pct,
                 kill_energize,
+                vs_type,
+                vs_type_pct,
                 ..
             } => Some((
                 bonus,
@@ -6131,7 +6249,7 @@ impl InWorld {
                     below_health_pct,
                     below_bonus_pct,
                     bleeding_pct,
-                ),
+                ) + self.type_pct(target, vs_type, vs_type_pct),
                 block_value_pct,
                 heal_pct,
                 (kill_heal_pct, kill_energize),
@@ -7802,6 +7920,10 @@ impl InWorld {
                 callings::AuraEffect::ModHealingTakenPct { pct } => {
                     AuraKind::HealingTaken { pct: *pct }
                 }
+                callings::AuraEffect::ModThreatPct { pct, school } => AuraKind::Threat {
+                    pct: *pct,
+                    school: *school,
+                },
                 callings::AuraEffect::SkillAmountPct { skill, pct } => AuraKind::SkillAmount {
                     skill: skill.as_str(),
                     pct: *pct,

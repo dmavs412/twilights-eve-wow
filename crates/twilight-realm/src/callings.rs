@@ -366,6 +366,13 @@ pub enum AuraEffect {
         #[serde(default)]
         school: Option<School>,
     },
+    /// The wearer's damage of `school` makes `pct` percent more threat, on top of a shield's
+    /// `threat_pct`; no `school` is every school.
+    ModThreatPct {
+        pct: u32,
+        #[serde(default)]
+        school: Option<School>,
+    },
     /// The player's next cast of one of the skills changes: see [`NextCast`].
     NextCast(NextCast),
     /// A count that grows by one each time the aura is put on again; at the row's `max_stacks`
@@ -1516,6 +1523,12 @@ pub enum Effect {
         /// (Killshot).
         #[serde(default)]
         below_instant: bool,
+        /// `vs_type_pct` more on a creature of `vs_type`, summed with `controlled_pct`,
+        /// `bleeding_pct` and `below_bonus_pct`.
+        #[serde(default)]
+        vs_type: Option<CreatureType>,
+        #[serde(default)]
+        vs_type_pct: u32,
     },
     /// Flat damage of a school. Physical goes against armour, and through the melee table when
     /// `melee_hit_table`; any other school ignores armour, rolls only the level-based miss, and
@@ -1562,6 +1575,11 @@ pub enum Effect {
         splash_pct: u32,
         #[serde(default)]
         splash_yd: f32,
+        /// As a [`Effect::WeaponStrike`]'s: more on a creature of that type.
+        #[serde(default)]
+        vs_type: Option<CreatureType>,
+        #[serde(default)]
+        vs_type_pct: u32,
     },
     /// A bleed on the target under the skill's own spell id: `tick` every `tick_ms`.
     PeriodicDamage {
@@ -1716,8 +1734,13 @@ pub enum Effect {
     /// diminishes and works on bosses.
     Taunt { duration_ms: u32 },
     /// Each mob it lands on slides `distance_yd` straight away from the caster, stopping short at
-    /// a rise, a drop or a wall, and does nothing while it slides. A boss is not moved.
-    Knockback { distance_yd: f32 },
+    /// a rise, a drop or a wall, and does nothing while it slides. A boss is not moved. With
+    /// `only_type`, a creature of another type is not moved either.
+    Knockback {
+        distance_yd: f32,
+        #[serde(default)]
+        only_type: Option<CreatureType>,
+    },
     /// `amount` combo points on the target, five at most; points on another target are lost.
     /// `bleeding_bonus` more on a target bleeding from the caster (Serrated Strikes).
     AddComboPoints {
@@ -1749,19 +1772,24 @@ pub enum Effect {
         tick_ms: u32,
         duration_ms: u32,
     },
-    /// The target cannot act, under `aura_spell_id`.
+    /// The target cannot act, under `aura_spell_id`. With `only_type`, a target of another
+    /// creature type, or a player, is left alone; so for a root, an incapacitate and a knockback.
     Stun {
         aura_spell_id: u32,
         duration_ms: u32,
         /// Milliseconds added to `duration_ms` once per combo point on the target: a finisher.
         #[serde(default)]
         per_combo: Option<Linear>,
+        #[serde(default)]
+        only_type: Option<CreatureType>,
     },
     /// The target cannot move, though it still swings and casts, under `aura_spell_id` for
     /// `duration_ms` (Frostbite). Roots take no diminishing returns.
     Root {
         aura_spell_id: u32,
         duration_ms: u32,
+        #[serde(default)]
+        only_type: Option<CreatureType>,
     },
     /// When the cast lands, `chance` percent of the time: at a bar that was full before the cast,
     /// with `full_absorb_pct` set, a shield of that percent of the cast's cost for
@@ -1782,6 +1810,8 @@ pub enum Effect {
         duration_ms: u32,
         #[serde(default)]
         break_on_damage: bool,
+        #[serde(default)]
+        only_type: Option<CreatureType>,
     },
     /// The target swings `pct`% slower, under the skill's spell id.
     AttackSpeedSlow { pct: u32, duration_ms: u32 },
@@ -1977,11 +2007,24 @@ pub enum Effect {
     /// active: a new one replaces the old.
     Seal { duration_ms: u32, seal: Seal },
     /// Consumes the caster's active Seal for its judgement on the target. With no Seal active the
-    /// cast fails and costs nothing.
-    Judgement,
+    /// cast fails and costs nothing. With `seal_spell_id` (resolved by the build from
+    /// `seal=key`), it judges that aura row of the Calling instead: the cast needs the caster to
+    /// wear it, takes it off, deals `amount` in `school` to the target and heals the caster
+    /// `heal_pct` percent of their maximum health.
+    Judgement {
+        #[serde(default)]
+        seal_spell_id: Option<u32>,
+        #[serde(default)]
+        amount: Option<Linear>,
+        #[serde(default)]
+        school: School,
+        #[serde(default)]
+        heal_pct: u32,
+    },
     /// `stacks` more of the caster's aura `aura_spell_id` when the hit lands, held to the aura
     /// row's `max_stacks` under its `stack_rule`, each application putting it back to
-    /// `duration_ms`.
+    /// `duration_ms`. A cast that lands on several enemies adds them once, or with `per_target`
+    /// once per enemy it landed on.
     AddAuraStacks {
         aura_spell_id: u32,
         #[serde(default = "one")]
@@ -1991,6 +2034,8 @@ pub enum Effect {
         max_stacks: u32,
         #[serde(default)]
         stack_rule: StackRule,
+        #[serde(default)]
+        per_target: bool,
     },
     /// `stacks` more on the caster's periodic damage `aura_spell_id` on the target, held to its
     /// `max_stacks`, when the hit lands. The timer stays. A target without the aura gets nothing.
@@ -2056,6 +2101,29 @@ fn one_u8() -> u8 {
 pub enum IfWorn {
     /// The aura gains a stack and keeps its timer, instead of starting over.
     Grow,
+}
+
+/// A creature's kind, 1.12's `CreatureType` ids 1 to 9 (a mob template's `creature_type`), as a
+/// hit's `vs_type` and a control's `only_type` name it. A player is of none.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CreatureType {
+    Beast,
+    Dragonkin,
+    Demon,
+    Elemental,
+    Giant,
+    Undead,
+    Humanoid,
+    Critter,
+    Mechanical,
+}
+
+impl CreatureType {
+    /// Its `CreatureType` id.
+    pub fn id(self) -> u32 {
+        self as u32 + 1
+    }
 }
 
 /// Whom a periodic damage effect's `tick_aura` goes on (the `tick_aura_on` param).

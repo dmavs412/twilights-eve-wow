@@ -363,6 +363,7 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             aura_spell_id,
             duration_ms,
             per_combo,
+            ..
         } => {
             assert_eq!(kind, "stun", "{key}");
             assert_eq!(per_combo, want.get("per_combo").map(linear), "{key}");
@@ -375,6 +376,7 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::Incapacitate {
             duration_ms,
             break_on_damage,
+            ..
         } => {
             assert_eq!(kind, "incapacitate", "{key}");
             assert_eq!(duration_ms, ms(want, "duration_ms"));
@@ -416,7 +418,7 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             assert_eq!(kind, "add_combo_points", "{key}");
             assert_eq!(amount, ms(want, "amount"));
         }
-        Effect::Seal { .. } | Effect::Judgement => {
+        Effect::Seal { .. } | Effect::Judgement { .. } => {
             assert!(matches!(kind, "seal" | "judgement"), "{key}");
             let want: Effect =
                 serde_json::from_value(want.clone()).unwrap_or_else(|e| panic!("{key}: {e}"));

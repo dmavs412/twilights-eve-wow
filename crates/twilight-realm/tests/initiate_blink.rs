@@ -144,6 +144,7 @@ fn frostbite_roots_a_slowed_target_for_2_s_and_not_one_only_this_cast_slows() {
     let Effect::Root {
         aura_spell_id: root,
         duration_ms,
+        ..
     } = choice_skill("biting_cold", "frostbite").effects[2]
     else {
         panic!("Frostbite's third effect is its root");
