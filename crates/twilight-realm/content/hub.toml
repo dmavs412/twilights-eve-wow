@@ -2669,6 +2669,27 @@ hidden = true
 text_id = 64187
 greeting = "Watch your feet, $C. Half this tree line is wire, and I've stopped remembering which half."
 
+# Mother Ysolde Grey, the Blightcaller (#692): keeps a garden of rot behind the ruined house at
+# Beggar's Haunt, on the hill east of Darkshire, 28 yd from Deathstalker Zraedus and 40 yd from
+# Apothecary Faustin. The look is Morbent Fel's (a placeholder). Role `talker`, as Hale's. z is
+# ground_check.py's.
+[[npc]]
+guid = 9300118
+entry = 190118
+name = "Mother Ysolde Grey"
+subname = "Blightcaller"
+level = 50
+display_id = 4272
+faction_template = 35
+role = "talker"
+npc_flags = 0x3
+map = 0
+position = [-10376.0, -1556.0, 98.12]
+orientation = 0.8
+hidden = true
+text_id = 64188
+greeting = "Mind the beds, $C. Everything here is growing, and most of it is hungry."
+
 # Belongs to tests/sight.rs: seen only after test quest 99811 is handed in, 10 yd from that
 # quest's Rachel (zones.toml guid 960811), whom only those who have not handed it in see. The
 # look is Maera Holt's. z is ground_check.py's.

@@ -310,6 +310,11 @@ target needed, where the leap landed (Trap Vault lays an Immolation Trap). A Tal
 skill's cooldown, then the flat milliseconds add (Trap Mastery's -20). A `detonate_traps`
 `radius_yd` is left out of a `client_radius_index` row's yards check, since it is where the traps
 are sought and not the reticle (Spring the Traps).
+The Blightcaller (#692): a channel's tick shares only what that tick dealt or healed, so a
+`periodic_heal` with `pct_of=hit` on a channel row heals each tick's own share (Plague Tithe);
+before, a later tick's share counted the ticks before it too. A `ground_area`'s `ally_aura` goes on
+every friendly player inside, who wears it in their own session for the aura row's duration, and
+its `grow_aura` grows only enemies; before, another player inside took the enemy aura.
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

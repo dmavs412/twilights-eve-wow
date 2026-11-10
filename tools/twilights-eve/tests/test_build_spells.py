@@ -2700,6 +2700,18 @@ class TalentRows(BuildSpells):
         self.assertTrue(all(len(r["choices"]) == 3 for r in trapper["rows"]))
         self.assert_committed_icons("trapper")
 
+    def test_the_committed_blightcaller_has_ten_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            blightcaller = next(c for c in json.load(f) if c["key"] == "blightcaller")
+        self.assertEqual(blightcaller["row_levels"], [5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
+        self.assertEqual([(r["key"], r["level"]) for r in blightcaller["rows"]],
+                         [("creeping_blight", 5), ("plague_tithe", 10), ("miasma", 15), ("harvest", 20),
+                          ("blightcaller_rot_communion", 25), ("spread_blight", 30), ("hush", 35),
+                          ("wasting_communion", 40), ("rise_again", 45), ("blightcaller_plaguelord", 50)])
+        self.assertTrue(all(len(r["choices"]) == 3 for r in blightcaller["rows"]))
+        self.assert_committed_icons("blightcaller")
+
     def test_the_committed_bloodletter_has_ten_rows(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
                   encoding="utf-8") as f:

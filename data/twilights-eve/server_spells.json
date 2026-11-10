@@ -28261,5 +28261,2029 @@
    "spirit": 0
   },
   "shapeshift_form": 0
+ },
+ {
+  "key": "blightcaller",
+  "power": "mana",
+  "stat_profile": "priest",
+  "item_class": "warrior",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [
+   "cloth"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\Spell_Shadow_AbominationExplosion",
+  "spellbook": "Blightcaller",
+  "blurb": "A healer who works through rot. The Blight grows on the pack, jumps from foe to foe, and every tick of it mends your friends.",
+  "skills": [
+   {
+    "key": "creeping_blight",
+    "name": "Creeping Blight",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000954,
+    "realm_cost": 10,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_creeping_blight"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each tick of Plague Tithe on the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack."
+   },
+   {
+    "key": "plague_tithe",
+    "name": "Plague Tithe",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000955,
+    "realm_cost": 6,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "channel",
+    "channel_tick_ms": 1000,
+    "channel_ms": 3000,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 30,
+        "per_level": 1.5
+       },
+       "school": "shadow"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 1000,
+       "duration_ms": 4000,
+       "pct_of": "hit",
+       "pct": 100,
+       "ally": "lowest_health",
+       "radius_yd": 30,
+       "center": "caster"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "grow_aura",
+      "params": {
+       "aura": "aura_creeping_blight",
+       "stacks": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Channels rot into the target for 3 sec, dealing Shadow damage each second and growing your Creeping Blight on it by a stack. Each tick, the most hurt ally within 30 yards of you heals 100% of the damage it dealt over 4 sec."
+   },
+   {
+    "key": "miasma",
+    "name": "Miasma",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000956,
+    "realm_cost": 30,
+    "realm_cooldown_ms": 15000,
+    "realm_range_max": 30,
+    "realm_radius_yd": 8,
+    "target": "dest",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "area_shape": "circle",
+    "area_center": "ground",
+    "max_targets": null,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "ground_area",
+      "params": {
+       "radius_yd": 8,
+       "duration_ms": 10000,
+       "enemy_aura": "aura_miasma",
+       "ally_aura": "aura_miasma_ally"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 17% increased healing from all sources."
+   },
+   {
+    "key": "harvest",
+    "name": "Harvest",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000958,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 10000,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "consume_aura",
+      "params": {
+       "aura": "aura_creeping_blight",
+       "amount": {
+        "base": 12,
+        "per_level": 0.8
+       },
+       "per_stack": true,
+       "heal_allies_pct": 100,
+       "radius_yd": 30,
+       "school": "shadow"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Takes your Creeping Blight off the target, dealing Shadow damage for each of its stacks, and splits 100% of the damage dealt as healing among the allies within 30 yards of the target."
+   },
+   {
+    "key": "spread_blight",
+    "name": "Spread Blight",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000959,
+    "realm_cost": 8,
+    "realm_cooldown_ms": 12000,
+    "realm_range_max": 30,
+    "learn_level": 10,
+    "target": "enemy",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "copy_aura",
+      "params": {
+       "aura": "aura_creeping_blight",
+       "targets": 3,
+       "radius_yd": 10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Copies your Creeping Blight on the target, with its stacks and time left, onto the three nearest other enemies within 10 yards of it that do not have it."
+   },
+   {
+    "key": "hush",
+    "name": "Hush",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000960,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 24000,
+    "realm_gcd_ms": 0,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 4500
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_creeping_blight",
+       "if_worn": "grow"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, Creeping Blight settles on the target, or gains a stack if it is already there."
+   },
+   {
+    "key": "wasting_communion",
+    "name": "Wasting Communion",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000961,
+    "realm_cost": 15,
+    "realm_cooldown_ms": 30000,
+    "realm_range_max": 30,
+    "realm_radius_yd": 8,
+    "learn_level": 20,
+    "target": "dest",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "area_shape": "circle",
+    "area_center": "ground",
+    "max_targets": null,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "ground_area",
+      "params": {
+       "radius_yd": 8,
+       "duration_ms": 10000,
+       "ally_aura": "aura_communion",
+       "grow_aura": "aura_creeping_blight",
+       "grow_every_ms": 2000
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Sanctifies the rot at the target location for 10 sec. Allies inside heal every 2 sec, and every 2 sec each enemy inside with your Creeping Blight gains a stack."
+   },
+   {
+    "key": "rise_again",
+    "name": "Rise Again",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000963,
+    "realm_cost": 20,
+    "realm_range_max": 30,
+    "learn_level": 30,
+    "target": "ally",
+    "school": "shadow",
+    "prevention": "silence",
+    "requires": {
+     "combat": "out"
+    },
+    "requires_out_of_combat": true,
+    "cost_kind": "pct_base",
+    "cast_kind": "cast",
+    "cast_time_ms": 10000,
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "resurrect",
+      "params": {
+       "health_pct": 30
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Calls a dead ally back from the rot. They return to life with 30% of their health. Only out of combat."
+   }
+  ],
+  "auras": [
+   {
+    "key": "aura_creeping_blight",
+    "name": "Creeping Blight",
+    "spell_id": 1000954,
+    "status": "placeholder",
+    "school": "shadow",
+    "prevention": "silence",
+    "max_stacks": 255,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 3000,
+       "tick": {
+        "base": 20,
+        "per_level": 0.4
+       },
+       "leech_pct": 50,
+       "stacks_per_tick": 1,
+       "school": "shadow"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Taking Shadow damage over time. It grows with every tick."
+   },
+   {
+    "key": "aura_miasma",
+    "name": "Miasma",
+    "spell_id": 1000956,
+    "status": "placeholder",
+    "school": "shadow",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 1000,
+       "tick": {
+        "base": 18,
+        "per_level": 0.4
+       },
+       "school": "shadow"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Taking Shadow damage every second."
+   },
+   {
+    "key": "aura_miasma_ally",
+    "name": "Miasma",
+    "spell_id": 1000957,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_healing_taken_pct",
+      "params": {
+       "pct": 17
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Healing received increased by 17%."
+   },
+   {
+    "key": "aura_communion",
+    "name": "Wasting Communion",
+    "spell_id": 1000962,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 20,
+        "per_level": 2
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Healing every 2 sec."
+   },
+   {
+    "key": "aura_healing_miasma",
+    "name": "Healing Miasma",
+    "spell_id": 1000971,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_healing_taken_pct",
+      "params": {
+       "pct": 30
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Healing received increased by 30%."
+   },
+   {
+    "key": "aura_deep_communion",
+    "name": "Deep Communion",
+    "spell_id": 1000987,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 2000,
+       "tick": {
+        "base": 30,
+        "per_level": 3
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Healing every 2 sec."
+   }
+  ],
+  "rows": [
+   {
+    "key": "creeping_blight",
+    "level": 5,
+    "kind": "skill_choice",
+    "skill": "creeping_blight",
+    "choices": [
+     {
+      "key": "virulent_blight",
+      "name": "Virulent Blight",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000964,
+      "realm_cost": 10,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_creeping_blight",
+         "tick_spread_chance": 20,
+         "tick_spread_yd": 8
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each tick of Plague Tithe on the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. Each tick has a 20% chance to copy the Blight, with its stacks and time left, onto the nearest other enemy within 8 yards that does not have it.",
+      "change": "Each tick has a 20% chance to copy the Blight, with its stacks and time left, onto the nearest other enemy within 8 yards that does not have it.",
+      "variant_of": "creeping_blight"
+     },
+     {
+      "key": "hungry_blight",
+      "name": "Hungry Blight",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000965,
+      "realm_cost": 10,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_creeping_blight",
+         "leech_pct": 75
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each tick of Plague Tithe on the target. Each tick deals its damage once per stack and heals you for 75% of it. Recasting it starts it over at one stack.",
+      "change": "Each tick heals you for 75% of its damage instead of 50%.",
+      "variant_of": "creeping_blight"
+     },
+     {
+      "key": "deep_blight",
+      "name": "Deep Blight",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000966,
+      "realm_cost": 10,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_creeping_blight",
+         "tick": {
+          "base": 24,
+          "per_level": 0.48
+         }
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each tick of Plague Tithe on the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. Its ticks deal 20% more damage.",
+      "change": "Each tick deals {amount:24:0.48:0:0} a stack instead of {amount:20:0.4:0:0}.",
+      "variant_of": "creeping_blight"
+     }
+    ]
+   },
+   {
+    "key": "plague_tithe",
+    "level": 10,
+    "kind": "skill_choice",
+    "skill": "plague_tithe",
+    "choices": [
+     {
+      "key": "generous_tithe",
+      "name": "Generous Tithe",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000967,
+      "realm_cost": 6,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 30,
+          "per_level": 1.5
+         },
+         "school": "shadow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "tick_ms": 1000,
+         "duration_ms": 4000,
+         "pct_of": "hit",
+         "pct": 150,
+         "ally": "lowest_health",
+         "radius_yd": 30,
+         "center": "caster"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grow_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "stacks": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Channels rot into the target for 3 sec, dealing Shadow damage each second and growing your Creeping Blight on it by a stack. Each tick, the most hurt ally within 30 yards of you heals 150% of the damage it dealt over 4 sec.",
+      "change": "Each tick heals 150% of its damage instead of 100%.",
+      "variant_of": "plague_tithe"
+     },
+     {
+      "key": "rotting_tithe",
+      "name": "Rotting Tithe",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000968,
+      "realm_cost": 6,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 3000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 30,
+          "per_level": 1.5
+         },
+         "school": "shadow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "tick_ms": 1000,
+         "duration_ms": 4000,
+         "pct_of": "hit",
+         "pct": 100,
+         "ally": "lowest_health",
+         "radius_yd": 30,
+         "center": "caster"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grow_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "stacks": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Channels rot into the target for 3 sec, dealing Shadow damage each second and growing your Creeping Blight on it by two stacks. Each tick, the most hurt ally within 30 yards of you heals 100% of the damage it dealt over 4 sec.",
+      "change": "Each tick grows the Blight by 2 stacks instead of 1.",
+      "variant_of": "plague_tithe"
+     },
+     {
+      "key": "long_tithe",
+      "name": "Long Tithe",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000969,
+      "realm_cost": 6,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "channel",
+      "channel_tick_ms": 1000,
+      "channel_ms": 4000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 30,
+          "per_level": 1.5
+         },
+         "school": "shadow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "tick_ms": 1000,
+         "duration_ms": 4000,
+         "pct_of": "hit",
+         "pct": 100,
+         "ally": "lowest_health",
+         "radius_yd": 30,
+         "center": "caster"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grow_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "stacks": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Channels rot into the target for 4 sec, dealing Shadow damage each second and growing your Creeping Blight on it by a stack. Each tick, the most hurt ally within 30 yards of you heals 100% of the damage it dealt over 4 sec.",
+      "change": "Channels a second longer, for one more tick.",
+      "variant_of": "plague_tithe"
+     }
+    ]
+   },
+   {
+    "key": "miasma",
+    "level": 15,
+    "kind": "skill_choice",
+    "skill": "miasma",
+    "choices": [
+     {
+      "key": "healing_miasma",
+      "name": "Healing Miasma",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000970,
+      "realm_cost": 30,
+      "realm_cooldown_ms": 15000,
+      "realm_range_max": 30,
+      "realm_radius_yd": 8,
+      "target": "dest",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 8,
+         "duration_ms": 10000,
+         "enemy_aura": "aura_miasma",
+         "ally_aura": "aura_healing_miasma"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 30% increased healing from all sources.",
+      "change": "Allies inside receive 30% increased healing instead of 17%.",
+      "variant_of": "miasma"
+     },
+     {
+      "key": "wide_miasma",
+      "name": "Wide Miasma",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000972,
+      "realm_cost": 30,
+      "realm_cooldown_ms": 15000,
+      "realm_range_max": 30,
+      "realm_radius_yd": 13,
+      "target": "dest",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 13,
+         "duration_ms": 10000,
+         "enemy_aura": "aura_miasma",
+         "ally_aura": "aura_miasma_ally"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 17% increased healing from all sources. The cloud reaches 13 yards from its centre.",
+      "change": "The cloud reaches 13 yards from its centre instead of 8.",
+      "variant_of": "miasma"
+     },
+     {
+      "key": "breeding_miasma",
+      "name": "Breeding Miasma",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000973,
+      "realm_cost": 30,
+      "realm_cooldown_ms": 15000,
+      "realm_range_max": 30,
+      "realm_radius_yd": 8,
+      "target": "dest",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 8,
+         "duration_ms": 10000,
+         "enemy_aura": "aura_miasma",
+         "ally_aura": "aura_miasma_ally",
+         "grow_aura": "aura_creeping_blight",
+         "grow_every_ms": 2000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 17% increased healing from all sources. Every 2 sec, each enemy inside with your Creeping Blight gains a stack.",
+      "change": "Every 2 sec, each enemy inside with your Creeping Blight gains a stack.",
+      "variant_of": "miasma"
+     }
+    ]
+   },
+   {
+    "key": "harvest",
+    "level": 20,
+    "kind": "skill_choice",
+    "skill": "harvest",
+    "choices": [
+     {
+      "key": "bountiful_harvest",
+      "name": "Bountiful Harvest",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000974,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 10000,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "consume_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "amount": {
+          "base": 12,
+          "per_level": 0.8
+         },
+         "per_stack": true,
+         "heal_allies_pct": 150,
+         "radius_yd": 30,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Takes your Creeping Blight off the target, dealing Shadow damage for each of its stacks, and splits 150% of the damage dealt as healing among the allies within 30 yards of the target.",
+      "change": "Splits 150% of the damage as healing instead of 100%.",
+      "variant_of": "harvest"
+     },
+     {
+      "key": "seeded_harvest",
+      "name": "Seeded Harvest",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000975,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 10000,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "consume_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "amount": {
+          "base": 12,
+          "per_level": 0.8
+         },
+         "per_stack": true,
+         "heal_allies_pct": 100,
+         "radius_yd": 30,
+         "spread_yd": 8,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Takes your Creeping Blight off the target, dealing Shadow damage for each of its stacks, and splits 100% of the damage dealt as healing among the allies within 30 yards of the target. A fresh Creeping Blight of one stack then goes on the nearest other enemy within 8 yards of the target.",
+      "change": "A fresh Blight of one stack goes on the nearest other enemy within 8 yards of the target.",
+      "variant_of": "harvest"
+     },
+     {
+      "key": "quick_harvest",
+      "name": "Quick Harvest",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000976,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 6000,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "consume_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "amount": {
+          "base": 12,
+          "per_level": 0.8
+         },
+         "per_stack": true,
+         "heal_allies_pct": 100,
+         "radius_yd": 30,
+         "school": "shadow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Takes your Creeping Blight off the target, dealing Shadow damage for each of its stacks, and splits 100% of the damage dealt as healing among the allies within 30 yards of the target. 6 sec cooldown.",
+      "change": "Cooldown 6 sec instead of 10 sec.",
+      "variant_of": "harvest"
+     }
+    ]
+   },
+   {
+    "key": "blightcaller_rot_communion",
+    "level": 25,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "contagion",
+      "name": "Contagion",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000977,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "wearer_death",
+         "aura": "aura_creeping_blight",
+         "spread_aura": 10,
+         "spread_stacks": "all"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "When an enemy wearing your Creeping Blight dies, the Blight with all its stacks jumps to the nearest other enemy within 10 yards that does not have it."
+     },
+     {
+      "key": "shared_rot",
+      "name": "Shared Rot",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000978,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "proc",
+        "params": {
+         "on": "periodic_tick",
+         "skill": "creeping_blight",
+         "heal_allies_pct": 20,
+         "radius_yd": 30
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Each tick of your Creeping Blight splits 20% of its damage as healing among the allies within 30 yards of you."
+     },
+     {
+      "key": "withering",
+      "name": "Withering",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000979,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "damage_pct_vs_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "school": "shadow",
+         "pct": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your Shadow damage is 10% higher on enemies wearing your Creeping Blight."
+     }
+    ]
+   },
+   {
+    "key": "spread_blight",
+    "level": 30,
+    "kind": "skill_choice",
+    "skill": "spread_blight",
+    "choices": [
+     {
+      "key": "wide_spread",
+      "name": "Wide Spread",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000980,
+      "realm_cost": 8,
+      "realm_cooldown_ms": 12000,
+      "realm_range_max": 30,
+      "learn_level": 10,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "copy_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "targets": 5,
+         "radius_yd": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Copies your Creeping Blight on the target, with its stacks and time left, onto the five nearest other enemies within 10 yards of it that do not have it.",
+      "change": "Copies it onto 5 enemies instead of 3.",
+      "variant_of": "spread_blight"
+     },
+     {
+      "key": "far_spread",
+      "name": "Far Spread",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000981,
+      "realm_cost": 8,
+      "realm_cooldown_ms": 12000,
+      "realm_range_max": 30,
+      "learn_level": 10,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "copy_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "targets": 3,
+         "radius_yd": 15
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Copies your Creeping Blight on the target, with its stacks and time left, onto the three nearest other enemies within 15 yards of it that do not have it.",
+      "change": "Reaches enemies within 15 yards of the target instead of 10.",
+      "variant_of": "spread_blight"
+     },
+     {
+      "key": "quick_spread",
+      "name": "Quick Spread",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000982,
+      "realm_cost": 8,
+      "realm_cooldown_ms": 8000,
+      "realm_range_max": 30,
+      "learn_level": 10,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "copy_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "targets": 3,
+         "radius_yd": 10
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Copies your Creeping Blight on the target, with its stacks and time left, onto the three nearest other enemies within 10 yards of it that do not have it. 8 sec cooldown.",
+      "change": "Cooldown 8 sec instead of 12 sec.",
+      "variant_of": "spread_blight"
+     }
+    ]
+   },
+   {
+    "key": "hush",
+    "level": 35,
+    "kind": "skill_choice",
+    "skill": "hush",
+    "choices": [
+     {
+      "key": "long_hush",
+      "name": "Long Hush",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000983,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 24000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 6500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_creeping_blight",
+         "if_worn": "grow"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, Creeping Blight settles on the target, or gains a stack if it is already there.",
+      "change": "Locks the school out for 6.5 sec instead of 4.5 sec.",
+      "variant_of": "hush"
+     },
+     {
+      "key": "choking_hush",
+      "name": "Choking Hush",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000984,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 24000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 4500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_creeping_blight",
+         "if_worn": "grow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "grow_aura",
+        "params": {
+         "aura": "aura_creeping_blight",
+         "stacks": 2
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, Creeping Blight settles on the target, or gains a stack if it is already there. Then the Blight gains 2 more stacks, 3 in all.",
+      "change": "A stopped cast grows the Blight by 2 more stacks.",
+      "variant_of": "hush"
+     },
+     {
+      "key": "mending_hush",
+      "name": "Mending Hush",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000985,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 24000,
+      "realm_gcd_ms": 0,
+      "realm_range_max": 30,
+      "target": "enemy",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "interrupt",
+        "params": {
+         "lockout_ms": 4500
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "aura_creeping_blight",
+         "if_worn": "grow"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_heal",
+        "params": {
+         "tick_ms": 1000,
+         "duration_ms": 4000,
+         "tick": {
+          "base": 10,
+          "per_level": 1
+         },
+         "ally": "lowest_health",
+         "radius_yd": 30,
+         "center": "caster"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, Creeping Blight settles on the target, or gains a stack if it is already there. It also heals the most hurt ally within 30 yards of you over 4 sec.",
+      "change": "A stopped cast also heals the most hurt ally within 30 yards of you {amount:10:1:0:0} a second for 4 sec.",
+      "variant_of": "hush"
+     }
+    ]
+   },
+   {
+    "key": "wasting_communion",
+    "level": 40,
+    "kind": "skill_choice",
+    "skill": "wasting_communion",
+    "choices": [
+     {
+      "key": "deep_communion",
+      "name": "Deep Communion",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000986,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 30000,
+      "realm_range_max": 30,
+      "realm_radius_yd": 8,
+      "learn_level": 20,
+      "target": "dest",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 8,
+         "duration_ms": 10000,
+         "ally_aura": "aura_deep_communion",
+         "grow_aura": "aura_creeping_blight",
+         "grow_every_ms": 2000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Sanctifies the rot at the target location for 10 sec. Allies inside heal 50% more every 2 sec, and every 2 sec each enemy inside with your Creeping Blight gains a stack.",
+      "change": "Allies inside heal {amount:30:3:0:0} every 2 sec instead of {amount:20:2:0:0}.",
+      "variant_of": "wasting_communion"
+     },
+     {
+      "key": "wide_communion",
+      "name": "Wide Communion",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000988,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 30000,
+      "realm_range_max": 30,
+      "realm_radius_yd": 13,
+      "learn_level": 20,
+      "target": "dest",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 13,
+         "duration_ms": 10000,
+         "ally_aura": "aura_communion",
+         "grow_aura": "aura_creeping_blight",
+         "grow_every_ms": 2000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Sanctifies the rot at the target location for 10 sec. Allies inside heal every 2 sec, and every 2 sec each enemy inside with your Creeping Blight gains a stack. It reaches 13 yards from its centre.",
+      "change": "The area reaches 13 yards from its centre instead of 8.",
+      "variant_of": "wasting_communion"
+     },
+     {
+      "key": "fast_communion",
+      "name": "Fast Communion",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000989,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 30000,
+      "realm_range_max": 30,
+      "realm_radius_yd": 8,
+      "learn_level": 20,
+      "target": "dest",
+      "school": "shadow",
+      "prevention": "silence",
+      "cost_kind": "pct_base",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "area_shape": "circle",
+      "area_center": "ground",
+      "max_targets": null,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "ground_area",
+        "params": {
+         "radius_yd": 8,
+         "duration_ms": 10000,
+         "ally_aura": "aura_communion",
+         "grow_aura": "aura_creeping_blight",
+         "grow_every_ms": 1000
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Sanctifies the rot at the target location for 10 sec. Allies inside heal every 2 sec, and every second each enemy inside with your Creeping Blight gains a stack.",
+      "change": "Grows the Blight every 1 sec instead of every 2 sec.",
+      "variant_of": "wasting_communion"
+     }
+    ]
+   },
+   {
+    "key": "rise_again",
+    "level": 45,
+    "kind": "skill_choice",
+    "skill": "rise_again",
+    "choices": [
+     {
+      "key": "strong_return",
+      "name": "Strong Return",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000990,
+      "realm_cost": 20,
+      "realm_range_max": 30,
+      "learn_level": 30,
+      "target": "ally",
+      "school": "shadow",
+      "prevention": "silence",
+      "requires": {
+       "combat": "out"
+      },
+      "requires_out_of_combat": true,
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 10000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "resurrect",
+        "params": {
+         "health_pct": 50
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Calls a dead ally back from the rot. They return to life with 50% of their health. Only out of combat.",
+      "change": "The ally returns with 50% of their health instead of 30%.",
+      "variant_of": "rise_again"
+     },
+     {
+      "key": "quick_rites",
+      "name": "Quick Rites",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000991,
+      "realm_cost": 20,
+      "realm_range_max": 30,
+      "learn_level": 30,
+      "target": "ally",
+      "school": "shadow",
+      "prevention": "silence",
+      "requires": {
+       "combat": "out"
+      },
+      "requires_out_of_combat": true,
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 5000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "resurrect",
+        "params": {
+         "health_pct": 30
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Calls a dead ally back from the rot. They return to life with 30% of their health. Only out of combat. The cast takes 5 sec.",
+      "change": "The cast takes half as long.",
+      "variant_of": "rise_again"
+     },
+     {
+      "key": "far_rites",
+      "name": "Far Rites",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000992,
+      "realm_cost": 20,
+      "realm_range_max": 40,
+      "learn_level": 30,
+      "target": "ally",
+      "school": "shadow",
+      "prevention": "silence",
+      "requires": {
+       "combat": "out"
+      },
+      "requires_out_of_combat": true,
+      "cost_kind": "pct_base",
+      "cast_kind": "cast",
+      "cast_time_ms": 10000,
+      "interrupt_on": [
+       "move",
+       "pushback",
+       "kick"
+      ],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "resurrect",
+        "params": {
+         "health_pct": 30
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Calls a dead ally back from the rot. They return to life with 30% of their health. Only out of combat. Range 40 yards.",
+      "change": "Range 40 instead of 30.",
+      "variant_of": "rise_again"
+     }
+    ]
+   },
+   {
+    "key": "blightcaller_plaguelord",
+    "level": 50,
+    "kind": "talent",
+    "skill": null,
+    "choices": [
+     {
+      "key": "blight_mastery",
+      "name": "Blight Mastery",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000993,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_amount_pct",
+        "params": {
+         "skill": "creeping_blight",
+         "pct": 15,
+         "applies_to": "tick"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Your Creeping Blight's ticks deal 15% more damage."
+     },
+     {
+      "key": "sustaining_rot",
+      "name": "Sustaining Rot",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000994,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "skill_amount_pct",
+        "params": {
+         "skill": "plague_tithe",
+         "pct": 20
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Plague Tithe deals 20% more damage, and so heals 20% more."
+     },
+     {
+      "key": "harvest_moon",
+      "name": "Harvest Moon",
+      "rank": 1,
+      "status": "placeholder",
+      "spell_id": 1000995,
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "none",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [],
+      "description": "Harvest's cooldown is 3 sec shorter.",
+      "spellmods": [
+       {
+        "type": "flat",
+        "op": "COOLDOWN",
+        "family_bit": 36,
+        "value": -3000,
+        "target": [
+         "harvest"
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "name": "Blightcaller",
+  "tier": 2,
+  "tier_cap": 50,
+  "row_levels": [
+   5,
+   10,
+   15,
+   20,
+   25,
+   30,
+   35,
+   40,
+   45,
+   50
+  ],
+  "tier_bonus": {
+   "strength": 0,
+   "agility": 0,
+   "stamina": 24,
+   "intellect": 16,
+   "spirit": 30
+  },
+  "shapeshift_form": 0
  }
 ]

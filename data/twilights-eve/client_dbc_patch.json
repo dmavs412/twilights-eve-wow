@@ -181,6 +181,19 @@
    "weapon_mask": 1435135,
    "armor_mask": 4,
    "dual_wield": false
+  },
+  {
+   "key": "blightcaller",
+   "name": "Blightcaller",
+   "icon": "Interface\\Icons\\Spell_Shadow_AbominationExplosion",
+   "spellbook": "Blightcaller",
+   "power_type": 0,
+   "class": 5,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 2,
+   "dual_wield": false
   }
  ],
  "spells": [
@@ -17105,6 +17118,1385 @@
    }
   },
   {
+   "spell_id": 1000954,
+   "calling": "blightcaller",
+   "key": "creeping_blight",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Creeping Blight",
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each tick of Plague Tithe on the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "aura_description": "Taking Shadow damage over time. It grows with every tick.",
+    "visual": 71,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000955,
+   "calling": "blightcaller",
+   "key": "plague_tithe",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Plague Tithe",
+    "cost_percent": 6,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Channels rot into the target for 3 sec, dealing Shadow damage each second and growing your Creeping Blight on it by a stack. Each tick, the most hurt ally within 30 yards of you heals 100% of the damage it dealt over 4 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_DarkRitual",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 30,
+      "per_level": 1.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 1000
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 277,
+    "range_index": 4,
+    "duration_index": 27
+   }
+  },
+  {
+   "spell_id": 1000956,
+   "calling": "blightcaller",
+   "key": "miasma",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Miasma",
+    "cooldown_ms": 15000,
+    "cost_percent": 30,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 17% increased healing from all sources.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Fire_SelfDestruct",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "aura_description": "Taking Shadow damage every second.",
+    "visual": 2255,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000958,
+   "calling": "blightcaller",
+   "key": "harvest",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Harvest",
+    "cooldown_ms": 10000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Takes your Creeping Blight off the target, dealing Shadow damage for each of its stacks, and splits 100% of the damage dealt as healing among the allies within 30 yards of the target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Shadow_Haunting",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 12,
+      "per_level": 0.8
+     }
+    ],
+    "visual": 788,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000959,
+   "calling": "blightcaller",
+   "key": "spread_blight",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Spread Blight",
+    "cooldown_ms": 12000,
+    "cost_percent": 8,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Copies your Creeping Blight on the target, with its stacks and time left, onto the three nearest other enemies within 10 yards of it that do not have it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_CreepingPlague",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 381,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000960,
+   "calling": "blightcaller",
+   "key": "hush",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Hush",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, Creeping Blight settles on the target, or gains a stack if it is already there.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Shadow_ImpPhaseShift",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 179,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1000961,
+   "calling": "blightcaller",
+   "key": "wasting_communion",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Wasting Communion",
+    "cooldown_ms": 30000,
+    "cost_percent": 15,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Sanctifies the rot at the target location for 10 sec. Allies inside heal every 2 sec, and every 2 sec each enemy inside with your Creeping Blight gains a stack.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Shadow_GatherShadows",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 3643,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1000963,
+   "calling": "blightcaller",
+   "key": "rise_again",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Rise Again",
+    "not_in_combat": true,
+    "cost_percent": 20,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Calls a dead ally back from the rot. They return to life with 30% of their health. Only out of combat.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Shadow_AnimateDead",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 41,
+    "range_index": 4,
+    "cast_time_index": 7
+   }
+  },
+  {
+   "spell_id": 1000964,
+   "calling": "blightcaller",
+   "key": "virulent_blight",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Virulent Blight",
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each tick of Plague Tithe on the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. Each tick has a 20% chance to copy the Blight, with its stacks and time left, onto the nearest other enemy within 8 yards that does not have it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 71,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000965,
+   "calling": "blightcaller",
+   "key": "hungry_blight",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Hungry Blight",
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each tick of Plague Tithe on the target. Each tick deals its damage once per stack and heals you for 75% of it. Recasting it starts it over at one stack.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 71,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000966,
+   "calling": "blightcaller",
+   "key": "deep_blight",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Deep Blight",
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each tick of Plague Tithe on the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack. Its ticks deal 20% more damage.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 71,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 29
+   }
+  },
+  {
+   "spell_id": 1000967,
+   "calling": "blightcaller",
+   "key": "generous_tithe",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Generous Tithe",
+    "cost_percent": 6,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Channels rot into the target for 3 sec, dealing Shadow damage each second and growing your Creeping Blight on it by a stack. Each tick, the most hurt ally within 30 yards of you heals 150% of the damage it dealt over 4 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_DarkRitual",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 30,
+      "per_level": 1.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 1000
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 277,
+    "range_index": 4,
+    "duration_index": 27
+   }
+  },
+  {
+   "spell_id": 1000968,
+   "calling": "blightcaller",
+   "key": "rotting_tithe",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Rotting Tithe",
+    "cost_percent": 6,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Channels rot into the target for 3 sec, dealing Shadow damage each second and growing your Creeping Blight on it by two stacks. Each tick, the most hurt ally within 30 yards of you heals 100% of the damage it dealt over 4 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_DarkRitual",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 30,
+      "per_level": 1.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 1000
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 277,
+    "range_index": 4,
+    "duration_index": 27
+   }
+  },
+  {
+   "spell_id": 1000969,
+   "calling": "blightcaller",
+   "key": "long_tithe",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Tithe",
+    "cost_percent": 6,
+    "channeled": true,
+    "channel_interrupt_flags": 11,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Channels rot into the target for 4 sec, dealing Shadow damage each second and growing your Creeping Blight on it by a stack. Each tick, the most hurt ally within 30 yards of you heals 100% of the damage it dealt over 4 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Spell_Shadow_DarkRitual",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 30,
+      "per_level": 1.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 1000
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 277,
+    "range_index": 4,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000970,
+   "calling": "blightcaller",
+   "key": "healing_miasma",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Healing Miasma",
+    "cooldown_ms": 15000,
+    "cost_percent": 30,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 30% increased healing from all sources.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Fire_SelfDestruct",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 2255,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000972,
+   "calling": "blightcaller",
+   "key": "wide_miasma",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Wide Miasma",
+    "cooldown_ms": 15000,
+    "cost_percent": 30,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 17% increased healing from all sources. The cloud reaches 13 yards from its centre.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Fire_SelfDestruct",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 17
+     }
+    ],
+    "visual": 2255,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000973,
+   "calling": "blightcaller",
+   "key": "breeding_miasma",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Breeding Miasma",
+    "cooldown_ms": 15000,
+    "cost_percent": 30,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 17% increased healing from all sources. Every 2 sec, each enemy inside with your Creeping Blight gains a stack.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Fire_SelfDestruct",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 2255,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 31
+   }
+  },
+  {
+   "spell_id": 1000974,
+   "calling": "blightcaller",
+   "key": "bountiful_harvest",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Bountiful Harvest",
+    "cooldown_ms": 10000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Takes your Creeping Blight off the target, dealing Shadow damage for each of its stacks, and splits 150% of the damage dealt as healing among the allies within 30 yards of the target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Shadow_Haunting",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 12,
+      "per_level": 0.8
+     }
+    ],
+    "visual": 788,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000975,
+   "calling": "blightcaller",
+   "key": "seeded_harvest",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Seeded Harvest",
+    "cooldown_ms": 10000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Takes your Creeping Blight off the target, dealing Shadow damage for each of its stacks, and splits 100% of the damage dealt as healing among the allies within 30 yards of the target. A fresh Creeping Blight of one stack then goes on the nearest other enemy within 8 yards of the target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Shadow_Haunting",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 12,
+      "per_level": 0.8
+     }
+    ],
+    "visual": 788,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000976,
+   "calling": "blightcaller",
+   "key": "quick_harvest",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Harvest",
+    "cooldown_ms": 6000,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Takes your Creeping Blight off the target, dealing Shadow damage for each of its stacks, and splits 100% of the damage dealt as healing among the allies within 30 yards of the target. 6 sec cooldown.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Shadow_Haunting",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 12,
+      "per_level": 0.8
+     }
+    ],
+    "visual": 788,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000977,
+   "calling": "blightcaller",
+   "key": "contagion",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Contagion",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "When an enemy wearing your Creeping Blight dies, the Blight with all its stacks jumps to the nearest other enemy within 10 yards that does not have it.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_CorpseExplode",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000978,
+   "calling": "blightcaller",
+   "key": "shared_rot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Shared Rot",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Each tick of your Creeping Blight splits 20% of its damage as healing among the allies within 30 yards of you.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Nature_NullifyDisease",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000979,
+   "calling": "blightcaller",
+   "key": "withering",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Withering",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your Shadow damage is 10% higher on enemies wearing your Creeping Blight.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_ChillTouch",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000980,
+   "calling": "blightcaller",
+   "key": "wide_spread",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Wide Spread",
+    "cooldown_ms": 12000,
+    "cost_percent": 8,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Copies your Creeping Blight on the target, with its stacks and time left, onto the five nearest other enemies within 10 yards of it that do not have it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_CreepingPlague",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 381,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000981,
+   "calling": "blightcaller",
+   "key": "far_spread",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Far Spread",
+    "cooldown_ms": 12000,
+    "cost_percent": 8,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Copies your Creeping Blight on the target, with its stacks and time left, onto the three nearest other enemies within 15 yards of it that do not have it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_CreepingPlague",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 381,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000982,
+   "calling": "blightcaller",
+   "key": "quick_spread",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Spread",
+    "cooldown_ms": 8000,
+    "cost_percent": 8,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Copies your Creeping Blight on the target, with its stacks and time left, onto the three nearest other enemies within 10 yards of it that do not have it. 8 sec cooldown.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 137438953472,
+    "icon": "Interface\\Icons\\Spell_Shadow_CreepingPlague",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 381,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000983,
+   "calling": "blightcaller",
+   "key": "long_hush",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Long Hush",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6.5 seconds. When it stops a cast, Creeping Blight settles on the target, or gains a stack if it is already there.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Shadow_ImpPhaseShift",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 179,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1000984,
+   "calling": "blightcaller",
+   "key": "choking_hush",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Choking Hush",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, Creeping Blight settles on the target, or gains a stack if it is already there. Then the Blight gains 2 more stacks, 3 in all.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Shadow_ImpPhaseShift",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 179,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1000985,
+   "calling": "blightcaller",
+   "key": "mending_hush",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Mending Hush",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4.5 seconds. When it stops a cast, Creeping Blight settles on the target, or gains a stack if it is already there. It also heals the most hurt ally within 30 yards of you over 4 sec.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Shadow_ImpPhaseShift",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 1000
+     }
+    ],
+    "visual": 179,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1000986,
+   "calling": "blightcaller",
+   "key": "deep_communion",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Deep Communion",
+    "cooldown_ms": 30000,
+    "cost_percent": 15,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Sanctifies the rot at the target location for 10 sec. Allies inside heal 50% more every 2 sec, and every 2 sec each enemy inside with your Creeping Blight gains a stack.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Shadow_GatherShadows",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 3643,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1000988,
+   "calling": "blightcaller",
+   "key": "wide_communion",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Wide Communion",
+    "cooldown_ms": 30000,
+    "cost_percent": 15,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Sanctifies the rot at the target location for 10 sec. Allies inside heal every 2 sec, and every 2 sec each enemy inside with your Creeping Blight gains a stack. It reaches 13 yards from its centre.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Shadow_GatherShadows",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 17
+     }
+    ],
+    "visual": 3643,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1000989,
+   "calling": "blightcaller",
+   "key": "fast_communion",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Fast Communion",
+    "cooldown_ms": 30000,
+    "cost_percent": 15,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Sanctifies the rot at the target location for 10 sec. Allies inside heal every 2 sec, and every second each enemy inside with your Creeping Blight gains a stack.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Shadow_GatherShadows",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 3643,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1000990,
+   "calling": "blightcaller",
+   "key": "strong_return",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Strong Return",
+    "not_in_combat": true,
+    "cost_percent": 20,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Calls a dead ally back from the rot. They return to life with 50% of their health. Only out of combat.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Shadow_AnimateDead",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 41,
+    "range_index": 4,
+    "cast_time_index": 7
+   }
+  },
+  {
+   "spell_id": 1000991,
+   "calling": "blightcaller",
+   "key": "quick_rites",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Quick Rites",
+    "not_in_combat": true,
+    "cost_percent": 20,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Calls a dead ally back from the rot. They return to life with 30% of their health. Only out of combat. The cast takes 5 sec.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Shadow_AnimateDead",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 41,
+    "range_index": 4,
+    "cast_time_index": 6
+   }
+  },
+  {
+   "spell_id": 1000992,
+   "calling": "blightcaller",
+   "key": "far_rites",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Far Rites",
+    "not_in_combat": true,
+    "cost_percent": 20,
+    "interrupt_flags": 11,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Calls a dead ally back from the rot. They return to life with 30% of their health. Only out of combat. Range 40 yards.",
+    "implicit_targets": [
+     21,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Shadow_AnimateDead",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 41,
+    "range_index": 5,
+    "cast_time_index": 7
+   }
+  },
+  {
+   "spell_id": 1000993,
+   "calling": "blightcaller",
+   "key": "blight_mastery",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Blight Mastery",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your Creeping Blight's ticks deal 15% more damage.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_DeathCoil",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000994,
+   "calling": "blightcaller",
+   "key": "sustaining_rot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Sustaining Rot",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Plague Tithe deals 20% more damage, and so heals 20% more.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_ScourgeBuild",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 1000995,
+   "calling": "blightcaller",
+   "key": "harvest_moon",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Harvest Moon",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Harvest's cooldown is 3 sec shorter.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Shadow_CurseOfAchimonde"
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COOLDOWN",
+     "family_bit": 36,
+     "value": -3000
+    }
+   ]
+  },
+  {
    "spell_id": 1000009,
    "calling": "vanguard",
    "key": "aura_seal_of_iron_armor",
@@ -20147,6 +21539,102 @@
     ],
     "name": "Momentum",
     "aura_description": "Ranged attack speed increased by 15%."
+   }
+  },
+  {
+   "spell_id": 1000957,
+   "calling": "blightcaller",
+   "key": "aura_miasma_ally",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Fire_SelfDestruct",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Miasma",
+    "aura_description": "Healing received increased by 17%.",
+    "visual": 33
+   }
+  },
+  {
+   "spell_id": 1000962,
+   "calling": "blightcaller",
+   "key": "aura_communion",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Shadow_GatherShadows",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     }
+    ],
+    "name": "Wasting Communion",
+    "aura_description": "Healing every 2 sec.",
+    "visual": 3643
+   }
+  },
+  {
+   "spell_id": 1000971,
+   "calling": "blightcaller",
+   "key": "aura_healing_miasma",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Fire_SelfDestruct",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Healing Miasma",
+    "aura_description": "Healing received increased by 30%.",
+    "visual": 33
+   }
+  },
+  {
+   "spell_id": 1000987,
+   "calling": "blightcaller",
+   "key": "aura_deep_communion",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Shadow_GatherShadows",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     }
+    ],
+    "name": "Deep Communion",
+    "aura_description": "Healing every 2 sec.",
+    "visual": 3643
    }
   },
   {

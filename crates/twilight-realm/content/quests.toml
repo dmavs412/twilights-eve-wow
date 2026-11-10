@@ -2259,6 +2259,61 @@ completion = "Down, and you never stopped running. Come here."
 money = 5000
 kill = [[345, 1]]
 
+# The Blightcaller (#692): Mother Ysolde Grey in her garden of rot at Beggar's Haunt, above
+# Darkshire. Brother Corwin Ashgrave, Madame Eva and Blind Mary give the hints. A hard search, so an
+# easy trial on the grounds of Manor Mistmantle.
+[[quest]]
+id = 64407
+kind = "advancement"
+giver = 190118
+level = 30
+zone_or_sort = -262
+advancement = { from = "acolyte", to = "blightcaller", trial = 64452 }
+calling_choice = true
+title = "The Garden of Rot"
+objectives = "Find the Blightcaller who keeps a garden of rot, and pass her trial."
+details = "You rot them and you drink them, $N. A Blightcaller lets the rot do the mending: it grows on the foe, and the friend beside you heals.$B$BWhere the dead were left to the crows above a town that waits for dawn, the rot itself keeps a garden. Brother Corwin knows a seer in Darkshire who reads such things. Ask him."
+progress = "You found the garden. Did you plant anything?"
+completion = "Then it's yours to tend. Let it grow on them, and let it heal us. You start over, Blightcaller. The rot doesn't."
+money = 0
+hint = [
+  { npc = 190054, option = "Who reads the rot?", reply = "Madame Eva, in Darkshire. She reads cards for the Night Watch. Ask her about the garden." },
+  { npc = 265, option = "What do the cards say of the rot?", reply = "The Tower, reversed. Then the Mother. Blind Mary, in the house on the hill south-east of town, sees what I only read. Go to her." },
+  { npc = 302, option = "Who keeps the rot's garden?", reply = "Mother Grey. Up at Beggar's Haunt, past the dead men who make medicine. She feeds the beds what the beds want. Don't eat anything she grows." },
+]
+
+[[quest]]
+id = 64451
+kind = "once"
+giver = 190118
+after_taken = 64407
+level = 30
+min_tier = 1
+zone_or_sort = 10
+title = "Compost"
+objectives = "Kill 6 Fetid Corpses on the grounds of Manor Mistmantle, north of Beggar's Haunt."
+details = "The corpses around the manor walk because the rot was left untended. Lay six down, and let your Blight do the work while you mend yourself."
+progress = "Down?"
+completion = "Six. The beds will be glad."
+money = 2500
+kill = [[1270, 6]]
+
+[[quest]]
+id = 64452
+kind = "once"
+giver = 190118
+after = 64451
+level = 30
+min_tier = 1
+zone_or_sort = 10
+title = "Rotting Hearts"
+objectives = "Bring 5 Rotting Hearts from the Fetid Corpses."
+details = "Last. Bring me five hearts. The rot keeps them beating, if you know how to listen."
+progress = "The hearts?"
+completion = "Still warm. Sit down, Blightcaller."
+money = 5000
+collect = [{ item = 980891, count = 5, chance = 50, from = [1270] }]
+
 # ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
 # The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the
 # Dungeon's Repeatable Quests, from level 16. Every target is in the run (content/wailing_caverns.toml):

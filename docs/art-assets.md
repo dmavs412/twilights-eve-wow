@@ -433,6 +433,15 @@ one is a placeholder.
 | Quieting Snare's snare (#691) | master CSV, aura row | `Ability_GolemStormBolt` |
 | The Trapper's Talents and their buffs (#691) | master CSV, rows 25 and 50 | `INV_Misc_Gear_02`, `Ability_Hunter_Harass`, `Spell_Nature_Swiftness`, `Ability_Hunter_BeastSoothe`, `Ability_Mount_JungleTiger`, `Ability_Hunter_AimedShot` |
 | Tarantula Silk, the trial's quest item (#691) | `content/quest_items.toml`, entry 980881 | display 4815, `INV_Fabric_Silk_03` |
+| Mother Ysolde Grey, the Blightcaller trainer (#692) | `content/hub.toml`, entry 190118 | display 4272, Morbent Fel's look. Wanted: an old woman in a mud-stained grey robe and a gardener's apron, kneeling among raised beds of black rot, a trowel in one hand. |
+| Blightcaller Calling icon (#692) | `callings.csv` | `Spell_Shadow_AbominationExplosion` |
+| Plague Tithe (#692) | master CSV | `Spell_Shadow_DarkRitual` |
+| Harvest (#692) | master CSV | `Spell_Shadow_Haunting` |
+| Spread Blight (#692) | master CSV | `Spell_Shadow_CreepingPlague` |
+| Wasting Communion and its heals (#692) | master CSV | `Spell_Shadow_GatherShadows` |
+| Rise Again (#692) | master CSV | `Spell_Shadow_AnimateDead` |
+| The Blightcaller's Talents (#692) | master CSV, rows 25 and 50 | `Spell_Shadow_CorpseExplode`, `Spell_Nature_NullifyDisease`, `Spell_Shadow_ChillTouch`, `Spell_Shadow_DeathCoil`, `Spell_Shadow_ScourgeBuild`, `Spell_Shadow_CurseOfAchimonde` |
+| Rotting Heart, the trial's quest item (#692) | `content/quest_items.toml`, entry 980891 | display 10923, `INV_Misc_Organ_03` |
 
 The Sharpshooter's carried skills (Auto Shot, Puncturing Shaft, Rapid Fire, Silencing Shot) keep
 the Ranger's icons. Its trial has no quest items. The Ironclad's carried skills (Righteous Smash,
@@ -445,4 +454,6 @@ icons, as do its copies of Bloodlust and the blood droplet. The Nightblade's car
 quest items. The Pyromancer's carried skills (Searing Ember and its Ember, Catalyst, Counterspell)
 keep the Initiate's icons. The Leyweaver's carried skills (Ley-Spark, Ley Ward, Counterspell) keep
 the Initiate's icons, and its trial has no quest items. The Trapper's carried skills (Auto Shot,
-Snapshot, Vault, Silencing Shot) keep the Ranger's icons.
+Snapshot, Vault, Silencing Shot) keep the Ranger's icons. The Blightcaller's carried skills
+(Creeping Blight, Miasma and its auras, Hush) keep the Acolyte's icons, and Healing Miasma's aura
+keeps Miasma's.

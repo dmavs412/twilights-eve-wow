@@ -2973,6 +2973,10 @@ impl InWorld {
                 self.end_channel(true, events);
                 return;
             }
+            // A tick's share of what the cast dealt or healed is that tick's own (Plague Tithe).
+            self.skills.cast_dealt = 0;
+            self.skills.cast_healed = 0;
+            self.skills.cast_full_healed = 0;
             let how = self.roll(skill, ch.target, false, c, rng);
             if !matches!(how, Landed::Missed(_)) {
                 for effect in &skill.effects {
@@ -3025,6 +3029,13 @@ impl InWorld {
             } else {
                 area.centre
             };
+            // Every friendly player inside takes the ally aura, not the caster alone (Wasting
+            // Communion); another player wears it in their own session.
+            let friends: Vec<u64> = self
+                .friendly_players(c)
+                .into_iter()
+                .map(|(guid, _, _)| guid)
+                .collect();
             let now: Vec<u64> = if area.left <= CLOCK_EPSILON || area.arming > CLOCK_EPSILON {
                 Vec::new()
             } else {
@@ -3064,7 +3075,7 @@ impl InWorld {
                 .collect();
             self.leave_area(area, &left, events);
             for &unit in now.iter().filter(|u| !area.inside.contains(u)) {
-                let row = if unit == self.guid {
+                let row = if unit == self.guid || friends.contains(&unit) {
                     area.ally_aura
                 } else {
                     area.enemy_aura
@@ -3079,7 +3090,10 @@ impl InWorld {
                 grow.next -= dt;
                 while grow.next <= CLOCK_EPSILON {
                     grow.next += grow.every;
-                    for &unit in now.iter().filter(|&&u| u != self.guid) {
+                    for &unit in now
+                        .iter()
+                        .filter(|&&u| u != self.guid && !friends.contains(&u))
+                    {
                         self.skills.grow(unit, grow.spell_id, 1, events);
                     }
                 }
@@ -3095,18 +3109,18 @@ impl InWorld {
 
     /// `units` are out of `area`: its auras come off them.
     fn leave_area(&mut self, area: &Area, units: &[u64], events: &mut Vec<SessionEvent>) {
+        // Either side's row: a friend wore the ally aura, an enemy the enemy one. Another player's
+        // lives in their session and runs its own duration.
+        let rows: Vec<u32> = [area.ally_aura, area.enemy_aura]
+            .into_iter()
+            .flatten()
+            .map(|def| def.spell_id)
+            .collect();
         for &unit in units {
-            let row = if unit == self.guid {
-                area.ally_aura
-            } else {
-                area.enemy_aura
-            };
-            if let Some(def) = row {
-                let gone = self
-                    .skills
-                    .remove_where(|a| a.unit == unit && a.spell_id == def.spell_id, events);
-                self.faded(&gone, events);
-            }
+            let gone = self
+                .skills
+                .remove_where(|a| a.unit == unit && rows.contains(&a.spell_id), events);
+            self.faded(&gone, events);
         }
     }
 

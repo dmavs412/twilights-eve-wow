@@ -157,6 +157,9 @@ item = [
   # Hale Brannock's trial (#691, quests.toml 64447): INV_Fabric_Silk_03, a stock icon no other item
   # shows.
   { entry = 980881, name = "Tarantula Silk", quality = 1, item_level = 30, class = 12, display_id = 4815, stackable = 20 },
+  # Mother Grey's trial (#692, quests.toml 64452): INV_Misc_Organ_03, a stock icon no other item
+  # shows.
+  { entry = 980891, name = "Rotting Heart", quality = 1, item_level = 30, class = 12, display_id = 10923, stackable = 20 },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye
