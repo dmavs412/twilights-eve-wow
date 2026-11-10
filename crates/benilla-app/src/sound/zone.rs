@@ -30,12 +30,13 @@ use bevy::tasks::futures_lite::future;
 use bevy::tasks::{block_on, IoTaskPool, Task};
 use kira::sound::FromFileError;
 
+use benilla_formats::closed_zones::closed_distance;
 use benilla_formats::AreaSoundCatalog;
 use benilla_formats::Chain;
 
 use crate::net::{ServerSoundKind, ServerSoundMessage};
 use benilla_assets::{AssetSet, LockRecover, WorldAssets};
-use benilla_world::lighting::GameClock;
+use benilla_world::lighting::{edge, GameClock};
 use benilla_world::schedule::WorldStage;
 
 use super::kit::{play_kit_ext, KitRef, Latch, PlayExtras, SoundCategory, SoundKits};
@@ -94,6 +95,14 @@ const LUA_MUSIC_SCHEDULE_SECS: f64 = 6.0;
 /// The ambience crossfade, both legs (`0x460b00`: out `0x7a5a10(0x40a00000 = 5.0f)`, in
 /// `0x7a5dc0(0)` → `0x7a57b0(5.0f, kit vol)`); submerge/emerge is instant instead.
 const AMBIENCE_TRANSITION_FADE_MS: u64 = 5000;
+
+/// The ambience bed's share of its volume at the edge of the mist: the Hush (#662, decision 6).
+const HUSH_FLOOR: f32 = 0.15;
+
+/// The ambience bed's gain under the applied edge pull `hush`: 1 at 0, [`HUSH_FLOOR`] at 1.
+fn hush_gain(hush: f32) -> f32 {
+    1.0 - (1.0 - HUSH_FLOOR) * hush
+}
 
 /// The linear fade-in of a new ambience bed, driven per frame because the per-frame volume feed
 /// would override a handle-level ramp.
@@ -178,6 +187,8 @@ pub(super) struct ZoneAudio {
     interior: Option<super::interior::InteriorAudio>,
     /// Last submersion state; a flip makes the ambience swap instant.
     was_underwater: bool,
+    /// The applied edge pull on the ambience bed, eased toward its target (the Hush, #662).
+    hush: f32,
     rng: u32,
 }
 
@@ -205,6 +216,7 @@ impl Default for ZoneAudio {
             area: None,
             interior: None,
             was_underwater: false,
+            hush: 0.0,
             rng: 0x1234_5677,
         }
     }
@@ -283,6 +295,12 @@ fn zone_audio(
     interior: Res<super::interior::CurrentInterior>,
     weather: Res<super::weather::WeatherAmbience>,
     self_store: Query<&crate::net::ObjectStore, With<crate::net::SelfPlayer>>,
+    // The listener, the map and the Milestones reached, for the Hush near the edge of the mist.
+    (listener, current_map, reached): (
+        Res<AudioListener>,
+        Option<Res<benilla_world::world_map::CurrentMap>>,
+        Option<Res<benilla_assets::ReachedMilestones>>,
+    ),
 ) {
     let (Some(areas), Some(mut kits), Some(assets)) = (areas, kits, assets) else {
         return;
@@ -406,12 +424,19 @@ fn zone_audio(
     }
     // The incoming leg of the ambience crossfade.
     let ambience_gain = fade_in_gain(&mut zone.ambience_fade_in, now);
+    // The Hush: near the edge of the mist the bed turns down by the scene fog's eased pull.
+    let [x, y, _] = benilla_assets::coords::bevy_to_wow(listener.pos);
+    let map = current_map.as_ref().map_or(0, |m| m.0);
+    let reached = reached.map(|r| r.get()).unwrap_or_default();
+    let target = edge::edge_pull(closed_distance(map, x, y, edge::EDGE_NEAR_YD, &reached));
+    zone.hush = edge::ease(zone.hush, target, time.delta_secs());
     if let Some(h) = &mut zone.ambience {
         h.set_volume(
             mixer::amp_to_db(
                 config.category_amp(SoundCategory::Ambience)
                     * zone.ambience_kit_vol
-                    * ambience_gain,
+                    * ambience_gain
+                    * hush_gain(zone.hush),
             ),
             mixer::glide(),
         );
@@ -1092,6 +1117,7 @@ fn stop_world_soundscape(zone: &mut ZoneAudio, reason: &str) {
     zone.area = None;
     zone.interior = None;
     zone.was_underwater = false;
+    zone.hush = 0.0;
     // Else the next entry sees a falling edge left from this session's cinematic.
     zone.music_suppressed = false;
     if had {
@@ -1141,9 +1167,9 @@ pub(super) fn plugin(app: &mut App) {
 mod tests {
     use super::{
         apply_music_suppression, begin_bed_open, begin_zone_music, first_unplayable, forced_bed,
-        open_bed, poll_bed_open, pump_zone_music, reap_stopped_bed, slot_holds, start_bed,
-        stop_world_soundscape, take_lua_music_slot, OpenedBed, ZoneAudio,
-        CINEMATIC_MUSIC_RESUME_SECS, LUA_MUSIC_SCHEDULE_SECS,
+        hush_gain, open_bed, poll_bed_open, pump_zone_music, reap_stopped_bed, slot_holds,
+        start_bed, stop_world_soundscape, take_lua_music_slot, OpenedBed, ZoneAudio,
+        CINEMATIC_MUSIC_RESUME_SECS, HUSH_FLOOR, LUA_MUSIC_SCHEDULE_SECS,
     };
     use crate::sound::kit::SoundKits;
     use crate::sound::mixer;
@@ -1152,6 +1178,13 @@ mod tests {
     use kira::sound::{FromFileError, PlaybackState};
     use std::sync::{mpsc, Arc, Mutex};
     use std::time::{Duration, Instant};
+
+    #[test]
+    fn hush_gain_is_full_away_from_the_edge_and_the_floor_at_it() {
+        assert_eq!(hush_gain(0.0), 1.0);
+        assert!((hush_gain(1.0) - HUSH_FLOOR).abs() < 1e-6);
+        assert!((hush_gain(0.5) - 0.575).abs() < 1e-6);
+    }
 
     /// A kit of `files`, of which only the `present` ones open, picked uniformly per attempt as
     /// the reference's weighted pick does: every attempt is logged in `tried`.
