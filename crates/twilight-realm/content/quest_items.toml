@@ -127,10 +127,12 @@ item = [
   { entry = 980130, name = "The Book of Takings", quality = 1, item_level = 38, class = 12, display_id = 3114, max_count = 1, pages = ["Cogg: the tunnel, grey, the rails end in it. Taken. Lowe: Moonbrook, the hooded men left the day before. Taken.", "Vask: the sea, a mile out, the Keep's cutter at the edge of it. Taken. Marsh: the road order, three days early. To be taken. All to be hushed on the next tide."] },
   { entry = 980131, name = "Writ of Names", quality = 1, item_level = 40, class = 12, display_id = 992, max_count = 1, pages = ["Cogg, the gnome. Lowe. Vask. Marsh, the page. Quiet wing, west block.", "Below the names, a hammer over a black sun."] },
   # The way into Redridge and Duskwood (#604, quests_stormwind.toml). Each shows a stock icon no
-  # other item does: Wray's orders INV_Letter_05, his letter INV_Letter_06, Solomon's request
-  # INV_Scroll_02. Each is given by its quest and taken at the hand-in.
-  { entry = 980151, name = "Commander Wray's Orders", quality = 1, item_level = 30, class = 12, display_id = 3018, max_count = 1, description = "Sealed with the barracks' seal. For Magistrate Solomon, Lakeshire." },
-  { entry = 980152, name = "Commander Wray's Letter", quality = 1, item_level = 30, class = 12, display_id = 3030, max_count = 1, description = "Sealed with the barracks' seal. For Lord Ebonlocke, Darkshire." },
+  # other item does: the sealed orders INV_Letter_05, the sealed letter INV_Letter_06, Solomon's
+  # request INV_Scroll_02. Each is given by its quest and taken at the hand-in. Every Tier 2
+  # trainer's copy of the Lakeshire and Darkshire deliveries gives the same orders and letter
+  # (#694), so nobody's seal is on them.
+  { entry = 980151, name = "Sealed Orders for Lakeshire", quality = 1, item_level = 30, class = 12, display_id = 3018, max_count = 1, description = "Sealed. For Magistrate Solomon, Lakeshire." },
+  { entry = 980152, name = "Sealed Letter for Darkshire", quality = 1, item_level = 30, class = 12, display_id = 3030, max_count = 1, description = "Sealed. For Lord Ebonlocke, Darkshire." },
   { entry = 980153, name = "Solomon's Request", quality = 1, item_level = 34, class = 12, display_id = 1013, max_count = 1, description = "A request for one company of soldiers, signed and sealed by the Magistrate of Lakeshire." },
   # Darkshire's letter and the General's answer (#609, quests_stormwind.toml): Ebonlocke's letter
   # shows INV_Letter_08, the reply INV_Letter_10, stock icons no other item does.

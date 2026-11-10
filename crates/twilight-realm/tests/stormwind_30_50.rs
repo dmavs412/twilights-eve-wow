@@ -1,6 +1,7 @@
 //! Stormwind's quests from 30 to 50 (spec #595), walked on the shipped content
-//! (`content/quests_stormwind.toml`). Band 30-35 (#604): Commander Wray's two sets of orders, the
-//! poster beside the Writ Board, and Magistrate Solomon's request to the city gate. Band 35-40
+//! (`content/quests_stormwind.toml`). Band 30-35 (#604): the two deliveries each Tier 2 trainer
+//! gives the character it advanced (#694, in place of Commander Wray's), the poster beside the
+//! Writ Board, and Magistrate Solomon's request to the city gate. Band 35-40
 //! (#609): Darkshire's thirteenth letter to the General and his answer. Band 40-45 (#614):
 //! Tharil'zun's orders to the General and on to Marshal Dughan, and Oslow's bridge seal. Band
 //! 45-50 (#619): Darkshire's relief letter to Dughan.
@@ -14,8 +15,36 @@ use common::*;
 /// `zone_or_sort` of a Stormwind City quest.
 const STORMWIND: i32 = 1519;
 
-const ORDERS_FOR_LAKESHIRE: u32 = 97401;
-const ORDERS_FOR_DARKSHIRE: u32 = 97402;
+/// `zone_or_sort` of the trainers' deliveries: Redridge Mountains and Duskwood.
+const REDRIDGE: i32 = 44;
+const DUSKWOOD: i32 = 10;
+
+/// Commander Wray's two deliveries (#604), which the trainers' copies replace (#694).
+const WRAYS_DELIVERIES: [u32; 2] = [97401, 97402];
+/// Each Tier 2 trainer's pair: `(Lakeshire copy, Darkshire copy, trainer, its Advancement
+/// Quest)`.
+const COPIES: [(u32, u32, u32, u32); 10] = [
+    (97421, 97422, HOLT, 64002),
+    (97423, 97424, 190111, 64003),
+    (97425, 97426, 190112, 64401),
+    (97427, 97428, SILAS, 64402),
+    (97429, 97430, 190114, 64403),
+    (97431, 97432, 190115, 64404),
+    (97433, 97434, 190116, 64405),
+    (97435, 97436, 190117, 64406),
+    (97437, 97438, 190118, 64407),
+    (97439, 97440, 190119, 64408),
+];
+/// Sergeant Maera Holt (Ironclad), at the Lakeshire bridge, and her copies.
+const HOLT: u32 = 190110;
+const HOLTS_ORDERS: u32 = 97421;
+const HOLTS_LETTER: u32 = 97422;
+/// Silas Dunmere (Nightblade), the one trainer who is not a Hub NPC: he stands in the Stockade.
+const SILAS: u32 = 97290;
+/// The Lakeshire and Darkshire deliveries' reward choices, as #604 gave them to Wray's.
+const LAKESHIRE_CHOICES: [u32; 3] = [903204, 903206, 903208];
+const DARKSHIRE_CHOICES: [u32; 3] = [903214, 903216, 903218];
+
 const HANDS_WANTED_LAKESHIRE: u32 = 97403;
 const HANDS_WANTED_NIGHT_WATCH: u32 = 97404;
 const A_MAGISTRATES_REQUEST: u32 = 97405;
@@ -31,9 +60,7 @@ const THE_EVERSTILL_BRIDGE: u32 = 98105;
 const RELIEF_THAT_NEVER_CAME: u32 = 97411;
 
 /// Each quest: `(id, level, giver, giver_object, ender, after)`.
-const BANDS: [(u32, u32, Option<u32>, Option<u32>, u32, Option<u32>); 10] = [
-    (97401, 30, Some(WRAY), None, SOLOMON, None),
-    (97402, 30, Some(WRAY), None, ELLO, None),
+const BANDS: [(u32, u32, Option<u32>, Option<u32>, u32, Option<u32>); 8] = [
     (97403, 30, None, Some(POSTER_ENTRY), PARKER, None),
     (97404, 30, None, Some(POSTER_ENTRY), ALTHEA, None),
     (
@@ -65,10 +92,8 @@ const BANDS: [(u32, u32, Option<u32>, Option<u32>, u32, Option<u32>); 10] = [
     ),
 ];
 
-/// Each story quest's reward choices.
-const CHOICES: [(u32, &[u32]); 11] = [
-    (97401, &[903204, 903206, 903208]),
-    (97402, &[903214, 903216, 903218]),
+/// Each story quest's reward choices; the trainers' copies are checked apart.
+const CHOICES: [(u32, &[u32]); 9] = [
     (97403, &[903200, 903201, 903202, 903203]),
     (97404, &[903211, 903212, 903213]),
     (97405, &[903205, 903207, 903210]),
@@ -111,8 +136,8 @@ const POSTER_ENTRY: u32 = 980202;
 const POSTER: u64 = 0xF110 << 48 | 791002;
 const POSTER_AT: [f32; 3] = [-8823.0, 667.0, 95.43];
 
-const WRAYS_ORDERS: u32 = 980151;
-const WRAYS_LETTER: u32 = 980152;
+const SEALED_ORDERS: u32 = 980151;
+const SEALED_LETTER: u32 = 980152;
 const SOLOMONS_REQUEST: u32 = 980153;
 const EBONLOCKES_LETTER: u32 = 980154;
 const JONATHANS_REPLY: u32 = 980155;
@@ -125,7 +150,8 @@ fn quest_file(text: &str) -> Vec<toml::Value> {
     file["quest"].as_array().unwrap().clone()
 }
 
-fn quest_row(id: u32) -> toml::Value {
+/// Quest `id`'s row in the story quest files, if it has one.
+fn find_quest(id: u32) -> Option<toml::Value> {
     [
         include_str!("../content/quests_stormwind.toml"),
         include_str!("../content/quests_redridge.toml"),
@@ -134,7 +160,39 @@ fn quest_row(id: u32) -> toml::Value {
     .into_iter()
     .flat_map(quest_file)
     .find(|q| entry(q, "id") == Some(id))
-    .unwrap_or_else(|| panic!("quest {id}"))
+}
+
+fn quest_row(id: u32) -> toml::Value {
+    find_quest(id).unwrap_or_else(|| panic!("quest {id}"))
+}
+
+/// An integer array of a quest row, as `u32`s; empty when the row has none.
+fn ids(row: &toml::Value, key: &str) -> Vec<u32> {
+    row.get(key).map(ints).unwrap_or_default()
+}
+
+/// A TOML array of integers, as `u32`s.
+fn ints(array: &toml::Value) -> Vec<u32> {
+    array
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|v| v.as_integer())
+        .map(|v| v as u32)
+        .collect()
+}
+
+/// Quest item `entry`'s `(name, description)` in `content/quest_items.toml`.
+fn quest_item(entry: u32) -> (String, String) {
+    let file: toml::Table = include_str!("../content/quest_items.toml").parse().unwrap();
+    let row = file["item"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["entry"].as_integer() == Some(entry.into()))
+        .unwrap_or_else(|| panic!("quest item {entry}"));
+    let text = |key: &str| row[key].as_str().unwrap().to_string();
+    (text("name"), text("description"))
 }
 
 fn entry(row: &toml::Value, key: &str) -> Option<u32> {
@@ -143,14 +201,19 @@ fn entry(row: &toml::Value, key: &str) -> Option<u32> {
 
 /// What the realm sends a client asking for `quest`.
 fn template(realm: &mut Realm, quest: u32) -> Box<benilla_protocol::messages::QuestTemplate> {
+    sent_template(realm, quest).unwrap_or_else(|| panic!("quest {quest} has no template"))
+}
+
+/// What the realm sends a client asking for `quest`, if it knows the quest.
+fn sent_template(
+    realm: &mut Realm,
+    quest: u32,
+) -> Option<Box<benilla_protocol::messages::QuestTemplate>> {
     realm.handle(RealmCommand::QuestQuery { quest });
-    drain(realm)
-        .into_iter()
-        .find_map(|e| match e {
-            SessionEvent::QuestTemplate(t) if t.quest_id == quest => Some(t),
-            _ => None,
-        })
-        .unwrap_or_else(|| panic!("quest {quest} has no template"))
+    drain(realm).into_iter().find_map(|e| match e {
+        SessionEvent::QuestTemplate(t) if t.quest_id == quest => Some(t),
+        _ => None,
+    })
 }
 
 /// A character of `calling` at `level` in the barracks, having handed in `done` and carrying
@@ -320,49 +383,157 @@ fn every_story_quest_offers_the_choices_its_gear_row_names() {
 }
 
 #[test]
-fn wray_sends_a_tier_2_character_to_both_zones_and_not_a_tier_1() {
-    let mut zealot = questing_party("zealot", 30, &[]);
-    let wray = meet(&mut zealot, WRAY, WRAY_AT);
-    let offered = offers(&mut zealot, wray);
-    for quest in [ORDERS_FOR_LAKESHIRE, ORDERS_FOR_DARKSHIRE] {
-        assert!(offered.contains(&quest), "{quest} in {offered:?}");
+fn wrays_deliveries_are_gone() {
+    let mut realm = realm();
+    for id in WRAYS_DELIVERIES {
+        assert!(find_quest(id).is_none(), "quest {id} still has a row");
+        assert!(
+            sent_template(&mut realm, id).is_none(),
+            "the realm still knows quest {id}"
+        );
+    }
+}
+
+#[test]
+fn each_trainer_has_its_own_pair_offered_after_its_advancement() {
+    let mut realm = realm();
+    for (lakeshire, darkshire, trainer, advancement) in COPIES {
+        for (id, ender, zone, item, choices) in [
+            (
+                lakeshire,
+                SOLOMON,
+                REDRIDGE,
+                SEALED_ORDERS,
+                LAKESHIRE_CHOICES,
+            ),
+            (darkshire, ELLO, DUSKWOOD, SEALED_LETTER, DARKSHIRE_CHOICES),
+        ] {
+            let row = quest_row(id);
+            assert_eq!(row["kind"].as_str(), Some("story"), "quest {id}'s kind");
+            assert_eq!(entry(&row, "level"), Some(30), "quest {id}'s level");
+            assert_eq!(entry(&row, "giver"), Some(trainer), "quest {id}'s giver");
+            assert_eq!(entry(&row, "ender"), Some(ender), "quest {id}'s ender");
+            assert_eq!(entry(&row, "after"), Some(advancement), "quest {id}");
+            assert_eq!(ids(&row, "choices"), choices, "quest {id}'s choices");
+            let gives: Vec<Vec<u32>> = row["gives"].as_array().unwrap().iter().map(ints).collect();
+            assert_eq!(gives, [[item, 1]], "quest {id}'s `gives`");
+            let collect = &row["collect"].as_array().unwrap()[..];
+            assert_eq!(collect.len(), 1, "quest {id}'s `collect`");
+            assert_eq!(entry(&collect[0], "item"), Some(item), "quest {id}");
+            assert_eq!(entry(&collect[0], "count"), Some(1), "quest {id}");
+            let t = template(&mut realm, id);
+            assert_eq!(t.zone_or_sort, zone, "quest {id}'s zone");
+            let got: Vec<u32> = t
+                .choices
+                .iter()
+                .map(|c| c.0)
+                .filter(|&item| item != 0)
+                .collect();
+            assert_eq!(got, choices, "quest {id}'s choices as sent");
+        }
+    }
+}
+
+#[test]
+fn the_sealed_items_are_nobodys_seal() {
+    assert_eq!(
+        quest_item(SEALED_ORDERS),
+        (
+            "Sealed Orders for Lakeshire".to_string(),
+            "Sealed. For Magistrate Solomon, Lakeshire.".to_string()
+        )
+    );
+    assert_eq!(
+        quest_item(SEALED_LETTER),
+        (
+            "Sealed Letter for Darkshire".to_string(),
+            "Sealed. For Lord Ebonlocke, Darkshire.".to_string()
+        )
+    );
+}
+
+/// Every trainer's copy, both of each pair.
+fn every_copy() -> Vec<u32> {
+    COPIES.iter().flat_map(|c| [c.0, c.1]).collect()
+}
+
+#[test]
+fn holt_sends_the_ironclad_she_advanced_on_and_nobody_else_does() {
+    let mut party = questing_party("ironclad", 1, &[64002]);
+    let wray = meet(&mut party, WRAY, WRAY_AT);
+    let offered = offers(&mut party, wray);
+    assert!(
+        every_copy().iter().all(|c| !offered.contains(c)),
+        "Wray offers {offered:?}"
+    );
+
+    let holt_at = hub_home(hub_guid(HOLT));
+    let holt = meet(&mut party, HOLT, holt_at);
+    let offered = offers(&mut party, holt);
+    for quest in every_copy() {
+        let mine = quest == HOLTS_ORDERS || quest == HOLTS_LETTER;
+        assert_eq!(offered.contains(&quest), mine, "{quest} in {offered:?}");
     }
 
-    let mut vanguard = questing_party("vanguard", 30, &[]);
-    let wray = meet(&mut vanguard, WRAY, WRAY_AT);
-    let offered = offers(&mut vanguard, wray);
-    for quest in [ORDERS_FOR_LAKESHIRE, ORDERS_FOR_DARKSHIRE] {
+    // Every other trainer but Silas, who stands in the Stockade, offers none of the copies.
+    for (_, _, trainer, _) in COPIES {
+        if trainer == HOLT || trainer == SILAS {
+            continue;
+        }
+        let at = hub_home(hub_guid(trainer));
+        let npc = meet(&mut party, trainer, at);
+        let offered = offers(&mut party, npc);
+        assert!(
+            every_copy().iter().all(|c| !offered.contains(c)),
+            "{trainer} offers {offered:?}"
+        );
+    }
+}
+
+#[test]
+fn a_tier_1_vanguard_at_thirty_is_offered_neither() {
+    // 64002 done all the same, so only the Tier rule keeps the copies back.
+    let mut party = questing_party("vanguard", 30, &[64002]);
+    let holt_at = hub_home(hub_guid(HOLT));
+    let holt = meet(&mut party, HOLT, holt_at);
+    let offered = offers(&mut party, holt);
+    for quest in [HOLTS_ORDERS, HOLTS_LETTER] {
         assert!(!offered.contains(&quest), "{quest} in {offered:?}");
     }
 }
 
 #[test]
-fn wrays_orders_and_letter_go_in_the_bag_and_their_enders_keep_them() {
-    let mut party = questing_party("zealot", 30, &[]);
-    let wray = meet(&mut party, WRAY, WRAY_AT);
-    accept(&mut party, wray, ORDERS_FOR_LAKESHIRE);
-    accept(&mut party, wray, ORDERS_FOR_DARKSHIRE);
+fn holts_sealed_orders_and_letter_go_in_the_bag_and_their_enders_keep_them() {
+    let mut party = questing_party("ironclad", 1, &[64002]);
+    let holt_at = hub_home(hub_guid(HOLT));
+    let holt = meet(&mut party, HOLT, holt_at);
+    accept(&mut party, holt, HOLTS_ORDERS);
+    accept(&mut party, holt, HOLTS_LETTER);
     assert_eq!(
-        carries(&party, WRAYS_ORDERS),
+        carries(&party, SEALED_ORDERS),
         1,
-        "Wray hands over the orders"
+        "Holt hands over the orders"
     );
     assert_eq!(
-        carries(&party, WRAYS_LETTER),
+        carries(&party, SEALED_LETTER),
         1,
-        "Wray hands over the letter"
+        "Holt hands over the letter"
     );
 
     let solomon = meet(&mut party, SOLOMON, SOLOMON_AT);
-    let events = hand_in(&mut party, solomon, ORDERS_FOR_LAKESHIRE);
-    assert!(completed(&events, ORDERS_FOR_LAKESHIRE), "{events:?}");
-    assert_eq!(carries(&party, WRAYS_ORDERS), 0, "Solomon keeps the orders");
+    let events = hand_in(&mut party, solomon, HOLTS_ORDERS);
+    assert!(completed(&events, HOLTS_ORDERS), "{events:?}");
+    assert_eq!(
+        carries(&party, SEALED_ORDERS),
+        0,
+        "Solomon keeps the orders"
+    );
 
     let ello = meet(&mut party, ELLO, ELLO_AT);
-    let events = hand_in(&mut party, ello, ORDERS_FOR_DARKSHIRE);
-    assert!(completed(&events, ORDERS_FOR_DARKSHIRE), "{events:?}");
+    let events = hand_in(&mut party, ello, HOLTS_LETTER);
+    assert!(completed(&events, HOLTS_LETTER), "{events:?}");
     assert_eq!(
-        carries(&party, WRAYS_LETTER),
+        carries(&party, SEALED_LETTER),
         0,
         "Ebonlocke keeps the letter"
     );

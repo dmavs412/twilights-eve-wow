@@ -233,25 +233,14 @@ fn at_wray(blob: &str) -> String {
     }
 }
 
-/// Wray's orders for Lakeshire and Darkshire (#604), which he offers every Tier 2 character
-/// beside the Advancement Quests.
-const WRAYS_ORDERS: [u32; 2] = [97401, 97402];
-
-/// [`questing_as`] standing beside Wray, having handed in his orders, so he offers only
-/// Advancement Quests.
+/// [`questing_as`] standing beside Wray. Since #694 the Tier 2 trainers, not Wray, send a Tier 2
+/// character on to Lakeshire and Darkshire, so he offers only Advancement Quests.
 fn questing_at_wray(calling: &str, level: u8) -> (Realm, u64, Vec<SessionEvent>) {
     let (guid, blob) = save_with_quests(level, &[], 0, &[]);
-    let blob = at_wray(
-        &blob
-            .replace(
-                "calling = \"basic_warrior\"",
-                &format!("calling = \"{calling}\""),
-            )
-            .replace(
-                "xp = 0\n",
-                &format!("xp = 0\ncompleted = {WRAYS_ORDERS:?}\n"),
-            ),
-    );
+    let blob = at_wray(&blob.replace(
+        "calling = \"basic_warrior\"",
+        &format!("calling = \"{calling}\""),
+    ));
     let mut realm = Realm::with_seed(SEED);
     realm
         .import_character(&blob)

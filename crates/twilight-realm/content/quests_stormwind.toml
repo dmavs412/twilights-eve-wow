@@ -249,16 +249,19 @@ kill = [[97218, 1]]
 
 # ── Redridge and Duskwood: the way in (#595) ─────────────────────────────────────────────────────
 #
-# Five quests, 97401 to 97405 (#604, spec #595 decisions 2 and 3); the issue's text is the
-# contract. Commander Wray (hub.toml 9300034) and the poster beside the Writ Board each send the
-# character to both zones. All four are level 30, so only a Tier 2 character is offered them, and
-# none is a prerequisite: each zone's first quests are offered without them. Solomon's request goes
-# the other way, from Lakeshire to General Marcus Jonathan at the city gate (stormwind.toml, vmangos
-# guid 79677), and from 37 Lord Ebonlocke's letter does the same (97406, 97407; #609). From 42 the
-# evidence goes on to Marshal Dughan in Goldshire (97408 to 97410; #614), and from 46 Darkshire's
-# relief letter follows it (97411; #619). The quest
-# items are in quest_items.toml. `money` is copper. `zone_or_sort` 1519 is
-# Stormwind City's AreaTable id.
+# 97403 to 97405 (#604, spec #595 decisions 2 and 3) and 97421 to 97440 (#694, spec #674
+# decision 12); the issues' text is the contract. The Tier 2 trainer who advanced the character
+# and the poster beside the Writ Board each send it to both zones. #604 gave the two deliveries
+# (97401, 97402) to Commander Wray; #694 deleted them, and each trainer has its own copy of the
+# pair, offered `after` its Advancement Quest, so only to a character it advanced. The copies'
+# `zone_or_sort` is their destination's (44 Redridge Mountains, 10 Duskwood), so the quest log
+# files each under the zone it is done in. All are level 30, so only a Tier 2 character is offered
+# them, and none is a prerequisite: each zone's first quests are offered without them. Solomon's
+# request goes the other way, from Lakeshire to General Marcus Jonathan at the city gate
+# (stormwind.toml, vmangos guid 79677), and from 37 Lord Ebonlocke's letter does the same (97406,
+# 97407; #609). From 42 the evidence goes on to Marshal Dughan in Goldshire (97408 to 97410;
+# #614), and from 46 Darkshire's relief letter follows it (97411; #619). The quest items are in
+# quest_items.toml. `money` is copper. `zone_or_sort` 1519 is Stormwind City's AreaTable id.
 
 # The poster beside the Writ Board. Display 17 is vanilla's Wanted Poster, a placeholder
 # (docs/art-assets.md). It stands on the Trade District's street floor (wmo_floor.py group 277).
@@ -270,37 +273,373 @@ map = 0
 position = [-8823.0, 667.0, 95.43]
 orientation = 0.0
 
+# Sergeant Maera Holt's pair.
 [[quest]]
-id = 97401
+id = 97421
 kind = "story"
-giver = 190071
+giver = 190110
 ender = 344
+after = 64002
 level = 30
 title = "Orders for Lakeshire"
-objectives = "Carry Commander Wray's orders to Magistrate Solomon in Lakeshire, in Redridge."
-details = "You've earned your Tier, $C, and the army has nowhere to send you. Not because we don't need you. Because we're not allowed to go. Magistrate Solomon in Lakeshire has asked the barracks for a company three times. The answer comes down from the Keep: no. I can't send soldiers. I can send you, with my seal on it, so he knows somebody here read his letters. East through Elwynn, past Three Corners."
-progress = "From the barracks?"
-completion = "Wray's seal. So someone in that city does read. One fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
+objectives = "Carry the sealed orders to Magistrate Solomon in Lakeshire, in Redridge."
+details = "You hold a line now. Go and hold Lakeshire's. Magistrate Solomon has begged Stormwind for a company three times. Take him these orders, and take him yourself."
+progress = "Sent to me?"
+completion = "Another fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
 money = 0
 choices = [903204, 903206, 903208]
-zone_or_sort = 1519
+zone_or_sort = 44
 gives = [[980151, 1]]
 collect = [{ item = 980151, count = 1 }]
 
 [[quest]]
-id = 97402
+id = 97422
 kind = "story"
-giver = 190071
+giver = 190110
 ender = 263
+after = 64002
 level = 30
 title = "Orders for Darkshire"
-objectives = "Carry Commander Wray's letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
-details = "Lord Ebonlocke in Darkshire writes to the Keep every month. I know, because his letters come back down to the barracks marked 'for the military', and the military isn't allowed to answer them. Take him this. It isn't an answer. It's an apology, and you. South through Elwynn and over the river."
-progress = "From Stormwind? Truly?"
-completion = "An apology from a commander who isn't allowed to help. It's more than the Keep has sent me in a year. Welcome to Darkshire."
+objectives = "Carry the sealed letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
+details = "Darkshire has held its own line for years with nobody's help. Take Lord Ebonlocke this letter, south over the river, and tell him an Ironclad sent you."
+progress = "From someone who cares? Truly?"
+completion = "Someone sent you who isn't allowed to help, I expect. It's more than the Keep has sent me in a year. Welcome to Darkshire."
 money = 0
 choices = [903214, 903216, 903218]
-zone_or_sort = 1519
+zone_or_sort = 10
+gives = [[980152, 1]]
+collect = [{ item = 980152, count = 1 }]
+
+# Brother-Knight Aldren Vale's pair.
+[[quest]]
+id = 97423
+kind = "story"
+giver = 190111
+ender = 344
+after = 64003
+level = 30
+title = "Orders for Lakeshire"
+objectives = "Carry the sealed orders to Magistrate Solomon in Lakeshire, in Redridge."
+details = "The dead are not the only thing the Light has against it. Lakeshire has orcs. Take Magistrate Solomon these orders, east past Three Corners."
+progress = "Sent to me?"
+completion = "Another fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
+money = 0
+choices = [903204, 903206, 903208]
+zone_or_sort = 44
+gives = [[980151, 1]]
+collect = [{ item = 980151, count = 1 }]
+
+[[quest]]
+id = 97424
+kind = "story"
+giver = 190111
+ender = 263
+after = 64003
+level = 30
+title = "Orders for Darkshire"
+objectives = "Carry the sealed letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
+details = "Lord Ebonlocke keeps a town lit against the dark, and I keep his graves. Take him this. He'll know my hand."
+progress = "From someone who cares? Truly?"
+completion = "Someone sent you who isn't allowed to help, I expect. It's more than the Keep has sent me in a year. Welcome to Darkshire."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 10
+gives = [[980152, 1]]
+collect = [{ item = 980152, count = 1 }]
+
+# Sabine Redmark's pair.
+[[quest]]
+id = 97425
+kind = "story"
+giver = 190112
+ender = 344
+after = 64401
+level = 30
+title = "Orders for Lakeshire"
+objectives = "Carry the sealed orders to Magistrate Solomon in Lakeshire, in Redridge."
+details = "Solomon in Lakeshire wants soldiers. He'll get you. Take him this; he won't ask what's on your hands."
+progress = "Sent to me?"
+completion = "Another fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
+money = 0
+choices = [903204, 903206, 903208]
+zone_or_sort = 44
+gives = [[980151, 1]]
+collect = [{ item = 980151, count = 1 }]
+
+[[quest]]
+id = 97426
+kind = "story"
+giver = 190112
+ender = 263
+after = 64401
+level = 30
+title = "Orders for Darkshire"
+objectives = "Carry the sealed letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
+details = "Darkshire needs anyone who can make a thing bleed. Take this south to Lord Ebonlocke."
+progress = "From someone who cares? Truly?"
+completion = "Someone sent you who isn't allowed to help, I expect. It's more than the Keep has sent me in a year. Welcome to Darkshire."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 10
+gives = [[980152, 1]]
+collect = [{ item = 980152, count = 1 }]
+
+# Silas Dunmere's pair.
+[[quest]]
+id = 97427
+kind = "story"
+giver = 97290
+ender = 344
+after = 64402
+level = 30
+title = "Orders for Lakeshire"
+objectives = "Carry the sealed orders to Magistrate Solomon in Lakeshire, in Redridge."
+details = "You know the way out. Keep going, east to Lakeshire. Solomon gets this. Nobody else sees it."
+progress = "Sent to me?"
+completion = "Another fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
+money = 0
+choices = [903204, 903206, 903208]
+zone_or_sort = 44
+gives = [[980151, 1]]
+collect = [{ item = 980151, count = 1 }]
+
+[[quest]]
+id = 97428
+kind = "story"
+giver = 97290
+ender = 263
+after = 64402
+level = 30
+title = "Orders for Darkshire"
+objectives = "Carry the sealed letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
+details = "And this one goes south, to Ebonlocke in Darkshire. Be gone before anyone asks who sent it."
+progress = "From someone who cares? Truly?"
+completion = "Someone sent you who isn't allowed to help, I expect. It's more than the Keep has sent me in a year. Welcome to Darkshire."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 10
+gives = [[980152, 1]]
+collect = [{ item = 980152, count = 1 }]
+
+# Magus Ilyra Vance's pair.
+[[quest]]
+id = 97429
+kind = "story"
+giver = 190114
+ender = 344
+after = 64403
+level = 30
+title = "Orders for Lakeshire"
+objectives = "Carry the sealed orders to Magistrate Solomon in Lakeshire, in Redridge."
+details = "Lakeshire is burning slowly, and nobody in this city will put it out. Take Magistrate Solomon these orders, east through Elwynn."
+progress = "Sent to me?"
+completion = "Another fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
+money = 0
+choices = [903204, 903206, 903208]
+zone_or_sort = 44
+gives = [[980151, 1]]
+collect = [{ item = 980151, count = 1 }]
+
+[[quest]]
+id = 97430
+kind = "story"
+giver = 190114
+ender = 263
+after = 64403
+level = 30
+title = "Orders for Darkshire"
+objectives = "Carry the sealed letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
+details = "Darkshire has had no light but its own for a long time. Take Lord Ebonlocke this letter, and some fire."
+progress = "From someone who cares? Truly?"
+completion = "Someone sent you who isn't allowed to help, I expect. It's more than the Keep has sent me in a year. Welcome to Darkshire."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 10
+gives = [[980152, 1]]
+collect = [{ item = 980152, count = 1 }]
+
+# Teodric Lumen's pair.
+[[quest]]
+id = 97431
+kind = "story"
+giver = 190115
+ender = 344
+after = 64404
+level = 30
+title = "Orders for Lakeshire"
+objectives = "Carry the sealed orders to Magistrate Solomon in Lakeshire, in Redridge."
+details = "The ley runs east too, under a lake full of trouble. Take this to the magistrate at Lakeshire."
+progress = "Sent to me?"
+completion = "Another fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
+money = 0
+choices = [903204, 903206, 903208]
+zone_or_sort = 44
+gives = [[980151, 1]]
+collect = [{ item = 980151, count = 1 }]
+
+[[quest]]
+id = 97432
+kind = "story"
+giver = 190115
+ender = 263
+after = 64404
+level = 30
+title = "Orders for Darkshire"
+objectives = "Carry the sealed letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
+details = "And this to Lord Ebonlocke in Darkshire, just south of this bank. Tell him the river is listening."
+progress = "From someone who cares? Truly?"
+completion = "Someone sent you who isn't allowed to help, I expect. It's more than the Keep has sent me in a year. Welcome to Darkshire."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 10
+gives = [[980152, 1]]
+collect = [{ item = 980152, count = 1 }]
+
+# Wren Ashcombe's pair.
+[[quest]]
+id = 97433
+kind = "story"
+giver = 190116
+ender = 344
+after = 64405
+level = 30
+title = "Orders for Lakeshire"
+objectives = "Carry the sealed orders to Magistrate Solomon in Lakeshire, in Redridge."
+details = "Lakeshire is down that road. I've kept it clear this far. Take Solomon these orders and keep it clear the rest."
+progress = "Sent to me?"
+completion = "Another fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
+money = 0
+choices = [903204, 903206, 903208]
+zone_or_sort = 44
+gives = [[980151, 1]]
+collect = [{ item = 980151, count = 1 }]
+
+[[quest]]
+id = 97434
+kind = "story"
+giver = 190116
+ender = 263
+after = 64405
+level = 30
+title = "Orders for Darkshire"
+objectives = "Carry the sealed letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
+details = "Darkshire's south and west, past the river. Lord Ebonlocke needs eyes that don't blink. Take him this."
+progress = "From someone who cares? Truly?"
+completion = "Someone sent you who isn't allowed to help, I expect. It's more than the Keep has sent me in a year. Welcome to Darkshire."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 10
+gives = [[980152, 1]]
+collect = [{ item = 980152, count = 1 }]
+
+# Hale Brannock's pair.
+[[quest]]
+id = 97435
+kind = "story"
+giver = 190117
+ender = 344
+after = 64406
+level = 30
+title = "Orders for Lakeshire"
+objectives = "Carry the sealed orders to Magistrate Solomon in Lakeshire, in Redridge."
+details = "East into Redridge, and don't stop moving. Solomon in Lakeshire gets these orders."
+progress = "Sent to me?"
+completion = "Another fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
+money = 0
+choices = [903204, 903206, 903208]
+zone_or_sort = 44
+gives = [[980151, 1]]
+collect = [{ item = 980151, count = 1 }]
+
+[[quest]]
+id = 97436
+kind = "story"
+giver = 190117
+ender = 263
+after = 64406
+level = 30
+title = "Orders for Darkshire"
+objectives = "Carry the sealed letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
+details = "South into Duskwood next. Lord Ebonlocke in Darkshire. Lay a trap or two on the way."
+progress = "From someone who cares? Truly?"
+completion = "Someone sent you who isn't allowed to help, I expect. It's more than the Keep has sent me in a year. Welcome to Darkshire."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 10
+gives = [[980152, 1]]
+collect = [{ item = 980152, count = 1 }]
+
+# Mother Ysolde Grey's pair.
+[[quest]]
+id = 97437
+kind = "story"
+giver = 190118
+ender = 344
+after = 64407
+level = 30
+title = "Orders for Lakeshire"
+objectives = "Carry the sealed orders to Magistrate Solomon in Lakeshire, in Redridge."
+details = "The magistrate in Lakeshire has more wounded than healers. Take him this, and take your rot."
+progress = "Sent to me?"
+completion = "Another fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
+money = 0
+choices = [903204, 903206, 903208]
+zone_or_sort = 44
+gives = [[980151, 1]]
+collect = [{ item = 980151, count = 1 }]
+
+[[quest]]
+id = 97438
+kind = "story"
+giver = 190118
+ender = 263
+after = 64407
+level = 30
+title = "Orders for Darkshire"
+objectives = "Carry the sealed letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
+details = "Lord Ebonlocke is just down the hill. Take him this letter. Tell him the garden says hello."
+progress = "From someone who cares? Truly?"
+completion = "Someone sent you who isn't allowed to help, I expect. It's more than the Keep has sent me in a year. Welcome to Darkshire."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 10
+gives = [[980152, 1]]
+collect = [{ item = 980152, count = 1 }]
+
+# Sister Elowen Marr's pair.
+[[quest]]
+id = 97439
+kind = "story"
+giver = 190119
+ender = 344
+after = 64408
+level = 30
+title = "Orders for Lakeshire"
+objectives = "Carry the sealed orders to Magistrate Solomon in Lakeshire, in Redridge."
+details = "Lakeshire bleeds and nobody mends it. Take Magistrate Solomon these orders, and mend what you find."
+progress = "Sent to me?"
+completion = "Another fighter instead of a company. I'll take it. Sit down, and I'll tell you what the company would have done."
+money = 0
+choices = [903204, 903206, 903208]
+zone_or_sort = 44
+gives = [[980151, 1]]
+collect = [{ item = 980151, count = 1 }]
+
+[[quest]]
+id = 97440
+kind = "story"
+giver = 190119
+ender = 263
+after = 64408
+level = 30
+title = "Orders for Darkshire"
+objectives = "Carry the sealed letter to Lord Ello Ebonlocke in Darkshire, in Duskwood."
+details = "Darkshire has been bleeding for years. Take Lord Ebonlocke this, south over the river."
+progress = "From someone who cares? Truly?"
+completion = "Someone sent you who isn't allowed to help, I expect. It's more than the Keep has sent me in a year. Welcome to Darkshire."
+money = 0
+choices = [903214, 903216, 903218]
+zone_or_sort = 10
 gives = [[980152, 1]]
 collect = [{ item = 980152, count = 1 }]
 
