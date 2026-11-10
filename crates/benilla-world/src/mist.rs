@@ -215,9 +215,14 @@ struct MistCurtain;
 /// A curtain on a newly opened zone's border, detached from every tile, with its own material
 /// instance: it fades out and despawns [`OPEN_FADE_SECS`] after the zone opened.
 #[derive(Component)]
-struct FadingMist {
-    secs: f32,
+pub(crate) struct FadingMist {
+    pub(crate) secs: f32,
 }
+
+/// The segments a closed-zone curtain (tile or fading) stands on, which its foot's puffs
+/// (`mist_puffs`) spawn along. Placed walls keep none.
+#[derive(Component)]
+pub(crate) struct MistSegments(pub(crate) Vec<Segment>);
 
 /// How the edge goes on past one end of a segment, looking outward from that end.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -666,7 +671,7 @@ pub(crate) fn shell_columns(s: &Segment, k: usize) -> Option<[Vec2; COLUMNS]> {
 
 /// The ground at `p` behind `s`: bilinear in its closed neighbour's grid, `p` clamped into that
 /// chunk, or with no neighbour the height of `rows[0]`'s nearest column along the side.
-fn shell_ground(s: &Segment, p: Vec2) -> f32 {
+pub(crate) fn shell_ground(s: &Segment, p: Vec2) -> f32 {
     let (from, to) = (Vec2::from(s.from), Vec2::from(s.to));
     let step = from.distance(to) / 8.0;
     if step <= 0.0 {
@@ -785,6 +790,7 @@ fn build_mist_curtains(
         commands.entity(root).with_children(|c| {
             let mut curtain = c.spawn((
                 MistCurtain,
+                MistSegments(found),
                 Mesh3d(handle),
                 MeshMaterial3d(mist.material.clone()),
                 Transform::IDENTITY, // the mesh is in absolute world coords
@@ -843,6 +849,7 @@ fn fade_opened_curtains(
         let aabb = mesh.compute_aabb();
         let mut curtain = commands.spawn((
             FadingMist { secs: 0.0 },
+            MistSegments(fading),
             Mesh3d(meshes.add(mesh)),
             MeshMaterial3d(materials.add(material)),
             Transform::IDENTITY,
@@ -907,18 +914,29 @@ impl Plugin for MistPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<MistMaterial>::default())
             .add_message::<ZonesOpened>()
-            .add_systems(Startup, setup_mist)
+            .add_systems(Startup, (setup_mist, crate::mist_puffs::setup_mist_puffs))
             .add_systems(
                 Update,
                 (
                     (fade_opened_curtains, build_mist_curtains)
                         .chain()
                         .in_set(WorldStage::Stream),
+                    // After both, so a fading copy takes over its segments' puffs the frame it
+                    // spawns.
+                    crate::mist_puffs::simulate_mist_puffs
+                        .after(build_mist_curtains)
+                        .after(tick_fading_mist),
                     build_placed_walls.in_set(WorldStage::Stream),
                     (tint_mist, tick_fading_mist)
                         .chain()
                         .in_set(crate::lighting::LightingConsumeSet),
                 ),
+            )
+            // The stream push: PostUpdate after the frame's clear, as the weather's.
+            .add_systems(
+                PostUpdate,
+                crate::mist_puffs::push_mist_puffs
+                    .after(crate::particles::buffer::begin_effect_frame),
             );
     }
 }
