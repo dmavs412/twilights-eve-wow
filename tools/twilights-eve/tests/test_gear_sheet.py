@@ -248,6 +248,19 @@ class GearSheetTool(unittest.TestCase):
         db = self.db(ITEMS + [(8003, "First Plate", 4, 4, 5, 45, 30030, 2, 0)])
         self.ok("look-check", "902100", "--db", db)
 
+    def test_look_check_passes_a_plate_chest_to_50_on_a_far_41_to_50_look(self):
+        self.ok("scale", "902080", "902100", "item_level=43", "required_level=41",
+                "display_id=30030", "type=Plate", "wardrobe_head=1")
+        db = self.db(ITEMS + [(8003, "Late Plate", 4, 4, 5, 49, 30030, 2, 0)])
+        self.ok("look-check", "902100", "--db", db)
+
+    def test_look_check_fails_a_plate_chest_on_a_far_look_past_50(self):
+        self.ok("scale", "902080", "902100", "item_level=43", "required_level=41",
+                "display_id=30030", "type=Plate", "wardrobe_head=1")
+        db = self.db(ITEMS + [(8003, "Later Plate", 4, 4, 5, 52, 30030, 2, 0)])
+        done = self.run_tool("look-check", "902100", "--db", db)
+        self.assertEqual(done.returncode, 1, done.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -36,8 +36,9 @@ a Staff or Polearm).
 
 `look-check` judges the Chest, Weapon, Offhand and Ranged rows named (entries or `a-b` ranges):
 it prints each row's item level beside the nearest vanilla item with its `display_id`, and exits
-1 when one is more than `--spread` away or has none (a Plate Chest below 41 passes on a plate look
-from 41 to 50), when two named Chests of one armour type wear looks in the other order of their
+1 when one is more than `--spread` away or has none (a Plate Chest up to item level 50 passes on
+any plate look from 41 to 50: vanilla has none lower and too few to keep every row within the
+spread, so they go out in item level order, #660), when two named Chests of one armour type wear looks in the other order of their
 item levels, when two named Chests share a `display_id`, or when a named Chest's Wardrobe equals
 another Chest row's. Run `build_gear.py` after an edit to regenerate gear.toml.
 """
@@ -76,7 +77,7 @@ CLASS_WEAPON = 2
 CHEST_INVENTORY = (5, 20)
 ROBE_INVENTORY = 20
 BACK_INVENTORY = 16
-# Vanilla has no plate chest below this item level; a lower Plate Chest may wear one up to 50.
+# Vanilla has no plate chest below this item level; a Plate Chest up to 50 may wear any from 41 to 50.
 FIRST_PLATE_LOOK, LAST_PLATE_LOOK = 41, 50
 LOOK_SLOTS = ("Chest", "Weapon", "Offhand", "Ranged")
 
@@ -392,8 +393,10 @@ def look_check(sheet: GearSheet, items: list[dict], targets: list[str], spread: 
         look = min(found, key=lambda v: (abs(v - level), v))
         good = abs(look - level) <= spread
         plate = [v for v in found if FIRST_PLATE_LOOK <= v <= LAST_PLATE_LOOK]
-        if (row["slot"], row["type"]) == ("Chest", "Plate") and level < FIRST_PLATE_LOOK and plate:
-            look, good = min(plate), True
+        if (row["slot"], row["type"]) == ("Chest", "Plate") and level <= LAST_PLATE_LOOK and plate:
+            if level < FIRST_PLATE_LOOK:
+                look = min(plate)
+            good = good or FIRST_PLATE_LOOK <= look <= LAST_PLATE_LOOK
         lines.append(f"{'ok' if good else 'fail'}: {where}: item level {level}, look {look} "
                      f"(display {display})")
         ok = ok and good

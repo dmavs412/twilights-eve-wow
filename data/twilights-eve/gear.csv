@@ -735,13 +735,13 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905001,Digger's Jerkin,Chest,Leather,,Rare,18,15,,32,15,,,543,,,,,,,,,,,,,,,,47,dungeon-chest-leather,,,,17214,INV_Chest_Cloth_07,1137,Equip,90,,Leather,,12403,23021,,9526,12464,12402,9530
 905002,Grik's Hauberk,Chest,Mail,,Rare,18,15,32,,15,,,932,,,,,,,,,,,,,,,,47,dungeon-chest-mail,,,,27010,INV_Chest_Chain_11,1880,Equip,105,,Chain,,27014,27011,27007,27012,27008,27013,27009
 905003,Eye's Cuirass,Chest,Plate,,Rare,18,15,32,,15,,,1164,,,,,,,,,,,,,,,,47,dungeon-chest-plate,,,,22677,INV_Chest_Plate09,22519,Equip,135,,Plate,,,25945,22674,22676,11131,7193,22673
-905004,Digger's Blade,Weapon,Sword,1H,Rare,18,15,32,,15,,,,,47,70,Physical,2.0,,,,,,,,,,,47,dungeon-sword,,,,13488,,1742,Equip,65,Side,Metal,,,,,,,,
-905005,Grik's Bulwark,Offhand,Shield,,Rare,18,15,32,,15,,,419,6,,,,,,,,,,,,,,,47,dungeon-shield,,,,20974,,1067,Equip,75,Shield,Metal,,,,,,,,
-905006,Eye's Dirk,Weapon,Dagger,1H,Rare,18,15,,32,15,,,,,35,53,Physical,1.5,,,,,,,,,,,47,dungeon-dagger,,,,6555,,2509,Equip,50,Side,Metal,,,,,,,,
-905007,Digger's Longbow,Ranged,Bow,,Rare,18,15,,32,15,,,,,43,64,Physical,2.4,,,,,,,,,,,47,dungeon-bow,,,,32570,,2240,Equip,65,,Wood,,,,,,,,
-905008,Grik's Staff,Weapon,Staff,2H,Rare,18,15,,,,46,,,,94,140,Physical,3.0,,,,,,,,,,93,93,dungeon-staff,,,,20325,,2922,Equip,80,Staff,Wood,,,,,,,,
-905009,Eye's Cudgel,Weapon,Mace,1H,Rare,18,15,,,,22,,,,47,70,Physical,2.0,,,,,,,,,,49,47,dungeon-mace,,,,15726,,2025,Equip,70,Side,Wood,,,,,,,,
-905010,Digger's Lantern,Offhand,Held,,Rare,18,15,,,,22,,,,,,,,,,,,,,,,,49,47,dungeon-held,,,,21612,,1575,Equip,,Hip,,,,,,,,,
+905004,Digger's Blade,Weapon,Sword,1H,Rare,18,15,32,,15,,,,,47,70,Physical,2.0,,,,,,,,,,,47,dungeon-sword,,,,13488,INV_Sword_10,1742,Equip,65,Side,Metal,,,,,,,,
+905005,Grik's Bulwark,Offhand,Shield,,Rare,18,15,32,,15,,,419,6,,,,,,,,,,,,,,,47,dungeon-shield,,,,20974,INV_Shield_17,1067,Equip,75,Shield,Metal,,,,,,,,
+905006,Eye's Dirk,Weapon,Dagger,1H,Rare,18,15,,32,15,,,,,35,53,Physical,1.5,,,,,,,,,,,47,dungeon-dagger,,,,6555,INV_Spear_01,2509,Equip,50,Side,Metal,,,,,,,,
+905007,Digger's Longbow,Ranged,Bow,,Rare,18,15,,32,15,,,,,43,64,Physical,2.4,,,,,,,,,,,47,dungeon-bow,,,,32570,INV_Waepon_Bow_ZulGrub_D_01,2240,Equip,65,,Wood,,,,,,,,
+905008,Grik's Staff,Weapon,Staff,2H,Rare,18,15,,,,46,,,,94,140,Physical,3.0,,,,,,,,,,93,93,dungeon-staff,,,,20325,INV_Staff_01,2922,Equip,80,Staff,Wood,,,,,,,,
+905009,Eye's Cudgel,Weapon,Mace,1H,Rare,18,15,,,,22,,,,47,70,Physical,2.0,,,,,,,,,,49,47,dungeon-mace,,,,15726,INV_Hammer_19,2025,Equip,70,Side,Wood,,,,,,,,
+905010,Digger's Lantern,Offhand,Held,,Rare,18,15,,,,22,,,,,,,,,,,,,,,,,49,47,dungeon-held,,,,21612,INV_Misc_Bone_OrcSkull_01,1575,Equip,,Hip,,,,,,,,,
 905011,Grik's Torc,Amulet,Misc,,Rare,18,15,32,,15,,,,,,,,,,,,,,,,,,,47,dungeon-amulet-might,,,,609,,3002,Equip,,,,,,,,,,,
 905012,Eye's Talisman,Amulet,Misc,,Rare,18,15,,32,15,,,,,,,,,,,,,,,,,,,47,dungeon-amulet-swift,,,,964,,3002,Equip,,,,,,,,,,,
 905013,Digger's Pendant,Amulet,Misc,,Rare,18,15,,,10,24,12,,,,,,,,,,,,,,,,,46,dungeon-amulet-mind,,,,1012,,3002,Equip,,,,,,,,,,,
@@ -755,13 +755,13 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905021,Morganth's Jerkin,Chest,Leather,,Rare,22,19,,37,20,,,665,,,,,,,,,,,,,,,,57,dungeon-chest-leather,,,,27669,INV_Chest_Cloth_07,1467,Equip,90,,Leather,,27667,27673,13355,27672,27668,27670,16997
 905022,Shadowhide Hauberk,Chest,Mail,,Rare,22,19,37,,20,,,1139,,,,,,,,,,,,,,,,57,dungeon-chest-mail,,,,26990,INV_Chest_Chain_11,1880,Equip,105,,Chain,,26997,26991,26993,26994,26992,26995,27541
 905023,Void Cuirass,Chest,Plate,,Rare,22,19,37,,20,,,1424,,,,,,,,,,,,,,,,57,dungeon-chest-plate,,,,25763,INV_Chest_Plate09,22519,Equip,135,,Plate,,25764,25967,12456,25761,25762,12453,25760
-905024,Morganth's Blade,Weapon,Sword,1H,Rare,22,19,37,,20,,,,,57,86,Physical,2.0,,,,,,,,,,,57,dungeon-sword,,,,13488,,2964,Equip,75,Side,Metal,,,,,,,,
-905025,Shadowhide Bulwark,Offhand,Shield,,Rare,22,19,37,,20,,,513,8,,,,,,,,,,,,,,,57,dungeon-shield,,,,20974,,1920,Equip,90,Shield,Metal,,,,,,,,
-905026,Void Dirk,Weapon,Dagger,1H,Rare,22,19,,37,20,,,,,43,65,Physical,1.5,,,,,,,,,,,57,dungeon-dagger,,,,6555,,2974,Equip,50,Side,Metal,,,,,,,,
-905027,Morganth's Longbow,Ranged,Bow,,Rare,22,19,,37,20,,,,,53,78,Physical,2.4,,,,,,,,,,,57,dungeon-bow,,,,32570,,2240,Equip,65,,Wood,,,,,,,,
-905028,Shadowhide Staff,Weapon,Staff,2H,Rare,22,19,,,,56,,,,116,172,Physical,3.0,,,,,,,,,,113,113,dungeon-staff,,,,20325,,3517,Equip,90,Staff,Wood,,,,,,,,
-905029,Void Cudgel,Weapon,Mace,1H,Rare,22,19,,,,27,,,,57,86,Physical,2.0,,,,,,,,,,59,57,dungeon-mace,,,,15726,,3018,Equip,75,Side,Wood,,,,,,,,
-905030,Morganth's Lantern,Offhand,Held,,Rare,22,19,,,,27,,,,,,,,,,,,,,,,,59,57,dungeon-held,,,,21612,,3121,Equip,,Hip,,,,,,,,,
+905024,Morganth's Blade,Weapon,Sword,1H,Rare,22,19,37,,20,,,,,57,86,Physical,2.0,,,,,,,,,,,57,dungeon-sword,,,,13488,INV_Sword_10,2964,Equip,75,Side,Metal,,,,,,,,
+905025,Shadowhide Bulwark,Offhand,Shield,,Rare,22,19,37,,20,,,513,8,,,,,,,,,,,,,,,57,dungeon-shield,,,,20974,INV_Shield_17,1920,Equip,90,Shield,Metal,,,,,,,,
+905026,Void Dirk,Weapon,Dagger,1H,Rare,22,19,,37,20,,,,,43,65,Physical,1.5,,,,,,,,,,,57,dungeon-dagger,,,,6555,INV_Spear_01,2974,Equip,50,Side,Metal,,,,,,,,
+905027,Morganth's Longbow,Ranged,Bow,,Rare,22,19,,37,20,,,,,53,78,Physical,2.4,,,,,,,,,,,57,dungeon-bow,,,,32570,INV_Waepon_Bow_ZulGrub_D_01,2240,Equip,65,,Wood,,,,,,,,
+905028,Shadowhide Staff,Weapon,Staff,2H,Rare,22,19,,,,56,,,,116,172,Physical,3.0,,,,,,,,,,113,113,dungeon-staff,,,,20325,INV_Staff_01,3517,Equip,90,Staff,Wood,,,,,,,,
+905029,Void Cudgel,Weapon,Mace,1H,Rare,22,19,,,,27,,,,57,86,Physical,2.0,,,,,,,,,,59,57,dungeon-mace,,,,15726,INV_Hammer_19,3018,Equip,75,Side,Wood,,,,,,,,
+905030,Morganth's Lantern,Offhand,Held,,Rare,22,19,,,,27,,,,,,,,,,,,,,,,,59,57,dungeon-held,,,,21612,INV_Misc_Bone_OrcSkull_01,3121,Equip,,Hip,,,,,,,,,
 905031,Shadowhide Torc,Amulet,Misc,,Rare,22,19,37,,20,,,,,,,,,,,,,,,,,,,57,dungeon-amulet-might,,,,609,,3002,Equip,,,,,,,,,,,
 905032,Void Talisman,Amulet,Misc,,Rare,22,19,,37,20,,,,,,,,,,,,,,,,,,,57,dungeon-amulet-swift,,,,964,,3002,Equip,,,,,,,,,,,
 905033,Morganth's Pendant,Amulet,Misc,,Rare,22,19,,,12,29,15,,,,,,,,,,,,,,,,,56,dungeon-amulet-mind,,,,1012,,3002,Equip,,,,,,,,,,,
@@ -775,13 +775,13 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905041,Riverpaw Jerkin,Chest,Leather,,Rare,30,27,,52,25,,,906,,,,,,,,,,,,,,,,77,dungeon-chest-leather,,,,11382,INV_Chest_Cloth_07,4161,Equip,100,,Leather,,9527,28042,17002,28046,17114,14522,28039
 905042,Hogger's Hauberk,Chest,Mail,,Rare,30,27,52,,25,,,1553,,,,,,,,,,,,,,,,77,dungeon-chest-mail,,,,26961,INV_Chest_Chain_11,3379,Equip,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
 905043,Gnoll Cuirass,Chest,Plate,,Rare,30,27,52,,25,,,1941,,,,,,,,,,,,,,,,77,dungeon-chest-plate,,,,26972,INV_Chest_Plate09,6377,Equip,135,,Plate,,26975,26977,26971,26973,26969,26974,26970
-905044,Riverpaw Blade,Weapon,Sword,1H,Rare,30,27,52,,25,,,,,80,119,Physical,2.0,,,,,,,,,,,77,dungeon-sword,,,,13488,,8094,Equip,90,Side,Metal,,,,,,,,
-905045,Hogger's Bulwark,Offhand,Shield,,Rare,30,27,52,,25,,,699,10,,,,,,,,,,,,,,,77,dungeon-shield,,,,20974,,3960,Equip,100,Shield,Metal,,,,,,,,
-905046,Gnoll Dirk,Weapon,Dagger,1H,Rare,30,27,,52,25,,,,,60,89,Physical,1.5,,,,,,,,,,,77,dungeon-dagger,,,,6555,,6731,Equip,65,Side,Metal,,,,,,,,
-905047,Riverpaw Longbow,Ranged,Bow,,Rare,30,27,,52,25,,,,,72,109,Physical,2.4,,,,,,,,,,,77,dungeon-bow,,,,32570,,5086,Equip,75,,Wood,,,,,,,,
-905048,Hogger's Staff,Weapon,Staff,2H,Rare,30,27,,,,77,,,,157,235,Physical,3.0,,,,,,,,,,154,154,dungeon-staff,,,,20325,,8267,Equip,100,Staff,Wood,,,,,,,,
-905049,Gnoll Cudgel,Weapon,Mace,1H,Rare,30,27,,,,38,,,,80,119,Physical,2.0,,,,,,,,,,77,77,dungeon-mace,,,,15726,,8836,Equip,90,Side,Wood,,,,,,,,
-905050,Riverpaw Lantern,Offhand,Held,,Rare,30,27,,,,38,,,,,,,,,,,,,,,,,77,77,dungeon-held,,,,21612,,3113,Equip,,Hip,,,,,,,,,
+905044,Riverpaw Blade,Weapon,Sword,1H,Rare,30,27,52,,25,,,,,80,119,Physical,2.0,,,,,,,,,,,77,dungeon-sword,,,,13488,INV_Sword_10,8094,Equip,90,Side,Metal,,,,,,,,
+905045,Hogger's Bulwark,Offhand,Shield,,Rare,30,27,52,,25,,,699,10,,,,,,,,,,,,,,,77,dungeon-shield,,,,20974,INV_Shield_17,3960,Equip,100,Shield,Metal,,,,,,,,
+905046,Gnoll Dirk,Weapon,Dagger,1H,Rare,30,27,,52,25,,,,,60,89,Physical,1.5,,,,,,,,,,,77,dungeon-dagger,,,,6555,INV_Spear_01,6731,Equip,65,Side,Metal,,,,,,,,
+905047,Riverpaw Longbow,Ranged,Bow,,Rare,30,27,,52,25,,,,,72,109,Physical,2.4,,,,,,,,,,,77,dungeon-bow,,,,32570,INV_Waepon_Bow_ZulGrub_D_01,5086,Equip,75,,Wood,,,,,,,,
+905048,Hogger's Staff,Weapon,Staff,2H,Rare,30,27,,,,77,,,,157,235,Physical,3.0,,,,,,,,,,154,154,dungeon-staff,,,,20325,INV_Staff_01,8267,Equip,100,Staff,Wood,,,,,,,,
+905049,Gnoll Cudgel,Weapon,Mace,1H,Rare,30,27,,,,38,,,,80,119,Physical,2.0,,,,,,,,,,77,77,dungeon-mace,,,,15726,INV_Hammer_19,8836,Equip,90,Side,Wood,,,,,,,,
+905050,Riverpaw Lantern,Offhand,Held,,Rare,30,27,,,,38,,,,,,,,,,,,,,,,,77,77,dungeon-held,,,,21612,INV_Misc_Bone_OrcSkull_01,3113,Equip,,Hip,,,,,,,,,
 905051,Hogger's Torc,Amulet,Misc,,Rare,30,27,52,,25,,,,,,,,,,,,,,,,,,,77,dungeon-amulet-might,,,,609,,3002,Equip,,,,,,,,,,,
 905052,Gnoll Talisman,Amulet,Misc,,Rare,30,27,,52,25,,,,,,,,,,,,,,,,,,,77,dungeon-amulet-swift,,,,964,,3002,Equip,,,,,,,,,,,
 905053,Riverpaw Pendant,Amulet,Misc,,Rare,30,27,,,18,38,20,,,,,,,,,,,,,,,,,76,dungeon-amulet-mind,,,,1012,,3002,Equip,,,,,,,,,,,
@@ -795,13 +795,13 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905061,Rioter's Jerkin,Chest,Leather,,Rare,34,31,,60,28,,,1020,,,,,,,,,,,,,,,,88,dungeon-chest-leather,,,,11382,INV_Chest_Cloth_07,5271,Equip,100,,Leather,,9527,28042,17002,28046,17114,14522,28039
 905062,Convict's Hauberk,Chest,Mail,,Rare,34,31,60,,28,,,1748,,,,,,,,,,,,,,,,88,dungeon-chest-mail,,,,26961,INV_Chest_Chain_11,4280,Equip,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
 905063,Watchman's Cuirass,Chest,Plate,,Rare,34,31,60,,28,,,2185,,,,,,,,,,,,,,,,88,dungeon-chest-plate,,,,26972,INV_Chest_Plate09,8078,Equip,135,,Plate,,26975,26977,26971,26973,26969,26974,26970
-905064,Rioter's Blade,Weapon,Sword,1H,Rare,34,31,60,,28,,,,,90,134,Physical,2.0,,,,,,,,,,,88,dungeon-sword,,,,13488,,10253,Equip,90,Side,Metal,,,,,,,,
-905065,Convict's Bulwark,Offhand,Shield,,Rare,34,31,60,,28,,,787,11,,,,,,,,,,,,,,,88,dungeon-shield,,,,20974,,5016,Equip,100,Shield,Metal,,,,,,,,
-905066,Watchman's Dirk,Weapon,Dagger,1H,Rare,34,31,,60,28,,,,,68,100,Physical,1.5,,,,,,,,,,,88,dungeon-dagger,,,,6555,,8527,Equip,65,Side,Metal,,,,,,,,
-905067,Rioter's Longbow,Ranged,Bow,,Rare,34,31,,60,28,,,,,81,123,Physical,2.4,,,,,,,,,,,88,dungeon-bow,,,,32570,,6443,Equip,75,,Wood,,,,,,,,
-905068,Convict's Staff,Weapon,Staff,2H,Rare,34,31,,,,88,,,,177,264,Physical,3.0,,,,,,,,,,176,176,dungeon-staff,,,,20325,,10472,Equip,100,Staff,Wood,,,,,,,,
-905069,Watchman's Cudgel,Weapon,Mace,1H,Rare,34,31,,,,44,,,,90,134,Physical,2.0,,,,,,,,,,87,88,dungeon-mace,,,,15726,,11193,Equip,90,Side,Wood,,,,,,,,
-905070,Rioter's Lantern,Offhand,Held,,Rare,34,31,,,,44,,,,,,,,,,,,,,,,,87,88,dungeon-held,,,,21612,,3943,Equip,,Hip,,,,,,,,,
+905064,Rioter's Blade,Weapon,Sword,1H,Rare,34,31,60,,28,,,,,90,134,Physical,2.0,,,,,,,,,,,88,dungeon-sword,,,,13488,INV_Sword_10,10253,Equip,90,Side,Metal,,,,,,,,
+905065,Convict's Bulwark,Offhand,Shield,,Rare,34,31,60,,28,,,787,11,,,,,,,,,,,,,,,88,dungeon-shield,,,,20974,INV_Shield_17,5016,Equip,100,Shield,Metal,,,,,,,,
+905066,Watchman's Dirk,Weapon,Dagger,1H,Rare,34,31,,60,28,,,,,68,100,Physical,1.5,,,,,,,,,,,88,dungeon-dagger,,,,6555,INV_Spear_01,8527,Equip,65,Side,Metal,,,,,,,,
+905067,Rioter's Longbow,Ranged,Bow,,Rare,34,31,,60,28,,,,,81,123,Physical,2.4,,,,,,,,,,,88,dungeon-bow,,,,32570,INV_Waepon_Bow_ZulGrub_D_01,6443,Equip,75,,Wood,,,,,,,,
+905068,Convict's Staff,Weapon,Staff,2H,Rare,34,31,,,,88,,,,177,264,Physical,3.0,,,,,,,,,,176,176,dungeon-staff,,,,20325,INV_Staff_01,10472,Equip,100,Staff,Wood,,,,,,,,
+905069,Watchman's Cudgel,Weapon,Mace,1H,Rare,34,31,,,,44,,,,90,134,Physical,2.0,,,,,,,,,,87,88,dungeon-mace,,,,15726,INV_Hammer_19,11193,Equip,90,Side,Wood,,,,,,,,
+905070,Rioter's Lantern,Offhand,Held,,Rare,34,31,,,,44,,,,,,,,,,,,,,,,,87,88,dungeon-held,,,,21612,INV_Misc_Bone_OrcSkull_01,3943,Equip,,Hip,,,,,,,,,
 905071,Convict's Torc,Amulet,Misc,,Rare,34,31,60,,28,,,,,,,,,,,,,,,,,,,88,dungeon-amulet-might,,,,609,,3803,Equip,,,,,,,,,,,
 905072,Watchman's Talisman,Amulet,Misc,,Rare,34,31,,60,28,,,,,,,,,,,,,,,,,,,88,dungeon-amulet-swift,,,,964,,3803,Equip,,,,,,,,,,,
 905073,Rioter's Pendant,Amulet,Misc,,Rare,34,31,,,20,45,23,,,,,,,,,,,,,,,,,88,dungeon-amulet-mind,,,,1012,,3803,Equip,,,,,,,,,,,
@@ -815,13 +815,13 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905081,Warder's Jerkin,Chest,Leather,,Rare,40,37,,71,34,,,1218,,,,,,,,,,,,,,,,105,dungeon-chest-leather,,,,11382,INV_Chest_Cloth_07,7515,Equip,100,,Leather,,9527,28042,17002,28046,17114,14522,28039
 905082,Hushed Hauberk,Chest,Mail,,Rare,40,37,71,,34,,,2087,,,,,,,,,,,,,,,,105,dungeon-chest-mail,,,,26961,INV_Chest_Chain_11,6103,Equip,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
 905083,Scribe's Cuirass,Chest,Plate,,Rare,40,37,71,,34,,,2609,,,,,,,,,,,,,,,,105,dungeon-chest-plate,,,,26972,INV_Chest_Plate09,11518,Equip,135,,Plate,,26975,26977,26971,26973,26969,26974,26970
-905084,Warder's Blade,Weapon,Sword,1H,Rare,40,37,71,,34,,,,,108,160,Physical,2.0,,,,,,,,,,,105,dungeon-sword,,,,13488,,14619,Equip,90,Side,Metal,,,,,,,,
-905085,Hushed Bulwark,Offhand,Shield,,Rare,40,37,71,,34,,,939,13,,,,,,,,,,,,,,,105,dungeon-shield,,,,20974,,7152,Equip,100,Shield,Metal,,,,,,,,
-905086,Scribe's Dirk,Weapon,Dagger,1H,Rare,40,37,,71,34,,,,,81,120,Physical,1.5,,,,,,,,,,,105,dungeon-dagger,,,,6555,,12157,Equip,65,Side,Metal,,,,,,,,
-905087,Warder's Longbow,Ranged,Bow,,Rare,40,37,,71,34,,,,,97,146,Physical,2.4,,,,,,,,,,,105,dungeon-bow,,,,32570,,9186,Equip,75,,Wood,,,,,,,,
-905088,Hushed Staff,Weapon,Staff,2H,Rare,40,37,,,,105,,,,211,316,Physical,3.0,,,,,,,,,,210,210,dungeon-staff,,,,20325,,14931,Equip,100,Staff,Wood,,,,,,,,
-905089,Scribe's Cudgel,Weapon,Mace,1H,Rare,40,37,,,,53,,,,108,160,Physical,2.0,,,,,,,,,,103,105,dungeon-mace,,,,15726,,15959,Equip,90,Side,Wood,,,,,,,,
-905090,Warder's Lantern,Offhand,Held,,Rare,40,37,,,,53,,,,,,,,,,,,,,,,,103,105,dungeon-held,,,,21612,,5622,Equip,,Hip,,,,,,,,,
+905084,Warder's Blade,Weapon,Sword,1H,Rare,40,37,71,,34,,,,,108,160,Physical,2.0,,,,,,,,,,,105,dungeon-sword,,,,13488,INV_Sword_10,14619,Equip,90,Side,Metal,,,,,,,,
+905085,Hushed Bulwark,Offhand,Shield,,Rare,40,37,71,,34,,,939,13,,,,,,,,,,,,,,,105,dungeon-shield,,,,20974,INV_Shield_17,7152,Equip,100,Shield,Metal,,,,,,,,
+905086,Scribe's Dirk,Weapon,Dagger,1H,Rare,40,37,,71,34,,,,,81,120,Physical,1.5,,,,,,,,,,,105,dungeon-dagger,,,,6555,INV_Spear_01,12157,Equip,65,Side,Metal,,,,,,,,
+905087,Warder's Longbow,Ranged,Bow,,Rare,40,37,,71,34,,,,,97,146,Physical,2.4,,,,,,,,,,,105,dungeon-bow,,,,32570,INV_Waepon_Bow_ZulGrub_D_01,9186,Equip,75,,Wood,,,,,,,,
+905088,Hushed Staff,Weapon,Staff,2H,Rare,40,37,,,,105,,,,211,316,Physical,3.0,,,,,,,,,,210,210,dungeon-staff,,,,20325,INV_Staff_01,14931,Equip,100,Staff,Wood,,,,,,,,
+905089,Scribe's Cudgel,Weapon,Mace,1H,Rare,40,37,,,,53,,,,108,160,Physical,2.0,,,,,,,,,,103,105,dungeon-mace,,,,15726,INV_Hammer_19,15959,Equip,90,Side,Wood,,,,,,,,
+905090,Warder's Lantern,Offhand,Held,,Rare,40,37,,,,53,,,,,,,,,,,,,,,,,103,105,dungeon-held,,,,21612,INV_Misc_Bone_OrcSkull_01,5622,Equip,,Hip,,,,,,,,,
 905091,Hushed Torc,Amulet,Misc,,Rare,40,37,71,,34,,,,,,,,,,,,,,,,,,,105,dungeon-amulet-might,,,,609,,5422,Equip,,,,,,,,,,,
 905092,Scribe's Talisman,Amulet,Misc,,Rare,40,37,,71,34,,,,,,,,,,,,,,,,,,,105,dungeon-amulet-swift,,,,964,,5422,Equip,,,,,,,,,,,
 905093,Warder's Pendant,Amulet,Misc,,Rare,40,37,,,24,54,27,,,,,,,,,,,,,,,,,105,dungeon-amulet-mind,,,,1012,,5422,Equip,,,,,,,,,,,
@@ -835,13 +835,13 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905101,Tunnel Jerkin,Chest,Leather,,Rare,42,39,,75,36,,,1292,,,,,,,,,,,,,,,,111,dungeon-chest-leather,,,,11382,INV_Chest_Cloth_07,8458,Equip,100,,Leather,,9527,28042,17002,28046,17114,14522,28039
 905102,Conductor's Hauberk,Chest,Mail,,Rare,42,39,75,,36,,,2214,,,,,,,,,,,,,,,,111,dungeon-chest-mail,,,,26961,INV_Chest_Chain_11,6869,Equip,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
 905103,Signalman's Cuirass,Chest,Plate,,Rare,42,39,75,,36,,,2767,,,,,,,,,,,,,,,,111,dungeon-chest-plate,,,,26972,INV_Chest_Plate09,12963,Equip,135,,Plate,,26975,26977,26971,26973,26969,26974,26970
-905104,Tunnel Blade,Weapon,Sword,1H,Rare,42,39,75,,36,,,,,114,170,Physical,2.0,,,,,,,,,,,111,dungeon-sword,,,,13488,,16453,Equip,90,Side,Metal,,,,,,,,
-905105,Conductor's Bulwark,Offhand,Shield,,Rare,42,39,75,,36,,,997,14,,,,,,,,,,,,,,,111,dungeon-shield,,,,20974,,8050,Equip,100,Shield,Metal,,,,,,,,
-905106,Signalman's Dirk,Weapon,Dagger,1H,Rare,42,39,,75,36,,,,,86,127,Physical,1.5,,,,,,,,,,,111,dungeon-dagger,,,,6555,,13683,Equip,65,Side,Metal,,,,,,,,
-905107,Tunnel Longbow,Ranged,Bow,,Rare,42,39,,75,36,,,,,103,155,Physical,2.4,,,,,,,,,,,111,dungeon-bow,,,,32570,,10339,Equip,75,,Wood,,,,,,,,
-905108,Conductor's Staff,Weapon,Staff,2H,Rare,42,39,,,,111,,,,224,335,Physical,3.0,,,,,,,,,,222,222,dungeon-staff,,,,20325,,16805,Equip,100,Staff,Wood,,,,,,,,
-905109,Signalman's Cudgel,Weapon,Mace,1H,Rare,42,39,,,,56,,,,114,170,Physical,2.0,,,,,,,,,,110,111,dungeon-mace,,,,15726,,17962,Equip,90,Side,Wood,,,,,,,,
-905110,Tunnel Lantern,Offhand,Held,,Rare,42,39,,,,56,,,,,,,,,,,,,,,,,110,111,dungeon-held,,,,21612,,6328,Equip,,Hip,,,,,,,,,
+905104,Tunnel Blade,Weapon,Sword,1H,Rare,42,39,75,,36,,,,,114,170,Physical,2.0,,,,,,,,,,,111,dungeon-sword,,,,13488,INV_Sword_10,16453,Equip,90,Side,Metal,,,,,,,,
+905105,Conductor's Bulwark,Offhand,Shield,,Rare,42,39,75,,36,,,997,14,,,,,,,,,,,,,,,111,dungeon-shield,,,,20974,INV_Shield_17,8050,Equip,100,Shield,Metal,,,,,,,,
+905106,Signalman's Dirk,Weapon,Dagger,1H,Rare,42,39,,75,36,,,,,86,127,Physical,1.5,,,,,,,,,,,111,dungeon-dagger,,,,6555,INV_Spear_01,13683,Equip,65,Side,Metal,,,,,,,,
+905107,Tunnel Longbow,Ranged,Bow,,Rare,42,39,,75,36,,,,,103,155,Physical,2.4,,,,,,,,,,,111,dungeon-bow,,,,32570,INV_Waepon_Bow_ZulGrub_D_01,10339,Equip,75,,Wood,,,,,,,,
+905108,Conductor's Staff,Weapon,Staff,2H,Rare,42,39,,,,111,,,,224,335,Physical,3.0,,,,,,,,,,222,222,dungeon-staff,,,,20325,INV_Staff_01,16805,Equip,100,Staff,Wood,,,,,,,,
+905109,Signalman's Cudgel,Weapon,Mace,1H,Rare,42,39,,,,56,,,,114,170,Physical,2.0,,,,,,,,,,110,111,dungeon-mace,,,,15726,INV_Hammer_19,17962,Equip,90,Side,Wood,,,,,,,,
+905110,Tunnel Lantern,Offhand,Held,,Rare,42,39,,,,56,,,,,,,,,,,,,,,,,110,111,dungeon-held,,,,21612,INV_Misc_Bone_OrcSkull_01,6328,Equip,,Hip,,,,,,,,,
 905111,Conductor's Torc,Amulet,Misc,,Rare,42,39,75,,36,,,,,,,,,,,,,,,,,,,111,dungeon-amulet-might,,,,609,,6102,Equip,,,,,,,,,,,
 905112,Signalman's Talisman,Amulet,Misc,,Rare,42,39,,75,36,,,,,,,,,,,,,,,,,,,111,dungeon-amulet-swift,,,,964,,6102,Equip,,,,,,,,,,,
 905113,Tunnel Pendant,Amulet,Misc,,Rare,42,39,,,26,56,29,,,,,,,,,,,,,,,,,111,dungeon-amulet-mind,,,,1012,,6102,Equip,,,,,,,,,,,
@@ -855,13 +855,13 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905121,Lampman's Jerkin,Chest,Leather,,Uncommon,40,37,,32,16,,,1059,,,,,,,,,,,,,,,,48,dungeon-chest-leather,,,,11382,INV_Chest_Cloth_07,5683,Equip,100,,Leather,,9527,28042,17002,28046,17114,14522,28039
 905122,Platform Hauberk,Chest,Mail,,Uncommon,40,37,32,,16,,,1815,,,,,,,,,,,,,,,,48,dungeon-chest-mail,,,,26961,INV_Chest_Chain_11,4615,Equip,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
 905123,Hauler's Cuirass,Chest,Plate,,Uncommon,40,37,32,,16,,,2268,,,,,,,,,,,,,,,,48,dungeon-chest-plate,,,,26972,INV_Chest_Plate09,8709,Equip,135,,Plate,,26975,26977,26971,26973,26969,26974,26970
-905124,Lampman's Blade,Weapon,Sword,1H,Uncommon,40,37,32,,16,,,,,82,122,Physical,2.0,,,,,,,,,,,48,dungeon-sword,,,,13488,,11054,Equip,90,Side,Metal,,,,,,,,
-905125,Platform Bulwark,Offhand,Shield,,Uncommon,40,37,32,,16,,,817,12,,,,,,,,,,,,,,,48,dungeon-shield,,,,20974,,5408,Equip,100,Shield,Metal,,,,,,,,
-905126,Hauler's Dirk,Weapon,Dagger,1H,Uncommon,40,37,,32,16,,,,,62,91,Physical,1.5,,,,,,,,,,,48,dungeon-dagger,,,,6555,,9192,Equip,65,Side,Metal,,,,,,,,
-905127,Lampman's Longbow,Ranged,Bow,,Uncommon,40,37,,32,16,,,,,74,113,Physical,2.4,,,,,,,,,,,48,dungeon-bow,,,,32570,,6946,Equip,75,,Wood,,,,,,,,
-905128,Platform Staff,Weapon,Staff,2H,Uncommon,40,37,,,,48,,,,163,243,Physical,3.0,,,,,,,,,,96,96,dungeon-staff,,,,20325,,11290,Equip,100,Staff,Wood,,,,,,,,
-905129,Hauler's Cudgel,Weapon,Mace,1H,Uncommon,40,37,,,,24,,,,82,122,Physical,2.0,,,,,,,,,,48,48,dungeon-mace,,,,15726,,12067,Equip,90,Side,Wood,,,,,,,,
-905130,Lampman's Lantern,Offhand,Held,,Uncommon,40,37,,,,24,,,,,,,,,,,,,,,,,48,48,dungeon-held,,,,21612,,4251,Equip,,Hip,,,,,,,,,
+905124,Lampman's Blade,Weapon,Sword,1H,Uncommon,40,37,32,,16,,,,,82,122,Physical,2.0,,,,,,,,,,,48,dungeon-sword,,,,13488,INV_Sword_10,11054,Equip,90,Side,Metal,,,,,,,,
+905125,Platform Bulwark,Offhand,Shield,,Uncommon,40,37,32,,16,,,817,12,,,,,,,,,,,,,,,48,dungeon-shield,,,,20974,INV_Shield_17,5408,Equip,100,Shield,Metal,,,,,,,,
+905126,Hauler's Dirk,Weapon,Dagger,1H,Uncommon,40,37,,32,16,,,,,62,91,Physical,1.5,,,,,,,,,,,48,dungeon-dagger,,,,6555,INV_Spear_01,9192,Equip,65,Side,Metal,,,,,,,,
+905127,Lampman's Longbow,Ranged,Bow,,Uncommon,40,37,,32,16,,,,,74,113,Physical,2.4,,,,,,,,,,,48,dungeon-bow,,,,32570,INV_Waepon_Bow_ZulGrub_D_01,6946,Equip,75,,Wood,,,,,,,,
+905128,Platform Staff,Weapon,Staff,2H,Uncommon,40,37,,,,48,,,,163,243,Physical,3.0,,,,,,,,,,96,96,dungeon-staff,,,,20325,INV_Staff_01,11290,Equip,100,Staff,Wood,,,,,,,,
+905129,Hauler's Cudgel,Weapon,Mace,1H,Uncommon,40,37,,,,24,,,,82,122,Physical,2.0,,,,,,,,,,48,48,dungeon-mace,,,,15726,INV_Hammer_19,12067,Equip,90,Side,Wood,,,,,,,,
+905130,Lampman's Lantern,Offhand,Held,,Uncommon,40,37,,,,24,,,,,,,,,,,,,,,,,48,48,dungeon-held,,,,21612,INV_Misc_Bone_OrcSkull_01,4251,Equip,,Hip,,,,,,,,,
 905131,Platform Torc,Amulet,Misc,,Uncommon,40,37,32,,16,,,,,,,,,,,,,,,,,,,48,dungeon-amulet-might,,,,609,,4100,Equip,,,,,,,,,,,
 905132,Hauler's Talisman,Amulet,Misc,,Uncommon,40,37,,32,16,,,,,,,,,,,,,,,,,,,48,dungeon-amulet-swift,,,,964,,4100,Equip,,,,,,,,,,,
 905133,Lampman's Pendant,Amulet,Misc,,Uncommon,40,37,,,11,25,12,,,,,,,,,,,,,,,,,48,dungeon-amulet-mind,,,,1012,,4100,Equip,,,,,,,,,,,
@@ -988,7 +988,7 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 902100,Lakeshire Wool Robe,Chest,Cloth,,Uncommon,33,31,,,9,19,11,492,,,,,,,,,,,,,,,,39,world-chest-cloth,,,,27856,INV_Chest_Leather_01,1960,Equip,70,,Cloth,27862,27855,27858,27857,10508,27854,27853,27861
 902101,Everstill Leather Jerkin,Chest,Leather,,Uncommon,33,31,,25,14,,,861,,,,,,,,,,,,,,,,39,world-chest-leather,,,,11580,INV_Chest_Leather_03,2655,Equip,85,,Leather,28173,27764,,28482,27766,14936,6772,11581
 902102,Darkshire Chain Hauberk,Chest,Mail,,Uncommon,33,31,25,,14,,,1475,,,,,,,,,,,,,,,,39,world-chest-mail,,,,27034,INV_Chest_Plate03,2933,Equip,100,,Chain,27191,,27033,27026,27027,27029,27028,27035
-902103,Tranquil Plate Cuirass,Chest,Plate,,Uncommon,33,31,25,,14,,,1844,,,,,,,,,,,,,,,,39,world-chest-plate,,,,27081,INV_Chest_Plate10,6722,Equip,115,,Plate,27083,27080,27082,27074,27075,27079,27076,27540
+902103,Tranquil Plate Cuirass,Chest,Plate,,Uncommon,33,31,25,,14,,,1844,,,,,,,,,,,,,,,,39,world-chest-plate,,,,26654,INV_Chest_Plate10,6722,Equip,115,,Plate,26656,26655,0,26646,27838,26650,26651,26652
 902104,Lakeshire Cutlass,Weapon,Sword,1H,Uncommon,33,31,25,,14,,,,,65,100,Physical,2.0,,,,,,,,,,,39,world-sword,,,,28594,INV_Sword_23,5266,Equip,70,Side,Metal,,,,,,,,
 902105,Everstill Kite Shield,Offhand,Shield,,Uncommon,33,31,25,,14,,,664,9,,,,,,,,,,,,,,,39,world-shield,,,,26060,INV_Shield_14,3360,Equip,80,Shield,Metal,,,,,,,,
 902106,Darkshire Dirk,Weapon,Dagger,1H,Uncommon,33,31,,25,14,,,,,50,74,Physical,1.5,,,,,,,,,,,39,world-dagger,,,,32074,INV_Weapon_ShortBlade_25,5250,Equip,50,Side,Metal,,,,,,,,
@@ -1008,7 +1008,7 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 902120,Canyon Wool Robe,Chest,Cloth,,Uncommon,38,36,,,10,23,13,570,,,,,,,,,,,,,,,,46,world-chest-cloth,,,,28425,INV_Chest_Leather_01,2634,Equip,70,,Cloth,16638,12980,15236,28418,28422,28421,28419,28423
 902121,Alther's Leather Jerkin,Chest,Leather,,Uncommon,38,36,,29,17,,,998,,,,,,,,,,,,,,,,46,world-chest-leather,,,,14068,INV_Chest_Leather_03,3568,Equip,85,,Leather,26550,8098,23004,18930,18929,11956,14635,28734
 902122,Yorgen Chain Hauberk,Chest,Mail,,Uncommon,38,36,29,,17,,,1710,,,,,,,,,,,,,,,,46,world-chest-mail,,,,25787,INV_Chest_Plate03,3942,Equip,100,,Chain,25991,25790,26251,25786,25788,25784,26249,25980
-902123,Addle's Plate Cuirass,Chest,Plate,,Uncommon,38,36,29,,17,,,2138,,,,,,,,,,,,,,,,46,world-chest-plate,,,,27081,INV_Chest_Plate10,9034,Equip,115,,Plate,27083,27080,27082,27074,27075,27079,27076,27540
+902123,Addle's Plate Cuirass,Chest,Plate,,Uncommon,38,36,29,,17,,,2138,,,,,,,,,,,,,,,,46,world-chest-plate,,,,16109,INV_Chest_Plate10,9034,Equip,115,,Plate,16115,16089,0,27373,16091,27375,16092,16113
 902124,Canyon Cutlass,Weapon,Sword,1H,Uncommon,38,36,29,,17,,,,,76,116,Physical,2.0,,,,,,,,,,,46,world-sword,,,,20156,INV_Sword_23,7077,Equip,70,Side,Metal,,,,,,,,
 902125,Alther's Kite Shield,Offhand,Shield,,Uncommon,38,36,29,,17,,,770,11,,,,,,,,,,,,,,,46,world-shield,,,,18790,INV_Shield_14,4515,Equip,80,Shield,Metal,,,,,,,,
 902126,Yorgen Dirk,Weapon,Dagger,1H,Uncommon,38,36,,29,17,,,,,58,85,Physical,1.5,,,,,,,,,,,46,world-dagger,,,,20594,INV_Weapon_ShortBlade_25,7055,Equip,50,Side,Metal,,,,,,,,
@@ -1028,7 +1028,7 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 902140,Render's Wool Robe,Chest,Cloth,,Uncommon,43,41,,,12,26,15,661,,,,,,,,,,,,,,,,53,world-chest-cloth,,,,28074,INV_Chest_Leather_01,3540,Equip,70,,Cloth,28067,28068,28065,28057,28062,26470,28061,28088
 902141,Brightwood Leather Jerkin,Chest,Leather,,Uncommon,43,41,,34,19,,,1156,,,,,,,,,,,,,,,,53,world-chest-leather,,,,18903,INV_Chest_Leather_03,4795,Equip,85,,Leather,18921,3169,23023,3606,18912,17129,27807,18904
 902142,Vul'Gol Chain Hauberk,Chest,Mail,,Uncommon,43,41,34,,19,,,1983,,,,,,,,,,,,,,,,53,world-chest-mail,,,,27889,INV_Chest_Plate03,5298,Equip,100,,Chain,27898,27893,27108,27895,27892,27894,27890,27891
-902143,Rethban Plate Cuirass,Chest,Plate,,Uncommon,43,41,34,,19,,,2478,,,,,,,,,,,,,,,,53,world-chest-plate,,,,27081,INV_Chest_Plate10,12141,Equip,115,,Plate,27083,27080,27082,27074,27075,27079,27076,27540
+902143,Rethban Plate Cuirass,Chest,Plate,,Uncommon,43,41,34,,19,,,2478,,,,,,,,,,,,,,,,53,world-chest-plate,,,,16117,INV_Chest_Plate10,12141,Equip,115,,Plate,16119,16106,0,27402,16105,27399,16103,16118
 902144,Render's Cutlass,Weapon,Sword,1H,Uncommon,43,41,34,,19,,,,,88,134,Physical,2.0,,,,,,,,,,,53,world-sword,,,,26572,INV_Sword_23,9512,Equip,70,Side,Metal,,,,,,,,
 902145,Brightwood Kite Shield,Offhand,Shield,,Uncommon,43,41,34,,19,,,892,13,,,,,,,,,,,,,,,53,world-shield,,,,18697,INV_Shield_14,6068,Equip,80,Shield,Metal,,,,,,,,
 902146,Vul'Gol Dirk,Weapon,Dagger,1H,Uncommon,43,41,,34,19,,,,,68,99,Physical,1.5,,,,,,,,,,,53,world-dagger,,,,20475,INV_Weapon_ShortBlade_25,9482,Equip,50,Side,Metal,,,,,,,,
@@ -1048,7 +1048,7 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 902160,Galardell Wool Robe,Chest,Cloth,,Uncommon,48,46,,,13,31,17,766,,,,,,,,,,,,,,,,61,world-chest-cloth,,,,28417,INV_Chest_Leather_01,4758,Equip,70,,Cloth,28414,28409,28412,28410,28413,28415,28416,11548
 902161,Orchard Leather Jerkin,Chest,Leather,,Uncommon,48,46,,39,22,,,1341,,,,,,,,,,,,,,,,61,world-chest-leather,,,,18934,INV_Chest_Leather_03,6445,Equip,85,,Leather,19010,18939,23073,18938,18936,17115,18935,18937
 902162,Ebonlocke Chain Hauberk,Chest,Mail,,Uncommon,48,46,39,,22,,,2298,,,,,,,,,,,,,,,,61,world-chest-mail,,,,26087,INV_Chest_Plate03,7120,Equip,100,,Chain,26098,26091,26097,26088,26089,6926,3193,26090
-902163,Stonefall Plate Cuirass,Chest,Plate,,Uncommon,48,46,39,,22,,,2873,,,,,,,,,,,,,,,,61,world-chest-plate,,,,27081,INV_Chest_Plate10,16316,Equip,115,,Plate,27083,27080,27082,27074,27075,27079,27076,27540
+902163,Stonefall Plate Cuirass,Chest,Plate,,Uncommon,48,46,39,,22,,,2873,,,,,,,,,,,,,,,,61,world-chest-plate,,,,28394,INV_Chest_Plate10,16316,Equip,115,,Plate,15340,18389,0,25829,28397,28395,25833,28396
 902164,Galardell Cutlass,Weapon,Sword,1H,Uncommon,48,46,39,,22,,,,,102,156,Physical,2.0,,,,,,,,,,,61,world-sword,,,,20221,INV_Sword_23,12783,Equip,70,Side,Metal,,,,,,,,
 902165,Orchard Kite Shield,Offhand,Shield,,Uncommon,48,46,39,,22,,,1034,15,,,,,,,,,,,,,,,61,world-shield,,,,26693,INV_Shield_14,8155,Equip,80,Shield,Metal,,,,,,,,
 902166,Ebonlocke Dirk,Weapon,Dagger,1H,Uncommon,48,46,,39,22,,,,,78,115,Physical,1.5,,,,,,,,,,,61,world-dagger,,,,28520,INV_Weapon_ShortBlade_25,12743,Equip,50,Side,Metal,,,,,,,,
@@ -1066,16 +1066,16 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 902178,Ebonlocke Circle,Ring,Misc,,Uncommon,48,46,,,13,31,17,,,,,,,,,,,,,,,,,61,world-ring-mind-a,,,,9832,,2252,Equip,,,,,,,,,,,
 902179,Stonefall Seal,Ring,Misc,,Uncommon,48,46,,,13,26,22,,,,,,,,,,,,,,,,,61,world-ring-mind-b,,,,12987,,2252,Equip,,,,,,,,,,,
 903200,Wayfarer's Robe,Chest,Cloth,,Uncommon,33,30,,,9,20,10,492,,,,,,,,,,,,,,,,39,quest-chest-cloth,,,,27873,INV_Chest_Cloth_19,2480,Pickup,70,,Cloth,25996,27872,25997,25994,25999,25998,12973,25995
-903201,Wayfarer's Jerkin,Chest,Leather,,Uncommon,33,30,,26,13,,,861,,,,,,,,,,,,,,,,39,quest-chest-leather,,,,27962,INV_Shirt_04,2912,Pickup,85,,Leather,27968,10179,27584,27964,27966,27963,27967,27965
+903201,Wayfarer's Jerkin,Chest,Leather,,Uncommon,33,30,,26,13,,,861,,,,,,,,,,,,,,,,39,quest-chest-leather,,,,14261,INV_Shirt_04,2912,Pickup,85,,Leather,0,0,0,0,0,17231,0,0
 903202,Wayfarer's Hauberk,Chest,Mail,,Uncommon,33,30,26,,13,,,1475,,,,,,,,,,,,,,,,39,quest-chest-mail,,,,27769,INV_Chest_Chain_03,3677,Pickup,100,,Chain,27774,27776,27779,27783,27778,27777,27770,27771
-903203,Wayfarer's Cuirass,Chest,Plate,,Uncommon,33,30,26,,13,,,1844,,,,,,,,,,,,,,,,39,quest-chest-plate,,,,26654,INV_Chest_Plate12,4904,Pickup,115,,Plate,26656,0,0,26646,27838,26650,26651,26652
-903204,Wayfarer's Cutlass,Weapon,Sword,1H,Uncommon,33,30,26,,13,,,,,65,100,Physical,2.0,,,,,,,,,,,39,quest-sword,,,,5153,INV_Sword_40,5468,Pickup,75,Side,Metal,,,,,,,,
-903205,Wayfarer's Kite Shield,Offhand,Shield,,Uncommon,33,30,26,,13,,,664,9,,,,,,,,,,,,,,,39,quest-shield,,,,18769,,3306,Pickup,85,Shield,Metal,,,,,,,,
-903206,Wayfarer's Dirk,Weapon,Dagger,1H,Uncommon,33,30,,26,13,,,,,50,74,Physical,1.5,,,,,,,,,,,39,quest-dagger,,,,22247,INV_Sword_21,5674,Pickup,55,Side,Metal,,,,,,,,
-903207,Wayfarer's Recurve,Ranged,Bow,,Uncommon,33,30,,26,13,,,,,61,90,Physical,2.4,,,,,,,,,,,39,quest-bow,,,,20653,INV_Weapon_Bow_14,4814,Pickup,65,,Wood,,,,,,,,
+903203,Wayfarer's Cuirass,Chest,Plate,,Uncommon,33,30,26,,13,,,1844,,,,,,,,,,,,,,,,39,quest-chest-plate,,,,28694,INV_Chest_Plate12,4904,Pickup,115,,Plate,21301,18497,0,18378,29000,32644,21961,28362
+903204,Wayfarer's Cutlass,Weapon,Sword,1H,Uncommon,33,30,26,,13,,,,,65,100,Physical,2.0,,,,,,,,,,,39,quest-sword,,,,32077,INV_Sword_40,5468,Pickup,75,Side,Metal,,,,,,,,
+903205,Wayfarer's Kite Shield,Offhand,Shield,,Uncommon,33,30,26,,13,,,664,9,,,,,,,,,,,,,,,39,quest-shield,,,,2632,INV_Shield_01,3306,Pickup,85,Shield,Metal,,,,,,,,
+903206,Wayfarer's Dirk,Weapon,Dagger,1H,Uncommon,33,30,,26,13,,,,,50,74,Physical,1.5,,,,,,,,,,,39,quest-dagger,,,,32075,INV_Sword_21,5674,Pickup,55,Side,Metal,,,,,,,,
+903207,Wayfarer's Recurve,Ranged,Bow,,Uncommon,33,30,,26,13,,,,,61,90,Physical,2.4,,,,,,,,,,,39,quest-bow,,,,20650,INV_Weapon_Bow_14,4814,Pickup,65,,Wood,,,,,,,,
 903208,Wayfarer's Quarterstaff,Weapon,Staff,2H,Uncommon,33,30,,,,39,,,,133,197,Physical,3.0,,,,,,,,,,78,78,quest-staff,,,,20356,INV_Staff_03,7239,Pickup,85,Staff,Wood,,,,,,,,
-903209,Wayfarer's Cudgel,Weapon,Mace,1H,Uncommon,33,30,,,,20,,,,65,100,Physical,2.0,,,,,,,,,,38,39,quest-mace,,,,19673,,5958,Pickup,75,Side,Wood,,,,,,,,
-903210,Wayfarer's Lantern,Offhand,Held,,Uncommon,33,30,,,,20,,,,,,,,,,,,,,,,,38,39,quest-held,,,,28514,,2421,Pickup,,Hip,,,,,,,,,
+903209,Wayfarer's Cudgel,Weapon,Mace,1H,Uncommon,33,30,,,,20,,,,65,100,Physical,2.0,,,,,,,,,,38,39,quest-mace,,,,19670,INV_Mace_16,5958,Pickup,75,Side,Wood,,,,,,,,
+903210,Wayfarer's Lantern,Offhand,Held,,Uncommon,33,30,,,,20,,,,,,,,,,,,,,,,,38,39,quest-held,,,,28492,INV_Wand_05,2421,Pickup,,Hip,,,,,,,,,
 903211,Wayfarer's Torc,Amulet,Misc,,Uncommon,33,30,26,,13,,,,,,,,,,,,,,,,,,,39,quest-amulet-might,,,,31604,,4224,Pickup,,,,,,,,,,,
 903212,Wayfarer's Talisman,Amulet,Misc,,Uncommon,33,30,,26,13,,,,,,,,,,,,,,,,,,,39,quest-amulet-swift,,,,31603,,4224,Pickup,,,,,,,,,,,
 903213,Wayfarer's Pendant,Amulet,Misc,,Uncommon,33,30,,,9,20,10,,,,,,,,,,,,,,,,,39,quest-amulet-mind,,,,32713,,4224,Pickup,,,,,,,,,,,
@@ -1085,17 +1085,17 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 903217,Wayfarer's Ring,Ring,Misc,,Uncommon,33,30,,24,15,,,,,,,,,,,,,,,,,,,39,quest-ring-swift-b,,,,31906,,2174,Pickup,,,,,,,,,,,
 903218,Wayfarer's Circle,Ring,Misc,,Uncommon,33,30,,,9,20,10,,,,,,,,,,,,,,,,,39,quest-ring-mind-a,,,,35313,,2174,Pickup,,,,,,,,,,,
 903219,Wayfarer's Seal,Ring,Misc,,Uncommon,33,30,,,10,18,11,,,,,,,,,,,,,,,,,39,quest-ring-mind-b,,,,35423,,2174,Pickup,,,,,,,,,,,
-903220,Pathfinder's Robe,Chest,Cloth,,Uncommon,38,36,,,11,23,12,570,,,,,,,,,,,,,,,,46,quest-chest-cloth,,,,28424,INV_Chest_Cloth_19,3333,Pickup,70,,Cloth,28420,28409,28412,28418,28422,28421,28419,28423
-903221,Pathfinder's Jerkin,Chest,Leather,,Uncommon,38,36,,31,15,,,998,,,,,,,,,,,,,,,,46,quest-chest-leather,,,,28028,INV_Shirt_04,3913,Pickup,85,,Leather,28022,28037,28049,28032,28034,28030,28029,28031
-903222,Pathfinder's Hauberk,Chest,Mail,,Uncommon,38,36,31,,15,,,1710,,,,,,,,,,,,,,,,46,quest-chest-mail,,,,27049,INV_Chest_Chain_03,4942,Pickup,100,,Chain,27052,27054,27051,27048,27053,27046,27050,27047
-903223,Pathfinder's Cuirass,Chest,Plate,,Uncommon,38,36,31,,15,,,2138,,,,,,,,,,,,,,,,46,quest-chest-plate,,,,27155,INV_Chest_Plate12,6591,Pickup,115,,Plate,27151,27160,27161,27154,27156,27159,27157,27158
-903224,Pathfinder's Cutlass,Weapon,Sword,1H,Uncommon,38,36,31,,15,,,,,75,116,Physical,2.0,,,,,,,,,,,46,quest-sword,,,,5153,INV_Sword_40,7349,Pickup,75,Side,Metal,,,,,,,,
-903225,Pathfinder's Kite Shield,Offhand,Shield,,Uncommon,38,36,31,,15,,,770,10,,,,,,,,,,,,,,,46,quest-shield,,,,18769,,4443,Pickup,85,Shield,Metal,,,,,,,,
-903226,Pathfinder's Dirk,Weapon,Dagger,1H,Uncommon,38,36,,31,15,,,,,58,86,Physical,1.5,,,,,,,,,,,46,quest-dagger,,,,22247,INV_Sword_21,7625,Pickup,55,Side,Metal,,,,,,,,
-903227,Pathfinder's Recurve,Ranged,Bow,,Uncommon,38,36,,31,15,,,,,71,104,Physical,2.4,,,,,,,,,,,46,quest-bow,,,,20653,INV_Weapon_Bow_14,6470,Pickup,65,,Wood,,,,,,,,
-903228,Pathfinder's Quarterstaff,Weapon,Staff,2H,Uncommon,38,36,,,,46,,,,154,229,Physical,3.0,,,,,,,,,,92,92,quest-staff,,,,20356,INV_Staff_03,9729,Pickup,85,Staff,Wood,,,,,,,,
-903229,Pathfinder's Cudgel,Weapon,Mace,1H,Uncommon,38,36,,,,23,,,,75,116,Physical,2.0,,,,,,,,,,45,46,quest-mace,,,,19673,,8007,Pickup,75,Side,Wood,,,,,,,,
-903230,Pathfinder's Lantern,Offhand,Held,,Uncommon,38,36,,,,23,,,,,,,,,,,,,,,,,45,46,quest-held,,,,28514,,3254,Pickup,,Hip,,,,,,,,,
+903220,Pathfinder's Robe,Chest,Cloth,,Uncommon,38,36,,,11,23,12,570,,,,,,,,,,,,,,,,46,quest-chest-cloth,,,,27557,INV_Chest_Cloth_19,3333,Pickup,70,,Cloth,15298,16652,18131,14618,14623,14624,14625,14617
+903221,Pathfinder's Jerkin,Chest,Leather,,Uncommon,38,36,,31,15,,,998,,,,,,,,,,,,,,,,46,quest-chest-leather,,,,27689,INV_Shirt_04,3913,Pickup,85,,Leather,27687,27688,27686,3652,3846,27684,3442,27685
+903222,Pathfinder's Hauberk,Chest,Mail,,Uncommon,38,36,31,,15,,,1710,,,,,,,,,,,,,,,,46,quest-chest-mail,,,,27067,INV_Chest_Chain_03,4942,Pickup,100,,Chain,27073,27071,27072,27066,27069,27068,27070,27065
+903223,Pathfinder's Cuirass,Chest,Plate,,Uncommon,38,36,31,,15,,,2138,,,,,,,,,,,,,,,,46,quest-chest-plate,,,,26636,INV_Chest_Plate12,6591,Pickup,115,,Plate,27512,26645,0,26454,26640,26634,26641,26643
+903224,Pathfinder's Cutlass,Weapon,Sword,1H,Uncommon,38,36,31,,15,,,,,75,116,Physical,2.0,,,,,,,,,,,46,quest-sword,,,,20076,INV_Sword_40,7349,Pickup,75,Side,Metal,,,,,,,,
+903225,Pathfinder's Kite Shield,Offhand,Shield,,Uncommon,38,36,31,,15,,,770,10,,,,,,,,,,,,,,,46,quest-shield,,,,18476,INV_Shield_01,4443,Pickup,85,Shield,Metal,,,,,,,,
+903226,Pathfinder's Dirk,Weapon,Dagger,1H,Uncommon,38,36,,31,15,,,,,58,86,Physical,1.5,,,,,,,,,,,46,quest-dagger,,,,20318,INV_Sword_21,7625,Pickup,55,Side,Metal,,,,,,,,
+903227,Pathfinder's Recurve,Ranged,Bow,,Uncommon,38,36,,31,15,,,,,71,104,Physical,2.4,,,,,,,,,,,46,quest-bow,,,,25602,INV_Weapon_Bow_14,6470,Pickup,65,,Wood,,,,,,,,
+903228,Pathfinder's Quarterstaff,Weapon,Staff,2H,Uncommon,38,36,,,,46,,,,154,229,Physical,3.0,,,,,,,,,,92,92,quest-staff,,,,22252,INV_Staff_03,9729,Pickup,85,Staff,Wood,,,,,,,,
+903229,Pathfinder's Cudgel,Weapon,Mace,1H,Uncommon,38,36,,,,23,,,,75,116,Physical,2.0,,,,,,,,,,45,46,quest-mace,,,,19501,INV_Mace_16,8007,Pickup,75,Side,Wood,,,,,,,,
+903230,Pathfinder's Lantern,Offhand,Held,,Uncommon,38,36,,,,23,,,,,,,,,,,,,,,,,45,46,quest-held,,,,11410,INV_Wand_05,3254,Pickup,,Hip,,,,,,,,,
 903231,Pathfinder's Torc,Amulet,Misc,,Uncommon,38,36,31,,15,,,,,,,,,,,,,,,,,,,46,quest-amulet-might,,,,31604,,5677,Pickup,,,,,,,,,,,
 903232,Pathfinder's Talisman,Amulet,Misc,,Uncommon,38,36,,31,15,,,,,,,,,,,,,,,,,,,46,quest-amulet-swift,,,,31603,,5677,Pickup,,,,,,,,,,,
 903233,Pathfinder's Pendant,Amulet,Misc,,Uncommon,38,36,,,11,23,12,,,,,,,,,,,,,,,,,46,quest-amulet-mind,,,,32713,,5677,Pickup,,,,,,,,,,,
@@ -1105,17 +1105,17 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 903237,Pathfinder's Ring,Ring,Misc,,Uncommon,38,36,,28,18,,,,,,,,,,,,,,,,,,,46,quest-ring-swift-b,,,,31906,,2922,Pickup,,,,,,,,,,,
 903238,Pathfinder's Circle,Ring,Misc,,Uncommon,38,36,,,11,23,12,,,,,,,,,,,,,,,,,46,quest-ring-mind-a,,,,35313,,2922,Pickup,,,,,,,,,,,
 903239,Pathfinder's Seal,Ring,Misc,,Uncommon,38,36,,,12,21,13,,,,,,,,,,,,,,,,,46,quest-ring-mind-b,,,,35423,,2922,Pickup,,,,,,,,,,,
-903240,Outrider's Robe,Chest,Cloth,,Uncommon,43,40,,,13,26,14,661,,,,,,,,,,,,,,,,53,quest-chest-cloth,,,,26192,INV_Chest_Cloth_19,4479,Pickup,70,,Cloth,26197,26194,26189,26187,26193,26190,26196,26186
-903241,Outrider's Jerkin,Chest,Leather,,Uncommon,43,40,,36,17,,,1156,,,,,,,,,,,,,,,,53,quest-chest-leather,,,,27564,INV_Shirt_04,5259,Pickup,85,,Leather,27572,27569,27573,27565,27567,27566,27570,27568
-903242,Outrider's Hauberk,Chest,Mail,,Uncommon,43,40,36,,17,,,1983,,,,,,,,,,,,,,,,53,quest-chest-mail,,,,27039,INV_Chest_Chain_03,6642,Pickup,100,,Chain,27042,27044,27040,27038,27041,27045,27043,27037
-903243,Outrider's Cuirass,Chest,Plate,,Uncommon,43,40,36,,17,,,2478,,,,,,,,,,,,,,,,53,quest-chest-plate,,,,27171,INV_Chest_Plate12,8858,Pickup,115,,Plate,27178,27177,27176,27170,27172,27169,27174,27173
-903244,Outrider's Cutlass,Weapon,Sword,1H,Uncommon,43,40,36,,17,,,,,87,135,Physical,2.0,,,,,,,,,,,53,quest-sword,,,,5153,INV_Sword_40,9876,Pickup,75,Side,Metal,,,,,,,,
-903245,Outrider's Kite Shield,Offhand,Shield,,Uncommon,43,40,36,,17,,,893,12,,,,,,,,,,,,,,,53,quest-shield,,,,18769,,5971,Pickup,85,Shield,Metal,,,,,,,,
-903246,Outrider's Dirk,Weapon,Dagger,1H,Uncommon,43,40,,36,17,,,,,67,99,Physical,1.5,,,,,,,,,,,53,quest-dagger,,,,22247,INV_Sword_21,10247,Pickup,55,Side,Metal,,,,,,,,
-903247,Outrider's Recurve,Ranged,Bow,,Uncommon,43,40,,36,17,,,,,82,121,Physical,2.4,,,,,,,,,,,53,quest-bow,,,,20653,INV_Weapon_Bow_14,8695,Pickup,65,,Wood,,,,,,,,
-903248,Outrider's Quarterstaff,Weapon,Staff,2H,Uncommon,43,40,,,,53,,,,179,266,Physical,3.0,,,,,,,,,,106,106,quest-staff,,,,20356,INV_Staff_03,13075,Pickup,85,Staff,Wood,,,,,,,,
-903249,Outrider's Cudgel,Weapon,Mace,1H,Uncommon,43,40,,,,27,,,,87,135,Physical,2.0,,,,,,,,,,52,53,quest-mace,,,,19673,,10761,Pickup,75,Side,Wood,,,,,,,,
-903250,Outrider's Lantern,Offhand,Held,,Uncommon,43,40,,,,27,,,,,,,,,,,,,,,,,52,53,quest-held,,,,28514,,4373,Pickup,,Hip,,,,,,,,,
+903240,Outrider's Robe,Chest,Cloth,,Uncommon,43,40,,,13,26,14,661,,,,,,,,,,,,,,,,53,quest-chest-cloth,,,,24951,INV_Chest_Cloth_19,4479,Pickup,70,,Cloth,19060,18866,0,0,19055,0,19061,19051
+903241,Outrider's Jerkin,Chest,Leather,,Uncommon,43,40,,36,17,,,1156,,,,,,,,,,,,,,,,53,quest-chest-leather,,,,16508,INV_Shirt_04,5259,Pickup,85,,Leather,25711,0,24297,0,0,0,16510,0
+903242,Outrider's Hauberk,Chest,Mail,,Uncommon,43,40,36,,17,,,1983,,,,,,,,,,,,,,,,53,quest-chest-mail,,,,11598,INV_Chest_Chain_03,6642,Pickup,100,,Chain,16492,0,0,16506,16488,0,16487,0
+903243,Outrider's Cuirass,Chest,Plate,,Uncommon,43,40,36,,17,,,2478,,,,,,,,,,,,,,,,53,quest-chest-plate,,,,26687,INV_Chest_Plate12,8858,Pickup,115,,Plate,26692,26688,0,26685,29015,26686,26691,26690
+903244,Outrider's Cutlass,Weapon,Sword,1H,Uncommon,43,40,36,,17,,,,,87,135,Physical,2.0,,,,,,,,,,,53,quest-sword,,,,7485,INV_Sword_40,9876,Pickup,75,Side,Metal,,,,,,,,
+903245,Outrider's Kite Shield,Offhand,Shield,,Uncommon,43,40,36,,17,,,893,12,,,,,,,,,,,,,,,53,quest-shield,,,,20900,INV_Shield_01,5971,Pickup,85,Shield,Metal,,,,,,,,
+903246,Outrider's Dirk,Weapon,Dagger,1H,Uncommon,43,40,,36,17,,,,,67,99,Physical,1.5,,,,,,,,,,,53,quest-dagger,,,,3175,INV_Sword_21,10247,Pickup,55,Side,Metal,,,,,,,,
+903247,Outrider's Recurve,Ranged,Bow,,Uncommon,43,40,,36,17,,,,,82,121,Physical,2.4,,,,,,,,,,,53,quest-bow,,,,4426,INV_Weapon_Bow_14,8695,Pickup,65,,Wood,,,,,,,,
+903248,Outrider's Quarterstaff,Weapon,Staff,2H,Uncommon,43,40,,,,53,,,,179,266,Physical,3.0,,,,,,,,,,106,106,quest-staff,,,,20274,INV_Staff_03,13075,Pickup,85,Staff,Wood,,,,,,,,
+903249,Outrider's Cudgel,Weapon,Mace,1H,Uncommon,43,40,,,,27,,,,87,135,Physical,2.0,,,,,,,,,,52,53,quest-mace,,,,19721,INV_Mace_16,10761,Pickup,75,Side,Wood,,,,,,,,
+903250,Outrider's Lantern,Offhand,Held,,Uncommon,43,40,,,,27,,,,,,,,,,,,,,,,,52,53,quest-held,,,,21603,INV_Wand_05,4373,Pickup,,Hip,,,,,,,,,
 903251,Outrider's Torc,Amulet,Misc,,Uncommon,43,40,36,,17,,,,,,,,,,,,,,,,,,,53,quest-amulet-might,,,,31604,,7629,Pickup,,,,,,,,,,,
 903252,Outrider's Talisman,Amulet,Misc,,Uncommon,43,40,,36,17,,,,,,,,,,,,,,,,,,,53,quest-amulet-swift,,,,31603,,7629,Pickup,,,,,,,,,,,
 903253,Outrider's Pendant,Amulet,Misc,,Uncommon,43,40,,,13,26,14,,,,,,,,,,,,,,,,,53,quest-amulet-mind,,,,32713,,7629,Pickup,,,,,,,,,,,
@@ -1125,17 +1125,17 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 903257,Outrider's Ring,Ring,Misc,,Uncommon,43,40,,32,21,,,,,,,,,,,,,,,,,,,53,quest-ring-swift-b,,,,31906,,3927,Pickup,,,,,,,,,,,
 903258,Outrider's Circle,Ring,Misc,,Uncommon,43,40,,,13,26,14,,,,,,,,,,,,,,,,,53,quest-ring-mind-a,,,,35313,,3927,Pickup,,,,,,,,,,,
 903259,Outrider's Seal,Ring,Misc,,Uncommon,43,40,,,14,24,15,,,,,,,,,,,,,,,,,53,quest-ring-mind-b,,,,35423,,3927,Pickup,,,,,,,,,,,
-903260,Trailblazer's Robe,Chest,Cloth,,Uncommon,48,45,,,15,30,16,766,,,,,,,,,,,,,,,,61,quest-chest-cloth,,,,26161,INV_Chest_Cloth_19,6019,Pickup,70,,Cloth,26166,26164,26167,26151,26154,26149,26159,26153
-903261,Trailblazer's Jerkin,Chest,Leather,,Uncommon,48,45,,41,20,,,1341,,,,,,,,,,,,,,,,61,quest-chest-leather,,,,27716,INV_Shirt_04,7068,Pickup,85,,Leather,27711,27713,27700,27719,27726,27717,27731,27718
-903262,Trailblazer's Hauberk,Chest,Mail,,Uncommon,48,45,41,,20,,,2298,,,,,,,,,,,,,,,,61,quest-chest-mail,,,,29807,INV_Chest_Chain_03,8926,Pickup,100,,Chain,29808,29802,29824,29810,29811,29809,29814,29813
-903263,Trailblazer's Cuirass,Chest,Plate,,Uncommon,48,45,41,,20,,,2873,,,,,,,,,,,,,,,,61,quest-chest-plate,,,,29844,INV_Chest_Plate12,11904,Pickup,115,,Plate,29843,29841,29827,29847,29848,29846,29849,29850
-903264,Trailblazer's Cutlass,Weapon,Sword,1H,Uncommon,48,45,41,,20,,,,,101,157,Physical,2.0,,,,,,,,,,,61,quest-sword,,,,5153,INV_Sword_40,13273,Pickup,75,Side,Metal,,,,,,,,
-903265,Trailblazer's Kite Shield,Offhand,Shield,,Uncommon,48,45,41,,20,,,1035,14,,,,,,,,,,,,,,,61,quest-shield,,,,18769,,8025,Pickup,85,Shield,Metal,,,,,,,,
-903266,Trailblazer's Dirk,Weapon,Dagger,1H,Uncommon,48,45,,41,20,,,,,78,115,Physical,1.5,,,,,,,,,,,61,quest-dagger,,,,22247,INV_Sword_21,13771,Pickup,55,Side,Metal,,,,,,,,
-903267,Trailblazer's Recurve,Ranged,Bow,,Uncommon,48,45,,41,20,,,,,95,140,Physical,2.4,,,,,,,,,,,61,quest-bow,,,,20653,INV_Weapon_Bow_14,11685,Pickup,65,,Wood,,,,,,,,
-903268,Trailblazer's Quarterstaff,Weapon,Staff,2H,Uncommon,48,45,,,,61,,,,207,308,Physical,3.0,,,,,,,,,,122,122,quest-staff,,,,20356,INV_Staff_03,17572,Pickup,85,Staff,Wood,,,,,,,,
-903269,Trailblazer's Cudgel,Weapon,Mace,1H,Uncommon,48,45,,,,31,,,,101,157,Physical,2.0,,,,,,,,,,60,61,quest-mace,,,,19673,,14462,Pickup,75,Side,Wood,,,,,,,,
-903270,Trailblazer's Lantern,Offhand,Held,,Uncommon,48,45,,,,31,,,,,,,,,,,,,,,,,60,61,quest-held,,,,28514,,5877,Pickup,,Hip,,,,,,,,,
+903260,Trailblazer's Robe,Chest,Cloth,,Uncommon,48,45,,,15,30,16,766,,,,,,,,,,,,,,,,61,quest-chest-cloth,,,,33590,INV_Chest_Cloth_19,6019,Pickup,70,,Cloth,0,0,0,0,18271,0,0,0
+903261,Trailblazer's Jerkin,Chest,Leather,,Uncommon,48,45,,41,20,,,1341,,,,,,,,,,,,,,,,61,quest-chest-leather,,,,31529,INV_Shirt_04,7068,Pickup,85,,Leather,0,0,0,0,28339,0,0,4440
+903262,Trailblazer's Hauberk,Chest,Mail,,Uncommon,48,45,41,,20,,,2298,,,,,,,,,,,,,,,,61,quest-chest-mail,,,,26074,INV_Chest_Chain_03,8926,Pickup,100,,Chain,15290,26078,26082,26073,26075,26076,3409,26077
+903263,Trailblazer's Cuirass,Chest,Plate,,Uncommon,48,45,41,,20,,,2873,,,,,,,,,,,,,,,,61,quest-chest-plate,,,,25751,INV_Chest_Plate12,11904,Pickup,115,,Plate,25856,22534,0,25753,27428,22550,22520,25752
+903264,Trailblazer's Cutlass,Weapon,Sword,1H,Uncommon,48,45,41,,20,,,,,101,157,Physical,2.0,,,,,,,,,,,61,quest-sword,,,,31526,INV_Sword_40,13273,Pickup,75,Side,Metal,,,,,,,,
+903265,Trailblazer's Kite Shield,Offhand,Shield,,Uncommon,48,45,41,,20,,,1035,14,,,,,,,,,,,,,,,61,quest-shield,,,,18399,INV_Shield_01,8025,Pickup,85,Shield,Metal,,,,,,,,
+903266,Trailblazer's Dirk,Weapon,Dagger,1H,Uncommon,48,45,,41,20,,,,,78,115,Physical,1.5,,,,,,,,,,,61,quest-dagger,,,,20380,INV_Sword_21,13771,Pickup,55,Side,Metal,,,,,,,,
+903267,Trailblazer's Recurve,Ranged,Bow,,Uncommon,48,45,,41,20,,,,,95,140,Physical,2.4,,,,,,,,,,,61,quest-bow,,,,25604,INV_Weapon_Bow_14,11685,Pickup,65,,Wood,,,,,,,,
+903268,Trailblazer's Quarterstaff,Weapon,Staff,2H,Uncommon,48,45,,,,61,,,,207,308,Physical,3.0,,,,,,,,,,122,122,quest-staff,,,,20269,INV_Staff_03,17572,Pickup,85,Staff,Wood,,,,,,,,
+903269,Trailblazer's Cudgel,Weapon,Mace,1H,Uncommon,48,45,,,,31,,,,101,157,Physical,2.0,,,,,,,,,,60,61,quest-mace,,,,19743,INV_Mace_16,14462,Pickup,75,Side,Wood,,,,,,,,
+903270,Trailblazer's Lantern,Offhand,Held,,Uncommon,48,45,,,,31,,,,,,,,,,,,,,,,,60,61,quest-held,,,,18714,INV_Wand_05,5877,Pickup,,Hip,,,,,,,,,
 903271,Trailblazer's Torc,Amulet,Misc,,Uncommon,48,45,41,,20,,,,,,,,,,,,,,,,,,,61,quest-amulet-might,,,,31604,,10253,Pickup,,,,,,,,,,,
 903272,Trailblazer's Talisman,Amulet,Misc,,Uncommon,48,45,,41,20,,,,,,,,,,,,,,,,,,,61,quest-amulet-swift,,,,31603,,10253,Pickup,,,,,,,,,,,
 903273,Trailblazer's Pendant,Amulet,Misc,,Uncommon,48,45,,,15,30,16,,,,,,,,,,,,,,,,,61,quest-amulet-mind,,,,32713,,10253,Pickup,,,,,,,,,,,
@@ -1145,22 +1145,22 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 903277,Trailblazer's Ring,Ring,Misc,,Uncommon,48,45,,37,24,,,,,,,,,,,,,,,,,,,61,quest-ring-swift-b,,,,31906,,5278,Pickup,,,,,,,,,,,
 903278,Trailblazer's Circle,Ring,Misc,,Uncommon,48,45,,,15,30,16,,,,,,,,,,,,,,,,,61,quest-ring-mind-a,,,,35313,,5278,Pickup,,,,,,,,,,,
 903279,Trailblazer's Seal,Ring,Misc,,Uncommon,48,45,,,16,28,17,,,,,,,,,,,,,,,,,61,quest-ring-mind-b,,,,35423,,5278,Pickup,,,,,,,,,,,
-903300,Thresher-Bone Sword,Weapon,Sword,1H,Rare,33,30,57,,28,,,,,85,131,Physical,2.0,,,,,,,,,,,85,quest-elite-sword,,,,32077,INV_Sword_42,7285,Pickup,90,Side,Metal,,,,,,,,
-903301,Thresher-Tooth Dirk,Weapon,Dagger,1H,Rare,33,30,,57,28,,,,,66,96,Physical,1.5,,,,,,,,,,,85,quest-elite-dagger,,,,32075,INV_Weapon_ShortBlade_06,7074,Pickup,65,Side,Metal,,,,,,,,
+903300,Thresher-Bone Sword,Weapon,Sword,1H,Rare,33,30,57,,28,,,,,85,131,Physical,2.0,,,,,,,,,,,85,quest-elite-sword,,,,5153,INV_Sword_42,7285,Pickup,90,Side,Metal,,,,,,,,
+903301,Thresher-Tooth Dirk,Weapon,Dagger,1H,Rare,33,30,,57,28,,,,,66,96,Physical,1.5,,,,,,,,,,,85,quest-elite-dagger,,,,20320,INV_Weapon_ShortBlade_06,7074,Pickup,65,Side,Metal,,,,,,,,
 903302,Dockmaster's Driftwood Staff,Weapon,Staff,2H,Rare,33,30,,,,85,,,,173,256,Physical,3.0,,,,,,,,,,170,170,quest-elite-staff,,,,20330,INV_Staff_30,8554,Pickup,100,Staff,Wood,,,,,,,,
 903303,Overseer's Iron Band,Ring,Misc,,Rare,38,36,66,,33,,,,,,,,,,,,,,,,,,,99,quest-elite-ring-might,,,,32335,,3887,Pickup,,,,,,,,,,,
 903304,Overseer's Coiled Band,Ring,Misc,,Rare,38,36,,66,33,,,,,,,,,,,,,,,,,,,99,quest-elite-ring-swift,,,,35367,,3887,Pickup,,,,,,,,,,,
 903305,Overseer's Grey Band,Ring,Misc,,Rare,38,36,,,24,50,25,,,,,,,,,,,,,,,,,99,quest-elite-ring-mind,,,,35472,,3887,Pickup,,,,,,,,,,,
-903306,Warchief's-Bane Robe,Chest,Cloth,,Rare,43,40,,,28,57,30,760,,,,,,,,,,,,,,,,115,quest-elite-chest-cloth,,,,28078,INV_Chest_Cloth_28,5957,Pickup,84,,Cloth,28067,28068,28071,28082,28083,28079,28084,28080
-903307,Warchief's-Bane Jerkin,Chest,Leather,,Rare,43,40,,78,37,,,1330,,,,,,,,,,,,,,,,115,quest-elite-chest-leather,,,,27728,INV_Chest_Samurai,6994,Pickup,102,,Leather,27729,27732,27721,27727,27722,27724,27723,27725
-903308,Warchief's-Bane Hauberk,Chest,Mail,,Rare,43,40,78,,37,,,2280,,,,,,,,,,,,,,,,115,quest-elite-chest-mail,,,,26123,INV_Misc_Desecrated_MailChest,8834,Pickup,120,,Chain,26128,26116,26126,26122,26125,26127,26130,26129
-903309,Warchief's-Bane Breastplate,Chest,Plate,,Rare,43,40,78,,37,,,2850,,,,,,,,,,,,,,,,115,quest-elite-chest-plate,,,,27308,INV_Misc_Desecrated_PlateChest,11781,Pickup,138,,Plate,27306,27302,27304,27307,27309,27310,27311,27312
+903306,Warchief's-Bane Robe,Chest,Cloth,,Rare,43,40,,,28,57,30,760,,,,,,,,,,,,,,,,115,quest-elite-chest-cloth,,,,18837,INV_Chest_Cloth_28,5957,Pickup,84,,Cloth,18879,19113,0,0,19111,0,16764,0
+903307,Warchief's-Bane Jerkin,Chest,Leather,,Rare,43,40,,78,37,,,1330,,,,,,,,,,,,,,,,115,quest-elite-chest-leather,,,,16134,INV_Chest_Samurai,6994,Pickup,102,,Leather,16137,0,0,0,17183,16131,16133,16136
+903308,Warchief's-Bane Hauberk,Chest,Mail,,Rare,43,40,78,,37,,,2280,,,,,,,,,,,,,,,,115,quest-elite-chest-mail,,,,27784,INV_Misc_Desecrated_MailChest,8834,Pickup,120,,Chain,27789,27790,27794,27788,27791,27792,26163,27787
+903309,Warchief's-Bane Breastplate,Chest,Plate,,Rare,43,40,78,,37,,,2850,,,,,,,,,,,,,,,,115,quest-elite-chest-plate,,,,24393,INV_Misc_Desecrated_PlateChest,11781,Pickup,138,,Plate,27404,26797,0,27426,16124,26819,27377,28172
 903310,Grey Captain's Pendant of Might,Amulet,Misc,,Rare,48,45,89,,44,,,,,,,,,,,,,,,,,,,133,quest-elite-amulet-might,,,,31604,INV_Jewelry_Necklace_17,13636,Pickup,,,,,,,,,,,
 903311,Grey Captain's Pendant of Speed,Amulet,Misc,,Rare,48,45,,89,44,,,,,,,,,,,,,,,,,,,133,quest-elite-amulet-swift,,,,31603,INV_Jewelry_Necklace_18,13636,Pickup,,,,,,,,,,,
 903312,Grey Captain's Pendant of Sight,Amulet,Misc,,Rare,48,45,,,33,65,35,,,,,,,,,,,,,,,,,133,quest-elite-amulet-mind,,,,32713,INV_Jewelry_Necklace_19,13636,Pickup,,,,,,,,,,,
-903313,Courier's Road Shield,Offhand,Shield,,Rare,48,45,89,,44,,,1190,16,,,,,,,,,,,,,,,133,quest-elite-shield,,,,18769,INV_Shield_12,10673,Pickup,102,Shield,Metal,,,,,,,,
-903314,Courier's Long Bow,Ranged,Bow,,Rare,48,45,,89,44,,,,,124,183,Physical,2.4,,,,,,,,,,,133,quest-elite-bow,,,,20653,INV_Weapon_Crossbow_05,15541,Pickup,78,,Wood,,,,,,,,
-903315,Courier's Sealed Satchel,Offhand,Held,,Rare,48,45,,,,67,,,,,,,,,,,,,,,,,131,133,quest-elite-held,,,,28514,INV_Misc_Bag_15,7816,Pickup,,Hip,,,,,,,,,
+903313,Courier's Road Shield,Offhand,Shield,,Rare,48,45,89,,44,,,1190,16,,,,,,,,,,,,,,,133,quest-elite-shield,,,,26099,INV_Shield_12,10673,Pickup,102,Shield,Metal,,,,,,,,
+903314,Courier's Long Bow,Ranged,Bow,,Rare,48,45,,89,44,,,,,124,183,Physical,2.4,,,,,,,,,,,133,quest-elite-bow,,,,21112,INV_Weapon_Crossbow_05,15541,Pickup,78,,Wood,,,,,,,,
+903315,Courier's Sealed Satchel,Offhand,Held,,Rare,48,45,,,,67,,,,,,,,,,,,,,,,,131,133,quest-elite-held,,,,24742,INV_Misc_Bag_15,7816,Pickup,,Hip,,,,,,,,,
 903316,Ladimore's Band,Ring,Misc,,Rare,48,45,89,,44,,,,,,,,,,,,,,,,,,,133,quest-elite-ring-might,,,,32335,,7020,Pickup,,,,,,,,,,,
 903317,Sarah's Ribbon Ring,Ring,Misc,,Rare,48,45,,89,44,,,,,,,,,,,,,,,,,,,133,quest-elite-ring-swift,,,,35367,,7020,Pickup,,,,,,,,,,,
 903318,Raven Hill Signet,Ring,Misc,,Rare,48,45,,,32,67,34,,,,,,,,,,,,,,,,,133,quest-elite-ring-mind,,,,35472,,7020,Pickup,,,,,,,,,,,
@@ -1188,17 +1188,17 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 904045,Gravewatch Signet,Ring,Misc,,Rare,48,46,91,,42,,,,,,,,,,,,,,,,,,,133,elite-ring-might,,,,31664,,6837,Equip,,,,,,,,,,,
 904046,Gravewatch Loop,Ring,Misc,,Rare,48,46,,91,42,,,,,,,,,,,,,,,,,,,133,elite-ring-swift,,,,32678,,6837,Equip,,,,,,,,,,,
 904047,Gravewatch Band,Ring,Misc,,Rare,48,46,,,30,68,35,,,,,,,,,,,,,,,,,133,elite-ring-mind,,,,31905,,6837,Equip,,,,,,,,,,,
-905140,Tutor's Robe,Chest,Cloth,,Rare,36,33,,,22,47,24,618,,,,,,,,,,,,,,,,93,dungeon-chest-cloth,,,,16531,INV_Chest_Cloth_31,3353,Equip,80,,Cloth,,25859,25855,14541,14542,25858,11421,25857
-905141,Candlewick Jerkin,Chest,Leather,,Rare,36,33,,63,30,,,1081,,,,,,,,,,,,,,,,93,dungeon-chest-leather,,,,11382,INV_Chest_Cloth_07,5933,Equip,100,,Leather,,9527,28042,17002,28046,17114,14522,28039
-905142,Mistmantle Hauberk,Chest,Mail,,Rare,36,33,63,,30,,,1854,,,,,,,,,,,,,,,,93,dungeon-chest-mail,,,,26961,INV_Chest_Chain_11,4818,Equip,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
-905143,Tutor's Cuirass,Chest,Plate,,Rare,36,33,63,,30,,,2317,,,,,,,,,,,,,,,,93,dungeon-chest-plate,,,,26972,INV_Chest_Plate09,9092,Equip,135,,Plate,,26975,26977,26971,26973,26969,26974,26970
-905144,Candlewick Blade,Weapon,Sword,1H,Rare,36,33,63,,30,,,,,95,141,Physical,2.0,,,,,,,,,,,93,dungeon-sword,,,,13488,,11540,Equip,90,Side,Metal,,,,,,,,
-905145,Mistmantle Bulwark,Offhand,Shield,,Rare,36,33,63,,30,,,835,12,,,,,,,,,,,,,,,93,dungeon-shield,,,,20974,,5646,Equip,100,Shield,Metal,,,,,,,,
-905146,Tutor's Dirk,Weapon,Dagger,1H,Rare,36,33,,63,30,,,,,71,106,Physical,1.5,,,,,,,,,,,93,dungeon-dagger,,,,6555,,9597,Equip,65,Side,Metal,,,,,,,,
-905147,Candlewick Longbow,Ranged,Bow,,Rare,36,33,,63,30,,,,,85,129,Physical,2.4,,,,,,,,,,,93,dungeon-bow,,,,32570,,7251,Equip,75,,Wood,,,,,,,,
-905148,Mistmantle Staff,Weapon,Staff,2H,Rare,36,33,,,,93,,,,188,281,Physical,3.0,,,,,,,,,,186,186,dungeon-staff,,,,20325,,11787,Equip,100,Staff,Wood,,,,,,,,
-905149,Tutor's Cudgel,Weapon,Mace,1H,Rare,36,33,,,,46,,,,95,141,Physical,2.0,,,,,,,,,,93,93,dungeon-mace,,,,15726,,12598,Equip,90,Side,Wood,,,,,,,,
-905150,Candlewick Lantern,Offhand,Held,,Rare,36,33,,,,46,,,,,,,,,,,,,,,,,93,93,dungeon-held,,,,21612,,4438,Equip,,Hip,,,,,,,,,
+905140,Tutor's Robe,Chest,Cloth,,Rare,36,33,,,22,47,24,618,,,,,,,,,,,,,,,,93,dungeon-chest-cloth,,,,26011,INV_Chest_Cloth_31,3353,Equip,80,,Cloth,15293,26012,26006,26004,26007,26005,16719,26008
+905141,Candlewick Jerkin,Chest,Leather,,Rare,36,33,,63,30,,,1081,,,,,,,,,,,,,,,,93,dungeon-chest-leather,,,,16890,INV_Chest_Cloth_07,5933,Equip,100,,Leather,21304,17193,23045,17009,17061,17121,17149,3036
+905142,Mistmantle Hauberk,Chest,Mail,,Rare,36,33,63,,30,,,1854,,,,,,,,,,,,,,,,93,dungeon-chest-mail,,,,13088,INV_Chest_Chain_11,4818,Equip,120,,Chain,25658,9422,0,9417,9414,0,9415,9412
+905143,Tutor's Cuirass,Chest,Plate,,Rare,36,33,63,,30,,,2317,,,,,,,,,,,,,,,,93,dungeon-chest-plate,,,,27348,INV_Chest_Plate09,9092,Equip,135,,Plate,27511,27355,0,27350,27351,27352,27354,27349
+905144,Candlewick Blade,Weapon,Sword,1H,Rare,36,33,63,,30,,,,,95,141,Physical,2.0,,,,,,,,,,,93,dungeon-sword,,,,22232,INV_Sword_10,11540,Equip,90,Side,Metal,,,,,,,,
+905145,Mistmantle Bulwark,Offhand,Shield,,Rare,36,33,63,,30,,,835,12,,,,,,,,,,,,,,,93,dungeon-shield,,,,18699,INV_Shield_17,5646,Equip,100,Shield,Metal,,,,,,,,
+905146,Tutor's Dirk,Weapon,Dagger,1H,Rare,36,33,,63,30,,,,,71,106,Physical,1.5,,,,,,,,,,,93,dungeon-dagger,,,,20333,INV_Spear_01,9597,Equip,65,Side,Metal,,,,,,,,
+905147,Candlewick Longbow,Ranged,Bow,,Rare,36,33,,63,30,,,,,85,129,Physical,2.4,,,,,,,,,,,93,dungeon-bow,,,,21111,INV_Waepon_Bow_ZulGrub_D_01,7251,Equip,75,,Wood,,,,,,,,
+905148,Mistmantle Staff,Weapon,Staff,2H,Rare,36,33,,,,93,,,,188,281,Physical,3.0,,,,,,,,,,186,186,dungeon-staff,,,,20360,INV_Staff_01,11787,Equip,100,Staff,Wood,,,,,,,,
+905149,Tutor's Cudgel,Weapon,Mace,1H,Rare,36,33,,,,46,,,,95,141,Physical,2.0,,,,,,,,,,93,93,dungeon-mace,,,,19741,INV_Hammer_19,12598,Equip,90,Side,Wood,,,,,,,,
+905150,Candlewick Lantern,Offhand,Held,,Rare,36,33,,,,46,,,,,,,,,,,,,,,,,93,93,dungeon-held,,,,28555,INV_Misc_Bone_OrcSkull_01,4438,Equip,,Hip,,,,,,,,,
 905151,Mistmantle Torc,Amulet,Misc,,Rare,36,33,63,,30,,,,,,,,,,,,,,,,,,,93,dungeon-amulet-might,,,,609,,4280,Equip,,,,,,,,,,,
 905152,Tutor's Talisman,Amulet,Misc,,Rare,36,33,,63,30,,,,,,,,,,,,,,,,,,,93,dungeon-amulet-swift,,,,964,,4280,Equip,,,,,,,,,,,
 905153,Candlewick Pendant,Amulet,Misc,,Rare,36,33,,,22,47,24,,,,,,,,,,,,,,,,,93,dungeon-amulet-mind,,,,1012,,4280,Equip,,,,,,,,,,,
@@ -1208,17 +1208,17 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905157,Mistmantle Ring,Ring,Misc,,Rare,36,33,,60,33,,,,,,,,,,,,,,,,,,,93,dungeon-ring-swift-b,,,,31576,,4615,Equip,,,,,,,,,,,
 905158,Tutor's Circle,Ring,Misc,,Rare,36,33,,,22,47,24,,,,,,,,,,,,,,,,,93,dungeon-ring-mind-a,,,,31616,,4615,Equip,,,,,,,,,,,
 905159,Candlewick Seal,Ring,Misc,,Rare,36,33,,,22,43,28,,,,,,,,,,,,,,,,,93,dungeon-ring-mind-b,,,,31655,,4615,Equip,,,,,,,,,,,
-905160,Tuner's Robe,Chest,Cloth,,Rare,38,35,,,23,50,26,656,,,,,,,,,,,,,,,,99,dungeon-chest-cloth,,,,16531,INV_Chest_Cloth_31,3774,Equip,80,,Cloth,,25859,25855,14541,14542,25858,11421,25857
-905161,Ilgalar Jerkin,Chest,Leather,,Rare,38,35,,67,32,,,1147,,,,,,,,,,,,,,,,99,dungeon-chest-leather,,,,11382,INV_Chest_Cloth_07,6677,Equip,100,,Leather,,9527,28042,17002,28046,17114,14522,28039
-905162,Morganth's Hauberk,Chest,Mail,,Rare,38,35,67,,32,,,1967,,,,,,,,,,,,,,,,99,dungeon-chest-mail,,,,26961,INV_Chest_Chain_11,5422,Equip,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
-905163,Tuner's Cuirass,Chest,Plate,,Rare,38,35,67,,32,,,2458,,,,,,,,,,,,,,,,99,dungeon-chest-plate,,,,26972,INV_Chest_Plate09,10233,Equip,135,,Plate,,26975,26977,26971,26973,26969,26974,26970
-905164,Ilgalar Blade,Weapon,Sword,1H,Rare,38,35,67,,32,,,,,101,150,Physical,2.0,,,,,,,,,,,99,dungeon-sword,,,,13488,,12988,Equip,90,Side,Metal,,,,,,,,
-905165,Morganth's Bulwark,Offhand,Shield,,Rare,38,35,67,,32,,,885,13,,,,,,,,,,,,,,,99,dungeon-shield,,,,20974,,6355,Equip,100,Shield,Metal,,,,,,,,
-905166,Tuner's Dirk,Weapon,Dagger,1H,Rare,38,35,,67,32,,,,,76,112,Physical,1.5,,,,,,,,,,,99,dungeon-dagger,,,,6555,,10801,Equip,65,Side,Metal,,,,,,,,
-905167,Ilgalar Longbow,Ranged,Bow,,Rare,38,35,,67,32,,,,,91,137,Physical,2.4,,,,,,,,,,,99,dungeon-bow,,,,32570,,8162,Equip,75,,Wood,,,,,,,,
-905168,Morganth's Staff,Weapon,Staff,2H,Rare,38,35,,,,99,,,,199,298,Physical,3.0,,,,,,,,,,198,198,dungeon-staff,,,,20325,,13266,Equip,100,Staff,Wood,,,,,,,,
-905169,Tuner's Cudgel,Weapon,Mace,1H,Rare,38,35,,,,49,,,,101,150,Physical,2.0,,,,,,,,,,99,99,dungeon-mace,,,,15726,,14179,Equip,90,Side,Wood,,,,,,,,
-905170,Ilgalar Lantern,Offhand,Held,,Rare,38,35,,,,49,,,,,,,,,,,,,,,,,99,99,dungeon-held,,,,21612,,4995,Equip,,Hip,,,,,,,,,
+905160,Tuner's Robe,Chest,Cloth,,Rare,38,35,,,23,50,26,656,,,,,,,,,,,,,,,,99,dungeon-chest-cloth,,,,26017,INV_Chest_Cloth_31,3774,Equip,80,,Cloth,26308,28729,26015,25970,26020,26022,26021,9184
+905161,Ilgalar Jerkin,Chest,Leather,,Rare,38,35,,67,32,,,1147,,,,,,,,,,,,,,,,99,dungeon-chest-leather,,,,18284,INV_Chest_Cloth_07,6677,Equip,100,,Leather,29134,27703,27700,27699,27701,11953,27704,27702
+905162,Morganth's Hauberk,Chest,Mail,,Rare,38,35,67,,32,,,1967,,,,,,,,,,,,,,,,99,dungeon-chest-mail,,,,25862,INV_Chest_Chain_11,5422,Equip,120,,Chain,30092,25872,26064,25861,25865,25866,25868,25860
+905163,Tuner's Cuirass,Chest,Plate,,Rare,38,35,67,,32,,,2458,,,,,,,,,,,,,,,,99,dungeon-chest-plate,,,,27330,INV_Chest_Plate09,10233,Equip,135,,Plate,27338,27336,0,27329,27331,27332,27335,27334
+905164,Ilgalar Blade,Weapon,Sword,1H,Rare,38,35,67,,32,,,,,101,150,Physical,2.0,,,,,,,,,,,99,dungeon-sword,,,,28570,INV_Sword_10,12988,Equip,90,Side,Metal,,,,,,,,
+905165,Morganth's Bulwark,Offhand,Shield,,Rare,38,35,67,,32,,,885,13,,,,,,,,,,,,,,,99,dungeon-shield,,,,4403,INV_Shield_17,6355,Equip,100,Shield,Metal,,,,,,,,
+905166,Tuner's Dirk,Weapon,Dagger,1H,Rare,38,35,,67,32,,,,,76,112,Physical,1.5,,,,,,,,,,,99,dungeon-dagger,,,,20326,INV_Spear_01,10801,Equip,65,Side,Metal,,,,,,,,
+905167,Ilgalar Longbow,Ranged,Bow,,Rare,38,35,,67,32,,,,,91,137,Physical,2.4,,,,,,,,,,,99,dungeon-bow,,,,28575,INV_Waepon_Bow_ZulGrub_D_01,8162,Equip,75,,Wood,,,,,,,,
+905168,Morganth's Staff,Weapon,Staff,2H,Rare,38,35,,,,99,,,,199,298,Physical,3.0,,,,,,,,,,198,198,dungeon-staff,,,,15806,INV_Staff_01,13266,Equip,100,Staff,Wood,,,,,,,,
+905169,Tuner's Cudgel,Weapon,Mace,1H,Rare,38,35,,,,49,,,,101,150,Physical,2.0,,,,,,,,,,99,99,dungeon-mace,,,,28706,INV_Hammer_19,14179,Equip,90,Side,Wood,,,,,,,,
+905170,Ilgalar Lantern,Offhand,Held,,Rare,38,35,,,,49,,,,,,,,,,,,,,,,,99,99,dungeon-held,,,,28472,INV_Misc_Bone_OrcSkull_01,4995,Equip,,Hip,,,,,,,,,
 905171,Morganth's Torc,Amulet,Misc,,Rare,38,35,67,,32,,,,,,,,,,,,,,,,,,,99,dungeon-amulet-might,,,,609,,4817,Equip,,,,,,,,,,,
 905172,Tuner's Talisman,Amulet,Misc,,Rare,38,35,,67,32,,,,,,,,,,,,,,,,,,,99,dungeon-amulet-swift,,,,964,,4817,Equip,,,,,,,,,,,
 905173,Ilgalar Pendant,Amulet,Misc,,Rare,38,35,,,23,50,26,,,,,,,,,,,,,,,,,99,dungeon-amulet-mind,,,,1012,,4817,Equip,,,,,,,,,,,
@@ -1228,17 +1228,17 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905177,Morganth's Ring,Ring,Misc,,Rare,38,35,,64,35,,,,,,,,,,,,,,,,,,,99,dungeon-ring-swift-b,,,,31576,,5194,Equip,,,,,,,,,,,
 905178,Tuner's Circle,Ring,Misc,,Rare,38,35,,,23,50,26,,,,,,,,,,,,,,,,,99,dungeon-ring-mind-a,,,,31616,,5194,Equip,,,,,,,,,,,
 905179,Ilgalar Seal,Ring,Misc,,Rare,38,35,,,23,46,30,,,,,,,,,,,,,,,,,99,dungeon-ring-mind-b,,,,31655,,5194,Equip,,,,,,,,,,,
-905180,Deacon's Robe,Chest,Cloth,,Rare,44,41,,,28,59,31,783,,,,,,,,,,,,,,,,118,dungeon-chest-cloth,,,,16531,INV_Chest_Cloth_31,5381,Equip,80,,Cloth,,25859,25855,14541,14542,25858,11421,25857
-905181,Seamdigger's Jerkin,Chest,Leather,,Rare,44,41,,80,38,,,1370,,,,,,,,,,,,,,,,118,dungeon-chest-leather,,,,11382,INV_Chest_Cloth_07,9520,Equip,100,,Leather,,9527,28042,17002,28046,17114,14522,28039
-905182,Gravebound Hauberk,Chest,Mail,,Rare,44,41,80,,38,,,2348,,,,,,,,,,,,,,,,118,dungeon-chest-mail,,,,26961,INV_Chest_Chain_11,7731,Equip,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
-905183,Deacon's Cuirass,Chest,Plate,,Rare,44,41,80,,38,,,2935,,,,,,,,,,,,,,,,118,dungeon-chest-plate,,,,26972,INV_Chest_Plate09,14590,Equip,135,,Plate,,26975,26977,26971,26973,26969,26974,26970
-905184,Seamdigger's Blade,Weapon,Sword,1H,Rare,44,41,80,,38,,,,,120,179,Physical,2.0,,,,,,,,,,,118,dungeon-sword,,,,13488,,18518,Equip,90,Side,Metal,,,,,,,,
-905185,Gravebound Bulwark,Offhand,Shield,,Rare,44,41,80,,38,,,1057,15,,,,,,,,,,,,,,,118,dungeon-shield,,,,20974,,9060,Equip,100,Shield,Metal,,,,,,,,
-905186,Deacon's Dirk,Weapon,Dagger,1H,Rare,44,41,,80,38,,,,,90,134,Physical,1.5,,,,,,,,,,,118,dungeon-dagger,,,,6555,,15400,Equip,65,Side,Metal,,,,,,,,
-905187,Seamdigger's Longbow,Ranged,Bow,,Rare,44,41,,80,38,,,,,108,164,Physical,2.4,,,,,,,,,,,118,dungeon-bow,,,,32570,,11636,Equip,75,,Wood,,,,,,,,
-905188,Gravebound Staff,Weapon,Staff,2H,Rare,44,41,,,,118,,,,238,356,Physical,3.0,,,,,,,,,,236,236,dungeon-staff,,,,20325,,18914,Equip,100,Staff,Wood,,,,,,,,
-905189,Deacon's Cudgel,Weapon,Mace,1H,Rare,44,41,,,,59,,,,120,179,Physical,2.0,,,,,,,,,,118,118,dungeon-mace,,,,15726,,20216,Equip,90,Side,Wood,,,,,,,,
-905190,Seamdigger's Lantern,Offhand,Held,,Rare,44,41,,,,59,,,,,,,,,,,,,,,,,118,118,dungeon-held,,,,21612,,7122,Equip,,Hip,,,,,,,,,
+905180,Deacon's Robe,Chest,Cloth,,Rare,44,41,,,28,59,31,783,,,,,,,,,,,,,,,,118,dungeon-chest-cloth,,,,26092,INV_Chest_Cloth_31,5381,Equip,80,,Cloth,26093,0,26080,26079,26081,16781,26083,26086
+905181,Seamdigger's Jerkin,Chest,Leather,,Rare,44,41,,80,38,,,1370,,,,,,,,,,,,,,,,118,dungeon-chest-leather,,,,14995,INV_Chest_Cloth_07,9520,Equip,100,,Leather,0,27988,27986,27985,15000,27983,27984,27982
+905182,Gravebound Hauberk,Chest,Mail,,Rare,44,41,80,,38,,,2348,,,,,,,,,,,,,,,,118,dungeon-chest-mail,,,,22559,INV_Chest_Chain_11,7731,Equip,120,,Chain,25824,25822,26018,25818,25819,25821,25820,25817
+905183,Deacon's Cuirass,Chest,Plate,,Rare,44,41,80,,38,,,2935,,,,,,,,,,,,,,,,118,dungeon-chest-plate,,,,27363,INV_Chest_Plate09,14590,Equip,135,,Plate,27366,27371,0,27368,27364,27365,27367,26799
+905184,Seamdigger's Blade,Weapon,Sword,1H,Rare,44,41,80,,38,,,,,120,179,Physical,2.0,,,,,,,,,,,118,dungeon-sword,,,,20010,INV_Sword_10,18518,Equip,90,Side,Metal,,,,,,,,
+905185,Gravebound Bulwark,Offhand,Shield,,Rare,44,41,80,,38,,,1057,15,,,,,,,,,,,,,,,118,dungeon-shield,,,,4458,INV_Shield_17,9060,Equip,100,Shield,Metal,,,,,,,,
+905186,Deacon's Dirk,Weapon,Dagger,1H,Rare,44,41,,80,38,,,,,90,134,Physical,1.5,,,,,,,,,,,118,dungeon-dagger,,,,20573,INV_Spear_01,15400,Equip,65,Side,Metal,,,,,,,,
+905187,Seamdigger's Longbow,Ranged,Bow,,Rare,44,41,,80,38,,,,,108,164,Physical,2.4,,,,,,,,,,,118,dungeon-bow,,,,28344,INV_Waepon_Bow_ZulGrub_D_01,11636,Equip,75,,Wood,,,,,,,,
+905188,Gravebound Staff,Weapon,Staff,2H,Rare,44,41,,,,118,,,,238,356,Physical,3.0,,,,,,,,,,236,236,dungeon-staff,,,,28470,INV_Staff_01,18914,Equip,100,Staff,Wood,,,,,,,,
+905189,Deacon's Cudgel,Weapon,Mace,1H,Rare,44,41,,,,59,,,,120,179,Physical,2.0,,,,,,,,,,118,118,dungeon-mace,,,,19735,INV_Hammer_19,20216,Equip,90,Side,Wood,,,,,,,,
+905190,Seamdigger's Lantern,Offhand,Held,,Rare,44,41,,,,59,,,,,,,,,,,,,,,,,118,118,dungeon-held,,,,15430,INV_Misc_Bone_OrcSkull_01,7122,Equip,,Hip,,,,,,,,,
 905191,Gravebound Torc,Amulet,Misc,,Rare,44,41,80,,38,,,,,,,,,,,,,,,,,,,118,dungeon-amulet-might,,,,609,,6868,Equip,,,,,,,,,,,
 905192,Deacon's Talisman,Amulet,Misc,,Rare,44,41,,80,38,,,,,,,,,,,,,,,,,,,118,dungeon-amulet-swift,,,,964,,6868,Equip,,,,,,,,,,,
 905193,Seamdigger's Pendant,Amulet,Misc,,Rare,44,41,,,28,59,31,,,,,,,,,,,,,,,,,118,dungeon-amulet-mind,,,,1012,,6868,Equip,,,,,,,,,,,
@@ -1248,17 +1248,17 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905197,Gravebound Ring,Ring,Misc,,Rare,44,41,,77,41,,,,,,,,,,,,,,,,,,,118,dungeon-ring-swift-b,,,,31576,,7406,Equip,,,,,,,,,,,
 905198,Deacon's Circle,Ring,Misc,,Rare,44,41,,,28,59,31,,,,,,,,,,,,,,,,,118,dungeon-ring-mind-a,,,,31616,,7406,Equip,,,,,,,,,,,
 905199,Seamdigger's Seal,Ring,Misc,,Rare,44,41,,,28,55,35,,,,,,,,,,,,,,,,,118,dungeon-ring-mind-b,,,,31655,,7406,Equip,,,,,,,,,,,
-905200,Warlord's Robe,Chest,Cloth,,Rare,48,45,,,32,66,35,881,,,,,,,,,,,,,,,,133,dungeon-chest-cloth,,,,16531,INV_Chest_Cloth_31,6817,Equip,80,,Cloth,,25859,25855,14541,14542,25858,11421,25857
-905201,Scorched Jerkin,Chest,Leather,,Rare,48,45,,90,43,,,1542,,,,,,,,,,,,,,,,133,dungeon-chest-leather,,,,11382,INV_Chest_Cloth_07,12060,Equip,100,,Leather,,9527,28042,17002,28046,17114,14522,28039
-905202,Stonewatch Hauberk,Chest,Mail,,Rare,48,45,90,,43,,,2643,,,,,,,,,,,,,,,,133,dungeon-chest-mail,,,,26961,INV_Chest_Chain_11,9793,Equip,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
-905203,Warlord's Cuirass,Chest,Plate,,Rare,48,45,90,,43,,,3304,,,,,,,,,,,,,,,,133,dungeon-chest-plate,,,,26972,INV_Chest_Plate09,18482,Equip,135,,Plate,,26975,26977,26971,26973,26969,26974,26970
-905204,Scorched Blade,Weapon,Sword,1H,Rare,48,45,90,,43,,,,,136,202,Physical,2.0,,,,,,,,,,,133,dungeon-sword,,,,13488,,23459,Equip,90,Side,Metal,,,,,,,,
-905205,Stonewatch Bulwark,Offhand,Shield,,Rare,48,45,90,,43,,,1190,17,,,,,,,,,,,,,,,133,dungeon-shield,,,,20974,,11477,Equip,100,Shield,Metal,,,,,,,,
-905206,Warlord's Dirk,Weapon,Dagger,1H,Rare,48,45,,90,43,,,,,102,151,Physical,1.5,,,,,,,,,,,133,dungeon-dagger,,,,6555,,19508,Equip,65,Side,Metal,,,,,,,,
-905207,Scorched Longbow,Ranged,Bow,,Rare,48,45,,90,43,,,,,122,185,Physical,2.4,,,,,,,,,,,133,dungeon-bow,,,,32570,,14741,Equip,75,,Wood,,,,,,,,
-905208,Stonewatch Staff,Weapon,Staff,2H,Rare,48,45,,,,133,,,,268,400,Physical,3.0,,,,,,,,,,266,266,dungeon-staff,,,,20325,,23960,Equip,100,Staff,Wood,,,,,,,,
-905209,Warlord's Cudgel,Weapon,Mace,1H,Rare,48,45,,,,66,,,,136,202,Physical,2.0,,,,,,,,,,133,133,dungeon-mace,,,,15726,,25609,Equip,90,Side,Wood,,,,,,,,
-905210,Scorched Lantern,Offhand,Held,,Rare,48,45,,,,66,,,,,,,,,,,,,,,,,133,133,dungeon-held,,,,21612,,9022,Equip,,Hip,,,,,,,,,
+905200,Warlord's Robe,Chest,Cloth,,Rare,48,45,,,32,66,35,881,,,,,,,,,,,,,,,,133,dungeon-chest-cloth,,,,26174,INV_Chest_Cloth_31,6817,Equip,80,,Cloth,26150,4904,26175,26151,26154,26149,26159,26153
+905201,Scorched Jerkin,Chest,Leather,,Rare,48,45,,90,43,,,1542,,,,,,,,,,,,,,,,133,dungeon-chest-leather,,,,31531,INV_Chest_Cloth_07,12060,Equip,100,,Leather,0,0,0,0,28283,0,0,28281
+905202,Stonewatch Hauberk,Chest,Mail,,Rare,48,45,90,,43,,,2643,,,,,,,,,,,,,,,,133,dungeon-chest-mail,,,,27147,INV_Chest_Chain_11,9793,Equip,120,,Chain,27151,16079,27152,21756,27148,27146,27150,27149
+905203,Warlord's Cuirass,Chest,Plate,,Rare,48,45,90,,43,,,3304,,,,,,,,,,,,,,,,133,dungeon-chest-plate,,,,27899,INV_Chest_Plate09,18482,Equip,135,,Plate,27906,27904,0,27903,27901,27902,27900,27905
+905204,Scorched Blade,Weapon,Sword,1H,Rare,48,45,90,,43,,,,,136,202,Physical,2.0,,,,,,,,,,,133,dungeon-sword,,,,20218,INV_Sword_10,23459,Equip,90,Side,Metal,,,,,,,,
+905205,Stonewatch Bulwark,Offhand,Shield,,Rare,48,45,90,,43,,,1190,17,,,,,,,,,,,,,,,133,dungeon-shield,,,,26085,INV_Shield_17,11477,Equip,100,Shield,Metal,,,,,,,,
+905206,Warlord's Dirk,Weapon,Dagger,1H,Rare,48,45,,90,43,,,,,102,151,Physical,1.5,,,,,,,,,,,133,dungeon-dagger,,,,20376,INV_Spear_01,19508,Equip,65,Side,Metal,,,,,,,,
+905207,Scorched Longbow,Ranged,Bow,,Rare,48,45,,90,43,,,,,122,185,Physical,2.4,,,,,,,,,,,133,dungeon-bow,,,,28801,INV_Waepon_Bow_ZulGrub_D_01,14741,Equip,75,,Wood,,,,,,,,
+905208,Stonewatch Staff,Weapon,Staff,2H,Rare,48,45,,,,133,,,,268,400,Physical,3.0,,,,,,,,,,266,266,dungeon-staff,,,,20259,INV_Staff_01,23960,Equip,100,Staff,Wood,,,,,,,,
+905209,Warlord's Cudgel,Weapon,Mace,1H,Rare,48,45,,,,66,,,,136,202,Physical,2.0,,,,,,,,,,133,133,dungeon-mace,,,,19748,INV_Hammer_19,25609,Equip,90,Side,Wood,,,,,,,,
+905210,Scorched Lantern,Offhand,Held,,Rare,48,45,,,,66,,,,,,,,,,,,,,,,,133,133,dungeon-held,,,,18437,INV_Misc_Bone_OrcSkull_01,9022,Equip,,Hip,,,,,,,,,
 905211,Stonewatch Torc,Amulet,Misc,,Rare,48,45,90,,43,,,,,,,,,,,,,,,,,,,133,dungeon-amulet-might,,,,609,,8701,Equip,,,,,,,,,,,
 905212,Warlord's Talisman,Amulet,Misc,,Rare,48,45,,90,43,,,,,,,,,,,,,,,,,,,133,dungeon-amulet-swift,,,,964,,8701,Equip,,,,,,,,,,,
 905213,Scorched Pendant,Amulet,Misc,,Rare,48,45,,,32,66,35,,,,,,,,,,,,,,,,,133,dungeon-amulet-mind,,,,1012,,8701,Equip,,,,,,,,,,,
