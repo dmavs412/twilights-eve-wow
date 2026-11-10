@@ -2446,6 +2446,24 @@ class TalentRows(BuildSpells):
         self.assert_each_fails([], self.AREA, "object_display needs a whole number of at least 1, has",
                                "object_display=0", "object_display=trap")
 
+    # Trap springs (#681).
+    def test_a_ground_areas_spring_radius_needs_first_only_and_a_number_above_0(self):
+        self.assertEqual(self.built_params([], self.AREA, "first_only=yes;spring_radius_yd=6")["spring_radius_yd"], 6)
+        self.assert_each_fails([], self.AREA, "ground_area spring_radius_yd needs first_only=yes",
+                               "spring_radius_yd=6", "first_only=no;spring_radius_yd=6")
+        self.assert_each_fails([], self.AREA, "ground_area spring_radius_yd needs a number above 0, has",
+                               "first_only=yes;spring_radius_yd=0", "first_only=yes;spring_radius_yd=yes")
+
+    def test_detonate_traps_needs_a_radius_above_0(self):
+        row = {**STRIKE, "effect1_kind": "detonate_traps", "effect1_params": "radius_yd=10",
+               "effect4_kind": "", "effect4_params": ""}
+        done, data = self.run_build([row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"], {"radius_yd": 10})
+        for params in ("", "radius_yd=0", "radius_yd=yes"):
+            with self.subTest(params=params):
+                self.assert_fails([{**row, "effect1_params": params}], "detonate_traps needs a positive radius_yd, has")
+
     def test_rows_with_a_blank_row_levels_fail(self):
         self.assert_fails([CALLING, {**STRIKE, "row_level": "3"}, *self.three()], "do not fill row_levels")
 

@@ -237,6 +237,9 @@ struct Area {
     arming: f32,
     /// Only the first enemy that is not a boss is caught, and the area ends with it.
     first_only: bool,
+    /// When a `first_only` area springs, every enemy that is not a boss within this many yards of
+    /// its centre is caught; 0 catches the first alone.
+    spring_radius_yd: f32,
     enemy_aura: Option<&'static callings::AuraDef>,
     ally_aura: Option<&'static callings::AuraDef>,
     inside: Vec<u64>,
@@ -3003,16 +3006,15 @@ impl InWorld {
             let now: Vec<u64> = if area.left <= CLOCK_EPSILON || area.arming > CLOCK_EPSILON {
                 Vec::new()
             } else {
-                let mut now: Vec<u64> = self
-                    .mobs
-                    .iter()
-                    .filter(|m| {
-                        m.alive()
-                            && distance(m.position, centre) <= area.radius_yd
-                            && !(area.first_only && !m.remote && m.template.raises_boss_bar())
-                    })
-                    .map(|m| m.guid)
-                    .collect();
+                let mut now: Vec<u64> = if area.first_only {
+                    self.trap_catches(centre, area.radius_yd)
+                } else {
+                    self.mobs
+                        .iter()
+                        .filter(|m| m.alive() && distance(m.position, centre) <= area.radius_yd)
+                        .map(|m| m.guid)
+                        .collect()
+                };
                 if !area.first_only {
                     now.extend(
                         self.friendly_players(c)
@@ -3024,12 +3026,9 @@ impl InWorld {
                 now
             };
             if area.first_only {
-                // The first enemy inside takes the aura and spends the area; the aura runs out
-                // on its own duration.
-                if let (Some(&unit), Some(def)) = (now.first(), area.enemy_aura) {
-                    self.put_aura(def, unit, c.power_level(), events);
-                    area.left = 0.0;
-                    events.extend(area.hides());
+                // The first enemy inside springs the area; the aura runs out on its own duration.
+                if let (Some(&unit), Some(_)) = (now.first(), area.enemy_aura) {
+                    self.spring(area, centre, Some(unit), c, events);
                 } else if area.left <= CLOCK_EPSILON {
                     events.extend(area.hides());
                 }
@@ -3087,6 +3086,74 @@ impl InWorld {
                 self.faded(&gone, events);
             }
         }
+    }
+
+    /// The living enemies a trap centred at `centre` catches within `radius_yd`, bosses left out,
+    /// nearest first; equally near ones in the order the world lists them.
+    fn trap_catches(&self, centre: [f32; 3], radius_yd: f32) -> Vec<u64> {
+        let mut near: Vec<&crate::mobs::Mob> = self
+            .mobs
+            .iter()
+            .filter(|m| {
+                m.alive()
+                    && distance(m.position, centre) <= radius_yd
+                    && !(!m.remote && m.template.raises_boss_bar())
+            })
+            .collect();
+        near.sort_by(|a, b| distance(a.position, centre).total_cmp(&distance(b.position, centre)));
+        near.into_iter().map(|m| m.guid).collect()
+    }
+
+    /// Springs the `first_only` `area`, centred at `centre`: `first`, the enemy that set it off,
+    /// takes its enemy aura, with every other enemy its spring radius catches; the area is spent
+    /// and its objects go.
+    fn spring(
+        &mut self,
+        area: &mut Area,
+        centre: [f32; 3],
+        first: Option<u64>,
+        c: &Char,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let mut caught: Vec<u64> = first.into_iter().collect();
+        if area.spring_radius_yd > 0.0 {
+            let more = self.trap_catches(centre, area.spring_radius_yd);
+            caught.extend(more.into_iter().filter(|u| Some(*u) != first));
+        }
+        if let Some(def) = area.enemy_aura {
+            for unit in caught {
+                self.put_aura(def, unit, c.power_level(), events);
+            }
+        }
+        area.left = 0.0;
+        events.extend(area.hides());
+    }
+
+    /// `detonate_traps`: every armed, unspent `first_only` area of the player centred within
+    /// `radius_yd` of `at` springs on the nearest enemy inside it, if any.
+    fn detonate_traps(
+        &mut self,
+        at: [f32; 3],
+        radius_yd: f32,
+        c: &Char,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let mut areas = std::mem::take(&mut self.skills.areas);
+        for area in &mut areas {
+            let centre = if area.follow { c.position } else { area.centre };
+            if area.caster != self.guid
+                || !area.first_only
+                || area.arming > CLOCK_EPSILON
+                || area.left <= CLOCK_EPSILON
+                || distance(centre, at) > radius_yd
+            {
+                continue;
+            }
+            let first = self.trap_catches(centre, area.radius_yd).first().copied();
+            self.spring(area, centre, first, c, events);
+        }
+        areas.retain(|a| a.left > CLOCK_EPSILON);
+        self.skills.areas = areas;
     }
 
     /// Ends the channel under way, if any: `broken` when it stops short.
@@ -4847,6 +4914,18 @@ impl InWorld {
                 targets,
                 radius_yd,
             } => self.copy_aura(target, aura_spell_id, targets, radius_yd, events),
+            Effect::DetonateTraps { radius_yd } => {
+                // The cast's point: its ground target, else its unit target.
+                let at = if skill.target == Target::Ground {
+                    self.skills.dest.unwrap_or(c.position)
+                } else {
+                    self.mobs
+                        .iter()
+                        .find(|m| m.guid == target)
+                        .map_or(c.position, |m| m.position)
+                };
+                self.detonate_traps(at, radius_yd, c, events);
+            }
             Effect::SpillDroplets { count, duration_ms } => {
                 let at = c.position;
                 for _ in 0..count {
@@ -5193,6 +5272,7 @@ impl InWorld {
                 ally_aura_spell_id,
                 arm_ms,
                 first_only,
+                spring_radius_yd,
                 grow_aura_spell_id,
                 grow_every_ms,
                 follow_caster,
@@ -5224,6 +5304,7 @@ impl InWorld {
                     left: clock::secs(duration_ms),
                     arming: clock::secs(arm_ms),
                     first_only,
+                    spring_radius_yd,
                     enemy_aura: row(enemy_aura_spell_id),
                     ally_aura: row(ally_aura_spell_id),
                     inside: Vec::new(),

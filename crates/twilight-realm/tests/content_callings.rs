@@ -498,6 +498,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::ModArmor { .. } => {
             panic!("{key}: the reference has no realm half for an armour loss")
         }
+        // A trap detonation lives in the master CSV only (#681); tests/ground_area.rs reads it.
+        Effect::DetonateTraps { .. } => {
+            panic!("{key}: the reference has no realm half for a trap detonation")
+        }
     }
 }
 

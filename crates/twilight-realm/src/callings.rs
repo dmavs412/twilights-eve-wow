@@ -1911,6 +1911,11 @@ pub enum Effect {
         arm_ms: u32,
         #[serde(default)]
         first_only: bool,
+        /// When a `first_only` area springs, every living enemy that is not a boss within this
+        /// many yards of its centre takes the enemy aura, not only the first. 0 catches the first
+        /// alone.
+        #[serde(default)]
+        spring_radius_yd: f32,
         /// Every `grow_every_ms` while it lasts, each living enemy inside that wears the caster's
         /// damage over time of `grow_aura_spell_id`, resolved from `grow_aura=key`, gains a stack,
         /// its timer left alone (Breeding Ground).
@@ -1988,6 +1993,11 @@ pub enum Effect {
         targets: u32,
         radius_yd: f32,
     },
+    /// Every armed, unspent `first_only` ground area of the caster whose centre is within
+    /// `radius_yd` of the cast's point (its ground target, else its unit target) springs at once,
+    /// as if an enemy had stepped in: it catches everyone within its `spring_radius_yd`, or with
+    /// none the nearest enemy inside it, if any, and is spent.
+    DetonateTraps { radius_yd: f32 },
     /// The target's run speed changes by `pct` percent for `duration_ms`: a snare on an enemy
     /// when negative, a sprint on the caster when positive.
     ModRunSpeed {

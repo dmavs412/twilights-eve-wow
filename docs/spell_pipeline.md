@@ -242,6 +242,18 @@ value, and only beside `spread_aura`). It works on a Talent row and on an aura r
 The Sharpshooter (#684) adds `mod_armor` as a skill kind: `apply_aura=key` names an aura row of
 the Calling with a `mod_armor` effect, and `stacks=N` (default 1) puts it on the living target
 that many times when the hit lands, held to the row's `max_stacks` (Sunder Arrow, Shred).
+The trap springs (#681): a `ground_area` takes `arm_ms=` (no one counts as inside until it has
+passed) and `first_only=yes` (friendly players and bosses are ignored; the first other enemy inside
+takes the enemy aura and spends the area, and the aura outlasts it). With `first_only=yes` it also
+takes `spring_radius_yd=N`, above 0: when it springs, every living enemy that is not a boss within
+N yd of its centre takes the enemy aura too. The build refuses `spring_radius_yd` without
+`first_only=yes`. A skill's `detonate_traps` takes `radius_yd=N`, above 0: when the cast lands,
+every armed, unspent `first_only` area of the caster whose centre is within N yd of the cast's
+point (its ground target with `target=dest`, else its unit target) springs at once, as if an enemy
+had stepped in. One with `spring_radius_yd` catches everyone within it; one without catches the
+nearest enemy inside its own radius, if any. Either way it is spent, and its objects go. An area
+still arming does not spring. One area stands per caster and skill, so several trap skills stand
+at once.
 Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points, or `skill=key` only for that skill's crits), `skill_armor_ignore` (`skill=`, `amount=` more armour that skill's strikes skip), `no_min_range` (`skill=key`, or `skill=ranged` for every `defense_type=ranged` skill: the realm drops the minimum range; the stock client still refuses inside the row's minimum, its range spell mod moving only the maximum),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`

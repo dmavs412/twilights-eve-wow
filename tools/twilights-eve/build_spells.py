@@ -53,7 +53,7 @@ KNOWN_KINDS = {
     "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike", "pickup",
     "refund_cost", "cast_skill", "cast_while_moving", "mod_threat_pct",
     "mod_periodic_taken_pct", "tick_now", "consume_self_stacks", "spill_droplets", "drop_threat",
-    "copy_aura",
+    "copy_aura", "detonate_traps",
 }
 # 1.12's CreatureType names, ids 1 to 9 in this order: a hit's `vs_type` and a control's
 # `only_type`.
@@ -1340,6 +1340,11 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
         radius = params.get("radius_yd")
         if isinstance(radius, bool) or not isinstance(radius, (int, float)) or radius <= 0:
             raise BuildError(f"{where}: copy_aura needs a positive radius_yd, has {radius!r}")
+    # A shot that sets off the caster's traps near its point (#681).
+    if kind == "detonate_traps":
+        radius = params.get("radius_yd")
+        if isinstance(radius, bool) or not isinstance(radius, (int, float)) or radius <= 0:
+            raise BuildError(f"{where}: detonate_traps needs a positive radius_yd, has {radius!r}")
     if kind == "skill_crit_pct" and not isinstance(params.get("skill", "any"), str):
         raise BuildError(f"{where}: skill_crit_pct skill is one skill key or any, has {params['skill']!r}")
     for block in ("per_combo", "duration_per_combo"):
@@ -1888,6 +1893,13 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
                 raise BuildError(f"{here}: ground_area arm_ms is a whole number of 0 or more, has {arm!r}")
             if not isinstance(parsed.get("first_only", False), bool):
                 raise BuildError(f"{here}: ground_area first_only is yes or no, has {parsed['first_only']!r}")
+            # A trap that catches everyone near it when it springs (#681).
+            if "spring_radius_yd" in parsed:
+                spring = parsed["spring_radius_yd"]
+                if isinstance(spring, bool) or not isinstance(spring, (int, float)) or spring <= 0:
+                    raise BuildError(f"{here}: ground_area spring_radius_yd needs a number above 0, has {spring!r}")
+                if parsed.get("first_only") is not True:
+                    raise BuildError(f"{here}: ground_area spring_radius_yd needs first_only=yes")
         if kind == "skill_amount_pct":
             if parsed.get("applies_to", "both") not in ("hit", "tick", "both"):
                 raise BuildError(f"{here}: applies_to is {parsed['applies_to']!r}, want hit, tick or both")
