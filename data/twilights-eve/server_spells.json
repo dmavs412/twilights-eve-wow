@@ -3443,7 +3443,13 @@
   "item_class": "warrior",
   "health_pct": 100,
   "mana_pct": 100,
-  "armour": [],
+  "armour": [
+   "cloth",
+   "leather",
+   "mail",
+   "plate",
+   "shield"
+  ],
   "weapons": [
    "one_hand_axe",
    "two_hand_axe",
@@ -3464,6 +3470,7 @@
   ],
   "icon": "Interface\\Icons\\Ability_Warrior_InnerRage",
   "spellbook": "Zealot",
+  "blurb": "A holy fury in plate. Stands in its own Consecration, judges its Seal to mend itself, and is the dead's worst enemy.",
   "skills": [
    {
     "key": "seal_of_command",

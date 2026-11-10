@@ -249,9 +249,12 @@ struct Save {
     /// gear tables.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     lure_waiting: Option<u32>,
-    /// Whether they have picked from the Calling Choice. A plain key, so before the tables; an old
-    /// save has not chosen.
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    /// The Tiers they have picked from the Calling Choice at. A plain key, so before the tables;
+    /// an old save has not chosen.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    chosen_tiers: Vec<u8>,
+    /// The old one-bool record of a pick (#416), read only: `true` loads as a Tier 0 pick.
+    #[serde(default, skip_serializing)]
     calling_chosen: bool,
     /// The wall time the next potion may be drunk (#543, within version 6).
     #[serde(default, skip_serializing_if = "is_never")]
@@ -537,7 +540,8 @@ pub(crate) fn export(c: &Char) -> String {
         alchemy_last: c.alchemy_last.clone(),
         brew_log: c.brew_log.clone(),
         lure_waiting: c.lure_waiting,
-        calling_chosen: c.calling_chosen,
+        chosen_tiers: c.chosen_tiers.clone(),
+        calling_chosen: false,
         fishing_pole: saved_gear(&c.fishing_pole),
         fishing_lure: saved_gear(&c.fishing_lure),
         satchel: saved_satchel(&c.inventory.satchel),
@@ -662,7 +666,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         fishing_pole: None,
         fishing_lure: None,
         lure_waiting: s.lure_waiting,
-        calling_chosen: s.calling_chosen,
+        chosen_tiers: chosen_tiers(s.chosen_tiers, s.calling_chosen),
     };
     c.fishing_pole = load_gear(&mut c.inventory, &s.fishing_pole);
     c.fishing_lure = load_gear(&mut c.inventory, &s.fishing_lure);
@@ -678,4 +682,12 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         })
         .collect();
     Ok((c, notes))
+}
+
+/// The saved Tiers picked at, with an old save's `calling_chosen = true` read as Tier 0.
+fn chosen_tiers(mut tiers: Vec<u8>, old_chosen: bool) -> Vec<u8> {
+    if old_chosen && !tiers.contains(&0) {
+        tiers.insert(0, 0);
+    }
+    tiers
 }

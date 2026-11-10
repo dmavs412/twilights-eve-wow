@@ -552,7 +552,7 @@ pub enum RealmCommand {
     FishingChoice {
         reel: bool,
     },
-    /// Pick a Tier 1 Calling from the Calling Choice popup: `quest` is the Advancement Quest of
+    /// Pick a Calling from the Calling Choice popup: `quest` is the Advancement Quest of
     /// one of its options, which goes in the log. Ignored unless the popup is due.
     ChooseCalling {
         quest: u32,

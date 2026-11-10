@@ -103,8 +103,9 @@ pub(crate) struct Char {
     /// The entry of the lure that ran out in the Lure slot: the next one of it to reach the
     /// Satchel refills the slot (#392).
     pub(crate) lure_waiting: Option<u32>,
-    /// Whether they have picked from the Calling Choice: it is offered until they do.
-    pub(crate) calling_chosen: bool,
+    /// The Tiers they have picked from the Calling Choice at, in order: it is offered at a Tier
+    /// Cap until they pick there.
+    pub(crate) chosen_tiers: Vec<u8>,
     /// The Legendary Fish (trophy items) they have caught: each bites for them once.
     pub(crate) legends_caught: Vec<u32>,
     /// The Legendary Fish they hold a hint of, from a Legend Rumour or an angler's gossip.
@@ -366,7 +367,7 @@ impl Characters {
             fishing_pole: None,
             fishing_lure: None,
             lure_waiting: None,
-            calling_chosen: false,
+            chosen_tiers: Vec::new(),
             legends_caught: Vec::new(),
             legend_hints: Vec::new(),
             knows_herbalism: false,

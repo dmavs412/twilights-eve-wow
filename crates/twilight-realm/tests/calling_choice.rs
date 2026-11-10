@@ -79,11 +79,20 @@ fn xp_times(xp: f32) -> DevMultipliers {
 
 /// A level 9 Basic Warrior at the Crossroads with Zun'jin's skins quest done but for the hand-in.
 fn skinner(xp: f32) -> (Realm, u64, Vec<SessionEvent>) {
+    skinner_as("basic_warrior", 9, xp)
+}
+
+/// [`skinner`] as a `calling` at `level`.
+fn skinner_as(calling: &str, level: u8, xp: f32) -> (Realm, u64, Vec<SessionEvent>) {
     let (guid, blob) = save_with_quests(
-        9,
+        level,
         &[(23, CROCOLISK_SKIN, 8)],
         0,
         &[(CROCOLISK_SKINS, [0; 4])],
+    );
+    let blob = blob.replace(
+        "calling = \"basic_warrior\"",
+        &format!("calling = \"{calling}\""),
     );
     let mut realm = Realm::with_seed(SEED).with_dev(xp_times(xp));
     realm.import_character(&blob).unwrap();
@@ -161,7 +170,7 @@ fn a_pick_logs_the_quest_already_met_and_jorik_makes_a_cutthroat() {
     );
     let saved = realm.export_character(me).unwrap();
     assert!(saved.contains("id = 64010"), "{saved}");
-    assert!(saved.contains("calling_chosen = true"), "{saved}");
+    assert!(saved.contains("chosen_tiers = [0]\n"), "{saved}");
 
     let mut again = Realm::with_seed(SEED);
     again.import_character(&saved).unwrap();
@@ -236,10 +245,98 @@ fn a_full_quest_log_refuses_the_pick_and_the_next_login_offers_it_again() {
         "{events:?}"
     );
     let saved = realm.export_character(me).unwrap();
-    assert!(!saved.contains("calling_chosen"), "{saved}");
+    assert!(!saved.contains("chosen_tiers"), "{saved}");
     assert!(!saved.contains("id = 64010"), "{saved}");
 
     let mut again = Realm::with_seed(SEED);
     again.import_character(&saved).unwrap();
     assert_eq!(popups(&enter(&mut again, me)).len(), 1);
+}
+
+/// A `calling` at `level` who picked at the Tier 0 Calling Choice, not yet in the world.
+fn tier1(calling: &str, level: u8) -> (Realm, u64) {
+    let (maker, me) = northshire(level, &[]);
+    let blob = maker
+        .export_character(me)
+        .unwrap()
+        .replace(
+            "calling = \"basic_warrior\"",
+            &format!("calling = \"{calling}\""),
+        )
+        .replacen(
+            &format!("\nlevel = {level}\n"),
+            &format!("\nlevel = {level}\nchosen_tiers = [0]\n"),
+            1,
+        );
+    let mut realm = Realm::with_seed(SEED);
+    realm
+        .import_character(&blob)
+        .unwrap_or_else(|e| panic!("{e:?}: {blob}"));
+    (realm, me)
+}
+
+/// The quests each popup in `events` lists.
+fn offered(events: &[SessionEvent]) -> Vec<Vec<u32>> {
+    popups(events)
+        .iter()
+        .map(|options| options.iter().map(|o| o.quest).collect())
+        .collect()
+}
+
+#[test]
+fn a_level_30_vanguard_is_offered_the_zealot_at_login() {
+    let (mut realm, me) = tier1("vanguard", 30);
+    assert_eq!(offered(&enter(&mut realm, me)), [[64003]]);
+}
+
+#[test]
+fn a_vanguard_reaching_30_is_offered_the_zealot() {
+    let (mut realm, _, events) = skinner_as("vanguard", 29, 5000.0);
+    assert!(popups(&events).is_empty(), "{events:?}");
+    let zunjin = giver(&events, ZUNJIN);
+    let turned_in = hand_in(&mut realm, zunjin, CROCOLISK_SKINS);
+    assert!(
+        turned_in
+            .iter()
+            .any(|e| matches!(e, SessionEvent::LevelUp(l) if l.level == 30)),
+        "{turned_in:?}"
+    );
+    assert_eq!(offered(&turned_in), [[64003]]);
+}
+
+#[test]
+fn a_tier_1_pick_logs_the_quest_names_nobody_and_is_not_offered_again() {
+    let (mut realm, me) = tier1("vanguard", 30);
+    enter(&mut realm, me);
+    realm.handle(RealmCommand::ChooseCalling { quest: 64003 });
+    let events = drain(&mut realm);
+    assert!(
+        events.iter().any(|e| matches!(
+            e,
+            SessionEvent::Chat(m) if m.text
+                == "Your path is chosen. Your quest log tells you where to begin looking."
+        )),
+        "{events:?}"
+    );
+    let saved = realm.export_character(me).unwrap();
+    assert!(saved.contains("id = 64003"), "{saved}");
+    assert!(saved.contains("chosen_tiers = [0, 1]\n"), "{saved}");
+
+    let mut again = Realm::with_seed(SEED);
+    again.import_character(&saved).unwrap();
+    assert!(popups(&enter(&mut again, me)).is_empty());
+    again.handle(RealmCommand::QuestLogRemoveQuest { slot: 0 });
+    drain(&mut again);
+    let abandoned = again.export_character(me).unwrap();
+    assert!(!abandoned.contains("id = 64003"), "{abandoned}");
+
+    let mut later = Realm::with_seed(SEED);
+    later.import_character(&abandoned).unwrap();
+    assert!(popups(&enter(&mut later, me)).is_empty());
+}
+
+#[test]
+fn a_level_30_cutthroat_has_no_tier_2_choice_yet() {
+    let (mut realm, me) = tier1("cutthroat", 30);
+    assert!(popups(&enter(&mut realm, me)).is_empty());
 }

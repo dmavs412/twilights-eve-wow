@@ -372,14 +372,14 @@ fn every_explore_spot_is_a_named_place_in_the_barrens() {
 }
 
 #[test]
-fn exactly_the_five_northshire_advancement_quests_are_calling_choices() {
+fn the_calling_choices_are_the_five_northshire_advancement_quests_and_the_zealot() {
     let chosen: Vec<u32> = content()
         .quest
         .into_iter()
         .filter(|q| q.calling_choice)
         .map(|q| q.id)
         .collect();
-    assert_eq!(chosen, [64009, 64010, 64011, 64012, 64013]);
+    assert_eq!(chosen, [64003, 64009, 64010, 64011, 64012, 64013]);
 }
 
 /// Every Elwynn story quest (#448) offers a choice of sheet rows the character may wear by the

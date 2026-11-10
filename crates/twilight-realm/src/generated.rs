@@ -177,6 +177,23 @@ pub(crate) fn callings() -> Vec<CallingDef> {
         .collect()
 }
 
+/// The `callings.csv` icon and blurb of each Calling the sheet has no `calling` row for, so still
+/// a TOML Calling: `(key, icon, blurb)`.
+pub(crate) fn toml_calling_columns() -> Vec<(String, String, String)> {
+    let all: Vec<Value> =
+        serde_json::from_str(SERVER_SPELLS).expect("data/twilights-eve/server_spells.json parses");
+    let text = |c: &Value, field: &str| {
+        c.get(field)
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned()
+    };
+    all.iter()
+        .filter(|c| c.get("tier").is_none())
+        .map(|c| (text(c, "key"), text(c, "icon"), text(c, "blurb")))
+        .collect()
+}
+
 fn calling(g: GenCalling) -> CallingDef {
     let tier = g.tier.expect("filtered on tier");
     let missing = |field: &str| -> ! {

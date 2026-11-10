@@ -164,14 +164,28 @@ completed = [99998, {THINNING_THE_HERDS}]
 fn the_calling_choice_pick_survives_a_save_and_an_old_save_has_not_chosen() {
     let (me, blob) = save_with_quests(10, &[], 0, &[]);
     assert!(!blob.contains("calling_chosen"), "{blob}");
-    let chosen = blob.replacen("\nlevel = 10\n", "\nlevel = 10\ncalling_chosen = true\n", 1);
+    assert!(!blob.contains("chosen_tiers"), "{blob}");
+    let chosen = blob.replacen("\nlevel = 10\n", "\nlevel = 10\nchosen_tiers = [0, 1]\n", 1);
     let mut realm = Realm::new();
     realm.import_character(&chosen).unwrap();
     let saved = realm.export_character(me).unwrap();
-    assert!(saved.contains("calling_chosen = true\n"), "{saved}");
+    assert!(saved.contains("chosen_tiers = [0, 1]\n"), "{saved}");
     let mut old = Realm::new();
     old.import_character(&blob).unwrap();
-    assert!(!old.export_character(me).unwrap().contains("calling_chosen"));
+    let saved = old.export_character(me).unwrap();
+    assert!(!saved.contains("calling_chosen"), "{saved}");
+    assert!(!saved.contains("chosen_tiers"), "{saved}");
+}
+
+#[test]
+fn an_old_saves_calling_choice_bool_loads_as_a_tier_0_pick() {
+    let (me, blob) = save_with_quests(10, &[], 0, &[]);
+    let old = blob.replacen("\nlevel = 10\n", "\nlevel = 10\ncalling_chosen = true\n", 1);
+    let mut realm = Realm::new();
+    realm.import_character(&old).unwrap();
+    let saved = realm.export_character(me).unwrap();
+    assert!(saved.contains("chosen_tiers = [0]\n"), "{saved}");
+    assert!(!saved.contains("calling_chosen"), "{saved}");
 }
 
 #[test]

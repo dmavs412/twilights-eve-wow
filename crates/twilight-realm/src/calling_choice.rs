@@ -1,20 +1,27 @@
-//! The **Calling Choice** (`GLOSSARY.md`): the popup a Basic Warrior gets at the Tier Cap, listing
-//! each Tier 1 Calling. The quests it lists carry `calling_choice` in `content/quests.toml`;
-//! picking one puts that Advancement Quest in the log.
+//! The **Calling Choice** (`GLOSSARY.md`): the popup a character gets at its Calling's Tier Cap,
+//! listing each Calling of the next Tier it may advance into. The quests it lists carry
+//! `calling_choice` in `content/quests.toml`; picking one puts that Advancement Quest in the log.
 
 use benilla_protocol::{CallingOption, SessionEvent};
 
 use crate::characters::Char;
 use crate::quests::content::{calling_choices, quest, Kind, Quest};
 
-/// The popup for `c`, when it is due: a Basic Warrior at the Tier Cap who has not picked.
+/// The quests `c`'s popup lists: the Calling Choice quests that advance from its Calling.
+fn options(c: &Char) -> impl Iterator<Item = &'static Quest> {
+    let from = &crate::callings::of(c.calling).key;
+    calling_choices().filter(move |q| q.advancement.as_ref().is_some_and(|a| a.from == *from))
+}
+
+/// The popup for `c`, when it is due: at the Tier Cap, not yet picked at this Tier, and with at
+/// least one quest to list.
 pub(crate) fn calling_choice(c: &Char) -> Option<SessionEvent> {
-    let due = crate::callings::of(c.calling).tier == 0
-        && crate::world::at_tier_cap(c)
-        && !c.calling_chosen;
-    due.then(|| SessionEvent::CallingChoice {
-        options: calling_choices().map(option).collect(),
-    })
+    let tier = crate::callings::of(c.calling).tier;
+    if !crate::world::at_tier_cap(c) || c.chosen_tiers.contains(&tier) {
+        return None;
+    }
+    let options: Vec<CallingOption> = options(c).map(option).collect();
+    (!options.is_empty()).then_some(SessionEvent::CallingChoice { options })
 }
 
 /// The popup at login: also not while an Advancement Quest is already in the log.
@@ -48,27 +55,33 @@ fn option(q: &Quest) -> CallingOption {
     }
 }
 
-/// `RealmCommand::ChooseCalling`: puts the picked quest in the log and marks the choice made.
-/// Nothing happens unless the popup is due and `picked` is one of its options. A full log pushes
-/// `QuestLogFull` and records nothing. Whether the pick was taken.
+/// `RealmCommand::ChooseCalling`: puts the picked quest in the log and records the pick at the
+/// character's Tier. Nothing happens unless the popup is due and `picked` is one of its options.
+/// A full log pushes `QuestLogFull` and records nothing. Whether the pick was taken.
 pub(crate) fn choose(c: &mut Char, picked: u32, events: &mut Vec<SessionEvent>) -> bool {
     if calling_choice(c).is_none() {
         return false;
     }
-    let Some(q) = calling_choices().find(|q| q.id == picked) else {
+    let Some(q) = options(c).find(|q| q.id == picked) else {
         return false;
     };
     if !crate::quests::take(c, q, events) {
         return false;
     }
-    c.calling_chosen = true;
-    let giver = q
-        .giver
-        .npc()
-        .and_then(|entry| crate::hub::npcs().iter().find(|n| n.entry == entry))
-        .map_or("your trainer", |n| n.name.as_str());
-    events.push(crate::quests::system_line(format!(
-        "Your path is chosen. Speak with {giver} to begin."
-    )));
+    let tier = crate::callings::of(c.calling).tier;
+    c.chosen_tiers.push(tier);
+    // A Tier 0 pick names its trainer; a later Tier's trainers are hidden, so the quest log's
+    // text is the only lead.
+    let line = if tier == 0 {
+        let giver = q
+            .giver
+            .npc()
+            .and_then(|entry| crate::hub::npcs().iter().find(|n| n.entry == entry))
+            .map_or("your trainer", |n| n.name.as_str());
+        format!("Your path is chosen. Speak with {giver} to begin.")
+    } else {
+        "Your path is chosen. Your quest log tells you where to begin looking.".to_owned()
+    };
+    events.push(crate::quests::system_line(line));
     true
 }

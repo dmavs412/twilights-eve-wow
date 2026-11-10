@@ -114,3 +114,18 @@ tells the three apart.
 - A Talent row's choices keep icons of their own, as do the aura rows a choice puts up.
 - The 87 icons the grills picked for Skill Choices are gone from the sheet. The Icon columns in
   `docs/specs/talents/README.md` still record them.
+
+## Amended 2026-11-08: Tier 2 rows
+
+Grilled on #674. Tier 2's Row Levels are `5|10|15|20|25|30|35|40|45|50`, ten rows, one every 5
+levels into the Tier.
+
+- Every Tier 2 skill gets a Skill Choice row, the Kick and the utility included. The two rows
+  left over are Talent rows. The Consequences' "the Kick and the utility never get a row" holds
+  for Tier 1 only.
+- A Tier 2 kit learns its two skills carried from Tier 1, the Kick and two new skills at level 1,
+  then one new skill at 10, one at 20 and the utility at 30. ADR 0020's "Kicks at 10, utilities
+  at 20" is Tier 1's.
+- No Tier 1 choice carries into Tier 2. Advancement still clears every row, and a carried skill's
+  three choices at Tier 2 are new ones.
+- The row each Row Level belongs to is the template in #674, "The ten Talent Rows".

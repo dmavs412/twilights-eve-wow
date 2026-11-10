@@ -55,12 +55,13 @@ pub struct CallingDef {
     /// The weapons it may wield, and whether it dual wields; every Warrior weapon unless it says.
     #[serde(default = "WeaponKind::warrior")]
     pub weapons: Vec<WeaponKind>,
-    /// Its icon and its spell book tab's name (`callings.csv`); empty for a TOML Calling.
+    /// Its icon and its spell book tab's name (`callings.csv`); a TOML Calling takes only the
+    /// icon, from its row there when it has one.
     #[serde(default)]
     pub icon: String,
     #[serde(default)]
     pub spellbook: String,
-    /// Its Calling Choice blurb, `callings.csv`; empty for a TOML Calling and most sheet Callings.
+    /// Its Calling Choice blurb, `callings.csv` (a TOML Calling's too); empty for most.
     #[serde(default)]
     pub blurb: String,
     #[serde(rename = "skill")]
@@ -2183,13 +2184,25 @@ struct Callings {
 }
 
 /// The shipped Callings: the ones the master sheet defines (`generated.rs`), then the tables in
-/// `content/callings.toml`.
+/// `content/callings.toml`. A table with no icon or blurb takes its `callings.csv` row's.
 fn shipped() -> &'static [CallingDef] {
     static CALLINGS: OnceLock<Vec<CallingDef>> = OnceLock::new();
     CALLINGS.get_or_init(|| {
         let mut all = crate::generated::callings();
-        let tables = parse_toml(include_str!("../content/callings.toml"))
+        let mut tables = parse_toml(include_str!("../content/callings.toml"))
             .expect("content/callings.toml parses");
+        let columns = crate::generated::toml_calling_columns();
+        for c in &mut tables.calling {
+            let Some((_, icon, blurb)) = columns.iter().find(|(key, ..)| *key == c.key) else {
+                continue;
+            };
+            if c.icon.is_empty() {
+                c.icon = icon.clone();
+            }
+            if c.blurb.is_empty() {
+                c.blurb = blurb.clone();
+            }
+        }
         all.extend(tables.calling);
         all
     })

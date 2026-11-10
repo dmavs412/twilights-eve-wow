@@ -799,12 +799,12 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
     if q.calling_choice {
         assert!(
             q.kind == Kind::Advancement
-                && q.advancement
-                    .as_ref()
-                    .is_some_and(|a| a.from == "basic_warrior")
+                && q.advancement.as_ref().is_some_and(|a| {
+                    crate::callings::calling(&a.from).is_some_and(|from| from.tier <= 1)
+                })
                 && q.giver.npc().is_some(),
-            "quest {} is a Calling Choice, so it must be an advancement from basic_warrior \
-             with a giver NPC",
+            "quest {} is a Calling Choice, so it must be an advancement from a Tier 0 or Tier 1 \
+             Calling with a giver NPC",
             q.id
         );
     }

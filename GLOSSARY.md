@@ -93,7 +93,7 @@ A named node in the advancement tree, at one Tier on one Line: Basic Warrior, Va
 _Avoid_: specialization, spec (that means a talent build in WoW), job, rank, class
 
 **Line**:
-A Tier 1 Calling and every Calling that branches from it, such as the Vanguard line (Vanguard, Ironclad, Zealot, Bastion, Templar). Basic Warrior belongs to no Line.
+A Tier 1 Calling and every Calling that branches from it, such as the Vanguard line (Vanguard, Ironclad, Zealot, Bastion, Templar). The other Lines' Tier 2 pairs: the Cutthroat line (Cutthroat, Bloodletter, Nightblade), the Initiate line (Initiate, Pyromancer, Leyweaver), the Ranger line (Ranger, Sharpshooter, Trapper) and the Acolyte line (Acolyte, Blightcaller, Bloodmender). Basic Warrior belongs to no Line.
 _Avoid_: path, tree
 _Avoid_: specialization, spec (that means a talent build in WoW), job, rank
 
@@ -162,7 +162,7 @@ _Avoid_: max level
 A quest from a Calling's trainer, offered at the Tier Cap. Completing it advances the character into that Calling, so choosing which one to finish is how a player chooses their branch. A Basic Warrior can also take one from the Calling Choice.
 
 **Calling Choice**:
-The popup a Basic Warrior gets at the Tier Cap, listing each Tier 1 Calling with a blurb. Picking one puts that Calling's Northshire Advancement Quest in the log, to hand in at its trainer. It is offered until a pick is made, and never again after.
+The popup a character gets at its Calling's Tier Cap, listing each Calling of the next Tier it may advance into, with a blurb: a Basic Warrior's lists every Tier 1 Calling, a Tier 1 Calling's lists the Tier 2 Callings of its Line. Picking one puts that Calling's Advancement Quest in the log. At each Tier it is offered until a pick is made, and never again after.
 
 **Tier Bonus**:
 A flat boost to base stats, set by each Calling and growing with each Tier; its mix suits the Calling's Line. With the Power Level, it is what makes a character stronger after Advancement resets their level. Gear, gold and completed quests carry over; skills and Talent Rows are replaced by the new Calling's, every row empty.
