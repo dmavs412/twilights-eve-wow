@@ -104,7 +104,7 @@ impl InWorld {
         if let Phase::Dungeon(id) = now {
             let door = phased::dungeon(id).and_then(|d| d.portal.door.as_ref());
             if let Some(door) = door.filter(|_| !self.doors_open.contains(&id)) {
-                events.push(self.refusal(door, c.position));
+                events.push(self.refusal(door, c));
                 self.teleport(c, door.outside, c.orientation, events);
                 return;
             }
@@ -659,7 +659,7 @@ impl InWorld {
         }
         let opened = c.doors_opened.contains(&door.entry);
         if !opened && c.inventory.count(door.opens_with) == 0 {
-            events.push(self.refusal(door, c.position));
+            events.push(self.refusal(door, c));
             return DoorClick::Ignored;
         }
         if !opened {
@@ -674,9 +674,9 @@ impl InWorld {
         }
     }
 
-    /// What tells the player at `me` that `door` stays shut: its speaker, an open-world creature
-    /// or a Hub NPC, says the sealed text when the player sees them, else a notification shows it.
-    fn refusal(&self, door: &phased::Door, me: [f32; 3]) -> SessionEvent {
+    /// What tells the character `c` that `door` stays shut: its speaker, an open-world creature
+    /// or a Hub NPC, says the sealed text when they see it, else a notification shows it.
+    fn refusal(&self, door: &phased::Door, c: &Char) -> SessionEvent {
         let creature = door.speaker.and_then(|low| {
             self.mobs.iter().find(|m| {
                 m.spawn_row()
@@ -686,8 +686,8 @@ impl InWorld {
         // A Hub NPC streams in with the open world's view.
         let hub = || {
             let npc = crate::hub::spawned(door.speaker?, self.map)?;
-            (self.phase == Phase::OpenWorld && crate::hub::in_view(npc, me))
-                .then(|| (npc.guid(), npc.name.clone()))
+            let seen = crate::hub::in_view(npc, c.position, &c.quests.completed);
+            (self.phase == Phase::OpenWorld && seen).then(|| (npc.guid(), npc.name.clone()))
         };
         let speaker = creature
             .map(|m| (m.guid, m.template.name.clone()))

@@ -337,9 +337,13 @@ pub(crate) fn repair(
     traded
 }
 
-/// The vendor `guid`, if the character stands within reach of it and the Milestones `reached`
-/// meet its keys.
+/// The vendor `guid`, if the character stands within reach of it and sees it, and the Milestones
+/// `reached` meet its keys.
 fn reachable(guid: u64, c: &Char, reached: &[&str]) -> Option<&'static Npc> {
-    hub::find(guid, reached)
-        .filter(|n| n.is_vendor() && c.map == n.map && hub::within_reach(n, c.position))
+    hub::find(guid, reached).filter(|n| {
+        n.is_vendor()
+            && c.map == n.map
+            && hub::within_reach(n, c.position)
+            && n.seen_by(&c.quests.completed)
+    })
 }

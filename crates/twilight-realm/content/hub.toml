@@ -34,6 +34,10 @@
 # `hidden = true` makes a Hidden Trainer (#676): the Living Map shows no quest or service mark for
 # it to a character who has not met it, and a character meets it the first time they open its
 # gossip menu or its quest list (the save's `met`). After that it is marked as any Hub NPC is.
+# `seen = { after = Q, before = Q }` is a sight rule (#596, ADR 0035): `after` shows the NPC only
+# to a character who has handed in quest Q, `before` only to one who has not, and either or both
+# may be set. A character who does not see it is not sent it, gets no map mark for it, and is not
+# served by it (gossip, quests, goods, inn).
 
 [[npc]]
 guid = 0xF00001
@@ -2603,3 +2607,22 @@ orientation = 2.71
 hidden = true
 text_id = 64182
 greeting = "Sit, $C. They think I skin rabbits. I let them think it."
+
+# Belongs to tests/sight.rs: seen only after test quest 99811 is handed in, 10 yd from that
+# quest's Rachel (zones.toml guid 960811), whom only those who have not handed it in see. The
+# look is Maera Holt's. z is ground_check.py's.
+[[npc]]
+guid = 9399811
+entry = 199811
+name = "Sight Tester"
+level = 10
+display_id = 3287
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-8840.0, -2960.0, 282.33]
+orientation = 3.14
+text_id = 69811
+greeting = "You see me now, $C."
+seen = { after = 99811 }

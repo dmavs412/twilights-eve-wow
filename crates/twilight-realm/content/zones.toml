@@ -14,6 +14,11 @@
 # on a mobs.toml template, wherever that template comes from: a generated zone file or mobs.toml.
 # It is a content error when the template already has rolls or another row names the entry, so
 # every 31-50 elite roll sits here. Ticket 08 of spec #650 fills it.
+# `seen = [{ guid, after, before }, ...]` gives spawns of the zone a sight rule (#596, ADR 0035),
+# keyed by the spawn's guid in the zone's generated file or in its `[[zone.added]]` rows.
+# `after = Q` shows the creature only to a character who has handed in quest Q, and `before = Q`
+# only to one who has not; either or both may be set. Only a friendly creature may carry a rule,
+# and a guid the zone does not have is a content error.
 
 [[zone]]
 file = "duskwood"
@@ -368,6 +373,9 @@ removed_guids = [
 # redridge_bands.toml covers the whole zone and decides instead; this reaches only its exclude
 # box, where no spawn stands.
 levels = { from = [14, 27], to = [30, 50] }
+# Belongs to tests/sight.rs: its Rachel (guid 960811, below) is seen only before test quest 99811
+# is handed in.
+seen = [{ guid = 960811, before = 99811 }]
 
 # The cult courier in Galardell Valley (#616, spec #595): the Twilight Courier (96054) on the
 # valley path toward the Tower of Ilgalar, outside Ilgalar's Approach, and his two Twilight
@@ -672,6 +680,17 @@ level_max = 51
 position = [-8705.0, -2670.0, 150.15]
 orientation = 0.0
 after_milestone = "ilgalar_anchor_broken"
+
+# Belongs to tests/sight.rs: a Rachel (849, a friendly template no shipped quest names) on the
+# hills north of Lake Everstill, over 120 yd from every other spawn and Hub NPC, the Field Giver
+# of its test quest 99811. Its `seen` row is in this [[zone]]'s keys above. z is ground_check.py's.
+[[zone.added]]
+guid = 960811
+entry = 849
+level_min = 10
+level_max = 10
+position = [-8850.0, -2960.0, 275.24]
+orientation = 0.0
 
 # The named elites and rares roll their band's Elite pool at 20%, else one of the band's
 # greens at 50% (#658, spec #650 decision 10). The band holds the creature's lowest open-world

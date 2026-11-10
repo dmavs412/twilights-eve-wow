@@ -256,7 +256,7 @@ impl Realm {
         let Some(c) = self.characters.get(w.guid) else {
             return;
         };
-        let Some(entry) = w.friendly_within_reach(guid, c.position) else {
+        let Some(entry) = w.friendly_within_reach(guid, c.position, &c.quests.completed) else {
             return;
         };
         let mut options = super::talk_options(c, entry);
@@ -279,7 +279,7 @@ impl Realm {
     pub(crate) fn field_gossip_select(&mut self, guid: u64, option: u32) {
         let entry = self.world.as_ref().and_then(|w| {
             let c = self.characters.get(w.guid)?;
-            w.friendly_within_reach(guid, c.position)
+            w.friendly_within_reach(guid, c.position, &c.quests.completed)
         });
         if let Some(entry) = entry {
             self.talk_select(guid, entry, option);
@@ -358,8 +358,11 @@ fn any_speaker(npc: u64, reached: &[&str]) -> Option<Speaker> {
 /// The quest giver `npc`, if the player stands near enough to talk to it.
 fn talking_to(c: &Char, w: &crate::world::InWorld, npc: u64, reached: &[&str]) -> Option<Speaker> {
     if let Some(n) = hub_speaker(npc, reached) {
-        // A Hub NPC stands on its own map only, not in a Dungeon.
-        let near = c.map == n.map && crate::hub::within_reach(n, c.position);
+        // A Hub NPC stands on its own map only, not in a Dungeon, and serves only those who see
+        // it.
+        let near = c.map == n.map
+            && crate::hub::within_reach(n, c.position)
+            && n.seen_by(&c.quests.completed);
         return near.then_some(Speaker {
             entry: n.entry,
             greeting: &n.greeting,
@@ -374,7 +377,7 @@ fn talking_to(c: &Char, w: &crate::world::InWorld, npc: u64, reached: &[&str]) -
             object: true,
         });
     }
-    field_speaker(w.friendly_within_reach(npc, c.position)?)
+    field_speaker(w.friendly_within_reach(npc, c.position, &c.quests.completed)?)
 }
 
 /// `quest`, if the Quest Starter the player carries as item `item` offers it now: the quest the

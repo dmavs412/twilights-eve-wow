@@ -99,6 +99,10 @@ pub(crate) struct Npc {
     /// opening its gossip menu or its quest list.
     #[serde(default)]
     pub(crate) hidden: bool,
+    /// Who sees it by the quests they have handed in (#596); none is seen by everyone. One a
+    /// character does not see serves them nothing.
+    #[serde(default)]
+    pub(crate) seen: Option<crate::sight::Sight>,
 }
 
 /// A Tally's stages in words: one greeting before its `after` is reached, one per band of the
@@ -242,12 +246,17 @@ pub(crate) fn spawned(low: u32, map: u32) -> Option<&'static Npc> {
     npcs().iter().find(|n| n.guid == low && n.map == map)
 }
 
-/// Whether a player at `at` on the Hub NPC's map has it in view.
-pub(crate) fn in_view(npc: &Npc, at: [f32; 3]) -> bool {
-    flat_distance(npc.position, at) <= VIEW_YD
+/// Whether a player at `at` on the Hub NPC's map, who has handed in `completed`, has it in view.
+pub(crate) fn in_view(npc: &Npc, at: [f32; 3], completed: &[u32]) -> bool {
+    flat_distance(npc.position, at) <= VIEW_YD && npc.seen_by(completed)
 }
 
 impl Npc {
+    /// Whether a character who has handed in `completed` sees it, by its sight rule.
+    pub(crate) fn seen_by(&self, completed: &[u32]) -> bool {
+        crate::sight::sees(&self.seen, completed)
+    }
+
     /// What it takes in place of copper, if it is a vendor of that kind.
     pub(crate) fn currency(&self) -> Option<&'static crate::currency_vendor::Currency> {
         if self.blood_coin {
@@ -484,14 +493,19 @@ impl crate::Realm {
         }
     }
 
-    /// Whether the character in the world can reach `npc`, and the Milestones meet its keys.
+    /// Whether the character in the world can reach `npc` and sees it, and the Milestones meet
+    /// its keys.
     pub(crate) fn near(&self, npc: &Npc) -> bool {
         npc.milestones.met(&self.milestones.reached_refs())
             && self
                 .world
                 .as_ref()
                 .and_then(|w| self.characters.get(w.guid))
-                .is_some_and(|c| c.map == npc.map && within_reach(npc, c.position))
+                .is_some_and(|c| {
+                    c.map == npc.map
+                        && within_reach(npc, c.position)
+                        && npc.seen_by(&c.quests.completed)
+                })
     }
 }
 
@@ -611,13 +625,14 @@ impl InView {
 }
 
 impl InView {
-    /// The NPCs in the world within view of `me`: each one's guid and its create where it stands.
-    pub(crate) fn in_view(&self, me: [f32; 3]) -> Vec<(u64, SessionEvent)> {
+    /// The NPCs in the world within view of `me` that a character who has handed in `completed`
+    /// sees: each one's guid and its create where it stands.
+    pub(crate) fn in_view(&self, me: [f32; 3], completed: &[u32]) -> Vec<(u64, SessionEvent)> {
         npcs()
             .iter()
             .zip(&self.present)
             .filter_map(|(npc, s)| s.as_ref().map(|s| (npc, s)))
-            .filter(|(_, s)| flat_distance(s.at, me) <= VIEW_YD)
+            .filter(|(npc, s)| flat_distance(s.at, me) <= VIEW_YD && npc.seen_by(completed))
             .map(|(npc, s)| (npc.guid(), npc.create(s.at, npc.facing())))
             .collect()
     }

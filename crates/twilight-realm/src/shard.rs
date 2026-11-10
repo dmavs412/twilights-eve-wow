@@ -59,6 +59,9 @@ pub(crate) struct OnShard<S> {
     /// Their patches on the ground: each DynamicObject's guid, centre and create. Another client
     /// sees one in view of its centre, stealthed caster or not.
     pub(crate) patches: Vec<(u64, [f32; 3], SessionEvent)>,
+    /// The quests they have handed in, which decide the creatures and Hub NPCs with a sight rule
+    /// they see (#596).
+    pub(crate) completed: Vec<u32>,
 }
 
 /// Whether `guid` is a player's: `HIGHGUID_PLAYER` is 0.
@@ -140,6 +143,30 @@ impl Shard {
     /// when its view next lacks it.
     pub(crate) fn despawn_audience(&mut self, audience: &Audience) {
         self.mobs.retain(|m| m.audience.as_ref() != Some(audience));
+    }
+
+    /// Hides the creature `guid` from the characters `from` while everyone else still sees it:
+    /// it leaves their view, and they are outside its Audience. A creature the Population
+    /// streams back in is a new one, hidden from no one, so a caller hides it every tick.
+    // The escort (#701) is the first caller.
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub(crate) fn hide_from(&mut self, guid: u64, from: &[u64]) {
+        let Some(m) = self.mobs.iter_mut().find(|m| m.guid == guid) else {
+            return;
+        };
+        for &g in from {
+            if !m.hidden_from.contains(&g) {
+                m.hidden_from.push(g);
+            }
+        }
+    }
+
+    /// Shows the creature `guid` again to the characters `from` it was hidden from.
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub(crate) fn unhide(&mut self, guid: u64, from: &[u64]) {
+        if let Some(m) = self.mobs.iter_mut().find(|m| m.guid == guid) {
+            m.hidden_from.retain(|g| !from.contains(g));
+        }
     }
 
     /// The stops whose inner portal is open in the Run; none with no Run.
@@ -624,12 +651,18 @@ impl Shard {
     }
 
     /// Everything a player at `me` sees: each mob and Hub NPC within view, and its create.
-    /// A mob whose Audience does not admit `viewer` is never in it.
-    pub(crate) fn in_view(&self, viewer: u64, me: [f32; 3]) -> Vec<(u64, SessionEvent)> {
+    /// A mob whose Audience does not admit `viewer` is never in it, nor a mob or Hub NPC whose
+    /// sight rule hides it from a character who has handed in `completed`.
+    pub(crate) fn in_view(
+        &self,
+        viewer: u64,
+        me: [f32; 3],
+        completed: &[u32],
+    ) -> Vec<(u64, SessionEvent)> {
         // A Run is there all at once.
         let dungeon = self.run.is_some();
         let near = |m: &&Mob| {
-            m.admits(viewer)
+            m.seen_by(viewer, completed)
                 && (dungeon
                     || flat_distance(m.position, me) <= VIEW_YD
                     || flat_distance(m.home, me) <= VIEW_YD)
@@ -640,7 +673,7 @@ impl Shard {
             .filter(near)
             .map(|m| (m.guid, m.create()))
             .collect();
-        seen.extend(self.hub.in_view(me));
+        seen.extend(self.hub.in_view(me, completed));
         seen.extend(self.carts.in_view());
         // The tram's cars and lit lamps, which the whole Phase sees.
         seen.extend(self.tram().map_or(Vec::new(), |l| l.in_view()));
@@ -828,6 +861,24 @@ mod tests {
         );
         assert!(shard.mobs.len() >= 2, "the Abbey holds creatures");
         shard
+    }
+
+    #[test]
+    fn a_creature_hidden_from_one_character_leaves_only_their_view() {
+        let mut shard = run();
+        let guid = shard.mobs[0].guid;
+        let sees = |s: &Shard, viewer: u64| {
+            s.in_view(viewer, [0.0; 3], &[])
+                .iter()
+                .any(|(g, _)| *g == guid)
+        };
+        assert!(sees(&shard, 1) && sees(&shard, 2));
+        shard.hide_from(guid, &[1]);
+        assert!(!sees(&shard, 1), "hidden from 1");
+        assert!(sees(&shard, 2), "still seen by 2");
+        assert!(!shard.mobs[0].admits(1) && shard.mobs[0].admits(2));
+        shard.unhide(guid, &[1]);
+        assert!(sees(&shard, 1) && shard.mobs[0].admits(1), "back for 1");
     }
 
     #[test]

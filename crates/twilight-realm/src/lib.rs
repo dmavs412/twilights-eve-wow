@@ -88,6 +88,7 @@ pub mod rules;
 mod rumours;
 mod save;
 mod shard;
+mod sight;
 mod space;
 mod tables;
 mod talents;
@@ -1491,6 +1492,7 @@ impl Realm {
                 calling: callings::of(c.calling).key.clone(),
                 hidden: w.hidden(),
                 patches: w.patches(),
+                completed: c.quests.completed.clone(),
             });
         }
         // A shard no one stands on resets its Run, and the chests its tram line left and its
@@ -1571,7 +1573,7 @@ impl Realm {
                     }
                 }
                 // The view: what came within it is created, what left it removed.
-                let mut view = shard.in_view(p.guid, p.position); // The other players in view.
+                let mut view = shard.in_view(p.guid, p.position, &p.completed); // The other players in view.
                 view.extend(
                     players
                         .iter()

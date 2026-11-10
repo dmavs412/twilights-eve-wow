@@ -418,6 +418,9 @@ pub(crate) struct Spawn {
     /// The Milestones a hand-added spawn waits on (ADR 0034): the Population brings it in only
     /// while they are met.
     pub(crate) milestones: crate::milestones::Gate,
+    /// Who sees it by the quests they have handed in (`content/zones.toml`'s `seen`); none for a
+    /// spawn everyone sees. Only a friendly creature has one.
+    pub(crate) sight: Option<crate::sight::Sight>,
 }
 
 /// The high bits of a Camp number a dungeon file names, apart from every creature guid and from
@@ -657,6 +660,20 @@ struct ZoneOverrides {
     /// Loot rolls set on a template by entry, wherever the template comes from (spec #650).
     #[serde(default)]
     rolls: Vec<EntryRolls>,
+    /// Sight rules (#596) on the zone's spawns, by guid in its generated file or its `added`.
+    #[serde(default)]
+    seen: Vec<SeenRow>,
+}
+
+/// A `[[zone]]`'s `seen` row: who sees the spawn `guid`, by quest state.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SeenRow {
+    guid: u32,
+    #[serde(default)]
+    after: Option<u32>,
+    #[serde(default)]
+    before: Option<u32>,
 }
 
 /// A `[[zone.rolls]]` row: the `rolls` of the template with `entry`.
@@ -864,6 +881,23 @@ pub(crate) fn content() -> &'static Mobs {
                 (*name, file)
             })
             .collect();
+        // The sight rules (#596) by zone file and guid, each taken by the spawn it names.
+        let mut sight_rules: HashMap<(String, u32), crate::sight::Sight> = HashMap::new();
+        for z in &mut zone_overrides.zone {
+            for r in std::mem::take(&mut z.seen) {
+                let sight = crate::sight::Sight {
+                    after: r.after,
+                    before: r.before,
+                };
+                let twice = sight_rules.insert((z.file.clone(), r.guid), sight);
+                assert!(
+                    twice.is_none(),
+                    "content/zones.toml's {} has two seen rows for guid {}",
+                    z.file,
+                    r.guid
+                );
+            }
+        }
         let difficulty = hand.difficulty;
         let zone_factors = hand
             .zone
@@ -940,16 +974,16 @@ pub(crate) fn content() -> &'static Mobs {
             .collect();
         let elwynn_guids: HashSet<u32> = elwynn.spawns.iter().map(|r| r.0).collect();
         let zones = [
-            (barrens.spawns, crate::content::KALIMDOR),
-            (elwynn.spawns, crate::content::EASTERN_KINGDOMS),
+            (None, barrens.spawns, crate::content::KALIMDOR),
+            (None, elwynn.spawns, crate::content::EASTERN_KINGDOMS),
         ]
         .into_iter()
         .chain(
             eastern
                 .into_iter()
-                .map(|(_, f)| (f.spawns, crate::content::EASTERN_KINGDOMS)),
+                .map(|(name, f)| (Some(name), f.spawns, crate::content::EASTERN_KINGDOMS)),
         );
-        for (rows, map) in zones {
+        for (file, rows, map) in zones {
             spawn.extend(rows.into_iter().map(
                 |Row(guid, entry, lmin, lmax, x, y, z, o, display_id, wander, camp)| Spawn {
                     guid,
@@ -967,6 +1001,7 @@ pub(crate) fn content() -> &'static Mobs {
                     on_health: &[],
                     called_by: None,
                     imported: true,
+                    sight: file.and_then(|f| sight_rules.remove(&(f.to_string(), guid))),
                     ..Default::default()
                 },
             ));
@@ -1017,8 +1052,12 @@ pub(crate) fn content() -> &'static Mobs {
         for z in &mut zone_overrides.zone {
             zone_rolls.append(&mut z.rolls);
         }
-        let zone_added = zone_overrides.zone.into_iter().flat_map(|z| z.added);
-        for a in overrides.added.into_iter().chain(zone_added) {
+        let zone_added = zone_overrides.zone.into_iter().flat_map(|z| {
+            let file = z.file;
+            z.added.into_iter().map(move |a| (Some(file.clone()), a))
+        });
+        let elwynn_added = overrides.added.into_iter().map(|a| (None, a));
+        for (file, a) in elwynn_added.chain(zone_added) {
             let t = template
                 .iter()
                 .find(|t| t.entry == a.entry)
@@ -1040,8 +1079,24 @@ pub(crate) fn content() -> &'static Mobs {
                 on_health: &[],
                 called_by: None,
                 milestones: a.milestones,
+                sight: file.and_then(|f| sight_rules.remove(&(f, a.guid))),
                 ..Default::default()
             });
+        }
+        if let Some((file, guid)) = sight_rules.keys().next() {
+            panic!("content/zones.toml's {file} has a seen row for guid {guid}, which it lacks");
+        }
+        // Sight stays out of aggro and threat: only a friendly creature may carry a rule.
+        for s in spawn.iter().filter(|s| s.sight.is_some()) {
+            let friendly = template
+                .iter()
+                .find(|t| t.entry == s.entry)
+                .is_some_and(|t| t.friendly);
+            assert!(
+                friendly,
+                "spawn {} has a seen rule but is not friendly",
+                s.guid
+            );
         }
         let dungeon: DungeonFile = toml::from_str(include_str!("../content/wailing_caverns.toml"))
             .expect("content/wailing_caverns.toml parses");
@@ -1128,6 +1183,7 @@ pub(crate) fn content() -> &'static Mobs {
                     wake_radius_mod: c.wake_radius_mod,
                     imported: false,
                     milestones: Default::default(),
+                    sight: None,
                 });
                 // The creatures its calls bring in: rows the Run does not start with, each
                 // with a guid of its own above every authored one.
@@ -1468,6 +1524,11 @@ pub(crate) struct Mob {
     /// The characters that see it and that it acts on; none for every mob a spawn row or a
     /// Phased Dungeon places. Fixed at spawn.
     pub(crate) audience: Option<crate::audience::Audience>,
+    /// Who sees it by the quests they have handed in: its spawn's rule (#596).
+    pub(crate) sight: Option<crate::sight::Sight>,
+    /// The characters it is hidden from while everyone else sees it (`Shard::hide_from`): an
+    /// escort's start creature, while the escort's own copy walks. Empty when it is made.
+    pub(crate) hidden_from: Vec<u64>,
     /// It turned from idle to a fight since the realm last looked: its aggro line is due a roll
     /// (`Realm::creature_speech`).
     pub(crate) aggro_due: bool,
@@ -1647,6 +1708,8 @@ impl Mob {
             brought_by: None,
             fight_no: None,
             audience: None,
+            sight: spawn.sight,
+            hidden_from: Vec::new(),
             target: 0,
             threat: Default::default(),
             hunts: None,
@@ -1765,6 +1828,8 @@ impl Mob {
             brought_by: None,
             fight_no: None,
             audience: None,
+            sight: None,
+            hidden_from: Vec::new(),
             target: 0,
             threat: Default::default(),
             hunts: Some(hunts),
@@ -2040,9 +2105,16 @@ impl Mob {
         self.alive() && !self.template.friendly
     }
 
-    /// Whether `viewer`'s character is an Audience of it (or it has none).
+    /// Whether `viewer`'s character is an Audience of it (or it has none), and it is not hidden
+    /// from them.
     pub(crate) fn admits(&self, viewer: u64) -> bool {
-        crate::audience::admits(&self.audience, viewer)
+        crate::audience::admits(&self.audience, viewer) && !self.hidden_from.contains(&viewer)
+    }
+
+    /// Whether a character `viewer` who has handed in `completed` sees it: [`Self::admits`], and
+    /// its sight rule.
+    pub(crate) fn seen_by(&self, viewer: u64, completed: &[u32]) -> bool {
+        self.admits(viewer) && crate::sight::sees(&self.sight, completed)
     }
 
     /// [`Self::attackable`], and `viewer` can see it.
