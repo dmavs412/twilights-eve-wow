@@ -104,10 +104,11 @@ def report(rows, args, levels):
             out.append(f"| {calling} | {level} | {text} |")
         before[calling] = b
     out += ["", "## Ignored choices", "", "Talent Row choices that change nothing in the model's fights, in sheet "
-            "order, and why.", "", "| Calling | Row | Choice | Reason |", "|---|---|---|---|"]
+            "order, and why. A choice named as its row is the row's own skill, unset.", "",
+            "| Calling | Row | Choice | Reason |", "|---|---|---|---|"]
     simmed_callings = [c for c in model.CALLINGS + model.TIER2_CALLINGS if scenarios.has_sim(c)]
-    ignored = [(c, row["key"], ch["key"]) for c in simmed_callings for row in model.talent_rows(c)
-               for ch in row["choices"] if (c, ch["key"]) in model.IGNORED]
+    ignored = [(c, row["key"], key) for c in simmed_callings for row in model.talent_rows(c)
+               for key in [row["key"]] + [ch["key"] for ch in row["choices"]] if (c, key) in model.IGNORED]
     for calling, row, key in ignored:
         out.append(f"| {calling} | {row} | {key} | {model.IGNORED[(calling, key)]} |")
     if not ignored:

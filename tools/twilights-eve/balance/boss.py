@@ -149,13 +149,14 @@ def named_bosses():
                                health_mul=t["health_multiplier"], damage_mul=t["damage_multiplier"],
                                armor_mul=t.get("armor_multiplier", 1.0),
                                swing_s=t.get("base_attack_time", 2000) / 1000, area=area, area_why=why,
+                               creature_type=model.CREATURE_TYPES.get(t.get("creature_type", 7), "humanoid"),
                                spells=spells, unmodelled=unmodelled))
     return bosses
 
 
 def boss_mob(b):
     return model.mob_stats(b["level"], b["unit_class"], b["rank"], b["area"], b["health_mul"], b["damage_mul"],
-                           b["armor_mul"], b["swing_s"], b["name"])
+                           b["armor_mul"], b["swing_s"], b["name"], b["creature_type"])
 
 
 def kickable(spells):
@@ -213,6 +214,21 @@ class Boss:
         if self.stance:
             raw = raw * (100 + self.stance[1]) / 100
         return super().hit_mob(raw, src, *a, **kw)
+
+    def stunnable(self):
+        """The boss casts what the character would kick, and its Kick is not ready: what a stun
+        stops instead (Hammer of Justice)."""
+        c = self.casting
+        return (c is not None and c[0]["key"] in self.kick_keys and self.t < self.kick_ready
+                and self.t >= c[1] + KICK_REACTION_S)
+
+    def stun_cast(self, until):
+        """A stun stops the boss's cast, as a kick with no lockout would, and it thinks again only
+        once the stun ends at `until`."""
+        sp = self.casting[0]
+        self.casting = None
+        self.ready_at[sp["key"]] = self.t + _cooldown_s(sp, self.rng, shortest=True)
+        self.next_think = max(self.next_think, until)
 
     def hurt(self, d):
         d = self.take(int(d))

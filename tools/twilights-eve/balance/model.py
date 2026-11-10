@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The balance model: one Basic Warrior or Tier 1 Calling against one creature row.
+"""The balance model: one Basic Warrior, Tier 1 Calling or Tier 2 Calling against one creature row.
 
 Every file it reads comes through one DataRoot (`--data-root`, default the repo): the data in
 data/twilights-eve/ (server_spells.json, gear.csv, class level tables, callings.csv, master.csv)
@@ -373,6 +373,9 @@ ELWYNN_FOREST = 12
 NORTHSHIRE_VALLEY = 9
 REDRIDGE_MOUNTAINS = 44
 DUSKWOOD = 10
+# 1.12's CreatureType ids, a template's `creature_type` (callings.rs CreatureType).
+CREATURE_TYPES = {1: "beast", 2: "dragonkin", 3: "demon", 4: "elemental", 5: "giant", 6: "undead", 7: "humanoid",
+                  8: "critter", 9: "mechanical"}
 
 
 def round_half_up(v):
@@ -415,11 +418,12 @@ def on_level_area(level):
 
 
 def mob_stats(level, unit_class="warrior", rank=0, area=None, health_mul=1.0, damage_mul=1.0,
-              armor_mul=1.0, swing_s=2.0, name=None):
+              armor_mul=1.0, swing_s=2.0, name=None, creature_type="humanoid"):
     """A creature as Mob::stats_for makes it: its unit class's level-10 vanilla row x P(level) x
     [difficulty] health and damage_at(level) x the Tier Step x its rank's factors x the Zone
     Factor x the template's own multipliers; armour the vanilla row's at its level. `area` None
-    is the on-level area."""
+    is the on-level area. `creature_type` (CREATURE_TYPES) is what a hit's vs_type and a stun's
+    only_type read: an on-level mob is humanoid, a named boss its template's."""
     d = DATA.difficulty
     rank_h, rank_d = d["rank"][RANK_KEY[rank]] if rank in RANK_KEY else (1.0, 1.0)
     step = d["tier_step"]
@@ -432,7 +436,7 @@ def mob_stats(level, unit_class="warrior", rank=0, area=None, health_mul=1.0, da
     avg = t["melee_damage_avg"][CURVE_ANCHOR - 1] * dm
     return dict(level=level, name=name or f"{unit_class} {level}", hp=round_half_up(t["health"][CURVE_ANCHOR - 1] * hm),
                 armor=int(t["armor"][level - 1] * armor_mul), dmin=avg * (1 - DAMAGE_VARIANCE),
-                dmax=avg * (1 + DAMAGE_VARIANCE), swing=swing_s)
+                dmax=avg * (1 + DAMAGE_VARIANCE), swing=swing_s, type=creature_type)
 
 
 # ---------------------------------------------------------------- skills
@@ -503,6 +507,41 @@ IGNORED = {
     ("acolyte", "unbroken_siphon"): "no mob interrupts",
     ("acolyte", "shroud_of_rot"): "range change",
 }
+# The Tier 2 choices, and the skills a row starts from, that change nothing in the sim's fights.
+KICK = "the Kick boss.py casts is the plain skill"
+RADIUS = "a larger radius: every mob of a pull stands in melee"
+IGNORED.update({
+    ("ironclad", "long_rebuke"): KICK,
+    ("ironclad", "rebuke_of_conviction"): KICK,
+    ("ironclad", "shield_rebuke"): KICK,
+    ("ironclad", "wider_line"): RADIUS,
+    ("ironclad", "hard_line"): "taunt",
+    ("zealot", "wide_ground"): RADIUS,
+    ("zealot", "righteous_fury"): "threat",
+    ("zealot", "blazing_fury"): "threat",
+    ("zealot", "long_rebuke"): KICK,
+    ("zealot", "rebuke_of_iron"): KICK,
+    ("zealot", "judging_rebuke"): KICK,
+    ("zealot", "thrown_hammer"): "range change",
+    ("blightcaller", "wide_miasma"): RADIUS,
+    ("blightcaller", "wide_spread"): "no pull holds more than 3 mobs",
+    ("blightcaller", "far_spread"): RADIUS,
+    ("blightcaller", "long_hush"): KICK,
+    ("blightcaller", "choking_hush"): KICK,
+    ("blightcaller", "mending_hush"): KICK,
+    ("blightcaller", "wide_communion"): RADIUS,
+    ("blightcaller", "strong_return"): "resurrection",
+    ("blightcaller", "quick_rites"): "resurrection",
+    ("blightcaller", "far_rites"): "resurrection",
+    ("bloodmender", "wide_ward"): RADIUS,
+    ("bloodmender", "long_hush"): KICK,
+    ("bloodmender", "deep_drink"): KICK,
+    ("bloodmender", "mana_hush"): KICK,
+    ("bloodmender", "wide_circle"): RADIUS,
+    ("bloodmender", "full_rites"): "resurrection",
+    ("bloodmender", "quick_rites"): "resurrection",
+    ("bloodmender", "cheap_rites"): "resurrection",
+})
 
 
 # ---------------------------------------------------------------- sim core
@@ -593,6 +632,25 @@ class Sim:
         """Skill `key`'s cost after the next_cast changes `mods` (the buffs' now when None)."""
         mods = self.next_casts(key) if mods is None else mods
         return self.cost(self.skill(key)) * (100 + max(sum(p.get("cost_pct", 0) for p in mods), -100)) // 100
+
+    def skill_pct(self, kind, key, part=None):
+        """The pct the build's passives' `kind` effects (skill_crit_pct, skill_amount_pct) give skill
+        `key`: those for every part of it, and with `part` those for that part too (`applies_to`)."""
+        return sum(p["pct"] for p in passive_effects(self.calling, self.rows, kind)
+                   if p["skill"] == key and p.get("applies_to") in (None, part))
+
+    def cooldown_ms(self, key):
+        """Skill `key`'s cooldown, less the flat COOLDOWN spellmods the build's passives put on it
+        (Harvest Moon)."""
+        mod = sum(m["value"] for p in passives(self.calling, self.rows) for m in p.get("spellmods", [])
+                  if m["op"] == "COOLDOWN" and m["type"] == "flat" and key in m["target"])
+        return max((self.skill(key).get("realm_cooldown_ms") or 0) + mod, 0)
+
+    def gcd_of(self, key):
+        """The global cooldown skill `key` starts, in seconds: its realm_gcd_ms, 0 when its row has
+        none, as generated.rs reads it. cast.rs starts no global cooldown for 0, so such an instant
+        can go off again at once (every Tier 2 healer row has none)."""
+        return (self.skill(key).get("realm_gcd_ms") or 0) / 1000
 
     def heal(self, amount, src):
         """`amount` healed up to the maximum health, more while below a passive's health line (Will
@@ -941,6 +999,346 @@ class Vanguard(Sim):
             if d > 0:
                 d = self.take(d)
                 self.rage_taken(d)
+
+
+# ---------------------------------------------------------------- Ironclad and Zealot
+class Sturdy(Vanguard):
+    """The Tier 2 plate Callings' core, the Vanguard's rage and swing: rage from white swings and
+    blows taken, buffs kept as aura rows (self.buffs, as Sim.grant keeps them) whose block_pct,
+    armor_items_pct, mod_damage_taken_pct, mod_spell_damage_pct and procs count while they are up,
+    and the build's passives: their procs, armour, block, rage cap, crit and amounts."""
+
+    def setup_sturdy(self):
+        self.dist = 0.0
+        self.mob_swing_t = 0.5
+        self.swing_t = 0.0
+        self.gcd = 0.0
+        self.buffs = {}
+        self.since_block = None   # when the character last blocked
+        c, rows = self.calling, self.rows
+        self.passive_procs = passive_effects(c, rows, "proc")
+        # A max_power passive's amount is in tenths of rage, as the realm keeps rage (Fervent: +10).
+        self.rage_cap = 100 + sum(p["amount"] for p in passive_effects(c, rows, "max_power")) // 10
+        self.power = min(self.power, self.rage_cap)
+        self.passive_armor = sum(p["pct"] for p in passive_effects(c, rows, "armor_items_pct"))
+        self.passive_block = sum(p["pct"] for p in passive_effects(c, rows, "block_pct"))
+
+    def gain_rage(self, n):
+        self.power = min(self.power + n, self.rage_cap)
+
+    def up(self, key):
+        b = self.buffs.get(key)
+        return b is not None and self.t < b[0]
+
+    def can(self, key):
+        """Skill `key` is off its cooldown, paid for, and free of the global cooldown if it starts one."""
+        return (self.ready(key) and self.power >= self.cost(self.skill(key))
+                and (self.gcd_of(key) == 0 or self.t >= self.gcd))
+
+    def pay(self, key):
+        """Skill `key` takes its rage and starts its cooldown and global cooldown."""
+        self.power -= self.cost(self.skill(key))
+        self.cd(key, self.cooldown_ms(key))
+        self.gcd = max(self.gcd, self.t + self.gcd_of(key))
+
+    def cast_aura(self, key):
+        self.pay(key)
+        self.grant(fx(self.skill(key), "grant_aura")["aura"])
+
+    def pull_size(self):
+        """The living mobs of the pull: one outside multi.Multi."""
+        return len(self.alive()) if hasattr(self, "alive") else 1
+
+    def player_armor(self):
+        pct = self.passive_armor + sum(p["pct"] for p in self.buffed("armor_items_pct"))
+        return 2 * self.s.agi + self.s.armor_items * (100 + pct) // 100
+
+    def block_pct(self):
+        if self.s.shield is None:
+            return 0.0
+        return self.s.block_pct + self.passive_block + sum(p["pct"] for p in self.buffed("block_pct"))
+
+    def taken_pct(self):
+        """The percent more (less, when negative) damage the character takes."""
+        return sum(p["pct"] for p in self.buffed("mod_damage_taken_pct"))
+
+    def take(self, dmg):
+        return Sim.take(self, dmg * max(100 + self.taken_pct(), 0) // 100)
+
+    def mob_swing(self, from_front=True, i=None):
+        d, o = super().mob_swing(from_front, i)
+        if o == "block":
+            self.since_block = self.t
+        return d, o
+
+    def crit_of(self, key):
+        return self.s.crit + self.skill_pct("skill_crit_pct", key)
+
+    def school_hit(self, raw, src, school="physical", crit=False):
+        """`raw` of `school` at the target: physical past its armour, any other school more by the
+        buffs' mod_spell_damage_pct (Fury's Edge)."""
+        if school == "physical":
+            return self.hit_mob(raw, src, True, crit)
+        return self.hit_mob(raw, src, False, crit, dmg_pct=sum(p["pct"] for p in self.buffed("mod_spell_damage_pct")))
+
+    def weapon_strike(self, key, src):
+        """Skill `key`'s weapon_strike, rolled as its defense_type says: its weapon_pct of a swing,
+        its bonus, its block_value_pct of the block value, in its school, healing its heal_pct of
+        what it dealt. Returns (damage, outcome)."""
+        s, sk = self.s, self.skill(key)
+        p = fx(sk, "weapon_strike")
+        crit = self.crit_of(key)
+        o = self.spell_roll(crit) if sk["defense_type"] == "magic" else self.yellow(crit)
+        if o not in ("hit", "crit"):
+            return 0, o
+        raw = (self.rng.uniform(s.mh_min, s.mh_max) * p.get("weapon_pct", 100) / 100 + linear(p["bonus"], self.L)
+               + self.block_value() * p.get("block_value_pct", 0) // 100)
+        d = self.school_hit(raw, src, p.get("school", "physical"), o == "crit")
+        self.heal(d * p.get("heal_pct", 0) // 100, src)
+        self.fire("melee_hit")
+        return d, o
+
+    def white_swing(self):
+        s = self.s
+        d, o = self.white()
+        if o in ("hit", "crit"):
+            self.rage_dealt(d)
+            self.fire("melee_hit")
+        elif o in ("dodge", "parry"):
+            self.rage_dealt(int(self.rng.uniform(s.mh_min, s.mh_max) * 0.75 * (1 - armor_dr(self.m_armor, self.L))))
+
+    def fire(self, on):
+        """The procs on `on` (melee_hit, block, parry): each buff's still up, then the passives'."""
+        for b in list(self.buffs.values()):
+            if self.t < b[0]:
+                for p in fxs(b[1], "proc"):
+                    if p["on"] == on:
+                        self.proc(p, b[1]["key"])
+        for p in self.passive_procs:
+            if p["on"] == on:
+                self.proc(p, "passive")
+
+    def proc(self, p, src):
+        """The proc `p` from `src`, when its chance comes up: a share of the maximum health, rage,
+        an aura, and damage to the attacker."""
+        if p.get("chance", 100) < 100 and self.rng.random() * 100 >= p["chance"]:
+            return
+        if p.get("heal_pct"):
+            self.heal(self.s.max_hp * p["heal_pct"] // 100, src)
+        if p.get("energize"):
+            self.gain_rage(p["energize"])
+        if p.get("apply_aura"):
+            self.apply(p["apply_aura"])
+        if p.get("damage_attacker"):
+            self.school_hit(linear(p["damage_attacker"], self.L), src, p.get("school", "physical"))
+
+    def apply(self, key):
+        self.grant(key)
+
+    def mob_turn(self):
+        if self.t >= self.mob_swing_t:
+            self.mob_swing_t = self.t + self.m["swing"]
+            d, o = self.mob_swing()
+            if o in ("block", "parry"):
+                self.fire(o)
+            if d > 0:
+                self.rage_taken(self.take(d))
+
+
+class Ironclad(Sturdy):
+    """Righteous Smash on every swing it can afford; Shield Slam on its cooldown at SLAM_AT
+    Conviction or more; Retort while a block's window is open; Shield of the Penitent and Steel
+    Resolve on their cooldowns; Iron Wall under WALL_BELOW health; Hold the Line on a pull of 2 or
+    more, for its block stacks (its taunt is nothing to the model). Rebuke is the Kick boss.py
+    casts. self.fight_log holds (time, "shield_slam", Conviction spent) for each Shield Slam."""
+    SLAM_AT = 3
+    WALL_BELOW = 0.40
+
+    def setup_fight(self):
+        self.setup_sturdy()
+        self.smash_queued = False
+        self.conviction = 0
+        self.conv_until = 0
+        self.conv_aura = aura(self.calling, fx(self.skill("righteous_smash"), "add_aura_stacks")["aura"])
+
+    def apply(self, key):
+        if key == self.conv_aura["key"]:
+            self.add_conviction(1)
+        else:
+            self.grant(key)
+
+    def window_open(self):
+        """Retort's caster_state=after_block window: a block within its window_ms."""
+        window = self.skill("retort")["requires"]["window_ms"]
+        return self.since_block is not None and (self.t - self.since_block) * 1000 <= window
+
+    def hold_the_line(self):
+        """Hold the Line's stacks, its stacks a mob for each mob of the pull, up to the aura's
+        max_stacks."""
+        self.pay("hold_the_line")
+        p = fx(self.skill("hold_the_line"), "add_aura_stacks")
+        a = aura(self.calling, p["aura"])
+        held = self.buffs[a["key"]][2] if self.up(a["key"]) else 0
+        self.grant(a["key"])
+        self.buffs[a["key"]][2] = min(held + p["stacks"] * (self.pull_size() if p.get("per_target") else 1),
+                                      a["max_stacks"])
+
+    def shield_slam(self):
+        sk = self.skill("shield_slam")
+        stacks = self.conviction
+        self.pay("shield_slam")
+        self.fight_log.append((self.t, "shield_slam", stacks))
+        d, o = self.weapon_strike("shield_slam", "shield_slam")
+        if o not in ("hit", "crit"):
+            return
+        c = fx(sk, "consume_aura_stacks")
+        self.conviction = 0
+        self.school_hit(linear(c["per_stack"], self.L) * stacks, "conviction", c.get("school", "holy"))
+        self.gain_rage(c.get("refund_per_stack", 0) * stacks)
+        for p in fxs(sk, "stun"):
+            self.stun(p)
+
+    def retort(self):
+        self.pay("retort")
+        d, o = self.weapon_strike("retort", "retort")
+        if o in ("hit", "crit"):
+            self.add_conviction(fx(self.skill("retort"), "add_aura_stacks")["stacks"])
+
+    def step(self):
+        s = self.s
+        if self.conviction and self.t > self.conv_until:
+            self.conviction = 0
+        # Off the global cooldown.
+        if self.hp < s.max_hp * self.WALL_BELOW and self.can("iron_wall"):
+            self.cast_aura("iron_wall")
+        if s.shield is not None and self.can("shield_of_penitent"):
+            self.cast_aura("shield_of_penitent")
+        if self.can("steel_resolve"):
+            self.cast_aura("steel_resolve")
+        if self.pull_size() >= 2 and self.can("hold_the_line"):
+            self.hold_the_line()
+        # On it.
+        if s.shield is not None and self.conviction >= self.SLAM_AT and self.can("shield_slam"):
+            self.shield_slam()
+        elif self.window_open() and self.can("retort"):
+            self.retort()
+        # Righteous Smash on the next swing.
+        rs = self.skill("righteous_smash")
+        if not self.smash_queued and self.power >= self.cost(rs):
+            self.smash_queued = True
+        if self.t >= self.swing_t:
+            self.swing_t = self.t + s.mh_speed
+            if self.smash_queued and self.power >= self.cost(rs):
+                self.smash_queued = False
+                self.power -= self.cost(rs)
+                d, o = self.weapon_strike("righteous_smash", "smash")
+                if o in ("hit", "crit"):
+                    self.add_conviction(fx(rs, "add_aura_stacks")["stacks"])
+            else:
+                self.smash_queued = False
+                self.white_swing()
+        self.mob_turn()
+
+
+class Zealot(Sturdy):
+    """Bulwark Charge to open; Seal of Iron kept up, Judgement on its cooldown while the Seal is up,
+    then the Seal again; Hallowed Ground and Holy Wrath on their cooldowns, the Zealot standing in
+    its ground; Righteous Fury up from the pull (its threat is nothing to the model; a choice's
+    damage taken or spell damage counts). Rebuke is the Kick boss.py casts, and Hammer of Justice
+    stuns a boss's cast that Kick is not ready for."""
+
+    def setup_fight(self):
+        self.setup_sturdy()
+        self.ground = None   # [until, next tick, damage, source, caster aura row, every]
+        self.seal_key = fx(self.skill("seal_of_iron"), "grant_aura")["aura"]
+        self.grant(fx(self.skill("righteous_fury"), "grant_aura")["aura"])
+        if self.ready("bulwark_charge"):
+            ch = self.skill("bulwark_charge")
+            self.cd("bulwark_charge", self.cooldown_ms("bulwark_charge"))
+            self.gain_rage(linear(fx(ch, "energize")["amount"], self.L))
+            self.lay_ground(fx(ch, "ground_effect"), "consecration")
+
+    def lay_ground(self, g, src):
+        """Ground effect `g` at the Zealot's feet, in place of the one before: its damage a tick to
+        every mob within its yards, and its caster aura on the Zealot standing in it."""
+        ward = next(a for a in SPELLS[self.calling]["auras"] if a["spell_id"] == g["caster_aura_spell_id"])
+        self.ground = [self.t + g["duration_ms"] / 1000, self.t + g["tick_ms"] / 1000, linear(g["amount"], self.L),
+                       src, ward, g["tick_ms"] / 1000]
+
+    def taken_pct(self):
+        ward = sum(p["pct"] for p in fxs(self.ground[4], "mod_damage_taken_pct")) if self.on_ground() else 0
+        return super().taken_pct() + ward
+
+    def on_ground(self):
+        return self.ground is not None and self.t < self.ground[0]
+
+    def tick_ground(self):
+        """A ground tick: its holy damage, and its caster aura's heal (Hallowed Ground's, more by its
+        skill_amount_pct: Sanctified)."""
+        g = self.ground
+        if not self.on_ground() or self.t < g[1]:
+            return
+        g[1] += g[5]
+        self.school_hit(g[2], g[3], "holy")
+        for h in fxs(g[4], "periodic_heal"):
+            self.heal(linear(h["tick"], self.L) * (100 + self.skill_pct("skill_amount_pct", "hallowed_ground")) // 100,
+                      g[3])
+
+    def judgement(self):
+        """Judgement takes the Seal off: its holy amount, never missed, critting at the character's
+        chance and the build's, and its heal_pct of the maximum health (rules/seals.rs, cast.rs)."""
+        p = fx(self.skill("judgement"), "judgement")
+        self.pay("judgement")
+        del self.buffs[self.seal_key]
+        crit = self.rng.random() * 100 < self.crit_of("judgement")
+        self.school_hit(linear(p["amount"], self.L), "judgement", p.get("school", "holy"), crit)
+        self.heal(self.s.max_hp * p["heal_pct"] // 100, "judgement")
+
+    def holy_wrath(self):
+        """Holy Wrath on every mob within its yards: its amount, vs_type_pct more on a mob of its
+        vs_type, and its stun on only_type. Its defense_type none never misses or crits."""
+        sk = self.skill("holy_wrath")
+        p = fx(sk, "school_damage")
+        raw = linear(p["amount"], self.L)
+        if p.get("vs_type") and self.m.get("type") == p["vs_type"]:
+            raw = raw * (100 + p["vs_type_pct"]) // 100
+        self.school_hit(raw, "holy_wrath", p.get("school", "holy"))
+        for st in fxs(sk, "stun"):
+            if st.get("only_type") in (None, self.m.get("type")):
+                self.stun(st)
+
+    def hammer(self):
+        """Hammer of Justice on a boss's cast: the cast stops, and the boss neither swings nor casts
+        until the stun ends (boss.Boss.stun_cast)."""
+        sk = self.skill("hammer_of_justice")
+        self.pay("hammer_of_justice")
+        if self.spell_roll(0) == "miss":
+            return
+        for p in fxs(sk, "stun"):
+            self.stun(p)
+            self.stun_cast(self.mob_swing_t)
+
+    def step(self):
+        s = self.s
+        self.tick_ground()
+        if getattr(self, "stunnable", None) and self.stunnable() and self.can("hammer_of_justice"):
+            self.hammer()
+        # Off the global cooldown.
+        if self.up(self.seal_key) and self.can("judgement"):
+            self.judgement()
+        # On it.
+        if not self.up(self.seal_key) and self.can("seal_of_iron"):
+            self.cast_aura("seal_of_iron")
+        elif self.can("hallowed_ground"):
+            self.pay("hallowed_ground")
+            self.lay_ground(fx(self.skill("hallowed_ground"), "ground_effect"), "hallowed_ground")
+        elif self.can("holy_wrath"):
+            self.pay("holy_wrath")
+            self.holy_wrath()
+        if self.t >= self.swing_t:
+            self.swing_t = self.t + s.mh_speed
+            self.white_swing()
+        self.mob_turn()
 
 
 # ---------------------------------------------------------------- Cutthroat
@@ -1918,6 +2316,478 @@ class Acolyte(Sim):
         return r
 
 
+# ---------------------------------------------------------------- Blightcaller and Bloodmender
+class Mending:
+    """What the Tier 2 healers share, ahead of Sim: the mob runs in from 30 yd as the Acolyte's
+    does; a heal on "the most hurt ally" lands on the caster, or on H-1's dummy friend
+    (multi.Guard) when there is one; a heal split among the allies near splits between the two;
+    heals over time; and the healing-taken bonus of the ground area the allies stand in."""
+
+    def setup_mending(self):
+        self.dist = 30.0
+        self.mob_swing_t = 0.0
+        self.gcd = 0.0
+        self.cast = None      # when the cast lands
+        self.channel = None   # [until, next tick]
+        self.buffs = {}       # aura key -> [until, aura row, stacks, charges] on the caster
+        self.hots = []        # [until, next, tick, every, who, source]
+        self.costs = 0
+
+    def friend_up(self):
+        return getattr(self, "friend", None) is not None
+
+    def who(self):
+        """The most hurt ally: H-1's friend, which the mob swings at, else the caster."""
+        return "friend" if self.friend_up() else "self"
+
+    def allies(self):
+        return ["self", "friend"] if self.friend_up() else ["self"]
+
+    def health_of(self, who):
+        return self.friend_hp / self.friend["hp"] if who == "friend" else self.hp / self.s.max_hp
+
+    def in_melee(self):
+        return self.dist <= 5
+
+    def heal_bonus(self):
+        """The percent more healing the allies take inside a ground area of the caster's."""
+        return 0
+
+    def heal_on(self, who, amount, src):
+        """`amount` healed on `who`, more by heal_bonus. Returns what it healed."""
+        amount = int(amount) * (100 + self.heal_bonus()) // 100
+        if who == "friend":
+            return self.heal_friend(amount)
+        before = self.hp
+        self.heal(amount, src)
+        return self.hp - before
+
+    def split(self, amount, src):
+        """`amount` split evenly among the allies."""
+        for who in self.allies():
+            self.heal_on(who, amount // len(self.allies()), src)
+
+    def hot(self, who, total, duration_ms, tick_ms, src):
+        """`total` healed on `who` over `duration_ms`, a tick each `tick_ms`."""
+        ticks = max(duration_ms // tick_ms, 1)
+        self.hots.append([self.t + duration_ms / 1000, self.t + tick_ms / 1000, total // ticks, tick_ms / 1000, who, src])
+
+    def hot_on(self, who, src):
+        return any(h[4] == who and h[5] == src and self.t < h[0] for h in self.hots)
+
+    def tick_hots(self):
+        for h in self.hots:
+            if self.t < h[0] and self.t >= h[1]:
+                h[1] += h[3]
+                self.heal_on(h[4], h[2], h[5])
+        self.hots = [h for h in self.hots if self.t < h[0]]
+
+    def mob_turn(self):
+        if self.dist > 5:
+            self.dist = max(self.dist - MOB_RUN * DT, 0)
+            self.mob_swing_t = max(self.mob_swing_t, self.t + 0.3)
+        elif self.t >= self.mob_swing_t:
+            self.mob_swing_t = self.t + self.m["swing"]
+            d, o = self.mob_swing()
+            if d > 0:
+                self.take(d)
+
+
+class Blightcaller(Mending, Sim):
+    """Creeping Blight on every mob; Harvest at HARVEST_AT stacks or more; Spread Blight on a pull
+    of 2 or more once the target wears the Blight and another mob does not; Miasma and Wasting
+    Communion on their cooldowns once the mobs are in melee; Plague Tithe as the filler. Hush is
+    the Kick boss.py casts. Solo, every heal for the most hurt ally or the allies near reaches the
+    caster; the Blight's leech always does."""
+    HARVEST_AT = 8
+
+    def setup_fight(self):
+        self.setup_mending()
+        c = self.calling
+        self.blight = None      # [until, next tick, tick, stacks] on the target
+        self.miasma = None      # the Miasma's cloud: dict(until, next, tick, every, heal_pct, grow_every, grow_next)
+        self.communion = None   # Wasting Communion's: dict(until, next, tick, every, grow_every, grow_next)
+        bf = fx(self.skill("creeping_blight"), "periodic_damage")
+        self.blight_fx = bf
+        self.blight_aura = aura(c, bf["apply_aura"])
+        # A choice's own tick or leech (Deep Blight, Hungry Blight) replaces the aura's.
+        self.blight_dot = {**fx(self.blight_aura, "periodic_damage"), **{k: bf[k] for k in ("tick", "leech_pct") if k in bf}}
+        self.procs = passive_effects(c, self.rows, "proc")
+        self.withering = sum(p["pct"] for p in passive_effects(c, self.rows, "damage_pct_vs_aura")
+                             if p["aura"] == self.blight_aura["key"])
+
+    def blighted(self, b):
+        return b is not None and self.t < b[0]
+
+    def shadow(self, raw, src, crit=False):
+        """`raw` Shadow damage at the target, more on one wearing the Blight (Withering)."""
+        more = self.withering if self.blighted(self.blight) else 0
+        return self.hit_mob(raw, src, False, crit, dmg_pct=more)
+
+    def new_blight(self):
+        """A Creeping Blight of one stack from now: its tick with the duration share of the spell
+        power, more by the build's tick pct (Blight Mastery)."""
+        dur, every = self.blight_aura["duration_ms"], self.blight_dot["tick_ms"]
+        tick = linear(self.blight_dot["tick"], self.L) + sp_periodic(self.s.spell_power, dur, dur // every)
+        tick = tick * (100 + self.skill_pct("skill_amount_pct", "creeping_blight", "tick")) // 100
+        return [self.t + dur / 1000, self.t + every / 1000, tick, 1]
+
+    def grow(self, b, n=1):
+        if self.blighted(b):
+            b[3] = min(b[3] + n, self.blight_aura["max_stacks"])
+
+    def grow_others(self, n=1):
+        """The Blights on the other mobs of a pull gain `n` stacks: none in a fight with one."""
+
+    def spread_blight(self, b, n):
+        """Copies of Blight `b` on up to `n` other mobs that wear none: none in a fight with one."""
+        return 0
+
+    def bare_other(self):
+        """Another living mob of a pull that wears no Blight: none in a fight with one."""
+        return None
+
+    def tick_blight(self, b):
+        """Blight `b` on the target ticks: its damage once a stack, its leech on the caster, a share
+        split among the allies (Shared Rot), a stack more, and on a chance a copy on another mob
+        (Virulent Blight)."""
+        dot = self.blight_dot
+        b[1] += dot["tick_ms"] / 1000
+        d = self.shadow(b[2] * b[3], "blight")
+        self.heal_on("self", d * dot["leech_pct"] // 100, "blight_leech")
+        for p in self.procs:
+            if p["on"] == "periodic_tick" and p.get("skill") == "creeping_blight":
+                self.split(d * p["heal_allies_pct"] // 100, "shared_rot")
+        b[3] = min(b[3] + dot["stacks_per_tick"], self.blight_aura["max_stacks"])
+        if self.blight_fx.get("tick_spread_chance") and self.rng.random() * 100 < self.blight_fx["tick_spread_chance"]:
+            self.spread_blight(b, 1)
+
+    def heal_bonus(self):
+        m = self.miasma
+        return m["heal_pct"] if m and self.t < m["until"] else 0
+
+    def spend(self, key):
+        """Skill `key` takes its mana and starts its cooldown and global cooldown."""
+        self.spend_mana(self.cost(self.skill(key)))
+        self.cd(key, self.cooldown_ms(key))
+        self.gcd = self.t + self.gcd_of(key)
+
+    def affords(self, key):
+        return self.ready(key) and self.power >= self.cost(self.skill(key))
+
+    def tithe_tick(self):
+        """A Plague Tithe tick: its hit, more by the build's pct (Sustaining Rot), a heal over time of
+        its pct of the hit on the most hurt ally, and stacks on the target's Blight."""
+        sk = self.skill("plague_tithe")
+        self.channel[1] += sk["channel_tick_ms"] / 1000
+        o = self.spell_roll(self.s.crit)
+        if o == "miss":
+            return
+        p = fx(sk, "school_damage")
+        raw = (linear(p["amount"], self.L) + sp_direct(self.s.spell_power, 0)) * (
+            100 + self.skill_pct("skill_amount_pct", "plague_tithe")) // 100
+        d = self.shadow(raw, "plague_tithe", o == "crit")
+        h = fx(sk, "periodic_heal")
+        self.hot(self.who(), d * h["pct"] // 100, h["duration_ms"], h["tick_ms"], "plague_tithe")
+        self.grow(self.blight, fx(sk, "grow_aura")["stacks"])
+
+    def harvest(self):
+        """Harvest takes the target's Blight: its amount once a stack, split as healing among the
+        allies at its heal_allies_pct, then a fresh Blight on another mob with a spread_yd (Seeded
+        Harvest)."""
+        p = fx(self.skill("harvest"), "consume_aura")
+        self.spend("harvest")
+        o = self.spell_roll(self.s.crit)
+        if o == "miss":
+            return
+        d = self.shadow(linear(p["amount"], self.L) * self.blight[3], "harvest", o == "crit")
+        self.blight = None
+        self.split(d * p["heal_allies_pct"] // 100, "harvest")
+        if p.get("spread_yd"):
+            i = self.bare_other()
+            if i is not None:
+                self.blights[i] = self.new_blight()
+
+    def cloud(self):
+        """The Miasma: its enemy aura's damage a tick on every mob inside, its ally aura's healing
+        taken on the allies inside, and with a grow_every_ms a stack on the Blights inside
+        (Breeding Miasma)."""
+        g = fx(self.skill("miasma"), "ground_area")
+        dot = fx(aura(self.calling, g["enemy_aura"]), "periodic_damage")
+        heal_pct = sum(p["pct"] for p in fxs(aura(self.calling, g["ally_aura"]), "mod_healing_taken_pct"))
+        self.spend("miasma")
+        every = g.get("grow_every_ms", 0) / 1000
+        self.miasma = dict(until=self.t + g["duration_ms"] / 1000, next=self.t + dot["tick_ms"] / 1000,
+                           tick=linear(dot["tick"], self.L), every=dot["tick_ms"] / 1000, heal_pct=heal_pct,
+                           grow_every=every, grow_next=self.t + every)
+
+    def commune(self):
+        """Wasting Communion: its ally aura's heal a tick on each ally inside, and a stack each
+        grow_every_ms on every Blight inside."""
+        g = fx(self.skill("wasting_communion"), "ground_area")
+        h = fx(aura(self.calling, g["ally_aura"]), "periodic_heal")
+        self.spend("wasting_communion")
+        every = g["grow_every_ms"] / 1000
+        self.communion = dict(until=self.t + g["duration_ms"] / 1000, next=self.t + h["tick_ms"] / 1000,
+                              tick=linear(h["tick"], self.L), every=h["tick_ms"] / 1000, grow_every=every,
+                              grow_next=self.t + every)
+
+    def tick_areas(self):
+        m, w = self.miasma, self.communion
+        if m and self.t < m["until"]:
+            if self.t >= m["next"]:
+                m["next"] += m["every"]
+                self.shadow(m["tick"], "miasma")
+            if m["grow_every"] and self.t >= m["grow_next"]:
+                m["grow_next"] += m["grow_every"]
+                self.grow(self.blight)
+                self.grow_others()
+        if w and self.t < w["until"]:
+            if self.t >= w["next"]:
+                w["next"] += w["every"]
+                for who in self.allies():
+                    self.heal_on(who, w["tick"], "wasting_communion")
+            if self.t >= w["grow_next"]:
+                w["grow_next"] += w["grow_every"]
+                self.grow(self.blight)
+                self.grow_others()
+
+    def step(self):
+        self.tick_hots()
+        self.tick_areas()
+        if self.blighted(self.blight) and self.t >= self.blight[1]:
+            self.tick_blight(self.blight)
+        if self.channel:
+            if self.t >= self.channel[1]:
+                self.tithe_tick()
+            if self.t >= self.channel[0]:
+                self.channel = None
+        if not self.channel and self.t >= self.gcd:
+            b = self.blight
+            if not self.blighted(b) and self.affords("creeping_blight"):
+                self.spend("creeping_blight")
+                if self.spell_roll(0) != "miss":
+                    self.blight = self.new_blight()
+            elif self.blighted(b) and b[3] >= self.HARVEST_AT and self.affords("harvest"):
+                self.harvest()
+            elif self.blighted(b) and self.bare_other() is not None and self.affords("spread_blight"):
+                self.spend("spread_blight")
+                self.spread_blight(b, fx(self.skill("spread_blight"), "copy_aura")["targets"])
+            elif self.bare_other() is not None and self.affords("creeping_blight"):
+                self.spend("creeping_blight")
+                if self.spell_roll(0) != "miss":
+                    self.blights[self.bare_other()] = self.new_blight()
+            elif self.in_melee() and self.affords("miasma"):
+                self.cloud()
+            elif self.in_melee() and self.affords("wasting_communion"):
+                self.commune()
+            elif self.affords("plague_tithe"):
+                sk = self.skill("plague_tithe")
+                self.spend("plague_tithe")
+                self.channel = [self.t + sk["channel_ms"] / 1000, self.t + sk["channel_tick_ms"] / 1000]
+        self.mob_turn()
+
+
+class Bloodmender(Mending, Sim):
+    """Dark Mending, else Transfusion, on the most hurt ally under MEND_BELOW health while the
+    Bloodmender's health stays above the cost; Blood Feast under FEAST_BELOW health; Blood Ward
+    and Circle of Blood on their cooldowns once the mob is in melee; Blood Lance as the damage.
+    Hush is the Kick boss.py casts. Every health cost fires the build's on-cast procs: Masochism's
+    heal over time, Sanguine Flow's instant Blood Lance (a Lance costs health, so each one makes
+    the next instant), Bloodsurge's mana. self.fight_log holds (time, "blood_lance", instant) for
+    each Lance started."""
+    MEND_BELOW = 0.40
+    FEAST_BELOW = 0.60
+
+    def setup_fight(self):
+        self.setup_mending()
+        self.shields = {}    # skill key -> [left, until] on the caster, first up first
+        self.tolls = []      # [until, next, tick, every, who]: Dark Mending's toll
+        self.circle = None   # [until, next, tick, every]
+        self.procs = passive_effects(self.calling, self.rows, "proc")
+
+    def health_cost(self, key):
+        return self.s.max_hp * self.skill(key)["realm_cost"] // 100
+
+    def affords(self, key):
+        """Skill `key` is off its cooldown and its health cost leaves the Bloodmender alive (cast.rs
+        refuses a health cost that would kill)."""
+        return self.ready(key) and self.hp > self.health_cost(key)
+
+    def pay_health(self, key):
+        """Skill `key`'s health cost, and the on-cast procs of a health cost. Returns the cost."""
+        cost = self.health_cost(key)
+        self.hp -= cost
+        self.costs += cost
+        for p in self.procs:
+            if p["on"] != "cast" or p.get("cost_kind") != "health" or not cost:
+                continue
+            if p.get("apply_aura"):
+                a = aura(self.calling, p["apply_aura"])
+                h = fxs(a, "periodic_heal")
+                if h:
+                    self.hot("self", cost * h[0]["pct"] // 100, a["duration_ms"], h[0]["tick_ms"], a["key"])
+                else:
+                    self.grant(a["key"])
+            if p.get("energize_pct_of_base"):
+                self.power = min(self.power + self.pct_base(p["energize_pct_of_base"]), self.s.max_mana)
+        return cost
+
+    def start(self, key):
+        self.cd(key, self.cooldown_ms(key))
+        self.gcd = self.t + self.gcd_of(key)
+
+    def start_lance(self):
+        mods = self.next_casts("blood_lance")
+        self.use_next_casts("blood_lance")
+        instant = any(p.get("instant") for p in mods)
+        self.fight_log.append((self.t, "blood_lance", instant))
+        self.cast = self.t + (0 if instant else self.skill("blood_lance")["cast_time_ms"] / 1000)
+        self.gcd = self.t + self.gcd_of("blood_lance")
+
+    def lance(self):
+        """Blood Lance lands: its health cost, the hit, and a heal over time of its pct of the hit on
+        the most hurt ally within its yards of the target: the friend beside the mob, or the caster
+        once the mob is that near."""
+        sk = self.skill("blood_lance")
+        self.pay_health("blood_lance")
+        o = self.spell_roll(self.s.crit)
+        if o == "miss":
+            return
+        p = fx(sk, "school_damage")
+        d = self.hit_mob(linear(p["amount"], self.L) + sp_direct(self.s.spell_power, sk["cast_time_ms"]),
+                         "blood_lance", False, o == "crit")
+        h = fx(sk, "periodic_heal")
+        who = self.who() if self.friend_up() or self.dist <= h["radius_yd"] else None
+        if who:
+            self.hot(who, d * h["pct"] // 100, h["duration_ms"], h["tick_ms"], "blood_lance")
+
+    def drink(self):
+        """A Blood Feast tick: the drain, its heal_pct of it on the caster, and a shield of what it
+        heals past the maximum (Sated Feast)."""
+        sk = self.skill("blood_feast")
+        self.channel[1] += sk["channel_tick_ms"] / 1000
+        p = fx(sk, "drain")
+        o = self.spell_roll(self.s.crit)
+        if o == "miss":
+            return
+        d = self.hit_mob(linear(p["amount"], self.L), "blood_feast", False, o == "crit")
+        asked = d * p["heal_pct"] // 100
+        healed = self.heal_on("self", asked, "blood_feast")
+        if p.get("overheal_absorb_max_pct") and asked > healed:
+            w = self.shields.get("blood_feast")
+            left = w[0] if w and self.t < w[1] else 0
+            cap = self.s.max_hp * p["overheal_absorb_max_pct"] // 100
+            self.shield("self", "blood_feast", min(left + asked - healed, cap), p["overheal_absorb_ms"])
+
+    def shield(self, who, key, amount, ms):
+        if who == "friend":
+            self.shield_friend(amount, ms)
+        elif amount > 0:
+            self.shields[key] = [amount, self.t + ms / 1000]
+
+    def take(self, dmg):
+        for key, w in list(self.shields.items()):
+            soaked = min(w[0], dmg) if self.t < w[1] else 0
+            w[0] -= soaked
+            dmg -= soaked
+            if not w[0] or self.t >= w[1]:
+                del self.shields[key]
+        return Sim.take(self, dmg)
+
+    def mend(self, who):
+        """Dark Mending on `who`: its health cost, the heal, more by the build's pct (Crimson Gift),
+        and its toll on `who`: its pct of what it healed over the toll aura's ticks."""
+        sk = self.skill("dark_mending")
+        self.start("dark_mending")
+        self.pay_health("dark_mending")
+        amount = (linear(fx(sk, "heal")["amount"], self.L) + sp_direct(self.s.spell_power, 0)) * (
+            100 + self.skill_pct("skill_amount_pct", "dark_mending")) // 100
+        healed = self.heal_on(who, amount, "dark_mending")
+        a = aura(self.calling, fx(sk, "periodic_damage")["apply_aura"])
+        toll = fx(a, "periodic_damage")
+        ticks = a["duration_ms"] // toll["tick_ms"]
+        self.tolls = [x for x in self.tolls if x[4] != who]
+        self.tolls.append([self.t + a["duration_ms"] / 1000, self.t + toll["tick_ms"] / 1000,
+                           healed * toll["pct"] // 100 // ticks, toll["tick_ms"] / 1000, who])
+
+    def transfuse(self, who):
+        """Transfusion on `who`: its health cost, and its aura's pct of the cost healed over the
+        aura's duration, more by the build's pct (Crimson Gift)."""
+        sk = self.skill("transfusion")
+        self.start("transfusion")
+        cost = self.pay_health("transfusion")
+        a = aura(self.calling, fx(sk, "periodic_heal")["apply_aura"])
+        h = fx(a, "periodic_heal")
+        total = cost * h["pct"] // 100 * (100 + self.skill_pct("skill_amount_pct", "transfusion")) // 100
+        self.hot(who, total, a["duration_ms"], h["tick_ms"], "transfusion")
+
+    def ward(self):
+        """Blood Ward: its health cost, and a shield of its pct of the cost on every ally."""
+        p = fx(self.skill("blood_ward"), "absorb")
+        self.start("blood_ward")
+        cost = self.pay_health("blood_ward")
+        for who in self.allies():
+            self.shield(who, "blood_ward", cost * p["pct"] // 100, p["duration_ms"])
+
+    def draw_circle(self):
+        """Circle of Blood: its health cost, and its ally aura's heal a tick on every ally inside."""
+        g = fx(self.skill("circle_of_blood"), "ground_area")
+        h = fx(aura(self.calling, g["ally_aura"]), "periodic_heal")
+        self.start("circle_of_blood")
+        self.pay_health("circle_of_blood")
+        self.circle = [self.t + g["duration_ms"] / 1000, self.t + h["tick_ms"] / 1000, linear(h["tick"], self.L),
+                       h["tick_ms"] / 1000]
+
+    def tick_tolls(self):
+        for x in self.tolls:
+            if self.t < x[0] and self.t >= x[1]:
+                x[1] += x[3]
+                if x[4] == "friend":
+                    self.hurt_friend(x[2])
+                else:
+                    self.hp -= min(x[2], max(self.hp - 1, 0))
+                    self.costs += x[2]
+        self.tolls = [x for x in self.tolls if self.t < x[0]]
+        c = self.circle
+        if c and self.t < c[0] and self.t >= c[1]:
+            c[1] += c[3]
+            for who in self.allies():
+                self.heal_on(who, c[2], "circle_of_blood")
+
+    def step(self):
+        s = self.s
+        self.tick_hots()
+        self.tick_tolls()
+        if self.channel:
+            if self.t >= self.channel[1]:
+                self.drink()
+            if self.t >= self.channel[0]:
+                self.channel = None
+        if self.cast is not None and self.t >= self.cast:
+            self.cast = None
+            self.lance()
+        if self.cast is None and not self.channel and self.t >= self.gcd:
+            who = self.who()
+            low = self.health_of(who) < self.MEND_BELOW
+            feast = self.skill("blood_feast")
+            if low and self.affords("dark_mending"):
+                self.mend(who)
+            elif low and not self.hot_on(who, "transfusion") and self.affords("transfusion"):
+                self.transfuse(who)
+            elif self.hp < s.max_hp * self.FEAST_BELOW and self.power >= self.cost(feast):
+                self.spend_mana(self.cost(feast))
+                self.gcd = self.t + self.gcd_of("blood_feast")
+                self.channel = [self.t + feast["channel_ms"] / 1000, self.t + feast["channel_tick_ms"] / 1000]
+            elif self.in_melee() and self.affords("blood_ward"):
+                self.ward()
+            elif self.in_melee() and self.affords("circle_of_blood"):
+                self.draw_circle()
+            elif self.affords("blood_lance"):
+                self.start_lance()
+        self.mob_turn()
+
+
 # ---------------------------------------------------------------- Basic Warrior
 class BasicWarrior(Sim):
     """Tier 0, levels 1 to 9: Charge in, Fire Blast and Gouge on their cooldowns, Heroic Strike on
@@ -1990,7 +2860,7 @@ class BasicWarrior(Sim):
 
 
 SIMS = dict(basic_warrior=BasicWarrior, vanguard=Vanguard, cutthroat=Cutthroat, initiate=Initiate, ranger=Ranger,
-            acolyte=Acolyte)
+            acolyte=Acolyte, ironclad=Ironclad, zealot=Zealot, blightcaller=Blightcaller, bloodmender=Bloodmender)
 
 # ---------------------------------------------------------------- levels and Talent Rows
 def tier_cap(tier):

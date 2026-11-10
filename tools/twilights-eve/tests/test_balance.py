@@ -220,6 +220,8 @@ class BalanceModel(unittest.TestCase):
         choices = {(calling, c["key"]) for calling in model.CALLINGS for row in model.talent_rows(calling)
                    for c in row["choices"]}
         for key, why in model.IGNORED.items():
+            if key[0] not in model.CALLINGS:
+                continue
             with self.subTest(ignored=key):
                 self.assertIn(key, choices)
                 self.assertTrue(why)
@@ -504,6 +506,7 @@ class BalanceModel(unittest.TestCase):
                     self.heal_friend(self.friend["hp"])
 
         added = dict(spells=model.SPELLS, callings=model.CALLINGS_CSV)
+        kept = {name: table.get(calling) for name, table in added.items()}
         model.SPELLS[calling] = {**model.SPELLS["acolyte"], "key": calling, "tier": 2, "tier_cap": 50}
         model.CALLINGS_CSV[calling] = model.CALLINGS_CSV["acolyte"]
         had = multi.CLASSES.get(calling)
@@ -515,8 +518,12 @@ class BalanceModel(unittest.TestCase):
                 scenarios._CHARACTERS.clear()
                 rows[name] = scenarios.h_1([40], 5, [calling], lambda cells: [scenarios.run_cell(c) for c in cells])
         finally:
-            for table in added.values():
-                del table[calling]
+            # The Blightcaller's own data and sim come back once the fixture is done.
+            for name, table in added.items():
+                if kept[name] is None:
+                    del table[calling]
+                else:
+                    table[calling] = kept[name]
             if had:
                 multi.CLASSES[calling] = had
             else:
@@ -532,6 +539,91 @@ class BalanceModel(unittest.TestCase):
         self.assertTrue(mends["holds"])
         self.assertLess(idle["win"], 0.80)
         self.assertFalse(idle["holds"])
+
+    # The sturdy Tier 2 Callings' sims: the Ironclad and the Zealot in the form of the Vanguard,
+    # the Blightcaller and the Bloodmender in the form of the Acolyte.
+    STURDY_TIER2 = ("ironclad", "zealot", "blightcaller", "bloodmender")
+
+    def test_sturdy_tier2_sims_fight_at_30_and_50(self):
+        for calling in self.STURDY_TIER2:
+            for level in (30, 50):
+                with self.subTest(calling=calling, level=level):
+                    self.assertIn(calling, multi.CLASSES)
+                    ch = model.character(calling, level, "green", scenarios.pick_build(calling, level, 1))
+                    sim = multi.fighter(calling, 1)(calling, level, ch["stats"], ch["rows"], random.Random(7), {},
+                                                    mob=model.mob_stats(level))
+                    r = sim.fight()
+                    self.assertLess(r["time"], model.FIGHT_CAP_S)
+                    self.assertTrue(r["won"] or r["died"])
+                    self.assertGreater(sum(sim.dmg.values()), 0)
+                    self.assertTrue(0 <= r["health_left"] <= 1)
+                    row = scenarios.run_cell(scenarios.cell(calling, level, "green", scenarios.normals(level, 1), 1))
+                    self.assertIn(row["win"], (0, 1))
+                    self.assertGreater(row["dps"], 0)
+                    self.assertTrue(row["win"] == 0 or 0 < row["health_left"] <= 1)
+
+    def test_ironclad_spends_conviction_with_shield_slam(self):
+        level = 40
+        ch = model.character("ironclad", level, "green")
+        cls = multi.fighter("ironclad", 1)
+        slams = []
+        for seed in range(5):
+            sim = cls("ironclad", level, ch["stats"], ch["rows"], random.Random(seed), {},
+                      mob=model.mob_stats(level, rank=1))
+            sim.fight()
+            slams += [entry for entry in sim.fight_log if entry[1] == "shield_slam"]
+        self.assertTrue(slams)
+        for at, key, stacks in slams:
+            self.assertGreaterEqual(stacks, 3)
+
+    def test_zealot_holy_wrath_doubles_on_undead(self):
+        level = 40
+        ch = model.character("zealot", level, "green")
+        dealt, stunned = {}, {}
+        for kind in ("humanoid", "undead"):
+            mob = model.mob_stats(level, creature_type=kind)
+            sim = model.Zealot("zealot", level, ch["stats"], ch["rows"], random.Random(1), {}, mob=mob)
+            sim.mob_hp, sim.m_armor = mob["hp"], mob["armor"]
+            sim.setup_fight()
+            swing_at = sim.mob_swing_t
+            sim.holy_wrath()
+            dealt[kind] = sim.dmg["holy_wrath"]
+            stunned[kind] = sim.mob_swing_t > swing_at
+        self.assertGreater(dealt["humanoid"], 0)
+        self.assertEqual(dealt["undead"], 2 * dealt["humanoid"])
+        self.assertEqual(stunned, dict(humanoid=False, undead=True))
+        # A named boss fights as its template's creature_type; on-level mobs are humanoid.
+        self.assertEqual(model.mob_stats(level)["type"], "humanoid")
+        types = {boss.boss_mob(b)["type"] for b in boss.named_bosses()}
+        self.assertIn("undead", types)
+
+    def test_healers_h1_cells_report_the_friend(self):
+        serial = lambda cells: [scenarios.run_cell(c) for c in scenarios.with_builds(cells)]  # noqa: E731
+        for calling in ("blightcaller", "bloodmender"):
+            with self.subTest(calling=calling):
+                rows = scenarios.h_1([30, 50], 3, [calling], serial)
+                self.assertEqual([r["level"] for r in rows], [30, 50])
+                for r in rows:
+                    self.assertFalse(r.get("no_sim"))
+                    self.assertIn("friend", r["against"])
+                    self.assertTrue(0 <= r["win"] <= 1)
+                    self.assertTrue(r["win"] == 0 or 0.30 <= r["health_left"] <= 1)
+                    self.assertIsNotNone(r["holds"])
+                # The healer's heals reach the friend.
+                ch = model.character(calling, 40, "green")
+                cls = multi.guard(calling, dict(hp=ch["stats"].max_hp, armor=ch["stats"].armor))
+                sim = cls(calling, 40, ch["stats"], ch["rows"], random.Random(3), {}, mob=model.mob_stats(40, rank=1))
+                sim.fight()
+                self.assertGreater(sim.friend_healed, 0)
+
+    def test_every_tier2_ignored_entry_names_a_choice_or_row(self):
+        for (calling, key), why in model.IGNORED.items():
+            if calling in model.CALLINGS:
+                continue
+            with self.subTest(calling=calling, key=key):
+                rows = model.talent_rows(calling)
+                self.assertIn(key, {r["key"] for r in rows} | {c["key"] for r in rows for c in r["choices"]})
+                self.assertTrue(why)
 
     def test_named_bosses_load(self):
         bosses = boss.named_bosses()

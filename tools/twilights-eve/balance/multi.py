@@ -134,13 +134,27 @@ class Guard:
         d = model.armored(raw, f["armor"], self.m["level"])
         r = self.rng.random() * 100
         if r >= 5:
-            self.friend_hp -= d * 2 if r < 10 else d
+            self.hurt_friend(d * 2 if r < 10 else d)
         return 0, "friend"
+
+    def hurt_friend(self, d):
+        """`d` damage on the friend, past the shield a healer put on it (shield_friend)."""
+        w = self.friend_shield
+        if w and self.t < w[1]:
+            soaked = min(w[0], d)
+            w[0] -= soaked
+            d -= soaked
+        self.friend_hp -= d
+
+    def shield_friend(self, amount, ms):
+        """A shield of `amount` on the friend for `ms`, in place of the one before (Blood Ward)."""
+        self.friend_shield = [int(amount), self.t + ms / 1000]
 
     def heal_friend(self, amount):
         """`amount` healed on the friend, up to its maximum. Returns what it healed."""
         before = self.friend_hp
         self.friend_hp = min(self.friend_hp + int(amount), self.friend["hp"])
+        self.friend_healed += self.friend_hp - before
         return self.friend_hp - before
 
     def after_step(self):
@@ -154,6 +168,8 @@ class Guard:
 
     def fight(self):
         self.friend_hp = self.friend["hp"]
+        self.friend_shield = None
+        self.friend_healed = 0
         r = super().fight()
         left = max(self.friend_hp, 0) / self.friend["hp"]
         lived = self.friend_hp > 0 and self.hp > 0
@@ -266,8 +282,81 @@ class AcolyteN(Multi, model.Acolyte):
         self.tgt = keep
 
 
+class IroncladN(Multi, model.Ironclad):
+    def extra_defended(self, i, o):
+        # A block's procs hit the mob that swung.
+        keep, self.tgt = self.tgt, i
+        self.fire(o)
+        self.tgt = keep
+
+
+class ZealotN(Multi, model.Zealot):
+    AOE = {"consecration": 0, "hallowed_ground": 0, "holy_wrath": 0}
+
+    def extra_defended(self, i, o):
+        keep, self.tgt = self.tgt, i
+        self.fire(o)
+        self.tgt = keep
+
+
+class BlightcallerN(Multi, model.Blightcaller):
+    AOE = {"miasma": 0}
+
+    @property
+    def blight(self):
+        return self.blights.get(self.tgt)
+
+    @blight.setter
+    def blight(self, b):
+        self.blights[self.tgt] = b
+
+    def setup_fight(self):
+        self.blights = {}  # mob -> its Blight
+        super().setup_fight()
+
+    def bare_other(self):
+        bare = [i for i in self.alive() if i != self.tgt and not self.blighted(self.blights.get(i))]
+        return bare[0] if bare else None
+
+    def spread_blight(self, b, n):
+        # Copies with its stacks and time left, ticking a tick from now.
+        bare = [i for i in self.alive() if i != self.tgt and not self.blighted(self.blights.get(i))][:n]
+        for i in bare:
+            self.blights[i] = [b[0], self.t + self.blight_dot["tick_ms"] / 1000, b[2], b[3]]
+        return len(bare)
+
+    def grow_others(self, n=1):
+        for i in self.alive():
+            if i != self.tgt:
+                self.grow(self.blights.get(i), n)
+
+    def after_step(self):
+        keep = self.tgt
+        # A mob that died wearing the Blight passes it on with every stack (Contagion), then loses it.
+        for i, b in list(self.blights.items()):
+            if self.mobs[i] <= 0:
+                del self.blights[i]
+                if self.blighted(b) and any(p["on"] == "wearer_death" for p in self.procs):
+                    bare = [j for j in self.alive() if not self.blighted(self.blights.get(j))]
+                    if bare:
+                        self.blights[bare[0]] = [b[0], b[1], b[2], b[3]]
+        # The Blights on the other mobs tick there.
+        for i in self.alive():
+            b = self.blights.get(i)
+            if i != keep and self.blighted(b) and self.t >= b[1]:
+                self.tgt = i
+                self.tick_blight(b)
+        self.tgt = keep
+        super().after_step()
+
+
+class BloodmenderN(Multi, model.Bloodmender):
+    pass
+
+
 CLASSES = dict(basic_warrior=BasicWarriorN, vanguard=VanguardN, cutthroat=CutthroatN, initiate=InitiateN,
-               ranger=RangerN, acolyte=AcolyteN)
+               ranger=RangerN, acolyte=AcolyteN, ironclad=IroncladN, zealot=ZealotN, blightcaller=BlightcallerN,
+               bloodmender=BloodmenderN)
 
 
 def fighter(calling, n=1):
