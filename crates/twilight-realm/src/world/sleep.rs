@@ -128,6 +128,7 @@ fn wake(
             if let Some(&(_, Some(fight))) = mates {
                 if m.template.hostile && m.alive() && m.assist_in.is_none() {
                     m.assist_in = Some(aggro::social_delay(distance(m.position, fight)));
+                    m.assist_on = None;
                 }
             }
         }

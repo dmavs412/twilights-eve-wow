@@ -1,7 +1,8 @@
 //! **Threat** (#147): each mob's table of the players it hates, and whom it fights. Damage is
 //! threat 1:1, healing half its amount split across the mobs that hate the one healed, and a
 //! player takes the mob from its target only past 110% of the target's threat in melee reach or
-//! 130% beyond it (vanilla).
+//! 130% beyond it (vanilla). A guid on a table may be a creature's too: a defender, or a hostile
+//! creature a defender fights (#700); a guid's high bits tell the two apart (`shard::is_player`).
 
 /// The share of a heal's amount that becomes the healer's threat.
 pub const HEAL_FACTOR: f32 = 0.5;

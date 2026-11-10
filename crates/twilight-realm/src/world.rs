@@ -34,6 +34,7 @@ use power::Power;
 
 mod brew;
 mod death;
+mod defend;
 mod discovery;
 mod dungeon;
 mod fear;
@@ -933,6 +934,8 @@ impl InWorld {
                 }
             }
         }
+        // ... and the defenders that come too close (#700).
+        self.notice_defenders(host, events);
 
         self.player_swing(c, rng, events, &mut ticked);
         self.auto_shot(c, rng, events, &mut ticked);
@@ -1013,6 +1016,18 @@ impl InWorld {
     /// goes one hop: a mob that joins calls no one. With a `host`, a campmate joins only when it
     /// has line of sight to the pulled mob; an attack passes none and calls through walls.
     fn pull(&mut self, i: usize, host: Option<&dyn Host>, events: &mut Vec<SessionEvent>) {
+        self.pull_onto(i, self.guid, host, events);
+    }
+
+    /// [`Self::pull`] onto `target`: the player, or a defender (#700), whom the campmates who
+    /// answer fall on too.
+    fn pull_onto(
+        &mut self,
+        i: usize,
+        target: u64,
+        host: Option<&dyn Host>,
+        events: &mut Vec<SessionEvent>,
+    ) {
         // A creature that never fights, or a frozen one, is pulled by nothing, and calls no one.
         if self.mobs[i].template.never_fights || self.mobs[i].frozen {
             return;
@@ -1020,10 +1035,11 @@ impl InWorld {
         let camp = self.mobs[i].camp;
         let at = self.mobs[i].position;
         let map = self.map;
-        engage(&mut self.mobs[i], self.guid, events);
+        engage(&mut self.mobs[i], target, events);
         if !self.mobs[i].template.hostile {
             return;
         }
+        let on = (target != self.guid).then_some(target);
         for mob in &mut self.mobs {
             let d = distance(mob.position, at);
             if mob.camp == camp
@@ -1034,6 +1050,7 @@ impl InWorld {
                 && host.map_or(true, |h| h.line_of_sight(map, eye(mob.position), eye(at)))
             {
                 mob.assist_in = Some(aggro::social_delay(d));
+                mob.assist_on = on;
             }
         }
     }
@@ -1301,6 +1318,7 @@ impl InWorld {
         let rooted = self.skills.rooted(self.mobs[i].guid);
         let incapacitated = self.skills.incapacitated(self.mobs[i].guid);
         self.partner_stance(i, events);
+        let foes = self.creature_foes(i);
         let mob = &mut self.mobs[i];
         if rooted {
             events.extend(mob.halt());
@@ -1342,11 +1360,13 @@ impl InWorld {
             return;
         }
         if let Some(t) = mob.assist_in {
-            if mob.state != State::Idle || !self.player.alive() {
+            // A call against a defender answers whether or not the player lives (#700).
+            let on = mob.assist_on;
+            if mob.state != State::Idle || (on.is_none() && !self.player.alive()) {
                 mob.assist_in = None;
             } else if t <= dt {
                 mob.assist_in = None;
-                engage(mob, self.guid, events);
+                engage(mob, on.unwrap_or(self.guid), events);
             } else {
                 mob.assist_in = Some(t - dt);
             }
@@ -1388,7 +1408,11 @@ impl InWorld {
                     let p = if g == guid {
                         me_alive.then_some(me)
                     } else {
-                        others.iter().find(|o| o.0 == g).map(|o| o.1)
+                        others
+                            .iter()
+                            .find(|o| o.0 == g)
+                            .map(|o| o.1)
+                            .or_else(|| foes.iter().find(|f| f.0 == g).map(|f| f.1))
                     };
                     p.filter(|&p| !strayed || !leash::beyond(home, p))
                         .map(|p| distance(at, p) <= melee_reach())
@@ -1405,16 +1429,24 @@ impl InWorld {
                     engage(mob, next, events);
                     return;
                 }
-                // It gives up only with no one left on its table.
+                // It gives up only with no one left on its table; a defender where it stands.
                 if next.is_none() {
+                    if mob.defender {
+                        stand_down(mob, events);
+                        return;
+                    }
                     let camp = mob.camp;
                     self.evade_camp(camp, target, route.map(|r| (r, map, host)), events);
                     return;
                 }
                 mob.engaged_secs += dt;
+                // The creature it fights, where it stands (#700).
+                let foe_at = foes.iter().find(|f| f.0 == mob.target).map(|f| f.1);
                 // Running from its target at low health: no swing, no cast and no chase.
                 if mob.fleeing.is_some() {
-                    let from = if mob.target == self.guid {
+                    let from = if let Some(at) = foe_at {
+                        at
+                    } else if mob.target == self.guid {
                         me
                     } else {
                         self.others
@@ -1430,7 +1462,8 @@ impl InWorld {
                     interrupt_cast(mob, events);
                     return;
                 }
-                if self.mob_cast(i, dt, me, c.orientation, host, rng, events) {
+                // A creature fighting a creature swings and never casts.
+                if foe_at.is_none() && self.mob_cast(i, dt, me, c.orientation, host, rng, events) {
                     return;
                 }
                 let mob = &mut self.mobs[i];
@@ -1438,7 +1471,9 @@ impl InWorld {
                 if !mob.template.melee {
                     return;
                 }
-                let d = distance(mob.position, me);
+                // Where its target stands: the player's, or the creature's it fights.
+                let aim = foe_at.unwrap_or(me);
+                let d = distance(mob.position, aim);
                 if d > melee_reach() && rooted {
                     return;
                 }
@@ -1446,18 +1481,18 @@ impl InWorld {
                     let stale = mob
                         .walk
                         .as_ref()
-                        .is_none_or(|w| distance(w.aimed_at, me) > CHASE_SLACK);
+                        .is_none_or(|w| distance(w.aimed_at, aim) > CHASE_SLACK);
                     if stale && mob.repath_timer <= 0.0 {
                         mob.repath_timer = REPATH_SECS;
                         let run = match route {
                             Some(r) => {
-                                let path = r.path(mob.position, me, map, host);
-                                mob.run_path(short_of(path, CHASE_DISTANCE), me)
+                                let path = r.path(mob.position, aim, map, host);
+                                mob.run_path(short_of(path, CHASE_DISTANCE), aim)
                             }
                             None => {
-                                let to = chase_point(mob.position, me, map, host);
-                                match crate::phased::chase_within(phase, map, to, me) {
-                                    Some(to) => mob.run_to(to, me),
+                                let to = chase_point(mob.position, aim, map, host);
+                                match crate::phased::chase_within(phase, map, to, aim) {
+                                    Some(to) => mob.run_to(to, aim),
                                     None => return,
                                 }
                             }
@@ -1467,11 +1502,19 @@ impl InWorld {
                     return;
                 }
                 if mob.walk.is_none() {
-                    mob.orientation = (me[1] - mob.position[1])
-                        .atan2(me[0] - mob.position[0])
+                    mob.orientation = (aim[1] - mob.position[1])
+                        .atan2(aim[0] - mob.position[0])
                         .rem_euclid(std::f32::consts::TAU);
                 }
                 if mob.swing_timer > 0.0 {
+                    return;
+                }
+                if foe_at.is_some() {
+                    mob.swing_timer = clock::secs(mob.template.base_attack_time)
+                        * mob.attack_time_mul
+                        * self.skills.attack_time_mul(mob.guid);
+                    let victim = mob.target;
+                    self.swing_at_creature(i, victim, c, rng, events, ticked);
                     return;
                 }
                 let stats = cast::buffed(&self.player.stats, &self.skills);
@@ -1751,6 +1794,40 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
+        let (victim, base_xp) = self.fall(i, c, rng, events, ticked);
+        self.fed_kill_heal(events);
+        self.proc(
+            crate::rules::procs::Happened {
+                was_ms: 0,
+                event: crate::callings::ProcEvent::Kill,
+                skill: None,
+                plain: None,
+                yields_xp: base_xp > 0,
+                // The victim, its auras still on it: a kill proc may ask what it wore (Fuel).
+                target: Some(victim),
+                amount: 0,
+                school: None,
+            },
+            c,
+            rng,
+            events,
+            ticked,
+        );
+        self.wearer_died(victim, c, rng, events, ticked);
+        self.auras_die_with(victim, events);
+    }
+
+    /// Mob `i` dies, at the player's hand or a defender's (#700): the fight ends, and the kill is
+    /// credited, here and now when alone, or by the realm to everyone near a shard's mob. Its
+    /// guid, and the experience its kill pays before the party share.
+    fn fall(
+        &mut self,
+        i: usize,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) -> (u64, u32) {
         let (elite, base_xp) = self.kill_xp(&self.mobs[i]);
         let mob = &mut self.mobs[i];
         let entry = mob.template.entry;
@@ -1796,9 +1873,15 @@ impl InWorld {
             });
         }
         if engaged {
+            // The creature it fought, or the player.
+            let fought = if crate::shard::is_player(mob.target) {
+                self.guid
+            } else {
+                mob.target
+            };
             events.push(SessionEvent::AttackStop {
                 attacker: mob.guid,
-                victim: self.guid,
+                victim: fought,
             });
         }
         let mut pairs = vec![(UNIT_FIELD_HEALTH, 0), (UNIT_FIELD_FLAGS, 0)];
@@ -1842,26 +1925,7 @@ impl InWorld {
             };
             self.take_credit(credit, c, rng, events, ticked);
         }
-        self.fed_kill_heal(events);
-        self.proc(
-            crate::rules::procs::Happened {
-                was_ms: 0,
-                event: crate::callings::ProcEvent::Kill,
-                skill: None,
-                plain: None,
-                yields_xp: base_xp > 0,
-                // The victim, its auras still on it: a kill proc may ask what it wore (Fuel).
-                target: Some(victim),
-                amount: 0,
-                school: None,
-            },
-            c,
-            rng,
-            events,
-            ticked,
-        );
-        self.wearer_died(victim, c, rng, events, ticked);
-        self.auras_die_with(victim, events);
+        (victim, base_xp)
     }
 
     /// What this session cast on other players since it was last asked, to deliver.
@@ -2213,6 +2277,24 @@ fn evade(
         None => mob.run_to(home, home),
     };
     events.push(run);
+}
+
+/// A defender with no one left on its table stops where it stands (#700): idle at the health it
+/// has, its home where it stopped, so nothing walks it back. Its escort walks it on.
+fn stand_down(mob: &mut Mob, events: &mut Vec<SessionEvent>) {
+    mob.state = State::Idle;
+    mob.threat.clear();
+    drop_cast(mob, events);
+    events.extend(mob.halt());
+    events.push(SessionEvent::AttackStop {
+        attacker: mob.guid,
+        victim: mob.target,
+    });
+    let mut pairs = vec![(UNIT_FIELD_FLAGS, 0)];
+    pairs.extend(guid_pairs(UNIT_FIELD_TARGET, 0));
+    events.push(values(mob.guid, &pairs));
+    mob.home = mob.position;
+    mob.home_orientation = mob.orientation;
 }
 
 /// `mob`'s Creature Spell under way stops short, and lands nothing.

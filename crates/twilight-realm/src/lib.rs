@@ -2992,6 +2992,34 @@ impl Realm {
         map: u32,
         audience: Audience,
     ) -> Option<u64> {
+        self.spawn_creature_for(host, entry, level, position, map, audience, false)
+    }
+
+    /// [`Self::spawn_for`], the creature made a defender (#700): hostile creatures fight it, it
+    /// fights back, and players heal it.
+    pub fn spawn_defender_for(
+        &mut self,
+        host: &dyn Host,
+        entry: u32,
+        level: u8,
+        position: [f32; 3],
+        map: u32,
+        audience: Audience,
+    ) -> Option<u64> {
+        self.spawn_creature_for(host, entry, level, position, map, audience, true)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn spawn_creature_for(
+        &mut self,
+        host: &dyn Host,
+        entry: u32,
+        level: u8,
+        position: [f32; 3],
+        map: u32,
+        audience: Audience,
+        defender: bool,
+    ) -> Option<u64> {
         let template = mobs::template(entry)?;
         let place = shard::Place {
             map,
@@ -3003,7 +3031,7 @@ impl Realm {
             .shards
             .entry(place)
             .or_insert_with(|| shard::Shard::new(place, shard_seed(place, &mut self.rng)));
-        shard.spawn_for(host, template, level, position, audience)
+        shard.spawn_for(host, template, level, position, audience, defender)
     }
 
     /// Removes every creature made for exactly `audience` on any shard; each admitted client

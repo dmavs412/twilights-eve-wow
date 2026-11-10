@@ -117,7 +117,8 @@ impl Shard {
 
     /// A creature of `template` at `level`, made at `position` for `audience` (ADR 0014): it
     /// stands at the [`crate::ground::spot`] for the point, and no spawn timer ever revives it.
-    /// Its guid, or `None` when no spot within reach fits it.
+    /// Its guid, or `None` when no spot within reach fits it. A `defender` is one hostile
+    /// creatures fight (#700).
     pub(crate) fn spawn_for(
         &mut self,
         host: &dyn Host,
@@ -125,6 +126,7 @@ impl Shard {
         level: u8,
         position: [f32; 3],
         audience: Audience,
+        defender: bool,
     ) -> Option<u64> {
         let at = crate::ground::spot(host, self.place.map, position, template.swims)?;
         self.audience_spawned = self.audience_spawned.wrapping_add(1);
@@ -134,8 +136,11 @@ impl Shard {
             self.settling.push(guid);
         }
         let zone = mobs::zone_factor_at(host, self.place.phase, self.place.map, at);
-        self.mobs
-            .push(Mob::for_audience(guid, template, level, at, audience, zone));
+        self.mobs.push(if defender {
+            Mob::defender_for(guid, template, level, at, audience, zone)
+        } else {
+            Mob::for_audience(guid, template, level, at, audience, zone)
+        });
         Some(guid)
     }
 
@@ -689,24 +694,35 @@ impl Shard {
     }
 
     /// Which player runs each mob's fight and AI this tick: the one it fights, while that player
-    /// is here; otherwise the nearest.
+    /// is here; otherwise the nearest. A creature fighting a living creature is run by the
+    /// nearest player both admit, and by nobody while none is here (#700).
     pub(crate) fn owners<S: Copy + Eq + std::hash::Hash>(
         &self,
         players: &[OnShard<S>],
     ) -> HashMap<S, HashSet<u64>> {
         let mut owners: HashMap<S, HashSet<u64>> = HashMap::new();
+        let nearest = |m: &Mob, admitted: &dyn Fn(u64) -> bool| {
+            players.iter().filter(|p| admitted(p.guid)).min_by(|a, b| {
+                flat_distance(a.position, m.position)
+                    .total_cmp(&flat_distance(b.position, m.position))
+            })
+        };
         for m in &self.mobs {
+            let foe = (m.state == State::Engaged && !is_player(m.target))
+                .then(|| self.mobs.iter().find(|f| f.guid == m.target && f.alive()))
+                .flatten();
+            if let Some(foe) = foe {
+                if let Some(p) = nearest(m, &|g| m.admits(g) && foe.admits(g)) {
+                    owners.entry(p.session).or_default().insert(m.guid);
+                }
+                continue;
+            }
             let fighting = matches!(m.state, State::Engaged | State::Evading);
             // Only a character its Audience admits runs it.
             let owner = players
                 .iter()
                 .find(|p| fighting && p.guid == m.target && m.admits(p.guid))
-                .or_else(|| {
-                    players.iter().filter(|p| m.admits(p.guid)).min_by(|a, b| {
-                        flat_distance(a.position, m.position)
-                            .total_cmp(&flat_distance(b.position, m.position))
-                    })
-                });
+                .or_else(|| nearest(m, &|g| m.admits(g)));
             if let Some(p) = owner {
                 owners.entry(p.session).or_default().insert(m.guid);
             }
@@ -717,7 +733,7 @@ impl Shard {
 
 /// Adds the threat `events` show `player` making (#147): their damage to each mob 1:1, at
 /// `threat_pct` percent of it by its school index (Steady Stance, #544, a threat aura), and their
-/// heals at half, split across the living mobs that hate the one healed.
+/// heals at half, split across the living mobs that hate the one healed, a defender as a player.
 pub(crate) fn note_threat(
     mobs: &mut [Mob],
     player: u64,
@@ -753,7 +769,8 @@ pub(crate) fn note_threat(
             SessionEvent::SpellHealLog(l) => (l.target, 0.0, l.amount, l.healer),
             _ => continue,
         };
-        if let Some(m) = mobs.iter_mut().find(|m| m.guid == victim) {
+        // No player strikes a defender: what lands on one is a heal, not a blow (#700).
+        if let Some(m) = mobs.iter_mut().find(|m| m.guid == victim && !m.defender) {
             // Even a miss puts the attacker on the table.
             m.threat.add(player, made);
             continue;

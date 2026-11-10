@@ -1458,6 +1458,8 @@ pub(crate) struct Mob {
     pub(crate) camp: u32,
     /// Seconds until it answers a campmate's cry for help; `None` when no one has called.
     pub(crate) assist_in: Option<f32>,
+    /// The creature the cry for help it answers is against; `None` for the player's pull.
+    pub(crate) assist_on: Option<u64>,
     /// How far from home it strolls while idle.
     wander_radius: f32,
     /// Seconds until an idle mob sets off on its next stroll.
@@ -1562,6 +1564,10 @@ pub(crate) struct Mob {
     /// Its partner's mob guid in this Run and the stance it takes while the partner is dead
     /// (`on_partner_death`, #637).
     pub(crate) partner: Option<(u64, &'static crate::creature_spells::CreatureSpell)>,
+    /// A friendly creature that hostile creatures fight, that fights back and that players heal
+    /// (#700). Players still cannot attack it. It never leashes, and its fight ends where it
+    /// stands. Nothing in content makes one; an escort sets it on its escortee.
+    pub(crate) defender: bool,
 }
 
 /// A creature's stance (#473): the damage it deals and takes, each changed by a percent.
@@ -1653,6 +1659,22 @@ impl Mob {
         mob
     }
 
+    /// [`Self::for_audience`], made a defender (#700): hostile creatures fight it, it fights
+    /// back, and it never leashes.
+    pub(crate) fn defender_for(
+        guid: u64,
+        template: &'static Template,
+        level: u8,
+        position: [f32; 3],
+        audience: crate::audience::Audience,
+        zone: ZoneFactor,
+    ) -> Self {
+        let mut mob = Self::for_audience(guid, template, level, position, audience, zone);
+        mob.defender = true;
+        mob.leashes = false;
+        mob
+    }
+
     /// The mob of `spawn`, which is `content().spawn[index]`, at `level` under the Zone Factor
     /// `zone`.
     pub(crate) fn from_spawn(
@@ -1688,6 +1710,7 @@ impl Mob {
             spawn: index,
             camp: spawn.camp,
             assist_in: None,
+            assist_on: None,
             wander_radius: spawn.wander_radius,
             // A stagger, so a camp's mobs don't all set off together.
             wander_in: WANDER_PAUSE.0 + (spawn.guid % 97) as f32 / 97.0 * WANDER_PAUSE.1,
@@ -1738,6 +1761,7 @@ impl Mob {
             frozen: spawn.frozen_until.is_some(),
             frozen_until: spawn.frozen_until,
             partner: spawn.on_partner_death,
+            defender: false,
         })
     }
 
@@ -1809,6 +1833,7 @@ impl Mob {
             // A camp of its own: no other mob evades with it.
             camp: guid as u32 | 1 << 31,
             assist_in: None,
+            assist_on: None,
             wander_radius: 0.0,
             wander_in: WANDER_PAUSE.0,
             display_id: template.display_id,
@@ -1855,6 +1880,7 @@ impl Mob {
             frozen: false,
             frozen_until: None,
             partner: None,
+            defender: false,
         }
     }
 
@@ -2120,6 +2146,23 @@ impl Mob {
     /// [`Self::attackable`], and `viewer` can see it.
     pub(crate) fn attackable_by(&self, viewer: u64) -> bool {
         self.attackable() && self.admits(viewer)
+    }
+
+    /// Whether it and `other` may fight each other (#700): both alive, one a defender and the
+    /// other a hostile creature that is none, and some character admitted by both.
+    pub(crate) fn may_fight(&self, other: &Mob) -> bool {
+        let pair = |a: &Mob, b: &Mob| a.defender && !b.defender && b.template.hostile;
+        if !(pair(self, other) || pair(other, self)) || !self.alive() || !other.alive() {
+            return false;
+        }
+        match self.audience.as_ref().or(other.audience.as_ref()) {
+            Some(audience) => audience
+                .0
+                .iter()
+                .any(|&g| self.admits(g) && other.admits(g)),
+            // Both seen by everyone: everyone but those each is hidden from.
+            None => true,
+        }
     }
 
     pub(crate) fn run_speed(&self) -> f32 {

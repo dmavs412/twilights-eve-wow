@@ -6,8 +6,8 @@ use benilla_protocol::messages::AttackerState;
 use crate::mobs::Mob;
 use crate::rng::Rng;
 use crate::rules::melee::{
-    armor_reduced, dual_wield_miss_bp, mob_vs_player, player_vs_mob, Outcome, PlayerDefense,
-    PlayerOffense, ROLL,
+    armor_reduced, dual_wield_miss_bp, mob_vs_mob, mob_vs_player, player_vs_mob, Outcome,
+    PlayerDefense, PlayerOffense, ROLL,
 };
 use crate::rules::stats::CharacterStats;
 
@@ -115,6 +115,17 @@ pub(crate) fn mob_swing(
 ) -> Swing {
     let raw = rng.urand(mob.stats.min_damage as u32, mob.stats.max_damage as u32);
     mob_blow(mob, raw, p, from_front, miss_pct, rng)
+}
+
+/// `mob`'s swing at the creature `victim` (#700), after its stance and the victim's armour, on
+/// the creature-on-creature table; `from_front` when `mob` stands in the victim's front arc.
+pub(crate) fn mob_swing_at_mob(mob: &Mob, victim: &Mob, from_front: bool, rng: &mut Rng) -> Swing {
+    let raw = rng.urand(mob.stats.min_damage as u32, mob.stats.max_damage as u32);
+    let armored = armor_reduced(mob.deals(raw), victim.stats.armor, mob.level());
+    let table = mob_vs_mob(victim.defense(), from_front);
+    // As a player's swing meets a creature's shield.
+    let block_value = u32::from(victim.level()) / 2 + 1;
+    land(table.outcome(rng.below(ROLL)), armored, 0, block_value)
 }
 
 /// `mob`'s melee spell at the player (a Bite, a Backstab): one roll on the table its swing uses,

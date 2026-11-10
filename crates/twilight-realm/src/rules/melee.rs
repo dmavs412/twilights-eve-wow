@@ -148,6 +148,16 @@ pub fn mob_vs_player(p: PlayerDefense, from_front: bool) -> HitTable {
     }
 }
 
+/// The table a creature's swing rolls on against another creature (#700): the victim's mob
+/// chances to dodge, parry and block, as a player's swing meets them, and a creature's crit.
+pub fn mob_vs_mob(victim: MobDefense, from_front: bool) -> HitTable {
+    let c = chances();
+    HitTable {
+        crit: bp(c.mob_crit),
+        ..player_vs_mob(PlayerOffense { crit_pct: 0.0 }, victim, from_front)
+    }
+}
+
 /// `damage` after the victim's `armor`, against an attacker of `attacker_level`: at most 75% off,
 /// truncated, never below 1.
 pub fn armor_reduced(damage: u32, armor: u32, attacker_level: u8) -> u32 {

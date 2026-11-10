@@ -3731,10 +3731,12 @@ impl InWorld {
         self.player.health as f32 / max as f32
     }
 
-    /// The friendly player within `radius_yd` of `at` with the smallest share of health left.
+    /// The friendly player or defender the player sees (#700) within `radius_yd` of `at` with the
+    /// smallest share of health left.
     fn lowest_health_ally(&self, c: &Char, at: [f32; 3], radius_yd: f32) -> Option<u64> {
         self.friendly_players(c)
             .into_iter()
+            .chain(self.friendly_defenders())
             .filter(|(_, p, _)| distance(*p, at) <= radius_yd)
             .min_by(|a, b| a.2.total_cmp(&b.2))
             .map(|(guid, _, _)| guid)
@@ -3747,7 +3749,8 @@ impl InWorld {
         self.skills.healing_taken_pct(self.guid) + crate::talents::healing_taken_pct(c, health_pct)
     }
 
-    /// `total` healing split evenly among the friendly players within `radius_yd` of `at`.
+    /// `total` healing split evenly among the friendly players and the defenders the player sees
+    /// (#700) within `radius_yd` of `at`.
     pub(super) fn heal_allies(
         &mut self,
         c: &Char,
@@ -3760,6 +3763,7 @@ impl InWorld {
         let allies: Vec<u64> = self
             .friendly_players(c)
             .into_iter()
+            .chain(self.friendly_defenders())
             .filter(|(_, p, _)| distance(*p, at) <= radius_yd)
             .map(|(guid, _, _)| guid)
             .collect();
@@ -3770,6 +3774,8 @@ impl InWorld {
         for guid in allies {
             if guid == self.guid {
                 self.heal_player(c, spell_id, each, events);
+            } else if !crate::shard::is_player(guid) {
+                self.heal_defender(guid, spell_id, each, events);
             } else {
                 self.helps.push(super::Help::Heal {
                     to: guid,
@@ -3847,9 +3853,20 @@ impl InWorld {
         }
     }
 
-    /// Whom an ally skill lands on (#150): the other living player targeted, in its range; the
-    /// caster when nothing friendly is targeted (vanilla's auto self-cast).
+    /// Whom an ally skill lands on (#150): the other living player targeted, or the living
+    /// defender the caster sees (#700), in its range; the caster when nothing friendly is
+    /// targeted (vanilla's auto self-cast).
     fn ally(&self, skill: &Skill, target: Option<u64>, c: &Char) -> Result<u64, u8> {
+        let defender = target
+            .and_then(|g| self.defender(g))
+            .map(|i| (self.mobs[i].guid, self.mobs[i].position));
+        if let Some((g, at)) = defender {
+            let [_, hi] = skill.range_yd;
+            if hi > 0.0 && distance(c.position, at) > hi {
+                return Err(SPELL_FAILED_OUT_OF_RANGE);
+            }
+            return Ok(g);
+        }
         let Some(g) = target.filter(|&g| g != self.guid && crate::shard::is_player(g)) else {
             return Ok(self.guid);
         };
@@ -4424,6 +4441,12 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
+        // A defender takes an ally skill's heals, and none of its buffs (#700).
+        if !matches!(effect, Effect::Heal { .. } | Effect::PeriodicHeal { .. })
+            && self.defender(target).is_some()
+        {
+            return;
+        }
         let stats = buffed(&self.player.stats, &self.skills);
         let ap = stats.attack_power;
         // Talents that raise the skill's amounts (Improved Rend, Improved Battle Shout), and the
@@ -5500,6 +5523,11 @@ impl InWorld {
                     );
                     self.skills.cast_healed += healed;
                     self.skills.cast_full_healed += full;
+                } else if let Some((healed, full)) =
+                    self.heal_defender(target, skill.spell_id, amount, events)
+                {
+                    self.skills.cast_healed += healed;
+                    self.skills.cast_full_healed += full;
                 } else if crate::shard::is_player(target) {
                     // Their session heals them, and bursts what it could not heal.
                     self.skills.cast_full_healed += amount;
@@ -5552,7 +5580,8 @@ impl InWorld {
                         };
                         at.and_then(|at| self.lowest_health_ally(c, at, radius_yd))
                     }
-                    None => crate::shard::is_player(target).then_some(target),
+                    None => (crate::shard::is_player(target) || self.defender(target).is_some())
+                        .then_some(target),
                 };
                 let Some(unit) = unit else {
                     return;
@@ -7024,6 +7053,10 @@ impl InWorld {
                             self.skills.ticking = None;
                         }
                     }
+                }
+                // The player's heal over time on a defender ticks on it (#700).
+                AuraKind::Heal { per_tick, .. } if a.unit != self.guid => {
+                    self.heal_tick_defender(a.unit, a.spell_id, per_tick, events);
                 }
                 AuraKind::Heal { per_tick, .. } => {
                     let max = buffed(&self.player.stats, &self.skills).max_health;
