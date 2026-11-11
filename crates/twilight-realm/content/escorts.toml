@@ -105,3 +105,163 @@ entry = 2958
 level = 20
 count = 2
 position = [-9845.0, -3448.0, 200.27]
+
+# Corporal Keeshan's escort out of Render's Camp, Missing in Action (#620, spec #595). He starts at
+# his hideout above the camp (spawn 17874, redridge.toml) and ends by Marshal Marris in Lakeshire.
+# The path is vanilla's creature_movement_template for entry 349 (68 points) thinned to 33: every
+# point where the road turns by more than 20 degrees, any point where a chord between two kept ones
+# strays more than 6 yd from vanilla's road, the point nearest the middle of any leg longer than
+# 80 yd, and vanilla's points 25 (his rest, 45 s in vanilla), 26, 43 and 67. No leg is longer than
+# 80 yd because the Population lets an idle creature go once every character is 110 yd from its
+# home, and a walking escortee's home is the last point he reached. Point 14 is vanilla's 25,
+# point 23 vanilla's 43. Two ambushes: Blackrock Trackers 12 yd back along the road at his rest,
+# and Blackrock Champions 12 yd ahead of him at point 23.
+[[escort]]
+key = "keeshan"
+quest = 98391
+spawn = 17874
+level = 42
+health_mul = 3.0
+start_option = "I'm here to get you out. Lead the way."
+start_say = "About time. Stay close, they patrol the ridge."
+end_say = "Marshal. I've got a report you won't like."
+failed_text = "Corporal Keeshan has slipped back to his hideout above Render's Camp."
+wait_yd = 20.0
+leash_yd = 60.0
+leash_s = 10.0
+reset_s = 10.0
+linger_s = 10.0
+assist_yd = 20.0
+
+[[escort.point]]
+at = [-8764.5, -2186.2]
+
+[[escort.point]]
+at = [-8771.7, -2188.9]
+
+[[escort.point]]
+at = [-8777.0, -2194.6]
+
+[[escort.point]]
+at = [-8818.0, -2185.8]
+
+[[escort.point]]
+at = [-8827.2, -2199.8]
+
+[[escort.point]]
+at = [-8798.5, -2240.0]
+
+[[escort.point]]
+at = [-8791.7, -2253.3]
+
+[[escort.point]]
+at = [-8769.3, -2259.9]
+
+[[escort.point]]
+at = [-8699.2, -2241.6]
+
+[[escort.point]]
+at = [-8685.2, -2242.1]
+
+[[escort.point]]
+at = [-8667.7, -2251.7]
+
+[[escort.point]]
+at = [-8667.2, -2258.4]
+
+[[escort.point]]
+at = [-8672.6, -2268.9]
+
+[[escort.point]]
+at = [-8678.3, -2302.9]
+wait_s = 10.0
+say = "I need a moment to rest."
+
+[[escort.point]]
+at = [-8678.3, -2302.9]
+say = "Let's go!"
+
+[[escort.point]]
+at = [-8684.5, -2322.2]
+
+[[escort.point]]
+at = [-8731.0, -2359.1]
+
+[[escort.point]]
+at = [-8759.8, -2380.4]
+
+[[escort.point]]
+at = [-8777.2, -2416.6]
+
+[[escort.point]]
+at = [-8795.3, -2469.6]
+
+[[escort.point]]
+at = [-8841.5, -2500.1]
+
+[[escort.point]]
+at = [-8870.5, -2546.2]
+
+[[escort.point]]
+at = [-8914.7, -2579.3]
+say = "So close to blessed Lakeshire."
+run = true
+
+[[escort.point]]
+at = [-8957.7, -2601.2]
+
+[[escort.point]]
+at = [-9004.0, -2601.9]
+
+[[escort.point]]
+at = [-9045.9, -2563.3]
+
+[[escort.point]]
+at = [-9104.4, -2515.4]
+
+[[escort.point]]
+at = [-9135.4, -2467.2]
+
+[[escort.point]]
+at = [-9153.4, -2433.8]
+
+[[escort.point]]
+at = [-9155.8, -2390.6]
+
+[[escort.point]]
+at = [-9200.8, -2346.7]
+
+[[escort.point]]
+at = [-9239.9, -2305.1]
+
+[[escort.point]]
+at = [-9277.2, -2296.2]
+
+[[escort.ambush]]
+point = 14
+say = "Blackrock! Behind us!"
+
+[[escort.ambush.creature]]
+entry = 615
+level = 41
+position = [-8676.0, -2291.0, 156.22]
+
+[[escort.ambush.creature]]
+entry = 615
+level = 42
+position = [-8673.0, -2290.0, 157.00]
+
+[[escort.ambush]]
+point = 23
+say = "Here they come!"
+
+[[escort.ambush.creature]]
+entry = 435
+level = 42
+count = 2
+position = [-8925.0, -2586.0, 132.45]
+
+[[escort.ambush.creature]]
+entry = 435
+level = 43
+position = [-8923.0, -2589.0, 132.45]

@@ -373,9 +373,10 @@ removed_guids = [
 # redridge_bands.toml covers the whole zone and decides instead; this reaches only its exclude
 # box, where no spawn stands.
 levels = { from = [14, 27], to = [30, 50] }
-# Belongs to tests/sight.rs: its Rachel (guid 960811, below) is seen only before test quest 99811
-# is handed in.
-seen = [{ guid = 960811, before = 99811 }]
+# Its Rachel (guid 960811, below) belongs to tests/sight.rs: seen only before test quest 99811 is
+# handed in. Corporal Keeshan at his hideout above Render's Camp (17874) is seen only before
+# Missing in Action (98391) is handed in; after it he stands at the Watch's camp (hub.toml 9300088).
+seen = [{ guid = 960811, before = 99811 }, { guid = 17874, before = 98391 }]
 
 # The cult courier in Galardell Valley (#616, spec #595): the Twilight Courier (96054) on the
 # valley path toward the Tower of Ilgalar, outside Ilgalar's Approach, and his two Twilight

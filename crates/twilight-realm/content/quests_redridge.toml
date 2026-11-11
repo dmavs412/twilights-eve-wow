@@ -385,7 +385,7 @@ kill = [[440, 10]]
 # ── Redridge 40-45 (#595) ─────────────────────────────────────────────────────────────────────
 # Render's Camp and Render's Rock, Kazon, Tharil'zun in Stonewatch's yard, and the Ranthal farm in
 # Render's Valley. Every giver and ender is a vanilla Redridge spawn (content/redridge.toml).
-# Keeshan's escort (98391, 98392) waits on the escort spec.
+# Keeshan's two quests (98391, 98392) are under their own heading below.
 
 [[quest]]
 id = 98301
@@ -527,6 +527,44 @@ completion = "The field was dry this morning. First time in a fortnight. Clyde s
 money = 1230
 zone_or_sort = 44
 kill = [[545, 10]]
+
+# ── Keeshan (#595) ────────────────────────────────────────────────────────────────────────────
+# Missing in Action is Keeshan's escort (content/escorts.toml's `keeshan`, #596): holding it, a
+# character asks him to set off at his hideout above Render's Camp, and his arrival at Marris meets
+# it. What Keeshan Saw is given by Keeshan at the Watch's camp (hub.toml 190087), whom only a
+# character who has handed in Missing in Action sees.
+
+[[quest]]
+id = 98391
+kind = "story"
+giver = 382
+after = 98302
+level = 42
+title = "Missing in Action"
+objectives = "Find Corporal Keeshan in Render's Camp and see him safely back to Marshal Marris in Lakeshire."
+details = "Keeshan's alive. One of the Ranthal boys saw a man in a Watch tabard waving from the rocks above Render's Camp, two nights running. That's Keeshan. He's hiding up there with a whole Blackrock camp between him and home, and he won't come down without someone to watch his back. Go and get him. Bring him to me on his own two feet."
+progress = "Keeshan?"
+completion = "You walked him out through the lot of them. He's thinner, he smells like a cave, and he won't stop talking about what he saw from those rocks. Let him tell it. Then he's going east, to Crane's camp. He insists."
+money = 1470
+choices = [903254, 903256, 903258]
+zone_or_sort = 44
+
+[[quest]]
+id = 98392
+kind = "story"
+giver = 190087
+ender = 190084
+after = [98391, 98401]
+level = 45
+title = "What Keeshan Saw"
+objectives = "Climb to the rocks above Stonewatch Keep, look at the keep's roof, then report to Sergeant Crane."
+details = "Three nights in those rocks I watched the sky over Stonewatch. On the second night something flew over the keep. Wings like a ship's sail. It came down on the roof and the orcs in the yard knelt. Marris thinks I've been in a cave too long. Go up to the rocks above the keep and look at that roof. Then tell Crane what you saw, not what I said."
+progress = "Well?"
+completion = "Scorched stone all along the roof's edge, and claw marks you could lie down in. Then Keeshan isn't mad. I'm going to need more than eight men."
+money = 1575
+choices = [903274, 903276, 903278]
+zone_or_sort = 44
+explore = { place = "The rocks above Stonewatch", position = [-9250.0, -2960.0], radius = 15.0, map = 0 }
 
 # ── Redridge 45-50 (#595) ─────────────────────────────────────────────────────────────────────
 # The Lakeshire Watch's camp at Stonewatch Falls (decision 16): Sergeant Crane (hub.toml 190084)

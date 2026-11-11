@@ -5,7 +5,8 @@
 //! the north farms' gnolls, and four bounties. Band 40-45 (#612): the Blackrock badges, Render's
 //! Rock, Kazon and Tharil'zun's orders, the Ranthal farm, and four bounties. Band 45-50 (#617):
 //! the Lakeshire Watch's camp at Stonewatch Falls, Gath'Ilzogg's poster, the last courier, and
-//! four bounties.
+//! four bounties. Keeshan (#620): his escort out of Render's Camp (`content/escorts.toml`'s
+//! `keeshan`) and what he saw, given at the camp.
 
 mod common;
 
@@ -235,6 +236,48 @@ const CULT_COURIERS_SATCHEL: u32 = 980331;
 /// The items tickets 29 and 30 use, defined by #617; the letter reads three pages.
 const LATER_ITEMS: [u32; 3] = [980386, 980391, 980392];
 const MORGANTHS_UNSENT_LETTER: u32 = 980392;
+
+const MISSING_IN_ACTION: u32 = 98391;
+const WHAT_KEESHAN_SAW: u32 = 98392;
+
+/// Keeshan's quests: `(id, giver, ender, after, choices)`, the ender when it is not the giver.
+#[allow(clippy::type_complexity)]
+const KEESHAN_QUESTS: [(u32, u32, Option<u32>, &[u32], &[u32]); 2] = [
+    (
+        MISSING_IN_ACTION,
+        MARRIS,
+        None,
+        &[RENDERS_ROCK],
+        &[903254, 903256, 903258],
+    ),
+    (
+        WHAT_KEESHAN_SAW,
+        CAMP_KEESHAN,
+        Some(CRANE),
+        &[MISSING_IN_ACTION, STONEWATCH_FALLS],
+        &[903274, 903276, 903278],
+    ),
+];
+
+const KEESHAN: u32 = 349;
+/// Keeshan at his hideout above Render's Camp: spawn 17874 (`content/redridge.toml`), the
+/// escort's start creature.
+const HIDEOUT: u64 = 0xF130 << 48 | (KEESHAN as u64) << 24 | 17874;
+const HIDEOUT_AT: [f32; 3] = [-8756.77, -2187.12, 139.975];
+const KEESHAN_START: &str = "I'm here to get you out. Lead the way.";
+const KEESHAN_FAILED: &str =
+    "Corporal Keeshan has slipped back to his hideout above Render's Camp.";
+/// The escort's `reset_s`.
+const KEESHAN_RESET_S: f32 = 10.0;
+const BLACKROCK_CHAMPION: u32 = 435;
+/// The low guids of creatures made for an Audience start here (`mobs::AUDIENCE_GUID_BASE`).
+const AUDIENCE_GUID_BASE: u64 = 0xD0_0000;
+
+/// Keeshan at the Watch's camp (`hub.toml` 9300088).
+const CAMP_KEESHAN: u32 = 190087;
+const CAMP_KEESHAN_AT: [f32; 3] = [-9506.0, -3260.0, 49.78];
+/// The rocks above Stonewatch that What Keeshan Saw sends the player to.
+const STONEWATCH_ROCKS: [f32; 3] = [-9250.0, -2960.0, 0.0];
 
 fn redridge_quests() -> toml::Table {
     include_str!("../content/quests_redridge.toml")
@@ -940,4 +983,361 @@ fn met(events: &[SessionEvent], quest: u32) -> bool {
     events.iter().any(
         |e| matches!(e, SessionEvent::QuestObjectivesComplete { quest_id } if *quest_id == quest),
     )
+}
+
+/// A row's `after`, one quest or a list.
+fn afters(row: &toml::Value) -> Vec<u32> {
+    match row.get("after") {
+        Some(toml::Value::Integer(q)) => vec![*q as u32],
+        Some(toml::Value::Array(qs)) => qs.iter().map(|q| q.as_integer().unwrap() as u32).collect(),
+        _ => Vec::new(),
+    }
+}
+
+#[test]
+fn keeshan_s_quests_load_with_their_givers_chains_and_choices() {
+    let mut realm = realm();
+    for (id, giver, ender, after, choices) in KEESHAN_QUESTS {
+        let row = quest_row(id);
+        assert_eq!(entry(&row, "giver"), Some(giver), "quest {id}'s giver");
+        assert_eq!(entry(&row, "ender"), ender, "quest {id}'s ender");
+        assert_eq!(row["kind"].as_str(), Some("story"), "quest {id}'s kind");
+        assert_eq!(afters(&row), after, "quest {id}'s `after`");
+        let t = template(&mut realm, id);
+        assert_eq!(Some(t.title.as_str()), row["title"].as_str(), "quest {id}");
+        assert_eq!(t.zone_or_sort, REDRIDGE, "quest {id}'s zone");
+        let got: Vec<u32> = t
+            .choices
+            .iter()
+            .map(|c| c.0)
+            .filter(|&item| item != 0)
+            .collect();
+        assert_eq!(got, choices, "quest {id}'s choices");
+    }
+}
+
+/// Whether `guid` is a creature's, not a player's.
+fn is_creature(guid: u64) -> bool {
+    guid >> 48 == 0xF130
+}
+
+fn entry_of(guid: u64) -> u32 {
+    (guid >> 24 & 0xFF_FFFF) as u32
+}
+
+/// Whether `guid` is a creature made for an Audience: an escortee or an ambusher.
+fn made_for_a_group(guid: u64) -> bool {
+    guid & 0xFF_FFFF >= AUDIENCE_GUID_BASE
+}
+
+/// Kills every creature player 0's client holds but the Keeshans, so the Blackrock about
+/// Render's Camp and the ambushes leave the walk alone: the walk's tests are about Keeshan, and
+/// `kill_creature` leaves no killer and no loot.
+fn clear(party: &mut Party) {
+    for guid in party.units_held(0) {
+        if is_creature(guid) && entry_of(guid) != KEESHAN {
+            party.realm.kill_creature(guid);
+        }
+    }
+}
+
+/// Level 42 Zealots who have handed in Render's Rock and hold Missing in Action, each beside
+/// Keeshan's hideout, with the creatures about it cleared.
+fn keeshan_party(n: usize) -> Party {
+    let mut party = Party::edited(
+        Realm::with_seed(1),
+        &vec![42; n],
+        START_ELWYNN,
+        Box::new(NoGround),
+        |_, blob| {
+            let blob = blob
+                .replace("calling = \"basic_warrior\"", "calling = \"zealot\"")
+                .replace(
+                    "xp = 0\n",
+                    &format!("xp = 0\ncompleted = [{RENDERS_ROCK}]\n"),
+                );
+            format!(
+                "{blob}\n[[quests]]\nid = {MISSING_IN_ACTION}\nslot = 0\nkills = [0, 0, 0, 0]\n"
+            )
+        },
+    );
+    for i in 0..n {
+        party.go(i, beside_hideout(), 0.0);
+    }
+    party.run(0.5);
+    clear(&mut party);
+    party
+}
+
+fn beside_hideout() -> [f32; 3] {
+    [HIDEOUT_AT[0] + 2.0, HIDEOUT_AT[1], HIDEOUT_AT[2]]
+}
+
+/// The gossip lines player 0 is offered on greeting `npc`.
+fn gossip_lines(party: &mut Party, npc: u64) -> Vec<String> {
+    let from = party.seen(0).len();
+    party.cmd(0, RealmCommand::GossipHello { guid: npc });
+    party.run(0.1);
+    since(party, from)
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu {
+                npc: n, options, ..
+            } if *n == npc => Some(options.iter().map(|o| o.message.clone()).collect()),
+            _ => None,
+        })
+        .unwrap_or_default()
+}
+
+/// Player 0 asks Keeshan at his hideout to set off; the escortee their client is sent.
+fn set_off(party: &mut Party) -> u64 {
+    let from = party.seen(0).len();
+    ask(party, HIDEOUT, KEESHAN_START);
+    party.run(1.0);
+    escortees(&since(party, from))
+        .first()
+        .copied()
+        .expect("an escortee")
+}
+
+/// The Keeshans made for a group in `events`.
+fn escortees(events: &[SessionEvent]) -> Vec<u64> {
+    unit_creates(events)
+        .into_iter()
+        .filter(|&(g, e, _)| e == KEESHAN && made_for_a_group(g))
+        .map(|(g, _, _)| g)
+        .collect()
+}
+
+/// Every player walks beside the escortee `him` for at most `secs`, until `done` holds for what
+/// player 0 has been sent since the walk began; whether it did. Every half second each steps to
+/// where his last move puts him now, and the creatures about them are cleared.
+fn walk_with(
+    party: &mut Party,
+    him: u64,
+    secs: f32,
+    mut done: impl FnMut(&[SessionEvent]) -> bool,
+) -> bool {
+    let mut got = Vec::new();
+    // His last move: from, to, its seconds, and when it came.
+    let mut leg: Option<([f32; 3], [f32; 3], f32, f32)> = None;
+    let mut t = 0.0;
+    while t < secs {
+        let step = party.run(0.5);
+        for e in &step[0] {
+            if let SessionEvent::MonsterMove {
+                guid,
+                start,
+                path,
+                duration_ms,
+                ..
+            } = e
+            {
+                if *guid == him {
+                    let to = *path.last().unwrap_or(start);
+                    leg = Some((*start, to, *duration_ms as f32 / 1000.0, t));
+                }
+            }
+        }
+        got.extend(step.into_iter().next().unwrap());
+        t += 0.5;
+        if done(&got) {
+            return true;
+        }
+        if let Some((from, to, secs, sent)) = leg {
+            let k = if secs > 0.0 {
+                ((t - sent) / secs).min(1.0)
+            } else {
+                1.0
+            };
+            let at = [0, 1, 2].map(|i| from[i] + (to[i] - from[i]) * k);
+            for i in 0..party.guids.len() {
+                party.go(i, at, 0.0);
+            }
+        }
+        clear(party);
+    }
+    false
+}
+
+fn system_lines(events: &[SessionEvent]) -> Vec<String> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::Chat(m) if m.chat_type == benilla_protocol::messages::CHAT_MSG_SYSTEM => {
+                Some(m.text.clone())
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+fn quest_failed(events: &[SessionEvent], quest: u32) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::QuestFailed { quest_id, .. } if *quest_id == quest))
+}
+
+/// The creatures of `entry` made for a group in `events`: an ambush's.
+fn ambushers(events: &[SessionEvent], entry: u32) -> Vec<u64> {
+    unit_creates(events)
+        .into_iter()
+        .filter(|&(g, e, _)| e == entry && made_for_a_group(g))
+        .map(|(g, _, _)| g)
+        .collect()
+}
+
+#[test]
+fn accepting_missing_in_action_starts_no_walk_and_keeshan_s_line_does() {
+    let mut party = questing_party(42, &[RENDERS_ROCK]);
+    let marris = meet(&mut party, MARRIS, MARRIS_AT);
+    assert!(offered(&mut party, marris, MISSING_IN_ACTION));
+    let from = party.seen(0).len();
+    accept(&mut party, marris, MISSING_IN_ACTION);
+    party.run(2.0);
+    assert!(
+        escortees(&since(&party, from)).is_empty(),
+        "accepting starts no walk"
+    );
+
+    walk(&mut party, beside_hideout());
+    clear(&mut party);
+    assert!(
+        party.units_held(0).contains(&HIDEOUT),
+        "Keeshan at his hideout"
+    );
+    assert!(gossip_lines(&mut party, HIDEOUT).contains(&KEESHAN_START.to_string()));
+    let him = set_off(&mut party);
+    assert_ne!(him, HIDEOUT);
+    assert!(
+        !party.units_held(0).contains(&HIDEOUT),
+        "the hideout's Keeshan leaves their view"
+    );
+}
+
+#[test]
+fn keeshan_reaching_marris_meets_missing_in_action_for_the_group_once_each_ambush() {
+    let mut party = keeshan_party(2);
+    let him = set_off(&mut party);
+    let from = party.seen(1).len();
+    assert!(
+        walk_with(&mut party, him, 900.0, |got| met(got, MISSING_IN_ACTION)),
+        "he reaches Marris: {:?}",
+        system_lines(party.seen(0))
+    );
+    let walked = party.seen(0).to_vec();
+    assert!(
+        met(&party.seen(1)[from..], MISSING_IN_ACTION),
+        "the second holder is met too"
+    );
+    assert_eq!(
+        ambushers(&walked, BLACKROCK_TRACKER).len(),
+        2,
+        "two trackers at his rest"
+    );
+    assert_eq!(
+        ambushers(&walked, BLACKROCK_CHAMPION).len(),
+        3,
+        "three champions on the road"
+    );
+    let said = |text: &str| {
+        walked
+            .iter()
+            .filter(|e| matches!(e, SessionEvent::Chat(m) if m.text == text))
+            .count()
+    };
+    assert_eq!(said("Blackrock! Behind us!"), 1, "the trackers' line, once");
+    assert_eq!(said("Here they come!"), 1, "the champions' line, once");
+    assert_eq!(said("Marshal. I've got a report you won't like."), 1);
+    let there = party.realm.player_positions()[0].1;
+    assert!(
+        flat_distance(there, MARRIS_AT) < 15.0,
+        "the walk ends by Marris: {there:?}"
+    );
+}
+
+#[test]
+fn keeshan_dying_ends_the_escort_and_his_line_starts_a_new_one() {
+    let mut party = keeshan_party(1);
+    let him = set_off(&mut party);
+    walk_with(&mut party, him, 5.0, |_| false);
+    let from = party.seen(0).len();
+    party.realm.kill_creature(him);
+    party.go(0, beside_hideout(), 0.0);
+    party.run(1.0);
+    let ended = since(&party, from);
+    assert_eq!(system_lines(&ended), [KEESHAN_FAILED]);
+    assert!(
+        !quest_failed(party.seen(0), MISSING_IN_ACTION),
+        "Missing in Action is not failed"
+    );
+    assert!(!party.units_held(0).contains(&him));
+
+    party.run(KEESHAN_RESET_S - 2.0);
+    clear(&mut party);
+    assert!(
+        !party.units_held(0).contains(&HIDEOUT),
+        "hidden until the reset"
+    );
+    party.run(2.0);
+    assert!(
+        party.units_held(0).contains(&HIDEOUT),
+        "back at his hideout after the reset"
+    );
+    clear(&mut party);
+    assert!(
+        gossip_lines(&mut party, HIDEOUT).contains(&KEESHAN_START.to_string()),
+        "Missing in Action is still in the log"
+    );
+    let again = set_off(&mut party);
+    assert_ne!(again, him, "a new walk");
+}
+
+#[test]
+fn the_camp_s_keeshan_gives_what_keeshan_saw_once_both_are_in_and_the_rocks_credit_it() {
+    // Before Missing in Action is in: the hideout's Keeshan, not the camp's.
+    let mut before = questing_party(46, &[STONEWATCH_FALLS]);
+    walk(&mut before, beside_hideout());
+    assert!(before.units_held(0).contains(&HIDEOUT));
+    walk(
+        &mut before,
+        [
+            CAMP_KEESHAN_AT[0] + 1.5,
+            CAMP_KEESHAN_AT[1],
+            CAMP_KEESHAN_AT[2],
+        ],
+    );
+    let camp: Vec<u64> = unit_creates(before.seen(0))
+        .into_iter()
+        .filter(|&(_, e, _)| e == CAMP_KEESHAN)
+        .map(|(g, _, _)| g)
+        .collect();
+    assert!(camp.is_empty(), "the camp's Keeshan is not sent: {camp:?}");
+
+    // Missing in Action in, Stonewatch Falls not: he stands at the camp and offers nothing.
+    let mut early = questing_party(46, &[MISSING_IN_ACTION]);
+    walk(&mut early, beside_hideout());
+    assert!(
+        !early.units_held(0).contains(&HIDEOUT),
+        "the hideout's Keeshan is not sent"
+    );
+    let keeshan = meet(&mut early, CAMP_KEESHAN, CAMP_KEESHAN_AT);
+    assert!(!offered(&mut early, keeshan, WHAT_KEESHAN_SAW));
+
+    let mut party = questing_party(46, &[MISSING_IN_ACTION, STONEWATCH_FALLS]);
+    let keeshan = meet(&mut party, CAMP_KEESHAN, CAMP_KEESHAN_AT);
+    assert!(offered(&mut party, keeshan, WHAT_KEESHAN_SAW));
+    accept(&mut party, keeshan, WHAT_KEESHAN_SAW);
+
+    let short = walk(
+        &mut party,
+        [STONEWATCH_ROCKS[0] - 40.0, STONEWATCH_ROCKS[1], 0.0],
+    );
+    assert!(!met(&short, WHAT_KEESHAN_SAW), "met short of the rocks");
+    let there = walk(&mut party, STONEWATCH_ROCKS);
+    assert!(met(&there, WHAT_KEESHAN_SAW), "{there:?}");
+
+    let crane = meet(&mut party, CRANE, CRANE_AT);
+    let events = hand_in(&mut party, crane, WHAT_KEESHAN_SAW);
+    assert!(completed(&events, WHAT_KEESHAN_SAW), "{events:?}");
 }

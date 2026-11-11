@@ -2500,6 +2500,26 @@ faces = [-9386.3, -3046.8]
 text_id = 64319
 greeting = "Eight of us and a sergeant. Marris calls it a garrison."
 
+# Corporal Keeshan, come east after his escort (#620): seen only by a character who has handed in
+# Missing in Action (98391); until then he is at his hideout above Render's Camp (zones.toml's
+# redridge `seen`). He gives What Keeshan Saw. Display 1826 is his vanilla one.
+[[npc]]
+guid = 9300088
+entry = 190087
+name = "Corporal Keeshan"
+subname = "Lakeshire Watch"
+level = 42
+display_id = 1826
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-9506.0, -3260.0, 49.78]
+orientation = 1.0
+faces = [-9386.3, -3046.8]
+greeting = "I owe you a drink, and Marris owes me a week's pay."
+seen = { after = 98391 }
+
 # A Hidden Trainer for the realm's tests only (tests/trainer_search.rs, #676): no shipped quest
 # names it, and the tests add the quests it gives. It stands 160 yd south-west of the Test
 # Grounds' centre, more than 100 yd (the view range) from every test box (the Test Grounds, the Ward Test, the Sealed Yard),
