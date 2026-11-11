@@ -354,9 +354,73 @@ class BloodmenderN(Multi, model.Bloodmender):
     pass
 
 
+class BloodletterN(Multi, model.Bloodletter):
+    def retarget(self):
+        # The target died and the pull goes on: the build's procs on a kill (Last Drop).
+        super().retarget()
+        self.on_kill()
+
+
+class NightbladeN(Multi, model.Nightblade):
+    pass
+
+
+class PyromancerN(Multi, model.Pyromancer):
+    def after_step(self):
+        # A mob that died wearing an Ember pays the build's procs on such a kill (Fuel).
+        for i, e in list(self.embers.items()):
+            if self.mobs[i] <= 0:
+                del self.embers[i]
+                if self.t < e[0]:
+                    for p in self.procs:
+                        if p["on"] == "kill" and p.get("requires_target_aura") == self.ember_aura["key"]:
+                            self.gain_mana(self.pct_base(p.get("energize_pct_of_base", 0)))
+        super().after_step()
+
+
+class LeyweaverN(Multi, model.Leyweaver):
+    """Ley Bind holds an add: it neither swings nor is the target until damage breaks the bind or it
+    runs out (the aura's break_on damage)."""
+    AOE = {"ward_burst": 0}
+
+    def held(self):
+        b = self.bound
+        return b[0] if b and self.t < b[1] and self.mobs[b[0]] > 0 else None
+
+    def extra_step(self):
+        if self.t < self.extra_swing_t:
+            return
+        self.extra_swing_t = self.t + self.m["swing"]
+        for i in [i for i in self.alive() if i not in (self.tgt, self.held())]:
+            d, o = self.mob_swing(i=i)
+            if d > 0:
+                self.take(d)
+
+    def after_step(self):
+        b = self.bound
+        if b and (self.t >= b[1] or self.mobs[b[0]] < b[2]):
+            self.bound = None
+        super().after_step()
+
+    def retarget(self):
+        super().retarget()
+        free = [i for i in self.alive() if i != self.held()]
+        if self.tgt == self.held() and free:
+            self.tgt = free[0]
+
+
+class SharpshooterN(Multi, model.Sharpshooter):
+    pass
+
+
+class TrapperN(Multi, model.Trapper):
+    pass
+
+
 CLASSES = dict(basic_warrior=BasicWarriorN, vanguard=VanguardN, cutthroat=CutthroatN, initiate=InitiateN,
                ranger=RangerN, acolyte=AcolyteN, ironclad=IroncladN, zealot=ZealotN, blightcaller=BlightcallerN,
-               bloodmender=BloodmenderN)
+               bloodmender=BloodmenderN, bloodletter=BloodletterN, nightblade=NightbladeN, pyromancer=PyromancerN,
+               leyweaver=LeyweaverN, sharpshooter=SharpshooterN, trapper=TrapperN)
 
 
 def fighter(calling, n=1):

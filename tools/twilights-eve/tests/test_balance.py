@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import math
 import os
 import random
@@ -658,6 +659,74 @@ class BalanceModel(unittest.TestCase):
                 rows = model.talent_rows(calling)
                 self.assertIn(key, {r["key"] for r in rows} | {c["key"] for r in rows for c in r["choices"]})
                 self.assertTrue(why)
+
+    # The damage Tier 2 Callings' sims: the Bloodletter and the Nightblade in the form of the
+    # Cutthroat, the Pyromancer and the Leyweaver of the Initiate, the Sharpshooter and the Trapper
+    # of the Ranger.
+    DAMAGE_TIER2 = ("bloodletter", "nightblade", "pyromancer", "leyweaver", "sharpshooter", "trapper")
+
+    def test_damage_tier2_sims_fight_at_30_and_50(self):
+        for calling in self.DAMAGE_TIER2:
+            for level in (30, 50):
+                with self.subTest(calling=calling, level=level):
+                    self.assertIn(calling, multi.CLASSES)
+                    self.assertIn(calling, model.SIMS)
+                    ch = model.character(calling, level, "green", scenarios.pick_build(calling, level, 1))
+                    sim = multi.fighter(calling, 1)(calling, level, ch["stats"], ch["rows"], random.Random(7), {},
+                                                    mob=model.mob_stats(level))
+                    r = sim.fight()
+                    self.assertLess(r["time"], model.FIGHT_CAP_S)
+                    self.assertTrue(r["won"] or r["died"])
+                    self.assertGreater(sum(sim.dmg.values()), 0)
+                    self.assertTrue(0 <= r["health_left"] <= 1)
+                    row = scenarios.run_cell(scenarios.cell(calling, level, "green", scenarios.normals(level, 1), 1))
+                    self.assertIn(row["win"], (0, 1))
+                    self.assertGreater(row["dps"], 0)
+                    self.assertTrue(row["win"] == 0 or 0 < row["health_left"] <= 1)
+                    # A kit part a lone mob never calls on is named on the cell (Ley Bind, a trap's group).
+                    alone = model.SIMS[calling].IGNORED_ALONE
+                    self.assertEqual(alone is not None, calling in ("leyweaver", "trapper"))
+                    if alone:
+                        self.assertIn("ignored: " + alone, row["notes"])
+
+    def test_leyweaver_arcane_surge_hits_harder_from_a_full_bar(self):
+        # Arcane Surge pays its cost, then the rest of the bar up to cost_extra_max, and adds its
+        # per_mana_pct of all it paid (cast.rs, cost_kind all_remaining). The bar here holds just
+        # what one Surge can spend, so a half bar spends half of it.
+        level = 40
+        ch = model.character("leyweaver", level, "green")
+        sk = model.skill("leyweaver", "arcane_surge")
+        stats = copy.copy(ch["stats"])
+        stats.max_mana = sk["realm_cost"] + sk["cost_extra_max"]
+        dealt, paid = {}, {}
+        for name, share in (("full", 1.0), ("half", 0.5)):
+            sim = model.Leyweaver("leyweaver", level, stats, ch["rows"], random.Random(2), {},
+                                  mob=model.mob_stats(level))
+            sim.mob_hp, sim.m_armor = sim.m["hp"], sim.m["armor"]
+            sim.setup_fight()
+            sim.power = int(stats.max_mana * share)
+            paid[name] = sim.surge()
+            dealt[name] = sim.dmg["arcane_surge"]
+        self.assertEqual(paid, dict(full=stats.max_mana, half=stats.max_mana // 2))
+        self.assertGreater(dealt["half"], 0)
+        self.assertGreater(dealt["full"], dealt["half"])
+
+    def test_sharpshooter_steady_aim_reaches_5_standing_still(self):
+        # The Sharpshooter never moves, so its Steady Aim never breaks. Every shot has an 8 yd
+        # minimum range, so it shoots only while the mob is on its way in: Long Pin holds the mob
+        # 9 s at range at Power Level 50.
+        level = 50
+        ch = model.character("sharpshooter", level, "green", {"pinning_shot": "long_pin"})
+        cls = multi.fighter("sharpshooter", 1)
+        peak = 0
+        for seed in range(5):
+            sim = cls("sharpshooter", level, ch["stats"], ch["rows"], random.Random(seed), {},
+                      mob=model.mob_stats(level, rank=1))
+            sim.fight()
+            stacks = [n for _, key, n in sim.fight_log if key == "steady_aim"]
+            self.assertLessEqual(max(stacks, default=0), 5)
+            peak = max([peak] + stacks)
+        self.assertEqual(peak, 5)
 
     def test_named_bosses_load(self):
         bosses = boss.named_bosses()

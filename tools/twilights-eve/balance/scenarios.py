@@ -227,6 +227,10 @@ def run_cell(c):
             mob = model.mob_stats(lv, rank=1)
         else:
             mob = model.mob_stats(lv, rank=1, health_mul=GENERIC_BOSS[0], damage_mul=GENERIC_BOSS[1])
+    # What the sim's kit holds for a pull that a fight with one mob never uses (Ley Bind's add).
+    alone = getattr(model.SIMS.get(calling), "IGNORED_ALONE", None)
+    if alone and against["n"] == 1 and kind != "guard":
+        notes.append("ignored: " + alone)
     if ch["fell_back"]:
         notes.append("green in " + ", ".join(ch["fell_back"]))
     if ch["empty"]:

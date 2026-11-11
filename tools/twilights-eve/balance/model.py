@@ -272,6 +272,9 @@ class Stats:
     pass
 
 
+STAT_ATTR = dict(strength="str", agility="agi", stamina="sta", intellect="int", spirit="spi")
+
+
 def build_stats(calling, level, entries, off_entry, rows):
     """`calling`'s stats at `level` in the gear `entries`, in the build `rows`: callings.csv's
     health_pct and mana_pct keep that percent of the base health and mana, rounded down, as
@@ -312,6 +315,10 @@ def build_stats(calling, level, entries, off_entry, rows):
             s.ranged = (fnum(r["dmg_min"]), fnum(r["dmg_max"]), fnum(r["speed"]))
     names = ["str", "agi", "sta", "int", "spi"]
     s.str, s.agi, s.sta, s.int, s.spi = (base[i] + gear[n] for i, n in enumerate(names))
+    # A passive's mod_stat pct raises that stat's total (Arcane Mind).
+    for p in passive_effects(calling, rows, "mod_stat"):
+        stat = STAT_ATTR[p["stat"]]
+        setattr(s, stat, getattr(s, stat) * (100 + p.get("pct", 0)) // 100 + p.get("amount", 0))
     s.base_health = per["base_health"] * int(pools["health_pct"] or 100) // 100
     s.max_hp = s.base_health + min(s.sta, 20) + max(s.sta - 20, 0) * 10
     s.max_hp = s.max_hp * (100 + sum(p["pct"] for p in passive_effects(calling, rows, "max_health_pct"))) // 100
@@ -319,6 +326,9 @@ def build_stats(calling, level, entries, off_entry, rows):
     bm = per["base_mana"]
     s.base_mana = bm
     s.max_mana = 0 if bm == 0 else bm * int(pools["mana_pct"] or 100) // 100 + min(s.int, 20) + max(s.int - 20, 0) * 15
+    # A max_power passive on a mana bar is that much more mana (talents.rs; Deep Reserves).
+    if c["power"] == "mana":
+        s.max_mana += sum(p["amount"] for p in passive_effects(calling, rows, "max_power"))
     if prof in ("mage", "priest"):
         s.mana_tick = s.spi / 4.0 + 12.5
     elif prof == "hunter":
@@ -545,6 +555,48 @@ IGNORED.update({
     ("bloodmender", "full_rites"): "resurrection",
     ("bloodmender", "quick_rites"): "resurrection",
     ("bloodmender", "cheap_rites"): "resurrection",
+    ("bloodletter", "long_kick"): KICK,
+    ("bloodletter", "bleeding_kick"): KICK,
+    ("bloodletter", "double_kick"): KICK,
+    ("bloodletter", "wide_fan"): "no pull holds more than 3 mobs",
+    ("bloodletter", "lasting_pool"): "the sim picks up its share of a droplet, however long it lasts",
+    ("nightblade", "quick_shadows"): "the sim stealths once, before the pull",
+    ("nightblade", "shadow_speed"): "run speed",
+    ("nightblade", "stalker"): "the sim opens from Stealth with Ambush, so no Backstab comes out of it",
+    ("nightblade", "fleeting_vanish"): "run speed",
+    ("nightblade", "long_kick"): KICK,
+    ("nightblade", "kick_from_the_dark"): KICK,
+    ("nightblade", "double_kick"): KICK,
+    ("pyromancer", "far_kindle"): RADIUS,
+    ("pyromancer", "long_counter"): KICK,
+    ("pyromancer", "burning_counter"): KICK,
+    ("pyromancer", "mana_counter"): KICK,
+    ("pyromancer", "wide_flamestrike"): RADIUS,
+    ("pyromancer", "big_wave"): RADIUS,
+    ("pyromancer", "dazing_wave"): "movement slow",
+    ("leyweaver", "arcane_focus"): "the choice has no effect in the data",
+    ("leyweaver", "walking_tap"): "the sim never moves",
+    ("leyweaver", "long_counter"): KICK,
+    ("leyweaver", "siphoning_counter"): KICK,
+    ("leyweaver", "spark_counter"): KICK,
+    ("leyweaver", "far_bind"): "range change",
+    ("sharpshooter", "eagle_eye"): "range change",
+    ("sharpshooter", "crippling_aim"): "movement slow",
+    ("sharpshooter", "long_silence"): KICK,
+    ("sharpshooter", "pinning_silence"): KICK,
+    ("sharpshooter", "mana_return"): KICK,
+    ("sharpshooter", "double_pin"): "a pull starts in melee, inside Pinning Shot's minimum range",
+    ("sharpshooter", "unhurried"): "the choice has no effect in the data",
+    ("trapper", "wide_trap"): RADIUS,
+    ("trapper", "wide_frost"): RADIUS,
+    ("trapper", "running_fire"): "the sim moves only by Vault, a leap",
+    ("trapper", "light_feet"): "the sim moves only by Vault, a leap",
+    ("trapper", "long_silence"): KICK,
+    ("trapper", "quieting_snare"): KICK,
+    ("trapper", "reset_traps"): KICK,
+    ("trapper", "wide_spring"): RADIUS,
+    ("trapper", "wide_wire"): RADIUS,
+    ("trapper", "momentum"): "the sim moves only by Vault, a leap",
 })
 
 
@@ -644,11 +696,20 @@ class Sim:
                    if p["skill"] == key and p.get("applies_to") in (None, part))
 
     def cooldown_ms(self, key):
-        """Skill `key`'s cooldown, less the flat COOLDOWN spellmods the build's passives put on it
-        (Harvest Moon)."""
-        mod = sum(m["value"] for p in passives(self.calling, self.rows) for m in p.get("spellmods", [])
-                  if m["op"] == "COOLDOWN" and m["type"] == "flat" and key in m["target"])
-        return max((self.skill(key).get("realm_cooldown_ms") or 0) + mod, 0)
+        """Skill `key`'s cooldown after the COOLDOWN spellmods the build's passives put on it: the pct
+        ones (Trap Mastery), then the flat ones (Harvest Moon), as talents.rs cooldown_ms does."""
+        mods = [m for p in passives(self.calling, self.rows) for m in p.get("spellmods", [])
+                if m["op"] == "COOLDOWN" and key in m["target"]]
+        flat = sum(m["value"] for m in mods if m["type"] == "flat")
+        pct = sum(m["value"] for m in mods if m["type"] == "pct")
+        return max((self.skill(key).get("realm_cooldown_ms") or 0) * (100 + pct) // 100 + flat, 0)
+
+    def knows(self, key):
+        """Skill `key` is learned at the character's real level in its Calling (its learn_level)."""
+        known = self.__dict__.setdefault("_known", {})
+        if key not in known:
+            known[key] = (self.skill(key).get("learn_level") or 1) <= calling_level(self.calling, self.L)
+        return known[key]
 
     def gcd_of(self, key):
         """The global cooldown skill `key` starts, in seconds: the client's client_gcd_ms, which it
@@ -2794,6 +2855,1225 @@ class Bloodmender(Mending, Sim):
         self.mob_turn()
 
 
+# ---------------------------------------------------------------- the Tier 2 damage pairs
+class Pull:
+    """What the Tier 2 damage sims share, ahead of Sim: they keep their state a mob (bleeds,
+    Embers, traps), so they need the living mobs (one outside multi.Multi), the target among them,
+    a blow on any one of them, and buffs as aura rows (self.buffs, as Sim.grant keeps them). A sim
+    with IGNORED_ALONE names a part of its kit that a fight with one mob never uses; scenarios.py
+    notes it on those cells."""
+    IGNORED_ALONE = None
+
+    def mob_ids(self):
+        if hasattr(self, "mobs"):
+            return self.alive()
+        return [0] if self.mob_hp > 0 else []
+
+    def target(self):
+        return getattr(self, "tgt", 0)
+
+    def others(self):
+        return [i for i in self.mob_ids() if i != self.target()]
+
+    def pull_size(self):
+        return len(self.mob_ids())
+
+    def on_mob(self, i, fn, *a, **kw):
+        """`fn(*a, **kw)` with mob `i` as the target, then the target back."""
+        keep = self.target()
+        if i == keep:
+            return fn(*a, **kw)
+        self.tgt = i
+        try:
+            return fn(*a, **kw)
+        finally:
+            self.tgt = keep
+
+    def up(self, key):
+        b = self.buffs.get(key)
+        return b is not None and self.t < b[0]
+
+    def stacks(self, key):
+        return self.buffs[key][2] if self.up(key) else 0
+
+    def set_stacks(self, key, n):
+        """Aura `key` on the character, fresh for its duration, at `n` stacks up to its max_stacks."""
+        self.grant(key)
+        self.buffs[key][2] = max(min(n, self.buffs[key][1]["max_stacks"]), 1)
+
+    def boss_fight(self):
+        """A named boss's fight (boss.Boss), where a trap catches nothing (cast.rs trap_catches)."""
+        return hasattr(self, "boss_spells")
+
+
+class Blade(Pull, Sim):
+    """The Tier 2 Cutthroat Line's core, the Cutthroat's energy, combo points and two weapons: buffs
+    whose mod_damage_done_pct, mod_melee_haste_pct and skill_crit_pct count while they are up; bleeds
+    a mob, each tick more by the mod_periodic_taken_pct auras on that mob (Hemorrhage) and by the
+    buffs' damage (cast.rs own_tick); a melee crit's bleed (Deep Wounds); each skill learned at its
+    learn_level, paid and timed by its row (cooldown_ms, gcd_of)."""
+
+    def setup_blade(self):
+        s = self.s
+        self.combo = 0
+        self.swing_t = 0.0
+        self.oh_t = s.oh_speed / 2 if s.oh else 1e9
+        self.mob_swing_t = 0.5
+        self.gcd = 0.0
+        self.buffs = {}
+        self.bleeds = defaultdict(dict)   # mob -> key -> [until, next tick, tick, every, droplet chance, leech pct]
+        self.debuffs = defaultdict(dict)  # mob -> aura key -> [until, aura row]
+        self.procs = passive_effects(self.calling, self.rows, "proc")
+        self.crit_bleeds = passive_effects(self.calling, self.rows, "crit_bleed")
+
+    def dmg_pct(self):
+        return sum(p["pct"] for p in self.buffed("mod_damage_done_pct"))
+
+    def haste(self):
+        return sum(p["pct"] for p in self.buffed("mod_melee_haste_pct"))
+
+    def can(self, key):
+        """Skill `key` is learned, off its cooldown, paid for, and free of the global cooldown if it
+        starts one."""
+        return (self.knows(key) and self.ready(key) and self.power >= self.cost(self.skill(key))
+                and (self.gcd_of(key) == 0 or self.t >= self.gcd))
+
+    def pay(self, key):
+        self.power -= self.cost(self.skill(key))
+        self.cd(key, self.cooldown_ms(key))
+        self.gcd = max(self.gcd, self.t + self.gcd_of(key))
+
+    def gain_energy(self, n):
+        self.power = min(self.power + n, self.s.max_energy)
+
+    def add_combo(self, n):
+        self.combo = min(self.combo + n, 5)
+
+    def crit_of(self, key):
+        """Skill `key`'s crit chance: the character's, the passives' for it, and a buff's for it or for
+        any skill (Cold Blood)."""
+        return self.s.crit + self.skill_pct("skill_crit_pct", key) + sum(
+            p["pct"] for p in self.buffed("skill_crit_pct") if p["skill"] in (key, "any"))
+
+    def spend_crit_buffs(self, key):
+        """Skill `key` hit: each buff with a skill_crit_pct for it or any skill loses a charge, and goes
+        at none left (Cold Blood)."""
+        for k, b in list(self.buffs.items()):
+            if self.t < b[0] and b[3] and any(p["skill"] in (key, "any") for p in fxs(b[1], "skill_crit_pct")):
+                b[3] -= 1
+                if not b[3]:
+                    del self.buffs[k]
+
+    def blow(self, crit, behind=False):
+        """A yellow blow's outcome; from behind the mob still dodges but cannot parry (rules/melee.rs)."""
+        if not behind:
+            return self.yellow(crit)
+        r = self.rng.random() * 100
+        if r < 5:
+            return "miss"
+        if r < 10:
+            return "dodge"
+        return "crit" if self.rng.random() * 100 < crit else "hit"
+
+    def strike(self, key, behind=False, crit=None):
+        """Skill `key`'s weapon_strike at the target: its weapon_pct of a main-hand swing and its bonus
+        past armour, more by the buffs' damage and by bleeding_pct on a bleeding target (Gushing
+        Strike), crit_damage_pct more on a crit (Cruel Backstab), then its combo points, a
+        bleeding_bonus more on a bleeding target (Twin Cut). `crit` replaces the crit chance (an
+        opener from Stealth). Returns (damage, outcome)."""
+        s, sk = self.s, self.skill(key)
+        p = fx(sk, "weapon_strike")
+        o = self.blow(self.crit_of(key) if crit is None else crit, behind)
+        if o not in ("hit", "crit"):
+            return 0, o
+        bleeding = self.bleeding()
+        raw = self.rng.uniform(s.mh_min, s.mh_max) * p.get("weapon_pct", 100) / 100 + linear(p["bonus"], self.L)
+        more = p.get("bleeding_pct", 0) if bleeding else 0
+        d = self.hit_mob(raw, key, True, o == "crit", p.get("crit_damage_pct", 0), dmg_pct=self.dmg_pct() + more)
+        self.spend_crit_buffs(key)
+        if o == "crit":
+            self.crit_landed(d)
+        for a in fxs(sk, "add_combo_points"):
+            self.add_combo(a["amount"] + (a.get("bleeding_bonus", 0) if bleeding else 0))
+        return d, o
+
+    def crit_landed(self, d):
+        """A melee crit of `d` on the target: the build's crit bleed, its pct of the crit spread over
+        its ticks, which the next crit sizes afresh (cast.rs crit_landed: Deep Wounds)."""
+        for p in self.crit_bleeds:
+            ticks = max(p["duration_ms"] // p["tick_ms"], 1)
+            self.bleed("crit_bleed", p["duration_ms"], d * p["pct"] // 100 // ticks, p["tick_ms"])
+
+    def bleed(self, key, ms, tick, every_ms, drop=0, leech=0, i=None):
+        """Bleed `key` on mob `i` (the target) for `ms`, `tick` each `every_ms`, in place of the one it
+        wore."""
+        i = self.target() if i is None else i
+        self.bleeds[i][key] = [self.t + ms / 1000, self.t + every_ms / 1000, tick, every_ms / 1000, drop, leech]
+
+    def bleed_up(self, key, i=None):
+        b = self.bleeds[self.target() if i is None else i].get(key)
+        return b is not None and self.t < b[0]
+
+    def bleed_count(self, i=None):
+        return sum(1 for b in self.bleeds[self.target() if i is None else i].values() if self.t < b[0])
+
+    def bleeding(self, i=None):
+        return self.bleed_count(i) > 0
+
+    def debuff(self, key, i=None):
+        a = aura(self.calling, key)
+        self.debuffs[self.target() if i is None else i][key] = [self.t + a["duration_ms"] / 1000, a]
+
+    def taken_pct(self, i):
+        """The percent more mob `i` takes of the character's bleeds (Hemorrhage)."""
+        return sum(p["pct"] for b in self.debuffs[i].values() if self.t < b[0]
+                   for p in fxs(b[1], "mod_periodic_taken_pct"))
+
+    def bleed_hit(self, i, key, tick):
+        """One tick of `tick` from bleed `key` on mob `i`, more by what the mob takes more of bleeds and
+        by the buffs' damage. Returns what it dealt."""
+        return self.on_mob(i, self.hit_mob, tick * (100 + self.taken_pct(i)) // 100, key, False,
+                           dmg_pct=self.dmg_pct())
+
+    def droplet(self, chance):
+        """A bleed's droplet: only the Bloodletter's Calling spills them."""
+
+    def tick_bleeds(self):
+        """Each bleed's tick: its damage, its leech, and a droplet on its chance."""
+        for i in self.mob_ids():
+            for key, b in list(self.bleeds[i].items()):
+                if self.t < b[0] and self.t >= b[1]:
+                    b[1] += b[3]
+                    d = self.bleed_hit(i, key, b[2])
+                    self.heal(d * b[5] // 100, "leech")
+                    if b[4]:
+                        self.droplet(b[4])
+
+    def swings(self):
+        s, h = self.s, self.haste()
+        if self.t >= self.swing_t:
+            self.swing_t = self.t + s.mh_speed * 100 / (100 + h)
+            d, o = self.white("mh")
+            if o == "crit":
+                self.crit_landed(d)
+        if s.oh and self.t >= self.oh_t:
+            self.oh_t = self.t + s.oh_speed * 100 / (100 + h)
+            d, o = self.white("oh")
+            if o == "crit":
+                self.crit_landed(d)
+
+    def mob_turn(self):
+        if self.t >= self.mob_swing_t:
+            self.mob_swing_t = self.t + self.m["swing"]
+            d, o = self.mob_swing()
+            if d > 0:
+                self.take(d)
+
+    def proc(self, on):
+        """The build's procs on `on` (finisher, kill), when their chance comes up: energy, combo
+        points, a share of the maximum health."""
+        for p in self.procs:
+            if p["on"] != on or (p.get("chance", 100) < 100 and self.rng.random() * 100 >= p["chance"]):
+                continue
+            self.gain_energy(p.get("energize", 0))
+            self.add_combo(p.get("add_combo_points", 0))
+            self.heal(self.s.max_hp * p.get("heal_pct", 0) // 100, "proc")
+
+    def on_kill(self):
+        self.proc("kill")
+
+
+class Bloodletter(Blade):
+    """Garrote kept up; Hemorrhage as the builder; at 5 combo points Rupture when it is down, else
+    Open Veins once two bleeds are up; Blood Fan on a pull of 2 or more; Red Frenzy at 5 Bloodlust
+    stacks; Blood Pool on its cooldown. Droplets are picked up as the Cutthroat picks them up
+    (DROPLET_PICKUP). Kick is the Kick boss.py casts."""
+
+    def setup_fight(self):
+        self.setup_blade()
+        c = self.calling
+        self.drop_chance = SPELLS[c]["bleed_drop_chance"]
+        self.bl_key = fx(aura(c, SPELLS[c]["bleed_drop"]), "pickup")["grants"]
+        self.pickup_heal = sum(p["pct"] for p in passive_effects(c, self.rows, "pickup_heal_pct"))
+        self.pickup_energy = sum(p["amount"] for p in passive_effects(c, self.rows, "pickup_energize"))
+
+    def tick_pct(self, key):
+        return self.skill_pct("skill_amount_pct", key, "tick")
+
+    def droplet(self, chance):
+        """A droplet spills `chance` percent of the time and the character picks up its share of
+        them: a Bloodlust stack, and the passives' heal and energy."""
+        if self.rng.random() * 100 < chance and self.rng.random() < self.opts.get("pickup", DROPLET_PICKUP):
+            self.grant(self.bl_key)
+            self.heal(self.s.max_hp * self.pickup_heal // 100, "pickup")
+            self.gain_energy(self.pickup_energy)
+
+    def aura_bleed(self, key, i=None):
+        """Skill `key`'s periodic_damage aura on mob `i`: the aura's tick, more by the build's tick pct
+        (Arterial), its droplet chance the skill's own or the Calling's."""
+        p = fx(self.skill(key), "periodic_damage")
+        a = aura(self.calling, p["apply_aura"])
+        dot = fx(a, "periodic_damage")
+        tick = linear(dot["tick"], self.L) * (100 + self.tick_pct(key)) // 100
+        self.bleed(key, a["duration_ms"], tick, dot["tick_ms"], p.get("drop_chance", self.drop_chance), i=i)
+
+    def garrote(self):
+        self.pay("garrote")
+        if self.blow(self.crit_of("garrote")) in ("hit", "crit"):
+            self.aura_bleed("garrote")
+            self.add_combo(fx(self.skill("garrote"), "add_combo_points")["amount"])
+
+    def rupture(self):
+        """Rupture: longer and harder a combo point, leeching its leech_pct, as the Cutthroat's."""
+        p = fx(self.skill("rupture"), "periodic_damage")
+        self.pay("rupture")
+        if self.blow(self.crit_of("rupture")) in ("hit", "crit"):
+            ms = p["duration_ms"] + linear(p["duration_per_combo"], self.L) * self.combo
+            tick = (linear(p["tick"], self.L) + linear(p["per_combo"], self.L) * self.combo) * (
+                100 + self.tick_pct("rupture")) // 100
+            self.bleed("rupture", ms, tick, p["tick_ms"], p.get("drop_chance", self.drop_chance), p.get("leech_pct", 0))
+        self.combo = 0
+
+    def open_veins(self):
+        """Open Veins: each bleed on the target deals its ticks_per_combo ticks a combo point now, its
+        timer left alone, each forced tick spilling a droplet on the skill's drop_chance (Spilling
+        Veins), and its heal_pct of what they dealt heals (Feeding Veins) (cast.rs tick_now)."""
+        p = fx(self.skill("open_veins"), "tick_now")
+        self.pay("open_veins")
+        if self.blow(self.crit_of("open_veins")) in ("hit", "crit"):
+            n = p.get("ticks_per_combo", 0) * self.combo if p.get("ticks_per_combo") else p.get("ticks", 0)
+            i, dealt = self.target(), 0
+            for key, b in list(self.bleeds[i].items()):
+                for _ in range(n if self.t < b[0] else 0):
+                    if self.mob_hp <= 0:
+                        break
+                    dealt += self.bleed_hit(i, key, b[2])
+                    if p.get("drop_chance"):
+                        self.droplet(p["drop_chance"])
+            self.heal(dealt * p.get("heal_pct", 0) // 100, "open_veins")
+        self.combo = 0
+
+    def blood_fan(self):
+        """Blood Fan: every mob of the pull, up to its max_targets, bleeds where the blow lands."""
+        self.pay("blood_fan")
+        for i in ([self.target()] + self.others())[:self.skill("blood_fan").get("max_targets", 1)]:
+            if self.blow(self.crit_of("blood_fan")) in ("hit", "crit"):
+                self.aura_bleed("blood_fan", i)
+
+    def hemorrhage(self):
+        self.pay("hemorrhage")
+        d, o = self.strike("hemorrhage")
+        if o in ("hit", "crit"):
+            self.debuff(fx(self.skill("hemorrhage"), "mod_periodic_taken_pct")["apply_aura"])
+
+    def red_frenzy(self):
+        """Red Frenzy takes the Bloodlust stacks and grants its aura at as many (cast.rs
+        consume_self_stacks)."""
+        p = fx(self.skill("red_frenzy"), "consume_self_stacks")
+        n = self.stacks(p["aura"])
+        self.pay("red_frenzy")
+        del self.buffs[p["aura"]]
+        self.set_stacks(p["grant"], n)
+
+    def blood_pool(self):
+        """Blood Pool spills its count of droplets at the character's feet, picked up as any other."""
+        self.pay("blood_pool")
+        for _ in range(fx(self.skill("blood_pool"), "spill_droplets")["count"]):
+            self.droplet(100)
+
+    def step(self):
+        self.tick_bleeds()
+        if self.stacks(self.bl_key) >= 5 and self.can("red_frenzy"):
+            self.red_frenzy()
+        if self.t >= self.gcd:
+            if self.can("blood_pool"):
+                self.blood_pool()
+            elif not self.bleed_up("garrote") and self.can("garrote"):
+                self.garrote()
+            elif self.combo >= 5:
+                if not self.bleed_up("rupture"):
+                    if self.can("rupture"):
+                        self.rupture()
+                elif self.bleed_count() >= 2 and self.can("open_veins"):
+                    self.open_veins()
+            elif self.pull_size() >= 2 and self.can("blood_fan"):
+                self.blood_fan()
+            elif self.can("hemorrhage"):
+                self.hemorrhage()
+        self.swings()
+        self.mob_turn()
+
+
+class Nightblade(Blade):
+    """Opens from Stealth with Ambush; Backstab as the builder; Eviscerate at 5 combo points, with
+    Cold Blood before it; Vanish on its cooldown once the energy for an Ambush is there, and Ambush
+    from it at once. The sim stands behind the mob for every Backstab and Ambush, as the Cutthroat
+    sim does for its opener. Kick is the Kick boss.py casts; Kidney Shot stuns a boss's cast that
+    the Kick is not ready for."""
+
+    def setup_fight(self):
+        self.setup_blade()
+        # Stealth, cast out of combat before the pull.
+        self.stealth = self.stealth_aura("stealth")
+        self.cold_key = fx(self.skill("cold_blood"), "grant_aura")["aura"]
+
+    def stealth_aura(self, key):
+        """The aura row skill `key` stealths the character with: its stealth effect's, or a granted
+        aura's that stealths (Shadow Speed, Vanish)."""
+        sk = self.skill(key)
+        for p in fxs(sk, "stealth"):
+            return aura(self.calling, p["apply_aura"])
+        for g in fxs(sk, "grant_aura"):
+            a = aura(self.calling, g["aura"])
+            if fxs(a, "stealth"):
+                return a
+        return None
+
+    def ambush(self):
+        """Ambush, from behind: a crit out of a Stealth with opener_crit, its combo points, and the
+        bleed its choice adds (Lingering Ambush)."""
+        sk = self.skill("ambush")
+        opener = self.stealth is not None and any(p.get("opener_crit") for p in fxs(self.stealth, "stealth"))
+        self.stealth = None
+        self.pay("ambush")
+        d, o = self.strike("ambush", behind=True, crit=100 if opener else None)
+        if o in ("hit", "crit"):
+            for p in fxs(sk, "periodic_damage"):
+                a = aura(self.calling, p["apply_aura"])
+                dot = fx(a, "periodic_damage")
+                self.bleed("ambush_bleed", a["duration_ms"], linear(dot["tick"], self.L), dot["tick_ms"])
+
+    def vanish(self):
+        """Vanish: back into Stealth, the cooldowns its choice ends (Ready Vanish) and its heal (Shadow
+        Heal). The mobs let go until the Ambush that follows."""
+        sk = self.skill("vanish")
+        self.pay("vanish")
+        self.stealth = self.stealth_aura("vanish")
+        for r in fxs(sk, "reset_cooldowns"):
+            for sid in r["spell_ids"]:
+                self.cds.pop(key_of(self.calling, sid), None)
+        for h in fxs(sk, "heal"):
+            self.heal(linear(h["amount"], self.L), "vanish")
+
+    def eviscerate(self):
+        """Eviscerate: its amount and per_combo past armour, below_bonus_pct more under its
+        below_health_pct (Fatal Edge), kill_energize on a killing blow (Relentless), then the
+        finisher procs."""
+        p = fx(self.skill("eviscerate"), "school_damage")
+        self.pay("eviscerate")
+        o = self.blow(self.crit_of("eviscerate"))
+        if o in ("hit", "crit"):
+            raw = linear(p["amount"], self.L) + linear(p["per_combo"], self.L) * self.combo
+            low = p.get("below_health_pct") and self.mob_hp * 100 < self.m["hp"] * p["below_health_pct"]
+            more = p.get("below_bonus_pct", 0) if low else 0
+            d = self.hit_mob(raw, "eviscerate", True, o == "crit", dmg_pct=self.dmg_pct() + more)
+            self.spend_crit_buffs("eviscerate")
+            if o == "crit":
+                self.crit_landed(d)
+            if self.mob_hp <= 0:
+                self.gain_energy(p.get("kill_energize", 0))
+        self.combo = 0
+        self.proc("finisher")
+
+    def cold_blood(self):
+        sk = self.skill("cold_blood")
+        self.pay("cold_blood")
+        self.grant(self.cold_key)
+        for e in fxs(sk, "energize"):
+            self.gain_energy(linear(e["amount"], self.L))
+
+    def kidney_shot(self):
+        """Kidney Shot: a stun of its per_combo a combo point, which stops the boss's cast
+        (boss.Boss.stun_cast), its choice's damage a combo point (Bruising Kidney), then the
+        finisher procs."""
+        sk = self.skill("kidney_shot")
+        self.pay("kidney_shot")
+        o = self.blow(self.crit_of("kidney_shot"))
+        if o in ("hit", "crit"):
+            ms = sum(linear(p.get("per_combo"), self.L) * self.combo for p in fxs(sk, "stun"))
+            until = self.t + ms / 1000
+            self.mob_swing_t = max(self.mob_swing_t, until)
+            self.stun_cast(until)
+            for p in fxs(sk, "school_damage"):
+                self.hit_mob(linear(p["per_combo"], self.L) * self.combo, "kidney_shot", True, o == "crit",
+                             dmg_pct=self.dmg_pct())
+        self.combo = 0
+        self.proc("finisher")
+
+    def step(self):
+        self.tick_bleeds()
+        if (getattr(self, "stunnable", None) and self.combo and self.stealth is None and self.stunnable()
+                and self.can("kidney_shot")):
+            self.kidney_shot()
+        if (self.stealth is None and self.t >= self.gcd and self.can("vanish")
+                and self.power >= self.cost(self.skill("ambush"))):
+            self.vanish()
+        if self.combo >= 5 and not self.up(self.cold_key) and self.can("cold_blood"):
+            self.cold_blood()
+        # A Vanish ready waits for the energy of its Ambush.
+        pooling = self.stealth is None and self.knows("vanish") and self.ready("vanish")
+        if self.t >= self.gcd:
+            if self.stealth is not None:
+                if self.can("ambush"):
+                    self.ambush()
+            elif pooling:
+                pass
+            elif self.combo >= 5:
+                if self.can("eviscerate"):
+                    self.eviscerate()
+            elif self.can("backstab"):
+                self.pay("backstab")
+                self.strike("backstab", behind=True)
+        if self.stealth is None:
+            self.swings()
+            self.mob_turn()
+
+
+class Caster(Pull, Sim):
+    """The Tier 2 Initiate Line's core, the Initiate's mana and the mob that runs in from 30 yd: a
+    cast takes its row's cast time (none with a next_cast's instant, shorter by the buffs'
+    mod_cast_speed_pct), starts the global cooldown its row sets (gcd_of), and pays its price and
+    starts its cooldown as it lands; a channel pays and starts as it begins and ticks at its row's
+    channel_tick_ms; shields as the Initiate's (Ley Ward). Each skill is learned at its learn_level."""
+
+    def setup_caster(self):
+        self.dist = 30.0
+        self.mob_swing_t = 0.0
+        self.gcd = 0.0
+        self.cast = None      # (lands, key, the next_cast changes it took)
+        self.channel = None   # [until, next tick, key, every]
+        self.buffs = {}
+        self.shields = {}     # skill key -> [left, until, amount, absorb params], first up first
+        self.procs = passive_effects(self.calling, self.rows, "proc")
+
+    def can(self, key):
+        return self.knows(key) and self.ready(key) and self.power >= self.price(key)
+
+    def spend(self, cost):
+        """`cost` mana; a free cast does not hold back the mana regeneration."""
+        if cost:
+            self.spend_mana(cost)
+
+    def gain_mana(self, n):
+        self.power = min(self.power + n, self.s.max_mana)
+
+    def crit_of(self, key):
+        return self.s.crit + self.skill_pct("skill_crit_pct", key)
+
+    def start(self, key):
+        mods = self.next_casts(key)
+        self.use_next_casts(key)
+        haste = sum(p["pct"] for p in self.buffed("mod_cast_speed_pct"))
+        ms = 0 if any(p.get("instant") for p in mods) else self.skill(key).get("cast_time_ms", 0) * 100 // (100 + haste)
+        self.cast = (self.t + ms / 1000, key, mods)
+        self.gcd = self.t + self.gcd_of(key)
+
+    def pay(self, key, mods):
+        self.spend(self.price(key, mods))
+        self.cd(key, self.cooldown_ms(key))
+
+    def begin_channel(self, key):
+        sk = self.skill(key)
+        mods = self.next_casts(key)
+        self.use_next_casts(key)
+        self.pay(key, mods)
+        every = sk["channel_tick_ms"] / 1000
+        self.channel = [self.t + sk["channel_ms"] / 1000, self.t + every, key, every]
+        self.gcd = self.t + self.gcd_of(key)
+
+    def run_channel(self):
+        ch = self.channel
+        if ch and self.t >= ch[1]:
+            ch[1] += ch[3]
+            self.channel_tick(ch[2])
+        if ch and self.t >= ch[0] - 1e-9:
+            self.channel = None
+
+    def fire(self, on, key):
+        """The build's procs on `on` (crit) of skill `key`: an aura on the character, and a share of
+        base mana."""
+        for p in self.procs:
+            if p["on"] == on and p.get("skill") in (None, key):
+                if p.get("apply_aura"):
+                    self.grant(p["apply_aura"])
+                self.gain_mana(self.pct_base(p.get("energize_pct_of_base", 0)))
+
+    def shield(self, key, amount, ms, p):
+        self.shields.pop(key, None)
+        self.shields[key] = [amount, self.t + ms / 1000, amount, p]
+
+    def take(self, dmg):
+        """`dmg` past the shields up, as the Initiate's: each pays its energize_pct on what it soaks,
+        and a ward that breaks with burst_radius_yd bursts for its amount at every mob of the pull."""
+        for key, w in list(self.shields.items()):
+            if self.t > w[1]:
+                del self.shields[key]
+                continue
+            soaked = min(w[0], dmg)
+            if not soaked:
+                continue
+            w[0] -= soaked
+            dmg -= soaked
+            self.gain_mana(soaked * w[3].get("energize_pct", 0) // 100)
+            if not w[0]:
+                del self.shields[key]
+                if w[3].get("burst_radius_yd"):
+                    o = self.spell_roll(self.s.crit)
+                    if o != "miss":
+                        self.hit_mob(w[2], "ward_burst", False, o == "crit")
+        return Sim.take(self, dmg)
+
+    def crit_taken(self, i):
+        """Mob `i` (the target when None) landed a crit on the character."""
+
+    def mob_swing(self, from_front=True, i=None):
+        d, o = super().mob_swing(from_front, i)
+        if o == "crit":
+            self.crit_taken(self.target() if i is None else i)
+        return d, o
+
+    def mob_turn(self):
+        if self.dist > 5:
+            self.dist = max(self.dist - MOB_RUN * DT, 0)
+            self.mob_swing_t = max(self.mob_swing_t, self.t + 0.3)
+        elif self.t >= self.mob_swing_t:
+            self.mob_swing_t = self.t + self.m["swing"]
+            d, o = self.mob_swing()
+            if d > 0:
+                self.take(d)
+
+    def hit_on(self, i, raw, src, crit=False):
+        """`raw` of a magic school at mob `i` (the target when None)."""
+        return self.on_mob(self.target() if i is None else i, self.hit_mob, raw, src, False, crit)
+
+
+class Pyromancer(Caster):
+    """Searing Ember on a target that wears none (to open, and again after each Catalyst); on a pull
+    of 2 or more Blast Wave and Flamestrike on their cooldowns, and Kindle once the target has 3
+    Ember stacks and another mob has fewer; Catalyst at 3 Ember stacks; Pyroblast on its cooldown;
+    Fireball as the filler. Counterspell is the Kick boss.py casts."""
+
+    def setup_fight(self):
+        self.setup_caster()
+        self.embers = {}   # mob -> [until, next tick, tick a stack, stacks]
+        self.burns = {}    # mob -> [until, next tick, tick, every]: Pyroblast's
+        self.ember_aura = aura(self.calling, fx(self.skill("searing_ember"), "periodic_damage")["apply_aura"])
+        self.ember_dot = fx(self.ember_aura, "periodic_damage")
+
+    def ember_on(self, i=None):
+        e = self.embers.get(self.target() if i is None else i)
+        return e if e is not None and self.t < e[0] else None
+
+    def ember_stacks(self, i=None):
+        e = self.ember_on(i)
+        return e[3] if e else 0
+
+    def put_ember(self, i=None, stacks=1):
+        """A Searing Ember on mob `i` (the target): a stack more on one it wears, up to the aura's
+        max_stacks, its time from now; its tick the aura's with the periodic share of the spell
+        power, half of it beside a direct hit (cast.rs), more by the build's tick pct."""
+        i = self.target() if i is None else i
+        a, dot = self.ember_aura, self.ember_dot
+        dur, every = a["duration_ms"], dot["tick_ms"]
+        tick = (linear(dot["tick"], self.L) + sp_periodic(self.s.spell_power, dur, dur // every) // 2) * (
+            100 + self.skill_pct("skill_amount_pct", "searing_ember", "tick")) // 100
+        held = self.ember_stacks(i)
+        nxt = self.embers[i][1] if held else self.t + every / 1000
+        self.embers[i] = [self.t + dur / 1000, nxt, tick, min(held + stacks, a["max_stacks"])]
+
+    def grow_ember(self, n, i=None):
+        """The Ember mob `i` wears gains `n` stacks, its time left alone (grow_aura)."""
+        e = self.ember_on(i)
+        if e:
+            e[3] = min(e[3] + n, self.ember_aura["max_stacks"])
+
+    def crit_taken(self, i):
+        # An Ember on a mob that crits the character (Ember Ward).
+        for p in self.procs:
+            if p["on"] == "crit_taken" and p.get("apply_aura_target") == self.ember_aura["key"]:
+                self.put_ember(i)
+
+    def tick_dots(self):
+        for i in self.mob_ids():
+            e = self.embers.get(i)
+            if e and self.t < e[0] and self.t >= e[1]:
+                e[1] += self.ember_dot["tick_ms"] / 1000
+                self.hit_on(i, e[2] * e[3], "ember_dot")
+            b = self.burns.get(i)
+            if b and self.t < b[0] and self.t >= b[1]:
+                b[1] += b[3]
+                self.hit_on(i, b[2], "pyroblast_dot")
+
+    def bolt(self, key, i=None):
+        """Skill `key`'s school_damage at mob `i` (the target): its amount and the cast-time share of
+        the spell power, more by the build's amount pct, rolled for a miss and a crit unless its
+        defense_type is none. Returns (damage, outcome)."""
+        sk = self.skill(key)
+        p = fx(sk, "school_damage")
+        o = "hit" if sk.get("defense_type") == "none" else self.spell_roll(self.crit_of(key))
+        if o == "miss":
+            return 0, o
+        raw = (linear(p["amount"], self.L) + sp_direct(self.s.spell_power, sk.get("cast_time_ms", 0))) * (
+            100 + self.skill_pct("skill_amount_pct", key, "hit")) // 100
+        return self.hit_on(i, raw, key, o == "crit"), o
+
+    def finish(self, key, mods):
+        sk = self.skill(key)
+        self.pay(key, mods)
+        if key == "searing_ember":
+            for i in ([self.target()] + self.others())[:sk.get("max_targets", 1)]:
+                if self.bolt(key, i)[1] != "miss":
+                    self.put_ember(i)
+        elif key in ("fireball", "pyroblast"):
+            d, o = self.bolt(key)
+            if o == "miss":
+                return
+            p = fx(sk, "school_damage")
+            if p.get("splash_pct"):
+                self.splash(d * p["splash_pct"] // 100, key + "_splash", n=0)
+            for g in fxs(sk, "grow_aura"):
+                self.grow_ember(g["stacks"])
+            for b in fxs(sk, "periodic_damage"):
+                a = aura(self.calling, b["apply_aura"])
+                dot = fx(a, "periodic_damage")
+                dur, every = a["duration_ms"], dot["tick_ms"]
+                tick = linear(dot["tick"], self.L) + sp_periodic(self.s.spell_power, dur, dur // every) // 2
+                self.burns[self.target()] = [self.t + dur / 1000, self.t + every / 1000, tick, every / 1000]
+            if o == "crit":
+                self.fire("crit", key)
+        elif key == "catalyst":
+            # The Ember goes: its amount once a stack, rolled for a crit but never a miss, as the
+            # Initiate's, its share of the maximum mana back, and with a spread_yd a fresh Ember on
+            # another mob (Spreading Catalyst).
+            p = fx(sk, "consume_aura")
+            stacks = self.ember_stacks()
+            self.embers.pop(self.target(), None)
+            crit = self.rng.random() * 100 < self.crit_of(key)
+            self.hit_on(None, linear(p["amount"], self.L) * (stacks if p.get("per_stack") else 1), key, crit)
+            self.gain_mana(self.s.max_mana * p.get("energize_pct_of_max", 0) // 100)
+            if p.get("spread_yd") and self.others():
+                self.put_ember(self.others()[0])
+        elif key == "kindle":
+            # The target's Ember, its stacks and time, on its targets of the other mobs.
+            p = fx(sk, "copy_aura")
+            e = self.ember_on()
+            for i in [i for i in self.others() if e and self.ember_stacks(i) < e[3]][:p["targets"]]:
+                self.embers[i] = list(e)
+        elif key in ("flamestrike", "blast_wave"):
+            for i in [self.target()] + self.others():
+                self.bolt(key, i)
+                if fxs(sk, "periodic_damage"):
+                    self.put_ember(i)
+
+    def step(self):
+        self.tick_dots()
+        if self.cast and self.t >= self.cast[0]:
+            _, key, mods = self.cast
+            self.cast = None
+            self.finish(key, mods)
+        if not self.cast and self.t >= self.gcd:
+            pull = self.pull_size() >= 2
+            stacks = self.ember_stacks()
+            if not stacks and self.can("searing_ember"):
+                self.start("searing_ember")
+            elif pull and self.dist <= self.skill("blast_wave").get("realm_radius_yd", 0) and self.can("blast_wave"):
+                self.start("blast_wave")
+            elif pull and self.can("flamestrike"):
+                self.start("flamestrike")
+            elif (pull and stacks >= 3 and any(self.ember_stacks(i) < 3 for i in self.others())
+                  and self.can("kindle")):
+                self.start("kindle")
+            elif stacks >= 3 and self.can("catalyst"):
+                self.start("catalyst")
+            elif self.can("pyroblast"):
+                self.start("pyroblast")
+            elif self.can("fireball"):
+                self.start("fireball")
+        self.mob_turn()
+
+
+class Leyweaver(Caster):
+    """Arcane Surge from a full bar; Ley Ward and Attunement on their cooldowns; on a pull of 2 or
+    more Ley Bind on an add; Ley Tap when the bar is under 30% (the sim stands at range for it, as
+    the ticket allows); Ley-Spark while the bar stays above 80% after its cost, Arcane Missiles
+    otherwise. Counterspell is the Kick boss.py casts. Ley Bind holds an add only in a pull
+    (multi.LeyweaverN)."""
+    IGNORED_ALONE = "Ley Bind, no add to bind"
+    SPARK_ABOVE = 0.80
+    TAP_BELOW = 0.30
+
+    def setup_fight(self):
+        self.setup_caster()
+        self.bound = None   # [mob, until, its health when bound]: Ley Bind's
+
+    def fill_pct(self, pct):
+        """`pct` scaled by the mana bar's fill now, cut to a whole percent (cast.rs)."""
+        return int(pct * self.power / self.s.max_mana) if self.s.max_mana else 0
+
+    def surge(self, mods=()):
+        """Arcane Surge: its cost, then the rest of the bar up to its cost_extra_max (cost_kind
+        all_remaining), and per_mana_pct of all it spent added to its amount. Returns what it spent."""
+        sk = self.skill("arcane_surge")
+        p = fx(sk, "school_damage")
+        cost = self.price("arcane_surge", list(mods))
+        self.spend(cost)
+        extra = min(max(self.power, 0), sk.get("cost_extra_max", 0))
+        self.spend(extra)
+        self.cd("arcane_surge", self.cooldown_ms("arcane_surge"))
+        paid = cost + extra
+        o = self.spell_roll(self.crit_of("arcane_surge"))
+        if o != "miss":
+            raw = linear(p["amount"], self.L) + paid * p.get("per_mana_pct", 0) // 100 + sp_direct(self.s.spell_power, 0)
+            d = self.hit_on(None, raw, "arcane_surge", o == "crit")
+            if p.get("splash_pct"):
+                self.splash(d * p["splash_pct"] // 100, "arcane_surge_splash", n=0)
+        return paid
+
+    def finish(self, key, mods):
+        sk = self.skill(key)
+        if key == "arcane_surge":
+            self.surge(mods)
+            return
+        self.pay(key, mods)
+        if key == "ley_spark":
+            # Its crit_pct_at_full_mana scaled by the bar's fill after the cost, as the Initiate's.
+            p = fx(sk, "school_damage")
+            o = self.spell_roll(self.crit_of(key) + p.get("crit_pct_at_full_mana", 0) * self.power / self.s.max_mana)
+            if o != "miss":
+                raw = linear(p["amount"], self.L) + sp_direct(self.s.spell_power, sk.get("cast_time_ms", 0))
+                self.hit_on(None, raw, key, o == "crit")
+                if o == "crit":
+                    self.fire("crit", key)
+        elif key == "ley_ward":
+            p = fx(sk, "absorb")
+            self.shield(key, self.s.max_mana * p["pct"] // 100, p["duration_ms"], p)
+        elif key == "attunement":
+            self.grant(fx(sk, "grant_aura")["aura"])
+        elif key == "ley_bind":
+            free = self.free_add()
+            if free is not None and self.spell_roll(0) != "miss":
+                a = aura(self.calling, fx(sk, "incapacitate")["apply_aura"])
+                self.bound = [free, self.t + a["duration_ms"] / 1000, self.mobs[free]]
+
+    def channel_tick(self, key):
+        sk = self.skill(key)
+        if key == "arcane_missiles":
+            # A missile: its amount and an instant's share of the spell power, pct_at_full_mana more
+            # by the fill at that tick, and its energize's share of the maximum mana if it lands.
+            p = fx(sk, "school_damage")
+            o = self.spell_roll(self.crit_of(key))
+            if o == "miss":
+                return
+            raw = (linear(p["amount"], self.L) + sp_direct(self.s.spell_power, 0)) * (
+                100 + self.fill_pct(p.get("pct_at_full_mana", 0)) + self.skill_pct("skill_amount_pct", key, "hit")) // 100
+            self.hit_on(None, raw, key, o == "crit")
+            for e in fxs(sk, "energize"):
+                self.gain_mana(self.s.max_mana * e.get("pct_of_max", 0) // 100)
+        elif key == "ley_tap":
+            for e in fxs(sk, "energize"):
+                self.gain_mana(self.s.max_mana * e.get("pct_of_max", 0) // 100)
+
+    def free_add(self):
+        """A mob of the pull besides the target that no Ley Bind holds: none in a fight with one."""
+        held = self.bound[0] if self.bound and self.t < self.bound[1] else None
+        free = [i for i in self.others() if i != held]
+        return free[0] if free and held is None else None
+
+    def step(self):
+        self.run_channel()
+        if self.cast and self.t >= self.cast[0]:
+            _, key, mods = self.cast
+            self.cast = None
+            self.finish(key, mods)
+        if not self.cast and not self.channel and self.t >= self.gcd:
+            top = self.s.max_mana
+            if self.power >= top and self.can("arcane_surge"):
+                self.start("arcane_surge")
+            elif self.can("ley_ward"):
+                self.start("ley_ward")
+            elif self.can("attunement"):
+                self.start("attunement")
+            elif self.pull_size() >= 2 and self.free_add() is not None and self.can("ley_bind"):
+                self.start("ley_bind")
+            elif self.power < top * self.TAP_BELOW and self.can("ley_tap"):
+                self.begin_channel("ley_tap")
+            elif self.power - self.price("ley_spark") > top * self.SPARK_ABOVE and self.can("ley_spark"):
+                self.start("ley_spark")
+            elif self.can("arcane_missiles"):
+                self.begin_channel("arcane_missiles")
+        self.mob_turn()
+
+
+class Bow(Pull, Sim):
+    """The Tier 2 Ranger Line's core, the Ranger's: the mob runs in from 30 yd, slower by the
+    strongest snare on it (cast.rs) and still while rooted; a shot needs the mob past the minimum
+    range, and a cast starts only when it ends before the mob comes inside it; Auto Shot between
+    casts, faster by the buffs' mod_ranged_haste_pct; the melee weapon on a mob inside the minimum
+    range; buffs whose mod_damage_done_pct, mod_ranged_crit_pct and mod_damage_taken_pct count while
+    they are up. Each skill is learned at its learn_level and starts the global cooldown its row sets."""
+
+    def setup_bow(self):
+        self.dist = 30.0
+        self.mob_swing_t = 0.0
+        self.gcd = 0.0
+        self.cast = None                  # (lands, key)
+        self.shot_t = self.t + 0.3
+        self.swing_t = 0.0
+        self.buffs = {}
+        self.dots = defaultdict(dict)     # mob -> key -> [until, next tick, tick, every]
+        self.snares = defaultdict(dict)   # mob -> key -> [until, pct]
+        self.roots = defaultdict(float)   # mob -> rooted until
+        self.sunders = {}                 # mob -> [until, stacks, aura row]
+        self.min_range = self.skill("auto_shot").get("realm_range_min") or 0
+        self.procs = passive_effects(self.calling, self.rows, "proc")
+
+    def can(self, key):
+        return (self.knows(key) and self.ready(key) and self.power >= self.cost(self.skill(key))
+                and (self.gcd_of(key) == 0 or self.t >= self.gcd))
+
+    def pay(self, key):
+        cost = self.cost(self.skill(key))
+        if cost:
+            self.spend_mana(cost)
+        self.cd(key, self.cooldown_ms(key))
+        self.gcd = max(self.gcd, self.t + self.gcd_of(key))
+
+    def can_shoot(self):
+        return self.dist > self.min_range
+
+    def in_melee(self):
+        return self.dist <= 5
+
+    def rooted(self, i=None):
+        return self.t < self.roots[self.target() if i is None else i]
+
+    def speed(self):
+        """The target's run speed now: none while rooted, else less by the strongest snare on it."""
+        i = self.target()
+        if self.rooted(i):
+            return 0.0
+        slow = min((s[1] for s in self.snares[i].values() if self.t < s[0]), default=0)
+        return MOB_RUN * max(100 + slow, 0) / 100
+
+    def can_start(self, key):
+        """Skill `key`'s cast ends before the mob comes inside the minimum range, as the Ranger's Shaft."""
+        if not self.can_shoot():
+            return False
+        ms = self.skill(key).get("cast_time_ms", 0)
+        free = max(self.roots[self.target()] - self.t, 0)
+        spd = self.speed() or MOB_RUN
+        return free + (self.dist - self.min_range) / spd >= ms / 1000 * 0.9
+
+    def dmg_pct(self):
+        return sum(p["pct"] for p in self.buffed("mod_damage_done_pct"))
+
+    def ranged_haste(self):
+        return sum(p["pct"] for p in self.buffed("mod_ranged_haste_pct"))
+
+    def armor_loss(self):
+        s = self.sunders.get(self.target())
+        if s and self.t < s[0]:
+            return -sum(p["amount"] for p in fxs(s[2], "mod_armor")) * s[1]
+        return 0
+
+    def sunder(self, key, n=1, i=None):
+        """`n` stacks of armour aura `key` on mob `i` (the target), up to its max_stacks, for its duration."""
+        i = self.target() if i is None else i
+        a = aura(self.calling, key)
+        s = self.sunders.get(i)
+        held = s[1] if s and self.t < s[0] else 0
+        self.sunders[i] = [self.t + a["duration_ms"] / 1000, min(held + n, a["max_stacks"]), a]
+
+    def sunder_stacks(self):
+        s = self.sunders.get(self.target())
+        return (s[1], s[0] - self.t) if s and self.t < s[0] else (0, 0)
+
+    def take(self, dmg):
+        pct = sum(p["pct"] for p in self.buffed("mod_damage_taken_pct"))
+        return Sim.take(self, dmg * max(100 + pct, 0) // 100)
+
+    def put_aura(self, key, i=None):
+        """Enemy aura row `key` on mob `i` (the target): its periodic damage, snare and root."""
+        i = self.target() if i is None else i
+        a = aura(self.calling, key)
+        until = self.t + (a.get("duration_ms") or 0) / 1000
+        for p in fxs(a, "periodic_damage"):
+            self.dots[i][key] = [until, self.t + p["tick_ms"] / 1000, linear(p["tick"], self.L), p["tick_ms"] / 1000]
+        for p in fxs(a, "mod_run_speed"):
+            self.snares[i][key] = [until, p["pct"]]
+        if fxs(a, "root"):
+            self.roots[i] = max(self.roots[i], until)
+
+    def apply_effects(self, sk, i=None):
+        """A landed shot's riders on mob `i`: its armour aura, bleed, snare and root."""
+        for p in fxs(sk, "mod_armor"):
+            self.sunder(p["apply_aura"], p.get("stacks", 1), i)
+        for p in fxs(sk, "periodic_damage") + fxs(sk, "mod_run_speed"):
+            self.put_aura(p["apply_aura"], i)
+        for p in fxs(sk, "root"):
+            i = self.target() if i is None else i
+            self.roots[i] = max(self.roots[i], self.t + p["duration_ms"] / 1000)
+
+    def tick_dots(self):
+        for i in self.mob_ids():
+            for key, b in list(self.dots[i].items()):
+                if self.t < b[0] and self.t >= b[1]:
+                    b[1] += b[3]
+                    self.on_mob(i, self.hit_mob, b[2], key, False, dmg_pct=self.dmg_pct())
+
+    def shot(self, key):
+        """Skill `key`'s weapon_strike from the ranged weapon: its weapon_pct of a shot and its bonus,
+        past armour less its armor_ignore and the passives' skill_armor_ignore; crit_damage_pct more
+        on a crit, below_bonus_pct more under below_health_pct, the passives' amount pct (Killing
+        Ground's within its yards); the passives' crit for it and the buffs' ranged crit and damage.
+        Returns (damage, outcome)."""
+        s, sk, c = self.s, self.skill(key), self.calling
+        p = fx(sk, "weapon_strike")
+        crit = s.crit + self.skill_pct("skill_crit_pct", key) + sum(q["pct"] for q in self.buffed("mod_ranged_crit_pct"))
+        o = self.ranged_roll(crit)
+        if o in ("miss", "dodge"):
+            return 0, o
+        more = sum(q["pct"] for q in passive_effects(c, self.rows, "skill_amount_pct") if q["skill"] == key
+                   and (not q.get("max_distance_yd") or self.dist <= q["max_distance_yd"]))
+        if p.get("below_health_pct") and self.mob_hp * 100 < self.m["hp"] * p["below_health_pct"]:
+            more += p.get("below_bonus_pct", 0)
+        ignore = linear(p.get("armor_ignore"), self.L) + sum(
+            q["amount"] for q in passive_effects(c, self.rows, "skill_armor_ignore") if q["skill"] == key)
+        raw = (self.rng.uniform(s.r_min, s.r_max) * p.get("weapon_pct", 100) / 100 + linear(p["bonus"], self.L)) * (
+            100 + more) / 100
+        d = self.hit_mob(raw, key, True, o == "crit", p.get("crit_damage_pct", 0), ignore, dmg_pct=self.dmg_pct())
+        return d, o
+
+    def auto_and_melee(self):
+        s = self.s
+        if self.can_shoot() and not self.cast and self.t >= self.shot_t:
+            self.shot_t = self.t + s.r_speed * 100 / (100 + self.ranged_haste())
+            d, o = self.shot("auto_shot")
+            for p in self.buffed("proc") if d else []:
+                if p["on"] == "damage_done" and p.get("skill") == "auto_shot":
+                    self.power = min(self.power + self.pct_base(p.get("energize_pct_of_base", 0)), s.max_mana)
+        if self.in_melee() and not self.can_shoot() and self.t >= self.swing_t:
+            self.swing_t = self.t + s.mh_speed
+            self.white("mh")
+
+    def mob_turn(self):
+        if self.dist > 5:
+            self.dist = max(self.dist - self.speed() * DT, 0)
+            self.mob_swing_t = max(self.mob_swing_t, self.t + 0.3)
+        elif self.t >= self.mob_swing_t:
+            self.mob_swing_t = self.t + self.m["swing"]
+            d, o = self.mob_swing()
+            if d > 0:
+                self.take(d)
+
+
+class Sharpshooter(Bow):
+    """Stands still. Pinning Shot on a mob running in, to keep it at range; Steady Shot until Steady
+    Aim holds 5 stacks and again before they run out; Sunder Arrow kept at 5 stacks; then Aimed
+    Shot on its cooldown and Puncturing Shaft (which has none) between them; Steady Shot as the
+    filler; Rapid Fire on its cooldown; Hold Your Ground once the mob reaches melee. Every shot has
+    an 8 yd minimum range and the kit has no leap, so a mob in melee meets the melee weapon.
+    Silencing Shot is the Kick boss.py casts. self.fight_log holds (time, "steady_aim", stacks)
+    after each Steady Shot."""
+
+    def setup_fight(self):
+        self.setup_bow()
+        self.t0 = self.t
+        self.aim_key = fx(self.skill("steady_shot"), "add_aura_stacks")["aura"]
+        self.still = [p for p in self.procs if p["on"] == "still_for"]
+        self.hot_t = {}   # buff key -> its next heal tick (Second Breath)
+
+    def still_procs(self):
+        """A still_for proc's aura once the Sharpshooter has stood still its ms: from the pull, for as
+        long as it stays still (Rooted Stance)."""
+        for p in self.still:
+            if self.t - self.t0 >= p["ms"] / 1000 and p["apply_aura"] not in self.buffs:
+                self.buffs[p["apply_aura"]] = [1e9, aura(self.calling, p["apply_aura"]), 1, 0]
+
+    def buff_heals(self):
+        for k, b in self.buffs.items():
+            for p in fxs(b[1], "periodic_heal") if self.t < b[0] else []:
+                if self.t >= self.hot_t.setdefault(k, self.t + p["tick_ms"] / 1000):
+                    self.hot_t[k] += p["tick_ms"] / 1000
+                    self.heal(linear(p["tick"], self.L), k)
+
+    def loose(self, key):
+        sk = self.skill(key)
+        d, o = self.shot(key)
+        if o in ("miss", "dodge"):
+            return
+        self.apply_effects(sk)
+        for p in fxs(sk, "add_aura_stacks"):
+            self.set_stacks(p["aura"], self.stacks(p["aura"]) + p["stacks"])
+        if key == "steady_shot":
+            self.fight_log.append((self.t, "steady_aim", self.stacks(self.aim_key)))
+
+    def start(self, key):
+        self.pay(key)
+        self.cast = (self.t + self.skill(key).get("cast_time_ms", 0) / 1000, key)
+
+    def step(self):
+        self.still_procs()
+        self.buff_heals()
+        self.tick_dots()
+        if self.cast and self.t >= self.cast[0]:
+            key = self.cast[1]
+            self.cast = None
+            self.loose(key)
+        if self.can_shoot() and self.can("rapid_fire"):
+            self.pay("rapid_fire")
+            self.grant(fx(self.skill("rapid_fire"), "grant_aura")["aura"])
+        if not self.cast and self.t >= self.gcd:
+            aim, aim_left = self.stacks(self.aim_key), self.buffs[self.aim_key][0] - self.t if self.up(self.aim_key) else 0
+            sunder, sunder_left = self.sunder_stacks()
+            steady_ms = self.skill("steady_shot").get("cast_time_ms", 0) / 1000
+            if self.in_melee() and self.can("hold_your_ground"):
+                self.pay("hold_your_ground")
+                self.grant(fx(self.skill("hold_your_ground"), "grant_aura")["aura"])
+            elif not self.in_melee() and self.can_shoot() and not self.rooted() and self.can("pinning_shot"):
+                self.pay("pinning_shot")
+                if self.ranged_roll(0) not in ("miss", "dodge"):
+                    self.apply_effects(self.skill("pinning_shot"))
+            elif (aim < 5 or aim_left < steady_ms + 3) and self.can("steady_shot") and self.can_start("steady_shot"):
+                self.start("steady_shot")
+            elif self.can_shoot() and (sunder < 5 or sunder_left < 3) and self.can("sunder_arrow"):
+                self.pay("sunder_arrow")
+                self.loose("sunder_arrow")
+            elif self.can("aimed_shot") and self.can_start("aimed_shot"):
+                self.start("aimed_shot")
+            elif self.can("puncturing_shaft") and self.can_start("puncturing_shaft"):
+                self.start("puncturing_shaft")
+            elif self.can("steady_shot") and self.can_start("steady_shot"):
+                self.start("steady_shot")
+        self.auto_and_melee()
+        self.mob_turn()
+
+
+class Trapper(Bow):
+    """Vault away from melee; Caltrops once the mob reaches melee; Spring the Traps once two armed
+    traps hold the mob within their spring radius; Immolation Trap, Frost Trap and Tripwire laid at
+    its feet on their cooldowns, where the mob will step; Snapshot as the filler beside Auto Shot.
+    Distances run along one line: a trap lies where the Trapper stood, and a mob in melee stands
+    within a trap's or the Caltrops' radius of the Trapper. A trap armed springs on the mob that
+    comes within its radius, and catches every mob of the pull within its spring radius; no trap
+    catches a named boss. Silencing Shot is the Kick boss.py casts."""
+    IGNORED_ALONE = "a trap springing on a group, one mob"
+    TRAPS = ("immolation_trap", "frost_trap", "tripwire")
+
+    def setup_fight(self):
+        self.setup_bow()
+        self.pos = 0.0        # where the Trapper stands along the line; the mobs stand dist beyond
+        self.traps = {}       # skill key -> dict(at, armed, until, area params)
+        self.caltrops = None  # [until, enemy aura key]
+
+    def mob_at(self):
+        """Where the mobs stand along the line: on the Trapper once in melee."""
+        return self.pos + (0.0 if self.in_melee() else self.dist)
+
+    def lay(self, key, free=False):
+        """Skill `key`'s trap at the Trapper's feet, in place of the one it laid before; `free` (a
+        cast_skill) pays nothing and starts no cooldown."""
+        if not free:
+            self.pay(key)
+        g = fx(self.skill(key), "ground_area")
+        self.traps[key] = dict(at=self.pos, armed=self.t + g.get("arm_ms", 0) / 1000,
+                               until=self.t + g["duration_ms"] / 1000, g=g)
+
+    def armed(self):
+        return {k: tr for k, tr in self.traps.items() if tr["armed"] <= self.t < tr["until"]}
+
+    def spring(self, key):
+        """Trap `key` springs: its enemy aura on every mob of the pull within its spring radius of it
+        (all of them stand together), none in a named boss's fight; the trap is spent."""
+        tr = self.traps.pop(key)
+        if self.boss_fight() or abs(self.mob_at() - tr["at"]) > max(tr["g"].get("spring_radius_yd", 0), tr["g"]["radius_yd"]):
+            return
+        for i in self.mob_ids():
+            self.put_aura(tr["g"]["enemy_aura"], i)
+
+    def catches(self, tr, yd):
+        return abs(self.mob_at() - tr["at"]) <= yd
+
+    def tick_traps(self):
+        for key, tr in list(self.armed().items()):
+            if not self.boss_fight() and self.catches(tr, tr["g"]["radius_yd"]):
+                self.spring(key)
+        for key in [k for k, tr in self.traps.items() if self.t >= tr["until"]]:
+            del self.traps[key]
+
+    def tick_caltrops(self):
+        """Caltrops follow the Trapper: their enemy aura on every mob in melee while they last, gone
+        from a mob once it is out."""
+        c = self.caltrops
+        inside = c is not None and self.t < c[0] and self.in_melee()
+        for i in self.mob_ids():
+            key = c[1] if c else None
+            worn = key in self.dots[i] and self.t < self.dots[i][key][0]
+            if inside and not worn:
+                self.put_aura(key, i)
+                for held in (self.dots[i], self.snares[i]):
+                    if key in held:
+                        held[key][0] = min(held[key][0], c[0])
+            elif not inside and key:
+                self.dots[i].pop(key, None)
+                self.snares[i].pop(key, None)
+
+    def spring_ready(self):
+        """Two armed traps within Spring the Traps' reach of the mob, each catching it in its spring radius."""
+        reach = fx(self.skill("spring_the_traps"), "detonate_traps")["radius_yd"]
+        return [k for k, tr in self.armed().items()
+                if self.catches(tr, reach) and self.catches(tr, tr["g"].get("spring_radius_yd", 0))]
+
+    def spring_the_traps(self):
+        sk = self.skill("spring_the_traps")
+        self.pay("spring_the_traps")
+        p = fx(sk, "school_damage")
+        for i in self.mob_ids():
+            self.on_mob(i, self.hit_mob, linear(p["amount"], self.L), "spring_the_traps", False, dmg_pct=self.dmg_pct())
+        for key in self.spring_ready():
+            self.spring(key)
+
+    def vault(self):
+        """Vault: a leap straight back its distance_yd, the mobs left behind, and the trap its choice
+        lays where it lands (Trap Vault); the Caltrops stay at the Trapper's feet."""
+        sk = self.skill("vault")
+        self.pay("vault")
+        yd = fx(sk, "blink")["distance_yd"]
+        self.pos -= yd
+        self.dist += yd
+        for p in fxs(sk, "cast_skill"):
+            self.lay(key_of(self.calling, p["skill_spell_id"]), free=True)
+
+    def snapshot(self):
+        self.pay("snapshot")
+        d, o = self.shot("snapshot")
+        p = fx(self.skill("snapshot"), "weapon_strike")
+        if o == "crit" and p.get("crit_cooldown_spell_id"):
+            cooled = key_of(self.calling, p["crit_cooldown_spell_id"])
+            if cooled in self.cds:
+                self.cds[cooled] -= p["crit_cooldown_ms"] / 1000
+
+    def step(self):
+        self.tick_traps()
+        self.tick_caltrops()
+        self.tick_dots()
+        if self.t >= self.gcd:
+            if self.in_melee() and self.can("vault"):
+                self.vault()
+            elif self.in_melee() and not (self.caltrops and self.t < self.caltrops[0]) and self.can("caltrops"):
+                self.pay("caltrops")
+                g = fx(self.skill("caltrops"), "ground_area")
+                self.caltrops = [self.t + g["duration_ms"] / 1000, g["enemy_aura"]]
+            elif len(self.spring_ready()) >= 2 and self.can("spring_the_traps"):
+                self.spring_the_traps()
+            elif any(self.can(k) for k in self.TRAPS):
+                self.lay(next(k for k in self.TRAPS if self.can(k)))
+            elif self.can_shoot() and self.can("snapshot"):
+                self.snapshot()
+        self.auto_and_melee()
+        self.mob_turn()
+
+
 # ---------------------------------------------------------------- Basic Warrior
 class BasicWarrior(Sim):
     """Tier 0, levels 1 to 9: Charge in, Fire Blast and Gouge on their cooldowns, Heroic Strike on
@@ -2866,7 +4146,9 @@ class BasicWarrior(Sim):
 
 
 SIMS = dict(basic_warrior=BasicWarrior, vanguard=Vanguard, cutthroat=Cutthroat, initiate=Initiate, ranger=Ranger,
-            acolyte=Acolyte, ironclad=Ironclad, zealot=Zealot, blightcaller=Blightcaller, bloodmender=Bloodmender)
+            acolyte=Acolyte, ironclad=Ironclad, zealot=Zealot, blightcaller=Blightcaller, bloodmender=Bloodmender,
+            bloodletter=Bloodletter, nightblade=Nightblade, pyromancer=Pyromancer, leyweaver=Leyweaver,
+            sharpshooter=Sharpshooter, trapper=Trapper)
 
 # ---------------------------------------------------------------- levels and Talent Rows
 def tier_cap(tier):
