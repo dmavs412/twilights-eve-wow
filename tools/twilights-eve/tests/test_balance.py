@@ -563,6 +563,26 @@ class BalanceModel(unittest.TestCase):
                     self.assertGreater(row["dps"], 0)
                     self.assertTrue(row["win"] == 0 or 0 < row["health_left"] <= 1)
 
+    def test_sturdy_tier2_sims_use_only_learned_skills(self):
+        # At Power Level 30 a Tier 2 Calling is at real level 1: a skill with a higher learn_level is
+        # never cast, alone or in a pull of 2, and Righteous Fury (learned at 10) is never up.
+        level = 30
+        for calling in self.STURDY_TIER2:
+            real = model.calling_level(calling, level)
+            unlearned = [s["key"] for s in model.SPELLS[calling]["skills"] if (s.get("learn_level") or 1) > real]
+            self.assertTrue(unlearned, calling)
+            ch = model.character(calling, level, "green", scenarios.pick_build(calling, level, 1))
+            for n in (1, 2):
+                for seed in range(3):
+                    with self.subTest(calling=calling, n=n, seed=seed):
+                        sim = multi.fighter(calling, n)(calling, level, ch["stats"], ch["rows"], random.Random(seed),
+                                                        {}, mob=model.mob_stats(level))
+                        sim.fight()
+                        self.assertEqual([k for k in unlearned if k in sim.cds or k in sim.dmg], [])
+                        if calling == "zealot":
+                            rf = model.fx(sim.skill("righteous_fury"), "grant_aura")["aura"]
+                            self.assertNotIn(rf, sim.buffs)
+
     def test_ironclad_spends_conviction_with_shield_slam(self):
         level = 40
         ch = model.character("ironclad", level, "green")

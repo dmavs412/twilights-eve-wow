@@ -1073,7 +1073,8 @@ class Sturdy(Vanguard):
     """The Tier 2 plate Callings' core, the Vanguard's rage and swing: rage from white swings and
     blows taken, buffs kept as aura rows (self.buffs, as Sim.grant keeps them) whose block_pct,
     armor_items_pct, mod_damage_taken_pct, mod_spell_damage_pct and procs count while they are up,
-    and the build's passives: their procs, armour, block, rage cap, crit and amounts."""
+    and the build's passives: their procs, armour, block, rage cap, crit and amounts. Each skill is
+    learned at its learn_level."""
 
     def setup_sturdy(self):
         self.dist = 0.0
@@ -1098,8 +1099,9 @@ class Sturdy(Vanguard):
         return b is not None and self.t < b[0]
 
     def can(self, key):
-        """Skill `key` is off its cooldown, paid for, and free of the global cooldown if it starts one."""
-        return (self.ready(key) and self.power >= self.cost(self.skill(key))
+        """Skill `key` is learned, off its cooldown, paid for, and free of the global cooldown if it
+        starts one."""
+        return (self.knows(key) and self.ready(key) and self.power >= self.cost(self.skill(key))
                 and (self.gcd_of(key) == 0 or self.t >= self.gcd))
 
     def pay(self, key):
@@ -1318,8 +1320,9 @@ class Zealot(Sturdy):
         self.setup_sturdy()
         self.ground = None   # [until, next tick, damage, source, caster aura row, every]
         self.seal_key = fx(self.skill("seal_of_iron"), "grant_aura")["aura"]
-        self.grant(fx(self.skill("righteous_fury"), "grant_aura")["aura"])
-        if self.ready("bulwark_charge"):
+        if self.knows("righteous_fury"):
+            self.grant(fx(self.skill("righteous_fury"), "grant_aura")["aura"])
+        if self.knows("bulwark_charge") and self.ready("bulwark_charge"):
             ch = self.skill("bulwark_charge")
             self.cd("bulwark_charge", self.cooldown_ms("bulwark_charge"))
             self.gain_rage(linear(fx(ch, "energize")["amount"], self.L))
@@ -2388,7 +2391,8 @@ class Mending:
     """What the Tier 2 healers share, ahead of Sim: the mob runs in from 30 yd as the Acolyte's
     does; a heal on "the most hurt ally" lands on the caster, or on H-1's dummy friend
     (multi.Guard) when there is one; a heal split among the allies near splits between the two;
-    heals over time; and the healing-taken bonus of the ground area the allies stand in."""
+    heals over time; and the healing-taken bonus of the ground area the allies stand in. Each skill
+    is learned at its learn_level."""
 
     def setup_mending(self):
         self.dist = 30.0
@@ -2540,7 +2544,7 @@ class Blightcaller(Mending, Sim):
         self.gcd = self.t + self.gcd_of(key)
 
     def affords(self, key):
-        return self.ready(key) and self.power >= self.cost(self.skill(key))
+        return self.knows(key) and self.ready(key) and self.power >= self.cost(self.skill(key))
 
     def tithe_tick(self):
         """A Plague Tithe tick: its hit, more by the build's pct (Sustaining Rot), a heal over time of
@@ -2677,9 +2681,9 @@ class Bloodmender(Mending, Sim):
         return self.s.max_hp * self.skill(key)["realm_cost"] // 100
 
     def affords(self, key):
-        """Skill `key` is off its cooldown and its health cost leaves the Bloodmender alive (cast.rs
-        refuses a health cost that would kill)."""
-        return self.ready(key) and self.hp > self.health_cost(key)
+        """Skill `key` is learned, off its cooldown, and its health cost leaves the Bloodmender alive
+        (cast.rs refuses a health cost that would kill)."""
+        return self.knows(key) and self.ready(key) and self.hp > self.health_cost(key)
 
     def pay_health(self, key):
         """Skill `key`'s health cost, and the on-cast procs of a health cost. Returns the cost."""
