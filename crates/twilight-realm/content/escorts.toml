@@ -31,6 +31,9 @@
 # reset_s       seconds after the escort ends (success or failure) before the group sees the start
 #               creature again
 # linger_s      seconds he stands at the last point before he goes
+# assist_yd     optional, 0 by default: each tick he is out of a fight, he attacks the nearest
+#               hostile creature within this of him that is engaged on a living group member and
+#               that he may fight (one of his ambush or one everyone sees). 0: he never assists.
 #
 # [[escort.point]]  in order; the first is his first step from the start spot, the last is the end
 # at            [x, y]; the Z comes from the host's ground when he walks there. Not `position`:
@@ -39,14 +42,30 @@
 # say           optional; he says it on reaching the point
 # run           optional; true makes him run from here on
 #
+# [[escort.ambush]]  any number, each at one point (#702). It comes the first time he reaches its
+#               point in a run: its creatures are made for the group alone (ADR 0014), he says its
+#               `say`, and on the next tick each one still idle attacks him. A new run after a
+#               failure brings it again. When the escort ends, its creatures, alive or dead, are
+#               removed at the reset, when the group sees the start creature again; they never
+#               respawn.
+# point         the point's number, counting the [[escort.point]] tables from 1 in file order
+# say           optional; he says it when the ambush comes
+#
+# [[escort.ambush.creature]]  one or more per ambush
+# entry         a creature template
+# level         its level; the Level Bands leave it alone
+# count         optional, 1 by default; that many at the same spot
+# position      [x, y, z] on the escort's map; write z as 0.0, and ground_check.py --fix sets it
+#
 # The load fails on a repeated key, an escort with fewer than two points, a `spawn` that is no
-# friendly spawn row on `map`, a `quest` the realm does not have, and two escorts sharing a quest
-# or a spawn. An escort whose key starts with `test_` belongs to a test, which adds its quest
+# friendly spawn row on `map`, a `quest` the realm does not have, two escorts sharing a quest
+# or a spawn, an ambush `point` the escort lacks, and an ambush `entry` with no template. An escort whose key starts with `test_` belongs to a test, which adds its quest
 # with `Realm::with_quests`; the load does not look its quest up.
 
 # Belongs to tests/escorts.rs, whose quest 99821 is added with `Realm::with_quests`; no shipped
 # quest names that id, so it cannot start in the game. Its start creature is the Erin of spawn
-# 960821 in content/zones.toml's redridge [[zone]], and its path runs 80 yd west from there.
+# 960821 in content/zones.toml's redridge [[zone]], and its path runs 80 yd west from there. Its
+# ambush at point 2 is two level 20 Prairie Wolves 15 yd north of the point (#702).
 [[escort]]
 key = "test_escort"
 quest = 99821
@@ -62,6 +81,7 @@ leash_yd = 60.0
 leash_s = 10.0
 reset_s = 5.0
 linger_s = 3.0
+assist_yd = 20.0
 
 [[escort.point]]
 at = [-9825.0, -3463.0]
@@ -75,3 +95,13 @@ at = [-9865.0, -3463.0]
 
 [[escort.point]]
 at = [-9885.0, -3463.0]
+
+[[escort.ambush]]
+point = 2
+say = "Wolves!"
+
+[[escort.ambush.creature]]
+entry = 2958
+level = 20
+count = 2
+position = [-9845.0, -3448.0, 200.27]

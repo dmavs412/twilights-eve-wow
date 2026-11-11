@@ -3,7 +3,8 @@
 //! file: its start creature is the Erin of spawn 960821 in south Redridge (`content/zones.toml`),
 //! its path four points 20 yd apart running 80 yd west from her, `wait_yd` 20, `leash_yd` 60,
 //! `leash_s` 10, `reset_s` 5 and `linger_s` 3. Its quest 99821 is added here with
-//! `Realm::with_quests`.
+//! `Realm::with_quests`. It has `assist_yd` 20 and one ambush at point 2 (#702): two level 20
+//! Prairie Wolves 15 yd north of the point, and the line "Wolves!".
 
 mod common;
 
@@ -190,7 +191,8 @@ fn quest_failed(events: &[SessionEvent]) -> bool {
 }
 
 /// Players `who` keep up with the escortee leg by leg, each standing 10 yd along the leg he
-/// walks, until the first of them is sent the quest complete. Whether it came.
+/// walks, until the first of them is sent the quest complete. Whether it came. A leg takes up to
+/// 40 s: he fights the wolves of point 2's ambush.
 fn follow(p: &mut Party, who: &[usize]) -> bool {
     let lead = p.guids[who[0]];
     for k in 0..4 {
@@ -198,7 +200,7 @@ fn follow(p: &mut Party, who: &[usize]) -> bool {
         for &i in who {
             p.go(i, mid, 0.0);
         }
-        if p.run_until(15.0, |got| log_complete(&got[who[0]], lead)) {
+        if p.run_until(40.0, |got| log_complete(&got[who[0]], lead)) {
             return true;
         }
     }
@@ -366,6 +368,243 @@ fn killed_it_fails_and_can_start_again() {
     assert!(offered(&mut p, 0, START), "the quest is still in the log");
     let again = start(&mut p, 0);
     assert_ne!(again, him);
+}
+
+/// The Prairie Wolves created in `events`, by guid.
+fn wolves(events: &[SessionEvent]) -> Vec<u64> {
+    unit_creates(events)
+        .into_iter()
+        .filter(|(_, entry, _)| *entry == PRAIRIE_WOLF)
+        .map(|(g, _, _)| g)
+        .collect()
+}
+
+/// The victims `attacker` is sent starting an attack on in `events`.
+fn attack_starts(events: &[SessionEvent], attacker: u64) -> Vec<u64> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::AttackStart {
+                attacker: a,
+                victim,
+            } if *a == attacker => Some(*victim),
+            _ => None,
+        })
+        .collect()
+}
+
+fn said(events: &[SessionEvent], text: &str) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::Chat(m) if m.text == text))
+}
+
+/// Player 0 walks with the just-started escortee `him` over the first leg, so he passes point 1
+/// and waits short of point 2, then steps up so he reaches it. The wolves, once they come.
+fn to_the_ambush(p: &mut Party, him: u64) -> Vec<u64> {
+    p.go(0, at((LEGS[0] + LEGS[1]) / 2.0, 3.0), 0.0);
+    let early = p.run(15.0);
+    assert!(wolves(&early[0]).is_empty(), "no wolves short of point 2");
+    let stops = moves(&early[0], him);
+    let waiting = stops.iter().rev().find(|m| m.0).expect("he waits").1;
+    assert!(waiting[0] > LEGS[2], "he waits before point 2");
+    let mark = p.seen(0).len();
+    p.go(0, at((LEGS[1] + LEGS[2]) / 2.0, 3.0), 0.0);
+    assert!(
+        p.run_until(15.0, |got| wolves(&got[0]).len() == 2),
+        "two wolves at point 2"
+    );
+    wolves(&p.seen(0)[mark..])
+}
+
+#[test]
+fn the_ambush_comes_at_its_point_and_falls_on_him() {
+    let mut p = party(&[Holds::Quest], &[beside()]);
+    let him = start(&mut p, 0);
+    let mark = p.seen(0).len();
+    let pack = to_the_ambush(&mut p, him);
+    let came = p.seen(0)[mark..].to_vec();
+    let first_wolf = came
+        .iter()
+        .position(|e| !wolves(std::slice::from_ref(e)).is_empty())
+        .unwrap();
+    let leaves = came.iter().position(|e| {
+        moves(std::slice::from_ref(e), him)
+            .iter()
+            .any(|(_, from)| from[0] <= LEGS[2] + 0.5)
+    });
+    assert!(
+        leaves.is_none_or(|l| first_wolf < l),
+        "they come when he reaches point 2, before he leaves it"
+    );
+    assert!(said(&came, "Wolves!"), "his line");
+
+    p.run(3.0);
+    let fight = p.seen(0)[mark..].to_vec();
+    for &w in &pack {
+        assert_eq!(attack_starts(&fight, w), [him], "each wolf goes for him");
+    }
+    assert!(
+        p.run_until(10.0, |got| swung_at(&got[0], him)
+            .iter()
+            .any(|v| pack.contains(v))),
+        "he swings back"
+    );
+}
+
+#[test]
+fn only_the_group_sees_the_ambush() {
+    let mut p = party(
+        &[Holds::Quest, Holds::Nothing],
+        &[beside(), at(START_AT[0] + 150.0, 0.0)],
+    );
+    let him = start(&mut p, 0);
+    assert!(!created(p.seen(1), him), "the outsider is no group member");
+    p.go(1, at(LEGS[2], 40.0), 0.0);
+    let pack = to_the_ambush(&mut p, him);
+    p.run(3.0);
+    assert!(wolves(p.seen(1)).is_empty(), "the outsider never sees them");
+    assert!(pack.iter().all(|w| !p.units_held(1).contains(w)));
+}
+
+#[test]
+fn the_ambush_comes_once_a_run() {
+    let mut p = party(&[Holds::Quest], &[beside()]);
+    let him = start(&mut p, 0);
+    let pack = to_the_ambush(&mut p, him);
+    assert!(all_dead(&mut p, &pack, 60.0), "he kills them");
+    let rest = p.seen(0).len();
+    let lead = p.guids[0];
+    let mut arrived = false;
+    for k in 2..4 {
+        p.go(0, at((LEGS[k] + LEGS[k + 1]) / 2.0, 3.0), 0.0);
+        if p.run_until(15.0, |got| log_complete(&got[0], lead)) {
+            arrived = true;
+            break;
+        }
+    }
+    assert!(arrived, "he walks on to the end");
+    assert!(wolves(&p.seen(0)[rest..]).is_empty(), "no more wolves");
+}
+
+/// Ticks until player 0 has seen every one of `pack` die, at most `secs`; whether they did.
+fn all_dead(p: &mut Party, pack: &[u64], secs: f32) -> bool {
+    let mut t = 0.0;
+    while t < secs {
+        if pack.iter().all(|&w| died(p.seen(0), w)) {
+            return true;
+        }
+        p.run(0.1);
+        t += 0.1;
+    }
+    false
+}
+
+#[test]
+fn a_failed_escort_clears_its_ambush_and_the_next_run_brings_a_new_one() {
+    let mut p = party(&[Holds::Quest], &[beside()]);
+    let him = start(&mut p, 0);
+    let pack = to_the_ambush(&mut p, him);
+    // Out of the leash, still in view of the wolves.
+    p.go(0, at(LEGS[2] + 70.0, 0.0), 0.0);
+    assert!(
+        p.run_until(12.0, |got| system_lines(&got[0])
+            .contains(&FAILED.to_string())),
+        "left behind, the escort fails"
+    );
+    p.run(0.5);
+    assert!(!p.units_held(0).contains(&him));
+    let mark = p.seen(0).len();
+    p.go(0, beside(), 0.0);
+    assert!(
+        p.run_until(6.0, |got| created(&got[0], START)),
+        "the start creature is back"
+    );
+    let reset = p.seen(0)[mark..].to_vec();
+    let back = reset
+        .iter()
+        .position(|e| created(std::slice::from_ref(e), START))
+        .unwrap();
+    for &w in &pack {
+        let held_before = p.seen(0)[..mark]
+            .iter()
+            .chain(&reset[..=back])
+            .any(|e| removed(std::slice::from_ref(e), w));
+        assert!(held_before, "wolf {w:#x} is removed by the reset");
+        assert!(!p.units_held(0).contains(&w));
+    }
+
+    p.run(0.5);
+    let again = start(&mut p, 0);
+    assert_ne!(again, him);
+    let again = to_the_ambush(&mut p, again);
+    assert!(
+        again.iter().all(|w| !pack.contains(w)),
+        "two new wolves come"
+    );
+}
+
+#[test]
+fn he_assists_against_a_creature_on_the_group_near_him() {
+    let mut p = party(&[Holds::Quest], &[beside()]);
+    let him = start(&mut p, 0);
+    let mark = p.seen(0).len();
+    assert!(
+        p.run_until(20.0, |got| moves(&got[0], him).iter().any(|m| m.0)),
+        "he waits 20 yd out"
+    );
+    let stopped = moves(&p.seen(0)[mark..], him)
+        .into_iter()
+        .find(|m| m.0)
+        .unwrap()
+        .1;
+    let group = Audience::of(&[p.guids[0]]);
+    let map = p.realm.player_positions()[0].0;
+
+    // 40 yd off: he waits on and lets it be.
+    p.go(0, at(stopped[0] + 41.0, 0.0), 0.0);
+    p.run(0.5);
+    let far = p
+        .realm
+        .spawn_for(
+            p.host.as_ref(),
+            PRAIRIE_WOLF,
+            20,
+            at(stopped[0] + 40.0, 0.0),
+            map,
+            group.clone(),
+        )
+        .expect("a wolf");
+    let got = p.run(3.0);
+    assert_eq!(
+        attack_starts(&got[0], far),
+        [p.guids[0]],
+        "the wolf attacks the holder"
+    );
+    assert!(!attack_starts(&got[0], him).contains(&far), "too far off");
+    p.realm.despawn_audience(&group);
+
+    // 10 yd off: he joins the fight.
+    p.go(0, at(stopped[0] + 11.0, 0.0), 0.0);
+    p.run(0.5);
+    let near = p
+        .realm
+        .spawn_for(
+            p.host.as_ref(),
+            PRAIRIE_WOLF,
+            20,
+            at(stopped[0] + 10.0, 0.0),
+            map,
+            group,
+        )
+        .expect("a wolf");
+    let got = p.run(2.0);
+    assert_eq!(
+        attack_starts(&got[0], near),
+        [p.guids[0]],
+        "the wolf attacks the holder"
+    );
+    assert!(attack_starts(&got[0], him).contains(&near), "he attacks it");
 }
 
 #[test]

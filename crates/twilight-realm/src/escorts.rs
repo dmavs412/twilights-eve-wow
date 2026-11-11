@@ -2,7 +2,9 @@
 //! creature to set off, and a private copy of it, seen by their group alone, walks a fixed path.
 //! It waits for the group, fights what attacks it (a defender, #700), and meets the quest for
 //! every group member holding it when it arrives. It fails when it dies or the group leaves it;
-//! the quest stays in the log for another try. Nothing here names a quest.
+//! the quest stays in the log for another try. Ambushes made for the group come at its points
+//! once a run, and the escortee joins the fight of a creature that attacks a group member near
+//! him (#702). Nothing here names a quest.
 
 use std::sync::OnceLock;
 
@@ -42,6 +44,33 @@ pub(crate) struct Point {
     pub(crate) run: bool,
 }
 
+/// Creatures made for the group the first time the escortee reaches a point in a run (#702).
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Ambush {
+    /// The point's number, counting the escort's points from 1.
+    pub(crate) point: usize,
+    #[serde(default)]
+    pub(crate) say: Option<String>,
+    pub(crate) creature: Vec<Ambusher>,
+}
+
+/// One kind of an ambush's creatures, `count` of them at one spot.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Ambusher {
+    pub(crate) entry: u32,
+    /// Its level; the Level Bands leave it alone.
+    pub(crate) level: u8,
+    #[serde(default = "one_u32")]
+    pub(crate) count: u32,
+    pub(crate) position: [f32; 3],
+}
+
+fn one_u32() -> u32 {
+    1
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Escort {
@@ -65,7 +94,12 @@ pub(crate) struct Escort {
     pub(crate) leash_s: f32,
     pub(crate) reset_s: f32,
     pub(crate) linger_s: f32,
+    /// He attacks a hostile creature engaged on a living group member within this; 0 never.
+    #[serde(default)]
+    pub(crate) assist_yd: f32,
     pub(crate) point: Vec<Point>,
+    #[serde(default)]
+    pub(crate) ambush: Vec<Ambush>,
 }
 
 #[derive(Deserialize)]
@@ -156,7 +190,8 @@ pub(crate) fn places() -> Vec<Place> {
 }
 
 /// The escorts of `text` (the shape of `content/escorts.toml`). A repeated key, an escort with
-/// fewer than two points, and two escorts sharing a quest or a spawn panic.
+/// fewer than two points, an ambush at no point of its escort, and two escorts sharing a quest or
+/// a spawn panic.
 fn parse(text: &str) -> Vec<Escort> {
     let file: File = toml::from_str(text).expect("content/escorts.toml parses");
     for (i, e) in file.escort.iter().enumerate() {
@@ -171,6 +206,14 @@ fn parse(text: &str) -> Vec<Escort> {
             "escort {} has fewer than two points",
             e.key
         );
+        for a in &e.ambush {
+            assert!(
+                (1..=e.point.len()).contains(&a.point),
+                "escort {}'s ambush at point {} names no point of it",
+                e.key,
+                a.point
+            );
+        }
         if let Some(o) = before.iter().find(|o| o.quest == e.quest) {
             panic!("escorts {} and {} share quest {}", o.key, e.key, e.quest);
         }
@@ -182,8 +225,9 @@ fn parse(text: &str) -> Vec<Escort> {
 }
 
 /// The checks against the rest of the content: each `spawn` is a friendly spawn row on its
-/// escort's map, and each `quest` a quest the realm has. A test's escort (a key starting
-/// `test_`) has its quest added by the test, after the load.
+/// escort's map, each `quest` a quest the realm has, and each ambush creature's `entry` a
+/// template. A test's escort (a key starting `test_`) has its quest added by the test, after the
+/// load.
 fn check_world(all: &[Escort]) {
     for e in all {
         let row = e.start_row().unwrap_or_else(|| {
@@ -204,6 +248,14 @@ fn check_world(all: &[Escort]) {
             e.key,
             e.quest
         );
+        for c in e.ambush.iter().flat_map(|a| &a.creature) {
+            assert!(
+                mobs::template(c.entry).is_some(),
+                "escort {}'s ambush names creature {}, which has no template",
+                e.key,
+                c.entry
+            );
+        }
     }
 }
 
@@ -246,6 +298,10 @@ struct Run {
     stage: Stage,
     /// Seconds no living group member has been within the leash.
     alone_s: f32,
+    /// Every creature its ambushes made, alive or dead, removed at its reset.
+    ambushers: Vec<u64>,
+    /// Those made last tick, now in the group's view, to turn on him.
+    pending: Vec<u64>,
 }
 
 /// What a tick has for the clients and the quest logs.
@@ -306,9 +362,13 @@ impl Escorts {
         self.asked.push((guid, i));
     }
 
-    /// Every escortee under way, which a Rumour ending leaves alone.
-    pub(crate) fn escortees(&self) -> Vec<u64> {
-        self.runs.iter().map(|r| r.escortee).collect()
+    /// Every escortee under way and every creature an escort's ambush made, which a Rumour ending
+    /// leaves alone: the escort removes them itself.
+    pub(crate) fn kept(&self) -> Vec<u64> {
+        self.runs
+            .iter()
+            .flat_map(|r| std::iter::once(r.escortee).chain(r.ambushers.iter().copied()))
+            .collect()
     }
 
     /// Hides each start creature at `place` from the groups of its escorts under way or waiting
@@ -358,6 +418,7 @@ impl Escorts {
             }
             let lives = r.tick(e, dt, players, shard, host, &mut out);
             if !lives {
+                shard.mobs.retain(|m| !r.ambushers.contains(&m.guid));
                 let starts: Vec<u64> = shard
                     .mobs
                     .iter()
@@ -437,6 +498,8 @@ impl Escorts {
             running: false,
             stage: Stage::Fresh,
             alone_s: 0.0,
+            ambushers: Vec::new(),
+            pending: Vec::new(),
         });
     }
 }
@@ -487,6 +550,25 @@ impl Run {
                 return true;
             }
         }
+        // Last tick's ambushers are in the group's view now: each still idle turns on him.
+        for g in std::mem::take(&mut self.pending) {
+            let idle = shard
+                .mobs
+                .iter_mut()
+                .find(|m| m.guid == g && m.state == State::Idle);
+            if let Some(m) = idle {
+                let mut events = Vec::new();
+                crate::world::engage(m, self.escortee, &mut events);
+                out.shown.extend(events);
+            }
+        }
+        if shard.mobs[i].state == State::Idle {
+            if let Some(foe) = assist_target(e, i, &group, shard) {
+                let mut events = Vec::new();
+                crate::world::engage(&mut shard.mobs[i], foe, &mut events);
+                out.shown.extend(events);
+            }
+        }
         let mob = &mut shard.mobs[i];
         // In a fight the walk waits; the fight ends where he stands, and he goes on from there.
         if mob.state != State::Idle {
@@ -529,6 +611,9 @@ impl Run {
             say(mob, text, &group, out);
         }
         self.running |= point.run;
+        // Points count from 1; each is reached once a run.
+        self.ambush(e, self.next + 1, i, &group, shard, host, out);
+        let mob = &shard.mobs[i];
         if self.next + 1 < e.point.len() {
             self.next += 1;
             self.stage = Stage::Standing(point.wait_s);
@@ -551,6 +636,47 @@ impl Run {
         true
     }
 
+    /// Each ambush of `e` at point `n` comes: its creatures are made for the group at the ground
+    /// spots for their positions, he (`shard.mobs[i]`) says its line, and on the next tick they
+    /// turn on him.
+    #[allow(clippy::too_many_arguments)]
+    fn ambush(
+        &mut self,
+        e: &Escort,
+        n: usize,
+        i: usize,
+        group: &[&Player],
+        shard: &mut Shard,
+        host: &dyn Host,
+        out: &mut Ticked,
+    ) {
+        let audience = Audience::of(&self.group);
+        for a in e.ambush.iter().filter(|a| a.point == n) {
+            for c in &a.creature {
+                let Some(template) = mobs::template(c.entry) else {
+                    continue;
+                };
+                for _ in 0..c.count {
+                    let made = shard.spawn_for(
+                        host,
+                        template,
+                        c.level,
+                        c.position,
+                        audience.clone(),
+                        false,
+                    );
+                    if let Some(g) = made {
+                        self.ambushers.push(g);
+                        self.pending.push(g);
+                    }
+                }
+            }
+            if let Some(text) = &a.say {
+                say(&shard.mobs[i], text, group, out);
+            }
+        }
+    }
+
     /// The escort fails: the escortee goes, and each group member is told. Their quests are
     /// untouched.
     fn fail(&mut self, e: &Escort, shard: &mut Shard, out: &mut Ticked) {
@@ -564,6 +690,25 @@ impl Run {
             gone: true,
         };
     }
+}
+
+/// The creature the escortee `shard.mobs[i]` of `e` assists against: the nearest hostile one
+/// within `assist_yd` of him that is engaged on a living member of `group` and that he may fight.
+/// None with `assist_yd` 0.
+fn assist_target(e: &Escort, i: usize, group: &[&Player], shard: &Shard) -> Option<u64> {
+    if e.assist_yd <= 0.0 {
+        return None;
+    }
+    let me = &shard.mobs[i];
+    let living = |g: u64| group.iter().any(|p| p.alive && p.guid == g);
+    shard
+        .mobs
+        .iter()
+        .filter(|m| m.state == State::Engaged && living(m.target) && me.may_fight(m))
+        .map(|m| (m.guid, flat_distance(m.position, me.position)))
+        .filter(|&(_, d)| d <= e.assist_yd)
+        .min_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(g, _)| g)
 }
 
 /// `mob` says `text` to the group members within a creature's line of it.
@@ -612,6 +757,57 @@ run = true
         assert!(all[0].start_say.is_none());
         assert!(all[0].point[1].run && !all[0].point[0].run);
         assert_eq!(all[0].point[1].wait_s, 2.0);
+    }
+
+    const AMBUSH: &str = r#"
+[[escort.ambush]]
+point = 2
+
+[[escort.ambush.creature]]
+entry = 2958
+level = 20
+position = [5.0, 5.0, 0.0]
+"#;
+
+    #[test]
+    fn an_ambush_loads_with_its_defaults() {
+        let all = parse(&format!("{TWO}{AMBUSH}"));
+        assert_eq!(all[0].assist_yd, 0.0);
+        let a = &all[0].ambush[0];
+        assert!(a.say.is_none());
+        assert_eq!(a.creature[0].count, 1);
+        assert!(parse(TWO)[0].ambush.is_empty());
+    }
+
+    #[test]
+    #[should_panic(expected = "ambush at point 3 names no point")]
+    fn an_ambush_past_the_last_point_panics() {
+        parse(&format!(
+            "{TWO}{}",
+            AMBUSH.replace("point = 2", "point = 3")
+        ));
+    }
+
+    #[test]
+    #[should_panic(expected = "ambush at point 0 names no point")]
+    fn an_ambush_at_point_zero_panics() {
+        parse(&format!(
+            "{TWO}{}",
+            AMBUSH.replace("point = 2", "point = 0")
+        ));
+    }
+
+    #[test]
+    #[should_panic(expected = "names creature 3999999, which has no template")]
+    fn an_ambush_creature_with_no_template_panics() {
+        let real = parse(TEXT);
+        let row = format!("spawn = {}", real[0].spawn);
+        let text = format!("{TWO}{}", AMBUSH.replace("2958", "3999999"));
+        check_world(&parse(
+            &text
+                .replace("spawn = 10", &row)
+                .replace("key = \"a\"", "key = \"test_a\""),
+        ));
     }
 
     #[test]

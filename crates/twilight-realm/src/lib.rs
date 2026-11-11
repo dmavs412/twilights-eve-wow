@@ -3111,14 +3111,16 @@ impl Realm {
         shard.spawn_for(host, template, level, position, audience, defender)
     }
 
-    /// Removes every creature made for exactly `audience` on any shard but an escortee; each
-    /// admitted client that had one in view is sent its destroy on the next tick.
+    /// Removes every creature made for exactly `audience` on any shard but an escortee and an
+    /// escort's ambushers; each admitted client that had one in view is sent its destroy on the
+    /// next tick.
     pub fn despawn_audience(&mut self, audience: &Audience) {
         self.give_back();
-        // An escortee shares a solo character's Audience with their Rumour, and stays (#701).
-        let escortees = self.escorts.escortees();
+        // An escortee shares a solo character's Audience with their Rumour, and stays (#701); so
+        // do his ambushers, which his escort removes at its reset (#702).
+        let kept = self.escorts.kept();
         for shard in self.shards.values_mut() {
-            shard.despawn_audience(audience, &escortees);
+            shard.despawn_audience(audience, &kept);
         }
         self.objects.despawn_audience(audience);
     }
